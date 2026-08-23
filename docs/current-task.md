@@ -2,49 +2,42 @@
 
 ## Task
 
-**ID:** RAW-CAP-PROBE-001
-**Title:** Integrate Raw availability with daemon capability snapshot
+**ID:** RAW-PARAM-001
+**Title:** Implement typed Raw parameter validation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Audit Raw templates against the existing capability catalog, add only the
-missing safe direct option probes needed to distinguish their availability,
-and publish the resulting authority through the daemon's existing snapshot.
+Define bounded user values for every Raw parameter kind, validate required and
+optional fields without shell interpretation, and retain typed values for
+later exact argv construction.
 
 ## Dependencies
 
-- `RAW-CAP-001` — DONE
+- `RAW-CATALOG-MODEL-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
-- `crates/yoctui-model/src/compatibility.rs`
-- `crates/yoctui-model/src/compatibility_catalog.rs`
-- `crates/yoctui-model/src/raw_catalog_builtin.rs`
-- `crates/yoctui-bitbake/src/compatibility.rs`
-- `crates/yoctui-cli/src/daemon_compatibility.rs`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- Existing safe capability records are reused wherever they fully distinguish
-  a Raw command's required BitBake behavior.
-- Missing option-level distinctions use bounded direct help/metadata probes;
-  no probe mutates a build or invokes a shell.
-- Probe results remain daemon-owned, generation-correlated, and identical for
-  every attached client.
-- Tests cover positive, negative, inconclusive, stale-generation, and absent-
-  authority behavior across model, BitBake adapter, and daemon integration.
+- Recipe, image, target, task, UI, file, integer, text, and multiconfig values
+  have closed typed validation rules and explicit byte bounds.
+- Required fields reject empty input; optional fields normalize empty input to
+  absence without inventing a value.
+- Control characters, shell metacharacters, traversal, invalid numeric ranges,
+  and kind/definition disagreements fail closed.
+- Tests cover every kind, Unicode/length boundaries, optional values, and
+  representative invalid input.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_capability_probe
-cargo test -p yoctui-bitbake raw_capability_probe
-cargo test -p yoctui -- raw_capability_probe
+cargo test -p yoctui-model raw_parameter
 cargo clippy -p yoctui-model --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

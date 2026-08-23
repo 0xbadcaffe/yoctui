@@ -36,9 +36,12 @@ classification, category, and rendered template, verifies the pinned SHA-256,
 and rejects stale generated output. `RAW-CAP-001` is complete: Raw projections
 consume only daemon-owned capability records and selected implementations,
 distinguish all-of from any-of, preserve exact limitations and failure reasons,
-and keep reference-only entries Unsupported. `RAW-CAP-PROBE-001` is active
-next to audit and extend direct option probes where the existing capability
-vocabulary is not specific enough for Raw commands.
+and keep reference-only entries Unsupported. `RAW-CAP-PROBE-001` is complete:
+31 version-agnostic Raw CLI capabilities use bounded direct
+`bitbake --help` evidence, including a dedicated help-text probe for
+multiconfig syntax. The daemon publishes positive, negative, or inconclusive
+results once per environment generation and rejects stale results.
+`RAW-PARAM-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

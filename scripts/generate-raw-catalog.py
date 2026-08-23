@@ -275,32 +275,102 @@ def command_parts(command: str) -> tuple[list[Parameter], list[str]]:
     return list(parameters.values()), arguments
 
 
-def capability(command: str) -> str:
-    if "--kill-server" in command or command == "bitbake -m":
-        return "BitBakeServerStop"
-    if "--status-only" in command:
-        return "BitBakeServerStatus"
-    if "--server-only" in command:
-        return "BitBakeServerStart"
-    if "--remote-server" in command or "--observe-only" in command:
-        return "BitBakeServerSocket"
-    if " listtasks " in f" {command} ":
-        return "BitBakeTaskList"
-    if " -f " in f" {command} " or " --force " in f" {command} ":
-        return "BitBakeForceTask"
-    if command.startswith("bitbake -e") or command.startswith("bitbake --environment"):
-        return "BitBakeEnvironmentDump"
-    if command.startswith("bitbake -s") or command.startswith("bitbake --show-versions"):
-        return "BitBakeRecipeInventory"
-    if " -g " in f" {command} " or " --graphviz " in f" {command} ":
-        return "BitBakeGraphGeneration"
-    if "printdiff" in command:
-        return "BitBakeDiffSigs"
-    if "dump-signatures" in command or " -S " in f" {command} ":
-        return "BitBakeDumpSig"
-    if command in {"bitbake --version", "bitbake --help", "bitbake -h", "bitbake -p", "bitbake --parse-only"}:
-        return "BitBakeWorkspaceInspection"
-    return "BitBakeBuild"
+def capabilities(command: str) -> list[str]:
+    tokens = shlex.split(command)[1:]
+    required = ["BitBakeRawCli"]
+
+    def add(capability: str) -> None:
+        if capability not in required:
+            required.append(capability)
+
+    def has(short: str, long: str) -> bool:
+        return short in tokens or any(token == long or token.startswith(f"{long}=") for token in tokens)
+
+    if has("-s", "--show-versions"):
+        add("BitBakeRawShowVersions")
+    if "-c" in tokens or any(token.startswith("--cmd=") for token in tokens):
+        add("BitBakeRawTaskExecution")
+    if "devshell" in tokens:
+        add("DevShell")
+    if "menuconfig" in tokens:
+        add("MenuConfig")
+    if "populate_sdk" in tokens:
+        add("SdkPopulate")
+    if "populate_sdk_ext" in tokens:
+        add("SdkExtensible")
+    if "testimage" in tokens or "testimage_auto" in tokens:
+        add("TestImage")
+    if "listtasks" in tokens:
+        add("BitBakeTaskList")
+    if has("-f", "--force"):
+        add("BitBakeForceTask")
+    if has("-C", "--clear-stamp"):
+        add("BitBakeRawClearStamp")
+    if has("-e", "--environment"):
+        add("BitBakeEnvironmentDump")
+    if has("-g", "--graphviz"):
+        add("BitBakeGraphGeneration")
+    if has("-n", "--dry-run"):
+        add("BitBakeRawDryRun")
+    if has("-p", "--parse-only"):
+        add("BitBakeRawParseOnly")
+    if has("-k", "--continue"):
+        add("BitBakeRawContinue")
+    if has("-P", "--profile"):
+        add("BitBakeRawProfile")
+    if has("-S", "--dump-signatures"):
+        add("BitBakeRawDumpSignatures")
+    if "--revisions-changed" in tokens:
+        add("BitBakeRawRevisionsChanged")
+    if has("-b", "--buildfile"):
+        add("BitBakeRawBuildFile")
+    if any(token.startswith("-D") for token in tokens) or "--debug" in tokens:
+        add("BitBakeRawDebug")
+    if has("-l", "--log-domains"):
+        add("BitBakeRawLogDomains")
+    if has("-v", "--verbose"):
+        add("BitBakeRawVerbose")
+    if any(token in {"-q", "-qq"} for token in tokens) or "--quiet" in tokens:
+        add("BitBakeRawQuiet")
+    if has("-w", "--write-log"):
+        add("BitBakeRawEventLog")
+    if has("-u", "--ui"):
+        add("BitBakeRawUi")
+    if has("-B", "--bind"):
+        add("BitBakeRawServerBind")
+    if has("-T", "--idle-timeout"):
+        add("BitBakeRawServerIdleTimeout")
+    if any(token.startswith("--remote-server=") for token in tokens):
+        add("BitBakeRawServerRemote")
+    if any(token.startswith("--token=") for token in tokens):
+        add("BitBakeRawServerToken")
+    if "--observe-only" in tokens:
+        add("BitBakeRawServerObserve")
+    if "--status-only" in tokens:
+        add("BitBakeServerStatus")
+    if "--server-only" in tokens:
+        add("BitBakeServerStart")
+    if "--kill-server" in tokens or "-m" in tokens:
+        add("BitBakeServerStop")
+    if has("-r", "--read"):
+        add("BitBakeRawConfigRead")
+    if has("-R", "--postread"):
+        add("BitBakeRawConfigPostRead")
+    if has("-I", "--ignore-deps"):
+        add("BitBakeRawIgnoreDeps")
+    if any(token.startswith("mc:") for token in tokens):
+        add("BitBakeRawMulticonfig")
+    if any("--runall=" in token for token in tokens):
+        add("BitBakeRawRunAll")
+    if any("--runonly=" in token for token in tokens):
+        add("BitBakeRawRunOnly")
+    if "--no-setscene" in tokens:
+        add("BitBakeRawNoSetscene")
+    if "--skip-setscene" in tokens:
+        add("BitBakeRawSkipSetscene")
+    if "--setscene-only" in tokens:
+        add("BitBakeRawSetsceneOnly")
+    return required
 
 
 def interaction(command: str) -> str:
@@ -315,21 +385,21 @@ def interaction(command: str) -> str:
     return "InteractivePty" if any(marker in padded for marker in interactive_markers) else "NoninteractiveJob"
 
 
-def safety(command: str, capability_name: str) -> str:
+def safety(command: str, capability_names: list[str]) -> str:
     padded = f" {command} "
     if any(marker in padded for marker in (" -c clean ", " -c cleansstate ", " -c cleanall ")):
         return "Destructive"
-    if capability_name.startswith("BitBakeServer"):
+    if any("Server" in capability for capability in capability_names):
         return "ServerLifecycle"
-    if capability_name in {
-        "BitBakeWorkspaceInspection",
-        "BitBakeRecipeInventory",
+    if any(capability in {
+        "BitBakeRawShowVersions",
         "BitBakeEnvironmentDump",
         "BitBakeGraphGeneration",
-        "BitBakeDiffSigs",
-        "BitBakeDumpSig",
+        "BitBakeRawDumpSignatures",
         "BitBakeTaskList",
-    } or any(marker in padded for marker in (" -n ", " --dry-run ")):
+        "BitBakeRawDryRun",
+        "BitBakeRawParseOnly",
+    } for capability in capability_names):
         return "Inspection"
     return "Build"
 
@@ -390,7 +460,8 @@ def render_command(entry: Entry) -> str:
         )
 
     parameters, arguments = command_parts(entry.command)
-    capability_name = capability(entry.command)
+    capability_names = capabilities(entry.command)
+    capability_rows = ", ".join(f"CapabilityId::{name}" for name in capability_names)
     parameters_text = ",\n                ".join(render_parameter(item) for item in parameters)
     arguments_text = ",\n                    ".join(arguments)
     return (
@@ -405,10 +476,10 @@ def render_command(entry: Entry) -> str:
         + (f"                    {arguments_text}\n" if arguments else "")
         + "                    ],\n"
         + "                    capabilities: RawCapabilityRequirement::All {\n"
-        + f"                        capabilities: vec![CapabilityId::{capability_name}],\n"
+        + f"                        capabilities: vec![{capability_rows}],\n"
         + "                    },\n"
         + f"                    interaction: RawInteractionMode::{interaction(entry.command)},\n"
-        + f"                    safety: RawSafetyClass::{safety(entry.command, capability_name)},\n"
+        + f"                    safety: RawSafetyClass::{safety(entry.command, capability_names)},\n"
         + "                },\n"
         + "            },\n"
         + "        },\n"

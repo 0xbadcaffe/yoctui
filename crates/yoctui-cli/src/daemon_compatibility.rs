@@ -832,7 +832,7 @@ mod tests {
             .unwrap();
             write_tool(
                 &bin.join("bitbake"),
-                "case \"$1\" in\n  --version) echo 'BitBake Build Tool Core version 2.18.0' ;;\n  --help) echo 'usage: bitbake -e -g -f -c --status-only --server-only --kill-server' ;;\n  *) echo ok ;;\nesac",
+                "case \"$1\" in\n  --version) echo 'BitBake Build Tool Core version 2.18.0' ;;\n  --help) echo 'usage: bitbake -e -g -f -c --dry-run --status-only --server-only --kill-server' ;;\n  *) echo ok ;;\nesac",
             );
             write_tool(
                 &bin.join("bitbake-getvar"),
@@ -979,6 +979,43 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn raw_capability_probe_daemon_publishes_and_reuses_option_authority() {
+        let fixture = RuntimeFixture::new();
+        let mut coordinator = DaemonCompatibilityCoordinator::default();
+        let first = coordinator
+            .startup_from_environment(&fixture.environment)
+            .await
+            .unwrap()
+            .unwrap();
+        assert!(first.snapshot.allows(CapabilityId::BitBakeRawCli));
+        assert!(first.snapshot.allows(CapabilityId::BitBakeRawDryRun));
+        assert!(!first.snapshot.allows(CapabilityId::BitBakeRawRunAll));
+        assert_eq!(
+            first
+                .implementations
+                .get(&CapabilityId::BitBakeRawDryRun)
+                .unwrap()
+                .id,
+            "bitbake.raw.dry_run.argv"
+        );
+        assert!(matches!(
+            first
+                .snapshot
+                .capability(CapabilityId::BitBakeRawRunAll)
+                .unwrap()
+                .state,
+            yoctui_model::CapabilityState::Unavailable { .. }
+        ));
+
+        let second = coordinator
+            .startup_from_environment(&fixture.environment)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(first, second);
+    }
+
+    #[tokio::test]
     async fn daemon_compatibility_runtime_refuses_host_path_without_initialized_build() {
         let fixture = RuntimeFixture::new();
         let environment = BTreeMap::from([("PATH".into(), fixture.bin.display().to_string())]);
@@ -1039,7 +1076,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn daemon_compatibility_environment_change_rejects_stale_probe_result() {
+    async fn raw_capability_probe_environment_change_rejects_stale_result() {
         let first_build = temporary_build("first");
         let second_build = temporary_build("second");
         let first_environment = environment(first_build.clone(), "1.52.0");

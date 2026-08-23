@@ -259,6 +259,68 @@ pub enum CapabilityId {
     BitBakeServerStop,
     #[serde(rename = "bitbake.native_events")]
     BitBakeNativeEvents,
+    #[serde(rename = "bitbake.raw.cli")]
+    BitBakeRawCli,
+    #[serde(rename = "bitbake.raw.show_versions")]
+    BitBakeRawShowVersions,
+    #[serde(rename = "bitbake.raw.task_execution")]
+    BitBakeRawTaskExecution,
+    #[serde(rename = "bitbake.raw.clear_stamp")]
+    BitBakeRawClearStamp,
+    #[serde(rename = "bitbake.raw.dry_run")]
+    BitBakeRawDryRun,
+    #[serde(rename = "bitbake.raw.parse_only")]
+    BitBakeRawParseOnly,
+    #[serde(rename = "bitbake.raw.continue")]
+    BitBakeRawContinue,
+    #[serde(rename = "bitbake.raw.profile")]
+    BitBakeRawProfile,
+    #[serde(rename = "bitbake.raw.dump_signatures")]
+    BitBakeRawDumpSignatures,
+    #[serde(rename = "bitbake.raw.revisions_changed")]
+    BitBakeRawRevisionsChanged,
+    #[serde(rename = "bitbake.raw.buildfile")]
+    BitBakeRawBuildFile,
+    #[serde(rename = "bitbake.raw.debug")]
+    BitBakeRawDebug,
+    #[serde(rename = "bitbake.raw.log_domains")]
+    BitBakeRawLogDomains,
+    #[serde(rename = "bitbake.raw.verbose")]
+    BitBakeRawVerbose,
+    #[serde(rename = "bitbake.raw.quiet")]
+    BitBakeRawQuiet,
+    #[serde(rename = "bitbake.raw.event_log")]
+    BitBakeRawEventLog,
+    #[serde(rename = "bitbake.raw.ui")]
+    BitBakeRawUi,
+    #[serde(rename = "bitbake.raw.server_bind")]
+    BitBakeRawServerBind,
+    #[serde(rename = "bitbake.raw.server_idle_timeout")]
+    BitBakeRawServerIdleTimeout,
+    #[serde(rename = "bitbake.raw.server_remote")]
+    BitBakeRawServerRemote,
+    #[serde(rename = "bitbake.raw.server_token")]
+    BitBakeRawServerToken,
+    #[serde(rename = "bitbake.raw.server_observe")]
+    BitBakeRawServerObserve,
+    #[serde(rename = "bitbake.raw.config_read")]
+    BitBakeRawConfigRead,
+    #[serde(rename = "bitbake.raw.config_postread")]
+    BitBakeRawConfigPostRead,
+    #[serde(rename = "bitbake.raw.ignore_deps")]
+    BitBakeRawIgnoreDeps,
+    #[serde(rename = "bitbake.raw.multiconfig")]
+    BitBakeRawMulticonfig,
+    #[serde(rename = "bitbake.raw.runall")]
+    BitBakeRawRunAll,
+    #[serde(rename = "bitbake.raw.runonly")]
+    BitBakeRawRunOnly,
+    #[serde(rename = "bitbake.raw.no_setscene")]
+    BitBakeRawNoSetscene,
+    #[serde(rename = "bitbake.raw.skip_setscene")]
+    BitBakeRawSkipSetscene,
+    #[serde(rename = "bitbake.raw.setscene_only")]
+    BitBakeRawSetsceneOnly,
     #[serde(rename = "devtool.modify")]
     DevtoolModify,
     #[serde(rename = "devtool.status")]
@@ -368,7 +430,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 76] = [
+    pub const ALL: [Self; 107] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -392,6 +454,37 @@ impl CapabilityId {
         Self::BitBakeServerStart,
         Self::BitBakeServerStop,
         Self::BitBakeNativeEvents,
+        Self::BitBakeRawCli,
+        Self::BitBakeRawShowVersions,
+        Self::BitBakeRawTaskExecution,
+        Self::BitBakeRawClearStamp,
+        Self::BitBakeRawDryRun,
+        Self::BitBakeRawParseOnly,
+        Self::BitBakeRawContinue,
+        Self::BitBakeRawProfile,
+        Self::BitBakeRawDumpSignatures,
+        Self::BitBakeRawRevisionsChanged,
+        Self::BitBakeRawBuildFile,
+        Self::BitBakeRawDebug,
+        Self::BitBakeRawLogDomains,
+        Self::BitBakeRawVerbose,
+        Self::BitBakeRawQuiet,
+        Self::BitBakeRawEventLog,
+        Self::BitBakeRawUi,
+        Self::BitBakeRawServerBind,
+        Self::BitBakeRawServerIdleTimeout,
+        Self::BitBakeRawServerRemote,
+        Self::BitBakeRawServerToken,
+        Self::BitBakeRawServerObserve,
+        Self::BitBakeRawConfigRead,
+        Self::BitBakeRawConfigPostRead,
+        Self::BitBakeRawIgnoreDeps,
+        Self::BitBakeRawMulticonfig,
+        Self::BitBakeRawRunAll,
+        Self::BitBakeRawRunOnly,
+        Self::BitBakeRawNoSetscene,
+        Self::BitBakeRawSkipSetscene,
+        Self::BitBakeRawSetsceneOnly,
         Self::DevtoolModify,
         Self::DevtoolStatus,
         Self::DevtoolEditRecipe,
@@ -447,6 +540,40 @@ impl CapabilityId {
         Self::GitArchive,
     ];
 
+    pub const RAW_CLI: [Self; 31] = [
+        Self::BitBakeRawCli,
+        Self::BitBakeRawShowVersions,
+        Self::BitBakeRawTaskExecution,
+        Self::BitBakeRawClearStamp,
+        Self::BitBakeRawDryRun,
+        Self::BitBakeRawParseOnly,
+        Self::BitBakeRawContinue,
+        Self::BitBakeRawProfile,
+        Self::BitBakeRawDumpSignatures,
+        Self::BitBakeRawRevisionsChanged,
+        Self::BitBakeRawBuildFile,
+        Self::BitBakeRawDebug,
+        Self::BitBakeRawLogDomains,
+        Self::BitBakeRawVerbose,
+        Self::BitBakeRawQuiet,
+        Self::BitBakeRawEventLog,
+        Self::BitBakeRawUi,
+        Self::BitBakeRawServerBind,
+        Self::BitBakeRawServerIdleTimeout,
+        Self::BitBakeRawServerRemote,
+        Self::BitBakeRawServerToken,
+        Self::BitBakeRawServerObserve,
+        Self::BitBakeRawConfigRead,
+        Self::BitBakeRawConfigPostRead,
+        Self::BitBakeRawIgnoreDeps,
+        Self::BitBakeRawMulticonfig,
+        Self::BitBakeRawRunAll,
+        Self::BitBakeRawRunOnly,
+        Self::BitBakeRawNoSetscene,
+        Self::BitBakeRawSkipSetscene,
+        Self::BitBakeRawSetsceneOnly,
+    ];
+
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::BitBakeWorkspaceInspection => "bitbake.workspace_inspection",
@@ -472,6 +599,37 @@ impl CapabilityId {
             Self::BitBakeServerStart => "bitbake.server_start",
             Self::BitBakeServerStop => "bitbake.server_stop",
             Self::BitBakeNativeEvents => "bitbake.native_events",
+            Self::BitBakeRawCli => "bitbake.raw.cli",
+            Self::BitBakeRawShowVersions => "bitbake.raw.show_versions",
+            Self::BitBakeRawTaskExecution => "bitbake.raw.task_execution",
+            Self::BitBakeRawClearStamp => "bitbake.raw.clear_stamp",
+            Self::BitBakeRawDryRun => "bitbake.raw.dry_run",
+            Self::BitBakeRawParseOnly => "bitbake.raw.parse_only",
+            Self::BitBakeRawContinue => "bitbake.raw.continue",
+            Self::BitBakeRawProfile => "bitbake.raw.profile",
+            Self::BitBakeRawDumpSignatures => "bitbake.raw.dump_signatures",
+            Self::BitBakeRawRevisionsChanged => "bitbake.raw.revisions_changed",
+            Self::BitBakeRawBuildFile => "bitbake.raw.buildfile",
+            Self::BitBakeRawDebug => "bitbake.raw.debug",
+            Self::BitBakeRawLogDomains => "bitbake.raw.log_domains",
+            Self::BitBakeRawVerbose => "bitbake.raw.verbose",
+            Self::BitBakeRawQuiet => "bitbake.raw.quiet",
+            Self::BitBakeRawEventLog => "bitbake.raw.event_log",
+            Self::BitBakeRawUi => "bitbake.raw.ui",
+            Self::BitBakeRawServerBind => "bitbake.raw.server_bind",
+            Self::BitBakeRawServerIdleTimeout => "bitbake.raw.server_idle_timeout",
+            Self::BitBakeRawServerRemote => "bitbake.raw.server_remote",
+            Self::BitBakeRawServerToken => "bitbake.raw.server_token",
+            Self::BitBakeRawServerObserve => "bitbake.raw.server_observe",
+            Self::BitBakeRawConfigRead => "bitbake.raw.config_read",
+            Self::BitBakeRawConfigPostRead => "bitbake.raw.config_postread",
+            Self::BitBakeRawIgnoreDeps => "bitbake.raw.ignore_deps",
+            Self::BitBakeRawMulticonfig => "bitbake.raw.multiconfig",
+            Self::BitBakeRawRunAll => "bitbake.raw.runall",
+            Self::BitBakeRawRunOnly => "bitbake.raw.runonly",
+            Self::BitBakeRawNoSetscene => "bitbake.raw.no_setscene",
+            Self::BitBakeRawSkipSetscene => "bitbake.raw.skip_setscene",
+            Self::BitBakeRawSetsceneOnly => "bitbake.raw.setscene_only",
             Self::DevtoolModify => "devtool.modify",
             Self::DevtoolStatus => "devtool.status",
             Self::DevtoolEditRecipe => "devtool.edit_recipe",

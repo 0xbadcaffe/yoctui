@@ -226,10 +226,10 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--version".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Inspection,
+                    safety: RawSafetyClass::Build,
                 },
             },
         },
@@ -253,10 +253,10 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--help".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Inspection,
+                    safety: RawSafetyClass::Build,
                 },
             },
         },
@@ -280,10 +280,10 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-h".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Inspection,
+                    safety: RawSafetyClass::Build,
                 },
             },
         },
@@ -342,7 +342,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -370,7 +370,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -397,7 +397,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "core-image-minimal".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -429,7 +429,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target3").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -458,7 +458,7 @@ impl RawCatalog {
                     RawArgument::Composed { segments: vec![RawArgumentSegment::Parameter { parameter: RawParameterId::new("recipe").unwrap() }, RawArgumentSegment::Literal { value: ":do_".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("task").unwrap() }] }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -490,7 +490,7 @@ impl RawCatalog {
                     RawArgument::Composed { segments: vec![RawArgumentSegment::Parameter { parameter: RawParameterId::new("recipe2").unwrap() }, RawArgumentSegment::Literal { value: ":do_".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("task2").unwrap() }] }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -517,7 +517,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "world".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -545,7 +545,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "world".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawContinue],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -572,7 +572,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-s".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeRecipeInventory],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawShowVersions],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -599,7 +599,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--show-versions".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeRecipeInventory],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawShowVersions],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -626,7 +626,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-e".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeEnvironmentDump],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeEnvironmentDump],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -655,7 +655,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeEnvironmentDump],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeEnvironmentDump],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -684,7 +684,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeEnvironmentDump],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeEnvironmentDump],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -713,7 +713,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -742,7 +742,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -772,7 +772,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawUi],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -802,7 +802,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawUi],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -833,7 +833,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration, CapabilityId::BitBakeRawUi],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Inspection,
@@ -864,7 +864,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration, CapabilityId::BitBakeRawUi],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Inspection,
@@ -894,7 +894,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawUi],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -924,7 +924,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawUi],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -951,10 +951,10 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--version".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Inspection,
+                    safety: RawSafetyClass::Build,
                 },
             },
         },
@@ -978,10 +978,10 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-h".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Inspection,
+                    safety: RawSafetyClass::Build,
                 },
             },
         },
@@ -1005,10 +1005,10 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--help".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Inspection,
+                    safety: RawSafetyClass::Build,
                 },
             },
         },
@@ -1037,7 +1037,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1069,7 +1069,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1100,7 +1100,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1130,7 +1130,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1161,7 +1161,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawClearStamp],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1191,7 +1191,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawClearStamp],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1221,7 +1221,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--runall=".into(), parameter: RawParameterId::new("task").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawRunAll],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1251,7 +1251,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--runonly=".into(), parameter: RawParameterId::new("task").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawRunOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1280,7 +1280,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawNoSetscene],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1309,7 +1309,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawSkipSetscene],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1338,7 +1338,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawSetsceneOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1367,7 +1367,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDryRun],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1396,7 +1396,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDryRun],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1423,7 +1423,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-p".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1450,7 +1450,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--parse-only".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1479,7 +1479,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawContinue],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1508,7 +1508,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawContinue],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1537,7 +1537,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawProfile],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1566,7 +1566,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawProfile],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1596,7 +1596,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDumpSig],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1625,7 +1625,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDumpSig],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1655,7 +1655,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1684,7 +1684,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -1713,7 +1713,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawRevisionsChanged],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1742,7 +1742,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe-file").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawBuildFile],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1770,7 +1770,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--buildfile=".into(), parameter: RawParameterId::new("recipe-file").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawBuildFile],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1802,7 +1802,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("task").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeRawBuildFile],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1831,7 +1831,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1860,7 +1860,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1889,7 +1889,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1918,7 +1918,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1947,7 +1947,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -1978,7 +1978,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawLogDomains],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2008,7 +2008,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawLogDomains],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2037,7 +2037,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2066,7 +2066,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2095,7 +2095,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawQuiet],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2124,7 +2124,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawQuiet],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2153,7 +2153,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawQuiet],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2184,7 +2184,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawEventLog],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2214,7 +2214,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawEventLog],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2244,7 +2244,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawEventLog],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2274,7 +2274,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--server-only".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStart],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerBind, CapabilityId::BitBakeServerStart],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2303,7 +2303,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--server-only".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStart],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerBind, CapabilityId::BitBakeServerStart],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2334,10 +2334,10 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerIdleTimeout],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Build,
+                    safety: RawSafetyClass::ServerLifecycle,
                 },
             },
         },
@@ -2364,10 +2364,10 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerIdleTimeout],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Build,
+                    safety: RawSafetyClass::ServerLifecycle,
                 },
             },
         },
@@ -2394,10 +2394,10 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerIdleTimeout],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Build,
+                    safety: RawSafetyClass::ServerLifecycle,
                 },
             },
         },
@@ -2422,7 +2422,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerSocket],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2449,7 +2449,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-m".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStop],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeServerStop],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2476,7 +2476,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--kill-server".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStop],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeServerStop],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2506,7 +2506,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerSocket],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote, CapabilityId::BitBakeRawServerToken],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2535,7 +2535,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerSocket],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote, CapabilityId::BitBakeRawServerObserve],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2564,7 +2564,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStatus],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote, CapabilityId::BitBakeServerStatus],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2591,7 +2591,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--server-only".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStart],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeServerStart],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -2622,7 +2622,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawConfigRead],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2652,7 +2652,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawConfigRead],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2683,7 +2683,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawConfigPostRead],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2713,7 +2713,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawConfigPostRead],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2744,7 +2744,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawIgnoreDeps],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2774,7 +2774,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawIgnoreDeps],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2804,7 +2804,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeTaskList],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeTaskList],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -2835,7 +2835,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2866,7 +2866,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("task").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2898,7 +2898,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2930,7 +2930,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2963,7 +2963,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -2994,7 +2994,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawClearStamp],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3024,7 +3024,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3052,7 +3052,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3082,7 +3082,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3113,7 +3113,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3143,7 +3143,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3173,7 +3173,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3203,7 +3203,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3234,7 +3234,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3264,7 +3264,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3295,7 +3295,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3326,7 +3326,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3356,7 +3356,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3386,7 +3386,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3416,7 +3416,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3447,7 +3447,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3477,7 +3477,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3507,7 +3507,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3537,7 +3537,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3567,7 +3567,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3597,7 +3597,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3627,7 +3627,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3657,7 +3657,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3687,7 +3687,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3717,7 +3717,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3747,7 +3747,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3777,7 +3777,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3807,7 +3807,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3837,7 +3837,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3867,7 +3867,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -3897,7 +3897,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Destructive,
@@ -3927,7 +3927,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Destructive,
@@ -3957,7 +3957,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Destructive,
@@ -3988,7 +3988,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4018,7 +4018,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::DevShell],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -4048,7 +4048,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -4078,7 +4078,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4108,7 +4108,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeTaskList],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeTaskList],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -4135,7 +4135,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "package-index".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4165,7 +4165,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4195,7 +4195,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4225,7 +4225,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4255,7 +4255,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4284,7 +4284,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4314,7 +4314,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::SdkPopulate],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4344,7 +4344,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::SdkExtensible],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4374,7 +4374,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::TestImage],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4404,7 +4404,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::TestImage],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4431,7 +4431,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4460,7 +4460,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::MenuConfig],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -4489,7 +4489,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4518,7 +4518,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4548,7 +4548,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4577,7 +4577,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4606,7 +4606,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4635,7 +4635,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4664,7 +4664,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4693,7 +4693,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4722,7 +4722,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4751,7 +4751,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4780,7 +4780,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4809,7 +4809,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4838,7 +4838,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "virtual/kernel".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4868,7 +4868,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Destructive,
@@ -4896,7 +4896,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4926,7 +4926,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Destructive,
@@ -4957,7 +4957,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -4987,7 +4987,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Destructive,
@@ -5018,7 +5018,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -5048,7 +5048,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawClearStamp],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -5075,7 +5075,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-p".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5102,7 +5102,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--parse-only".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5131,7 +5131,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDryRun],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5160,7 +5160,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDryRun],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5188,7 +5188,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "core-image-minimal".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDryRun],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5215,7 +5215,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-e".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeEnvironmentDump],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeEnvironmentDump],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5244,7 +5244,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeEnvironmentDump],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeEnvironmentDump],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5800,7 +5800,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5831,7 +5831,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration, CapabilityId::BitBakeRawIgnoreDeps],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5865,7 +5865,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration, CapabilityId::BitBakeRawIgnoreDeps],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5963,7 +5963,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDumpSig],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -5993,7 +5993,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -6023,7 +6023,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -6053,7 +6053,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -6082,7 +6082,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawNoSetscene],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6111,7 +6111,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawSkipSetscene],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6140,7 +6140,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawSetsceneOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6169,7 +6169,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6198,7 +6198,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6227,7 +6227,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6256,7 +6256,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6287,7 +6287,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6319,7 +6319,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6348,7 +6348,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawQuiet],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6377,7 +6377,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawQuiet],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6408,7 +6408,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawLogDomains],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6439,7 +6439,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawEventLog],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6469,7 +6469,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawEventLog],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6498,7 +6498,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawProfile],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6525,7 +6525,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--server-only".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStart],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeServerStart],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -6555,7 +6555,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--server-only".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStart],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerBind, CapabilityId::BitBakeServerStart],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -6586,10 +6586,10 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerIdleTimeout],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Build,
+                    safety: RawSafetyClass::ServerLifecycle,
                 },
             },
         },
@@ -6616,10 +6616,10 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerIdleTimeout],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Build,
+                    safety: RawSafetyClass::ServerLifecycle,
                 },
             },
         },
@@ -6644,7 +6644,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerSocket],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -6674,7 +6674,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerSocket],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote, CapabilityId::BitBakeRawServerToken],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -6703,7 +6703,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerSocket],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote, CapabilityId::BitBakeRawServerObserve],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -6732,7 +6732,7 @@ impl RawCatalog {
                     RawArgument::JoinedParameter { prefix: "--remote-server=".into(), parameter: RawParameterId::new("server").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStatus],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawServerRemote, CapabilityId::BitBakeServerStatus],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -6759,7 +6759,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-m".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeServerStop],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeServerStop],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::ServerLifecycle,
@@ -6790,7 +6790,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawConfigRead],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6821,7 +6821,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawConfigPostRead],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6852,7 +6852,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawConfigPostRead],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6883,7 +6883,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration, CapabilityId::BitBakeRawIgnoreDeps],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -6912,7 +6912,7 @@ impl RawCatalog {
                     RawArgument::Composed { segments: vec![RawArgumentSegment::Literal { value: "mc:".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("config").unwrap() }, RawArgumentSegment::Literal { value: ":".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("target").unwrap() }] }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawMulticonfig],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6940,7 +6940,7 @@ impl RawCatalog {
                     RawArgument::Composed { segments: vec![RawArgumentSegment::Literal { value: "mc:board1:".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("image").unwrap() }] }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawMulticonfig],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6969,7 +6969,7 @@ impl RawCatalog {
                     RawArgument::Composed { segments: vec![RawArgumentSegment::Literal { value: "mc:board2:".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("image").unwrap() }] }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawMulticonfig],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -6999,7 +6999,7 @@ impl RawCatalog {
                     RawArgument::Composed { segments: vec![RawArgumentSegment::Literal { value: "mc:board2:".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("image").unwrap() }] }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawMulticonfig],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7027,7 +7027,7 @@ impl RawCatalog {
                     RawArgument::Composed { segments: vec![RawArgumentSegment::Literal { value: "mc::".into() }, RawArgumentSegment::Parameter { parameter: RawParameterId::new("target").unwrap() }] }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawMulticonfig],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7056,7 +7056,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--runall=fetch".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawRunAll],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7085,7 +7085,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--runall=compile".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawRunAll],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7114,7 +7114,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--runonly=fetch".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawRunOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7143,7 +7143,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "--runonly=compile".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawRunOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7173,7 +7173,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7203,7 +7203,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7234,7 +7234,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7264,7 +7264,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7294,7 +7294,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7511,7 +7511,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7542,7 +7542,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7572,7 +7572,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7603,7 +7603,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7635,7 +7635,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7665,7 +7665,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::DevShell],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -7950,7 +7950,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -7980,7 +7980,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8010,7 +8010,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8040,7 +8040,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8070,7 +8070,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8219,7 +8219,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8249,7 +8249,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8279,7 +8279,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8377,7 +8377,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("image").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8710,7 +8710,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-p".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -8738,10 +8738,10 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-p".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly, CapabilityId::BitBakeRawDebug],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
-                    safety: RawSafetyClass::Build,
+                    safety: RawSafetyClass::Inspection,
                 },
             },
         },
@@ -8765,7 +8765,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-s".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeRecipeInventory],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawShowVersions],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -8880,7 +8880,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8911,7 +8911,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -8992,7 +8992,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9022,7 +9022,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9052,7 +9052,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9118,7 +9118,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9148,7 +9148,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::DevShell],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -9197,7 +9197,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask, CapabilityId::BitBakeRawVerbose],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9227,7 +9227,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::DevShell],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -9292,7 +9292,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9323,7 +9323,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9354,7 +9354,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9418,7 +9418,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -9466,7 +9466,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9496,7 +9496,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Destructive,
@@ -9524,7 +9524,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9551,7 +9551,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-p".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -9579,7 +9579,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9626,7 +9626,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeTaskList],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeTaskList],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -9656,7 +9656,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9686,7 +9686,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9716,7 +9716,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9746,7 +9746,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9776,7 +9776,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9807,7 +9807,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9837,7 +9837,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9867,7 +9867,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -9897,7 +9897,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::DevShell],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -9926,7 +9926,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeEnvironmentDump],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeEnvironmentDump],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -9989,7 +9989,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDryRun],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -10018,7 +10018,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -10048,7 +10048,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -10077,7 +10077,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawContinue],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11141,7 +11141,7 @@ impl RawCatalog {
                     RawArgument::Literal { value: "-p".into() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeWorkspaceInspection],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawParseOnly],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -11169,7 +11169,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11198,7 +11198,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDryRun],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -11245,7 +11245,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeTaskList],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeTaskList],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -11274,7 +11274,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeEnvironmentDump],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeEnvironmentDump],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -11321,7 +11321,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11351,7 +11351,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11381,7 +11381,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11411,7 +11411,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11441,7 +11441,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11472,7 +11472,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeForceTask],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::BitBakeForceTask],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11502,7 +11502,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11532,7 +11532,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11562,7 +11562,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
@@ -11592,7 +11592,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawTaskExecution, CapabilityId::DevShell],
                     },
                     interaction: RawInteractionMode::InteractivePty,
                     safety: RawSafetyClass::Build,
@@ -11621,7 +11621,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeGraphGeneration],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeGraphGeneration],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -11651,7 +11651,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("recipe").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeDiffSigs],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawDumpSignatures],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Inspection,
@@ -11680,7 +11680,7 @@ impl RawCatalog {
                     RawArgument::Parameter { parameter: RawParameterId::new("target").unwrap() }
                     ],
                     capabilities: RawCapabilityRequirement::All {
-                        capabilities: vec![CapabilityId::BitBakeBuild],
+                        capabilities: vec![CapabilityId::BitBakeRawCli, CapabilityId::BitBakeRawContinue],
                     },
                     interaction: RawInteractionMode::NoninteractiveJob,
                     safety: RawSafetyClass::Build,
