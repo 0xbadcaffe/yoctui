@@ -35,6 +35,10 @@ pub const MAX_RAW_ADDITIONAL_ARGUMENT_BYTES: usize = 512;
 pub const MAX_RAW_ADDITIONAL_AGGREGATE_BYTES: usize = 8_192;
 pub const MAX_RAW_PREVIEW_ARGUMENTS: usize = 128;
 pub const MAX_RAW_PREVIEW_ARGUMENT_BYTES: usize = 8_192;
+pub const MAX_RAW_SEARCH_BYTES: usize = 512;
+pub const MAX_RAW_FAVORITES: usize = 256;
+pub const MAX_RAW_HISTORY_STUBS: usize = 256;
+pub const MAX_RAW_VIEW_DEPTH: usize = 8;
 
 macro_rules! raw_id {
     ($name:ident, $field:literal) => {
@@ -653,6 +657,137 @@ pub enum RawPreviewError {
     },
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RawBrowserColumn {
+    Categories,
+    Commands,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RawModeView {
+    Browser,
+    Form,
+    Preview,
+    Execution,
+    History,
+    Favorites,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RawModeFocus {
+    Categories,
+    Commands,
+    Search,
+    Form,
+    Preview,
+    Execution,
+    History,
+    Favorites,
+    FavoriteConfirmation,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RawSearchState {
+    pub query: String,
+    pub editing: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawFormField {
+    pub parameter: RawParameterId,
+    pub input: String,
+    pub value: Option<RawParameterValue>,
+    pub validation_error: Option<RawParameterError>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawCommandForm {
+    pub command: RawCommandId,
+    pub fields: BTreeMap<RawParameterId, RawFormField>,
+    pub field_order: Vec<RawParameterId>,
+    pub field_selection: usize,
+    pub additional_arguments: RawArgvEditor,
+    pub capability_generation: u64,
+    pub build_directory: PathBuf,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawFavoriteConfirmation {
+    pub command: RawCommandId,
+    pub return_focus: RawModeFocus,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawModeState {
+    pub catalog_version: u16,
+    pub category: Option<RawCategoryId>,
+    pub command: Option<RawCommandId>,
+    pub browser_column: RawBrowserColumn,
+    pub view: RawModeView,
+    pub focus: RawModeFocus,
+    pub search: RawSearchState,
+    pub form: Option<RawCommandForm>,
+    pub preview: Option<RawExecutionPreview>,
+    pub execution: Option<RawCommandId>,
+    pub history: Vec<RawCommandId>,
+    pub history_selection: usize,
+    pub favorites: Vec<RawCommandId>,
+    pub favorite_selection: usize,
+    pub favorite_confirmation: Option<RawFavoriteConfirmation>,
+    pub notification: Option<String>,
+    return_stack: Vec<(RawModeView, RawModeFocus)>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RawModeAction {
+    SelectCategory {
+        delta: isize,
+    },
+    SelectCommand {
+        delta: isize,
+    },
+    FocusCategories,
+    FocusCommands,
+    OpenSelected,
+    Back,
+    BeginSearch,
+    AppendSearch(char),
+    BackspaceSearch,
+    FinishSearch,
+    ClearSearch,
+    SetParameterInput {
+        parameter: RawParameterId,
+        input: String,
+    },
+    ChooseParameter {
+        parameter: RawParameterId,
+        value: RawParameterValue,
+    },
+    SelectFormField {
+        delta: isize,
+    },
+    EditAdditionalArguments(PopupEditorCommand),
+    RequestPreview,
+    OpenExecution(RawCommandId),
+    OpenHistory,
+    SelectHistory {
+        delta: isize,
+    },
+    ActivateHistory,
+    RememberHistory(RawCommandId),
+    OpenFavorites,
+    SelectFavorite {
+        delta: isize,
+    },
+    ActivateFavorite,
+    ToggleFavorite,
+    ConfirmFavorite,
+    CancelFavorite,
+    ReprojectCatalog,
+    ReprojectAuthority,
+    DismissNotification,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RawInteractionMode {
@@ -1076,6 +1211,702 @@ impl RawCatalog {
             safety: template.safety,
             limitations,
         })
+    }
+}
+
+impl RawModeState {
+    pub fn new(catalog: &RawCatalog) -> Self {
+        let mut state = Self {
+            catalog_version: catalog.version,
+            category: catalog
+                .categories
+                .first()
+                .map(|category| category.id.clone()),
+            command: None,
+            browser_column: RawBrowserColumn::Categories,
+            view: RawModeView::Browser,
+            focus: RawModeFocus::Categories,
+            search: RawSearchState::default(),
+            form: None,
+            preview: None,
+            execution: None,
+            history: Vec::new(),
+            history_selection: 0,
+            favorites: Vec::new(),
+            favorite_selection: 0,
+            favorite_confirmation: None,
+            notification: None,
+            return_stack: Vec::new(),
+        };
+        reconcile_raw_mode(&mut state, catalog);
+        state
+    }
+
+    pub fn selected_command<'a>(&self, catalog: &'a RawCatalog) -> Option<&'a RawCommand> {
+        self.command
+            .as_ref()
+            .and_then(|command| catalog.command(command))
+    }
+
+    pub fn visible_commands<'a>(&self, catalog: &'a RawCatalog) -> Vec<&'a RawCommand> {
+        raw_visible_commands(self, catalog)
+    }
+
+    pub fn is_favorite(&self, command: &RawCommandId) -> bool {
+        self.favorites.contains(command)
+    }
+
+    fn enter_view(&mut self, view: RawModeView, focus: RawModeFocus) {
+        if self.return_stack.len() == MAX_RAW_VIEW_DEPTH {
+            self.return_stack.remove(0);
+        }
+        self.return_stack.push((self.view, self.focus));
+        self.view = view;
+        self.focus = focus;
+    }
+
+    fn leave_view(&mut self) {
+        match self.view {
+            RawModeView::Preview => self.preview = None,
+            RawModeView::Form => self.form = None,
+            RawModeView::Execution => self.execution = None,
+            RawModeView::Browser | RawModeView::History | RawModeView::Favorites => {}
+        }
+        if let Some((view, focus)) = self.return_stack.pop() {
+            self.view = view;
+            self.focus = focus;
+        } else {
+            self.view = RawModeView::Browser;
+            self.focus = match self.browser_column {
+                RawBrowserColumn::Categories => RawModeFocus::Categories,
+                RawBrowserColumn::Commands => RawModeFocus::Commands,
+            };
+        }
+    }
+
+    fn close_unsafe_work(&mut self, reason: String) {
+        self.form = None;
+        self.preview = None;
+        self.execution = None;
+        self.return_stack.clear();
+        self.view = RawModeView::Browser;
+        self.browser_column = RawBrowserColumn::Commands;
+        self.focus = RawModeFocus::Commands;
+        self.notification = Some(reason);
+    }
+}
+
+pub fn reduce_raw_mode(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+    action: RawModeAction,
+) {
+    reconcile_raw_mode(state, catalog);
+    match action {
+        RawModeAction::SelectCategory { delta } => select_raw_category(state, catalog, delta),
+        RawModeAction::SelectCommand { delta } => select_raw_command(state, catalog, delta),
+        RawModeAction::FocusCategories => {
+            state.browser_column = RawBrowserColumn::Categories;
+            state.focus = RawModeFocus::Categories;
+        }
+        RawModeAction::FocusCommands => {
+            state.browser_column = RawBrowserColumn::Commands;
+            state.focus = RawModeFocus::Commands;
+        }
+        RawModeAction::OpenSelected => open_raw_selected(state, catalog, authority),
+        RawModeAction::Back => raw_mode_back(state),
+        RawModeAction::BeginSearch => {
+            state.search.editing = true;
+            state.focus = RawModeFocus::Search;
+        }
+        RawModeAction::AppendSearch(character) => {
+            if state.search.editing
+                && !character.is_control()
+                && state.search.query.len() + character.len_utf8() <= MAX_RAW_SEARCH_BYTES
+            {
+                state.search.query.push(character);
+                reconcile_raw_command(state, catalog);
+            }
+        }
+        RawModeAction::BackspaceSearch => {
+            if state.search.editing {
+                state.search.query.pop();
+                reconcile_raw_command(state, catalog);
+            }
+        }
+        RawModeAction::FinishSearch => {
+            state.search.editing = false;
+            state.focus = match state.browser_column {
+                RawBrowserColumn::Categories => RawModeFocus::Categories,
+                RawBrowserColumn::Commands => RawModeFocus::Commands,
+            };
+        }
+        RawModeAction::ClearSearch => {
+            state.search.query.clear();
+            reconcile_raw_command(state, catalog);
+        }
+        RawModeAction::SetParameterInput { parameter, input } => {
+            set_raw_parameter_input(state, catalog, &parameter, input)
+        }
+        RawModeAction::ChooseParameter { parameter, value } => {
+            choose_raw_parameter(state, catalog, &parameter, value)
+        }
+        RawModeAction::SelectFormField { delta } => select_raw_form_field(state, delta),
+        RawModeAction::EditAdditionalArguments(command) => {
+            if let Some(form) = state.form.as_mut()
+                && let Err(error) = form.additional_arguments.apply(command)
+            {
+                state.notification = Some(error.to_string());
+            }
+        }
+        RawModeAction::RequestPreview => request_raw_preview(state, catalog, authority),
+        RawModeAction::OpenExecution(command) => {
+            if catalog.command(&command).is_some() {
+                state.execution = Some(command);
+                state.enter_view(RawModeView::Execution, RawModeFocus::Execution);
+            }
+        }
+        RawModeAction::OpenHistory => {
+            state.history_selection = state
+                .history_selection
+                .min(state.history.len().saturating_sub(1));
+            state.enter_view(RawModeView::History, RawModeFocus::History);
+        }
+        RawModeAction::SelectHistory { delta } => {
+            state.history_selection =
+                shifted_index(state.history_selection, state.history.len(), delta)
+        }
+        RawModeAction::ActivateHistory => activate_raw_retained(state, catalog, true),
+        RawModeAction::RememberHistory(command) => remember_raw_history(state, catalog, command),
+        RawModeAction::OpenFavorites => {
+            state.favorite_selection = state
+                .favorite_selection
+                .min(state.favorites.len().saturating_sub(1));
+            state.enter_view(RawModeView::Favorites, RawModeFocus::Favorites);
+        }
+        RawModeAction::SelectFavorite { delta } => {
+            state.favorite_selection =
+                shifted_index(state.favorite_selection, state.favorites.len(), delta)
+        }
+        RawModeAction::ActivateFavorite => activate_raw_retained(state, catalog, false),
+        RawModeAction::ToggleFavorite => toggle_raw_favorite(state, catalog),
+        RawModeAction::ConfirmFavorite => confirm_raw_favorite(state),
+        RawModeAction::CancelFavorite => cancel_raw_favorite(state),
+        RawModeAction::ReprojectCatalog => reconcile_raw_mode(state, catalog),
+        RawModeAction::ReprojectAuthority => reproject_raw_authority(state, catalog, authority),
+        RawModeAction::DismissNotification => state.notification = None,
+    }
+    reconcile_raw_mode(state, catalog);
+}
+
+fn raw_visible_commands<'a>(state: &RawModeState, catalog: &'a RawCatalog) -> Vec<&'a RawCommand> {
+    let query = state.search.query.to_lowercase();
+    if !query.is_empty() {
+        return catalog
+            .commands
+            .iter()
+            .filter(|command| {
+                let category = catalog.category(&command.category);
+                [
+                    command.label.as_str(),
+                    command.description.as_str(),
+                    command.reference.command.as_str(),
+                    command.reference.description.as_str(),
+                    category.map_or("", |category| category.label.as_str()),
+                ]
+                .iter()
+                .any(|value| value.to_lowercase().contains(&query))
+            })
+            .collect();
+    }
+    let Some(category_id) = state.category.as_ref() else {
+        return Vec::new();
+    };
+    if catalog
+        .category(category_id)
+        .is_some_and(|category| category.kind == RawCategoryKind::Favorites)
+    {
+        return state
+            .favorites
+            .iter()
+            .filter_map(|command| catalog.command(command))
+            .collect();
+    }
+    catalog
+        .commands
+        .iter()
+        .filter(|command| &command.category == category_id)
+        .collect()
+}
+
+fn reconcile_raw_mode(state: &mut RawModeState, catalog: &RawCatalog) {
+    if state.catalog_version != catalog.version {
+        state.catalog_version = catalog.version;
+        if state.form.is_some() || state.preview.is_some() {
+            state.close_unsafe_work(
+                "Raw form closed because the catalog version was replaced.".into(),
+            );
+        }
+    }
+    state
+        .favorites
+        .retain(|command| catalog.command(command).is_some());
+    state
+        .history
+        .retain(|command| catalog.command(command).is_some());
+    if state
+        .favorite_confirmation
+        .as_ref()
+        .is_some_and(|confirmation| catalog.command(&confirmation.command).is_none())
+    {
+        cancel_raw_favorite(state);
+    }
+    if state
+        .category
+        .as_ref()
+        .is_none_or(|category| catalog.category(category).is_none())
+    {
+        state.category = catalog
+            .categories
+            .first()
+            .map(|category| category.id.clone());
+    }
+    reconcile_raw_command(state, catalog);
+    state.history_selection = state
+        .history_selection
+        .min(state.history.len().saturating_sub(1));
+    state.favorite_selection = state
+        .favorite_selection
+        .min(state.favorites.len().saturating_sub(1));
+}
+
+fn reconcile_raw_command(state: &mut RawModeState, catalog: &RawCatalog) {
+    let visible = raw_visible_commands(state, catalog);
+    if state
+        .command
+        .as_ref()
+        .is_none_or(|selected| !visible.iter().any(|command| &command.id == selected))
+    {
+        state.command = visible.first().map(|command| command.id.clone());
+    }
+}
+
+fn shifted_index(current: usize, length: usize, delta: isize) -> usize {
+    if length == 0 {
+        return 0;
+    }
+    if delta.is_negative() {
+        current.saturating_sub(delta.unsigned_abs())
+    } else {
+        current
+            .saturating_add(delta as usize)
+            .min(length.saturating_sub(1))
+    }
+}
+
+fn select_raw_category(state: &mut RawModeState, catalog: &RawCatalog, delta: isize) {
+    let current = state
+        .category
+        .as_ref()
+        .and_then(|selected| {
+            catalog
+                .categories
+                .iter()
+                .position(|category| &category.id == selected)
+        })
+        .unwrap_or(0);
+    state.category = catalog
+        .categories
+        .get(shifted_index(current, catalog.categories.len(), delta))
+        .map(|category| category.id.clone());
+    state.command = None;
+    reconcile_raw_command(state, catalog);
+}
+
+fn select_raw_command(state: &mut RawModeState, catalog: &RawCatalog, delta: isize) {
+    let visible = raw_visible_commands(state, catalog);
+    let current = state
+        .command
+        .as_ref()
+        .and_then(|selected| visible.iter().position(|command| &command.id == selected))
+        .unwrap_or(0);
+    state.command = visible
+        .get(shifted_index(current, visible.len(), delta))
+        .map(|command| command.id.clone());
+}
+
+fn open_raw_selected(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+) {
+    let Some(command) = state.selected_command(catalog) else {
+        state.notification = Some("No Raw command is selected.".into());
+        return;
+    };
+    let RawExecutionPolicy::Executable { .. } = &command.execution else {
+        state.notification = Some(
+            "This catalog entry is reference-only; its exact help remains inspectable.".into(),
+        );
+        return;
+    };
+    let availability = command.availability(authority);
+    if !availability.is_enabled() {
+        state.notification = Some(raw_availability_reason(&availability));
+        return;
+    }
+    let Some(authority) = authority else {
+        state.notification = Some("No current Raw capability authority is installed.".into());
+        return;
+    };
+    let Some(build_directory) = authority.snapshot.environment.build_directory.value() else {
+        state.notification =
+            Some("The current capability authority has no build-directory identity.".into());
+        return;
+    };
+    let fields = command
+        .parameters
+        .iter()
+        .map(|parameter| {
+            (
+                parameter.id.clone(),
+                RawFormField {
+                    parameter: parameter.id.clone(),
+                    input: String::new(),
+                    value: None,
+                    validation_error: None,
+                },
+            )
+        })
+        .collect();
+    state.form = Some(RawCommandForm {
+        command: command.id.clone(),
+        fields,
+        field_order: command
+            .parameters
+            .iter()
+            .map(|parameter| parameter.id.clone())
+            .collect(),
+        field_selection: 0,
+        additional_arguments: RawArgvEditor::new("").expect("empty Raw argv is bounded"),
+        capability_generation: authority.snapshot.generation,
+        build_directory: build_directory.clone(),
+    });
+    state.notification = None;
+    state.enter_view(RawModeView::Form, RawModeFocus::Form);
+}
+
+fn raw_availability_reason(availability: &RawCommandAvailability) -> String {
+    if availability.issues.is_empty() {
+        return format!("Raw command is {:?}.", availability.state);
+    }
+    availability
+        .issues
+        .iter()
+        .map(|issue| issue.reason.as_str())
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn raw_mode_back(state: &mut RawModeState) {
+    if state.search.editing {
+        state.search.editing = false;
+        state.focus = match state.browser_column {
+            RawBrowserColumn::Categories => RawModeFocus::Categories,
+            RawBrowserColumn::Commands => RawModeFocus::Commands,
+        };
+        return;
+    }
+    if state.view != RawModeView::Browser {
+        state.leave_view();
+    } else if state.browser_column == RawBrowserColumn::Commands {
+        state.browser_column = RawBrowserColumn::Categories;
+        state.focus = RawModeFocus::Categories;
+    }
+}
+
+fn set_raw_parameter_input(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    parameter: &RawParameterId,
+    input: String,
+) {
+    let Some(form) = state.form.as_mut() else {
+        return;
+    };
+    let Some(definition) = catalog
+        .command(&form.command)
+        .and_then(|command| command.parameters.iter().find(|item| &item.id == parameter))
+    else {
+        state.notification = Some(format!("Raw form has no parameter {parameter}."));
+        return;
+    };
+    let Some(field) = form.fields.get_mut(parameter) else {
+        state.notification = Some(format!("Raw form state has no parameter {parameter}."));
+        return;
+    };
+    field.input = input;
+    match definition.parse_value(&field.input) {
+        Ok(value) => {
+            field.value = value;
+            field.validation_error = None;
+        }
+        Err(error) => {
+            field.value = None;
+            field.validation_error = Some(error);
+        }
+    }
+    state.preview = None;
+}
+
+fn choose_raw_parameter(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    parameter: &RawParameterId,
+    value: RawParameterValue,
+) {
+    let Some(form) = state.form.as_ref() else {
+        return;
+    };
+    let Some(definition) = catalog
+        .command(&form.command)
+        .and_then(|command| command.parameters.iter().find(|item| &item.id == parameter))
+    else {
+        state.notification = Some(format!("Raw form has no parameter {parameter}."));
+        return;
+    };
+    match definition.validate_value(&value) {
+        Ok(()) => set_raw_parameter_input(state, catalog, parameter, value.argument()),
+        Err(error) => {
+            if let Some(field) = state
+                .form
+                .as_mut()
+                .and_then(|form| form.fields.get_mut(parameter))
+            {
+                field.value = None;
+                field.validation_error = Some(error.clone());
+            }
+            state.notification = Some(error.to_string());
+        }
+    }
+}
+
+fn select_raw_form_field(state: &mut RawModeState, delta: isize) {
+    if let Some(form) = state.form.as_mut() {
+        form.field_selection = shifted_index(
+            form.field_selection,
+            form.field_order.len().saturating_add(1),
+            delta,
+        );
+    }
+}
+
+fn request_raw_preview(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+) {
+    let request = {
+        let Some(form) = state.form.as_mut() else {
+            state.notification = Some("No Raw command form is open.".into());
+            return;
+        };
+        let Some(command) = catalog.command(&form.command) else {
+            state.close_unsafe_work("Raw form command is no longer in the catalog.".into());
+            return;
+        };
+        let mut values = BTreeMap::new();
+        let mut first_error = None;
+        for definition in &command.parameters {
+            let Some(field) = form.fields.get_mut(&definition.id) else {
+                first_error.get_or_insert_with(|| {
+                    format!("Raw form state has no parameter {}.", definition.id)
+                });
+                continue;
+            };
+            match definition.parse_value(&field.input) {
+                Ok(value) => {
+                    field.value.clone_from(&value);
+                    field.validation_error = None;
+                    if let Some(value) = value {
+                        values.insert(definition.id.clone(), value);
+                    }
+                }
+                Err(error) => {
+                    field.value = None;
+                    field.validation_error = Some(error.clone());
+                    first_error.get_or_insert_with(|| error.to_string());
+                }
+            }
+        }
+        let additional_arguments = match form.additional_arguments.validate() {
+            Ok(arguments) => arguments.clone(),
+            Err(error) => {
+                first_error.get_or_insert_with(|| error.to_string());
+                RawAdditionalArguments::default()
+            }
+        };
+        if let Some(error) = first_error {
+            state.notification = Some(error);
+            return;
+        }
+        RawPreviewRequest {
+            catalog_version: state.catalog_version,
+            command: form.command.clone(),
+            parameters: values,
+            additional_arguments,
+            capability_generation: form.capability_generation,
+            build_directory: form.build_directory.clone(),
+        }
+    };
+    match catalog.preview(&request, authority) {
+        Ok(preview) => {
+            state.preview = Some(preview);
+            state.notification = None;
+            state.enter_view(RawModeView::Preview, RawModeFocus::Preview);
+        }
+        Err(error) => state.notification = Some(error.to_string()),
+    }
+}
+
+fn remember_raw_history(state: &mut RawModeState, catalog: &RawCatalog, command: RawCommandId) {
+    if catalog.command(&command).is_none() {
+        return;
+    }
+    state.history.insert(0, command);
+    state.history.truncate(MAX_RAW_HISTORY_STUBS);
+    state.history_selection = 0;
+}
+
+fn activate_raw_retained(state: &mut RawModeState, catalog: &RawCatalog, history: bool) {
+    let command = if history {
+        state.history.get(state.history_selection)
+    } else {
+        state.favorites.get(state.favorite_selection)
+    }
+    .cloned();
+    let Some(command) = command.and_then(|command| {
+        catalog
+            .command(&command)
+            .map(|catalog_command| (command, catalog_command.category.clone()))
+    }) else {
+        state.notification = Some("The retained Raw command is stale or unavailable.".into());
+        return;
+    };
+    state.command = Some(command.0);
+    state.category = Some(command.1);
+    state.search.query.clear();
+    state.search.editing = false;
+    state.return_stack.clear();
+    state.view = RawModeView::Browser;
+    state.browser_column = RawBrowserColumn::Commands;
+    state.focus = RawModeFocus::Commands;
+}
+
+fn toggle_raw_favorite(state: &mut RawModeState, catalog: &RawCatalog) {
+    let Some(command) = state.command.clone() else {
+        state.notification = Some("No Raw command is selected.".into());
+        return;
+    };
+    if catalog.command(&command).is_none() {
+        state.notification = Some("The selected Raw command is stale.".into());
+        return;
+    }
+    if state.favorites.contains(&command) {
+        state.favorite_confirmation = Some(RawFavoriteConfirmation {
+            command,
+            return_focus: state.focus,
+        });
+        state.focus = RawModeFocus::FavoriteConfirmation;
+        state.notification = Some("Confirm removal of the exact Raw favorite.".into());
+    } else if state.favorites.len() == MAX_RAW_FAVORITES {
+        state.notification = Some(format!(
+            "Raw favorites are bounded to {MAX_RAW_FAVORITES} entries."
+        ));
+    } else {
+        state.favorites.push(command);
+        state.favorite_selection = state.favorites.len().saturating_sub(1);
+        state.notification = Some("Raw favorite added.".into());
+    }
+}
+
+fn confirm_raw_favorite(state: &mut RawModeState) {
+    let Some(confirmation) = state.favorite_confirmation.take() else {
+        return;
+    };
+    state
+        .favorites
+        .retain(|favorite| favorite != &confirmation.command);
+    state.favorite_selection = state
+        .favorite_selection
+        .min(state.favorites.len().saturating_sub(1));
+    state.focus = confirmation.return_focus;
+    state.notification = Some("Raw favorite removed.".into());
+}
+
+fn cancel_raw_favorite(state: &mut RawModeState) {
+    let Some(confirmation) = state.favorite_confirmation.take() else {
+        return;
+    };
+    state.focus = confirmation.return_focus;
+    state.notification = None;
+}
+
+fn reproject_raw_authority(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+) {
+    if state.view == RawModeView::Execution {
+        return;
+    }
+    let Some(form) = state.form.as_ref() else {
+        return;
+    };
+    let Some(command) = catalog.command(&form.command) else {
+        state.close_unsafe_work("Raw form closed because its command was removed.".into());
+        return;
+    };
+    let availability = command.availability(authority);
+    if !availability.is_enabled() {
+        state.close_unsafe_work(format!(
+            "Raw form closed after capability update: {}",
+            raw_availability_reason(&availability)
+        ));
+        return;
+    }
+    let Some(authority) = authority else {
+        state.close_unsafe_work("Raw form closed because capability authority was lost.".into());
+        return;
+    };
+    let Some(build_directory) = authority.snapshot.environment.build_directory.value() else {
+        state.close_unsafe_work(
+            "Raw form closed because build-directory authority was lost.".into(),
+        );
+        return;
+    };
+    if build_directory != &form.build_directory {
+        state.close_unsafe_work(
+            "Raw form closed because the authoritative build directory changed.".into(),
+        );
+        return;
+    }
+    let preview_stale = state.preview.as_ref().is_some_and(|preview| {
+        preview.capability_generation != authority.snapshot.generation
+            || preview.build_directory != *build_directory
+    });
+    if preview_stale && state.view == RawModeView::Preview {
+        state.leave_view();
+        state.notification = Some(
+            "Raw preview closed after a safe capability generation update; review it again.".into(),
+        );
+    } else if preview_stale {
+        state.preview = None;
+    }
+    if let Some(form) = state.form.as_mut() {
+        form.capability_generation = authority.snapshot.generation;
+        form.build_directory.clone_from(build_directory);
     }
 }
 
@@ -2000,6 +2831,434 @@ fn contains_shell_syntax(value: &str) -> bool {
     value
         .chars()
         .any(|character| matches!(character, '|' | '&' | ';' | '<' | '>' | '`' | '$'))
+}
+
+#[cfg(test)]
+mod raw_mode_state_tests {
+    use super::*;
+    use crate::{
+        AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityImplementation, CapabilityImplementationKind, CapabilityReason, CapabilityRecord,
+        CapabilitySnapshot, IdentityAuthority, YoctoEnvironmentIdentity,
+    };
+
+    fn category(value: &str) -> RawCategoryId {
+        RawCategoryId::new(value).unwrap()
+    }
+
+    fn command(value: &str) -> RawCommandId {
+        RawCommandId::new(value).unwrap()
+    }
+
+    fn parameter(value: &str) -> RawParameterId {
+        RawParameterId::new(value).unwrap()
+    }
+
+    fn executable(id: &str, label: &str, description: &str, target: bool) -> RawCommand {
+        let parameters = target.then(|| RawParameter {
+            id: parameter("target"),
+            label: "Target".into(),
+            placeholder: "<target>".into(),
+            kind: RawParameterKind::Target,
+            presence: RawParameterPresence::Required,
+        });
+        RawCommand {
+            id: command(id),
+            category: category("build"),
+            label: label.into(),
+            description: description.into(),
+            reference: RawReference {
+                id: RawReferenceId::new(format!("{id}.reference")).unwrap(),
+                heading: "Build".into(),
+                command: if target {
+                    "bitbake <target>".into()
+                } else {
+                    "bitbake --version".into()
+                },
+                description: description.into(),
+            },
+            parameters: parameters.iter().cloned().collect(),
+            execution: RawExecutionPolicy::Executable {
+                template: RawExecutableTemplate {
+                    executable: RawExecutable::BitBake,
+                    arguments: if target {
+                        vec![RawArgument::Parameter {
+                            parameter: parameter("target"),
+                        }]
+                    } else {
+                        vec![RawArgument::Literal {
+                            value: "--version".into(),
+                        }]
+                    },
+                    capabilities: RawCapabilityRequirement::All {
+                        capabilities: vec![CapabilityId::BitBakeRawCli],
+                    },
+                    interaction: RawInteractionMode::NoninteractiveJob,
+                    safety: RawSafetyClass::Inspection,
+                },
+            },
+        }
+    }
+
+    fn catalog(version: u16) -> RawCatalog {
+        RawCatalog {
+            version,
+            categories: vec![
+                RawCategory {
+                    id: category("favorites"),
+                    label: "Favorites".into(),
+                    reference_heading: "Favorites".into(),
+                    kind: RawCategoryKind::Favorites,
+                },
+                RawCategory {
+                    id: category("build"),
+                    label: "Build commands".into(),
+                    reference_heading: "Build commands".into(),
+                    kind: RawCategoryKind::Executable,
+                },
+                RawCategory {
+                    id: category("reference"),
+                    label: "Reference material".into(),
+                    reference_heading: "Reference material".into(),
+                    kind: RawCategoryKind::ReferenceOnly,
+                },
+            ],
+            commands: vec![
+                executable(
+                    "build.target",
+                    "Build target",
+                    "Build one exact target.",
+                    true,
+                ),
+                executable(
+                    "build.version",
+                    "Show BitBake version",
+                    "Inspect the exact BitBake version.",
+                    false,
+                ),
+                RawCommand {
+                    id: command("reference.pipeline"),
+                    category: category("reference"),
+                    label: "Pipeline example".into(),
+                    description: "Reference-only pipeline explanation.".into(),
+                    reference: RawReference {
+                        id: RawReferenceId::new("reference.pipeline.source").unwrap(),
+                        heading: "Reference material".into(),
+                        command: "bitbake target | tee log".into(),
+                        description: "Reference-only pipeline explanation.".into(),
+                    },
+                    parameters: Vec::new(),
+                    execution: RawExecutionPolicy::ReferenceOnly {
+                        kind: RawReferenceKind::ShellPipeline,
+                        reason: "Shell pipelines are inert reference material.".into(),
+                    },
+                },
+            ],
+        }
+        .normalize()
+        .unwrap()
+    }
+
+    fn authority(generation: u64, available: bool) -> DaemonCompatibilitySnapshot {
+        let state = if available {
+            CapabilityState::Available
+        } else {
+            CapabilityState::Unavailable {
+                reason: CapabilityReason::new(
+                    "raw.test.unavailable",
+                    "Raw CLI probe is unavailable.",
+                    None,
+                )
+                .unwrap(),
+            }
+        };
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        "/work/build".into(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![CapabilityRecord {
+                    id: CapabilityId::BitBakeRawCli,
+                    state,
+                    evidence: vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: if available {
+                            CapabilityEvidenceOutcome::Positive
+                        } else {
+                            CapabilityEvidenceOutcome::Negative
+                        },
+                        subject: "bitbake --help".into(),
+                        detail: "Raw mode reducer fixture.".into(),
+                        argv: vec!["bitbake".into(), "--help".into()],
+                    }],
+                }],
+            },
+            implementations: if available {
+                BTreeMap::from([(
+                    CapabilityId::BitBakeRawCli,
+                    CapabilityImplementation {
+                        id: "bitbake.raw.argv".into(),
+                        kind: CapabilityImplementationKind::Command,
+                    },
+                )])
+            } else {
+                BTreeMap::new()
+            },
+        }
+        .normalize()
+        .unwrap()
+    }
+
+    fn select_build_category(state: &mut RawModeState, catalog: &RawCatalog) {
+        reduce_raw_mode(
+            state,
+            catalog,
+            None,
+            RawModeAction::SelectCategory { delta: 1 },
+        );
+        reduce_raw_mode(state, catalog, None, RawModeAction::FocusCommands);
+    }
+
+    #[test]
+    fn raw_mode_browsing_search_and_help_follow_exact_stable_selection() {
+        let catalog = catalog(1);
+        let mut state = RawModeState::new(&catalog);
+        assert_eq!(state.category, Some(category("favorites")));
+        assert!(state.command.is_none());
+
+        select_build_category(&mut state, &catalog);
+        assert_eq!(state.command, Some(command("build.target")));
+        assert_eq!(
+            state.selected_command(&catalog).unwrap().description,
+            "Build one exact target."
+        );
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            None,
+            RawModeAction::SelectCommand { delta: 99 },
+        );
+        assert_eq!(state.command, Some(command("build.version")));
+
+        reduce_raw_mode(&mut state, &catalog, None, RawModeAction::BeginSearch);
+        for character in "reference-only".chars() {
+            reduce_raw_mode(
+                &mut state,
+                &catalog,
+                None,
+                RawModeAction::AppendSearch(character),
+            );
+        }
+        assert_eq!(state.command, Some(command("reference.pipeline")));
+        assert_eq!(state.visible_commands(&catalog).len(), 1);
+        reduce_raw_mode(&mut state, &catalog, None, RawModeAction::Back);
+        assert!(!state.search.editing);
+        assert_eq!(state.focus, RawModeFocus::Commands);
+    }
+
+    #[test]
+    fn raw_mode_form_preview_and_back_restore_exact_typed_state() {
+        let catalog = catalog(1);
+        let authority = authority(5, true);
+        let mut state = RawModeState::new(&catalog);
+        select_build_category(&mut state, &catalog);
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::OpenSelected,
+        );
+        assert_eq!(state.view, RawModeView::Form);
+        assert_eq!(state.focus, RawModeFocus::Form);
+
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::RequestPreview,
+        );
+        assert_eq!(state.view, RawModeView::Form);
+        assert!(
+            state.form.as_ref().unwrap().fields[&parameter("target")]
+                .validation_error
+                .is_some()
+        );
+
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::ChooseParameter {
+                parameter: parameter("target"),
+                value: RawParameterValue::Target("virtual/kernel".into()),
+            },
+        );
+        state
+            .form
+            .as_mut()
+            .unwrap()
+            .additional_arguments
+            .replace_input("--verbose")
+            .unwrap();
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::RequestPreview,
+        );
+        assert_eq!(state.view, RawModeView::Preview);
+        assert_eq!(
+            state.preview.as_ref().unwrap().arguments,
+            ["virtual/kernel", "--verbose"]
+        );
+
+        reduce_raw_mode(&mut state, &catalog, Some(&authority), RawModeAction::Back);
+        assert_eq!(state.view, RawModeView::Form);
+        assert_eq!(
+            state.form.as_ref().unwrap().fields[&parameter("target")].value,
+            Some(RawParameterValue::Target("virtual/kernel".into()))
+        );
+        reduce_raw_mode(&mut state, &catalog, Some(&authority), RawModeAction::Back);
+        assert_eq!(state.view, RawModeView::Browser);
+        assert_eq!(state.focus, RawModeFocus::Commands);
+    }
+
+    #[test]
+    fn raw_mode_capability_replacement_closes_stale_preview_or_unsafe_form() {
+        let catalog = catalog(1);
+        let first = authority(5, true);
+        let mut state = RawModeState::new(&catalog);
+        select_build_category(&mut state, &catalog);
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&first),
+            RawModeAction::OpenSelected,
+        );
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&first),
+            RawModeAction::SetParameterInput {
+                parameter: parameter("target"),
+                input: "busybox".into(),
+            },
+        );
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&first),
+            RawModeAction::RequestPreview,
+        );
+        assert_eq!(state.view, RawModeView::Preview);
+
+        let replacement = authority(6, true);
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&replacement),
+            RawModeAction::ReprojectAuthority,
+        );
+        assert_eq!(state.view, RawModeView::Form);
+        assert!(state.preview.is_none());
+        assert_eq!(state.form.as_ref().unwrap().capability_generation, 6);
+
+        let unavailable = authority(7, false);
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&unavailable),
+            RawModeAction::ReprojectAuthority,
+        );
+        assert_eq!(state.view, RawModeView::Browser);
+        assert!(state.form.is_none());
+        assert!(
+            state
+                .notification
+                .as_deref()
+                .is_some_and(|message| message.contains("Raw CLI probe is unavailable"))
+        );
+    }
+
+    #[test]
+    fn raw_mode_history_favorites_and_catalog_replacement_retain_only_exact_ids() {
+        let original = catalog(1);
+        let mut state = RawModeState::new(&original);
+        select_build_category(&mut state, &original);
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
+        reduce_raw_mode(
+            &mut state,
+            &original,
+            None,
+            RawModeAction::RememberHistory(command("build.target")),
+        );
+        assert_eq!(state.favorites, [command("build.target")]);
+        assert_eq!(state.history, [command("build.target")]);
+
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
+        assert!(state.favorite_confirmation.is_some());
+        assert_eq!(state.favorites, [command("build.target")]);
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::CancelFavorite);
+        assert_eq!(state.favorites, [command("build.target")]);
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::ConfirmFavorite);
+        assert!(state.favorites.is_empty());
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
+
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::OpenFavorites);
+        reduce_raw_mode(&mut state, &original, None, RawModeAction::ActivateFavorite);
+        assert_eq!(state.command, Some(command("build.target")));
+        assert_eq!(state.view, RawModeView::Browser);
+        assert_eq!(state.focus, RawModeFocus::Commands);
+
+        let mut replacement = catalog(2);
+        replacement
+            .commands
+            .retain(|item| item.id != command("build.target"));
+        replacement = replacement.normalize().unwrap();
+        reduce_raw_mode(
+            &mut state,
+            &replacement,
+            None,
+            RawModeAction::ReprojectCatalog,
+        );
+        assert!(state.favorites.is_empty());
+        assert!(state.history.is_empty());
+        assert_ne!(state.command, Some(command("build.target")));
+    }
+
+    #[test]
+    fn raw_mode_empty_replacement_and_large_indices_never_panic() {
+        let catalog = catalog(1);
+        let mut state = RawModeState::new(&catalog);
+        let empty = RawCatalog {
+            version: 2,
+            categories: Vec::new(),
+            commands: Vec::new(),
+        };
+        reduce_raw_mode(&mut state, &empty, None, RawModeAction::ReprojectCatalog);
+        reduce_raw_mode(
+            &mut state,
+            &empty,
+            None,
+            RawModeAction::SelectCategory { delta: isize::MAX },
+        );
+        reduce_raw_mode(
+            &mut state,
+            &empty,
+            None,
+            RawModeAction::SelectCommand { delta: isize::MIN },
+        );
+        assert!(state.category.is_none());
+        assert!(state.command.is_none());
+        assert_eq!(state.history_selection, 0);
+        assert_eq!(state.favorite_selection, 0);
+    }
 }
 
 #[cfg(test)]

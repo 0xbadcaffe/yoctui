@@ -65,7 +65,14 @@ directory, selected implementations, interaction/safety classes, and
 limitation evidence; missing, stale, unavailable, or mismatched authority
 fails closed. The TestBackend preview renders indexed native argv without a
 joined command authority and degrades safely through 80x24 and tiny areas.
-`RAW-MODEL-001` is active next.
+`RAW-MODEL-001` is complete: the pure stable-ID reducer owns category/command
+selection, exact selection-following help, bounded search, typed form fields,
+expert argv editing, preview/execution views, bounded history/favorite
+selection, explicit favorite-removal confirmation, and view/focus restoration.
+Catalog replacement clamps or removes stale identities; a safe capability
+generation change closes only the stale preview and refreshes the form, while
+capability/build-identity loss closes unsafe work with an exact notification
+and no backend effect. `RAW-NAV-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

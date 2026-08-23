@@ -3641,6 +3641,109 @@ pub fn validate_raw_argv_editor(
         .validate()
         .map(|arguments| arguments.as_slice().to_vec())
 }
+
+pub fn reduce_raw_mode_state(
+    state: &mut yoctui_model::RawModeState,
+    catalog: &yoctui_model::RawCatalog,
+    authority: Option<&yoctui_model::DaemonCompatibilitySnapshot>,
+    action: yoctui_model::RawModeAction,
+) {
+    yoctui_model::reduce_raw_mode(state, catalog, authority, action);
+}
+
+pub fn raw_mode_input(
+    state: &yoctui_model::RawModeState,
+    key: Input,
+) -> Option<yoctui_model::RawModeAction> {
+    use yoctui_model::{RawBrowserColumn, RawModeAction, RawModeView};
+
+    if state.favorite_confirmation.is_some() {
+        return match key {
+            Input::Enter => Some(RawModeAction::ConfirmFavorite),
+            Input::Esc => Some(RawModeAction::CancelFavorite),
+            _ => None,
+        };
+    }
+    if state.search.editing {
+        return match key {
+            Input::Esc => Some(RawModeAction::FinishSearch),
+            Input::CtrlU => Some(RawModeAction::ClearSearch),
+            Input::Backspace => Some(RawModeAction::BackspaceSearch),
+            Input::Char(character) => Some(RawModeAction::AppendSearch(character)),
+            _ => None,
+        };
+    }
+    match state.view {
+        RawModeView::Browser => match key {
+            Input::Char('/') => Some(RawModeAction::BeginSearch),
+            Input::Char('f') => Some(RawModeAction::ToggleFavorite),
+            Input::Char('H') => Some(RawModeAction::OpenHistory),
+            Input::Left | Input::Char('h') => Some(RawModeAction::FocusCategories),
+            Input::Right | Input::Char('l') => Some(RawModeAction::FocusCommands),
+            Input::Up | Input::Char('k') => Some(match state.browser_column {
+                RawBrowserColumn::Categories => RawModeAction::SelectCategory { delta: -1 },
+                RawBrowserColumn::Commands => RawModeAction::SelectCommand { delta: -1 },
+            }),
+            Input::Down | Input::Char('j') => Some(match state.browser_column {
+                RawBrowserColumn::Categories => RawModeAction::SelectCategory { delta: 1 },
+                RawBrowserColumn::Commands => RawModeAction::SelectCommand { delta: 1 },
+            }),
+            Input::Enter if state.browser_column == RawBrowserColumn::Categories => {
+                Some(RawModeAction::FocusCommands)
+            }
+            Input::Enter => Some(RawModeAction::OpenSelected),
+            Input::Esc => Some(RawModeAction::Back),
+            _ => None,
+        },
+        RawModeView::Form => {
+            let additional_selected = state
+                .form
+                .as_ref()
+                .is_some_and(|form| form.field_selection == form.field_order.len());
+            if additional_selected
+                && let Some(action) = raw_argv_editor_action(
+                    state
+                        .form
+                        .as_ref()
+                        .is_some_and(|form| form.additional_arguments.editor.editing),
+                    key,
+                )
+            {
+                return Some(match action {
+                    RawArgvEditorAction::Edit(command) => {
+                        RawModeAction::EditAdditionalArguments(command)
+                    }
+                    RawArgvEditorAction::Validate => RawModeAction::RequestPreview,
+                });
+            }
+            match key {
+                Input::Up | Input::Char('k') => Some(RawModeAction::SelectFormField { delta: -1 }),
+                Input::Down | Input::Char('j') => Some(RawModeAction::SelectFormField { delta: 1 }),
+                Input::Enter => Some(RawModeAction::RequestPreview),
+                Input::Esc => Some(RawModeAction::Back),
+                _ => None,
+            }
+        }
+        RawModeView::Preview | RawModeView::Execution => match key {
+            Input::Esc => Some(RawModeAction::Back),
+            _ => None,
+        },
+        RawModeView::History => match key {
+            Input::Up | Input::Char('k') => Some(RawModeAction::SelectHistory { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(RawModeAction::SelectHistory { delta: 1 }),
+            Input::Enter => Some(RawModeAction::ActivateHistory),
+            Input::Esc => Some(RawModeAction::Back),
+            _ => None,
+        },
+        RawModeView::Favorites => match key {
+            Input::Up | Input::Char('k') => Some(RawModeAction::SelectFavorite { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(RawModeAction::SelectFavorite { delta: 1 }),
+            Input::Enter => Some(RawModeAction::ActivateFavorite),
+            Input::Esc => Some(RawModeAction::Back),
+            _ => None,
+        },
+    }
+}
 pub fn key_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('b') => None,
@@ -10689,5 +10792,104 @@ mod tests {
             validate_raw_argv_editor(&mut editor).unwrap(),
             ["--next", "escaped value"]
         );
+    }
+
+    #[test]
+    fn raw_mode_app_maps_browser_search_history_and_favorite_input_mechanically() {
+        let catalog = yoctui_model::RawCatalog::builtin();
+        let mut state = yoctui_model::RawModeState::new(&catalog);
+        assert_eq!(
+            raw_mode_input(&state, Input::Right),
+            Some(yoctui_model::RawModeAction::FocusCommands)
+        );
+        assert_eq!(
+            raw_mode_input(&state, Input::Down),
+            Some(yoctui_model::RawModeAction::SelectCategory { delta: 1 })
+        );
+        assert_eq!(
+            raw_mode_input(&state, Input::Char('/')),
+            Some(yoctui_model::RawModeAction::BeginSearch)
+        );
+        reduce_raw_mode_state(
+            &mut state,
+            &catalog,
+            None,
+            yoctui_model::RawModeAction::BeginSearch,
+        );
+        assert_eq!(
+            raw_mode_input(&state, Input::Char('x')),
+            Some(yoctui_model::RawModeAction::AppendSearch('x'))
+        );
+        assert_eq!(
+            raw_mode_input(&state, Input::Esc),
+            Some(yoctui_model::RawModeAction::FinishSearch)
+        );
+
+        state.search.editing = false;
+        state.view = yoctui_model::RawModeView::History;
+        assert_eq!(
+            raw_mode_input(&state, Input::Enter),
+            Some(yoctui_model::RawModeAction::ActivateHistory)
+        );
+        state.view = yoctui_model::RawModeView::Favorites;
+        assert_eq!(
+            raw_mode_input(&state, Input::Down),
+            Some(yoctui_model::RawModeAction::SelectFavorite { delta: 1 })
+        );
+        state.favorite_confirmation = Some(yoctui_model::RawFavoriteConfirmation {
+            command: catalog.commands[0].id.clone(),
+            return_focus: yoctui_model::RawModeFocus::Favorites,
+        });
+        assert_eq!(
+            raw_mode_input(&state, Input::Enter),
+            Some(yoctui_model::RawModeAction::ConfirmFavorite)
+        );
+        assert_eq!(
+            raw_mode_input(&state, Input::Esc),
+            Some(yoctui_model::RawModeAction::CancelFavorite)
+        );
+        assert_eq!(raw_mode_input(&state, Input::Down), None);
+    }
+
+    #[test]
+    fn raw_mode_app_routes_only_the_selected_additional_field_to_shared_editor() {
+        let catalog = yoctui_model::RawCatalog::builtin();
+        let mut state = yoctui_model::RawModeState::new(&catalog);
+        state.view = yoctui_model::RawModeView::Form;
+        state.focus = yoctui_model::RawModeFocus::Form;
+        state.form = Some(yoctui_model::RawCommandForm {
+            command: catalog.commands[0].id.clone(),
+            fields: std::collections::BTreeMap::new(),
+            field_order: Vec::new(),
+            field_selection: 0,
+            additional_arguments: yoctui_model::RawArgvEditor::new("").unwrap(),
+            capability_generation: 1,
+            build_directory: "/work/build".into(),
+        });
+
+        assert_eq!(
+            raw_mode_input(&state, Input::Char('i')),
+            Some(yoctui_model::RawModeAction::EditAdditionalArguments(
+                yoctui_model::PopupEditorCommand::ToggleInsert
+            ))
+        );
+        state
+            .form
+            .as_mut()
+            .unwrap()
+            .additional_arguments
+            .editor
+            .editing = true;
+        assert_eq!(
+            raw_mode_input(&state, Input::Char('v')),
+            Some(yoctui_model::RawModeAction::EditAdditionalArguments(
+                yoctui_model::PopupEditorCommand::Insert('v')
+            ))
+        );
+        assert_eq!(
+            raw_mode_input(&state, Input::Enter),
+            Some(yoctui_model::RawModeAction::RequestPreview)
+        );
+        assert_eq!(raw_mode_input(&state, Input::CtrlS), None);
     }
 }
