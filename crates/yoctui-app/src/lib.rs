@@ -228,6 +228,68 @@ pub fn raw_selector_for_command(
     command.selector(parameter, &raw_selector_authority(app, selected_recipe))
 }
 
+pub fn raw_form_selected_recipe<'a>(
+    app: &'a yoctui_model::App,
+    command: &yoctui_model::RawCommand,
+) -> Option<&'a str> {
+    let form = app.raw_mode.form.as_ref()?;
+    command.parameters.iter().find_map(|parameter| {
+        if parameter.kind != yoctui_model::RawParameterKind::Recipe {
+            return None;
+        }
+        match form.fields.get(&parameter.id)?.value.as_ref()? {
+            yoctui_model::RawParameterValue::Recipe(recipe) => Some(recipe.as_str()),
+            _ => None,
+        }
+    })
+}
+
+pub fn raw_form_parameter_selector(
+    app: &yoctui_model::App,
+    command: &yoctui_model::RawCommand,
+    parameter: &yoctui_model::RawParameterId,
+) -> Result<yoctui_model::RawParameterSelector, yoctui_model::RawSelectorError> {
+    raw_selector_for_command(
+        app,
+        command,
+        parameter,
+        raw_form_selected_recipe(app, command),
+    )
+}
+
+fn raw_form_selector_choice(
+    app: &yoctui_model::App,
+    parameter: &yoctui_model::RawParameterId,
+    delta: isize,
+) -> Option<yoctui_model::RawModeAction> {
+    let catalog = yoctui_model::builtin_raw_catalog();
+    let form = app.raw_mode.form.as_ref()?;
+    let command = catalog.command(&form.command)?;
+    let field = form.fields.get(parameter)?;
+    let selector = raw_form_parameter_selector(app, command, parameter).ok()?;
+    let choices = selector.inventory.choices()?;
+    if choices.is_empty() {
+        return None;
+    }
+    let current = field
+        .value
+        .as_ref()
+        .and_then(|value| choices.iter().position(|choice| &choice.value == value));
+    let next = current.map_or(0, |current| {
+        if delta.is_negative() {
+            current.saturating_sub(delta.unsigned_abs())
+        } else {
+            current
+                .saturating_add(delta as usize)
+                .min(choices.len().saturating_sub(1))
+        }
+    });
+    Some(yoctui_model::RawModeAction::ChooseParameter {
+        parameter: parameter.clone(),
+        value: choices[next].value.clone(),
+    })
+}
+
 pub fn reduce_daemon_state(
     state: &mut yoctui_model::DaemonGlobalState,
     action: yoctui_model::DaemonStateAction,
@@ -3046,6 +3108,14 @@ pub fn mouse_action_for_app(
     if app.active_dialog().is_some() {
         return dialog_mouse_action(mouse, app);
     }
+    if app.screen == Screen::RawMode
+        && matches!(
+            app.raw_mode.view,
+            yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
+        )
+    {
+        return matches!(mouse.kind, MouseKind::Down).then_some(Action::Focus(FocusTarget::Dialog));
+    }
     let shell = workbench_shell(terminal_width, terminal_height)?;
     if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
         return terminal_session_mouse_action(mouse, app, shell);
@@ -3329,7 +3399,7 @@ fn workspace_wheel_action(app: &yoctui_model::App, key: Input) -> Option<Action>
             }
         }
         Screen::Configuration => config_workspace_action(app.metadata_searching, key),
-        Screen::RawMode => raw_mode_input(&app.raw_mode, key).map(Action::RawMode),
+        Screen::RawMode => raw_mode_input(app, key).map(Action::RawMode),
         Screen::Maintenance => maintenance_workspace_action(
             app.maintenance.view,
             match app.maintenance.view {
@@ -3652,11 +3722,37 @@ pub fn reduce_raw_mode_state(
     yoctui_model::reduce_raw_mode(state, catalog, authority, action);
 }
 
-pub fn raw_mode_input(
-    state: &yoctui_model::RawModeState,
+pub trait RawModeInputContext {
+    fn raw_mode_state(&self) -> &yoctui_model::RawModeState;
+    fn raw_mode_app(&self) -> Option<&yoctui_model::App>;
+}
+
+impl RawModeInputContext for yoctui_model::App {
+    fn raw_mode_state(&self) -> &yoctui_model::RawModeState {
+        &self.raw_mode
+    }
+
+    fn raw_mode_app(&self) -> Option<&yoctui_model::App> {
+        Some(self)
+    }
+}
+
+impl RawModeInputContext for yoctui_model::RawModeState {
+    fn raw_mode_state(&self) -> &yoctui_model::RawModeState {
+        self
+    }
+
+    fn raw_mode_app(&self) -> Option<&yoctui_model::App> {
+        None
+    }
+}
+
+pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
+    context: &C,
     key: Input,
 ) -> Option<yoctui_model::RawModeAction> {
     use yoctui_model::{RawBrowserColumn, RawModeAction, RawModeView};
+    let state = context.raw_mode_state();
 
     if state.favorite_confirmation.is_some() {
         return match key {
@@ -3697,33 +3793,52 @@ pub fn raw_mode_input(
             _ => None,
         },
         RawModeView::Form => {
-            let additional_selected = state
-                .form
-                .as_ref()
-                .is_some_and(|form| form.field_selection == form.field_order.len());
-            if additional_selected
-                && let Some(action) = raw_argv_editor_action(
-                    state
-                        .form
-                        .as_ref()
-                        .is_some_and(|form| form.additional_arguments.editor.editing),
-                    key,
-                )
-            {
-                return Some(match action {
-                    RawArgvEditorAction::Edit(command) => {
-                        RawModeAction::EditAdditionalArguments(command)
-                    }
-                    RawArgvEditorAction::Validate => RawModeAction::RequestPreview,
+            let form = state.form.as_ref()?;
+            let parameter = form.field_order.get(form.field_selection);
+            let editing = parameter
+                .and_then(|parameter| form.fields.get(parameter))
+                .map_or(form.additional_arguments.editor.editing, |field| {
+                    field.editor.editing
                 });
+            if !editing {
+                match key {
+                    Input::Tab | Input::Down | Input::Char('j') => {
+                        return Some(RawModeAction::SelectFormField { delta: 1 });
+                    }
+                    Input::BackTab | Input::Up | Input::Char('k') => {
+                        return Some(RawModeAction::SelectFormField { delta: -1 });
+                    }
+                    Input::Char('q') | Input::Esc => return Some(RawModeAction::Back),
+                    Input::Left if parameter.is_some() => {
+                        if let Some(action) = context
+                            .raw_mode_app()
+                            .and_then(|app| raw_form_selector_choice(app, parameter?, -1))
+                        {
+                            return Some(action);
+                        }
+                    }
+                    Input::Right if parameter.is_some() => {
+                        if let Some(action) = context
+                            .raw_mode_app()
+                            .and_then(|app| raw_form_selector_choice(app, parameter?, 1))
+                        {
+                            return Some(action);
+                        }
+                    }
+                    _ => {}
+                }
             }
-            match key {
-                Input::Up | Input::Char('k') => Some(RawModeAction::SelectFormField { delta: -1 }),
-                Input::Down | Input::Char('j') => Some(RawModeAction::SelectFormField { delta: 1 }),
-                Input::Enter => Some(RawModeAction::RequestPreview),
-                Input::Esc => Some(RawModeAction::Back),
-                _ => None,
-            }
+            let action = raw_argv_editor_action(editing, key)?;
+            Some(match action {
+                RawArgvEditorAction::Edit(command) => parameter.map_or(
+                    RawModeAction::EditAdditionalArguments(command),
+                    |parameter| RawModeAction::EditParameterInput {
+                        parameter: parameter.clone(),
+                        command,
+                    },
+                ),
+                RawArgvEditorAction::Validate => RawModeAction::RequestPreview,
+            })
         }
         RawModeView::Preview | RawModeView::Execution => match key {
             Input::Esc => Some(RawModeAction::Back),
@@ -10892,6 +11007,95 @@ mod tests {
             Some(yoctui_model::RawModeAction::RequestPreview)
         );
         assert_eq!(raw_mode_input(&state, Input::CtrlS), None);
+    }
+
+    #[test]
+    fn raw_form_app_routes_selector_editor_fields_and_dialog_focus() {
+        let catalog = yoctui_model::RawCatalog::builtin();
+        let command = catalog
+            .commands
+            .iter()
+            .find(|command| {
+                command
+                    .parameters
+                    .iter()
+                    .any(|parameter| parameter.kind == yoctui_model::RawParameterKind::Target)
+            })
+            .unwrap();
+        let parameter = command
+            .parameters
+            .iter()
+            .find(|parameter| parameter.kind == yoctui_model::RawParameterKind::Target)
+            .unwrap()
+            .id
+            .clone();
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = yoctui_model::Screen::RawMode;
+        app.build.target = Some("busybox".into());
+        app.raw_mode.view = yoctui_model::RawModeView::Form;
+        app.raw_mode.focus = yoctui_model::RawModeFocus::Form;
+        app.raw_mode.form = Some(yoctui_model::RawCommandForm {
+            command: command.id.clone(),
+            fields: std::collections::BTreeMap::from([(
+                parameter.clone(),
+                yoctui_model::RawFormField {
+                    parameter: parameter.clone(),
+                    editor: yoctui_model::PopupEditor::new(String::new()),
+                    value: None,
+                    validation_error: None,
+                },
+            )]),
+            field_order: vec![parameter.clone()],
+            field_selection: 0,
+            additional_arguments: yoctui_model::RawArgvEditor::new("").unwrap(),
+            capability_generation: 1,
+            build_directory: "/work/build".into(),
+        });
+
+        let choice = raw_mode_input(&app, Input::Right).unwrap();
+        assert!(matches!(
+            choice,
+            yoctui_model::RawModeAction::ChooseParameter {
+                value: yoctui_model::RawParameterValue::Target(ref value),
+                ..
+            } if value == "busybox"
+        ));
+        assert!(matches!(
+            raw_mode_input(&app, Input::Char('i')),
+            Some(yoctui_model::RawModeAction::EditParameterInput {
+                command: yoctui_model::PopupEditorCommand::ToggleInsert,
+                ..
+            })
+        ));
+        assert_eq!(
+            raw_mode_input(&app, Input::Tab),
+            Some(yoctui_model::RawModeAction::SelectFormField { delta: 1 })
+        );
+
+        let _ = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::RawMode(yoctui_model::RawModeAction::DismissNotification),
+        );
+        assert_eq!(app.focus, yoctui_model::FocusTarget::Dialog);
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 1,
+                    row: 3,
+                },
+                &app,
+                160,
+                50,
+            ),
+            Some(yoctui_model::Action::Focus(
+                yoctui_model::FocusTarget::Dialog
+            ))
+        );
+        let close = raw_mode_input(&app, Input::Char('q')).unwrap();
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::RawMode(close));
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Browser);
+        assert_eq!(app.focus, yoctui_model::FocusTarget::Workspace);
     }
 
     #[test]

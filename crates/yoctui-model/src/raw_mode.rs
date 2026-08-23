@@ -705,7 +705,7 @@ pub struct RawSearchState {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawFormField {
     pub parameter: RawParameterId,
-    pub input: String,
+    pub editor: PopupEditor,
     pub value: Option<RawParameterValue>,
     pub validation_error: Option<RawParameterError>,
 }
@@ -772,6 +772,10 @@ pub enum RawModeAction {
     ChooseParameter {
         parameter: RawParameterId,
         value: RawParameterValue,
+    },
+    EditParameterInput {
+        parameter: RawParameterId,
+        command: PopupEditorCommand,
     },
     SelectFormField {
         delta: isize,
@@ -1376,6 +1380,9 @@ pub fn reduce_raw_mode(
         RawModeAction::ChooseParameter { parameter, value } => {
             choose_raw_parameter(state, catalog, &parameter, value)
         }
+        RawModeAction::EditParameterInput { parameter, command } => {
+            edit_raw_parameter_input(state, catalog, &parameter, command)
+        }
         RawModeAction::SelectFormField { delta } => select_raw_form_field(state, delta),
         RawModeAction::EditAdditionalArguments(command) => {
             if let Some(form) = state.form.as_mut()
@@ -1596,7 +1603,7 @@ fn open_raw_selected(
                 parameter.id.clone(),
                 RawFormField {
                     parameter: parameter.id.clone(),
-                    input: String::new(),
+                    editor: PopupEditor::new(String::new()),
                     value: None,
                     validation_error: None,
                 },
@@ -1669,8 +1676,91 @@ fn set_raw_parameter_input(
         state.notification = Some(format!("Raw form state has no parameter {parameter}."));
         return;
     };
-    field.input = input;
-    match definition.parse_value(&field.input) {
+    if input.len() > raw_parameter_input_limit(definition.kind) {
+        state.notification = Some(format!(
+            "Raw parameter {parameter} input exceeds its typed byte limit."
+        ));
+        return;
+    }
+    field.editor = PopupEditor::new(input);
+    match definition.parse_value(&field.editor.text) {
+        Ok(value) => {
+            field.value = value;
+            field.validation_error = None;
+        }
+        Err(error) => {
+            field.value = None;
+            field.validation_error = Some(error);
+        }
+    }
+    state.preview = None;
+}
+
+fn raw_parameter_input_limit(kind: RawParameterKind) -> usize {
+    match kind {
+        RawParameterKind::Recipe => MAX_RAW_RECIPE_BYTES,
+        RawParameterKind::Image => MAX_RAW_IMAGE_BYTES,
+        RawParameterKind::Target => MAX_RAW_TARGET_BYTES,
+        RawParameterKind::Task => MAX_RAW_TASK_BYTES,
+        RawParameterKind::UserInterface => MAX_RAW_UI_BYTES,
+        RawParameterKind::File => MAX_RAW_FILE_BYTES,
+        RawParameterKind::Integer => MAX_RAW_INTEGER_INPUT_BYTES,
+        RawParameterKind::Text => MAX_RAW_PARAMETER_TEXT_BYTES,
+        RawParameterKind::Multiconfig => MAX_RAW_MULTICONFIG_BYTES,
+    }
+}
+
+fn edit_raw_parameter_input(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    parameter: &RawParameterId,
+    command: PopupEditorCommand,
+) {
+    let Some(form) = state.form.as_mut() else {
+        return;
+    };
+    let Some(definition) = catalog
+        .command(&form.command)
+        .and_then(|command| command.parameters.iter().find(|item| &item.id == parameter))
+    else {
+        state.notification = Some(format!("Raw form has no parameter {parameter}."));
+        return;
+    };
+    let Some(field) = form.fields.get_mut(parameter) else {
+        state.notification = Some(format!("Raw form state has no parameter {parameter}."));
+        return;
+    };
+    let previous = field.editor.clone();
+    match command {
+        PopupEditorCommand::ToggleInsert => field.editor.editing = !field.editor.editing,
+        PopupEditorCommand::Insert(character)
+            if field.editor.editing && !character.is_control() =>
+        {
+            field.editor.insert(&character.to_string());
+        }
+        PopupEditorCommand::Insert(_) => {}
+        PopupEditorCommand::Backspace if field.editor.editing => field.editor.backspace(),
+        PopupEditorCommand::Backspace => {}
+        PopupEditorCommand::Left => field.editor.left(),
+        PopupEditorCommand::Right => field.editor.right(),
+        PopupEditorCommand::Up => field.editor.up(),
+        PopupEditorCommand::Down => field.editor.down(),
+        PopupEditorCommand::Home => field.editor.home(),
+        PopupEditorCommand::End => field.editor.end(),
+        PopupEditorCommand::SelectValue => {
+            field.editor.select_range(0, field.editor.text.len());
+            field.editor.editing = true;
+        }
+        PopupEditorCommand::Copy => {
+            field.editor.copy_selection_or_line();
+        }
+        PopupEditorCommand::Paste if field.editor.editing => field.editor.paste(),
+        PopupEditorCommand::Paste => {}
+    }
+    if field.editor.text.len() > raw_parameter_input_limit(definition.kind) {
+        field.editor = previous;
+    }
+    match definition.parse_value(&field.editor.text) {
         Ok(value) => {
             field.value = value;
             field.validation_error = None;
@@ -1717,6 +1807,10 @@ fn choose_raw_parameter(
 
 fn select_raw_form_field(state: &mut RawModeState, delta: isize) {
     if let Some(form) = state.form.as_mut() {
+        for field in form.fields.values_mut() {
+            field.editor.editing = false;
+        }
+        form.additional_arguments.editor.editing = false;
         form.field_selection = shifted_index(
             form.field_selection,
             form.field_order.len().saturating_add(1),
@@ -1748,7 +1842,7 @@ fn request_raw_preview(
                 });
                 continue;
             };
-            match definition.parse_value(&field.input) {
+            match definition.parse_value(&field.editor.text) {
                 Ok(value) => {
                     field.value.clone_from(&value);
                     field.validation_error = None;
@@ -3149,6 +3243,88 @@ mod raw_mode_state_tests {
         reduce_raw_mode(&mut state, &catalog, Some(&authority), RawModeAction::Back);
         assert_eq!(state.view, RawModeView::Browser);
         assert_eq!(state.focus, RawModeFocus::Commands);
+    }
+
+    #[test]
+    fn raw_form_editor_is_typed_bounded_and_invalidates_stale_values() {
+        let catalog = catalog(1);
+        let authority = authority(5, true);
+        let mut state = RawModeState::new(&catalog);
+        select_build_category(&mut state, &catalog);
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::OpenSelected,
+        );
+        let target = parameter("target");
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::EditParameterInput {
+                parameter: target.clone(),
+                command: PopupEditorCommand::ToggleInsert,
+            },
+        );
+        for character in "busybox".chars() {
+            reduce_raw_mode(
+                &mut state,
+                &catalog,
+                Some(&authority),
+                RawModeAction::EditParameterInput {
+                    parameter: target.clone(),
+                    command: PopupEditorCommand::Insert(character),
+                },
+            );
+        }
+        let field = &state.form.as_ref().unwrap().fields[&target];
+        assert_eq!(field.editor.text, "busybox");
+        assert_eq!(
+            field.value,
+            Some(RawParameterValue::Target("busybox".into()))
+        );
+
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::EditParameterInput {
+                parameter: target.clone(),
+                command: PopupEditorCommand::Insert('é'),
+            },
+        );
+        let field = &state.form.as_ref().unwrap().fields[&target];
+        assert_eq!(field.editor.text, "busyboxé");
+        assert!(field.value.is_none());
+        assert!(field.validation_error.is_some());
+
+        for _ in 0..MAX_RAW_TARGET_BYTES {
+            reduce_raw_mode(
+                &mut state,
+                &catalog,
+                Some(&authority),
+                RawModeAction::EditParameterInput {
+                    parameter: target.clone(),
+                    command: PopupEditorCommand::Insert('a'),
+                },
+            );
+        }
+        assert_eq!(
+            state.form.as_ref().unwrap().fields[&target]
+                .editor
+                .text
+                .len(),
+            MAX_RAW_TARGET_BYTES
+        );
+        reduce_raw_mode(
+            &mut state,
+            &catalog,
+            Some(&authority),
+            RawModeAction::SelectFormField { delta: 1 },
+        );
+        assert!(!state.form.as_ref().unwrap().fields[&target].editor.editing);
+        assert_eq!(state.form.as_ref().unwrap().field_selection, 1);
     }
 
     #[test]

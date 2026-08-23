@@ -1591,6 +1591,24 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     let screen_area = area;
     if app.command_palette_open {
         command_palette(frame, app, area);
+    } else if app.screen == Screen::RawMode
+        && let Some(form) = app
+            .raw_mode
+            .form
+            .as_ref()
+            .filter(|_| app.raw_mode.view == yoctui_model::RawModeView::Form)
+    {
+        raw_command_form_dialog(frame, app, form, area);
+    } else if app.screen == Screen::RawMode
+        && let Some(preview) = app
+            .raw_mode
+            .preview
+            .as_ref()
+            .filter(|_| app.raw_mode.view == yoctui_model::RawModeView::Preview)
+    {
+        let popup = dialog_popup_rect(area, 110, 30);
+        clear_popup(frame, app, popup);
+        render_raw_execution_preview(frame, preview, popup);
     } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
         recipe_editor(frame, app, editor, area);
     } else if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog() {
@@ -14171,6 +14189,213 @@ fn indexed_arguments(arguments: &[String]) -> String {
         .join("\n")
 }
 
+fn raw_form_selector_text(
+    app: &App,
+    command: &yoctui_model::RawCommand,
+    parameter: &yoctui_model::RawParameter,
+) -> String {
+    match yoctui_app::raw_form_parameter_selector(app, command, &parameter.id) {
+        Ok(selector) => match selector.inventory {
+            yoctui_model::RawSelectorInventory::Available { choices } => format!(
+                "Selector: {} choice{} (authoritative){}",
+                choices.len(),
+                if choices.len() == 1 { "" } else { "s" },
+                if selector.manual_entry {
+                    " · manual allowed"
+                } else {
+                    ""
+                }
+            ),
+            yoctui_model::RawSelectorInventory::Unavailable { reason } => format!(
+                "Selector unavailable: {reason}{}",
+                if selector.manual_entry {
+                    " · manual entry allowed"
+                } else {
+                    ""
+                }
+            ),
+        },
+        Err(yoctui_model::RawSelectorError::NotInventoryBacked { .. }) => {
+            "Selector: manual entry".into()
+        }
+        Err(error) => format!("Selector unavailable: {error}"),
+    }
+}
+
+fn raw_command_form_dialog(
+    frame: &mut Frame,
+    app: &App,
+    form: &yoctui_model::RawCommandForm,
+    area: Rect,
+) {
+    let popup = dialog_popup_rect(area, 110, 30);
+    clear_popup(frame, app, popup);
+    let block = dialog_block(app, "Run BitBake Command", DialogTone::Standard);
+    let inner = block.inner(popup);
+    frame.render_widget(block, popup);
+    if inner.is_empty() {
+        return;
+    }
+    let catalog = yoctui_model::builtin_raw_catalog();
+    let Some(command) = catalog.command(&form.command) else {
+        frame.render_widget(
+            Paragraph::new("The Raw form command is stale.\n\nq/Esc closes without execution.")
+                .wrap(Wrap { trim: false }),
+            inner,
+        );
+        return;
+    };
+    let sections = Layout::vertical([
+        Constraint::Length(4),
+        Constraint::Min(4),
+        Constraint::Length(3),
+    ])
+    .split(inner);
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Template: {}\nCatalog: {} · Capability generation: {}\nBuild directory: {}",
+            raw_command_template(command),
+            catalog.version,
+            form.capability_generation,
+            form.build_directory.display()
+        ))
+        .wrap(Wrap { trim: false }),
+        sections[0],
+    );
+
+    let total_fields = form.field_order.len().saturating_add(1);
+    let field_rows = 2usize;
+    let visible = usize::from(sections[1].height) / field_rows;
+    let viewport = yoctui_model::centered_viewport_range(
+        Some(form.field_selection.min(total_fields.saturating_sub(1))),
+        total_fields,
+        visible.max(1),
+    );
+    let position =
+        BoundedScrollIndicator::new(viewport.start, viewport.len(), total_fields).label();
+    let palette = ThemePalette::for_app(app);
+    let mut lines = Vec::new();
+    for index in viewport {
+        let selected = index == form.field_selection;
+        let marker = if selected { "▶" } else { " " };
+        if let Some(parameter_id) = form.field_order.get(index) {
+            let Some(parameter) = command
+                .parameters
+                .iter()
+                .find(|parameter| &parameter.id == parameter_id)
+            else {
+                lines.push(Line::from(format!(
+                    "{marker} Stale parameter: {parameter_id}"
+                )));
+                lines.push(Line::from("  The catalog definition is unavailable."));
+                continue;
+            };
+            let Some(field) = form.fields.get(parameter_id) else {
+                lines.push(Line::from(format!("{marker} {}", parameter.label)));
+                lines.push(Line::from("  Form state unavailable."));
+                continue;
+            };
+            let value = if field.editor.text.is_empty() {
+                match parameter.presence {
+                    yoctui_model::RawParameterPresence::Required => "<required>",
+                    yoctui_model::RawParameterPresence::Optional => "<optional>",
+                }
+            } else {
+                &field.editor.text
+            };
+            let mode = if field.editor.editing {
+                "INSERT"
+            } else {
+                "NORMAL"
+            };
+            lines.push(Line::styled(
+                bounded_cell_text(
+                    &format!(
+                        "{marker} {} {} · {} · {} · {mode}",
+                        parameter.label,
+                        parameter.placeholder,
+                        raw_parameter_kind_label(parameter.kind),
+                        raw_parameter_presence_label(parameter.presence)
+                    ),
+                    sections[1].width,
+                ),
+                if selected {
+                    palette.selected()
+                } else {
+                    palette.base()
+                },
+            ));
+            let detail = field.validation_error.as_ref().map_or_else(
+                || {
+                    format!(
+                        "  Value: {value} · {}",
+                        raw_form_selector_text(app, command, parameter)
+                    )
+                },
+                |error| format!("  ERROR: {error} · Value: {value}"),
+            );
+            lines.push(Line::styled(
+                bounded_cell_text(&detail, sections[1].width),
+                field.validation_error.as_ref().map_or_else(
+                    || palette.base(),
+                    |_| palette.role(palette.error, Modifier::BOLD),
+                ),
+            ));
+        } else {
+            let editor = &form.additional_arguments;
+            let value = if editor.editor.text.is_empty() {
+                "<none>"
+            } else {
+                &editor.editor.text
+            };
+            let mode = if editor.editor.editing {
+                "INSERT"
+            } else {
+                "NORMAL"
+            };
+            lines.push(Line::styled(
+                format!("{marker} Additional arguments · {mode}"),
+                if selected {
+                    palette.selected()
+                } else {
+                    palette.base()
+                },
+            ));
+            let detail = editor.validation_error.as_ref().map_or_else(
+                || format!("  Value: {value} · native argv only; no shell evaluation"),
+                |error| format!("  ERROR: {error} · Value: {value}"),
+            );
+            lines.push(Line::styled(
+                bounded_cell_text(&detail, sections[1].width),
+                editor.validation_error.as_ref().map_or_else(
+                    || palette.base(),
+                    |_| palette.role(palette.error, Modifier::BOLD),
+                ),
+            ));
+        }
+    }
+    frame.render_widget(
+        Paragraph::new(lines).block(Block::default().title(format!("Fields · {position}"))),
+        sections[1],
+    );
+    let editing = form
+        .field_order
+        .get(form.field_selection)
+        .and_then(|parameter| form.fields.get(parameter))
+        .map_or(form.additional_arguments.editor.editing, |field| {
+            field.editor.editing
+        });
+    let hints = if editing {
+        "INSERT · type/backspace edit · ←/→ cursor · Esc Normal\nEnter validates and opens exact preview · Tab/Shift+Tab field"
+    } else {
+        "NORMAL · i edit · e replace · ←/→ authoritative selector · Tab/↑/↓ field\nEnter validates and opens exact preview · q/Esc close without execution"
+    };
+    frame.render_widget(
+        Paragraph::new(hints).wrap(Wrap { trim: false }),
+        sections[2],
+    );
+}
+
 pub fn render_raw_execution_preview(
     frame: &mut Frame,
     preview: &yoctui_model::RawExecutionPreview,
@@ -25362,6 +25587,8 @@ mod tests {
         .normalize()
         .unwrap();
         let mut app = App::new(16, 4096);
+        app.workspace.build_dir = Some("/work/build".into());
+        app.build.target = Some("busybox".into());
         yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
         let _ = update(&mut app, Action::Open(Screen::RawMode));
         let _ = update(
@@ -25440,6 +25667,161 @@ mod tests {
         assert!(narrow.contains("[4] café value"), "{narrow}");
         let tiny = rendered_raw_preview(12, 3);
         assert!(tiny.contains("Run Bit"), "{tiny}");
+    }
+
+    #[test]
+    fn raw_form_renders_exact_typed_fields_selectors_and_responsive_focus_trap() {
+        let mut app = raw_command_list_app();
+        set_raw_command_query(&mut app, "--continue <target>");
+        assert_eq!(
+            update(
+                &mut app,
+                Action::RawMode(yoctui_model::RawModeAction::OpenSelected),
+            ),
+            None
+        );
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Form);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let selection = app.raw_mode.command.clone();
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            for expected in [
+                "Run BitBake Command",
+                "Template: bitbake --continue <target>",
+                "Capability generation: 19",
+                "Build directory: /work/build",
+                "Target <target> · Target · Required · NORMAL",
+                "Value: <required>",
+                "Selector: 1 choice (authoritative)",
+                "manual allowed",
+                "Additional arguments",
+                "Enter validates and opens exact preview",
+            ] {
+                assert!(
+                    output.contains(expected),
+                    "{width}x{height} missing {expected:?}: {output}"
+                );
+            }
+            assert_eq!(app.raw_mode.command, selection);
+            assert_eq!(app.focus, FocusTarget::Dialog);
+        }
+        app.color_enabled = false;
+        let no_color = rendered_text(&app, 80, 24);
+        assert!(no_color.contains("NORMAL · i edit"), "{no_color}");
+        assert!(!no_color.contains('�'), "{no_color}");
+    }
+
+    #[test]
+    fn raw_form_routes_manual_selector_and_argv_edits_to_exact_preview() {
+        let mut app = raw_command_list_app();
+        set_raw_command_query(&mut app, "--continue <target>");
+        let _ = update(
+            &mut app,
+            Action::RawMode(yoctui_model::RawModeAction::OpenSelected),
+        );
+
+        let request = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Enter).unwrap();
+        assert_eq!(update(&mut app, Action::RawMode(request)), None);
+        let invalid = rendered_text(&app, 100, 30);
+        assert!(
+            invalid.contains("ERROR: Raw parameter target is required"),
+            "{invalid}"
+        );
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Form);
+
+        let choose = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Right).unwrap();
+        assert!(matches!(
+            choose,
+            yoctui_model::RawModeAction::ChooseParameter { .. }
+        ));
+        let _ = update(&mut app, Action::RawMode(choose));
+        let edit = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Char('e')).unwrap();
+        let _ = update(&mut app, Action::RawMode(edit));
+        for character in "vé".chars() {
+            let action =
+                yoctui_app::raw_mode_input(&app, yoctui_app::Input::Char(character)).unwrap();
+            let _ = update(&mut app, Action::RawMode(action));
+        }
+        let unicode_error = rendered_text(&app, 100, 30);
+        assert!(unicode_error.contains("ERROR:"), "{unicode_error}");
+        assert!(!unicode_error.contains('�'), "{unicode_error}");
+        let normal = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Esc).unwrap();
+        let _ = update(&mut app, Action::RawMode(normal));
+        let choose = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Right).unwrap();
+        let _ = update(&mut app, Action::RawMode(choose));
+
+        let next = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Tab).unwrap();
+        let _ = update(&mut app, Action::RawMode(next));
+        let insert = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Char('i')).unwrap();
+        let _ = update(&mut app, Action::RawMode(insert));
+        for character in "--verbose".chars() {
+            let action =
+                yoctui_app::raw_mode_input(&app, yoctui_app::Input::Char(character)).unwrap();
+            let _ = update(&mut app, Action::RawMode(action));
+        }
+        let preview = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Enter).unwrap();
+        assert_eq!(update(&mut app, Action::RawMode(preview)), None);
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Preview);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        let output = rendered_text(&app, 160, 50);
+        for expected in [
+            "Exact indexed native argv:",
+            "[0] bitbake",
+            "[1] --continue",
+            "[2] busybox",
+            "[3] --verbose",
+        ] {
+            assert!(output.contains(expected), "missing {expected:?}: {output}");
+        }
+
+        let back = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Esc).unwrap();
+        let _ = update(&mut app, Action::RawMode(back));
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Form);
+        let normal = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Esc).unwrap();
+        let _ = update(&mut app, Action::RawMode(normal));
+        let close = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Char('q')).unwrap();
+        let _ = update(&mut app, Action::RawMode(close));
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Browser);
+        assert_eq!(app.focus, FocusTarget::Workspace);
+    }
+
+    #[test]
+    fn raw_form_closes_on_authority_loss_without_preview_or_execution() {
+        for query in ["--show-versions", "grep '^PACKAGES='"] {
+            let mut denied = raw_command_list_app();
+            set_raw_command_query(&mut denied, query);
+            let _ = update(
+                &mut denied,
+                Action::RawMode(yoctui_model::RawModeAction::OpenSelected),
+            );
+            assert_eq!(denied.raw_mode.view, yoctui_model::RawModeView::Browser);
+            assert!(denied.raw_mode.form.is_none());
+            assert!(denied.raw_mode.preview.is_none());
+            assert!(denied.raw_mode.execution.is_none());
+        }
+
+        let mut app = raw_command_list_app();
+        set_raw_command_query(&mut app, "--continue <target>");
+        let _ = update(
+            &mut app,
+            Action::RawMode(yoctui_model::RawModeAction::OpenSelected),
+        );
+        let mut replacement = app.workspace_compatibility.authority().unwrap().clone();
+        replacement.snapshot.generation = 20;
+        replacement.snapshot.environment.build_directory =
+            yoctui_model::AuthoritativeValue::unknown();
+        yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Browser);
+        assert!(app.raw_mode.form.is_none());
+        assert!(app.raw_mode.preview.is_none());
+        assert!(app.raw_mode.execution.is_none());
+        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert!(
+            app.raw_mode
+                .notification
+                .as_deref()
+                .is_some_and(|message| message.contains("build-directory authority was lost"))
+        );
     }
 
     #[test]

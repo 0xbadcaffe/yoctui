@@ -1050,13 +1050,40 @@ pub fn install_workspace_compatibility(
             reason: None,
         });
     }
-    Ok(revalidate_workspace_dialog(app, install))
+    let revalidation = revalidate_workspace_dialog(app, install);
+    reproject_raw_mode_authority(app);
+    Ok(revalidation)
 }
 
 pub fn invalidate_workspace_compatibility(app: &mut App) -> WorkspaceRevalidation {
     app.workspace_compatibility.invalidate();
     app.compatibility_ui.reconcile(None);
-    revalidate_workspace_dialog(app, WorkspaceSnapshotInstall::Invalidated)
+    let revalidation = revalidate_workspace_dialog(app, WorkspaceSnapshotInstall::Invalidated);
+    reproject_raw_mode_authority(app);
+    revalidation
+}
+
+fn reproject_raw_mode_authority(app: &mut App) {
+    let was_raw_modal = app.screen == crate::Screen::RawMode
+        && matches!(
+            app.raw_mode.view,
+            crate::RawModeView::Form | crate::RawModeView::Preview
+        );
+    let authority = app.workspace_compatibility.authority().cloned();
+    crate::reduce_raw_mode(
+        &mut app.raw_mode,
+        crate::builtin_raw_catalog(),
+        authority.as_ref(),
+        crate::RawModeAction::ReprojectAuthority,
+    );
+    let is_raw_modal = app.screen == crate::Screen::RawMode
+        && matches!(
+            app.raw_mode.view,
+            crate::RawModeView::Form | crate::RawModeView::Preview
+        );
+    if was_raw_modal || is_raw_modal {
+        crate::synchronize_focus(app);
+    }
 }
 
 fn revalidate_workspace_dialog(

@@ -11965,8 +11965,14 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
-                } else if app.screen == yoctui_model::Screen::RawMode {
-                    if let Some(action) = raw_mode_input(&app.raw_mode, input) {
+                } else if app.screen == yoctui_model::Screen::RawMode
+                    && (app.focus == yoctui_model::FocusTarget::Workspace
+                        || matches!(
+                            app.raw_mode.view,
+                            yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
+                        ))
+                {
+                    if let Some(action) = raw_mode_input(&app, input) {
                         let _ = compatibility_workspace_action(&mut app, Action::RawMode(action));
                     }
                 } else if app.screen == yoctui_model::Screen::Compatibility {

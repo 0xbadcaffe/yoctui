@@ -4134,6 +4134,18 @@ opens a separate preview and does not execute. `Esc`/`q` closes without work.
 The form remains usable at `80x24`, preserving title, selected field,
 validation, preview action, and close hint.
 
+The form is a modal focus target. In Normal mode `Tab`/`Down`/`j` and
+`Shift+Tab`/`Up`/`k` move between declared fields and the final Additional
+arguments field. `Left`/`Right` chooses the previous/next authoritative
+inventory value when the selected parameter has a selector; otherwise it moves
+the single-line editor cursor. `i` enters Insert mode and `e` selects the whole
+current value and enters Insert mode. Insert mode accepts ordinary text and
+backspace, retains cursor/clipboard navigation, and `Esc` returns to Normal.
+In Normal mode `Esc` or `q` closes without execution. `Enter` from either mode
+validates all fields and additional arguments and, only when valid, opens the
+separate exact preview. Unmapped shell, pane, and global keys are consumed
+while the form or preview is modal.
+
 ### Expert arguments and exact preview
 
 Additional arguments are tokenized into native argv without shell evaluation.

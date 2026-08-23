@@ -2252,6 +2252,7 @@ name = "yoctui-ui"
 version = "0.1.0"
 dependencies = [
  "ratatui",
+ "yoctui-app",
  "yoctui-model",
 ]
 

@@ -5749,7 +5749,10 @@ fn enqueue_build_completion(app: &mut App) {
 fn modal_focus(app: &App) -> Option<FocusTarget> {
     if app.command_palette_open {
         Some(FocusTarget::CommandPalette)
-    } else if dialog_is_open(app) {
+    } else if dialog_is_open(app)
+        || (app.screen == Screen::RawMode
+            && matches!(app.raw_mode.view, RawModeView::Form | RawModeView::Preview))
+    {
         Some(FocusTarget::Dialog)
     } else {
         None

@@ -100,7 +100,16 @@ interaction, safety, typed parameters, and favorite state. Executable,
 disabled, and reference-only records remain explainable with explicit text;
 empty/stale selection, long Unicode authority text, no-color mode, and wide,
 medium-overlay, narrow, and below-minimum rendering are covered.
-`RAW-FORM-UI-001` is active next.
+`RAW-FORM-UI-001` is complete: enabled executable selections open a shared
+focus-trapped `Run BitBake Command` dialog bound to exact catalog, capability,
+and build identities. Typed fields retain bounded Normal/Insert editors,
+current selector/manual authority, inline validation, and the shell-free
+Additional arguments editor; only a valid reducer request reaches the separate
+indexed native-argv preview. Keyboard and pointer focus cannot escape the
+modal, disabled/reference selections remain closed, and authority/build loss
+closes unsafe work without execution. Wide, medium, `80x24`, no-color,
+Unicode, empty/error, selector/manual, preview/back, and replacement paths are
+covered. `RAW-EXEC-MODEL-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
