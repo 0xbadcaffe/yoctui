@@ -2,24 +2,23 @@
 
 ## Task
 
-**ID:** RAW-001
-**Title:** Complete Raw BitBake Command Workbench
-**Status:** IN_PROGRESS
+**ID:** LIVE-UI-POKY-001
+**Title:** Validate redesigned UI against real Poky
+**Status:** BLOCKED
 
 ## Objective
 
-Run the complete Raw workbench completion gate after all required model, UI,
-security, compatibility, live, and documentation tasks are complete.
+The Raw workbench is complete. Global completion is blocked by the separate
+real-Poky redesigned-UI evidence task.
 
 ## Dependencies
 
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
 - `RAW-RESPONSIVE-001` — DONE
-- `RAW-DOC-001` — DONE
-- `RAW-LIVE-001` — DONE
-- `RAW-A11Y-001` — DONE
-- `RAW-MOUSE-001` — DONE
+- `VISUAL-TEST-003` — DONE
+- `PTY-UI-TEST-001` — DONE
+- `PERF-UI-002` — DONE
 
 ## Relevant files
 
@@ -35,14 +34,14 @@ security, compatibility, live, and documentation tasks are complete.
 
 ## Definition of done
 
-- Run `./scripts/verify-completion.sh` and
-  `./scripts/verify-roadmap.sh`.
+- Run `unshare -Ur true` and the live UI evidence harness commands.
 
 ## Verification
 
 ```bash
-./scripts/verify-completion.sh
-./scripts/verify-roadmap.sh
+unshare -Ur true
+YOCTUI_POKY_SOURCE="$PWD/.yoctui-fresh-poky" ./scripts/test-live-next-generation-ui.sh
+./scripts/verify-next-generation-ui-evidence.sh
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

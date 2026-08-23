@@ -186,7 +186,7 @@ active next.
 `RAW-LIVE-001` is complete: the harness records clean local Poky BitBake
 2.12.1/qemux86-64 recipe/dependency inspection, build completion, cancellation,
 reconnect, native-argv read-only, and PTY read-only evidence. `RAW-DOC-001` is
-complete and the Raw parent gate is active; `UI-REGRESSION-001` is complete.
+complete and the Raw parent gate is complete; `UI-REGRESSION-001` is complete.
 `RAW-COMPAT-001` is complete: the older and current live fixture matrices,
 unknown-future evidence, replacement/stale projections, and zero-spawn denial
 checks pass. The global completion gate still has the separately blocked
