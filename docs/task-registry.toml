@@ -5860,18 +5860,18 @@ notes = "Raw favorites default safely for legacy sessions and load only after wh
 id = "RAW-FAVORITE-UI-001"
 milestone = "M20"
 title = "Implement Raw Favorites browser and actions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 624
 required = true
 depends_on = ["RAW-FAVORITE-PERSIST-001", "RAW-FORM-UI-001"]
 verify = ["cargo test -p yoctui-model raw_favorite_ui", "cargo test -p yoctui-app raw_favorite_ui", "cargo test -p yoctui-ui raw_favorite_ui"]
-notes = "Pin Favorites for add/remove/rename/edit/reorder/execute/compatibility inspection without bypassing current capability revalidation."
+notes = "Favorites workspace renders bounded ordered records with template/default/argv and five-state projection; typed inspect, reorder, removal confirmation, fresh-form reopen, and atomic persistence effects never bypass current capability revalidation."
 
 [[task]]
 id = "RAW-SEARCH-001"
 milestone = "M20"
 title = "Search Raw categories commands and descriptions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 625
 required = true
 depends_on = ["RAW-COMMAND-UI-001"]

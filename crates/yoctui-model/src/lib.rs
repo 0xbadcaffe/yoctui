@@ -7884,12 +7884,23 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::RawMode(action) => {
             let authority = app.workspace_compatibility.authority().cloned();
+            let persist_favorites = matches!(
+                action,
+                RawModeAction::ToggleFavorite
+                    | RawModeAction::RenameFavorite { .. }
+                    | RawModeAction::MoveFavorite { .. }
+                    | RawModeAction::RemoveFavorite
+                    | RawModeAction::ConfirmFavorite
+            );
             reduce_raw_mode(
                 &mut app.raw_mode,
                 builtin_raw_catalog(),
                 authority.as_ref(),
                 action,
             );
+            if persist_favorites {
+                return Some(Effect::PersistSettings);
+            }
         }
         Action::EditActivePopup(command) => {
             let (editor, validation_error) = match app.active_dialog_mut() {

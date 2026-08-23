@@ -2487,6 +2487,14 @@ pub enum RawModeAction {
     },
     ActivateFavorite,
     ToggleFavorite,
+    RenameFavorite {
+        name: String,
+    },
+    MoveFavorite {
+        delta: isize,
+    },
+    RemoveFavorite,
+    InspectFavorite,
     ConfirmFavorite,
     CancelFavorite,
     ReprojectCatalog,
@@ -3410,6 +3418,10 @@ pub fn reduce_raw_mode(
         }
         RawModeAction::ActivateFavorite => activate_raw_favorite(state, catalog, authority),
         RawModeAction::ToggleFavorite => toggle_raw_favorite(state, catalog),
+        RawModeAction::RenameFavorite { name } => rename_raw_favorite(state, name),
+        RawModeAction::MoveFavorite { delta } => move_selected_raw_favorite(state, delta),
+        RawModeAction::RemoveFavorite => request_raw_favorite_removal(state),
+        RawModeAction::InspectFavorite => inspect_raw_favorite(state, catalog, authority),
         RawModeAction::ConfirmFavorite => confirm_raw_favorite(state),
         RawModeAction::CancelFavorite => cancel_raw_favorite(state),
         RawModeAction::ReprojectCatalog => reconcile_raw_mode(state, catalog),
@@ -4015,6 +4027,69 @@ fn activate_raw_favorite(
         &favorite.parameter_defaults,
         &favorite.additional_arguments,
     );
+}
+
+fn rename_raw_favorite(state: &mut RawModeState, name: String) {
+    let Some(current) = state.favorites.get(state.favorite_selection).cloned() else {
+        state.notification = Some("No Raw favorite is selected.".into());
+        return;
+    };
+    let replacement = RawFavorite { name, ..current };
+    match update_raw_favorite(&mut state.favorites, replacement) {
+        Ok(()) => state.notification = Some("Raw favorite renamed.".into()),
+        Err(error) => state.notification = Some(error.to_string()),
+    }
+}
+
+fn move_selected_raw_favorite(state: &mut RawModeState, delta: isize) {
+    let Some(current) = state.favorites.get(state.favorite_selection).cloned() else {
+        state.notification = Some("No Raw favorite is selected.".into());
+        return;
+    };
+    match move_raw_favorite(&mut state.favorites, &current.command, delta) {
+        Ok(()) => {
+            state.favorite_selection = state
+                .favorites
+                .iter()
+                .position(|favorite| favorite.command == current.command)
+                .unwrap_or(0);
+            state.notification = Some("Raw favorite order updated.".into());
+        }
+        Err(error) => state.notification = Some(error.to_string()),
+    }
+}
+
+fn request_raw_favorite_removal(state: &mut RawModeState) {
+    let Some(command) = state
+        .favorites
+        .get(state.favorite_selection)
+        .map(|favorite| favorite.command.clone())
+    else {
+        state.notification = Some("No Raw favorite is selected.".into());
+        return;
+    };
+    state.favorite_confirmation = Some(RawFavoriteConfirmation {
+        command,
+        return_focus: state.focus,
+    });
+    state.focus = RawModeFocus::FavoriteConfirmation;
+    state.notification = Some("Confirm removal of the exact Raw favorite.".into());
+}
+
+fn inspect_raw_favorite(
+    state: &mut RawModeState,
+    catalog: &RawCatalog,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+) {
+    let Some(favorite) = state.favorites.get(state.favorite_selection) else {
+        state.notification = Some("No Raw favorite is selected.".into());
+        return;
+    };
+    let projection = favorite.project(catalog, authority);
+    let reason = projection
+        .reason
+        .unwrap_or_else(|| raw_availability_reason(&projection.availability));
+    state.notification = Some(format!("{}: {reason}", favorite.name));
 }
 
 fn toggle_raw_favorite(state: &mut RawModeState, catalog: &RawCatalog) {

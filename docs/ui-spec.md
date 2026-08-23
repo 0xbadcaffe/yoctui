@@ -4246,6 +4246,12 @@ requirement, interaction, and safety class. Opening a current favorite creates
 a fresh form with its defaults and additional argv; it does not create a
 preview or request until the ordinary review flow is completed.
 
+The Favorites workspace is a bounded ordered record view. `↑`/`↓` select,
+`Enter` reopens a current record, `i` inspects its compatibility reason,
+`[`/`]` reorder, and `x` opens the exact-name removal confirmation. The view
+shows the name, reconstructed command template, defaults, additional argv,
+stale marker, and current availability state at narrow and wide widths.
+
 ### Capability and responsive behavior
 
 Every command has an explicit centralized capability requirement. The current

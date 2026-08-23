@@ -3739,6 +3739,10 @@ fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: 
         raw_execution_workspace(frame, app, area, terminal_width);
         return;
     }
+    if app.raw_mode.view == RawModeView::Favorites {
+        raw_favorites_workspace(frame, app, area, terminal_width);
+        return;
+    }
     if app.raw_mode.view != RawModeView::Browser {
         frame.render_widget(
             Paragraph::new("Raw Mode retained view\n\nEsc returns to the catalog browser.")
@@ -3760,6 +3764,102 @@ fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: 
     let columns = Layout::horizontal([Constraint::Percentage(52), Constraint::Min(20)]).split(area);
     raw_category_browser(frame, app, columns[0]);
     raw_command_list(frame, app, columns[1]);
+}
+
+fn raw_favorites_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+    use yoctui_model::RawModeFocus;
+    let catalog = yoctui_model::builtin_raw_catalog();
+    let authority = app.workspace_compatibility.authority();
+    let selected = app.raw_mode.favorite_selection;
+    let count = app.raw_mode.favorites.len();
+    let viewport_height = usize::from(area.height.saturating_sub(4)).max(1);
+    let viewport = yoctui_model::centered_viewport_range(
+        (count > 0).then_some(selected),
+        count,
+        viewport_height,
+    );
+    let position = BoundedScrollIndicator::new(viewport.start, viewport.len(), count).label();
+    let active =
+        app.focus == FocusTarget::Workspace && app.raw_mode.focus == RawModeFocus::Favorites;
+    let title = format!("Raw Mode / Favorites · {position}");
+    let block = pane_block(app, &title, active);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    if app.raw_mode.favorites.is_empty() {
+        frame.render_widget(
+            Paragraph::new("No Raw favorites.\n\nf adds the selected command from the catalog.\nEsc returns to the catalog browser.")
+                .wrap(Wrap { trim: false }),
+            inner,
+        );
+        return;
+    }
+    let width = usize::from(inner.width);
+    let mut lines = Vec::new();
+    for (offset, favorite) in app.raw_mode.favorites[viewport.clone()].iter().enumerate() {
+        let index = viewport.start + offset;
+        let selected_row = index == selected;
+        let projection = favorite.project(catalog, authority);
+        let state = raw_availability_label(projection.availability.state);
+        let stale = if projection.stale { " · STALE" } else { "" };
+        let command = catalog
+            .command(&favorite.command)
+            .map(raw_command_template)
+            .unwrap_or_else(|| "<command absent from current catalog>".into());
+        let prefix = if selected_row { "▶ " } else { "  " };
+        lines.push(Line::raw(bounded_cell_text(
+            &format!("{prefix}{} · {state}{stale}", favorite.name),
+            width as u16,
+        )));
+        lines.push(Line::raw(bounded_cell_text(
+            &format!("    {command}"),
+            width as u16,
+        )));
+        let defaults = if favorite.parameter_defaults.is_empty() {
+            "defaults: --"
+        } else {
+            "defaults: configured"
+        };
+        let argv = if favorite.additional_arguments.as_slice().is_empty() {
+            "argv: --".to_owned()
+        } else {
+            format!(
+                "argv: {}",
+                favorite.additional_arguments.as_slice().join(" ")
+            )
+        };
+        lines.push(Line::raw(bounded_cell_text(
+            &format!("    {defaults} · {argv}"),
+            width as u16,
+        )));
+        lines.push(Line::raw(bounded_cell_text(
+            &format!(
+                "    reason: {}",
+                projection
+                    .reason
+                    .as_deref()
+                    .unwrap_or("Current catalog and capability authority")
+            ),
+            width as u16,
+        )));
+    }
+    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
+    let footer = if terminal_width < 100 {
+        "Enter reopen · i inspect · r rename · o reorder · x remove · Esc back"
+    } else {
+        "Enter reopen · i inspect · r rename · ↑/↓ reorder · x remove · Esc back"
+    };
+    if inner.height > 1 {
+        let footer_area = Rect {
+            x: inner.x,
+            y: inner.y + inner.height.saturating_sub(1),
+            width: inner.width,
+            height: 1,
+        };
+        frame.render_widget(Paragraph::new(footer), footer_area);
+    }
 }
 
 fn raw_execution_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {

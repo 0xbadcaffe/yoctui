@@ -12284,6 +12284,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(action) = raw_mode_input(&app, input) {
                         let effect =
                             compatibility_workspace_action(&mut app, Action::RawMode(action));
+                        if matches!(effect.as_ref(), Some(Effect::PersistSettings)) {
+                            let favorites = app.raw_mode.favorites.clone();
+                            if let Err(error) = persist_raw_favorites(
+                                session_path.as_deref(),
+                                &mut session,
+                                &favorites,
+                            ) {
+                                app.notification =
+                                    Some(format!("Raw favorites could not be saved: {error}"));
+                            }
+                        }
                         if let Some(
                             effect @ (Effect::StartRaw(_)
                             | Effect::CancelRaw(_)

@@ -174,7 +174,12 @@ installation or persistence. The reader rejects symlinks and files above 1 MiB;
 the writer validates/serializes first, uses a unique mode-`0600` temporary,
 syncs file and directory around atomic rename, and preserves the prior file and
 unrelated preferences on failure. Valid stale template digests remain explicit
-rather than being discarded or upgraded. `RAW-FAVORITE-UI-001` is active next.
+rather than being discarded or upgraded. `RAW-FAVORITE-UI-001` now renders the
+dedicated bounded Favorites workspace with typed inspect, reorder,
+removal-confirmation, and fresh-form reopen actions. Rows retain stale records
+and show template/default/argv details plus the current five-state
+compatibility projection; mutations emit the existing atomic session
+persistence effect.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

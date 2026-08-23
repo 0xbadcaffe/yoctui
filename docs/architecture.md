@@ -2890,6 +2890,10 @@ five-state daemon availability used by the command browser; no availability or
 execution authority is stored in the favorite. Activating a current favorite
 creates a new form populated with defaults and argv under the current capability
 generation/build identity, with no preview, request, owner, or process state.
+The Favorites workspace renders the bounded ordered collection directly from
+typed projections; inspect, reorder, removal-confirmation, and reopen actions
+remain reducer transitions. Mutations return the normal atomic session
+persistence effect and never touch project files or daemon state.
 `session.toml` defaults missing favorite data for legacy sessions, but validates
 the complete favorite collection before app installation or replacement. The
 session reader rejects symlinks and files above 1 MiB. The writer validates and
