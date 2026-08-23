@@ -5893,18 +5893,18 @@ notes = "Raw category, command, Favorites, and history clicks/wheel events use b
 id = "RAW-RESPONSIVE-001"
 milestone = "M20"
 title = "Implement Raw Mode responsive layouts"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 627
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-FAVORITE-UI-001", "RAW-SEARCH-001"]
 verify = ["cargo test -p yoctui-ui raw_responsive"]
-notes = "Verify wide category/command/help composition, medium Inspector replacement, narrow pane switching, dialogs, output, and too-small safety."
+notes = "Wide, medium, narrow, and below-minimum Raw layouts preserve category/command/help composition, pane switching, dialogs, output, and exact too-small safety without panic."
 
 [[task]]
 id = "RAW-A11Y-001"
 milestone = "M20"
 title = "Verify Raw Mode accessibility"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 628
 required = true
 depends_on = ["RAW-RESPONSIVE-001"]

@@ -26720,7 +26720,7 @@ mod tests {
     }
 
     #[test]
-    fn raw_navigation_renders_responsively_with_exact_shell_help() {
+    fn raw_responsive_navigation_renders_with_exact_shell_help() {
         let mut app = App::new(16, 4096);
         let _ = update(&mut app, Action::Open(Screen::RawMode));
         for (width, height) in [(160, 40), (100, 30), (80, 24)] {

@@ -2,20 +2,20 @@
 
 ## Task
 
-**ID:** RAW-RESPONSIVE-001
-**Title:** Implement Raw Mode responsive layouts
+**ID:** RAW-A11Y-001
+**Title:** Verify Raw Mode accessibility
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify wide category/command/help composition, medium Inspector replacement,
-narrow pane switching, dialogs, output, and too-small terminal safety.
+Preserve focus, selection, availability, safety, favorite, job, and PTY meaning
+in every theme, no-color, high-contrast, and reduced-motion mode.
 
 ## Dependencies
 
-- `RAW-OUTPUT-UI-001` — DONE
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
+- `RAW-RESPONSIVE-001` — DONE
 
 ## Relevant files
 
@@ -31,15 +31,14 @@ narrow pane switching, dialogs, output, and too-small terminal safety.
 
 ## Definition of done
 
-- Wide, medium, narrow, and below-minimum layouts render without panic.
-- Inspector replacement and pane switching preserve exact selection and focus.
-- TestBackend tests cover dialogs, output, forms, Favorites, and responsive
-  text at supported widths.
+- Every Raw state retains semantic text and explicit focus without color.
+- Dialog and PTY traps remain isolated from global shortcuts.
+- TestBackend tests cover themes, no-color, reduced motion, and bounds.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui raw_responsive
+cargo test -p yoctui-ui raw_accessibility
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
