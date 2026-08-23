@@ -87,7 +87,13 @@ category viewport with explicit position and textual `FAVORITES`, `BITBAKE`,
 one active browser column and medium/wide terminals preserve both column
 states. Keyboard aliases, no-color meaning, long labels, empty selection,
 first/last bounds, and resize/search identity preservation are covered.
-`RAW-COMMAND-UI-001` is active next.
+`RAW-COMMAND-UI-001` is complete: the command column consumes the reducer's
+exact category, Favorites, or search projection and renders stable catalog
+templates with textual `RUN`/`REF`, five-state capability, and favorite
+markers. Selection and centered scrolling stay bounded across empty, stale,
+large, Unicode, first/last, no-color, and responsive states; reference-only
+rows remain inspectable without opening an execution form. `RAW-HELP-UI-001`
+is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

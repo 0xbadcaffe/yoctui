@@ -2,18 +2,18 @@
 
 ## Task
 
-**ID:** RAW-COMMAND-UI-001
-**Title:** Implement Raw command list
+**ID:** RAW-HELP-UI-001
+**Title:** Implement selection-following Raw command help
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Replace the Raw command-column placeholder with a bounded typed list of the
-exact catalog entries visible for the selected category or active search.
+Replace the Raw Inspector placeholder with bounded help derived exclusively
+from the exact highlighted catalog record and current capability authority.
 
 ## Dependencies
 
-- `RAW-CATEGORY-UI-001` — DONE
+- `RAW-COMMAND-UI-001` — DONE
 
 ## Relevant files
 
@@ -27,27 +27,30 @@ exact catalog entries visible for the selected category or active search.
 
 ## Definition of done
 
-- The command column consumes `RawModeState::visible_commands` and renders the
-  exact catalog template/identity for the selected category; Favorites uses
-  the retained stable-ID order and search uses the reducer's exact projection.
-- Every row has textual favorite state and current five-state capability
-  availability without inferring support in the widget.
-- Executable and reference-only entries remain visibly distinct, selectable,
-  and bounded; disabled/reference entries do not become runnable.
-- Up/Down and `j`/`k` select exact stable command identities; Left/`h` returns
-  to categories and Right/`l`/Enter preserve the command-column state.
-- Empty, first, last, long Unicode, large result, and catalog-replacement states
-  show explicit bounded position and never panic.
-- Wide/medium render categories and commands together; narrow renders only the
-  active column with explicit back/forward text and preserves selection on
-  resize.
-- TestBackend tests cover exact labels/templates, favorite/capability markers,
-  reference-only meaning, bounds, no-color accessibility, and responsive state.
+- The Inspector follows the exact highlighted stable command identity and
+  clears explicitly when no command is selected; search, category, catalog,
+  and capability changes update it immediately without cached prose.
+- Content is rendered in the specified order: exact reference description and
+  section, exact template, five-state capability with authoritative reason and
+  selected implementation, interaction mode, safety class, typed parameter
+  definitions, and textual favorite state.
+- Executable, disabled, and reference-only entries remain selectable and
+  explainable; the widget never infers support or suggests that inert shell,
+  filesystem, companion, or conceptual reference entries can run.
+- Long Unicode descriptions, reasons, implementations, templates, and
+  parameter help wrap or clip within bounds without panicking or losing
+  explicit textual meaning in no-color mode.
+- Wide and medium layouts show selection-following help in the Inspector;
+  narrow layouts expose the same content through the existing Inspector
+  overlay without changing command selection or browser focus.
+- TestBackend tests cover every help field and five-state availability, exact
+  selected-record following, empty/stale states, reference-only meaning,
+  responsive rendering, bounds, and no-color accessibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui raw_command_list
+cargo test -p yoctui-ui raw_command_help
 cargo clippy -p yoctui-model -p yoctui-app -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
