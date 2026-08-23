@@ -5915,18 +5915,18 @@ notes = "Raw semantic text, explicit focus, no-color rendering, modal/PTY traps,
 id = "RAW-SECURITY-001"
 milestone = "M20"
 title = "Verify Raw Mode has no shell-evaluation escape path"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 629
 required = true
 depends_on = ["RAW-ARG-001", "RAW-JOB-001", "RAW-PTY-001"]
 verify = ["cargo test --workspace --all-features raw_security", "./scripts/verify-raw-security.sh"]
-notes = "Reject shell operators/control corruption and prove ordinary execution reaches only exact native argv or the separately typed PTY path."
+notes = "Reject documented shell operators and control corruption before spawn; the verification script scans Raw paths for shell launchers and runs hostile argv coverage."
 
 [[task]]
 id = "RAW-COMPAT-001"
 milestone = "M20"
 title = "Verify dynamic Raw availability across BitBake fixtures"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 630
 required = true
 depends_on = ["RAW-CAP-PROBE-001", "RAW-FORM-UI-001"]

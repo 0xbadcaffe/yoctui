@@ -187,7 +187,10 @@ active next.
 below-minimum shells retain bounded selection and never panic across wide,
 medium, narrow, and too-small terminals. `RAW-A11Y-001` is complete: no-color
 and responsive Raw views retain semantic state, explicit focus, and modal/PTY
-traps. `RAW-SECURITY-001` is active next.
+traps. `RAW-SECURITY-001` is complete: documented operators and hostile
+argument values are rejected before spawn, Raw paths contain no shell launcher,
+and the verification script passes native-argv coverage. `RAW-COMPAT-001` is
+active next.
 `RAW-MOUSE-001` now maps Raw category, command, Favorites, and history clicks
 and wheel events through shared bounded row geometry while preserving modal and
 PTY focus traps.

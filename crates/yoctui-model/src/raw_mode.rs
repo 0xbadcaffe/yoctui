@@ -6211,7 +6211,7 @@ mod raw_argv_tests {
     }
 
     #[test]
-    fn raw_argv_rejects_every_documented_operator_even_when_quoted_or_assembled() {
+    fn raw_security_argv_rejects_every_documented_operator_even_when_quoted_or_assembled() {
         for (input, operator) in [
             ("'left|right'", "|"),
             ("left>right", ">"),

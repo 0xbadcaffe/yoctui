@@ -2,23 +2,23 @@
 
 ## Task
 
-**ID:** RAW-SECURITY-001
-**Title:** Verify Raw Mode has no shell-evaluation escape path
+**ID:** RAW-COMPAT-001
+**Title:** Verify dynamic Raw availability across BitBake fixtures
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Reject shell operators and control corruption and prove ordinary execution
-reaches only exact native argv or the separately typed PTY path.
+Exercise older, Wrynose 2.18, unknown-future, unavailable, limited,
+replacement, stale, and denial-with-zero-spawn behavior.
 
 ## Dependencies
 
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
 - `RAW-RESPONSIVE-001` — DONE
-- `RAW-ARG-001` — DONE
-- `RAW-JOB-001` — DONE
-- `RAW-PTY-001` — DONE
+- `RAW-CAP-PROBE-001` — DONE
+- `RAW-FORM-UI-001` — DONE
+- `RAW-SECURITY-001` — DONE
 
 ## Relevant files
 
@@ -34,16 +34,15 @@ reaches only exact native argv or the separately typed PTY path.
 
 ## Definition of done
 
-- Shell operators, substitutions, control bytes, and malformed arguments are
-  rejected before process creation.
-- Native argv and typed PTY execution remain separate and exact.
-- Security tests cover hostile values and zero-spawn denial paths.
+- Fixture authority snapshots classify all five availability states exactly.
+- Replacement and stale projections close unsafe forms without spawn effects.
+- Compatibility tests cover old, current, and unknown-future evidence.
 
 ## Verification
 
 ```bash
-cargo test --workspace --all-features raw_security
-./scripts/verify-raw-security.sh
+cargo test --workspace --all-features raw_compatibility
+./scripts/verify-compatibility.sh
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
