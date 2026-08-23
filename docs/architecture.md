@@ -2778,6 +2778,35 @@ the same daemon sequence/generation journal. Unknown required catalog IDs,
 interaction classes, safety classes, or parameter kinds fail closed; additive
 optional presentation fields may follow negotiated minor-version rules.
 
+The implemented lifecycle slice uses five opaque, prefix-checked Raw identity
+families for request, job, PTY session, output stream, and durable reference;
+generic build-job and PTY identifiers cannot be decoded into them. A confirmed
+model request is created only by re-rendering the catalog template from the
+typed preview request and comparing the exact executable, indexed native argv,
+interaction, and safety projections. Its SHA-256 digest covers that indexed
+review material with length-delimited fields, while the request itself omits
+executable and joined-command authority.
+
+`RawExecutionState` is a pure queued/starting/running/cancelling/terminal
+reducer with exact daemon sequence and generation correlation. It retains only
+typed job-or-session ownership, attachment state, cancellation intent, elapsed
+time, bounded stdout/stderr replicas, terminal result, and optional durable
+reference—never PID, process group, file descriptor, writer lease, or command
+handle. Each output stream has a disjoint identity and sequence plus independent
+byte/line retention, drop, and truncation counters. Duplicate/stale correlation
+is inert, gaps and invalid transitions reject without partial mutation, and
+validated reconnect snapshots replace replicas atomically.
+
+Wire schema version 1 mirrors requests, lifecycle events, chunks, results, and
+full reconnect snapshots with independent element and byte limits. Required
+wire enums include an explicit unknown state that conversion rejects. The
+daemon snapshot journal validates and atomically replaces newer Raw replicas;
+stale replacements and duplicate request identities fail closed. `yoctui-app`
+is the sole mechanical wire/model mapper and installs only a completely valid
+bounded snapshot set. The later Raw runner and PTY tasks will consume these
+types to reconstruct daemon-owned native commands; this slice does not spawn a
+process or grant the client execution authority.
+
 `yoctui-app` maps keyboard/mouse input to Raw reducer actions, maps daemon Raw
 events mechanically, and translates validated effects into typed daemon
 requests. The compatibility-aware reducer runs before request preparation and

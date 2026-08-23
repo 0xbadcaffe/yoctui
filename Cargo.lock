@@ -2224,6 +2224,7 @@ version = "0.1.0"
 dependencies = [
  "proptest",
  "serde",
+ "sha2",
  "thiserror 2.0.19",
  "vt100",
 ]

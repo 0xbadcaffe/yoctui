@@ -109,7 +109,18 @@ indexed native-argv preview. Keyboard and pointer focus cannot escape the
 modal, disabled/reference selections remain closed, and authority/build loss
 closes unsafe work without execution. Wide, medium, `80x24`, no-color,
 Unicode, empty/error, selector/manual, preview/back, and replacement paths are
-covered. `RAW-EXEC-MODEL-001` is active next.
+covered. `RAW-EXEC-MODEL-001` is complete: five disjoint prefix-checked Raw
+identity families, catalog-reconstructed confirmed intent, length-delimited
+SHA-256 preview digests, and a pure correlated lifecycle now cover queued,
+starting, running, cancelling, success, failure, cancellation, loss, elapsed
+time, detach/reattach, exact job-or-PTY ownership, durable references, and
+independently bounded stdout/stderr. Versioned bounded request, event, chunk,
+result, and reconnect DTOs reject unknown required variants, malformed or
+cross-kind identities, stale replacement, duplicate identity, Unicode byte
+overflow, and inconsistent snapshots. The app performs only mechanical
+wire/model conversion and atomically installs valid daemon replicas; no client
+request contains executable, joined-command, PID, writer, or process authority.
+`RAW-JOB-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

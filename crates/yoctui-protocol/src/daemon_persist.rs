@@ -482,6 +482,7 @@ mod tests {
             },
             compatibility: None,
             jobs: Vec::new(),
+            raw_executions: Vec::new(),
             pty_sessions: Vec::new(),
             pty_screens: Vec::new(),
             clients: Vec::new(),

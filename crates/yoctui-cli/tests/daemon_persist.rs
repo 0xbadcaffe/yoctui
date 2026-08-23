@@ -149,6 +149,7 @@ fn daemon_recovery_restores_history_but_marks_live_work_lost() {
             progress_total: Some(8),
             exit_code: None,
         }],
+        raw_executions: Vec::new(),
         pty_sessions: vec![PtySessionSummary {
             id: PtySessionId(6),
             name: "devshell".into(),
@@ -260,6 +261,7 @@ fn reboot_recovery_exposes_only_typed_explicit_relaunch_intent() {
         },
         compatibility: None,
         jobs: Vec::new(),
+        raw_executions: Vec::new(),
         pty_sessions: vec![PtySessionSummary {
             id: PtySessionId(9),
             name: "sdk-shell".into(),

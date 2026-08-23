@@ -3,8 +3,9 @@ use crate::{
     Recipe, RecipeMetadata,
 };
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::{BTreeMap, BTreeSet, VecDeque},
     path::{Component, Path, PathBuf},
     sync::OnceLock,
 };
@@ -40,6 +41,12 @@ pub const MAX_RAW_SEARCH_BYTES: usize = 512;
 pub const MAX_RAW_FAVORITES: usize = 256;
 pub const MAX_RAW_HISTORY_STUBS: usize = 256;
 pub const MAX_RAW_VIEW_DEPTH: usize = 8;
+pub const MAX_RAW_EXECUTION_ID_BYTES: usize = 96;
+pub const MAX_RAW_EXECUTION_REQUESTS: usize = 64;
+pub const MAX_RAW_EXECUTION_MESSAGE_BYTES: usize = 4_096;
+pub const MAX_RAW_OUTPUT_CHUNK_BYTES: usize = 64 * 1_024;
+pub const MAX_RAW_OUTPUT_RETAINED_BYTES: usize = 1_024 * 1_024;
+pub const MAX_RAW_OUTPUT_RETAINED_LINES: usize = 10_000;
 
 pub fn builtin_raw_catalog() -> &'static RawCatalog {
     static CATALOG: OnceLock<RawCatalog> = OnceLock::new();
@@ -622,6 +629,1173 @@ pub struct RawExecutionPreview {
     pub limitations: Vec<String>,
 }
 
+macro_rules! raw_execution_id {
+    ($name:ident, $prefix:literal, $kind:literal) => {
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        #[serde(transparent)]
+        pub struct $name(String);
+
+        impl $name {
+            pub fn new(value: impl Into<String>) -> Result<Self, RawExecutionError> {
+                let value = value.into();
+                let token = value.strip_prefix($prefix).ok_or_else(|| {
+                    RawExecutionError::InvalidIdentity {
+                        kind: $kind,
+                        value: value.clone(),
+                    }
+                })?;
+                if value.len() > MAX_RAW_EXECUTION_ID_BYTES
+                    || token.is_empty()
+                    || !token.bytes().all(|byte| {
+                        byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-')
+                    })
+                {
+                    return Err(RawExecutionError::InvalidIdentity { kind: $kind, value });
+                }
+                Ok(Self(value))
+            }
+
+            pub fn as_str(&self) -> &str {
+                &self.0
+            }
+        }
+
+        impl TryFrom<&str> for $name {
+            type Error = RawExecutionError;
+
+            fn try_from(value: &str) -> Result<Self, Self::Error> {
+                Self::new(value)
+            }
+        }
+
+        impl std::fmt::Display for $name {
+            fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                formatter.write_str(&self.0)
+            }
+        }
+    };
+}
+
+raw_execution_id!(RawRequestId, "raw-request:", "request");
+raw_execution_id!(RawJobId, "raw-job:", "job");
+raw_execution_id!(RawSessionId, "raw-session:", "session");
+raw_execution_id!(RawStreamId, "raw-stream:", "stream");
+raw_execution_id!(RawDurableReferenceId, "raw-durable:", "durable reference");
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct RawPreviewDigest(pub [u8; 32]);
+
+impl RawPreviewDigest {
+    pub fn from_preview(preview: &RawExecutionPreview) -> Self {
+        let mut digest = Sha256::new();
+        raw_digest_field(&mut digest, &preview.catalog_version.to_be_bytes());
+        raw_digest_field(&mut digest, preview.command.as_str().as_bytes());
+        raw_digest_field(&mut digest, preview.executable.as_str().as_bytes());
+        raw_digest_field(&mut digest, &preview.capability_generation.to_be_bytes());
+        raw_digest_field(
+            &mut digest,
+            preview.build_directory.as_os_str().as_encoded_bytes(),
+        );
+        raw_digest_field(
+            &mut digest,
+            raw_interaction_name(preview.interaction).as_bytes(),
+        );
+        raw_digest_field(&mut digest, raw_safety_name(preview.safety).as_bytes());
+        for argument in &preview.indexed_arguments {
+            raw_digest_field(&mut digest, &argument.index.to_be_bytes());
+            raw_digest_field(&mut digest, argument.value.as_bytes());
+            match argument.source {
+                RawPreviewArgumentSource::Executable => {
+                    raw_digest_field(&mut digest, b"executable")
+                }
+                RawPreviewArgumentSource::Template { index } => {
+                    raw_digest_field(&mut digest, b"template");
+                    raw_digest_field(&mut digest, &index.to_be_bytes());
+                }
+                RawPreviewArgumentSource::Additional { index } => {
+                    raw_digest_field(&mut digest, b"additional");
+                    raw_digest_field(&mut digest, &index.to_be_bytes());
+                }
+            }
+        }
+        Self(digest.finalize().into())
+    }
+
+    pub fn to_hex(self) -> String {
+        self.0.iter().map(|byte| format!("{byte:02x}")).collect()
+    }
+
+    pub fn from_hex(value: &str) -> Result<Self, RawExecutionError> {
+        if value.len() != 64 || !value.bytes().all(|byte| byte.is_ascii_hexdigit()) {
+            return Err(RawExecutionError::InvalidPreviewDigest);
+        }
+        let mut bytes = [0; 32];
+        for (index, byte) in bytes.iter_mut().enumerate() {
+            *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)
+                .map_err(|_| RawExecutionError::InvalidPreviewDigest)?;
+        }
+        Ok(Self(bytes))
+    }
+}
+
+fn raw_digest_field(digest: &mut Sha256, value: &[u8]) {
+    digest.update((value.len() as u64).to_be_bytes());
+    digest.update(value);
+}
+
+const fn raw_interaction_name(interaction: RawInteractionMode) -> &'static str {
+    match interaction {
+        RawInteractionMode::NoninteractiveJob => "noninteractive_job",
+        RawInteractionMode::InteractivePty => "interactive_pty",
+    }
+}
+
+const fn raw_safety_name(safety: RawSafetyClass) -> &'static str {
+    match safety {
+        RawSafetyClass::Inspection => "inspection",
+        RawSafetyClass::Build => "build",
+        RawSafetyClass::MetadataMutation => "metadata_mutation",
+        RawSafetyClass::Destructive => "destructive",
+        RawSafetyClass::ServerLifecycle => "server_lifecycle",
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawConfirmedExecutionRequest {
+    pub id: RawRequestId,
+    pub catalog_version: u16,
+    pub command: RawCommandId,
+    pub parameters: BTreeMap<RawParameterId, RawParameterValue>,
+    pub additional_arguments: Vec<String>,
+    pub interaction: RawInteractionMode,
+    pub safety: RawSafetyClass,
+    pub capability_generation: u64,
+    pub build_directory: PathBuf,
+    pub preview_digest: RawPreviewDigest,
+}
+
+impl RawConfirmedExecutionRequest {
+    pub fn from_reviewed_preview(
+        id: RawRequestId,
+        catalog: &RawCatalog,
+        request: &RawPreviewRequest,
+        preview: &RawExecutionPreview,
+    ) -> Result<Self, RawExecutionError> {
+        if request.catalog_version != preview.catalog_version
+            || request.command != preview.command
+            || request.capability_generation != preview.capability_generation
+            || request.build_directory != preview.build_directory
+        {
+            return Err(RawExecutionError::PreviewRequestMismatch);
+        }
+        catalog
+            .validate()
+            .map_err(|error| RawExecutionError::InvalidReviewedPreview(error.to_string()))?;
+        if catalog.version != request.catalog_version {
+            return Err(RawExecutionError::PreviewRequestMismatch);
+        }
+        let command = catalog
+            .command(&request.command)
+            .ok_or(RawExecutionError::InvalidCommand)?;
+        let RawExecutionPolicy::Executable { template } = &command.execution else {
+            return Err(RawExecutionError::InvalidCommand);
+        };
+        validate_raw_preview_parameters(command, &request.parameters)
+            .map_err(|error| RawExecutionError::InvalidReviewedPreview(error.to_string()))?;
+        if request.parameters.len() > MAX_RAW_PARAMETERS {
+            return Err(RawExecutionError::TooManyParameters);
+        }
+        request.additional_arguments.validate()?;
+        validate_raw_execution_build_directory(&request.build_directory)?;
+        let mut arguments = Vec::new();
+        let mut indexed_arguments = vec![RawPreviewArgument {
+            index: 0,
+            value: template.executable.as_str().into(),
+            source: RawPreviewArgumentSource::Executable,
+        }];
+        for (template_index, argument) in template.arguments.iter().enumerate() {
+            if let Some(value) = render_raw_template_argument(argument, &request.parameters) {
+                push_raw_preview_argument(
+                    &mut arguments,
+                    &mut indexed_arguments,
+                    value,
+                    RawPreviewArgumentSource::Template {
+                        index: template_index,
+                    },
+                )
+                .map_err(|error| RawExecutionError::InvalidReviewedPreview(error.to_string()))?;
+            }
+        }
+        for (additional_index, value) in request.additional_arguments.as_slice().iter().enumerate()
+        {
+            push_raw_preview_argument(
+                &mut arguments,
+                &mut indexed_arguments,
+                value.clone(),
+                RawPreviewArgumentSource::Additional {
+                    index: additional_index,
+                },
+            )
+            .map_err(|error| RawExecutionError::InvalidReviewedPreview(error.to_string()))?;
+        }
+        if preview.executable != template.executable
+            || preview.interaction != template.interaction
+            || preview.safety != template.safety
+            || preview.arguments != arguments
+            || preview.indexed_arguments != indexed_arguments
+        {
+            return Err(RawExecutionError::PreviewRequestMismatch);
+        }
+        Ok(Self {
+            id,
+            catalog_version: request.catalog_version,
+            command: request.command.clone(),
+            parameters: request.parameters.clone(),
+            additional_arguments: request.additional_arguments.as_slice().to_vec(),
+            interaction: preview.interaction,
+            safety: preview.safety,
+            capability_generation: request.capability_generation,
+            build_directory: request.build_directory.clone(),
+            preview_digest: RawPreviewDigest::from_preview(preview),
+        })
+    }
+
+    pub fn validate(&self) -> Result<(), RawExecutionError> {
+        RawRequestId::new(self.id.as_str())?;
+        RawCommandId::new(self.command.as_str()).map_err(|_| RawExecutionError::InvalidCommand)?;
+        if self.catalog_version == 0 || self.capability_generation == 0 {
+            return Err(RawExecutionError::InvalidAuthority);
+        }
+        if self.parameters.len() > MAX_RAW_PARAMETERS {
+            return Err(RawExecutionError::TooManyParameters);
+        }
+        for (parameter, value) in &self.parameters {
+            RawParameterId::new(parameter.as_str())
+                .map_err(|_| RawExecutionError::InvalidParameterValue)?;
+            validate_raw_execution_parameter_value(value)?;
+        }
+        RawAdditionalArguments::from_vec(self.additional_arguments.clone())?;
+        validate_raw_execution_build_directory(&self.build_directory)?;
+        Ok(())
+    }
+}
+
+fn validate_raw_execution_parameter_value(
+    value: &RawParameterValue,
+) -> Result<(), RawExecutionError> {
+    let valid = match value {
+        RawParameterValue::Recipe(value) => valid_raw_identifier(value, MAX_RAW_RECIPE_BYTES),
+        RawParameterValue::Image(value) => valid_raw_identifier(value, MAX_RAW_IMAGE_BYTES),
+        RawParameterValue::Target(value) => valid_raw_target(value),
+        RawParameterValue::Task(value) => valid_raw_identifier(value, MAX_RAW_TASK_BYTES),
+        RawParameterValue::UserInterface(value) => valid_raw_identifier(value, MAX_RAW_UI_BYTES),
+        RawParameterValue::File(value) => valid_raw_file(value),
+        RawParameterValue::Integer(_) => true,
+        RawParameterValue::Text(value) => valid_raw_text_parameter(value),
+        RawParameterValue::Multiconfig(value) => {
+            valid_raw_identifier(value, MAX_RAW_MULTICONFIG_BYTES)
+        }
+    };
+    if !valid {
+        return Err(RawExecutionError::InvalidParameterValue);
+    }
+    Ok(())
+}
+
+fn validate_raw_execution_build_directory(path: &Path) -> Result<(), RawExecutionError> {
+    if !path.is_absolute()
+        || path.as_os_str().as_encoded_bytes().len() > MAX_RAW_FILE_BYTES
+        || path
+            .components()
+            .any(|component| matches!(component, Component::CurDir | Component::ParentDir))
+    {
+        return Err(RawExecutionError::InvalidBuildDirectory);
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawOutputStream {
+    Stdout,
+    Stderr,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawOutputChunk {
+    pub stream_id: RawStreamId,
+    pub stream: RawOutputStream,
+    pub sequence: u64,
+    pub text: String,
+    pub truncated_bytes: u64,
+    pub dropped_lines: u64,
+}
+
+impl RawOutputChunk {
+    pub fn validate(&self) -> Result<(), RawExecutionError> {
+        RawStreamId::new(self.stream_id.as_str())?;
+        if self.sequence == 0 || self.text.len() > MAX_RAW_OUTPUT_CHUNK_BYTES {
+            return Err(RawExecutionError::InvalidOutputChunk);
+        }
+        Ok(())
+    }
+
+    fn line_count(&self) -> usize {
+        raw_output_line_count(&self.text)
+    }
+}
+
+fn raw_output_line_count(text: &str) -> usize {
+    if text.is_empty() {
+        0
+    } else {
+        text.bytes().filter(|byte| *byte == b'\n').count() + usize::from(!text.ends_with('\n'))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawRetainedOutput {
+    pub stream_id: RawStreamId,
+    pub stream: RawOutputStream,
+    pub chunks: VecDeque<RawOutputChunk>,
+    pub next_sequence: u64,
+    pub retained_bytes: usize,
+    pub retained_lines: usize,
+    pub dropped_bytes: u64,
+    pub dropped_lines: u64,
+    pub truncated_chunks: u64,
+}
+
+impl RawRetainedOutput {
+    pub fn new(stream_id: RawStreamId, stream: RawOutputStream) -> Self {
+        Self {
+            stream_id,
+            stream,
+            chunks: VecDeque::new(),
+            next_sequence: 1,
+            retained_bytes: 0,
+            retained_lines: 0,
+            dropped_bytes: 0,
+            dropped_lines: 0,
+            truncated_chunks: 0,
+        }
+    }
+
+    fn append(&mut self, chunk: RawOutputChunk) -> Result<bool, RawExecutionError> {
+        chunk.validate()?;
+        if chunk.stream_id != self.stream_id || chunk.stream != self.stream {
+            return Err(RawExecutionError::WrongOutputStream);
+        }
+        if chunk.sequence < self.next_sequence {
+            return Ok(false);
+        }
+        if chunk.sequence != self.next_sequence {
+            return Err(RawExecutionError::OutputGap {
+                expected: self.next_sequence,
+                actual: chunk.sequence,
+            });
+        }
+        self.next_sequence = self
+            .next_sequence
+            .checked_add(1)
+            .ok_or(RawExecutionError::SequenceExhausted)?;
+        self.retained_bytes = self.retained_bytes.saturating_add(chunk.text.len());
+        self.retained_lines = self.retained_lines.saturating_add(chunk.line_count());
+        self.dropped_bytes = self.dropped_bytes.saturating_add(chunk.truncated_bytes);
+        self.dropped_lines = self.dropped_lines.saturating_add(chunk.dropped_lines);
+        self.truncated_chunks = self
+            .truncated_chunks
+            .saturating_add(u64::from(chunk.truncated_bytes > 0));
+        self.chunks.push_back(chunk);
+        while self.retained_bytes > MAX_RAW_OUTPUT_RETAINED_BYTES
+            || self.retained_lines > MAX_RAW_OUTPUT_RETAINED_LINES
+        {
+            let Some(removed) = self.chunks.pop_front() else {
+                break;
+            };
+            let removed_bytes = removed.text.len();
+            let removed_lines = removed.line_count();
+            self.retained_bytes = self.retained_bytes.saturating_sub(removed_bytes);
+            self.retained_lines = self.retained_lines.saturating_sub(removed_lines);
+            self.dropped_bytes = self.dropped_bytes.saturating_add(removed_bytes as u64);
+            self.dropped_lines = self.dropped_lines.saturating_add(removed_lines as u64);
+        }
+        Ok(true)
+    }
+
+    pub fn validate(&self) -> Result<(), RawExecutionError> {
+        RawStreamId::new(self.stream_id.as_str())?;
+        if self.next_sequence == 0
+            || self.retained_bytes > MAX_RAW_OUTPUT_RETAINED_BYTES
+            || self.retained_lines > MAX_RAW_OUTPUT_RETAINED_LINES
+            || self.retained_bytes != self.chunks.iter().map(|chunk| chunk.text.len()).sum()
+            || self.retained_lines != self.chunks.iter().map(RawOutputChunk::line_count).sum()
+        {
+            return Err(RawExecutionError::InvalidOutputSnapshot);
+        }
+        let mut expected = self
+            .chunks
+            .front()
+            .map(|chunk| chunk.sequence)
+            .unwrap_or(self.next_sequence);
+        for chunk in &self.chunks {
+            chunk.validate()?;
+            if chunk.stream_id != self.stream_id
+                || chunk.stream != self.stream
+                || chunk.sequence != expected
+            {
+                return Err(RawExecutionError::InvalidOutputSnapshot);
+            }
+            expected = expected
+                .checked_add(1)
+                .ok_or(RawExecutionError::SequenceExhausted)?;
+        }
+        if expected != self.next_sequence {
+            return Err(RawExecutionError::InvalidOutputSnapshot);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "id", rename_all = "snake_case")]
+pub enum RawExecutionOwner {
+    Job(RawJobId),
+    Pty(RawSessionId),
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawExecutionOutcome {
+    Succeeded,
+    Failed,
+    Cancelled,
+    Lost,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "state", content = "outcome", rename_all = "snake_case")]
+pub enum RawExecutionPhase {
+    Queued,
+    Starting,
+    Running,
+    Cancelling,
+    Terminal(RawExecutionOutcome),
+}
+
+impl RawExecutionPhase {
+    pub const fn is_terminal(self) -> bool {
+        matches!(self, Self::Terminal(_))
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawAttachmentState {
+    Attached,
+    Detached,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct RawEventCursor {
+    pub sequence: u64,
+    pub generation: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionResult {
+    pub outcome: RawExecutionOutcome,
+    pub exit_code: Option<i32>,
+    pub message: Option<String>,
+    pub elapsed_ms: u64,
+    pub durable_reference: Option<RawDurableReferenceId>,
+}
+
+impl RawExecutionResult {
+    pub fn validate(&self) -> Result<(), RawExecutionError> {
+        if self
+            .message
+            .as_ref()
+            .is_some_and(|message| message.len() > MAX_RAW_EXECUTION_MESSAGE_BYTES)
+        {
+            return Err(RawExecutionError::ResultMessageTooLong);
+        }
+        if let Some(reference) = &self.durable_reference {
+            RawDurableReferenceId::new(reference.as_str())?;
+        }
+        match (self.outcome, self.exit_code) {
+            (RawExecutionOutcome::Succeeded, Some(0))
+            | (RawExecutionOutcome::Failed, Some(_))
+            | (RawExecutionOutcome::Failed, None)
+            | (RawExecutionOutcome::Cancelled, Some(_))
+            | (RawExecutionOutcome::Cancelled, None)
+            | (RawExecutionOutcome::Lost, None) => Ok(()),
+            (RawExecutionOutcome::Succeeded, Some(_))
+            | (RawExecutionOutcome::Succeeded, None)
+            | (RawExecutionOutcome::Lost, Some(_)) => Err(RawExecutionError::InvalidResult),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionState {
+    pub request: RawConfirmedExecutionRequest,
+    pub phase: RawExecutionPhase,
+    pub attachment: RawAttachmentState,
+    pub owner: Option<RawExecutionOwner>,
+    pub cancellation_requested: bool,
+    pub queued_unix_ms: u64,
+    pub started_unix_ms: Option<u64>,
+    pub elapsed_ms: u64,
+    pub result: Option<RawExecutionResult>,
+    pub stdout: RawRetainedOutput,
+    pub stderr: RawRetainedOutput,
+    pub cursor: RawEventCursor,
+}
+
+impl RawExecutionState {
+    pub fn queued(
+        request: RawConfirmedExecutionRequest,
+        stdout: RawStreamId,
+        stderr: RawStreamId,
+        queued_unix_ms: u64,
+        cursor: RawEventCursor,
+    ) -> Result<Self, RawExecutionError> {
+        request.validate()?;
+        if stdout == stderr {
+            return Err(RawExecutionError::DuplicateStreamIdentity);
+        }
+        let state = Self {
+            request,
+            phase: RawExecutionPhase::Queued,
+            attachment: RawAttachmentState::Attached,
+            owner: None,
+            cancellation_requested: false,
+            queued_unix_ms,
+            started_unix_ms: None,
+            elapsed_ms: 0,
+            result: None,
+            stdout: RawRetainedOutput::new(stdout, RawOutputStream::Stdout),
+            stderr: RawRetainedOutput::new(stderr, RawOutputStream::Stderr),
+            cursor,
+        };
+        state.validate()?;
+        Ok(state)
+    }
+
+    pub fn validate(&self) -> Result<(), RawExecutionError> {
+        self.request.validate()?;
+        self.stdout.validate()?;
+        self.stderr.validate()?;
+        if self.stdout.stream_id == self.stderr.stream_id
+            || self.stdout.stream != RawOutputStream::Stdout
+            || self.stderr.stream != RawOutputStream::Stderr
+        {
+            return Err(RawExecutionError::DuplicateStreamIdentity);
+        }
+        if let Some(owner) = &self.owner {
+            match owner {
+                RawExecutionOwner::Job(id) => {
+                    RawJobId::new(id.as_str())?;
+                    if self.request.interaction != RawInteractionMode::NoninteractiveJob {
+                        return Err(RawExecutionError::WrongOwnerKind);
+                    }
+                }
+                RawExecutionOwner::Pty(id) => {
+                    RawSessionId::new(id.as_str())?;
+                    if self.request.interaction != RawInteractionMode::InteractivePty {
+                        return Err(RawExecutionError::WrongOwnerKind);
+                    }
+                }
+            }
+        }
+        match (self.phase, &self.result) {
+            (RawExecutionPhase::Terminal(outcome), Some(result)) if outcome == result.outcome => {
+                result.validate()?;
+                if self.elapsed_ms != result.elapsed_ms {
+                    return Err(RawExecutionError::InvalidResult);
+                }
+            }
+            (RawExecutionPhase::Terminal(_), _) | (_, Some(_)) => {
+                return Err(RawExecutionError::InvalidResult);
+            }
+            _ => {}
+        }
+        match self.phase {
+            RawExecutionPhase::Queued if self.owner.is_some() || self.started_unix_ms.is_some() => {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            RawExecutionPhase::Starting
+                if self.owner.is_none() || self.started_unix_ms.is_some() =>
+            {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            RawExecutionPhase::Running
+                if self.owner.is_none() || self.started_unix_ms.is_none() =>
+            {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            RawExecutionPhase::Cancelling
+                if !self.cancellation_requested
+                    || self.started_unix_ms.is_some() && self.owner.is_none() =>
+            {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            RawExecutionPhase::Terminal(RawExecutionOutcome::Cancelled)
+                if !self.cancellation_requested =>
+            {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionEvent {
+    pub request_id: RawRequestId,
+    pub sequence: u64,
+    pub generation: u64,
+    pub kind: RawExecutionEventKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum RawExecutionEventKind {
+    Starting { owner: RawExecutionOwner },
+    Running { started_unix_ms: u64 },
+    CancellationRequested,
+    Cancelling,
+    AttachmentChanged { attachment: RawAttachmentState },
+    Elapsed { elapsed_ms: u64 },
+    Output { chunk: RawOutputChunk },
+    Finished { result: RawExecutionResult },
+}
+
+pub fn reduce_raw_execution(
+    state: &mut RawExecutionState,
+    event: RawExecutionEvent,
+) -> Result<bool, RawExecutionError> {
+    if event.request_id != state.request.id {
+        return Err(RawExecutionError::WrongRequest);
+    }
+    if event.sequence <= state.cursor.sequence || event.generation <= state.cursor.generation {
+        return Ok(false);
+    }
+    let expected_sequence = state
+        .cursor
+        .sequence
+        .checked_add(1)
+        .ok_or(RawExecutionError::SequenceExhausted)?;
+    let expected_generation = state
+        .cursor
+        .generation
+        .checked_add(1)
+        .ok_or(RawExecutionError::GenerationExhausted)?;
+    if event.sequence != expected_sequence || event.generation != expected_generation {
+        return Err(RawExecutionError::EventGap {
+            expected_sequence,
+            actual_sequence: event.sequence,
+            expected_generation,
+            actual_generation: event.generation,
+        });
+    }
+    let mut next = state.clone();
+    match event.kind {
+        RawExecutionEventKind::Starting { owner } => {
+            if next.phase != RawExecutionPhase::Queued {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            next.owner = Some(owner);
+            next.phase = RawExecutionPhase::Starting;
+        }
+        RawExecutionEventKind::Running { started_unix_ms } => {
+            if next.phase != RawExecutionPhase::Starting || next.owner.is_none() {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            next.started_unix_ms = Some(started_unix_ms);
+            next.phase = RawExecutionPhase::Running;
+        }
+        RawExecutionEventKind::CancellationRequested => {
+            if next.phase.is_terminal() {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            next.cancellation_requested = true;
+        }
+        RawExecutionEventKind::Cancelling => {
+            if !next.cancellation_requested
+                || !matches!(
+                    next.phase,
+                    RawExecutionPhase::Queued
+                        | RawExecutionPhase::Starting
+                        | RawExecutionPhase::Running
+                )
+            {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            next.phase = RawExecutionPhase::Cancelling;
+        }
+        RawExecutionEventKind::AttachmentChanged { attachment } => {
+            next.attachment = attachment;
+        }
+        RawExecutionEventKind::Elapsed { elapsed_ms } => {
+            if next.phase.is_terminal() || elapsed_ms < next.elapsed_ms {
+                return Err(RawExecutionError::InvalidElapsed);
+            }
+            next.elapsed_ms = elapsed_ms;
+        }
+        RawExecutionEventKind::Output { chunk } => {
+            if !matches!(
+                next.phase,
+                RawExecutionPhase::Starting
+                    | RawExecutionPhase::Running
+                    | RawExecutionPhase::Cancelling
+            ) {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            match chunk.stream {
+                RawOutputStream::Stdout => {
+                    if !next.stdout.append(chunk)? {
+                        return Ok(false);
+                    }
+                }
+                RawOutputStream::Stderr => {
+                    if !next.stderr.append(chunk)? {
+                        return Ok(false);
+                    }
+                }
+            }
+        }
+        RawExecutionEventKind::Finished { result } => {
+            result.validate()?;
+            if next.phase.is_terminal()
+                || (result.outcome == RawExecutionOutcome::Cancelled
+                    && !next.cancellation_requested)
+                || (result.outcome == RawExecutionOutcome::Succeeded
+                    && next.phase != RawExecutionPhase::Running)
+            {
+                return Err(RawExecutionError::InvalidLifecycle);
+            }
+            next.elapsed_ms = result.elapsed_ms;
+            next.phase = RawExecutionPhase::Terminal(result.outcome);
+            next.result = Some(result);
+        }
+    }
+    next.cursor = RawEventCursor {
+        sequence: event.sequence,
+        generation: event.generation,
+    };
+    next.validate()?;
+    *state = next;
+    Ok(true)
+}
+
+pub fn replace_raw_execution_snapshot(
+    state: &mut Option<RawExecutionState>,
+    replacement: RawExecutionState,
+) -> Result<bool, RawExecutionError> {
+    replacement.validate()?;
+    if let Some(current) = state
+        && current.request.id == replacement.request.id
+        && (replacement.cursor.sequence <= current.cursor.sequence
+            || replacement.cursor.generation <= current.cursor.generation)
+    {
+        return Ok(false);
+    }
+    *state = Some(replacement);
+    Ok(true)
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum RawExecutionError {
+    #[error("invalid Raw {kind} identity: {value:?}")]
+    InvalidIdentity { kind: &'static str, value: String },
+    #[error("invalid Raw command identity")]
+    InvalidCommand,
+    #[error("Raw execution authority must use nonzero catalog and capability generations")]
+    InvalidAuthority,
+    #[error("Raw preview and preview request do not describe the same reviewed work")]
+    PreviewRequestMismatch,
+    #[error("Raw reviewed preview is invalid: {0}")]
+    InvalidReviewedPreview(String),
+    #[error("Raw preview digest is not a 32-byte hexadecimal SHA-256 digest")]
+    InvalidPreviewDigest,
+    #[error("Raw execution contains too many typed parameters")]
+    TooManyParameters,
+    #[error("Raw execution contains an invalid typed parameter value")]
+    InvalidParameterValue,
+    #[error("Raw execution build directory is not a bounded absolute normalized identity")]
+    InvalidBuildDirectory,
+    #[error(transparent)]
+    InvalidAdditionalArguments(#[from] RawArgvError),
+    #[error("Raw stdout and stderr must use distinct stream identities")]
+    DuplicateStreamIdentity,
+    #[error("Raw execution owner does not match its interaction class")]
+    WrongOwnerKind,
+    #[error("Raw output chunk is empty-sequence or exceeds its byte bound")]
+    InvalidOutputChunk,
+    #[error("Raw output chunk names the wrong typed stream")]
+    WrongOutputStream,
+    #[error("Raw output sequence gap: expected {expected}, got {actual}")]
+    OutputGap { expected: u64, actual: u64 },
+    #[error("Raw output snapshot is inconsistent or exceeds retained bounds")]
+    InvalidOutputSnapshot,
+    #[error("Raw execution event belongs to a different request")]
+    WrongRequest,
+    #[error(
+        "Raw execution event gap: expected sequence/generation {expected_sequence}/{expected_generation}, got {actual_sequence}/{actual_generation}"
+    )]
+    EventGap {
+        expected_sequence: u64,
+        actual_sequence: u64,
+        expected_generation: u64,
+        actual_generation: u64,
+    },
+    #[error("Raw execution event sequence is exhausted")]
+    SequenceExhausted,
+    #[error("Raw execution generation is exhausted")]
+    GenerationExhausted,
+    #[error("invalid Raw execution lifecycle transition")]
+    InvalidLifecycle,
+    #[error("Raw execution elapsed time moved backwards or changed after termination")]
+    InvalidElapsed,
+    #[error("Raw execution result is inconsistent with its outcome")]
+    InvalidResult,
+    #[error("Raw execution result message exceeds its byte bound")]
+    ResultMessageTooLong,
+}
+
+#[cfg(test)]
+mod raw_execution_tests {
+    use super::*;
+
+    fn request_and_preview(
+        interaction: RawInteractionMode,
+    ) -> (RawCatalog, RawPreviewRequest, RawExecutionPreview) {
+        let mut catalog = super::raw_preview_tests::catalog();
+        let RawExecutionPolicy::Executable { template } =
+            &mut catalog.commands.first_mut().unwrap().execution
+        else {
+            unreachable!();
+        };
+        template.interaction = interaction;
+        let mut request = super::raw_preview_tests::request();
+        request.additional_arguments =
+            RawAdditionalArguments::from_vec(vec!["--dry-run".into()]).unwrap();
+        let preview = catalog
+            .preview(
+                &request,
+                Some(&super::raw_preview_tests::authority(
+                    request.capability_generation,
+                    true,
+                )),
+            )
+            .unwrap();
+        (catalog, request, preview)
+    }
+
+    fn confirmed(interaction: RawInteractionMode) -> RawConfirmedExecutionRequest {
+        let (catalog, request, preview) = request_and_preview(interaction);
+        RawConfirmedExecutionRequest::from_reviewed_preview(
+            RawRequestId::new("raw-request:test-1").unwrap(),
+            &catalog,
+            &request,
+            &preview,
+        )
+        .unwrap()
+    }
+
+    fn queued(interaction: RawInteractionMode) -> RawExecutionState {
+        RawExecutionState::queued(
+            confirmed(interaction),
+            RawStreamId::new("raw-stream:stdout-1").unwrap(),
+            RawStreamId::new("raw-stream:stderr-1").unwrap(),
+            100,
+            RawEventCursor::default(),
+        )
+        .unwrap()
+    }
+
+    fn apply(state: &mut RawExecutionState, kind: RawExecutionEventKind) {
+        reduce_raw_execution(
+            state,
+            RawExecutionEvent {
+                request_id: state.request.id.clone(),
+                sequence: state.cursor.sequence + 1,
+                generation: state.cursor.generation + 1,
+                kind,
+            },
+        )
+        .unwrap();
+    }
+
+    #[test]
+    fn raw_execution_identities_are_bounded_disjoint_and_digest_is_deterministic() {
+        assert!(RawRequestId::new("raw-request:one").is_ok());
+        assert!(RawRequestId::new("raw-job:one").is_err());
+        assert!(RawJobId::new("raw-request:one").is_err());
+        assert!(RawSessionId::new("raw-session:").is_err());
+        assert!(RawStreamId::new("raw-stream:bad/token").is_err());
+        assert!(
+            RawDurableReferenceId::new(format!(
+                "raw-durable:{}",
+                "x".repeat(MAX_RAW_EXECUTION_ID_BYTES)
+            ))
+            .is_err()
+        );
+
+        let (catalog, request, preview) =
+            request_and_preview(RawInteractionMode::NoninteractiveJob);
+        let first = RawConfirmedExecutionRequest::from_reviewed_preview(
+            RawRequestId::new("raw-request:one").unwrap(),
+            &catalog,
+            &request,
+            &preview,
+        )
+        .unwrap();
+        let second = RawPreviewDigest::from_preview(&preview);
+        assert_eq!(first.preview_digest, second);
+        assert_eq!(
+            RawPreviewDigest::from_hex(&second.to_hex()).unwrap(),
+            second
+        );
+        assert_eq!(second.to_hex().len(), 64);
+        assert!(!second.to_hex().contains("bitbake"));
+
+        let mut forged = preview.clone();
+        forged.arguments[0] = "forged".into();
+        assert_eq!(
+            RawConfirmedExecutionRequest::from_reviewed_preview(
+                RawRequestId::new("raw-request:forged").unwrap(),
+                &catalog,
+                &request,
+                &forged,
+            ),
+            Err(RawExecutionError::PreviewRequestMismatch)
+        );
+
+        let mut mismatched = preview;
+        mismatched.capability_generation += 1;
+        assert_eq!(
+            RawConfirmedExecutionRequest::from_reviewed_preview(
+                RawRequestId::new("raw-request:two").unwrap(),
+                &catalog,
+                &request,
+                &mismatched,
+            ),
+            Err(RawExecutionError::PreviewRequestMismatch)
+        );
+    }
+
+    #[test]
+    fn raw_execution_reducer_covers_job_lifecycle_output_detach_and_success() {
+        let mut state = queued(RawInteractionMode::NoninteractiveJob);
+        apply(
+            &mut state,
+            RawExecutionEventKind::Starting {
+                owner: RawExecutionOwner::Job(RawJobId::new("raw-job:one").unwrap()),
+            },
+        );
+        apply(
+            &mut state,
+            RawExecutionEventKind::Running {
+                started_unix_ms: 125,
+            },
+        );
+        let stdout = state.stdout.stream_id.clone();
+        apply(
+            &mut state,
+            RawExecutionEventKind::Output {
+                chunk: RawOutputChunk {
+                    stream_id: stdout,
+                    stream: RawOutputStream::Stdout,
+                    sequence: 1,
+                    text: "héllo\n".into(),
+                    truncated_bytes: 3,
+                    dropped_lines: 1,
+                },
+            },
+        );
+        apply(
+            &mut state,
+            RawExecutionEventKind::AttachmentChanged {
+                attachment: RawAttachmentState::Detached,
+            },
+        );
+        apply(
+            &mut state,
+            RawExecutionEventKind::AttachmentChanged {
+                attachment: RawAttachmentState::Attached,
+            },
+        );
+        apply(
+            &mut state,
+            RawExecutionEventKind::AttachmentChanged {
+                attachment: RawAttachmentState::Detached,
+            },
+        );
+        apply(
+            &mut state,
+            RawExecutionEventKind::Elapsed { elapsed_ms: 80 },
+        );
+        apply(
+            &mut state,
+            RawExecutionEventKind::Finished {
+                result: RawExecutionResult {
+                    outcome: RawExecutionOutcome::Succeeded,
+                    exit_code: Some(0),
+                    message: Some("complete".into()),
+                    elapsed_ms: 90,
+                    durable_reference: Some(
+                        RawDurableReferenceId::new("raw-durable:history-1").unwrap(),
+                    ),
+                },
+            },
+        );
+        assert_eq!(
+            state.phase,
+            RawExecutionPhase::Terminal(RawExecutionOutcome::Succeeded)
+        );
+        assert_eq!(state.attachment, RawAttachmentState::Detached);
+        assert_eq!(state.stdout.retained_bytes, "héllo\n".len());
+        assert_eq!(state.stdout.dropped_bytes, 3);
+        assert_eq!(state.stdout.dropped_lines, 1);
+        assert_eq!(state.elapsed_ms, 90);
+        assert!(state.validate().is_ok());
+    }
+
+    #[test]
+    fn raw_execution_cancellation_pty_and_fail_closed_correlation_are_exact() {
+        let mut state = queued(RawInteractionMode::InteractivePty);
+        apply(
+            &mut state,
+            RawExecutionEventKind::Starting {
+                owner: RawExecutionOwner::Pty(
+                    RawSessionId::new("raw-session:interactive-1").unwrap(),
+                ),
+            },
+        );
+        apply(
+            &mut state,
+            RawExecutionEventKind::Running {
+                started_unix_ms: 101,
+            },
+        );
+        apply(&mut state, RawExecutionEventKind::CancellationRequested);
+        apply(&mut state, RawExecutionEventKind::Cancelling);
+        let before = state.clone();
+        let stale = RawExecutionEvent {
+            request_id: state.request.id.clone(),
+            sequence: state.cursor.sequence,
+            generation: state.cursor.generation,
+            kind: RawExecutionEventKind::Elapsed { elapsed_ms: 999 },
+        };
+        assert!(!reduce_raw_execution(&mut state, stale).unwrap());
+        assert_eq!(state, before);
+
+        let gap = RawExecutionEvent {
+            request_id: state.request.id.clone(),
+            sequence: state.cursor.sequence + 2,
+            generation: state.cursor.generation + 2,
+            kind: RawExecutionEventKind::Elapsed { elapsed_ms: 999 },
+        };
+        assert!(matches!(
+            reduce_raw_execution(&mut state, gap),
+            Err(RawExecutionError::EventGap { .. })
+        ));
+        assert_eq!(state, before);
+
+        apply(
+            &mut state,
+            RawExecutionEventKind::Finished {
+                result: RawExecutionResult {
+                    outcome: RawExecutionOutcome::Cancelled,
+                    exit_code: None,
+                    message: None,
+                    elapsed_ms: 50,
+                    durable_reference: None,
+                },
+            },
+        );
+        assert_eq!(
+            state.phase,
+            RawExecutionPhase::Terminal(RawExecutionOutcome::Cancelled)
+        );
+    }
+
+    #[test]
+    fn raw_execution_streams_are_independently_bounded_and_snapshots_reject_corruption() {
+        let mut output = RawRetainedOutput::new(
+            RawStreamId::new("raw-stream:bounded").unwrap(),
+            RawOutputStream::Stdout,
+        );
+        for sequence in 1..=20 {
+            output
+                .append(RawOutputChunk {
+                    stream_id: output.stream_id.clone(),
+                    stream: RawOutputStream::Stdout,
+                    sequence,
+                    text: "界".repeat(MAX_RAW_OUTPUT_CHUNK_BYTES / 3),
+                    truncated_bytes: 0,
+                    dropped_lines: 0,
+                })
+                .unwrap();
+        }
+        assert!(output.retained_bytes <= MAX_RAW_OUTPUT_RETAINED_BYTES);
+        assert!(output.retained_lines <= MAX_RAW_OUTPUT_RETAINED_LINES);
+        assert!(output.dropped_bytes > 0);
+        assert!(output.validate().is_ok());
+
+        let mut corrupt = queued(RawInteractionMode::NoninteractiveJob);
+        corrupt.stdout.retained_bytes = 1;
+        let mut installed = Some(queued(RawInteractionMode::NoninteractiveJob));
+        let before = installed.clone();
+        assert_eq!(
+            replace_raw_execution_snapshot(&mut installed, corrupt),
+            Err(RawExecutionError::InvalidOutputSnapshot)
+        );
+        assert_eq!(installed, before);
+
+        let oversized = RawOutputChunk {
+            stream_id: RawStreamId::new("raw-stream:oversized").unwrap(),
+            stream: RawOutputStream::Stderr,
+            sequence: 1,
+            text: "é".repeat(MAX_RAW_OUTPUT_CHUNK_BYTES / 2 + 1),
+            truncated_bytes: 0,
+            dropped_lines: 0,
+        };
+        assert_eq!(
+            oversized.validate(),
+            Err(RawExecutionError::InvalidOutputChunk)
+        );
+    }
+
+    #[test]
+    fn raw_execution_terminal_failure_and_loss_paths_validate() {
+        for (outcome, exit_code) in [
+            (RawExecutionOutcome::Failed, Some(2)),
+            (RawExecutionOutcome::Lost, None),
+        ] {
+            let mut state = queued(RawInteractionMode::NoninteractiveJob);
+            apply(
+                &mut state,
+                RawExecutionEventKind::Finished {
+                    result: RawExecutionResult {
+                        outcome,
+                        exit_code,
+                        message: Some("terminal".into()),
+                        elapsed_ms: 1,
+                        durable_reference: None,
+                    },
+                },
+            );
+            assert_eq!(state.phase, RawExecutionPhase::Terminal(outcome));
+        }
+    }
+}
+
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum RawPreviewError {
     #[error("Raw preview catalog is invalid: {0}")]
@@ -739,6 +1913,7 @@ pub struct RawModeState {
     pub form: Option<RawCommandForm>,
     pub preview: Option<RawExecutionPreview>,
     pub execution: Option<RawCommandId>,
+    pub execution_states: BTreeMap<RawRequestId, RawExecutionState>,
     pub history: Vec<RawCommandId>,
     pub history_selection: usize,
     pub favorites: Vec<RawCommandId>,
@@ -1258,6 +2433,7 @@ impl RawModeState {
             form: None,
             preview: None,
             execution: None,
+            execution_states: BTreeMap::new(),
             history: Vec::new(),
             history_selection: 0,
             favorites: Vec::new(),
@@ -3504,7 +4680,7 @@ mod raw_preview_tests {
         RawParameterId::new(value).unwrap()
     }
 
-    fn catalog() -> RawCatalog {
+    pub(super) fn catalog() -> RawCatalog {
         RawCatalog {
             version: 7,
             categories: vec![RawCategory {
@@ -3595,7 +4771,7 @@ mod raw_preview_tests {
         .unwrap()
     }
 
-    fn authority(generation: u64, available: bool) -> DaemonCompatibilitySnapshot {
+    pub(super) fn authority(generation: u64, available: bool) -> DaemonCompatibilitySnapshot {
         let state = if available {
             CapabilityState::AvailableWithLimitations {
                 reason: CapabilityReason::new(
@@ -3658,7 +4834,7 @@ mod raw_preview_tests {
         .unwrap()
     }
 
-    fn request() -> RawPreviewRequest {
+    pub(super) fn request() -> RawPreviewRequest {
         RawPreviewRequest {
             catalog_version: 7,
             command: RawCommandId::new("preview.run").unwrap(),

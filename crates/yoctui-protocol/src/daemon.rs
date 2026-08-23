@@ -28,6 +28,20 @@ pub const MAX_COMPATIBILITY_EVIDENCE: usize = 32;
 pub const MAX_COMPATIBILITY_ITEMS: usize = 256;
 pub const MAX_COMPATIBILITY_TEXT_BYTES: usize = 4_096;
 pub const MAX_COMPATIBILITY_ARGV: usize = 64;
+pub const RAW_EXECUTION_SCHEMA_VERSION: u16 = 1;
+pub const MAX_RAW_EXECUTION_ID_BYTES: usize = 96;
+pub const MAX_RAW_EXECUTION_REQUESTS: usize = 64;
+pub const MAX_RAW_EXECUTION_PARAMETERS: usize = 32;
+pub const MAX_RAW_EXECUTION_PARAMETER_ID_BYTES: usize = 96;
+pub const MAX_RAW_EXECUTION_PARAMETER_BYTES: usize = 4_096;
+pub const MAX_RAW_EXECUTION_ARGUMENTS: usize = 64;
+pub const MAX_RAW_EXECUTION_ARGUMENT_BYTES: usize = 512;
+pub const MAX_RAW_EXECUTION_ARGUMENT_AGGREGATE_BYTES: usize = 8_192;
+pub const MAX_RAW_EXECUTION_BUILD_DIRECTORY_BYTES: usize = 4_096;
+pub const MAX_RAW_EXECUTION_OUTPUT_CHUNK_BYTES: usize = 64 * 1_024;
+pub const MAX_RAW_EXECUTION_RETAINED_BYTES: usize = 1_024 * 1_024;
+pub const MAX_RAW_EXECUTION_RETAINED_LINES: usize = 10_000;
+pub const MAX_RAW_EXECUTION_MESSAGE_BYTES: usize = 4_096;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProtocolVersion {
@@ -55,6 +69,579 @@ pub struct PtySessionId(pub u64);
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PaneId(pub u64);
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionRequestData {
+    pub schema_version: u16,
+    pub request_id: String,
+    pub catalog_version: u16,
+    pub command_id: String,
+    pub parameters: Vec<RawExecutionParameterData>,
+    pub additional_arguments: Vec<String>,
+    pub interaction: RawInteractionData,
+    pub safety: RawSafetyData,
+    pub capability_generation: u64,
+    pub build_directory: String,
+    pub preview_digest: String,
+}
+
+impl RawExecutionRequestData {
+    pub fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        validate_raw_schema(self.schema_version)?;
+        validate_raw_identity(&self.request_id, "raw-request:", "request")?;
+        validate_raw_catalog_id(&self.command_id, "command")?;
+        if self.catalog_version == 0 || self.capability_generation == 0 {
+            return Err(RawExecutionProtocolError::InvalidAuthority);
+        }
+        if self.parameters.len() > MAX_RAW_EXECUTION_PARAMETERS {
+            return Err(RawExecutionProtocolError::TooManyParameters);
+        }
+        let mut parameter_ids = std::collections::BTreeSet::new();
+        for parameter in &self.parameters {
+            parameter.validate()?;
+            if !parameter_ids.insert(&parameter.id) {
+                return Err(RawExecutionProtocolError::DuplicateParameter);
+            }
+        }
+        validate_raw_arguments(&self.additional_arguments)?;
+        validate_raw_absolute_path(&self.build_directory)?;
+        if self.preview_digest.len() != 64
+            || !self
+                .preview_digest
+                .bytes()
+                .all(|byte| byte.is_ascii_hexdigit())
+        {
+            return Err(RawExecutionProtocolError::InvalidPreviewDigest);
+        }
+        if matches!(self.interaction, RawInteractionData::Unknown)
+            || matches!(self.safety, RawSafetyData::Unknown)
+        {
+            return Err(RawExecutionProtocolError::UnknownRequiredVariant);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionParameterData {
+    pub id: String,
+    pub value: RawParameterValueData,
+}
+
+impl RawExecutionParameterData {
+    fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        validate_raw_catalog_id(&self.id, "parameter")?;
+        let bytes = match &self.value {
+            RawParameterValueData::Recipe(value)
+            | RawParameterValueData::Image(value)
+            | RawParameterValueData::Target(value)
+            | RawParameterValueData::Task(value)
+            | RawParameterValueData::UserInterface(value)
+            | RawParameterValueData::File(value)
+            | RawParameterValueData::Text(value)
+            | RawParameterValueData::Multiconfig(value) => value.len(),
+            RawParameterValueData::Integer(_) => 1,
+            RawParameterValueData::Unknown => {
+                return Err(RawExecutionProtocolError::UnknownRequiredVariant);
+            }
+        };
+        if bytes == 0 || bytes > MAX_RAW_EXECUTION_PARAMETER_BYTES {
+            return Err(RawExecutionProtocolError::InvalidParameter);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+pub enum RawParameterValueData {
+    Recipe(String),
+    Image(String),
+    Target(String),
+    Task(String),
+    UserInterface(String),
+    File(String),
+    Integer(u32),
+    Text(String),
+    Multiconfig(String),
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawInteractionData {
+    NoninteractiveJob,
+    InteractivePty,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawSafetyData {
+    Inspection,
+    Build,
+    MetadataMutation,
+    Destructive,
+    ServerLifecycle,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "id", rename_all = "snake_case")]
+pub enum RawExecutionOwnerData {
+    Job(String),
+    Pty(String),
+    #[serde(other)]
+    Unknown,
+}
+
+impl RawExecutionOwnerData {
+    fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        match self {
+            Self::Job(id) => validate_raw_identity(id, "raw-job:", "job"),
+            Self::Pty(id) => validate_raw_identity(id, "raw-session:", "session"),
+            Self::Unknown => Err(RawExecutionProtocolError::UnknownRequiredVariant),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawOutputStreamData {
+    Stdout,
+    Stderr,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawOutputChunkData {
+    pub schema_version: u16,
+    pub stream_id: String,
+    pub stream: RawOutputStreamData,
+    pub sequence: u64,
+    pub text: String,
+    pub truncated_bytes: u64,
+    pub dropped_lines: u64,
+}
+
+impl RawOutputChunkData {
+    pub fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        validate_raw_schema(self.schema_version)?;
+        validate_raw_identity(&self.stream_id, "raw-stream:", "stream")?;
+        if self.sequence == 0
+            || self.text.len() > MAX_RAW_EXECUTION_OUTPUT_CHUNK_BYTES
+            || matches!(self.stream, RawOutputStreamData::Unknown)
+        {
+            return Err(RawExecutionProtocolError::InvalidOutputChunk);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawExecutionOutcomeData {
+    Succeeded,
+    Failed,
+    Cancelled,
+    Lost,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionResultData {
+    pub schema_version: u16,
+    pub outcome: RawExecutionOutcomeData,
+    pub exit_code: Option<i32>,
+    pub message: Option<String>,
+    pub elapsed_ms: u64,
+    pub durable_reference: Option<String>,
+}
+
+impl RawExecutionResultData {
+    pub fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        validate_raw_schema(self.schema_version)?;
+        if matches!(self.outcome, RawExecutionOutcomeData::Unknown) {
+            return Err(RawExecutionProtocolError::UnknownRequiredVariant);
+        }
+        if self
+            .message
+            .as_ref()
+            .is_some_and(|message| message.len() > MAX_RAW_EXECUTION_MESSAGE_BYTES)
+        {
+            return Err(RawExecutionProtocolError::ResultMessageTooLong);
+        }
+        if let Some(reference) = &self.durable_reference {
+            validate_raw_identity(reference, "raw-durable:", "durable reference")?;
+        }
+        if matches!(self.outcome, RawExecutionOutcomeData::Lost) && self.exit_code.is_some() {
+            return Err(RawExecutionProtocolError::InvalidResult);
+        }
+        if matches!(self.outcome, RawExecutionOutcomeData::Succeeded) && self.exit_code != Some(0) {
+            return Err(RawExecutionProtocolError::InvalidResult);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawAttachmentData {
+    Attached,
+    Detached,
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
+pub enum RawExecutionEventKindData {
+    Starting {
+        owner: RawExecutionOwnerData,
+    },
+    Running {
+        started_unix_ms: u64,
+    },
+    CancellationRequested,
+    Cancelling,
+    AttachmentChanged {
+        attachment: RawAttachmentData,
+    },
+    Elapsed {
+        elapsed_ms: u64,
+    },
+    Output {
+        chunk: RawOutputChunkData,
+    },
+    Finished {
+        result: RawExecutionResultData,
+    },
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionEventData {
+    pub schema_version: u16,
+    pub request_id: String,
+    pub sequence: u64,
+    pub generation: u64,
+    pub event: RawExecutionEventKindData,
+}
+
+impl RawExecutionEventData {
+    pub fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        validate_raw_schema(self.schema_version)?;
+        validate_raw_identity(&self.request_id, "raw-request:", "request")?;
+        if self.sequence == 0 || self.generation == 0 {
+            return Err(RawExecutionProtocolError::InvalidCorrelation);
+        }
+        match &self.event {
+            RawExecutionEventKindData::Starting { owner } => owner.validate(),
+            RawExecutionEventKindData::Output { chunk } => chunk.validate(),
+            RawExecutionEventKindData::Finished { result } => result.validate(),
+            RawExecutionEventKindData::AttachmentChanged {
+                attachment: RawAttachmentData::Unknown,
+            } => Err(RawExecutionProtocolError::UnknownRequiredVariant),
+            RawExecutionEventKindData::Unknown => {
+                Err(RawExecutionProtocolError::UnknownRequiredVariant)
+            }
+            _ => Ok(()),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "state", content = "outcome", rename_all = "snake_case")]
+pub enum RawExecutionPhaseData {
+    Queued,
+    Starting,
+    Running,
+    Cancelling,
+    Terminal(RawExecutionOutcomeData),
+    #[serde(other)]
+    Unknown,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawRetainedOutputData {
+    pub stream_id: String,
+    pub stream: RawOutputStreamData,
+    pub chunks: Vec<RawOutputChunkData>,
+    pub next_sequence: u64,
+    pub retained_bytes: u64,
+    pub retained_lines: u64,
+    pub dropped_bytes: u64,
+    pub dropped_lines: u64,
+    pub truncated_chunks: u64,
+}
+
+impl RawRetainedOutputData {
+    fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        validate_raw_identity(&self.stream_id, "raw-stream:", "stream")?;
+        if matches!(self.stream, RawOutputStreamData::Unknown)
+            || self.chunks.len() > MAX_RAW_EXECUTION_RETAINED_LINES
+            || self.retained_bytes as usize > MAX_RAW_EXECUTION_RETAINED_BYTES
+            || self.retained_lines as usize > MAX_RAW_EXECUTION_RETAINED_LINES
+            || self.next_sequence == 0
+        {
+            return Err(RawExecutionProtocolError::InvalidOutputSnapshot);
+        }
+        let bytes = self
+            .chunks
+            .iter()
+            .map(|chunk| chunk.text.len())
+            .sum::<usize>();
+        let lines = self
+            .chunks
+            .iter()
+            .map(|chunk| raw_protocol_line_count(&chunk.text))
+            .sum::<usize>();
+        if bytes != self.retained_bytes as usize || lines != self.retained_lines as usize {
+            return Err(RawExecutionProtocolError::InvalidOutputSnapshot);
+        }
+        let mut expected = self
+            .chunks
+            .first()
+            .map(|chunk| chunk.sequence)
+            .unwrap_or(self.next_sequence);
+        for chunk in &self.chunks {
+            chunk.validate()?;
+            if chunk.stream_id != self.stream_id
+                || chunk.stream != self.stream
+                || chunk.sequence != expected
+            {
+                return Err(RawExecutionProtocolError::InvalidOutputSnapshot);
+            }
+            expected = expected
+                .checked_add(1)
+                .ok_or(RawExecutionProtocolError::InvalidOutputSnapshot)?;
+        }
+        if expected != self.next_sequence {
+            return Err(RawExecutionProtocolError::InvalidOutputSnapshot);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionSnapshotData {
+    pub schema_version: u16,
+    pub request: RawExecutionRequestData,
+    pub phase: RawExecutionPhaseData,
+    pub attachment: RawAttachmentData,
+    pub owner: Option<RawExecutionOwnerData>,
+    pub cancellation_requested: bool,
+    pub queued_unix_ms: u64,
+    pub started_unix_ms: Option<u64>,
+    pub elapsed_ms: u64,
+    pub result: Option<RawExecutionResultData>,
+    pub stdout: RawRetainedOutputData,
+    pub stderr: RawRetainedOutputData,
+    pub sequence: u64,
+    pub generation: u64,
+}
+
+impl RawExecutionSnapshotData {
+    pub fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        validate_raw_schema(self.schema_version)?;
+        self.request.validate()?;
+        self.stdout.validate()?;
+        self.stderr.validate()?;
+        if self.stdout.stream_id == self.stderr.stream_id
+            || self.stdout.stream != RawOutputStreamData::Stdout
+            || self.stderr.stream != RawOutputStreamData::Stderr
+            || matches!(self.phase, RawExecutionPhaseData::Unknown)
+            || matches!(self.attachment, RawAttachmentData::Unknown)
+        {
+            return Err(RawExecutionProtocolError::InvalidSnapshot);
+        }
+        if let Some(owner) = &self.owner {
+            owner.validate()?;
+            if matches!(
+                (&self.request.interaction, owner),
+                (
+                    RawInteractionData::NoninteractiveJob,
+                    RawExecutionOwnerData::Pty(_)
+                ) | (
+                    RawInteractionData::InteractivePty,
+                    RawExecutionOwnerData::Job(_)
+                )
+            ) {
+                return Err(RawExecutionProtocolError::InvalidSnapshot);
+            }
+        }
+        match (&self.phase, &self.result) {
+            (RawExecutionPhaseData::Terminal(outcome), Some(result))
+                if *outcome == result.outcome && self.elapsed_ms == result.elapsed_ms =>
+            {
+                result.validate()?;
+            }
+            (RawExecutionPhaseData::Terminal(_), _) | (_, Some(_)) => {
+                return Err(RawExecutionProtocolError::InvalidSnapshot);
+            }
+            _ => {}
+        }
+        if matches!(
+            self.phase,
+            RawExecutionPhaseData::Terminal(RawExecutionOutcomeData::Unknown)
+        ) {
+            return Err(RawExecutionProtocolError::UnknownRequiredVariant);
+        }
+        if (self.sequence == 0) != (self.generation == 0) {
+            return Err(RawExecutionProtocolError::InvalidCorrelation);
+        }
+        match self.phase {
+            RawExecutionPhaseData::Queued
+                if self.owner.is_some() || self.started_unix_ms.is_some() =>
+            {
+                return Err(RawExecutionProtocolError::InvalidSnapshot);
+            }
+            RawExecutionPhaseData::Starting
+                if self.owner.is_none() || self.started_unix_ms.is_some() =>
+            {
+                return Err(RawExecutionProtocolError::InvalidSnapshot);
+            }
+            RawExecutionPhaseData::Running
+                if self.owner.is_none() || self.started_unix_ms.is_none() =>
+            {
+                return Err(RawExecutionProtocolError::InvalidSnapshot);
+            }
+            RawExecutionPhaseData::Cancelling
+                if !self.cancellation_requested
+                    || self.started_unix_ms.is_some() && self.owner.is_none() =>
+            {
+                return Err(RawExecutionProtocolError::InvalidSnapshot);
+            }
+            RawExecutionPhaseData::Terminal(RawExecutionOutcomeData::Cancelled)
+                if !self.cancellation_requested =>
+            {
+                return Err(RawExecutionProtocolError::InvalidSnapshot);
+            }
+            _ => {}
+        }
+        Ok(())
+    }
+}
+
+fn validate_raw_schema(version: u16) -> Result<(), RawExecutionProtocolError> {
+    if version == RAW_EXECUTION_SCHEMA_VERSION {
+        Ok(())
+    } else {
+        Err(RawExecutionProtocolError::UnsupportedSchema(version))
+    }
+}
+
+fn validate_raw_identity(
+    value: &str,
+    prefix: &'static str,
+    kind: &'static str,
+) -> Result<(), RawExecutionProtocolError> {
+    let token = value
+        .strip_prefix(prefix)
+        .ok_or(RawExecutionProtocolError::InvalidIdentity(kind))?;
+    if value.len() > MAX_RAW_EXECUTION_ID_BYTES
+        || token.is_empty()
+        || !token
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
+    {
+        return Err(RawExecutionProtocolError::InvalidIdentity(kind));
+    }
+    Ok(())
+}
+
+fn validate_raw_catalog_id(
+    value: &str,
+    kind: &'static str,
+) -> Result<(), RawExecutionProtocolError> {
+    if value.is_empty()
+        || value.len() > MAX_RAW_EXECUTION_PARAMETER_ID_BYTES
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
+    {
+        return Err(RawExecutionProtocolError::InvalidIdentity(kind));
+    }
+    Ok(())
+}
+
+fn validate_raw_arguments(arguments: &[String]) -> Result<(), RawExecutionProtocolError> {
+    if arguments.len() > MAX_RAW_EXECUTION_ARGUMENTS
+        || arguments
+            .iter()
+            .any(|argument| argument.len() > MAX_RAW_EXECUTION_ARGUMENT_BYTES)
+        || arguments.iter().map(String::len).sum::<usize>()
+            > MAX_RAW_EXECUTION_ARGUMENT_AGGREGATE_BYTES
+    {
+        return Err(RawExecutionProtocolError::InvalidArguments);
+    }
+    Ok(())
+}
+
+fn validate_raw_absolute_path(path: &str) -> Result<(), RawExecutionProtocolError> {
+    let path = Path::new(path);
+    if !path.is_absolute()
+        || path.as_os_str().as_encoded_bytes().len() > MAX_RAW_EXECUTION_BUILD_DIRECTORY_BYTES
+        || path
+            .components()
+            .any(|component| matches!(component, Component::CurDir | Component::ParentDir))
+    {
+        return Err(RawExecutionProtocolError::InvalidBuildDirectory);
+    }
+    Ok(())
+}
+
+fn raw_protocol_line_count(text: &str) -> usize {
+    if text.is_empty() {
+        0
+    } else {
+        text.bytes().filter(|byte| *byte == b'\n').count() + usize::from(!text.ends_with('\n'))
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum RawExecutionProtocolError {
+    #[error("unsupported Raw execution schema version {0}")]
+    UnsupportedSchema(u16),
+    #[error("invalid Raw execution {0} identity")]
+    InvalidIdentity(&'static str),
+    #[error("Raw execution authority generation is zero")]
+    InvalidAuthority,
+    #[error("Raw execution has too many parameters")]
+    TooManyParameters,
+    #[error("Raw execution repeats a parameter identity")]
+    DuplicateParameter,
+    #[error("Raw execution snapshot repeats a request identity")]
+    DuplicateRequest,
+    #[error("Raw execution contains an invalid parameter")]
+    InvalidParameter,
+    #[error("Raw execution contains invalid bounded arguments")]
+    InvalidArguments,
+    #[error("Raw execution build directory is not a bounded absolute normalized path")]
+    InvalidBuildDirectory,
+    #[error("Raw execution preview digest is invalid")]
+    InvalidPreviewDigest,
+    #[error("Raw execution contains an unknown required enum variant")]
+    UnknownRequiredVariant,
+    #[error("Raw execution event correlation must be nonzero")]
+    InvalidCorrelation,
+    #[error("Raw execution output chunk is invalid")]
+    InvalidOutputChunk,
+    #[error("Raw execution retained output snapshot is invalid")]
+    InvalidOutputSnapshot,
+    #[error("Raw execution result message exceeds its byte bound")]
+    ResultMessageTooLong,
+    #[error("Raw execution result is inconsistent")]
+    InvalidResult,
+    #[error("Raw execution snapshot is inconsistent")]
+    InvalidSnapshot,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Capability {
@@ -68,6 +655,7 @@ pub enum Capability {
     PaneAttachments,
     TerminalMouse,
     EnvironmentCompatibility,
+    RawExecution,
     GracefulShutdown,
     #[serde(other)]
     Unknown,
@@ -642,6 +1230,12 @@ pub enum DaemonCommand {
     },
     CancelJob {
         job_id: JobId,
+    },
+    StartRaw {
+        request: RawExecutionRequestData,
+    },
+    CancelRaw {
+        request_id: String,
     },
     StartDevtool {
         operation: DaemonDevtoolOperation,
@@ -1232,6 +1826,8 @@ pub struct DaemonSnapshot {
     #[serde(default)]
     pub compatibility: Option<CompatibilitySnapshotData>,
     pub jobs: Vec<JobSummary>,
+    #[serde(default)]
+    pub raw_executions: Vec<RawExecutionSnapshotData>,
     pub pty_sessions: Vec<PtySessionSummary>,
     #[serde(default)]
     pub pty_screens: Vec<PtyScreenSnapshot>,
@@ -1306,6 +1902,10 @@ pub enum DaemonEvent {
     JobChanged(JobSummary),
     JobRemoved {
         job_id: JobId,
+    },
+    RawExecutionChanged(Box<RawExecutionSnapshotData>),
+    RawExecutionRemoved {
+        request_id: String,
     },
     PtyChanged(PtySessionSummary),
     PtyOutput {
@@ -1414,6 +2014,7 @@ pub enum JobKind {
     Security,
     Maintenance,
     Utility,
+    Raw,
     #[serde(other)]
     Unknown,
 }
@@ -1553,6 +2154,18 @@ impl DaemonSnapshotJournal {
         let limits = limits.validate()?;
         if let Some(compatibility) = &snapshot.compatibility {
             compatibility.validate()?;
+        }
+        if snapshot.raw_executions.len() > MAX_RAW_EXECUTION_REQUESTS {
+            return Err(DaemonSnapshotError::TooManyRawExecutions);
+        }
+        let mut raw_request_ids = std::collections::BTreeSet::new();
+        for execution in &snapshot.raw_executions {
+            execution.validate()?;
+            if !raw_request_ids.insert(&execution.request.request_id) {
+                return Err(DaemonSnapshotError::RawExecution(
+                    RawExecutionProtocolError::DuplicateRequest,
+                ));
+            }
         }
         for screen in &snapshot.pty_screens {
             validate_pty_screen(screen)?;
@@ -1700,6 +2313,37 @@ pub fn apply_sequenced_event(
         }
         DaemonEvent::JobChanged(job) => replace_by(&mut snapshot.jobs, job.clone(), |item| item.id),
         DaemonEvent::JobRemoved { job_id } => snapshot.jobs.retain(|job| job.id != *job_id),
+        DaemonEvent::RawExecutionChanged(execution) => {
+            execution.validate()?;
+            let request_id = execution.request.request_id.clone();
+            if let Some(current) = snapshot
+                .raw_executions
+                .iter()
+                .find(|current| current.request.request_id == request_id)
+                && (execution.sequence <= current.sequence
+                    || execution.generation <= current.generation)
+            {
+                return Err(DaemonSnapshotError::StaleRawExecution {
+                    request_id,
+                    current_sequence: current.sequence,
+                    received_sequence: execution.sequence,
+                });
+            }
+            replace_by(
+                &mut snapshot.raw_executions,
+                (**execution).clone(),
+                |item| item.request.request_id.clone(),
+            );
+            if snapshot.raw_executions.len() > MAX_RAW_EXECUTION_REQUESTS {
+                return Err(DaemonSnapshotError::TooManyRawExecutions);
+            }
+        }
+        DaemonEvent::RawExecutionRemoved { request_id } => {
+            validate_raw_identity(request_id, "raw-request:", "request")?;
+            snapshot
+                .raw_executions
+                .retain(|execution| execution.request.request_id != *request_id);
+        }
         DaemonEvent::PtyChanged(pty) => {
             replace_by(&mut snapshot.pty_sessions, pty.clone(), |item| item.id);
         }
@@ -1841,6 +2485,8 @@ fn ensure_snapshot_bound(
 pub enum DaemonSnapshotError {
     #[error(transparent)]
     Compatibility(#[from] CompatibilityProtocolError),
+    #[error(transparent)]
+    RawExecution(#[from] RawExecutionProtocolError),
     #[error("invalid daemon snapshot limit for {0}")]
     InvalidLimit(&'static str),
     #[error("daemon snapshot is {actual} bytes, exceeding the {maximum}-byte limit")]
@@ -1862,6 +2508,16 @@ pub enum DaemonSnapshotError {
     },
     #[error("stale compatibility generation: current {current}, received {received}")]
     StaleCompatibilityGeneration { current: u64, received: u64 },
+    #[error(
+        "stale Raw execution {request_id}: current sequence {current_sequence}, received {received_sequence}"
+    )]
+    StaleRawExecution {
+        request_id: String,
+        current_sequence: u64,
+        received_sequence: u64,
+    },
+    #[error("daemon snapshot contains too many Raw executions")]
+    TooManyRawExecutions,
     #[error("invalid bounded PTY screen snapshot for session {0:?}")]
     InvalidPtyScreen(PtySessionId),
     #[error(transparent)]
@@ -2066,6 +2722,7 @@ mod tests {
             },
             compatibility: None,
             jobs: Vec::new(),
+            raw_executions: Vec::new(),
             pty_sessions: Vec::new(),
             pty_screens: Vec::new(),
             clients: Vec::new(),
@@ -2272,6 +2929,7 @@ mod tests {
             },
             compatibility: None,
             jobs: Vec::new(),
+            raw_executions: Vec::new(),
             pty_sessions: Vec::new(),
             pty_screens: Vec::new(),
             clients: vec![ClientSummary {
@@ -2667,6 +3325,194 @@ mod tests {
         ));
         let encoded = encode_frame(&ServerMessage::Snapshot(journal.snapshot().clone())).unwrap();
         assert!(encoded.len() < MAX_FRAME_BYTES);
+    }
+
+    fn raw_execution_request_fixture() -> RawExecutionRequestData {
+        RawExecutionRequestData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            request_id: "raw-request:protocol-1".into(),
+            catalog_version: 1,
+            command_id: "build.target".into(),
+            parameters: vec![RawExecutionParameterData {
+                id: "target".into(),
+                value: RawParameterValueData::Target("core-image-minimal".into()),
+            }],
+            additional_arguments: vec!["--dry-run".into()],
+            interaction: RawInteractionData::NoninteractiveJob,
+            safety: RawSafetyData::Build,
+            capability_generation: 7,
+            build_directory: "/work/build".into(),
+            preview_digest: "ab".repeat(32),
+        }
+    }
+
+    fn raw_execution_chunk_fixture() -> RawOutputChunkData {
+        RawOutputChunkData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            stream_id: "raw-stream:stdout-1".into(),
+            stream: RawOutputStreamData::Stdout,
+            sequence: 1,
+            text: "héllo\n".into(),
+            truncated_bytes: 2,
+            dropped_lines: 1,
+        }
+    }
+
+    fn raw_execution_snapshot_fixture(sequence: u64) -> RawExecutionSnapshotData {
+        let chunk = raw_execution_chunk_fixture();
+        RawExecutionSnapshotData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            request: raw_execution_request_fixture(),
+            phase: RawExecutionPhaseData::Running,
+            attachment: RawAttachmentData::Detached,
+            owner: Some(RawExecutionOwnerData::Job("raw-job:protocol-1".into())),
+            cancellation_requested: false,
+            queued_unix_ms: 10,
+            started_unix_ms: Some(20),
+            elapsed_ms: 30,
+            result: None,
+            stdout: RawRetainedOutputData {
+                stream_id: chunk.stream_id.clone(),
+                stream: RawOutputStreamData::Stdout,
+                retained_bytes: chunk.text.len() as u64,
+                retained_lines: raw_protocol_line_count(&chunk.text) as u64,
+                chunks: vec![chunk],
+                next_sequence: 2,
+                dropped_bytes: 2,
+                dropped_lines: 1,
+                truncated_chunks: 1,
+            },
+            stderr: RawRetainedOutputData {
+                stream_id: "raw-stream:stderr-1".into(),
+                stream: RawOutputStreamData::Stderr,
+                chunks: Vec::new(),
+                next_sequence: 1,
+                retained_bytes: 0,
+                retained_lines: 0,
+                dropped_bytes: 0,
+                dropped_lines: 0,
+                truncated_chunks: 0,
+            },
+            sequence,
+            generation: sequence,
+        }
+    }
+
+    #[test]
+    fn raw_execution_protocol_round_trips_request_event_chunk_snapshot_and_result() {
+        let request = raw_execution_request_fixture();
+        request.validate().unwrap();
+        let request_round_trip: RawExecutionRequestData =
+            serde_json::from_slice(&serde_json::to_vec(&request).unwrap()).unwrap();
+        assert_eq!(request_round_trip, request);
+
+        let chunk = raw_execution_chunk_fixture();
+        chunk.validate().unwrap();
+        let chunk_round_trip: RawOutputChunkData =
+            serde_json::from_slice(&serde_json::to_vec(&chunk).unwrap()).unwrap();
+        assert_eq!(chunk_round_trip, chunk);
+
+        let result = RawExecutionResultData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            outcome: RawExecutionOutcomeData::Cancelled,
+            exit_code: None,
+            message: Some("cancelled by client".into()),
+            elapsed_ms: 40,
+            durable_reference: Some("raw-durable:history-1".into()),
+        };
+        result.validate().unwrap();
+        let result_round_trip: RawExecutionResultData =
+            serde_json::from_slice(&serde_json::to_vec(&result).unwrap()).unwrap();
+        assert_eq!(result_round_trip, result);
+
+        let event = RawExecutionEventData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            request_id: request.request_id.clone(),
+            sequence: 2,
+            generation: 9,
+            event: RawExecutionEventKindData::Finished { result },
+        };
+        event.validate().unwrap();
+        let event_round_trip: RawExecutionEventData =
+            serde_json::from_slice(&serde_json::to_vec(&event).unwrap()).unwrap();
+        assert_eq!(event_round_trip, event);
+
+        let snapshot = raw_execution_snapshot_fixture(4);
+        snapshot.validate().unwrap();
+        let snapshot_round_trip: RawExecutionSnapshotData =
+            serde_json::from_slice(&serde_json::to_vec(&snapshot).unwrap()).unwrap();
+        assert_eq!(snapshot_round_trip, snapshot);
+
+        let command = ClientMessage::Command(CommandRequest {
+            request_id: RequestId(4),
+            expected_generation: Some(8),
+            command: DaemonCommand::StartRaw { request },
+        });
+        assert_eq!(
+            decode_frame::<ClientMessage>(&encode_frame(&command).unwrap()).unwrap(),
+            command
+        );
+    }
+
+    #[test]
+    fn raw_execution_protocol_rejects_unknown_cross_kind_and_unicode_byte_overflow() {
+        let mut request = raw_execution_request_fixture();
+        request.request_id = "raw-job:protocol-1".into();
+        assert_eq!(
+            request.validate(),
+            Err(RawExecutionProtocolError::InvalidIdentity("request"))
+        );
+
+        let mut request = raw_execution_request_fixture();
+        request.interaction = serde_json::from_str("\"future_mode\"").unwrap();
+        assert_eq!(
+            request.validate(),
+            Err(RawExecutionProtocolError::UnknownRequiredVariant)
+        );
+
+        let mut request = raw_execution_request_fixture();
+        request.additional_arguments = vec!["界".repeat(MAX_RAW_EXECUTION_ARGUMENT_BYTES / 3 + 1)];
+        assert_eq!(
+            request.validate(),
+            Err(RawExecutionProtocolError::InvalidArguments)
+        );
+
+        let future: RawExecutionEventKindData =
+            serde_json::from_str(r#"{"type":"future_required"}"#).unwrap();
+        assert_eq!(future, RawExecutionEventKindData::Unknown);
+        let event = RawExecutionEventData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            request_id: "raw-request:future".into(),
+            sequence: 1,
+            generation: 1,
+            event: future,
+        };
+        assert_eq!(
+            event.validate(),
+            Err(RawExecutionProtocolError::UnknownRequiredVariant)
+        );
+    }
+
+    #[test]
+    fn raw_execution_protocol_snapshot_journal_replaces_newer_and_rejects_stale() {
+        let mut base = daemon_snapshot_fixture();
+        base.raw_executions = vec![raw_execution_snapshot_fixture(1)];
+        let mut journal =
+            DaemonSnapshotJournal::new(base, DaemonSnapshotLimits::default()).unwrap();
+        journal
+            .publish(DaemonEvent::RawExecutionChanged(Box::new(
+                raw_execution_snapshot_fixture(2),
+            )))
+            .unwrap();
+        assert_eq!(journal.snapshot().raw_executions[0].sequence, 2);
+        let before = journal.snapshot().clone();
+        assert!(matches!(
+            journal.publish(DaemonEvent::RawExecutionChanged(Box::new(
+                raw_execution_snapshot_fixture(2)
+            ))),
+            Err(DaemonSnapshotError::StaleRawExecution { .. })
+        ));
+        assert_eq!(journal.snapshot(), &before);
     }
 
     #[test]
