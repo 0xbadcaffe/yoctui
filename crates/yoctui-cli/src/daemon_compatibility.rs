@@ -272,7 +272,9 @@ impl DaemonCompatibilityRuntime {
                 )
                 .await
                 {
-                    datastore.insert(variable.to_owned(), value.trim().to_owned());
+                    if let Some(value) = authoritative_value(&value) {
+                        datastore.insert(variable.to_owned(), value);
+                    }
                 }
             }
         }
@@ -447,6 +449,19 @@ impl DaemonCompatibilityRuntime {
         .key(identity)?;
         Ok(Some(Self { key, context }))
     }
+}
+
+/// BitBake may write reconnect/status diagnostics to the same captured stream
+/// as a successful `bitbake-getvar` value. Keep only the final meaningful line
+/// so diagnostics cannot corrupt authoritative identity fields.
+fn authoritative_value(output: &str) -> Option<String> {
+    output
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .filter(|line| !line.starts_with("NOTE:") && !line.starts_with("WARNING:"))
+        .next_back()
+        .map(str::to_owned)
 }
 
 fn canonical_initialized_build(value: &str) -> Result<PathBuf, DaemonCompatibilityError> {
@@ -733,6 +748,15 @@ pub enum DaemonCompatibilityError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn authoritative_value_ignores_bitbake_diagnostics() {
+        assert_eq!(
+            authoritative_value("NOTE: reconnecting\npoky\n"),
+            Some("poky".into())
+        );
+        assert_eq!(authoritative_value("NOTE: reconnecting\n"), None);
+    }
     use std::{
         collections::{BTreeMap, BTreeSet},
         fs,
