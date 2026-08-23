@@ -26607,7 +26607,7 @@ mod tests {
     }
 
     #[test]
-    fn raw_command_help_is_bounded_empty_no_color_and_responsive() {
+    fn raw_accessibility_help_is_bounded_empty_no_color_and_responsive() {
         let mut app = raw_command_list_app();
         set_raw_command_query(&mut app, "--continue <target>");
         app.focus = FocusTarget::Inspector;

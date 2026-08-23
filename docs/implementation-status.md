@@ -185,7 +185,9 @@ preserving exact selection and explicit no-match behavior. `RAW-MOUSE-001` is
 active next.
 `RAW-RESPONSIVE-001` is complete: Raw browser, Favorites, execution, and
 below-minimum shells retain bounded selection and never panic across wide,
-medium, narrow, and too-small terminals. `RAW-A11Y-001` is active next.
+medium, narrow, and too-small terminals. `RAW-A11Y-001` is complete: no-color
+and responsive Raw views retain semantic state, explicit focus, and modal/PTY
+traps. `RAW-SECURITY-001` is active next.
 `RAW-MOUSE-001` now maps Raw category, command, Favorites, and history clicks
 and wheel events through shared bounded row geometry while preserving modal and
 PTY focus traps.

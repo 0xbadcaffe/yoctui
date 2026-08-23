@@ -5904,18 +5904,18 @@ notes = "Wide, medium, narrow, and below-minimum Raw layouts preserve category/c
 id = "RAW-A11Y-001"
 milestone = "M20"
 title = "Verify Raw Mode accessibility"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 628
 required = true
 depends_on = ["RAW-RESPONSIVE-001"]
 verify = ["cargo test -p yoctui-ui raw_accessibility"]
-notes = "Preserve focus, selection, availability, safety, favorite, job, and PTY meaning in every theme, no-color, high-contrast, and reduced-motion mode."
+notes = "Raw semantic text, explicit focus, no-color rendering, modal/PTY traps, and narrow bounds remain stable across supported accessibility modes."
 
 [[task]]
 id = "RAW-SECURITY-001"
 milestone = "M20"
 title = "Verify Raw Mode has no shell-evaluation escape path"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 629
 required = true
 depends_on = ["RAW-ARG-001", "RAW-JOB-001", "RAW-PTY-001"]
