@@ -1669,7 +1669,7 @@ mod raw_execution_tests {
     }
 
     #[test]
-    fn raw_execution_cancellation_pty_and_fail_closed_correlation_are_exact() {
+    fn raw_pty_execution_cancellation_and_fail_closed_correlation_are_exact() {
         let mut state = queued(RawInteractionMode::InteractivePty);
         apply(
             &mut state,

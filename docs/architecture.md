@@ -2823,7 +2823,24 @@ before bounded TERM/KILL completion, and rejects duplicate or terminal
 requests. Persisted recovery deliberately discards retained output bytes while
 preserving their drop accounting; a nonterminal process from a stopped daemon
 becomes one detached typed `Lost` result and cannot be resurrected. The later
-Raw PTY task consumes the interactive half of the same execution contract.
+interactive route consumes the same authority through
+`yoctui-bitbake::RawPtyPlanner`: the wire carries only confirmed intent and
+bounded dimensions, while the daemon reconstructs the canonical executable,
+native argv, cwd, catalog policy, capabilities, and digest before creating a
+PTY. Raw PTYs occupy a disjoint non-reused numeric namespace whose sequence is
+also encoded in the typed `RawSessionId`; the PTY supervisor rejects identity
+mismatches and generic PTY allocation never enters that namespace.
+
+The existing daemon PTY actor remains the sole owner of the process group,
+terminal emulator, writer epoch, input, resize, attachment set, and explicit
+termination. Its Started/Changed/Exited/Lost events advance the correlated Raw
+replica without copying or parsing terminal bytes into line-oriented Raw
+streams. Detach and socket EOF only change attachment state; cancel or the
+typed PTY termination command first records Raw cancellation and then asks the
+actor to terminate. Explicit termination publishes a normal PTY exit rather
+than manufacturing process loss. Recovery retains terminal Raw metadata but
+maps unrecoverable live ownership to detached `Lost` through the shared safe
+snapshot boundary.
 
 `yoctui-app` maps keyboard/mouse input to Raw reducer actions, maps daemon Raw
 events mechanically, and translates validated effects into typed daemon

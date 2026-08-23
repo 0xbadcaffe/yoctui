@@ -11,7 +11,7 @@ use yoctui_protocol::daemon::{
     ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQaCapabilityInput,
     DaemonQaCapabilityRequest, DaemonQemuRequest, DaemonSdkArtifactIdentity, DaemonSdkContext,
     DaemonSdkNativeMode, DaemonSdkOperation, DaemonTestSelftestRequest, DaemonWicCreateRequest,
-    JobId, RequestId, Subscription,
+    JobId, RequestId, Subscription, TerminalDimensions,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -230,10 +230,29 @@ fn daemon_command_for_effect(
                 job_id: JobId(job.id),
             }
         }
-        Effect::StartRaw(request) => DaemonCommand::StartRaw {
-            request: yoctui_app::raw_execution_request_to_protocol(request)
-                .map_err(ClientRuntimeError::RawExecution)?,
-        },
+        Effect::StartRaw(request) => {
+            let request = yoctui_app::raw_execution_request_to_protocol(request)
+                .map_err(ClientRuntimeError::RawExecution)?;
+            match request.interaction {
+                yoctui_protocol::daemon::RawInteractionData::NoninteractiveJob => {
+                    DaemonCommand::StartRaw { request }
+                }
+                yoctui_protocol::daemon::RawInteractionData::InteractivePty => {
+                    DaemonCommand::StartRawPty {
+                        request,
+                        dimensions: TerminalDimensions {
+                            columns: 120,
+                            rows: 40,
+                        },
+                    }
+                }
+                yoctui_protocol::daemon::RawInteractionData::Unknown => {
+                    return Err(ClientRuntimeError::RawExecution(
+                        "Raw interaction mode is not supported".into(),
+                    ));
+                }
+            }
+        }
         Effect::CancelRaw(request_id) => DaemonCommand::CancelRaw {
             request_id: request_id.as_str().into(),
         },
@@ -891,6 +910,35 @@ mod tests {
                 request_id: request.id.as_str().into(),
             })
         );
+    }
+
+    #[test]
+    fn raw_pty_effect_maps_to_confirmed_request_and_bounded_dimensions() {
+        let request = yoctui_model::RawConfirmedExecutionRequest {
+            id: yoctui_model::RawRequestId::new("raw-request:client-runtime-pty").unwrap(),
+            catalog_version: 1,
+            command: yoctui_model::RawCommandId::new("ui.knotty").unwrap(),
+            parameters: std::collections::BTreeMap::new(),
+            additional_arguments: Vec::new(),
+            interaction: yoctui_model::RawInteractionMode::InteractivePty,
+            safety: yoctui_model::RawSafetyClass::Build,
+            capability_generation: 4,
+            build_directory: "/work/build".into(),
+            preview_digest: yoctui_model::RawPreviewDigest([4; 32]),
+        };
+        let app = App::new(16, 4096);
+        let Some(DaemonCommand::StartRawPty {
+            request: wire,
+            dimensions,
+        }) = daemon_command_for_effect(&app, &Effect::StartRaw(request.clone())).unwrap()
+        else {
+            panic!("expected typed Raw PTY start command");
+        };
+        assert_eq!(
+            yoctui_app::raw_execution_request_from_protocol(&wire).unwrap(),
+            request
+        );
+        assert!(dimensions.columns <= 512 && dimensions.rows <= 512);
     }
 
     #[test]

@@ -5,17 +5,22 @@ use std::{
 
 use thiserror::Error;
 use tokio::sync::mpsc;
-use yoctui_bitbake::{RawJobPlanner, RawJobPlannerError, RawJobRunner, RawJobRunnerEvent};
+use yoctui_bitbake::{
+    RawJobPlanner, RawJobPlannerError, RawJobRunner, RawJobRunnerEvent, RawPtyCommandSpec,
+    RawPtyPlanner,
+};
 use yoctui_model::{
-    DaemonCompatibilitySnapshot, RawDurableReferenceId, RawEventCursor, RawExecutionEvent,
-    RawExecutionEventKind, RawExecutionOutcome, RawExecutionOwner, RawExecutionResult,
-    RawExecutionState, RawJobId, RawRequestId, RawStreamId, reduce_raw_execution,
+    DaemonCompatibilitySnapshot, PtySessionId, RawAttachmentState, RawDurableReferenceId,
+    RawEventCursor, RawExecutionEvent, RawExecutionEventKind, RawExecutionOutcome,
+    RawExecutionOwner, RawExecutionResult, RawExecutionState, RawJobId, RawRequestId, RawSessionId,
+    RawStreamId, reduce_raw_execution,
 };
 use yoctui_protocol::daemon::{
-    DaemonSnapshot, JobId, JobKind, LifecycleState, RawExecutionRequestData,
+    DaemonSnapshot, JobId, JobKind, LifecycleState, RawExecutionOwnerData, RawExecutionRequestData,
 };
 
 const RAW_JOB_NAMESPACE: u64 = 5 << 60;
+const RAW_PTY_NAMESPACE: u64 = 6 << 60;
 const RAW_JOB_SEQUENCE_LIMIT: u64 = 1 << 60;
 const RAW_SUPERVISOR_EVENT_CAPACITY: usize = 64;
 
@@ -23,6 +28,22 @@ const RAW_SUPERVISOR_EVENT_CAPACITY: usize = 64;
 pub struct DaemonRawStart {
     pub job_id: JobId,
     pub state: RawExecutionState,
+}
+
+#[derive(Debug, Clone)]
+pub struct DaemonRawPtyStart {
+    pub pty_id: PtySessionId,
+    pub command: RawPtyCommandSpec,
+    pub state: RawExecutionState,
+}
+
+#[derive(Debug, Clone)]
+pub enum DaemonRawCancel {
+    Job,
+    Pty {
+        pty_id: PtySessionId,
+        state: Box<RawExecutionState>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -38,9 +59,12 @@ pub struct DaemonRawSupervisor {
     operation_timeout: Duration,
     cancellation_timeout: Duration,
     next_job_id: u64,
+    next_pty_id: u64,
     seen_requests: HashSet<RawRequestId>,
     active: HashMap<RawRequestId, mpsc::UnboundedSender<()>>,
     cancellation_requested: HashSet<RawRequestId>,
+    pty_by_request: HashMap<RawRequestId, PtySessionId>,
+    pty_states: HashMap<PtySessionId, RawExecutionState>,
     events_tx: mpsc::Sender<DaemonRawEvent>,
     events_rx: mpsc::Receiver<DaemonRawEvent>,
 }
@@ -53,9 +77,12 @@ impl Default for DaemonRawSupervisor {
             operation_timeout: Duration::from_secs(24 * 60 * 60),
             cancellation_timeout: Duration::from_secs(5),
             next_job_id: 1,
+            next_pty_id: 1,
             seen_requests: HashSet::new(),
             active: HashMap::new(),
             cancellation_requested: HashSet::new(),
+            pty_by_request: HashMap::new(),
+            pty_states: HashMap::new(),
             events_tx,
             events_rx,
         }
@@ -80,11 +107,25 @@ impl DaemonRawSupervisor {
                 .map_err(|error| DaemonRawError::InvalidRequest(error.to_string()))?;
             self.seen_requests
                 .insert(RawRequestId::new(&execution.request.request_id)?);
+            if let Some(RawExecutionOwnerData::Pty(session)) = &execution.owner
+                && let Some(sequence) = session
+                    .strip_prefix("raw-session:daemon-")
+                    .and_then(|sequence| sequence.parse::<u64>().ok())
+                && sequence < RAW_JOB_SEQUENCE_LIMIT
+            {
+                self.next_pty_id = self.next_pty_id.max(sequence.saturating_add(1));
+            }
         }
         for job in snapshot.jobs.iter().filter(|job| job.kind == JobKind::Raw) {
             if job.id.0 >> 60 == RAW_JOB_NAMESPACE >> 60 {
                 let sequence = job.id.0 & (RAW_JOB_SEQUENCE_LIMIT - 1);
                 self.next_job_id = self.next_job_id.max(sequence.saturating_add(1));
+            }
+        }
+        for pty in &snapshot.pty_sessions {
+            if pty.id.0 >> 60 == RAW_PTY_NAMESPACE >> 60 {
+                let sequence = pty.id.0 & (RAW_JOB_SEQUENCE_LIMIT - 1);
+                self.next_pty_id = self.next_pty_id.max(sequence.saturating_add(1));
             }
         }
         Ok(())
@@ -361,8 +402,181 @@ impl DaemonRawSupervisor {
         Ok(DaemonRawStart { job_id, state })
     }
 
-    pub fn cancel(&mut self, request_id: &str) -> Result<(), DaemonRawError> {
+    pub fn prepare_pty(
+        &self,
+        wire: RawExecutionRequestData,
+    ) -> Result<DaemonRawPtyStart, DaemonRawError> {
+        let request = yoctui_app::raw_execution_request_from_protocol(&wire)
+            .map_err(DaemonRawError::InvalidRequest)?;
+        if self.seen_requests.contains(&request.id) {
+            return Err(DaemonRawError::DuplicateRequest(request.id));
+        }
+        let sequence = self.next_pty_id;
+        if sequence >= RAW_JOB_SEQUENCE_LIMIT {
+            return Err(DaemonRawError::PtySpaceExhausted);
+        }
+        let pty_id = PtySessionId(RAW_PTY_NAMESPACE | sequence);
+        let raw_session = RawSessionId::new(format!("raw-session:daemon-{sequence}"))?;
+        let compatibility = self
+            .compatibility
+            .as_ref()
+            .ok_or(DaemonRawError::CompatibilityUnavailable)?;
+        let command = RawPtyPlanner::new(compatibility).plan(&request, raw_session.clone())?;
+        let stdout = RawStreamId::new(format!("raw-stream:daemon-pty-{sequence}-stdout"))?;
+        let stderr = RawStreamId::new(format!("raw-stream:daemon-pty-{sequence}-stderr"))?;
+        let mut state = RawExecutionState::queued(
+            request,
+            stdout,
+            stderr,
+            unix_ms(),
+            RawEventCursor::default(),
+        )?;
+        advance_sync(
+            &mut state,
+            RawExecutionEventKind::Starting {
+                owner: RawExecutionOwner::Pty(raw_session),
+            },
+        )?;
+        Ok(DaemonRawPtyStart {
+            pty_id,
+            command,
+            state,
+        })
+    }
+
+    pub fn activate_pty(&mut self, start: &DaemonRawPtyStart) -> Result<(), DaemonRawError> {
+        let owner_matches = matches!(
+            start.state.owner.as_ref(),
+            Some(RawExecutionOwner::Pty(session)) if session == start.command.session_id()
+        );
+        if start.command.request_id() != &start.state.request.id
+            || start.command.capability_generation() != start.state.request.capability_generation
+            || start.command.current_directory() != start.state.request.build_directory
+            || !owner_matches
+        {
+            return Err(DaemonRawError::PtyIdentityMismatch);
+        }
+        if self.seen_requests.contains(&start.state.request.id)
+            || self.pty_states.contains_key(&start.pty_id)
+            || start.pty_id.0 != RAW_PTY_NAMESPACE | self.next_pty_id
+        {
+            return Err(DaemonRawError::DuplicateRequest(
+                start.state.request.id.clone(),
+            ));
+        }
+        self.next_pty_id = self
+            .next_pty_id
+            .checked_add(1)
+            .ok_or(DaemonRawError::PtySpaceExhausted)?;
+        self.seen_requests.insert(start.state.request.id.clone());
+        self.pty_by_request
+            .insert(start.state.request.id.clone(), start.pty_id);
+        self.pty_states.insert(start.pty_id, start.state.clone());
+        Ok(())
+    }
+
+    pub fn pty_started(
+        &mut self,
+        pty_id: PtySessionId,
+    ) -> Result<Option<RawExecutionState>, DaemonRawError> {
+        let Some(state) = self.pty_states.get_mut(&pty_id) else {
+            return Ok(None);
+        };
+        advance_sync(
+            state,
+            RawExecutionEventKind::Running {
+                started_unix_ms: unix_ms(),
+            },
+        )?;
+        Ok(Some(state.clone()))
+    }
+
+    pub fn pty_attachment(
+        &mut self,
+        pty_id: PtySessionId,
+        attached: bool,
+    ) -> Result<Option<RawExecutionState>, DaemonRawError> {
+        let Some(state) = self.pty_states.get_mut(&pty_id) else {
+            return Ok(None);
+        };
+        let attachment = if attached {
+            RawAttachmentState::Attached
+        } else {
+            RawAttachmentState::Detached
+        };
+        if state.attachment == attachment || state.phase.is_terminal() {
+            return Ok(None);
+        }
+        advance_sync(
+            state,
+            RawExecutionEventKind::AttachmentChanged { attachment },
+        )?;
+        Ok(Some(state.clone()))
+    }
+
+    pub fn pty_finished(
+        &mut self,
+        pty_id: PtySessionId,
+        exit_code: Option<i32>,
+        lost: Option<String>,
+    ) -> Result<Option<RawExecutionState>, DaemonRawError> {
+        let Some(mut state) = self.pty_states.remove(&pty_id) else {
+            return Ok(None);
+        };
+        self.pty_by_request.remove(&state.request.id);
+        self.cancellation_requested.remove(&state.request.id);
+        let (outcome, code, message) = if let Some(message) = lost {
+            (RawExecutionOutcome::Lost, None, Some(message))
+        } else if state.cancellation_requested {
+            (
+                RawExecutionOutcome::Cancelled,
+                exit_code,
+                Some("Raw PTY terminated".into()),
+            )
+        } else if exit_code == Some(0) {
+            (RawExecutionOutcome::Succeeded, Some(0), None)
+        } else {
+            (
+                RawExecutionOutcome::Failed,
+                exit_code,
+                Some("Raw PTY exited unsuccessfully".into()),
+            )
+        };
+        let elapsed_ms = state.started_unix_ms.map_or(state.elapsed_ms, |started| {
+            unix_ms().saturating_sub(started)
+        });
+        advance_sync(
+            &mut state,
+            RawExecutionEventKind::Finished {
+                result: RawExecutionResult {
+                    outcome,
+                    exit_code: code,
+                    message,
+                    elapsed_ms,
+                    durable_reference: None,
+                },
+            },
+        )?;
+        Ok(Some(state))
+    }
+
+    pub fn cancel(&mut self, request_id: &str) -> Result<DaemonRawCancel, DaemonRawError> {
         let request_id = RawRequestId::new(request_id)?;
+        if let Some(pty_id) = self.pty_by_request.get(&request_id).copied() {
+            if !self.cancellation_requested.insert(request_id.clone()) {
+                return Err(DaemonRawError::CancellationAlreadyRequested(request_id));
+            }
+            let state = self
+                .pty_states
+                .get_mut(&pty_id)
+                .ok_or_else(|| DaemonRawError::UnknownRequest(request_id.clone()))?;
+            advance_sync(state, RawExecutionEventKind::CancellationRequested)?;
+            advance_sync(state, RawExecutionEventKind::Cancelling)?;
+            return Ok(DaemonRawCancel::Pty {
+                pty_id,
+                state: Box::new(state.clone()),
+            });
+        }
         if !self.active.contains_key(&request_id) {
             return Err(DaemonRawError::UnknownRequest(request_id));
         }
@@ -373,7 +587,21 @@ impl DaemonRawSupervisor {
             .get(&request_id)
             .expect("active request was checked")
             .send(())
-            .map_err(|_| DaemonRawError::UnknownRequest(request_id))
+            .map_err(|_| DaemonRawError::UnknownRequest(request_id))?;
+        Ok(DaemonRawCancel::Job)
+    }
+
+    pub fn cancel_pty(
+        &mut self,
+        pty_id: PtySessionId,
+    ) -> Result<Option<DaemonRawCancel>, DaemonRawError> {
+        let request = self
+            .pty_by_request
+            .iter()
+            .find_map(|(request, candidate)| (*candidate == pty_id).then(|| request.clone()));
+        request
+            .map(|request| self.cancel(request.as_str()))
+            .transpose()
     }
 
     pub fn try_event(&mut self) -> Option<DaemonRawEvent> {
@@ -384,6 +612,22 @@ impl DaemonRawSupervisor {
         }
         Some(event)
     }
+}
+
+fn advance_sync(
+    state: &mut RawExecutionState,
+    kind: RawExecutionEventKind,
+) -> Result<(), yoctui_model::RawExecutionError> {
+    reduce_raw_execution(
+        state,
+        RawExecutionEvent {
+            request_id: state.request.id.clone(),
+            sequence: state.cursor.sequence.saturating_add(1),
+            generation: state.cursor.generation.saturating_add(1),
+            kind,
+        },
+    )?;
+    Ok(())
 }
 
 async fn request_cancellation(
@@ -522,6 +766,10 @@ pub enum DaemonRawError {
     CancellationAlreadyRequested(RawRequestId),
     #[error("daemon Raw job ID space exhausted")]
     JobSpaceExhausted,
+    #[error("daemon Raw PTY ID space exhausted")]
+    PtySpaceExhausted,
+    #[error("Raw request, session, and daemon PTY identities do not match")]
+    PtyIdentityMismatch,
     #[error(transparent)]
     Planner(#[from] RawJobPlannerError),
     #[error(transparent)]
@@ -572,7 +820,10 @@ mod tests {
         }
     }
 
-    fn authority(fixture: &Fixture) -> DaemonCompatibilitySnapshot {
+    fn authority_for(
+        fixture: &Fixture,
+        interaction: RawInteractionMode,
+    ) -> DaemonCompatibilitySnapshot {
         let catalog = builtin_raw_catalog();
         let command = catalog
             .commands
@@ -581,8 +832,9 @@ mod tests {
                 matches!(
                     command.execution,
                     RawExecutionPolicy::Executable { ref template }
-                        if template.interaction == RawInteractionMode::NoninteractiveJob
-                            && command.parameters.is_empty()
+                        if template.interaction == interaction
+                            && (interaction == RawInteractionMode::InteractivePty
+                                || command.parameters.is_empty())
                 )
             })
             .unwrap();
@@ -644,6 +896,10 @@ mod tests {
         .unwrap()
     }
 
+    fn authority(fixture: &Fixture) -> DaemonCompatibilitySnapshot {
+        authority_for(fixture, RawInteractionMode::NoninteractiveJob)
+    }
+
     fn request(authority: &DaemonCompatibilitySnapshot, id: &str) -> RawExecutionRequestData {
         let catalog = builtin_raw_catalog();
         let command = catalog
@@ -683,6 +939,50 @@ mod tests {
         yoctui_app::raw_execution_request_to_protocol(&confirmed).unwrap()
     }
 
+    fn pty_request(authority: &DaemonCompatibilitySnapshot, id: &str) -> RawExecutionRequestData {
+        let catalog = builtin_raw_catalog();
+        let command = catalog
+            .commands
+            .iter()
+            .find(|command| {
+                matches!(
+                    command.execution,
+                    RawExecutionPolicy::Executable { ref template }
+                        if template.interaction == RawInteractionMode::InteractivePty
+                            && command.parameters.len() == 1
+                )
+            })
+            .unwrap();
+        let parameter = command.parameters.first().unwrap();
+        let parameters = BTreeMap::from([(
+            parameter.id.clone(),
+            RawParameterValue::Target("core-image-minimal".into()),
+        )]);
+        let preview_request = RawPreviewRequest {
+            catalog_version: catalog.version,
+            command: command.id.clone(),
+            parameters,
+            additional_arguments: RawAdditionalArguments::default(),
+            capability_generation: authority.snapshot.generation,
+            build_directory: authority
+                .snapshot
+                .environment
+                .build_directory
+                .value()
+                .unwrap()
+                .clone(),
+        };
+        let preview = catalog.preview(&preview_request, Some(authority)).unwrap();
+        let confirmed = yoctui_model::RawConfirmedExecutionRequest::from_reviewed_preview(
+            RawRequestId::new(id).unwrap(),
+            catalog,
+            &preview_request,
+            &preview,
+        )
+        .unwrap();
+        yoctui_app::raw_execution_request_to_protocol(&confirmed).unwrap()
+    }
+
     async fn next_event(supervisor: &mut DaemonRawSupervisor) -> DaemonRawEvent {
         tokio::time::timeout(Duration::from_secs(2), async {
             loop {
@@ -694,6 +994,282 @@ mod tests {
         })
         .await
         .unwrap()
+    }
+
+    async fn next_pty_event(
+        supervisor: &mut crate::daemon_pty::DaemonPtySupervisor,
+    ) -> crate::daemon_pty::DaemonPtyEvent {
+        tokio::time::timeout(Duration::from_secs(2), async {
+            loop {
+                if let Some(event) = supervisor.try_event() {
+                    return event;
+                }
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn raw_pty_uses_authorized_native_argv_and_survives_detach_resize_and_input() {
+        let fixture = Fixture::new(
+            "pty",
+            "#!/bin/sh\nprintf 'cwd=%s argv=%s\\n' \"$PWD\" \"$*\"\nIFS= read -r line\nstty size\nprintf 'input=%s\\n' \"$line\"\n",
+        );
+        let authority = authority_for(&fixture, RawInteractionMode::InteractivePty);
+        let wire = pty_request(&authority, "raw-request:daemon-pty");
+        let mut raw = DaemonRawSupervisor::default();
+        raw.replace_compatibility(Some(authority)).unwrap();
+        let start = raw.prepare_pty(wire.clone()).unwrap();
+        assert_eq!(start.pty_id.0 >> 60, RAW_PTY_NAMESPACE >> 60);
+        assert_eq!(start.command.executable(), fixture.executable());
+        assert_eq!(
+            start.command.arguments(),
+            ["-u", "knotty", "core-image-minimal"]
+        );
+        assert_eq!(start.command.current_directory(), fixture.0);
+        assert!(
+            raw.prepare_pty(wire.clone()).is_ok(),
+            "an unactivated authorization remains spawn-free and retryable"
+        );
+
+        let dimensions = yoctui_protocol::daemon::TerminalDimensions {
+            columns: 90,
+            rows: 30,
+        };
+        let client = yoctui_model::PtyClientId([41; 16]);
+        let mut pty = crate::daemon_pty::DaemonPtySupervisor::default();
+        pty.start_raw(start.pty_id, &start.command, dimensions)
+            .unwrap();
+        raw.activate_pty(&start).unwrap();
+        assert!(matches!(
+            raw.prepare_pty(wire),
+            Err(DaemonRawError::DuplicateRequest(_))
+        ));
+        pty.attach(start.pty_id, client).unwrap();
+
+        loop {
+            match next_pty_event(&mut pty).await {
+                crate::daemon_pty::DaemonPtyEvent::Started { session_id, .. } => {
+                    assert_eq!(session_id, start.pty_id);
+                    let state = raw.pty_started(session_id).unwrap().unwrap();
+                    assert_eq!(state.phase, yoctui_model::RawExecutionPhase::Running);
+                    break;
+                }
+                crate::daemon_pty::DaemonPtyEvent::Lost { message, .. } => panic!("{message}"),
+                _ => {}
+            }
+        }
+        let epoch = pty.take(start.pty_id, client, 0).unwrap();
+        pty.resize(
+            start.pty_id,
+            client,
+            epoch,
+            yoctui_model::PtyDimensions {
+                columns: 100,
+                rows: 35,
+            },
+        )
+        .unwrap();
+        pty.detach(start.pty_id, client).unwrap();
+        let detached = raw.pty_attachment(start.pty_id, false).unwrap().unwrap();
+        assert_eq!(detached.attachment, RawAttachmentState::Detached);
+        assert_eq!(detached.phase, yoctui_model::RawExecutionPhase::Running);
+        pty.attach(start.pty_id, client).unwrap();
+        let attached = raw.pty_attachment(start.pty_id, true).unwrap().unwrap();
+        assert_eq!(attached.attachment, RawAttachmentState::Attached);
+        let epoch = pty
+            .take(start.pty_id, client, epoch.saturating_add(1))
+            .unwrap();
+        pty.input(start.pty_id, client, epoch, b"hello raw pty\n".to_vec())
+            .unwrap();
+
+        let mut output = Vec::new();
+        let exit_code = loop {
+            match next_pty_event(&mut pty).await {
+                crate::daemon_pty::DaemonPtyEvent::Output { bytes, .. } => output.extend(bytes),
+                crate::daemon_pty::DaemonPtyEvent::Exited { exit_code, .. } => break exit_code,
+                crate::daemon_pty::DaemonPtyEvent::Lost { message, .. } => panic!("{message}"),
+                _ => {}
+            }
+        };
+        let text = String::from_utf8_lossy(&output);
+        assert!(text.contains(&format!("cwd={}", fixture.0.display())));
+        assert!(text.contains("argv=-u knotty core-image-minimal"));
+        assert!(text.contains("35 100"));
+        assert!(text.contains("input=hello raw pty"));
+        let terminal = raw
+            .pty_finished(start.pty_id, exit_code, None)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            terminal.phase,
+            yoctui_model::RawExecutionPhase::Terminal(RawExecutionOutcome::Succeeded)
+        );
+        assert!(terminal.stdout.chunks.is_empty());
+        assert!(terminal.stderr.chunks.is_empty());
+    }
+
+    #[test]
+    fn raw_pty_rejects_cross_route_stale_tampered_duplicate_and_tracks_cancel_and_loss() {
+        let fixture = Fixture::new("pty-denial", "#!/bin/sh\nexit 99\n");
+        let authority = authority_for(&fixture, RawInteractionMode::InteractivePty);
+        let wire = pty_request(&authority, "raw-request:daemon-pty-denial");
+        let mut raw = DaemonRawSupervisor::default();
+        raw.replace_compatibility(Some(authority)).unwrap();
+
+        assert!(matches!(
+            raw.start(wire.clone()),
+            Err(DaemonRawError::Planner(
+                RawJobPlannerError::InteractiveRequest
+            ))
+        ));
+        let mut tampered = wire.clone();
+        let replacement = if tampered.preview_digest.starts_with("00") {
+            "ff"
+        } else {
+            "00"
+        };
+        tampered.preview_digest.replace_range(0..2, replacement);
+        assert!(raw.prepare_pty(tampered).is_err());
+        let mut stale = wire.clone();
+        stale.capability_generation += 1;
+        assert!(raw.prepare_pty(stale).is_err());
+
+        let start = raw.prepare_pty(wire.clone()).unwrap();
+        let other = raw
+            .prepare_pty(pty_request(
+                &raw.compatibility.clone().unwrap(),
+                "raw-request:daemon-pty-other",
+            ))
+            .unwrap();
+        let mut mismatched = start.clone();
+        mismatched.command = other.command;
+        assert!(matches!(
+            raw.activate_pty(&mismatched),
+            Err(DaemonRawError::PtyIdentityMismatch)
+        ));
+        raw.activate_pty(&start).unwrap();
+        assert!(matches!(
+            raw.activate_pty(&start),
+            Err(DaemonRawError::DuplicateRequest(_))
+        ));
+        raw.pty_started(start.pty_id).unwrap();
+        let DaemonRawCancel::Pty { pty_id, state } = raw.cancel_pty(start.pty_id).unwrap().unwrap()
+        else {
+            panic!("expected Raw PTY cancellation target");
+        };
+        assert_eq!(pty_id, start.pty_id);
+        assert_eq!(state.phase, yoctui_model::RawExecutionPhase::Cancelling);
+        let cancelled = raw.pty_finished(start.pty_id, None, None).unwrap().unwrap();
+        assert_eq!(
+            cancelled.phase,
+            yoctui_model::RawExecutionPhase::Terminal(RawExecutionOutcome::Cancelled)
+        );
+        let snapshot = DaemonSnapshot {
+            daemon_instance_id: yoctui_protocol::daemon::DaemonInstanceId([7; 16]),
+            sequence: 0,
+            generation: 0,
+            workspace: None,
+            project_profile: yoctui_protocol::daemon::ProjectProfileSummary::NotLoaded,
+            bitbake: yoctui_protocol::daemon::BitBakeState {
+                lifecycle: LifecycleState::Disconnected,
+                version: None,
+                capabilities: Vec::new(),
+                diagnostic: None,
+            },
+            compatibility: None,
+            jobs: Vec::new(),
+            raw_executions: vec![
+                yoctui_app::raw_execution_snapshot_to_protocol(&cancelled).unwrap(),
+            ],
+            pty_sessions: Vec::new(),
+            pty_screens: Vec::new(),
+            clients: Vec::new(),
+            recent_logs: Vec::new(),
+            build_events: Vec::new(),
+            recovery_warnings: Vec::new(),
+        };
+        let mut recovered = DaemonRawSupervisor::default();
+        recovered.restore_snapshot(&snapshot).unwrap();
+        recovered
+            .replace_compatibility(raw.compatibility.clone())
+            .unwrap();
+        let recovered_start = recovered
+            .prepare_pty(pty_request(
+                &recovered.compatibility.clone().unwrap(),
+                "raw-request:daemon-pty-recovered",
+            ))
+            .unwrap();
+        assert_eq!(recovered_start.pty_id.0, RAW_PTY_NAMESPACE | 2);
+
+        let lost_wire = pty_request(
+            &raw.compatibility.clone().unwrap(),
+            "raw-request:daemon-pty-lost",
+        );
+        let lost_start = raw.prepare_pty(lost_wire).unwrap();
+        raw.activate_pty(&lost_start).unwrap();
+        let lost = raw
+            .pty_finished(lost_start.pty_id, None, Some("daemon restarted".into()))
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            lost.phase,
+            yoctui_model::RawExecutionPhase::Terminal(RawExecutionOutcome::Lost)
+        );
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn raw_pty_explicit_termination_is_required_and_reports_cancelled() {
+        let fixture = Fixture::new(
+            "pty-terminate",
+            "#!/bin/sh\ntrap 'exit 0' TERM\nprintf 'ready\\n'\nwhile :; do sleep 1; done\n",
+        );
+        let authority = authority_for(&fixture, RawInteractionMode::InteractivePty);
+        let wire = pty_request(&authority, "raw-request:daemon-pty-terminate");
+        let mut raw = DaemonRawSupervisor::default();
+        raw.replace_compatibility(Some(authority)).unwrap();
+        let start = raw.prepare_pty(wire).unwrap();
+        let mut pty = crate::daemon_pty::DaemonPtySupervisor::default();
+        pty.start_raw(
+            start.pty_id,
+            &start.command,
+            yoctui_protocol::daemon::TerminalDimensions {
+                columns: 80,
+                rows: 24,
+            },
+        )
+        .unwrap();
+        raw.activate_pty(&start).unwrap();
+        loop {
+            if let crate::daemon_pty::DaemonPtyEvent::Started { session_id, .. } =
+                next_pty_event(&mut pty).await
+            {
+                raw.pty_started(session_id).unwrap();
+                break;
+            }
+        }
+
+        let DaemonRawCancel::Pty { pty_id, state } =
+            raw.cancel(start.state.request.id.as_str()).unwrap()
+        else {
+            panic!("expected PTY cancellation");
+        };
+        assert_eq!(state.phase, yoctui_model::RawExecutionPhase::Cancelling);
+        pty.terminate(pty_id).unwrap();
+        let exit_code = loop {
+            match next_pty_event(&mut pty).await {
+                crate::daemon_pty::DaemonPtyEvent::Exited { exit_code, .. } => break exit_code,
+                crate::daemon_pty::DaemonPtyEvent::Lost { message, .. } => panic!("{message}"),
+                _ => {}
+            }
+        };
+        let terminal = raw.pty_finished(pty_id, exit_code, None).unwrap().unwrap();
+        assert_eq!(
+            terminal.phase,
+            yoctui_model::RawExecutionPhase::Terminal(RawExecutionOutcome::Cancelled)
+        );
     }
 
     #[tokio::test]

@@ -184,7 +184,7 @@ pub use qa_task::{
 pub use qemu::{QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner};
 pub use raw_job::{
     RawJobCommandSpec, RawJobPlanner, RawJobPlannerError, RawJobRunner, RawJobRunnerError,
-    RawJobRunnerEvent,
+    RawJobRunnerEvent, RawPtyCommandSpec, RawPtyPlanner,
 };
 pub use sdk::{
     SdkArtifactAdapter, SdkArtifactAdapterError, SdkArtifactCancellation, SdkArtifactResponse,

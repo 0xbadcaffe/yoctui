@@ -132,7 +132,15 @@ graceful/forced cancellation, channel loss, and restart recovery exactly once.
 Duplicate/stale requests and terminal or repeated cancellation fail closed;
 reconnect installs current snapshots, while safe persistence strips output and
 turns unrecoverable live ownership into detached `Lost`. `RAW-PTY-001` is
-active next.
+complete: confirmed interactive requests now take a separate typed daemon
+route, are reconstructed against current catalog/capability/executable/build
+authority, and enter the existing PTY actor only as immutable native argv.
+Namespaced Raw PTY/session identities cannot collide with or be decoded from
+generic sessions. Ordered Raw and PTY replicas cover start, writer-controlled
+input/resize, detach/reattach, explicit termination, exit, loss, reconnect, and
+cancellation without parsing terminal output or granting client process
+authority. Cross-route, duplicate, stale, tampered, and identity-mismatched
+starts fail before spawn. `RAW-OUTPUT-UI-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

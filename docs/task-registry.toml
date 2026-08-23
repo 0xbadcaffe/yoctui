@@ -5805,18 +5805,18 @@ notes = "The daemon revalidates the catalog, digest, current capability/build/ex
 id = "RAW-PTY-001"
 milestone = "M20"
 title = "Execute interactive Raw commands through daemon PTYs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 619
 required = true
 depends_on = ["RAW-EXEC-MODEL-001", "RAW-CAP-PROBE-001", "PTY-MULTI-001"]
 verify = ["cargo test -p yoctui-model raw_pty", "cargo test -p yoctui-app raw_pty", "cargo test -p yoctui -- raw_pty"]
-notes = "Route only catalog-classified interactive argv through existing daemon PTY/session ownership with resize, detach, reattach, writer control, and termination."
+notes = "Confirmed interactive requests are reconstructed inside the daemon and enter the existing PTY actor only as canonical native argv/cwd. Disjoint Raw identities, ordered Raw plus PTY replicas, writer-controlled input/resize, detach/reattach, explicit termination, exit/loss/recovery, and fail-closed cross-route/stale/tampered/duplicate denial are covered."
 
 [[task]]
 id = "RAW-OUTPUT-UI-001"
 milestone = "M20"
 title = "Implement Raw execution output workspace"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 620
 required = true
 depends_on = ["RAW-JOB-001", "RAW-PTY-001"]

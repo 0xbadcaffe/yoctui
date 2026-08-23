@@ -15,7 +15,7 @@ use tokio::{
 use yoctui_model::{
     CapabilityToolId, DaemonCompatibilitySnapshot, RawAdditionalArguments,
     RawConfirmedExecutionRequest, RawInteractionMode, RawJobId, RawOutputChunk, RawOutputStream,
-    RawPreviewRequest, RawRequestId, RawStreamId, builtin_raw_catalog,
+    RawPreviewRequest, RawRequestId, RawSessionId, RawStreamId, builtin_raw_catalog,
 };
 
 use crate::output_text;
@@ -36,6 +36,42 @@ pub struct RawJobCommandSpec {
     arguments: Vec<OsString>,
     current_directory: PathBuf,
     capability_generation: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawPtyCommandSpec {
+    request_id: RawRequestId,
+    session_id: RawSessionId,
+    executable: PathBuf,
+    arguments: Vec<String>,
+    current_directory: PathBuf,
+    capability_generation: u64,
+}
+
+impl RawPtyCommandSpec {
+    pub fn request_id(&self) -> &RawRequestId {
+        &self.request_id
+    }
+
+    pub fn session_id(&self) -> &RawSessionId {
+        &self.session_id
+    }
+
+    pub fn executable(&self) -> &Path {
+        &self.executable
+    }
+
+    pub fn arguments(&self) -> &[String] {
+        &self.arguments
+    }
+
+    pub fn current_directory(&self) -> &Path {
+        &self.current_directory
+    }
+
+    pub const fn capability_generation(&self) -> u64 {
+        self.capability_generation
+    }
 }
 
 impl RawJobCommandSpec {
@@ -76,6 +112,35 @@ pub struct RawJobPlanner<'a> {
     compatibility: &'a DaemonCompatibilitySnapshot,
 }
 
+pub struct RawPtyPlanner<'a> {
+    compatibility: &'a DaemonCompatibilitySnapshot,
+}
+
+impl<'a> RawPtyPlanner<'a> {
+    pub fn new(compatibility: &'a DaemonCompatibilitySnapshot) -> Self {
+        Self { compatibility }
+    }
+
+    pub fn plan(
+        &self,
+        request: &RawConfirmedExecutionRequest,
+        session_id: RawSessionId,
+    ) -> Result<RawPtyCommandSpec, RawJobPlannerError> {
+        if request.interaction != RawInteractionMode::InteractivePty {
+            return Err(RawJobPlannerError::NoninteractiveRequest);
+        }
+        let (preview, executable) = reconstruct_raw_command(self.compatibility, request)?;
+        Ok(RawPtyCommandSpec {
+            request_id: request.id.clone(),
+            session_id,
+            executable,
+            arguments: preview.arguments,
+            current_directory: request.build_directory.clone(),
+            capability_generation: request.capability_generation,
+        })
+    }
+}
+
 impl<'a> RawJobPlanner<'a> {
     pub fn new(compatibility: &'a DaemonCompatibilitySnapshot) -> Self {
         Self { compatibility }
@@ -88,55 +153,13 @@ impl<'a> RawJobPlanner<'a> {
         stdout_stream: RawStreamId,
         stderr_stream: RawStreamId,
     ) -> Result<RawJobCommandSpec, RawJobPlannerError> {
-        request
-            .validate()
-            .map_err(|error| RawJobPlannerError::InvalidRequest(error.to_string()))?;
         if request.interaction != RawInteractionMode::NoninteractiveJob {
             return Err(RawJobPlannerError::InteractiveRequest);
         }
         if stdout_stream == stderr_stream {
             return Err(RawJobPlannerError::DuplicateStreamIdentity);
         }
-        let additional_arguments =
-            RawAdditionalArguments::from_vec(request.additional_arguments.clone())
-                .map_err(|error| RawJobPlannerError::InvalidRequest(error.to_string()))?;
-        let preview_request = RawPreviewRequest {
-            catalog_version: request.catalog_version,
-            command: request.command.clone(),
-            parameters: request.parameters.clone(),
-            additional_arguments,
-            capability_generation: request.capability_generation,
-            build_directory: request.build_directory.clone(),
-        };
-        let catalog = builtin_raw_catalog();
-        let preview = catalog
-            .preview(&preview_request, Some(self.compatibility))
-            .map_err(|error| RawJobPlannerError::Authorization(error.to_string()))?;
-        let reconstructed = RawConfirmedExecutionRequest::from_reviewed_preview(
-            request.id.clone(),
-            catalog,
-            &preview_request,
-            &preview,
-        )
-        .map_err(|error| RawJobPlannerError::Authorization(error.to_string()))?;
-        if reconstructed != *request {
-            return Err(RawJobPlannerError::PreviewMismatch);
-        }
-        let executable = self
-            .compatibility
-            .snapshot
-            .environment
-            .available_tools
-            .value()
-            .and_then(|tools| {
-                tools
-                    .iter()
-                    .find(|tool| tool.id == CapabilityToolId::BitBake.executable_name())
-            })
-            .map(|tool| tool.executable.clone())
-            .ok_or(RawJobPlannerError::MissingExecutableAuthority)?;
-        validate_directory(&request.build_directory)?;
-        validate_executable(&executable)?;
+        let (preview, executable) = reconstruct_raw_command(self.compatibility, request)?;
         Ok(RawJobCommandSpec {
             request_id: request.id.clone(),
             job_id,
@@ -148,6 +171,55 @@ impl<'a> RawJobPlanner<'a> {
             capability_generation: request.capability_generation,
         })
     }
+}
+
+fn reconstruct_raw_command(
+    compatibility: &DaemonCompatibilitySnapshot,
+    request: &RawConfirmedExecutionRequest,
+) -> Result<(yoctui_model::RawExecutionPreview, PathBuf), RawJobPlannerError> {
+    request
+        .validate()
+        .map_err(|error| RawJobPlannerError::InvalidRequest(error.to_string()))?;
+    let additional_arguments =
+        RawAdditionalArguments::from_vec(request.additional_arguments.clone())
+            .map_err(|error| RawJobPlannerError::InvalidRequest(error.to_string()))?;
+    let preview_request = RawPreviewRequest {
+        catalog_version: request.catalog_version,
+        command: request.command.clone(),
+        parameters: request.parameters.clone(),
+        additional_arguments,
+        capability_generation: request.capability_generation,
+        build_directory: request.build_directory.clone(),
+    };
+    let catalog = builtin_raw_catalog();
+    let preview = catalog
+        .preview(&preview_request, Some(compatibility))
+        .map_err(|error| RawJobPlannerError::Authorization(error.to_string()))?;
+    let reconstructed = RawConfirmedExecutionRequest::from_reviewed_preview(
+        request.id.clone(),
+        catalog,
+        &preview_request,
+        &preview,
+    )
+    .map_err(|error| RawJobPlannerError::Authorization(error.to_string()))?;
+    if reconstructed != *request {
+        return Err(RawJobPlannerError::PreviewMismatch);
+    }
+    let executable = compatibility
+        .snapshot
+        .environment
+        .available_tools
+        .value()
+        .and_then(|tools| {
+            tools
+                .iter()
+                .find(|tool| tool.id == CapabilityToolId::BitBake.executable_name())
+        })
+        .map(|tool| tool.executable.clone())
+        .ok_or(RawJobPlannerError::MissingExecutableAuthority)?;
+    validate_directory(&request.build_directory)?;
+    validate_executable(&executable)?;
+    Ok((preview, executable))
 }
 
 fn validate_directory(path: &Path) -> Result<(), RawJobPlannerError> {
@@ -194,6 +266,8 @@ pub enum RawJobPlannerError {
     InvalidRequest(String),
     #[error("interactive Raw request cannot enter the line-oriented job runner")]
     InteractiveRequest,
+    #[error("noninteractive Raw request cannot enter the PTY runner")]
+    NoninteractiveRequest,
     #[error("Raw stdout and stderr stream identities must be distinct")]
     DuplicateStreamIdentity,
     #[error("Raw job authorization failed: {0}")]

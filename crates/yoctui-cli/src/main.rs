@@ -2291,6 +2291,33 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             let Some(event) = pty_supervisor.try_event() else {
                 break;
             };
+            let raw_state = match &event {
+                daemon_pty::DaemonPtyEvent::Started { session_id, .. } => {
+                    raw_supervisor.pty_started(*session_id)?
+                }
+                daemon_pty::DaemonPtyEvent::Changed {
+                    session_id,
+                    snapshot,
+                } => raw_supervisor.pty_attachment(*session_id, snapshot.viewers > 0)?,
+                daemon_pty::DaemonPtyEvent::Exited {
+                    session_id,
+                    exit_code,
+                    ..
+                } => raw_supervisor.pty_finished(*session_id, *exit_code, None)?,
+                daemon_pty::DaemonPtyEvent::Lost {
+                    session_id,
+                    message,
+                } => raw_supervisor.pty_finished(*session_id, None, Some(message.clone()))?,
+                daemon_pty::DaemonPtyEvent::Output { .. } => None,
+            };
+            if let Some(state) = raw_state {
+                daemon_journal.publish(
+                    yoctui_protocol::daemon::DaemonEvent::RawExecutionChanged(Box::new(
+                        yoctui_app::raw_execution_snapshot_to_protocol(&state)
+                            .map_err(anyhow::Error::msg)?,
+                    )),
+                )?;
+            }
             publish_daemon_pty_event(&mut daemon_journal, event)?;
         }
         let now_ms = unix_ms();
@@ -2697,9 +2724,90 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                 current_generation: daemon_journal.snapshot().generation,
                             },
                         },
+                        DaemonCommand::StartRawPty {
+                            request,
+                            dimensions,
+                        } => match raw_supervisor.prepare_pty(request) {
+                            Ok(start) => match pty_supervisor.start_raw(
+                                start.pty_id,
+                                &start.command,
+                                dimensions,
+                            ) {
+                                Ok(()) => {
+                                    raw_supervisor.activate_pty(&start)?;
+                                    pty_supervisor.attach(
+                                        start.pty_id,
+                                        yoctui_model::PtyClientId(client_id.0),
+                                    ).map_err(anyhow::Error::msg)?;
+                                    daemon_journal.publish(
+                                        yoctui_protocol::daemon::DaemonEvent::RawExecutionChanged(
+                                            Box::new(
+                                                yoctui_app::raw_execution_snapshot_to_protocol(
+                                                    &start.state,
+                                                )
+                                                .map_err(anyhow::Error::msg)?,
+                                            ),
+                                        ),
+                                    )?;
+                                    daemon_journal.publish(
+                                        yoctui_protocol::daemon::DaemonEvent::PtyChanged(
+                                            yoctui_protocol::daemon::PtySessionSummary {
+                                                id: yoctui_protocol::daemon::PtySessionId(
+                                                    start.pty_id.0,
+                                                ),
+                                                name: format!(
+                                                    "Raw {}",
+                                                    start.state.request.command
+                                                ),
+                                                kind: yoctui_protocol::daemon::PtyKind::Utility,
+                                                cwd: start
+                                                    .command
+                                                    .current_directory()
+                                                    .display()
+                                                    .to_string(),
+                                                lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
+                                                dimensions,
+                                                writer: None,
+                                                writer_epoch: 0,
+                                                viewers: 1,
+                                                exit_code: None,
+                                                restartable: false,
+                                            },
+                                        ),
+                                    )?;
+                                    CommandOutcome::Accepted
+                                }
+                                Err(message) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                    message,
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            },
+                            Err(error) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                message: error.to_string(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
                         DaemonCommand::CancelRaw { request_id } => {
                             match raw_supervisor.cancel(&request_id) {
-                                Ok(()) => CommandOutcome::Accepted,
+                                Ok(daemon_raw::DaemonRawCancel::Job) => CommandOutcome::Accepted,
+                                Ok(daemon_raw::DaemonRawCancel::Pty { pty_id, state }) => {
+                                    daemon_journal.publish(
+                                        yoctui_protocol::daemon::DaemonEvent::RawExecutionChanged(
+                                            Box::new(
+                                                yoctui_app::raw_execution_snapshot_to_protocol(
+                                                    &state,
+                                                )
+                                                .map_err(anyhow::Error::msg)?,
+                                            ),
+                                        ),
+                                    )?;
+                                    pty_supervisor
+                                        .terminate(pty_id)
+                                        .map_err(anyhow::Error::msg)?;
+                                    CommandOutcome::Accepted
+                                }
                                 Err(error) => CommandOutcome::Rejected {
                                     code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
                                     message: error.to_string(),
@@ -2886,6 +2994,18 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             },
                         },
                         DaemonCommand::TerminatePty { session_id, .. } => {
+                            if let Some(daemon_raw::DaemonRawCancel::Pty { state, .. }) =
+                                raw_supervisor.cancel_pty(yoctui_model::PtySessionId(session_id.0))?
+                            {
+                                daemon_journal.publish(
+                                    yoctui_protocol::daemon::DaemonEvent::RawExecutionChanged(
+                                        Box::new(
+                                            yoctui_app::raw_execution_snapshot_to_protocol(&state)
+                                                .map_err(anyhow::Error::msg)?,
+                                        ),
+                                    ),
+                                )?;
+                            }
                             match pty_supervisor.terminate(yoctui_model::PtySessionId(session_id.0)) {
                                 Ok(()) => CommandOutcome::Accepted,
                                 Err(message) => CommandOutcome::Rejected {

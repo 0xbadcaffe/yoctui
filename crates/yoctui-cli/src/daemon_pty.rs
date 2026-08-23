@@ -5,6 +5,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use yoctui_bitbake::RawPtyCommandSpec;
 use yoctui_model::{
     PtyClientId, PtyCommandIdentity, PtyDimensions, PtySessionId, PtySessionKind, PtySessionSpec,
     PtyWorkspaceContext,
@@ -16,6 +17,8 @@ use yoctui_protocol::daemon::{
 use crate::pty_attach::{DaemonPtySession, PtyAttachEvent};
 
 const PTY_SCREEN_MIN_INTERVAL: Duration = Duration::from_millis(33);
+const GENERIC_PTY_ID_LIMIT: u64 = 1 << 60;
+const RAW_PTY_NAMESPACE: u64 = 6 << 60;
 
 #[derive(Debug)]
 enum Control {
@@ -85,6 +88,47 @@ impl Default for DaemonPtySupervisor {
 }
 
 impl DaemonPtySupervisor {
+    pub fn start_raw(
+        &mut self,
+        id: PtySessionId,
+        command: &RawPtyCommandSpec,
+        dimensions: TerminalDimensions,
+    ) -> Result<(), String> {
+        validate_dimensions(dimensions)?;
+        let sequence = command
+            .session_id()
+            .as_str()
+            .strip_prefix("raw-session:daemon-")
+            .and_then(|sequence| sequence.parse::<u64>().ok())
+            .filter(|sequence| *sequence > 0 && *sequence < GENERIC_PTY_ID_LIMIT)
+            .ok_or_else(|| "Raw PTY session identity is invalid".to_string())?;
+        if id.0 != RAW_PTY_NAMESPACE | sequence {
+            return Err("Raw and daemon PTY session identities do not match".into());
+        }
+        let cwd = command.current_directory().to_path_buf();
+        self.start_spec(PtySessionSpec {
+            id,
+            name: format!("Raw {}", command.request_id()),
+            kind: PtySessionKind::InteractiveTool,
+            cwd: cwd.clone(),
+            command: PtyCommandIdentity {
+                executable: command.executable().to_path_buf(),
+                arguments: command.arguments().to_vec(),
+            },
+            dimensions: PtyDimensions {
+                columns: dimensions.columns,
+                rows: dimensions.rows,
+            },
+            restartable: false,
+            workspace: PtyWorkspaceContext {
+                source_dir: cwd.clone(),
+                build_dir: cwd.clone(),
+                authorized_context_roots: vec![cwd],
+                owner_identity: command.session_id().as_str().into(),
+            },
+        })
+    }
+
     pub fn start_new(
         &mut self,
         name: String,
@@ -102,10 +146,12 @@ impl DaemonPtySupervisor {
             self.sessions
                 .keys()
                 .map(|id| id.0)
+                .filter(|id| *id < GENERIC_PTY_ID_LIMIT)
                 .max()
                 .unwrap_or(0)
                 .checked_add(1)
-                .ok_or_else(|| "PTY session ID space exhausted".to_string())?,
+                .filter(|id| *id < GENERIC_PTY_ID_LIMIT)
+                .ok_or_else(|| "generic PTY session ID space exhausted".to_string())?,
         );
         self.start(id, name, kind, cwd, command, dimensions)?;
         Ok(id)
@@ -120,10 +166,20 @@ impl DaemonPtySupervisor {
         command: PtyCommand,
         dimensions: TerminalDimensions,
     ) -> Result<(), String> {
+        let spec = wire_spec(id, name, kind, cwd, command, dimensions)?;
+        self.start_spec(spec)
+    }
+
+    fn start_spec(&mut self, spec: PtySessionSpec) -> Result<(), String> {
+        let id = spec.id;
         if id.0 == 0 || self.sessions.contains_key(&id) {
             return Err(format!("PTY session {} already exists or is invalid", id.0));
         }
-        let spec = wire_spec(id, name, kind, cwd, command, dimensions)?;
+        if self.sessions.len() >= MAX_DAEMON_PTY_SESSIONS {
+            return Err(format!(
+                "PTY session limit reached ({MAX_DAEMON_PTY_SESSIONS})"
+            ));
+        }
         let (control_tx, mut control_rx): (
             tokio::sync::mpsc::UnboundedSender<ControlMessage>,
             tokio::sync::mpsc::UnboundedReceiver<ControlMessage>,
@@ -161,6 +217,30 @@ impl DaemonPtySupervisor {
                 tokio::select! {
                     control = control_rx.recv() => {
                         let Some((control, response)) = control else { return; };
+                        if matches!(&control, Control::Terminate) {
+                            let result = session.terminate().await.map(|_| Response::Unit);
+                            let snapshot = session.snapshot(0).ok();
+                            let succeeded = result.is_ok();
+                            let _ = response.send(result.map_err(|error| error.to_string()));
+                            if succeeded {
+                                let exit_code = snapshot.as_ref().and_then(|snapshot| {
+                                    snapshot.listing.exit_status.and_then(|status| match status {
+                                        yoctui_model::PtyExitStatus::Code(code) => Some(code),
+                                        yoctui_model::PtyExitStatus::Signal(_) => None,
+                                    })
+                                });
+                                let screen = snapshot.as_ref().map(|snapshot| {
+                                    terminal_to_wire(session_id, &snapshot.terminal)
+                                });
+                                let _ = event_tx.send(DaemonPtyEvent::Exited {
+                                    session_id,
+                                    exit_code,
+                                    screen,
+                                });
+                                return;
+                            }
+                            continue;
+                        }
                         let result = match control {
                             Control::Attach(client) => session.attach(client).map(|_| Response::Unit),
                             Control::Detach(client) => session.detach(client).map(|_| Response::Unit),
@@ -168,7 +248,7 @@ impl DaemonPtySupervisor {
                             Control::Release(client, epoch) => session.release_control(client, epoch).map(|_| Response::Unit),
                             Control::Input(client, epoch, bytes) => session.input(client, epoch, &bytes).await.map(|_| Response::Unit),
                             Control::Resize(client, epoch, dimensions) => session.resize(client, epoch, dimensions).map(|_| Response::Unit),
-                            Control::Terminate => session.terminate().await.map(|_| Response::Unit),
+                            Control::Terminate => unreachable!("handled above"),
                         };
                         let _ = response.send(result.map_err(|error| error.to_string()));
                         if let Ok(snapshot) = session.snapshot(0) {
@@ -295,13 +375,7 @@ fn wire_spec(
     if !cwd.is_absolute() {
         return Err("PTY cwd must be absolute".into());
     }
-    if dimensions.columns == 0
-        || dimensions.rows == 0
-        || dimensions.columns > 512
-        || dimensions.rows > 512
-    {
-        return Err("PTY dimensions must be within 1..=512".into());
-    }
+    validate_dimensions(dimensions)?;
     Ok(PtySessionSpec {
         id,
         name,
@@ -334,6 +408,17 @@ fn wire_spec(
             owner_identity: "daemon".into(),
         },
     })
+}
+
+fn validate_dimensions(dimensions: TerminalDimensions) -> Result<(), String> {
+    if dimensions.columns == 0
+        || dimensions.rows == 0
+        || dimensions.columns > 512
+        || dimensions.rows > 512
+    {
+        return Err("PTY dimensions must be within 1..=512".into());
+    }
+    Ok(())
 }
 
 fn inherited_environment() -> BTreeMap<String, String> {
@@ -465,5 +550,40 @@ mod tests {
         assert_eq!(screen.rows[0], "ready");
         assert_eq!(screen.rows[1], "prompt");
         assert!(screen.rows.iter().all(|row| !row.contains('\x1b')));
+    }
+
+    #[tokio::test]
+    async fn raw_pty_namespace_never_changes_generic_identity_allocation() {
+        let mut supervisor = DaemonPtySupervisor::default();
+        let command = PtyCommand {
+            program: "/bin/true".into(),
+            arguments: Vec::new(),
+            environment_profile_id: None,
+        };
+        let dimensions = TerminalDimensions {
+            columns: 80,
+            rows: 24,
+        };
+        supervisor
+            .start(
+                PtySessionId(6 << 60 | 1),
+                "raw namespace fixture".into(),
+                PtyKind::Utility,
+                "/tmp".into(),
+                command.clone(),
+                dimensions,
+            )
+            .unwrap();
+        let generic = supervisor
+            .start_new(
+                "generic".into(),
+                PtyKind::Utility,
+                "/tmp".into(),
+                command,
+                dimensions,
+            )
+            .unwrap();
+        assert_eq!(generic, PtySessionId(1));
+        assert_eq!(generic.0 >> 60, 0);
     }
 }
