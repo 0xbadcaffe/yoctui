@@ -183,6 +183,9 @@ persistence effect. `RAW-SEARCH-001` is complete: bounded case-insensitive
 search matches category, command identity, labels, and descriptions while
 preserving exact selection and explicit no-match behavior. `RAW-MOUSE-001` is
 active next.
+`RAW-COMPAT-001` is complete: the older and current live fixture matrices,
+unknown-future evidence, replacement/stale projections, and zero-spawn denial
+checks pass. `RAW-LIVE-001` is active next.
 `RAW-RESPONSIVE-001` is complete: Raw browser, Favorites, execution, and
 below-minimum shells retain bounded selection and never panic across wide,
 medium, narrow, and too-small terminals. `RAW-A11Y-001` is complete: no-color

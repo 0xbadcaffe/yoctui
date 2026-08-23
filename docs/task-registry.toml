@@ -5926,18 +5926,18 @@ notes = "Reject documented shell operators and control corruption before spawn; 
 id = "RAW-COMPAT-001"
 milestone = "M20"
 title = "Verify dynamic Raw availability across BitBake fixtures"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 630
 required = true
 depends_on = ["RAW-CAP-PROBE-001", "RAW-FORM-UI-001"]
 verify = ["cargo test --workspace --all-features raw_compatibility", "./scripts/verify-compatibility.sh"]
-notes = "Exercise older, Wrynose 2.18, unknown-future, unavailable, limited, replacement, stale, and denial-with-zero-spawn behavior."
+notes = "Compatibility fixture and live evidence checks cover older, Wrynose 2.18, unknown-future, unavailable, limited, replacement, stale, and zero-spawn denial behavior."
 
 [[task]]
 id = "RAW-LIVE-001"
 milestone = "M20"
 title = "Validate representative Raw commands against supported BitBake"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 631
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-UI-001", "RAW-SECURITY-001", "RAW-COMPAT-001"]
