@@ -47,6 +47,18 @@ pub enum DaemonRawCancel {
 }
 
 #[derive(Debug, Clone)]
+pub enum DaemonRawAttachment {
+    Job,
+    Pty { pty_id: PtySessionId },
+}
+
+#[derive(Debug, Clone, Copy)]
+enum RawJobControl {
+    Cancel,
+    Attachment(RawAttachmentState),
+}
+
+#[derive(Debug, Clone)]
 pub struct DaemonRawEvent {
     pub job_id: JobId,
     pub state: RawExecutionState,
@@ -61,7 +73,8 @@ pub struct DaemonRawSupervisor {
     next_job_id: u64,
     next_pty_id: u64,
     seen_requests: HashSet<RawRequestId>,
-    active: HashMap<RawRequestId, mpsc::UnboundedSender<()>>,
+    active: HashMap<RawRequestId, mpsc::UnboundedSender<RawJobControl>>,
+    job_attachments: HashMap<RawRequestId, RawAttachmentState>,
     cancellation_requested: HashSet<RawRequestId>,
     pty_by_request: HashMap<RawRequestId, PtySessionId>,
     pty_states: HashMap<PtySessionId, RawExecutionState>,
@@ -80,6 +93,7 @@ impl Default for DaemonRawSupervisor {
             next_pty_id: 1,
             seen_requests: HashSet::new(),
             active: HashMap::new(),
+            job_attachments: HashMap::new(),
             cancellation_requested: HashSet::new(),
             pty_by_request: HashMap::new(),
             pty_states: HashMap::new(),
@@ -177,8 +191,10 @@ impl DaemonRawSupervisor {
             .checked_add(1)
             .ok_or(DaemonRawError::JobSpaceExhausted)?;
         self.seen_requests.insert(request.id.clone());
-        let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
-        self.active.insert(request.id.clone(), cancel_tx);
+        let (control_tx, mut control_rx) = mpsc::unbounded_channel();
+        self.active.insert(request.id.clone(), control_tx);
+        self.job_attachments
+            .insert(request.id.clone(), RawAttachmentState::Attached);
 
         let events = self.events_tx.clone();
         let operation_timeout = self.operation_timeout;
@@ -258,31 +274,46 @@ impl DaemonRawSupervisor {
                 }
             }
             let started = std::time::Instant::now();
-            let mut cancellation_open = true;
+            let mut control_open = true;
             loop {
                 tokio::select! {
-                    cancellation = cancel_rx.recv(), if cancellation_open => {
-                        if cancellation.is_none() {
-                            cancellation_open = false;
+                    control = control_rx.recv(), if control_open => {
+                        let Some(control) = control else {
+                            control_open = false;
                             if !request_cancellation(&events, job_id, &mut state).await {
                                 return;
                             }
-                        } else if !request_cancellation(&events, job_id, &mut state).await {
-                            return;
-                        }
-                        match runner.cancel().await {
-                            Ok(_) => {}
-                            Err(error) => {
-                                let _ = finish_and_send(
-                                    &events,
-                                    job_id,
-                                    &mut state,
-                                    RawExecutionOutcome::Lost,
-                                    None,
-                                    Some(error.to_string()),
-                                )
-                                .await;
+                            if let Err(error) = runner.cancel().await {
+                                let _ = finish_and_send(&events, job_id, &mut state, RawExecutionOutcome::Lost, None, Some(error.to_string())).await;
                                 return;
+                            }
+                            continue;
+                        };
+                        match control {
+                            RawJobControl::Cancel => {
+                                if !request_cancellation(&events, job_id, &mut state).await {
+                                    return;
+                                }
+                                if let Err(error) = runner.cancel().await {
+                                    let _ = finish_and_send(&events, job_id, &mut state, RawExecutionOutcome::Lost, None, Some(error.to_string())).await;
+                                    return;
+                                }
+                            }
+                            RawJobControl::Attachment(attachment) => {
+                                let lifecycle = lifecycle_for(&state);
+                                if state.attachment != attachment
+                                    && !advance_and_send(
+                                        &events,
+                                        job_id,
+                                        &mut state,
+                                        RawExecutionEventKind::AttachmentChanged { attachment },
+                                        lifecycle,
+                                        None,
+                                    )
+                                    .await
+                                {
+                                    return;
+                                }
                             }
                         }
                     }
@@ -586,9 +617,39 @@ impl DaemonRawSupervisor {
         self.active
             .get(&request_id)
             .expect("active request was checked")
-            .send(())
+            .send(RawJobControl::Cancel)
             .map_err(|_| DaemonRawError::UnknownRequest(request_id))?;
         Ok(DaemonRawCancel::Job)
+    }
+
+    pub fn set_attachment(
+        &mut self,
+        request_id: &str,
+        attachment: RawAttachmentState,
+    ) -> Result<DaemonRawAttachment, DaemonRawError> {
+        let request_id = RawRequestId::new(request_id)?;
+        if let Some(pty_id) = self.pty_by_request.get(&request_id).copied() {
+            let state = self
+                .pty_states
+                .get_mut(&pty_id)
+                .ok_or_else(|| DaemonRawError::UnknownRequest(request_id.clone()))?;
+            if state.attachment == attachment || state.phase.is_terminal() {
+                return Err(DaemonRawError::AttachmentUnchanged(request_id));
+            }
+            return Ok(DaemonRawAttachment::Pty { pty_id });
+        }
+        let control = self
+            .active
+            .get(&request_id)
+            .ok_or_else(|| DaemonRawError::UnknownRequest(request_id.clone()))?;
+        if self.job_attachments.get(&request_id) == Some(&attachment) {
+            return Err(DaemonRawError::AttachmentUnchanged(request_id));
+        }
+        control
+            .send(RawJobControl::Attachment(attachment))
+            .map_err(|_| DaemonRawError::UnknownRequest(request_id.clone()))?;
+        self.job_attachments.insert(request_id, attachment);
+        Ok(DaemonRawAttachment::Job)
     }
 
     pub fn cancel_pty(
@@ -608,6 +669,7 @@ impl DaemonRawSupervisor {
         let event = self.events_rx.try_recv().ok()?;
         if event.state.phase.is_terminal() {
             self.active.remove(&event.state.request.id);
+            self.job_attachments.remove(&event.state.request.id);
             self.cancellation_requested.remove(&event.state.request.id);
         }
         Some(event)
@@ -764,6 +826,8 @@ pub enum DaemonRawError {
     UnknownRequest(RawRequestId),
     #[error("Raw execution cancellation was already requested for {0}")]
     CancellationAlreadyRequested(RawRequestId),
+    #[error("Raw execution attachment is already in the requested state for {0}")]
+    AttachmentUnchanged(RawRequestId),
     #[error("daemon Raw job ID space exhausted")]
     JobSpaceExhausted,
     #[error("daemon Raw PTY ID space exhausted")]
@@ -1270,6 +1334,54 @@ mod tests {
             terminal.phase,
             yoctui_model::RawExecutionPhase::Terminal(RawExecutionOutcome::Cancelled)
         );
+    }
+
+    #[tokio::test]
+    async fn raw_output_job_attachment_is_ordered_idempotent_and_does_not_cancel() {
+        let fixture = Fixture::new(
+            "output-attachment",
+            "#!/bin/sh\nprintf 'ready\\n'\nsleep 1\nexit 0\n",
+        );
+        let authority = authority(&fixture);
+        let wire = request(&authority, "raw-request:daemon-output-attachment");
+        let mut supervisor = DaemonRawSupervisor::default();
+        supervisor.replace_compatibility(Some(authority)).unwrap();
+        supervisor.start(wire.clone()).unwrap();
+        loop {
+            if next_event(&mut supervisor).await.state.phase
+                == yoctui_model::RawExecutionPhase::Running
+            {
+                break;
+            }
+        }
+        assert!(matches!(
+            supervisor.set_attachment(&wire.request_id, RawAttachmentState::Detached),
+            Ok(DaemonRawAttachment::Job)
+        ));
+        let detached = loop {
+            let event = next_event(&mut supervisor).await;
+            if event.state.attachment == RawAttachmentState::Detached {
+                break event.state;
+            }
+        };
+        assert_eq!(detached.phase, yoctui_model::RawExecutionPhase::Running);
+        assert!(!detached.cancellation_requested);
+        assert!(matches!(
+            supervisor.set_attachment(&wire.request_id, RawAttachmentState::Detached),
+            Err(DaemonRawError::AttachmentUnchanged(_))
+        ));
+        assert!(matches!(
+            supervisor.set_attachment(&wire.request_id, RawAttachmentState::Attached),
+            Ok(DaemonRawAttachment::Job)
+        ));
+        let attached = loop {
+            let event = next_event(&mut supervisor).await;
+            if event.state.attachment == RawAttachmentState::Attached {
+                break event.state;
+            }
+        };
+        assert_eq!(attached.phase, yoctui_model::RawExecutionPhase::Running);
+        assert!(!attached.cancellation_requested);
     }
 
     #[tokio::test]

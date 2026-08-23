@@ -1241,6 +1241,10 @@ pub enum DaemonCommand {
     CancelRaw {
         request_id: String,
     },
+    SetRawAttachment {
+        request_id: String,
+        attached: bool,
+    },
     StartDevtool {
         operation: DaemonDevtoolOperation,
         build_directory: String,
@@ -3499,6 +3503,22 @@ mod tests {
         assert_eq!(
             decode_frame::<ClientMessage>(&encode_frame(&start).unwrap()).unwrap(),
             start
+        );
+    }
+
+    #[test]
+    fn raw_output_attachment_command_preserves_request_correlation() {
+        let command = ClientMessage::Command(CommandRequest {
+            request_id: RequestId(44),
+            expected_generation: Some(12),
+            command: DaemonCommand::SetRawAttachment {
+                request_id: "raw-request:protocol-output".into(),
+                attached: false,
+            },
+        });
+        assert_eq!(
+            decode_frame::<ClientMessage>(&encode_frame(&command).unwrap()).unwrap(),
+            command
         );
     }
 

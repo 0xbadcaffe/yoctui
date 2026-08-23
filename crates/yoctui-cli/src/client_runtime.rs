@@ -256,6 +256,10 @@ fn daemon_command_for_effect(
         Effect::CancelRaw(request_id) => DaemonCommand::CancelRaw {
             request_id: request_id.as_str().into(),
         },
+        Effect::SetRawAttachment { request, attached } => DaemonCommand::SetRawAttachment {
+            request_id: request.as_str().into(),
+            attached: *attached,
+        },
         Effect::DevtoolModify(identity) => DaemonCommand::StartDevtool {
             operation: DaemonDevtoolOperation::Modify {
                 recipe: identity.name.clone(),
@@ -939,6 +943,26 @@ mod tests {
             request
         );
         assert!(dimensions.columns <= 512 && dimensions.rows <= 512);
+    }
+
+    #[test]
+    fn raw_output_attachment_effect_maps_only_request_identity_and_state() {
+        let app = App::new(16, 4096);
+        let request = yoctui_model::RawRequestId::new("raw-request:client-output").unwrap();
+        assert_eq!(
+            daemon_command_for_effect(
+                &app,
+                &Effect::SetRawAttachment {
+                    request: request.clone(),
+                    attached: false,
+                },
+            )
+            .unwrap(),
+            Some(DaemonCommand::SetRawAttachment {
+                request_id: request.as_str().into(),
+                attached: false,
+            })
+        );
     }
 
     #[test]

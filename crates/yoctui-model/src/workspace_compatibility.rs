@@ -640,7 +640,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
                 all: vec![Id::BitBakeRawServerToken],
                 any: vec![Id::BitBakeRawServerToken],
             }),
-        Effect::CancelRaw(_) => Requirement::ClientLocal,
+        Effect::CancelRaw(_) | Effect::SetRawAttachment { .. } => Requirement::ClientLocal,
         Effect::DevtoolModify(_) => Requirement::one(Id::DevtoolModify),
         Effect::DevtoolReset(_) => Requirement::one(Id::DevtoolReset),
         Effect::DevtoolUpdateRecipe(_) => Requirement::one(Id::DevtoolUpdateRecipe),

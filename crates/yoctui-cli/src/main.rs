@@ -2815,6 +2815,45 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                 },
                             }
                         }
+                        DaemonCommand::SetRawAttachment {
+                            request_id,
+                            attached,
+                        } => match raw_supervisor.set_attachment(
+                            &request_id,
+                            if attached {
+                                yoctui_model::RawAttachmentState::Attached
+                            } else {
+                                yoctui_model::RawAttachmentState::Detached
+                            },
+                        ) {
+                            Ok(daemon_raw::DaemonRawAttachment::Job) => CommandOutcome::Accepted,
+                            Ok(daemon_raw::DaemonRawAttachment::Pty { pty_id }) => {
+                                let result = if attached {
+                                    pty_supervisor.attach(
+                                        pty_id,
+                                        yoctui_model::PtyClientId(client_id.0),
+                                    )
+                                } else {
+                                    pty_supervisor.detach(
+                                        pty_id,
+                                        yoctui_model::PtyClientId(client_id.0),
+                                    )
+                                };
+                                match result {
+                                    Ok(()) => CommandOutcome::Accepted,
+                                    Err(message) => CommandOutcome::Rejected {
+                                        code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                        message,
+                                        current_generation: daemon_journal.snapshot().generation,
+                                    },
+                                }
+                            }
+                            Err(error) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                message: error.to_string(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
                         DaemonCommand::CancelJob { job_id } => {
                             match devtool_supervisor.cancel(job_id).or_else(|_| bitbake_supervisor.cancel(job_id)) {
                                 Ok(()) => CommandOutcome::Accepted,
@@ -12175,7 +12214,11 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     if let Some(action) = raw_mode_input(&app, input) {
                         let effect =
                             compatibility_workspace_action(&mut app, Action::RawMode(action));
-                        if let Some(effect @ (Effect::StartRaw(_) | Effect::CancelRaw(_))) = effect
+                        if let Some(
+                            effect @ (Effect::StartRaw(_)
+                            | Effect::CancelRaw(_)
+                            | Effect::SetRawAttachment { .. }),
+                        ) = effect
                         {
                             #[cfg(unix)]
                             if let Some(runtime) = daemon_runtime.as_mut() {

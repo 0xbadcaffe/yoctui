@@ -7847,6 +7847,47 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.raw_mode.notification =
                 Some("Raw execution is unknown, terminal, or already cancelling.".into());
         }
+        Action::RawMode(RawModeAction::SetExecutionAttachment {
+            request,
+            attachment,
+        }) => {
+            let available = app
+                .raw_mode
+                .execution_states
+                .get(&request)
+                .is_some_and(|state| !state.phase.is_terminal() && state.attachment != attachment);
+            if available {
+                return Some(Effect::SetRawAttachment {
+                    request,
+                    attached: attachment == RawAttachmentState::Attached,
+                });
+            }
+            app.raw_mode.notification = Some(
+                "Raw execution is terminal, unknown, or already has that attachment state.".into(),
+            );
+        }
+        Action::RawMode(RawModeAction::CloseExecution) => {
+            let detach = app
+                .raw_mode
+                .selected_execution()
+                .filter(|state| {
+                    !state.phase.is_terminal() && state.attachment == RawAttachmentState::Attached
+                })
+                .map(|state| state.request.id.clone());
+            let authority = app.workspace_compatibility.authority().cloned();
+            reduce_raw_mode(
+                &mut app.raw_mode,
+                builtin_raw_catalog(),
+                authority.as_ref(),
+                RawModeAction::CloseExecution,
+            );
+            if let Some(request) = detach {
+                return Some(Effect::SetRawAttachment {
+                    request,
+                    attached: false,
+                });
+            }
+        }
         Action::RawMode(action) => {
             let authority = app.workspace_compatibility.authority().cloned();
             reduce_raw_mode(
@@ -15065,6 +15106,10 @@ pub enum Effect {
     Cancel,
     StartRaw(RawConfirmedExecutionRequest),
     CancelRaw(RawRequestId),
+    SetRawAttachment {
+        request: RawRequestId,
+        attached: bool,
+    },
     OpenInEditor(PathBuf),
     CopyToClipboard(String),
     OpenWorkspaceEditor {

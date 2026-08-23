@@ -2850,6 +2850,17 @@ projections and shared dialog/terminal primitives; it never tokenizes,
 constructs argv, reads the Markdown reference, evaluates capability, or parses
 process/PTY output.
 
+The Raw execution workspace selects an exact request replica and retains only
+client-local follow, stream, bounded scroll, and search presentation state.
+Noninteractive stdout/stderr remain independently identified and display their
+daemon retention/drop/truncation accounting; interactive output is projected
+from the existing typed daemon PTY screen and session summary. The workspace
+never converts PTY bytes into Raw lines. Cancel and attachment changes are
+separate request-correlated daemon commands. Job attachment changes pass
+through the Raw worker control channel, PTY changes pass through the existing
+viewer actor, and both publish ordered Raw snapshots. Closing an attached live
+view requests detach but never cancellation.
+
 Favorites use a bounded versioned user-local persistence record integrated with
 the existing atomic `session.toml` boundary. Loading normalizes every catalog
 ID and parameter value; removed/changed templates become explicit stale

@@ -5816,18 +5816,18 @@ notes = "Confirmed interactive requests are reconstructed inside the daemon and 
 id = "RAW-OUTPUT-UI-001"
 milestone = "M20"
 title = "Implement Raw execution output workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 620
 required = true
 depends_on = ["RAW-JOB-001", "RAW-PTY-001"]
 verify = ["cargo test -p yoctui-model raw_output", "cargo test -p yoctui-app raw_output", "cargo test -p yoctui-ui raw_output"]
-notes = "Render job and PTY lifecycle, elapsed time, bounded streams, follow/pause, search/scroll, cancel, detach, reattach, exit code, and exact command identity."
+notes = "The responsive execution workspace renders exact identity/lifecycle/result, independently bounded job streams with retention accounting, and typed daemon PTY screens. Reducer-owned follow/search/scroll/stream state plus request-correlated cancel, detach, reattach, and close-to-detach routes are covered without parsing terminal bytes."
 
 [[task]]
 id = "RAW-HISTORY-001"
 milestone = "M20"
 title = "Persist bounded Raw command history"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 621
 required = true
 depends_on = ["RAW-EXEC-MODEL-001"]

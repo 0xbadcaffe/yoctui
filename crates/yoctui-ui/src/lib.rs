@@ -974,7 +974,11 @@ fn footer_shortcuts(app: &App) -> String {
             "Tab view | ↑/↓ select | s scope | / search | f status | r run | I import | R refresh | Enter details | o report | e provider | l source | c cancel"
         }
         Screen::RawMode => {
-            "←/→ Pane | ↑/↓ Select | Enter Open | / Search | f Favorite | H History | Tab Focus | F1 Help | F10 Menu | q Quit"
+            if app.raw_mode.view == yoctui_model::RawModeView::Execution {
+                "↑/↓ Scroll | ←/→ Horizontal | 1/2 Stream | f Follow | / Search | c Cancel | d Detach | r Reattach | Esc Back"
+            } else {
+                "←/→ Pane | ↑/↓ Select | Enter Open | / Search | f Favorite | H History | Tab Focus | F1 Help | F10 Menu | q Quit"
+            }
         }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
@@ -1070,6 +1074,10 @@ fn current_search_state(app: &App) -> Option<(bool, bool)> {
         }
         Screen::Security => (app.security.searching, !app.security.query.is_empty()),
         Screen::Qa => (app.qa.searching, !app.qa.query.is_empty()),
+        Screen::RawMode if app.raw_mode.view == yoctui_model::RawModeView::Execution => (
+            app.raw_mode.output.searching,
+            !app.raw_mode.output.query.is_empty(),
+        ),
         Screen::RawMode => (
             app.raw_mode.search.editing,
             !app.raw_mode.search.query.is_empty(),
@@ -3727,6 +3735,10 @@ fn workspace(
 fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
     use yoctui_model::{RawBrowserColumn, RawModeView};
 
+    if app.raw_mode.view == RawModeView::Execution {
+        raw_execution_workspace(frame, app, area, terminal_width);
+        return;
+    }
     if app.raw_mode.view != RawModeView::Browser {
         frame.render_widget(
             Paragraph::new("Raw Mode retained view\n\nEsc returns to the catalog browser.")
@@ -3748,6 +3760,291 @@ fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: 
     let columns = Layout::horizontal([Constraint::Percentage(52), Constraint::Min(20)]).split(area);
     raw_category_browser(frame, app, columns[0]);
     raw_command_list(frame, app, columns[1]);
+}
+
+fn raw_execution_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+    use yoctui_model::{
+        RawAttachmentState, RawExecutionOutcome, RawExecutionOwner, RawExecutionPhase,
+        RawInteractionMode, RawOutputStream,
+    };
+
+    let Some(execution) = app.raw_mode.selected_execution() else {
+        let command = app
+            .raw_mode
+            .execution
+            .as_ref()
+            .map_or("unknown", |command| command.as_str());
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Command: {command}\nState: Awaiting daemon acknowledgement\n\nNo local process exists. The execution view will install the validated daemon replica when it arrives."
+            ))
+            .block(pane_block(app, "Raw execution · connecting", true))
+            .wrap(Wrap { trim: false }),
+            area,
+        );
+        return;
+    };
+
+    let phase = match execution.phase {
+        RawExecutionPhase::Queued => "QUEUED",
+        RawExecutionPhase::Starting => "STARTING",
+        RawExecutionPhase::Running => "RUNNING",
+        RawExecutionPhase::Cancelling => "CANCELLING",
+        RawExecutionPhase::Terminal(RawExecutionOutcome::Succeeded) => "SUCCEEDED",
+        RawExecutionPhase::Terminal(RawExecutionOutcome::Failed) => "FAILED",
+        RawExecutionPhase::Terminal(RawExecutionOutcome::Cancelled) => "CANCELLED",
+        RawExecutionPhase::Terminal(RawExecutionOutcome::Lost) => "LOST",
+    };
+    let attachment = match execution.attachment {
+        RawAttachmentState::Attached => "ATTACHED",
+        RawAttachmentState::Detached => "DETACHED",
+    };
+    let interaction = match execution.request.interaction {
+        RawInteractionMode::NoninteractiveJob => "Noninteractive job",
+        RawInteractionMode::InteractivePty => "Interactive PTY",
+    };
+    let owner = execution
+        .owner
+        .as_ref()
+        .map_or("pending".into(), |owner| match owner {
+            RawExecutionOwner::Job(id) => id.to_string(),
+            RawExecutionOwner::Pty(id) => id.to_string(),
+        });
+    let result = execution.result.as_ref().map_or_else(
+        || "Result: pending".into(),
+        |result| {
+            format!(
+                "Result: {:?} · exit {}{}",
+                result.outcome,
+                result
+                    .exit_code
+                    .map_or_else(|| "--".into(), |code| code.to_string()),
+                result
+                    .message
+                    .as_ref()
+                    .map_or_else(String::new, |message| format!(" · {message}"))
+            )
+        },
+    );
+    let rows = Layout::vertical([
+        Constraint::Length(if terminal_width >= 100 { 7 } else { 9 }),
+        Constraint::Min(3),
+        Constraint::Length(2),
+    ])
+    .split(area);
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::raw(format!(
+                "{} · {} · {} · {}",
+                execution.request.command, interaction, phase, attachment
+            )),
+            Line::raw(format!("Request: {}", execution.request.id)),
+            Line::raw(format!(
+                "Owner: {owner} · elapsed {} ms · capability generation {}",
+                execution.elapsed_ms, execution.request.capability_generation
+            )),
+            Line::raw(result),
+            Line::raw(format!(
+                "Search: {} · Follow: {}",
+                if app.raw_mode.output.query.is_empty() {
+                    "--"
+                } else {
+                    app.raw_mode.output.query.as_str()
+                },
+                if app.raw_mode.output.follow {
+                    "ON"
+                } else {
+                    "PAUSED"
+                }
+            )),
+        ])
+        .block(pane_block(app, "Raw execution", true))
+        .wrap(Wrap { trim: false }),
+        rows[0],
+    );
+
+    match execution.request.interaction {
+        RawInteractionMode::NoninteractiveJob => {
+            if terminal_width >= 110 {
+                let streams =
+                    Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)])
+                        .split(rows[1]);
+                raw_output_stream(
+                    frame,
+                    app,
+                    &execution.stdout,
+                    RawOutputStream::Stdout,
+                    streams[0],
+                );
+                raw_output_stream(
+                    frame,
+                    app,
+                    &execution.stderr,
+                    RawOutputStream::Stderr,
+                    streams[1],
+                );
+            } else {
+                let retained = match app.raw_mode.output.stream {
+                    RawOutputStream::Stdout => &execution.stdout,
+                    RawOutputStream::Stderr => &execution.stderr,
+                };
+                raw_output_stream(frame, app, retained, app.raw_mode.output.stream, rows[1]);
+            }
+        }
+        RawInteractionMode::InteractivePty => raw_pty_output(frame, app, execution, rows[1]),
+    }
+    frame.render_widget(
+        Paragraph::new(if terminal_width < 100 {
+            "c Cancel  d Detach  r Reattach  f Follow  / Search  Esc Back"
+        } else {
+            "c Cancel · d Detach · r Reattach · f Follow · / Search · Esc Back · ↑/↓ Scroll · ←/→ Horizontal · 1 stdout · 2 stderr"
+        })
+        .block(Block::default().borders(Borders::TOP)),
+        rows[2],
+    );
+}
+
+fn raw_output_stream(
+    frame: &mut Frame,
+    app: &App,
+    output: &yoctui_model::RawRetainedOutput,
+    stream: yoctui_model::RawOutputStream,
+    area: Rect,
+) {
+    let label = match stream {
+        yoctui_model::RawOutputStream::Stdout => "stdout",
+        yoctui_model::RawOutputStream::Stderr => "stderr",
+    };
+    let lines = output
+        .chunks
+        .iter()
+        .flat_map(|chunk| {
+            let lines = chunk.text.lines().collect::<Vec<_>>();
+            if lines.is_empty() { vec![""] } else { lines }
+        })
+        .collect::<Vec<_>>();
+    let viewport = usize::from(area.height.saturating_sub(2)).max(1);
+    let start = if app.raw_mode.output.follow {
+        lines.len().saturating_sub(viewport)
+    } else {
+        lines
+            .len()
+            .saturating_sub(viewport)
+            .saturating_sub(app.raw_mode.output.vertical_scroll)
+    };
+    let horizontal = app.raw_mode.output.horizontal_scroll;
+    let mut visible = lines
+        .iter()
+        .skip(start)
+        .take(viewport)
+        .map(|line| Line::raw(line.chars().skip(horizontal).collect::<String>()))
+        .collect::<Vec<_>>();
+    let hits = if app.raw_mode.output.query.is_empty() {
+        0
+    } else {
+        lines
+            .iter()
+            .filter(|line| {
+                line.to_lowercase()
+                    .contains(&app.raw_mode.output.query.to_lowercase())
+            })
+            .count()
+    };
+    visible.insert(
+        0,
+        Line::raw(format!(
+            "retained {} B/{} lines · dropped {} B/{} lines · truncated {} · hits {hits}",
+            output.retained_bytes,
+            output.retained_lines,
+            output.dropped_bytes,
+            output.dropped_lines,
+            output.truncated_chunks
+        )),
+    );
+    let title = format!(
+        " {label} · {} B/{} lines ",
+        output.retained_bytes, output.retained_lines,
+    );
+    frame.render_widget(
+        Paragraph::new(if visible.is_empty() {
+            vec![Line::raw("No retained output")]
+        } else {
+            visible
+        })
+        .block(pane_block(
+            app,
+            &title,
+            app.raw_mode.output.stream == stream,
+        ))
+        .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn raw_pty_output(
+    frame: &mut Frame,
+    app: &App,
+    execution: &yoctui_model::RawExecutionState,
+    area: Rect,
+) {
+    let pty_id = match execution.owner.as_ref() {
+        Some(yoctui_model::RawExecutionOwner::Pty(session)) => session.daemon_pty_id(),
+        _ => None,
+    };
+    let session = pty_id.and_then(|id| app.daemon.pty_sessions.iter().find(|pty| pty.id == id));
+    let screen = pty_id.and_then(|id| {
+        app.daemon
+            .pty_screens
+            .iter()
+            .find(|pty| pty.session_id == id)
+    });
+    let title = session.map_or_else(
+        || " Raw PTY · awaiting daemon session ".into(),
+        |session| {
+            let dimensions = screen.map_or_else(
+                || "size unavailable".into(),
+                |screen| format!("{}x{}", screen.columns, screen.rows_count),
+            );
+            format!(
+                " Raw PTY · {:?} · {dimensions} · daemon writer lease · {} viewer(s) ",
+                session.lifecycle, session.viewers
+            )
+        },
+    );
+    let lines = screen.map_or_else(
+        || vec![Line::raw("Screen unavailable · awaiting daemon snapshot")],
+        |screen| {
+            let viewport = usize::from(area.height.saturating_sub(2)).max(1);
+            let start = if app.raw_mode.output.follow {
+                screen.rows.len().saturating_sub(viewport)
+            } else {
+                screen
+                    .rows
+                    .len()
+                    .saturating_sub(viewport)
+                    .saturating_sub(app.raw_mode.output.vertical_scroll)
+            };
+            screen
+                .rows
+                .iter()
+                .skip(start)
+                .take(viewport)
+                .map(|line| {
+                    Line::raw(
+                        line.chars()
+                            .skip(app.raw_mode.output.horizontal_scroll)
+                            .collect::<String>(),
+                    )
+                })
+                .collect()
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(pane_block(app, &title, true))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
 }
 
 fn raw_category_kind_label(kind: yoctui_model::RawCategoryKind) -> &'static str {
@@ -25496,6 +25793,176 @@ mod tests {
             safety: yoctui_model::RawSafetyClass::Build,
             limitations: vec!["Exact fixture limitation.".into()],
         }
+    }
+
+    fn raw_output_app(interaction: yoctui_model::RawInteractionMode) -> App {
+        let request = yoctui_model::RawConfirmedExecutionRequest {
+            id: yoctui_model::RawRequestId::new(match interaction {
+                yoctui_model::RawInteractionMode::NoninteractiveJob => "raw-request:ui-output-job",
+                yoctui_model::RawInteractionMode::InteractivePty => "raw-request:ui-output-pty",
+            })
+            .unwrap(),
+            catalog_version: 1,
+            command: yoctui_model::RawCommandId::new("output.fixture").unwrap(),
+            parameters: std::collections::BTreeMap::new(),
+            additional_arguments: Vec::new(),
+            interaction,
+            safety: yoctui_model::RawSafetyClass::Build,
+            capability_generation: 9,
+            build_directory: "/work/build".into(),
+            preview_digest: yoctui_model::RawPreviewDigest([9; 32]),
+        };
+        let mut execution = yoctui_model::RawExecutionState::queued(
+            request,
+            yoctui_model::RawStreamId::new("raw-stream:ui-output-stdout").unwrap(),
+            yoctui_model::RawStreamId::new("raw-stream:ui-output-stderr").unwrap(),
+            10,
+            yoctui_model::RawEventCursor::default(),
+        )
+        .unwrap();
+        let mut apply = |kind| {
+            let event = yoctui_model::RawExecutionEvent {
+                request_id: execution.request.id.clone(),
+                sequence: execution.cursor.sequence + 1,
+                generation: execution.cursor.generation + 1,
+                kind,
+            };
+            yoctui_model::reduce_raw_execution(&mut execution, event).unwrap();
+        };
+        apply(yoctui_model::RawExecutionEventKind::Starting {
+            owner: match interaction {
+                yoctui_model::RawInteractionMode::NoninteractiveJob => {
+                    yoctui_model::RawExecutionOwner::Job(
+                        yoctui_model::RawJobId::new("raw-job:ui-output").unwrap(),
+                    )
+                }
+                yoctui_model::RawInteractionMode::InteractivePty => {
+                    yoctui_model::RawExecutionOwner::Pty(
+                        yoctui_model::RawSessionId::new("raw-session:daemon-3").unwrap(),
+                    )
+                }
+            },
+        });
+        apply(yoctui_model::RawExecutionEventKind::Running {
+            started_unix_ms: 20,
+        });
+        if interaction == yoctui_model::RawInteractionMode::NoninteractiveJob {
+            apply(yoctui_model::RawExecutionEventKind::Output {
+                chunk: yoctui_model::RawOutputChunk {
+                    stream_id: yoctui_model::RawStreamId::new("raw-stream:ui-output-stdout")
+                        .unwrap(),
+                    stream: yoctui_model::RawOutputStream::Stdout,
+                    sequence: 1,
+                    text: "first line\nmatching café output".into(),
+                    truncated_bytes: 4,
+                    dropped_lines: 1,
+                },
+            });
+            apply(yoctui_model::RawExecutionEventKind::Output {
+                chunk: yoctui_model::RawOutputChunk {
+                    stream_id: yoctui_model::RawStreamId::new("raw-stream:ui-output-stderr")
+                        .unwrap(),
+                    stream: yoctui_model::RawOutputStream::Stderr,
+                    sequence: 1,
+                    text: "warning output".into(),
+                    truncated_bytes: 0,
+                    dropped_lines: 0,
+                },
+            });
+        }
+        let request_id = execution.request.id.clone();
+        let mut app = App::new(16, 4096);
+        app.screen = Screen::RawMode;
+        app.focus = FocusTarget::Workspace;
+        app.raw_mode.view = yoctui_model::RawModeView::Execution;
+        app.raw_mode.focus = yoctui_model::RawModeFocus::Execution;
+        app.raw_mode.execution = Some(execution.request.command.clone());
+        app.raw_mode.output.request = Some(request_id.clone());
+        app.raw_mode.execution_states.insert(request_id, execution);
+        if interaction == yoctui_model::RawInteractionMode::InteractivePty {
+            let pty_id = 6 << 60 | 3;
+            app.daemon
+                .pty_sessions
+                .push(yoctui_model::ClientDaemonPtySummary {
+                    id: pty_id,
+                    name: "Raw output fixture".into(),
+                    lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                    viewers: 1,
+                });
+            app.daemon
+                .pty_screens
+                .push(yoctui_model::ClientDaemonPtyScreen {
+                    session_id: pty_id,
+                    columns: 80,
+                    rows_count: 24,
+                    cursor_column: 6,
+                    cursor_row: 1,
+                    rows: vec!["interactive prompt".into(), "typed terminal row".into()],
+                    scrollback_lines: 2,
+                });
+        }
+        app
+    }
+
+    #[test]
+    fn raw_output_renders_exact_job_streams_controls_and_bounds_responsively() {
+        let mut app = raw_output_app(yoctui_model::RawInteractionMode::NoninteractiveJob);
+        app.raw_mode.output.query = "café".into();
+        app.raw_mode.output.follow = false;
+        for (width, height) in [(160, 40), (100, 28), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("output.fixture"), "{width}: {output}");
+            assert!(output.contains("Noninteractive job"), "{width}: {output}");
+            assert!(output.contains("RUNNING"), "{width}: {output}");
+            assert!(output.contains("stdout"), "{width}: {output}");
+            assert!(output.contains("dropped"), "{width}: {output}");
+            assert!(output.contains("c Cancel"), "{width}: {output}");
+            assert!(output.contains("d Detach"), "{width}: {output}");
+            assert!(output.contains("r Reattach"), "{width}: {output}");
+        }
+        let wide = rendered_text(&app, 160, 40);
+        assert!(wide.contains("matching café output"), "{wide}");
+        assert!(wide.contains("warning output"), "{wide}");
+        assert!(wide.contains("hits 1"), "{wide}");
+    }
+
+    #[test]
+    fn raw_output_renders_daemon_pty_screen_without_parsing_terminal_bytes() {
+        let app = raw_output_app(yoctui_model::RawInteractionMode::InteractivePty);
+        for (width, height) in [(140, 32), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Interactive PTY"), "{width}: {output}");
+            assert!(output.contains("interactive prompt"), "{width}: {output}");
+            assert!(output.contains("typed terminal row"), "{width}: {output}");
+            assert!(output.contains("80x24"), "{width}: {output}");
+            assert!(!output.contains("\\x1b"), "{width}: {output}");
+        }
+    }
+
+    #[test]
+    fn raw_output_renders_terminal_lost_replica_without_implying_live_ownership() {
+        let mut app = raw_output_app(yoctui_model::RawInteractionMode::NoninteractiveJob);
+        let request = app.raw_mode.output.request.clone().unwrap();
+        let execution = app.raw_mode.execution_states.get_mut(&request).unwrap();
+        let event = yoctui_model::RawExecutionEvent {
+            request_id: request,
+            sequence: execution.cursor.sequence + 1,
+            generation: execution.cursor.generation + 1,
+            kind: yoctui_model::RawExecutionEventKind::Finished {
+                result: yoctui_model::RawExecutionResult {
+                    outcome: yoctui_model::RawExecutionOutcome::Lost,
+                    exit_code: None,
+                    message: Some("daemon ownership was lost".into()),
+                    elapsed_ms: 44,
+                    durable_reference: None,
+                },
+            },
+        };
+        yoctui_model::reduce_raw_execution(execution, event).unwrap();
+        let output = rendered_text(&app, 120, 28);
+        assert!(output.contains("LOST"), "{output}");
+        assert!(output.contains("daemon ownership was lost"), "{output}");
+        assert!(output.contains("exit --"), "{output}");
     }
 
     fn raw_command_list_app() -> App {

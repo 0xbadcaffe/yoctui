@@ -140,7 +140,15 @@ generic sessions. Ordered Raw and PTY replicas cover start, writer-controlled
 input/resize, detach/reattach, explicit termination, exit, loss, reconnect, and
 cancellation without parsing terminal output or granting client process
 authority. Cross-route, duplicate, stale, tampered, and identity-mismatched
-starts fail before spawn. `RAW-OUTPUT-UI-001` is active next.
+starts fail before spawn. `RAW-OUTPUT-UI-001` is complete: the Raw execution
+workspace renders exact command/request/owner identity, lifecycle, elapsed
+time, result/exit/loss state, independently bounded stdout/stderr accounting,
+and daemon PTY screens at every supported breakpoint. Follow/pause, bounded
+Unicode-safe vertical/horizontal scrolling, local search counts, stream
+selection, typed cancellation, explicit detach/reattach, and close-to-detach
+routes are reducer-owned and tested. Attachment changes remain ordered daemon
+events and never imply cancellation or terminal input. `RAW-HISTORY-001` is
+active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

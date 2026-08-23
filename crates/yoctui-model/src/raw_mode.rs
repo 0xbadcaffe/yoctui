@@ -682,6 +682,19 @@ raw_execution_id!(RawSessionId, "raw-session:", "session");
 raw_execution_id!(RawStreamId, "raw-stream:", "stream");
 raw_execution_id!(RawDurableReferenceId, "raw-durable:", "durable reference");
 
+const RAW_DAEMON_PTY_NAMESPACE: u64 = 6 << 60;
+const RAW_DAEMON_PTY_SEQUENCE_LIMIT: u64 = 1 << 60;
+
+impl RawSessionId {
+    pub fn daemon_pty_id(&self) -> Option<u64> {
+        self.as_str()
+            .strip_prefix("raw-session:daemon-")
+            .and_then(|sequence| sequence.parse::<u64>().ok())
+            .filter(|sequence| *sequence > 0 && *sequence < RAW_DAEMON_PTY_SEQUENCE_LIMIT)
+            .map(|sequence| RAW_DAEMON_PTY_NAMESPACE | sequence)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct RawPreviewDigest(pub [u8; 32]);
@@ -1796,6 +1809,66 @@ mod raw_execution_tests {
             assert_eq!(state.phase, RawExecutionPhase::Terminal(outcome));
         }
     }
+
+    #[test]
+    fn raw_output_selection_follow_search_scroll_and_session_mapping_are_bounded() {
+        let (catalog, _, _) = request_and_preview(RawInteractionMode::NoninteractiveJob);
+        let execution = queued(RawInteractionMode::NoninteractiveJob);
+        let request = execution.request.id.clone();
+        let command = execution.request.command.clone();
+        let mut mode = RawModeState::new(&catalog);
+        mode.execution_states.insert(request.clone(), execution);
+        reduce_raw_mode(
+            &mut mode,
+            &catalog,
+            None,
+            RawModeAction::OpenExecution(command),
+        );
+        assert_eq!(mode.selected_execution().unwrap().request.id, request);
+        reduce_raw_mode(&mut mode, &catalog, None, RawModeAction::ToggleOutputFollow);
+        reduce_raw_mode(
+            &mut mode,
+            &catalog,
+            None,
+            RawModeAction::ScrollOutput {
+                vertical: isize::MAX,
+                horizontal: isize::MAX,
+            },
+        );
+        assert!(!mode.output.follow);
+        assert_eq!(mode.output.vertical_scroll, 1_000_000);
+        assert_eq!(mode.output.horizontal_scroll, 1_000_000);
+        reduce_raw_mode(&mut mode, &catalog, None, RawModeAction::BeginOutputSearch);
+        for character in "héllo".chars() {
+            reduce_raw_mode(
+                &mut mode,
+                &catalog,
+                None,
+                RawModeAction::AppendOutputSearch(character),
+            );
+        }
+        assert_eq!(mode.output.query, "héllo");
+        reduce_raw_mode(
+            &mut mode,
+            &catalog,
+            None,
+            RawModeAction::SelectOutputStream(RawOutputStream::Stderr),
+        );
+        assert_eq!(mode.output.stream, RawOutputStream::Stderr);
+        assert_eq!(mode.output.vertical_scroll, 0);
+        assert_eq!(
+            RawSessionId::new("raw-session:daemon-17")
+                .unwrap()
+                .daemon_pty_id(),
+            Some(RAW_DAEMON_PTY_NAMESPACE | 17)
+        );
+        assert_eq!(
+            RawSessionId::new("raw-session:generic")
+                .unwrap()
+                .daemon_pty_id(),
+            None
+        );
+    }
 }
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
@@ -1904,6 +1977,31 @@ pub struct RawFavoriteConfirmation {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawOutputViewState {
+    pub request: Option<RawRequestId>,
+    pub stream: RawOutputStream,
+    pub follow: bool,
+    pub vertical_scroll: usize,
+    pub horizontal_scroll: usize,
+    pub query: String,
+    pub searching: bool,
+}
+
+impl Default for RawOutputViewState {
+    fn default() -> Self {
+        Self {
+            request: None,
+            stream: RawOutputStream::Stdout,
+            follow: true,
+            vertical_scroll: 0,
+            horizontal_scroll: 0,
+            query: String::new(),
+            searching: false,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RawModeState {
     pub catalog_version: u16,
     pub category: Option<RawCategoryId>,
@@ -1916,6 +2014,7 @@ pub struct RawModeState {
     pub preview: Option<RawExecutionPreview>,
     pub execution: Option<RawCommandId>,
     pub execution_states: BTreeMap<RawRequestId, RawExecutionState>,
+    pub output: RawOutputViewState,
     pub history: Vec<RawCommandId>,
     pub history_selection: usize,
     pub favorites: Vec<RawCommandId>,
@@ -1961,6 +2060,22 @@ pub enum RawModeAction {
     RequestPreview,
     ConfirmPreview,
     CancelExecution(RawRequestId),
+    CloseExecution,
+    SetExecutionAttachment {
+        request: RawRequestId,
+        attachment: RawAttachmentState,
+    },
+    ToggleOutputFollow,
+    SelectOutputStream(RawOutputStream),
+    ScrollOutput {
+        vertical: isize,
+        horizontal: isize,
+    },
+    BeginOutputSearch,
+    AppendOutputSearch(char),
+    BackspaceOutputSearch,
+    FinishOutputSearch,
+    ClearOutputSearch,
     OpenExecution(RawCommandId),
     OpenHistory,
     SelectHistory {
@@ -2438,6 +2553,7 @@ impl RawModeState {
             preview: None,
             execution: None,
             execution_states: BTreeMap::new(),
+            output: RawOutputViewState::default(),
             history: Vec::new(),
             history_selection: 0,
             favorites: Vec::new(),
@@ -2464,6 +2580,19 @@ impl RawModeState {
         self.favorites.contains(command)
     }
 
+    pub fn selected_execution(&self) -> Option<&RawExecutionState> {
+        if let Some(request) = &self.output.request
+            && let Some(execution) = self.execution_states.get(request)
+        {
+            return Some(execution);
+        }
+        let command = self.execution.as_ref()?;
+        self.execution_states
+            .values()
+            .rev()
+            .find(|execution| &execution.request.command == command)
+    }
+
     fn enter_view(&mut self, view: RawModeView, focus: RawModeFocus) {
         if self.return_stack.len() == MAX_RAW_VIEW_DEPTH {
             self.return_stack.remove(0);
@@ -2477,7 +2606,10 @@ impl RawModeState {
         match self.view {
             RawModeView::Preview => self.preview = None,
             RawModeView::Form => self.form = None,
-            RawModeView::Execution => self.execution = None,
+            RawModeView::Execution => {
+                self.execution = None;
+                self.output = RawOutputViewState::default();
+            }
             RawModeView::Browser | RawModeView::History | RawModeView::Favorites => {}
         }
         if let Some((view, focus)) = self.return_stack.pop() {
@@ -2572,10 +2704,53 @@ pub fn reduce_raw_mode(
             }
         }
         RawModeAction::RequestPreview => request_raw_preview(state, catalog, authority),
-        RawModeAction::ConfirmPreview | RawModeAction::CancelExecution(_) => {}
+        RawModeAction::ConfirmPreview
+        | RawModeAction::CancelExecution(_)
+        | RawModeAction::SetExecutionAttachment { .. } => {}
+        RawModeAction::CloseExecution => raw_mode_back(state),
+        RawModeAction::ToggleOutputFollow => {
+            state.output.follow = !state.output.follow;
+            if state.output.follow {
+                state.output.vertical_scroll = 0;
+            }
+        }
+        RawModeAction::SelectOutputStream(stream) => {
+            state.output.stream = stream;
+            state.output.vertical_scroll = 0;
+            state.output.horizontal_scroll = 0;
+        }
+        RawModeAction::ScrollOutput {
+            vertical,
+            horizontal,
+        } => {
+            state.output.vertical_scroll =
+                shifted_unbounded(state.output.vertical_scroll, vertical);
+            state.output.horizontal_scroll =
+                shifted_unbounded(state.output.horizontal_scroll, horizontal);
+            if vertical != 0 {
+                state.output.follow = false;
+            }
+        }
+        RawModeAction::BeginOutputSearch => state.output.searching = true,
+        RawModeAction::AppendOutputSearch(character) => {
+            if state.output.searching
+                && !character.is_control()
+                && state.output.query.len() + character.len_utf8() <= MAX_RAW_SEARCH_BYTES
+            {
+                state.output.query.push(character);
+            }
+        }
+        RawModeAction::BackspaceOutputSearch => {
+            if state.output.searching {
+                state.output.query.pop();
+            }
+        }
+        RawModeAction::FinishOutputSearch => state.output.searching = false,
+        RawModeAction::ClearOutputSearch => state.output.query.clear(),
         RawModeAction::OpenExecution(command) => {
             if catalog.command(&command).is_some() {
                 state.execution = Some(command);
+                state.output = RawOutputViewState::default();
                 state.enter_view(RawModeView::Execution, RawModeFocus::Execution);
             }
         }
@@ -2610,6 +2785,14 @@ pub fn reduce_raw_mode(
         RawModeAction::DismissNotification => state.notification = None,
     }
     reconcile_raw_mode(state, catalog);
+}
+
+fn shifted_unbounded(current: usize, delta: isize) -> usize {
+    if delta < 0 {
+        current.saturating_sub(delta.unsigned_abs())
+    } else {
+        current.saturating_add(delta as usize).min(1_000_000)
+    }
 }
 
 pub fn confirmed_raw_execution_request(

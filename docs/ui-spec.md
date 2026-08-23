@@ -4188,6 +4188,18 @@ exit code/result, follow/pause, search, vertical/horizontal scroll, save through
 an explicit typed destination, cancellation, detach, and reattach. Closing or
 detaching the view never implicitly cancels the job.
 
+The execution workspace uses `Up`/`Down` (or `k`/`j`) for bounded vertical
+scrolling and `Left`/`Right` (or `h`/`l`) for bounded horizontal scrolling.
+`f` toggles follow/pause, `/` edits the bounded client-local search,
+`Ctrl+U` clears that search, and `1`/`2` selects stdout/stderr when the narrow
+layout can show only one stream. `c` requests typed cancellation, `d` detaches
+the current client, `r` reattaches it, and `Esc` returns, detaching an attached
+nonterminal execution without cancellation.
+Unavailable, terminal, already-attached, and already-detached actions remain
+visible but reject with an exact reason; keys never become terminal input for
+an interactive PTY. PTY input continues to use the established writer-owned
+terminal-session route and prefix layer.
+
 `Enter` in the exact noninteractive preview is the sole start gesture. It
 revalidates the current catalog and capability projection, creates a fresh
 opaque request identity, and submits only the typed confirmed request to the

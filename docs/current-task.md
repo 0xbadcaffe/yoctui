@@ -2,29 +2,29 @@
 
 ## Task
 
-**ID:** RAW-OUTPUT-UI-001
-**Title:** Implement Raw execution output workspace
+**ID:** RAW-HISTORY-001
+**Title:** Persist bounded Raw command history
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Render daemon-owned Raw job and interactive PTY execution state as the typed
-Raw Mode output workspace, including lifecycle, bounded output or terminal
-session, follow/search/scroll controls, cancellation, detach/reattach, and
-terminal result identity.
+Retain a bounded, newest-first history of completed Raw executions using safe
+template, parameter, timing, and terminal-result metadata without persisting
+live process authority, unbounded output, or temporary daemon identities.
 
 ## Dependencies
 
-- `RAW-JOB-001` — DONE
-- `RAW-PTY-001` — DONE
+- `RAW-EXEC-MODEL-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
+- `crates/yoctui-protocol/src/daemon.rs`
+- `crates/yoctui-protocol/src/daemon_persist.rs`
 - `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-app/src/pty_context.rs`
-- `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-cli/src/client_runtime.rs`
+- `crates/yoctui-cli/src/daemon_persist.rs`
+- `crates/yoctui-cli/src/main.rs`
+- `docs/architecture.md`
 - `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -32,26 +32,27 @@ terminal result identity.
 
 ## Definition of done
 
-- Raw Mode opens a typed execution workspace for the selected daemon replica
-  and shows exact command identity, interaction kind, lifecycle, attachment,
-  elapsed time, terminal outcome, exit code, and bounded drop/truncation state.
-- Noninteractive jobs render independently identified stdout/stderr with
-  follow/pause, search, vertical scrolling, and safe horizontal scrolling.
-- Interactive executions render and attach through the existing daemon PTY
-  terminal/session components; UI widgets do not parse terminal bytes.
-- Cancellation and termination remain explicit typed actions, while closing or
-  detaching the view never terminates daemon-owned work.
-- Reattach/reconnect replaces the workspace from current validated Raw and PTY
-  replicas, including terminal `Lost` state, without inventing local ownership.
-- Keyboard, mouse, narrow-terminal, focus, and `TestBackend` coverage matches
-  the authoritative Raw Mode specification without adding new layout behavior.
+- A versioned bounded Raw history record retains stable command/template
+  identity, sanitized typed parameter/default values, interaction mode,
+  start/end timing, terminal outcome, exit code, and a safe durable reference.
+- History never persists PID, process group, writer lease, executable path,
+  capability authority, full stdout/stderr, PTY screen, secret, or temporary
+  live job/session identity.
+- Only validated terminal daemon replicas enter history; duplicate request
+  identities update idempotently and ordering remains newest first.
+- Safe daemon persistence bounds record count and aggregate bytes, rejects
+  malformed/oversized/unknown-version data, and recovers valid records without
+  resurrecting process ownership.
+- Reopening history selects current catalog identity and compatibility; running
+  again still requires a fresh form, exact preview, confirmation, and request.
+- Model and CLI tests cover success/failure/cancel/loss, sanitization, bounds,
+  duplicate replacement, catalog staleness, persistence, and recovery.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_output
-cargo test -p yoctui-app raw_output
-cargo test -p yoctui-ui raw_output
+cargo test -p yoctui-model raw_history
+cargo test -p yoctui -- raw_history
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
