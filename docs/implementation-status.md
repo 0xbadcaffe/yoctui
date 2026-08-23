@@ -168,7 +168,13 @@ and invalid-default records as stale and otherwise reports the current
 five-state daemon availability without storing it. Activation reconstructs only
 a fresh current-authority form with defaults; it retains no build/capability
 authority, preview, request, job/session identity, output, or process state.
-`RAW-FAVORITE-PERSIST-001` is active next.
+`RAW-FAVORITE-PERSIST-001` is complete: `session.toml` now defaults legacy
+favorite data safely and validates the entire versioned collection before app
+installation or persistence. The reader rejects symlinks and files above 1 MiB;
+the writer validates/serializes first, uses a unique mode-`0600` temporary,
+syncs file and directory around atomic rename, and preserves the prior file and
+unrelated preferences on failure. Valid stale template digests remain explicit
+rather than being discarded or upgraded. `RAW-FAVORITE-UI-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

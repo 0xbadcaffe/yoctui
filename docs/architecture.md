@@ -2890,6 +2890,12 @@ five-state daemon availability used by the command browser; no availability or
 execution authority is stored in the favorite. Activating a current favorite
 creates a new form populated with defaults and argv under the current capability
 generation/build identity, with no preview, request, owner, or process state.
+`session.toml` defaults missing favorite data for legacy sessions, but validates
+the complete favorite collection before app installation or replacement. The
+session reader rejects symlinks and files above 1 MiB. The writer validates and
+serializes before creating a unique mode-`0600` temporary file, syncs it,
+atomically renames it, and syncs the parent directory; a failed validation or
+write leaves the prior file and unrelated session fields unchanged.
 
 Security tests inspect the complete code path for prohibited shell-evaluation
 APIs and hostile values such as semicolons, pipelines, substitutions, and

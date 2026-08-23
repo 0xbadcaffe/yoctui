@@ -2,22 +2,25 @@
 
 ## Task
 
-**ID:** RAW-FAVORITE-PERSIST-001
-**Title:** Persist Raw favorites atomically
+**ID:** RAW-FAVORITE-UI-001
+**Title:** Implement Raw Favorites browser and actions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Load and save bounded versioned Raw favorites through the existing user-local
-atomic session-state boundary without granting persisted execution authority.
+Provide a complete typed Favorites workspace for inspecting, adding, editing,
+ordering, removing, and reopening persistent Raw command configurations.
 
 ## Dependencies
 
-- `RAW-FAVORITE-MODEL-001` — DONE
+- `RAW-FAVORITE-PERSIST-001` — DONE
+- `RAW-FORM-UI-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
+- `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-cli/src/main.rs`
 - `docs/architecture.md`
 - `docs/ui-spec.md`
@@ -27,26 +30,28 @@ atomic session-state boundary without granting persisted execution authority.
 
 ## Definition of done
 
-- The versioned session schema stores Raw favorites only in user-local
-  `session.toml`, using the existing private atomic replacement path.
-- Loading validates schema, identities, names, typed defaults, argv, ordering,
-  record count, and aggregate bytes before replacing model state.
-- Malformed, duplicate, unknown-version, or oversized favorite data fails
-  closed without partially installing records or disturbing unrelated session
-  preferences.
-- Removed or changed catalog templates load as explicit stale favorites rather
-  than being discarded or upgraded.
-- Persistence never includes process/session/job identity, output, executable
-  or build authority, capability generation/state, preview/request identity,
-  or transient form state.
-- CLI tests cover round trip, atomic replacement, legacy/default loading,
-  malformed and oversized rejection, stale retention, permissions, and
-  preservation of unrelated session fields.
+- The Favorites workspace renders bounded ordered records with name, command
+  template, defaults, additional argv, stale state, and exact current five-state
+  compatibility reason at supported widths and without color.
+- Typed actions add the selected command, rename, edit defaults/argv, reorder,
+  inspect, reopen configuration, and remove only after exact confirmation.
+- All edits validate before publication and trigger atomic user-local
+  persistence without changing project files or daemon state.
+- Stale or unavailable favorites remain inspectable and editable but cannot
+  open an executable form until current catalog and capability validation pass.
+- Reopening a current favorite creates only a fresh form and retains the normal
+  exact preview, confirmation, and new-request execution boundary.
+- Keyboard focus is explicit, dialogs trap focus, empty/invalid/bounded states
+  are clear, and narrow terminals never panic.
+- Model, app, and `TestBackend` tests cover the complete actions, persistence
+  effects, stale/unavailable states, focus, confirmation, and responsive output.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- raw_favorite_persistence
+cargo test -p yoctui-model raw_favorite_ui
+cargo test -p yoctui-app raw_favorite_ui
+cargo test -p yoctui-ui raw_favorite_ui
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

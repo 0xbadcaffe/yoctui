@@ -5849,18 +5849,18 @@ notes = "Versioned command/template records bound name, typed defaults, addition
 id = "RAW-FAVORITE-PERSIST-001"
 milestone = "M20"
 title = "Persist Raw favorites atomically"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 623
 required = true
 depends_on = ["RAW-FAVORITE-MODEL-001"]
 verify = ["cargo test -p yoctui -- raw_favorite_persistence"]
-notes = "Load and atomically save bounded versioned favorites in user-local session state with invalid/stale entries explicit."
+notes = "Raw favorites default safely for legacy sessions and load only after whole-collection validation. The 1 MiB bounded non-symlink session path uses unique private synced temporary files and atomic rename; invalid writes preserve the prior file and unrelated preferences while stale templates remain explicit."
 
 [[task]]
 id = "RAW-FAVORITE-UI-001"
 milestone = "M20"
 title = "Implement Raw Favorites browser and actions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 624
 required = true
 depends_on = ["RAW-FAVORITE-PERSIST-001", "RAW-FORM-UI-001"]

@@ -92,7 +92,7 @@ use yoctui_model::{
     SignatureTarget, TestComparison, TestOperation, TestSessionId, TestWorkspaceView, Theme,
     VariableDetail, VariableIdentity, WicCapability, WicCreateDraft, WicCreatePreview,
     WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId, update,
-    validate_config_edit_request,
+    validate_config_edit_request, validate_raw_favorites,
 };
 use yoctui_ui::render;
 
@@ -237,6 +237,8 @@ struct Session {
     recent_build_dirs: Vec<PathBuf>,
     #[serde(default)]
     pane_layout: Option<yoctui_model::PaneLayout>,
+    #[serde(default)]
+    raw_favorites: Vec<yoctui_model::RawFavorite>,
 }
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -802,6 +804,9 @@ fn project_profile_root(build_dir: &Path) -> Option<PathBuf> {
         .or_else(|| build_dir.parent().map(Path::to_path_buf))
 }
 
+const MAX_SESSION_BYTES: u64 = 1024 * 1024;
+static NEXT_SESSION_TEMPORARY: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+
 fn read_session(path: Option<&Path>) -> Result<Session> {
     let Some(path) = path else {
         return Ok(Session::default());
@@ -809,9 +814,22 @@ fn read_session(path: Option<&Path>) -> Result<Session> {
     if !path.exists() {
         return Ok(Session::default());
     }
+    let metadata = fs::symlink_metadata(path)
+        .with_context(|| format!("could not inspect session file {}", path.display()))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        anyhow::bail!("session file must be a regular non-symlink file");
+    }
+    if metadata.len() > MAX_SESSION_BYTES {
+        anyhow::bail!("session file exceeds the 1 MiB limit");
+    }
     let text = fs::read_to_string(path)
         .with_context(|| format!("could not read session file {}", path.display()))?;
-    toml::from_str(&text).with_context(|| format!("invalid session file {}", path.display()))
+    let session: Session = toml::from_str(&text)
+        .with_context(|| format!("invalid session file {}", path.display()))?;
+    validate_raw_favorites(&session.raw_favorites)
+        .map_err(anyhow::Error::msg)
+        .with_context(|| format!("invalid Raw favorites in session file {}", path.display()))?;
+    Ok(session)
 }
 
 fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
@@ -823,11 +841,62 @@ fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
             format!("could not create session directory {}", directory.display())
         })?;
     }
-    let temporary = path.with_extension("toml.tmp");
-    fs::write(&temporary, toml::to_string(session)?)
-        .with_context(|| format!("could not write session file {}", temporary.display()))?;
-    fs::rename(&temporary, path)
-        .with_context(|| format!("could not replace session file {}", path.display()))
+    validate_raw_favorites(&session.raw_favorites)
+        .map_err(anyhow::Error::msg)
+        .context("invalid Raw favorites cannot be persisted")?;
+    let text = toml::to_string(session)?;
+    if text.len() as u64 > MAX_SESSION_BYTES {
+        anyhow::bail!("session file exceeds the 1 MiB limit");
+    }
+    let temporary = path.with_extension(format!(
+        "toml.{}.{}.tmp",
+        std::process::id(),
+        NEXT_SESSION_TEMPORARY.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+    ));
+    let result = (|| -> Result<()> {
+        let mut options = fs::OpenOptions::new();
+        options.write(true).create_new(true);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt as _;
+            options.mode(0o600);
+        }
+        let mut file = options
+            .open(&temporary)
+            .with_context(|| format!("could not create session file {}", temporary.display()))?;
+        file.write_all(text.as_bytes())?;
+        file.sync_all()?;
+        drop(file);
+        fs::rename(&temporary, path)
+            .with_context(|| format!("could not replace session file {}", path.display()))?;
+        if let Some(directory) = path.parent() {
+            fs::File::open(directory)?.sync_all()?;
+        }
+        Ok(())
+    })();
+    if result.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    result
+}
+
+fn persist_raw_favorites(
+    path: Option<&Path>,
+    session: &mut Session,
+    favorites: &[yoctui_model::RawFavorite],
+) -> Result<()> {
+    validate_raw_favorites(favorites).map_err(anyhow::Error::msg)?;
+    let mut updated = session.clone();
+    updated.raw_favorites = favorites.to_vec();
+    write_session(path, &updated)?;
+    *session = updated;
+    Ok(())
+}
+
+fn install_session_raw_favorites(session: &Session, app: &mut App) -> Result<()> {
+    validate_raw_favorites(&session.raw_favorites).map_err(anyhow::Error::msg)?;
+    app.raw_mode.favorites.clone_from(&session.raw_favorites);
+    Ok(())
 }
 
 fn persist_settings(
@@ -9657,6 +9726,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.theme = theme;
     app.animation_speed = animation_speed;
     app.reduced_motion = reduced_motion;
+    install_session_raw_favorites(&session, &mut app)?;
     if let Some(layout) = session.pane_layout.clone()
         && layout.validate().is_ok()
     {
@@ -12619,6 +12689,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     }
     maintenance_coordinator.shutdown().await;
     backend.shutdown().await?;
+    let raw_favorites = app.raw_mode.favorites.clone();
     session.last_target = app.build.target;
     session.last_screen = Some(app.screen);
     session.log_filter = app.logs.filter;
@@ -12642,7 +12713,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
             }
             directories
         });
-    write_session(session_path.as_deref(), &session)?;
+    persist_raw_favorites(session_path.as_deref(), &mut session, &raw_favorites)?;
     Ok(())
 }
 
@@ -13585,6 +13656,7 @@ mod tests {
                 last_backend: Some(Backend::Process),
                 recent_build_dirs: vec![PathBuf::from("/build")],
                 pane_layout: None,
+                raw_favorites: Vec::new(),
             },
         )
         .unwrap();
@@ -13606,10 +13678,163 @@ mod tests {
                 last_backend: Some(Backend::Process),
                 recent_build_dirs: vec![PathBuf::from("/build")],
                 pane_layout: None,
+                raw_favorites: Vec::new(),
             }
         );
         fs::remove_file(&path).unwrap();
         fs::remove_dir(&directory).unwrap();
+    }
+
+    fn persistent_raw_favorite() -> yoctui_model::RawFavorite {
+        let command = yoctui_model::builtin_raw_catalog()
+            .commands
+            .iter()
+            .find(|command| {
+                matches!(
+                    command.execution,
+                    yoctui_model::RawExecutionPolicy::Executable { .. }
+                )
+            })
+            .unwrap();
+        yoctui_model::RawFavorite::new(
+            command,
+            "My Raw favorite",
+            BTreeMap::new(),
+            yoctui_model::RawAdditionalArguments::from_vec(vec!["--dry-run".into()]).unwrap(),
+            0,
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn raw_favorite_persistence_round_trips_privately_and_preserves_unrelated_session_state() {
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-raw-favorite-persistence-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&directory);
+        let path = directory.join("session.toml");
+        let favorite = persistent_raw_favorite();
+        let mut session = Session {
+            last_target: Some("core-image-minimal".into()),
+            theme: Some(Theme::MatrixGreen),
+            ..Session::default()
+        };
+        let mut app = App::new(8, 1024);
+        app.raw_mode.favorites = vec![favorite.clone()];
+        persist_raw_favorites(Some(&path), &mut session, &app.raw_mode.favorites).unwrap();
+
+        let loaded = read_session(Some(&path)).unwrap();
+        assert_eq!(loaded.raw_favorites.len(), 1);
+        assert_eq!(&loaded.raw_favorites[0], &favorite);
+        assert_eq!(loaded.last_target.as_deref(), Some("core-image-minimal"));
+        assert_eq!(loaded.theme, Some(Theme::MatrixGreen));
+        let mut restored = App::new(8, 1024);
+        install_session_raw_favorites(&loaded, &mut restored).unwrap();
+        assert_eq!(restored.raw_mode.favorites, [favorite]);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            assert_eq!(
+                fs::symlink_metadata(&path).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
+        }
+        let serialized = fs::read_to_string(&path).unwrap();
+        for prohibited in [
+            "process_group",
+            "raw-job:",
+            "raw-session:",
+            "stdout",
+            "stderr",
+            "capability_generation",
+            "build_directory",
+            "preview_digest",
+            "request_id",
+        ] {
+            assert!(!serialized.contains(prohibited), "retained {prohibited}");
+        }
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn raw_favorite_persistence_rejects_invalid_atomically_and_retains_stale_templates() {
+        let directory = std::env::temp_dir().join(format!(
+            "yoctui-raw-favorite-invalid-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&directory);
+        let path = directory.join("session.toml");
+        let favorite = persistent_raw_favorite();
+        let valid = Session {
+            raw_favorites: vec![favorite.clone()],
+            ..Session::default()
+        };
+        write_session(Some(&path), &valid).unwrap();
+        let before = fs::read(&path).unwrap();
+
+        let mut future = favorite.clone();
+        future.schema_version += 1;
+        let invalid = Session {
+            raw_favorites: vec![future],
+            ..Session::default()
+        };
+        assert!(write_session(Some(&path), &invalid).is_err());
+        assert_eq!(fs::read(&path).unwrap(), before);
+        let mut app = App::new(8, 1024);
+        app.raw_mode.favorites = vec![favorite.clone()];
+        assert!(install_session_raw_favorites(&invalid, &mut app).is_err());
+        assert_eq!(app.raw_mode.favorites.len(), 1);
+        assert_eq!(&app.raw_mode.favorites[0], &favorite);
+
+        let mut second = favorite.clone();
+        second.order = 1;
+        let duplicate = Session {
+            raw_favorites: vec![favorite.clone(), second],
+            ..Session::default()
+        };
+        assert!(write_session(Some(&path), &duplicate).is_err());
+        assert_eq!(fs::read(&path).unwrap(), before);
+
+        let mut stale = favorite;
+        stale.template_digest = yoctui_model::RawFavoriteTemplateDigest([9; 32]);
+        let stale_session = Session {
+            raw_favorites: vec![stale.clone()],
+            ..Session::default()
+        };
+        write_session(Some(&path), &stale_session).unwrap();
+        let loaded = read_session(Some(&path)).unwrap();
+        assert_eq!(loaded.raw_favorites, [stale.clone()]);
+        assert!(
+            stale
+                .project(yoctui_model::builtin_raw_catalog(), None)
+                .stale
+        );
+
+        let mut malformed = stale_session;
+        malformed.raw_favorites[0].schema_version += 1;
+        fs::write(&path, toml::to_string(&malformed).unwrap()).unwrap();
+        assert!(read_session(Some(&path)).is_err());
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn raw_favorite_persistence_defaults_legacy_and_rejects_oversized_session() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-raw-favorite-legacy-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("session.toml");
+        fs::write(&path, "theme = 'dark-pro'\n").unwrap();
+        assert!(read_session(Some(&path)).unwrap().raw_favorites.is_empty());
+
+        let file = fs::OpenOptions::new().write(true).open(&path).unwrap();
+        file.set_len(MAX_SESSION_BYTES + 1).unwrap();
+        assert!(read_session(Some(&path)).is_err());
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
     }
 
     #[test]
