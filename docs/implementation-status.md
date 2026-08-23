@@ -179,7 +179,10 @@ dedicated bounded Favorites workspace with typed inspect, reorder,
 removal-confirmation, and fresh-form reopen actions. Rows retain stale records
 and show template/default/argv details plus the current five-state
 compatibility projection; mutations emit the existing atomic session
-persistence effect.
+persistence effect. `RAW-SEARCH-001` is complete: bounded case-insensitive
+search matches category, command identity, labels, and descriptions while
+preserving exact selection and explicit no-match behavior. `RAW-MOUSE-001` is
+active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

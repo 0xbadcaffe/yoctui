@@ -5871,18 +5871,18 @@ notes = "Favorites workspace renders bounded ordered records with template/defau
 id = "RAW-SEARCH-001"
 milestone = "M20"
 title = "Search Raw categories commands and descriptions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 625
 required = true
 depends_on = ["RAW-COMMAND-UI-001"]
 verify = ["cargo test -p yoctui-model raw_search", "cargo test -p yoctui-app raw_search", "cargo test -p yoctui-ui raw_search"]
-notes = "Provide bounded case-insensitive typed search with result identity, exact help synchronization, and no-match behavior."
+notes = "Bounded case-insensitive typed search matches category, command identity, labels, and descriptions while preserving exact selection, synchronized help, and explicit no-match behavior."
 
 [[task]]
 id = "RAW-MOUSE-001"
 milestone = "M20"
 title = "Add first-class Raw Mode mouse behavior"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 626
 required = true
 depends_on = ["RAW-FAVORITE-UI-001", "RAW-SEARCH-001"]

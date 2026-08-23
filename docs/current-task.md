@@ -2,18 +2,19 @@
 
 ## Task
 
-**ID:** RAW-SEARCH-001
-**Title:** Search Raw categories commands and descriptions
+**ID:** RAW-MOUSE-001
+**Title:** Add first-class Raw Mode mouse behavior
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Provide bounded case-insensitive typed search across Raw categories, commands,
-and descriptions with synchronized exact selection and no-match behavior.
+Use shared rendered geometry for category, command, favorite, history, and
+field selection with wheel parity while dialogs and PTYs retain their traps.
 
 ## Dependencies
 
-- `RAW-COMMAND-UI-001` — DONE
+- `RAW-FAVORITE-UI-001` — DONE
+- `RAW-SEARCH-001` — DONE
 
 ## Relevant files
 
@@ -29,19 +30,16 @@ and descriptions with synchronized exact selection and no-match behavior.
 
 ## Definition of done
 
-- Search input is bounded, case-insensitive, and typed; it matches category,
-  command identity, labels, and descriptions without parsing rendered text.
-- Selection remains an exact catalog identity as results change, with clear
-  empty/no-match behavior and Ctrl+U clearing the query.
-- Model, app, and TestBackend tests cover editing, matching, selection sync,
-  empty results, bounds, and narrow responsive output.
+- Mouse hit-testing uses the same bounded row geometry as keyboard navigation.
+- Wheel and click actions preserve typed identities and focus traps.
+- App and TestBackend tests cover categories, commands, Favorites, history,
+  form fields, narrow bounds, and modal/PTY isolation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_search
-cargo test -p yoctui-app raw_search
-cargo test -p yoctui-ui raw_search
+cargo test -p yoctui-app raw_mouse
+cargo test -p yoctui -- raw_mouse
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

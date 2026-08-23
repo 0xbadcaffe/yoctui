@@ -26461,7 +26461,7 @@ mod tests {
     }
 
     #[test]
-    fn raw_command_list_bounds_empty_stale_and_responsive_state() {
+    fn raw_search_command_list_bounds_empty_stale_and_responsive_state() {
         let mut app = raw_command_list_app();
         set_raw_command_query(&mut app, "bitbake");
         let total = app

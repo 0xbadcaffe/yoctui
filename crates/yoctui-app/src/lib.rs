@@ -11612,7 +11612,7 @@ mod tests {
     }
 
     #[test]
-    fn raw_mode_app_maps_browser_search_history_and_favorite_input_mechanically() {
+    fn raw_search_app_maps_browser_history_and_favorite_input_mechanically() {
         let catalog = yoctui_model::RawCatalog::builtin();
         let mut state = yoctui_model::RawModeState::new(&catalog);
         assert_eq!(

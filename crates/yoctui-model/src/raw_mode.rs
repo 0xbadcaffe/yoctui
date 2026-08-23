@@ -5326,7 +5326,7 @@ mod raw_mode_state_tests {
     }
 
     #[test]
-    fn raw_mode_browsing_search_and_help_follow_exact_stable_selection() {
+    fn raw_search_browsing_and_help_follow_exact_stable_selection() {
         let catalog = catalog(1);
         let mut state = RawModeState::new(&catalog);
         assert_eq!(state.category, Some(category("favorites")));
