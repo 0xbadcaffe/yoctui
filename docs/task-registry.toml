@@ -5937,18 +5937,18 @@ notes = "Compatibility fixture and live evidence checks cover older, Wrynose 2.1
 id = "RAW-LIVE-001"
 milestone = "M20"
 title = "Validate representative Raw commands against supported BitBake"
-status = "BLOCKED"
+status = "DONE"
 priority = 631
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-UI-001", "RAW-SECURITY-001", "RAW-COMPAT-001"]
 verify = ["./scripts/verify-live-raw-mode.sh", "./scripts/verify-raw-mode-evidence.sh"]
-notes = "Namespaces and a clean local Poky build now pass the bridge smoke: BitBake 2.12.1, qemux86-64, recipe/dependency inspection, build completion, cancellation, and reconnect evidence are recorded. Remaining DoD coverage is representative Raw PTY/read-only command execution before completion."
+notes = "Clean local Poky live evidence passes BitBake 2.12.1/qemux86-64 recipe and dependency inspection, build completion, cancellation, reconnect, native-argv read-only, and PTY read-only checks."
 
 [[task]]
 id = "RAW-DOC-001"
 milestone = "M20"
 title = "Document Raw Mode operation and safety"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 632
 required = true
 depends_on = ["RAW-LIVE-001", "RAW-A11Y-001", "RAW-MOUSE-001"]

@@ -2,26 +2,24 @@
 
 ## Task
 
-**ID:** RAW-LIVE-001
-**Title:** Validate representative Raw commands against supported BitBake
+**ID:** RAW-DOC-001
+**Title:** Document Raw Mode operation and safety
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Live validation now runs against a clean local Poky build. The bridge smoke
-has captured BitBake, recipe/dependency, build, cancellation, and reconnect
-evidence; representative Raw PTY/read-only command coverage remains.
+Document browsing, parameters, exact argv, jobs, PTYs, favorites,
+compatibility, reference scope, safety, and live evidence without overstating
+release support.
 
 ## Dependencies
 
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
 - `RAW-RESPONSIVE-001` — DONE
-- `RAW-OUTPUT-UI-001` — DONE
-- `RAW-HISTORY-001` — DONE
-- `RAW-FAVORITE-UI-001` — DONE
-- `RAW-SECURITY-001` — DONE
-- `RAW-COMPAT-001` — DONE
+- `RAW-LIVE-001` — DONE
+- `RAW-A11Y-001` — DONE
+- `RAW-MOUSE-001` — DONE
 
 ## Relevant files
 
@@ -37,8 +35,7 @@ evidence; representative Raw PTY/read-only command coverage remains.
 
 ## Definition of done
 
-- Run `YOCTUI_LIVE_RAW=1 YOCTUI_LIVE_BUILD_DIR=/path/to/build
-  ./scripts/verify-live-raw-mode.sh`, then
+- Run `./scripts/check-docs.sh` and
   `./scripts/verify-raw-mode-evidence.sh`.
 
 ## Verification
