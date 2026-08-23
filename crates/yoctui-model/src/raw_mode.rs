@@ -948,7 +948,7 @@ impl RawOutputChunk {
 
 fn raw_output_line_count(text: &str) -> usize {
     if text.is_empty() {
-        0
+        1
     } else {
         text.bytes().filter(|byte| *byte == b'\n').count() + usize::from(!text.ends_with('\n'))
     }
@@ -1010,6 +1010,7 @@ impl RawRetainedOutput {
         self.chunks.push_back(chunk);
         while self.retained_bytes > MAX_RAW_OUTPUT_RETAINED_BYTES
             || self.retained_lines > MAX_RAW_OUTPUT_RETAINED_LINES
+            || self.chunks.len() > MAX_RAW_OUTPUT_RETAINED_LINES
         {
             let Some(removed) = self.chunks.pop_front() else {
                 break;
@@ -1029,6 +1030,7 @@ impl RawRetainedOutput {
         if self.next_sequence == 0
             || self.retained_bytes > MAX_RAW_OUTPUT_RETAINED_BYTES
             || self.retained_lines > MAX_RAW_OUTPUT_RETAINED_LINES
+            || self.chunks.len() > MAX_RAW_OUTPUT_RETAINED_LINES
             || self.retained_bytes != self.chunks.iter().map(|chunk| chunk.text.len()).sum()
             || self.retained_lines != self.chunks.iter().map(RawOutputChunk::line_count).sum()
         {
@@ -1957,6 +1959,8 @@ pub enum RawModeAction {
     },
     EditAdditionalArguments(PopupEditorCommand),
     RequestPreview,
+    ConfirmPreview,
+    CancelExecution(RawRequestId),
     OpenExecution(RawCommandId),
     OpenHistory,
     SelectHistory {
@@ -2568,6 +2572,7 @@ pub fn reduce_raw_mode(
             }
         }
         RawModeAction::RequestPreview => request_raw_preview(state, catalog, authority),
+        RawModeAction::ConfirmPreview | RawModeAction::CancelExecution(_) => {}
         RawModeAction::OpenExecution(command) => {
             if catalog.command(&command).is_some() {
                 state.execution = Some(command);
@@ -2605,6 +2610,62 @@ pub fn reduce_raw_mode(
         RawModeAction::DismissNotification => state.notification = None,
     }
     reconcile_raw_mode(state, catalog);
+}
+
+pub fn confirmed_raw_execution_request(
+    state: &RawModeState,
+    catalog: &RawCatalog,
+    authority: Option<&DaemonCompatibilitySnapshot>,
+    request_id: RawRequestId,
+) -> Result<RawConfirmedExecutionRequest, RawExecutionError> {
+    if state.view != RawModeView::Preview {
+        return Err(RawExecutionError::InvalidLifecycle);
+    }
+    let form = state
+        .form
+        .as_ref()
+        .ok_or(RawExecutionError::PreviewRequestMismatch)?;
+    let reviewed = state
+        .preview
+        .as_ref()
+        .ok_or(RawExecutionError::PreviewRequestMismatch)?;
+    let command = catalog
+        .command(&form.command)
+        .ok_or(RawExecutionError::InvalidCommand)?;
+    let mut parameters = BTreeMap::new();
+    for definition in &command.parameters {
+        let field = form
+            .fields
+            .get(&definition.id)
+            .ok_or(RawExecutionError::InvalidParameterValue)?;
+        if let Some(value) = definition
+            .parse_value(&field.editor.text)
+            .map_err(|_| RawExecutionError::InvalidParameterValue)?
+        {
+            parameters.insert(definition.id.clone(), value);
+        }
+    }
+    let preview_request = RawPreviewRequest {
+        catalog_version: state.catalog_version,
+        command: form.command.clone(),
+        parameters,
+        additional_arguments: RawAdditionalArguments::parse(&form.additional_arguments.editor.text)
+            .map_err(|_| RawExecutionError::InvalidParameterValue)?,
+        capability_generation: form.capability_generation,
+        build_directory: form.build_directory.clone(),
+    };
+    let current = catalog
+        .preview(&preview_request, authority)
+        .map_err(|error| RawExecutionError::InvalidReviewedPreview(error.to_string()))?;
+    if &current != reviewed {
+        return Err(RawExecutionError::PreviewRequestMismatch);
+    }
+    RawConfirmedExecutionRequest::from_reviewed_preview(
+        request_id,
+        catalog,
+        &preview_request,
+        reviewed,
+    )
 }
 
 fn raw_visible_commands<'a>(state: &RawModeState, catalog: &'a RawCatalog) -> Vec<&'a RawCommand> {

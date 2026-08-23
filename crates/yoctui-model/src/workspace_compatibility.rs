@@ -1,8 +1,9 @@
 use crate::{
     App, BuildRequest, CapabilityId, CapabilityState, DaemonCompatibilitySnapshot, Dialog, Effect,
-    MaintenanceDialog, MaintenanceEffect, MaintenanceOperation, QaDialog, QaEffect, Screen,
-    SdkOperation, SecurityDialog, SecurityEffect, SecurityOperation, TestFamily, TestLaunchPreview,
-    TestOperation, WicOperation,
+    MaintenanceDialog, MaintenanceEffect, MaintenanceOperation, QaDialog, QaEffect,
+    RawCapabilityRequirement, RawExecutionPolicy, Screen, SdkOperation, SecurityDialog,
+    SecurityEffect, SecurityOperation, TestFamily, TestLaunchPreview, TestOperation, WicOperation,
+    builtin_raw_catalog,
 };
 use thiserror::Error;
 
@@ -620,6 +621,26 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
 
         Effect::Start(request) => build_request_requirement(request),
         Effect::Cancel => Requirement::one(Id::BitBakeCancellation),
+        Effect::StartRaw(request) => builtin_raw_catalog()
+            .command(&request.command)
+            .and_then(|command| match &command.execution {
+                RawExecutionPolicy::Executable { template } => Some(match &template.capabilities {
+                    RawCapabilityRequirement::All { capabilities } => Requirement::Capabilities {
+                        all: capabilities.clone(),
+                        any: Vec::new(),
+                    },
+                    RawCapabilityRequirement::Any { capabilities } => Requirement::Capabilities {
+                        all: Vec::new(),
+                        any: capabilities.clone(),
+                    },
+                }),
+                RawExecutionPolicy::ReferenceOnly { .. } => None,
+            })
+            .unwrap_or_else(|| Requirement::Capabilities {
+                all: vec![Id::BitBakeRawServerToken],
+                any: vec![Id::BitBakeRawServerToken],
+            }),
+        Effect::CancelRaw(_) => Requirement::ClientLocal,
         Effect::DevtoolModify(_) => Requirement::one(Id::DevtoolModify),
         Effect::DevtoolReset(_) => Requirement::one(Id::DevtoolReset),
         Effect::DevtoolUpdateRecipe(_) => Requirement::one(Id::DevtoolUpdateRecipe),

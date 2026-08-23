@@ -3330,6 +3330,7 @@ pub struct App {
     pub workspace_compatibility: WorkspaceCompatibilityState,
     pub compatibility_ui: CompatibilityUiState,
     pub raw_mode: RawModeState,
+    pub raw_request_generation: u64,
     pub pty_selection: usize,
     pub pane_layout: PaneLayout,
     pub screen: Screen,
@@ -3480,6 +3481,7 @@ impl App {
             workspace_compatibility: WorkspaceCompatibilityState::default(),
             compatibility_ui: CompatibilityUiState::default(),
             raw_mode: RawModeState::new(builtin_raw_catalog()),
+            raw_request_generation: 0,
             pty_selection: 0,
             pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
             screen: Screen::Dashboard,
@@ -7797,6 +7799,54 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             .compatibility_ui
             .clear_query(app.workspace_compatibility.authority()),
         Action::FinishCompatibilitySearch => app.compatibility_ui.finish_search(),
+        Action::RawMode(RawModeAction::ConfirmPreview) => {
+            app.raw_request_generation = app.raw_request_generation.wrapping_add(1).max(1);
+            let nanos = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+            let request_id = RawRequestId::new(format!(
+                "raw-request:client-{nanos}-{}",
+                app.raw_request_generation
+            ))
+            .expect("generated Raw request identity is bounded and valid");
+            let authority = app.workspace_compatibility.authority().cloned();
+            match confirmed_raw_execution_request(
+                &app.raw_mode,
+                builtin_raw_catalog(),
+                authority.as_ref(),
+                request_id,
+            ) {
+                Ok(request) => {
+                    reduce_raw_mode(
+                        &mut app.raw_mode,
+                        builtin_raw_catalog(),
+                        authority.as_ref(),
+                        RawModeAction::OpenExecution(request.command.clone()),
+                    );
+                    reduce_raw_mode(
+                        &mut app.raw_mode,
+                        builtin_raw_catalog(),
+                        authority.as_ref(),
+                        RawModeAction::RememberHistory(request.command.clone()),
+                    );
+                    return Some(Effect::StartRaw(request));
+                }
+                Err(error) => app.raw_mode.notification = Some(error.to_string()),
+            }
+        }
+        Action::RawMode(RawModeAction::CancelExecution(request_id)) => {
+            let cancellable = app
+                .raw_mode
+                .execution_states
+                .get(&request_id)
+                .is_some_and(|state| !state.phase.is_terminal() && !state.cancellation_requested);
+            if cancellable {
+                return Some(Effect::CancelRaw(request_id));
+            }
+            app.raw_mode.notification =
+                Some("Raw execution is unknown, terminal, or already cancelling.".into());
+        }
         Action::RawMode(action) => {
             let authority = app.workspace_compatibility.authority().cloned();
             reduce_raw_mode(
@@ -15013,6 +15063,8 @@ pub enum Effect {
     CloneBuildEnvironment(BuildEnvironmentClonePlan),
     Start(BuildRequest),
     Cancel,
+    StartRaw(RawConfirmedExecutionRequest),
+    CancelRaw(RawRequestId),
     OpenInEditor(PathBuf),
     CopyToClipboard(String),
     OpenWorkspaceEditor {

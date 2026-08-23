@@ -118,6 +118,8 @@ mod daemon_qa;
 #[cfg(unix)]
 mod daemon_qemu;
 #[cfg(unix)]
+mod daemon_raw;
+#[cfg(unix)]
 mod daemon_sdk;
 #[cfg(unix)]
 mod daemon_security;
@@ -1894,6 +1896,7 @@ fn daemon_connection_with_snapshot() -> Result<(
             Capability::IncrementalEvents,
             Capability::PtySessions,
             Capability::EnvironmentCompatibility,
+            Capability::RawExecution,
         ],
     }))?;
     let ServerMessage::Hello(_) = connection.receive()? else {
@@ -2172,6 +2175,9 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     let mut daemon_journal = daemon_journal;
     let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
     devtool_supervisor.replace_compatibility(daemon_state.compatibility.clone())?;
+    let mut raw_supervisor = daemon_raw::DaemonRawSupervisor::default();
+    raw_supervisor.replace_compatibility(daemon_state.compatibility.clone())?;
+    raw_supervisor.restore_snapshot(daemon_journal.snapshot())?;
     let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::default();
     bitbake_supervisor
         .replace_compatibility(daemon_state.compatibility.clone())
@@ -2214,6 +2220,12 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 break;
             };
             publish_daemon_devtool_event(&mut daemon_journal, event)?;
+        }
+        for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
+            let Some(event) = raw_supervisor.try_event() else {
+                break;
+            };
+            publish_daemon_raw_event(&mut daemon_journal, event)?;
         }
         for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
             let Some(event) = bitbake_supervisor.try_event() else {
@@ -2394,6 +2406,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             Capability::PaneAttachments,
                             Capability::TerminalMouse,
                             Capability::EnvironmentCompatibility,
+                            Capability::RawExecution,
                             Capability::GracefulShutdown,
                         ],
                         limits: ProtocolLimits {
@@ -2648,6 +2661,52 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                 current_generation: daemon_journal.snapshot().generation,
                             },
                         },
+                        DaemonCommand::StartRaw { request } => match raw_supervisor.start(request) {
+                            Ok(start) => {
+                                let command = start.state.request.command.to_string();
+                                let raw_event = daemon_journal.publish(
+                                    yoctui_protocol::daemon::DaemonEvent::RawExecutionChanged(
+                                        Box::new(
+                                            yoctui_app::raw_execution_snapshot_to_protocol(
+                                                &start.state,
+                                            )
+                                            .map_err(anyhow::Error::msg)?,
+                                        ),
+                                    ),
+                                )?;
+                                connection.send(&ServerMessage::Event(raw_event))?;
+                                let job_event = daemon_journal.publish(
+                                    yoctui_protocol::daemon::DaemonEvent::JobChanged(
+                                        yoctui_protocol::daemon::JobSummary {
+                                            id: start.job_id,
+                                            kind: yoctui_protocol::daemon::JobKind::Raw,
+                                            label: format!("Raw {command}"),
+                                            lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
+                                            progress_current: None,
+                                            progress_total: None,
+                                            exit_code: None,
+                                        },
+                                    ),
+                                )?;
+                                connection.send(&ServerMessage::Event(job_event))?;
+                                CommandOutcome::Accepted
+                            }
+                            Err(error) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                message: error.to_string(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        },
+                        DaemonCommand::CancelRaw { request_id } => {
+                            match raw_supervisor.cancel(&request_id) {
+                                Ok(()) => CommandOutcome::Accepted,
+                                Err(error) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                    message: error.to_string(),
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            }
+                        }
                         DaemonCommand::CancelJob { job_id } => {
                             match devtool_supervisor.cancel(job_id).or_else(|_| bitbake_supervisor.cancel(job_id)) {
                                 Ok(()) => CommandOutcome::Accepted,
@@ -3238,6 +3297,27 @@ fn daemon_build_event(
         ),
         _ => (None, None),
     }
+}
+
+fn publish_daemon_raw_event(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    event: daemon_raw::DaemonRawEvent,
+) -> Result<()> {
+    use yoctui_protocol::daemon::{DaemonEvent, JobKind, JobSummary};
+    let command = event.state.request.command.to_string();
+    journal.publish(DaemonEvent::RawExecutionChanged(Box::new(
+        yoctui_app::raw_execution_snapshot_to_protocol(&event.state).map_err(anyhow::Error::msg)?,
+    )))?;
+    journal.publish(DaemonEvent::JobChanged(JobSummary {
+        id: event.job_id,
+        kind: JobKind::Raw,
+        label: format!("Raw {command}"),
+        lifecycle: event.lifecycle,
+        progress_current: None,
+        progress_total: None,
+        exit_code: event.exit_code,
+    }))?;
+    Ok(())
 }
 
 fn publish_daemon_devtool_event(
@@ -11973,7 +12053,30 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         ))
                 {
                     if let Some(action) = raw_mode_input(&app, input) {
-                        let _ = compatibility_workspace_action(&mut app, Action::RawMode(action));
+                        let effect =
+                            compatibility_workspace_action(&mut app, Action::RawMode(action));
+                        if let Some(effect @ (Effect::StartRaw(_) | Effect::CancelRaw(_))) = effect
+                        {
+                            #[cfg(unix)]
+                            if let Some(runtime) = daemon_runtime.as_mut() {
+                                match runtime.route_effect(&app, &effect) {
+                                    Ok(client_runtime::RuntimeEffectRoute::Daemon(_)) => {}
+                                    Ok(client_runtime::RuntimeEffectRoute::ClientLocal) => {
+                                        app.notification = Some(
+                                            "Raw execution was not routed to the daemon.".into(),
+                                        );
+                                    }
+                                    Err(error) => {
+                                        app.notification =
+                                            Some(format!("Raw execution was not sent: {error}"));
+                                    }
+                                }
+                            } else {
+                                app.notification = Some(
+                                    "Raw execution requires an attached Yoctui daemon.".into(),
+                                );
+                            }
+                        }
                     }
                 } else if app.screen == yoctui_model::Screen::Compatibility {
                     if let Some(action) =

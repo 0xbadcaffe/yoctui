@@ -4188,6 +4188,15 @@ exit code/result, follow/pause, search, vertical/horizontal scroll, save through
 an explicit typed destination, cancellation, detach, and reattach. Closing or
 detaching the view never implicitly cancels the job.
 
+`Enter` in the exact noninteractive preview is the sole start gesture. It
+revalidates the current catalog and capability projection, creates a fresh
+opaque request identity, and submits only the typed confirmed request to the
+attached daemon. A missing daemon, stale generation, changed preview, duplicate
+request, or rejected executable/build identity leaves no local process and
+reports the exact rejection. Reconnect installs the daemon's current bounded
+replica; if daemon process ownership itself was lost, the replica is detached
+and terminal `Lost`, never shown as resumed work.
+
 An interactive confirmation creates a daemon-owned PTY session through the
 existing terminal/session architecture. The session retains exact command and
 workspace identity, emulator screen, writer lease, resize, detach/reattach,

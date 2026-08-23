@@ -277,6 +277,7 @@ fn requested_capabilities() -> Vec<Capability> {
         Capability::BitBakeLifecycle,
         Capability::PtySessions,
         Capability::PtyWriterLease,
+        Capability::RawExecution,
         Capability::GracefulShutdown,
     ]
 }

@@ -2803,9 +2803,27 @@ wire enums include an explicit unknown state that conversion rejects. The
 daemon snapshot journal validates and atomically replaces newer Raw replicas;
 stale replacements and duplicate request identities fail closed. `yoctui-app`
 is the sole mechanical wire/model mapper and installs only a completely valid
-bounded snapshot set. The later Raw runner and PTY tasks will consume these
-types to reconstruct daemon-owned native commands; this slice does not spawn a
-process or grant the client execution authority.
+bounded snapshot set.
+
+The implemented noninteractive runner consumes those types without granting
+the client process authority. `yoctui-bitbake::RawJobPlanner` reconstructs the
+catalog preview from typed parameters and additional argv, compares the
+reviewed digest, requires the exact current capability generation and
+initialized build identity, and resolves a canonical executable before any
+process construction. `RawJobRunner` invokes that executable directly with
+native argv and cwd, null stdin, independent bounded stdout/stderr readers, a
+deadline, and an owned process group; it contains no shell-command path.
+
+The daemon Raw supervisor allocates namespaced non-reused job and stream IDs,
+retains request identities across safe daemon metadata recovery, and publishes
+each reducer snapshot plus its generic job projection through the shared
+journal. Client EOF and view detachment do not touch the worker. Cancellation
+is request-correlated, acknowledges cancellation intent and `Cancelling`
+before bounded TERM/KILL completion, and rejects duplicate or terminal
+requests. Persisted recovery deliberately discards retained output bytes while
+preserving their drop accounting; a nonterminal process from a stopped daemon
+becomes one detached typed `Lost` result and cannot be resurrected. The later
+Raw PTY task consumes the interactive half of the same execution contract.
 
 `yoctui-app` maps keyboard/mouse input to Raw reducer actions, maps daemon Raw
 events mechanically, and translates validated effects into typed daemon

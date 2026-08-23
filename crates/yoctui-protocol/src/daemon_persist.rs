@@ -1,7 +1,9 @@
 //! Safe, bounded persistence for reconstructable daemon metadata.
 use crate::daemon::{
     BitBakeCapability, BitBakeState, DaemonInstanceId, DaemonSnapshot, JobSummary, LifecycleState,
-    LogRecord, ProjectProfileSummary, PtyKind, TerminalDimensions, WorkspaceIdentity,
+    LogRecord, MAX_RAW_EXECUTION_REQUESTS, ProjectProfileSummary, PtyKind, RawAttachmentData,
+    RawExecutionOutcomeData, RawExecutionPhaseData, RawExecutionResultData,
+    RawExecutionSnapshotData, TerminalDimensions, WorkspaceIdentity,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -38,6 +40,8 @@ pub struct DaemonPersistedState {
     pub project_profile: ProjectProfileSummary,
     pub bitbake: PersistedBitBakeMetadata,
     pub job_history: Vec<JobSummary>,
+    #[serde(default)]
+    pub raw_executions: Vec<RawExecutionSnapshotData>,
     pub terminal_sessions: Vec<PersistedTerminalSession>,
     pub recent_logs: Vec<LogRecord>,
     pub recovery_warnings: Vec<String>,
@@ -110,6 +114,12 @@ impl DaemonPersistedState {
                 capabilities: snapshot.bitbake.capabilities.clone(),
             },
             job_history: snapshot.jobs.clone(),
+            raw_executions: snapshot
+                .raw_executions
+                .iter()
+                .cloned()
+                .map(sanitize_raw_execution_for_persistence)
+                .collect(),
             terminal_sessions: snapshot
                 .pty_sessions
                 .iter()
@@ -138,6 +148,7 @@ pub struct DaemonRecoveryReport {
     pub boundary: DaemonRecoveryBoundary,
     pub previous_boot_changed: bool,
     pub lost_jobs: usize,
+    pub lost_raw_executions: usize,
     pub lost_terminal_sessions: usize,
     pub bitbake_reconnect_recommended: bool,
     pub terminal_relaunch_intents: Vec<TerminalRelaunchIntent>,
@@ -158,6 +169,20 @@ pub struct TerminalRelaunchIntent {
     pub dimensions: TerminalDimensions,
 }
 
+fn sanitize_raw_execution_for_persistence(
+    mut execution: RawExecutionSnapshotData,
+) -> RawExecutionSnapshotData {
+    for output in [&mut execution.stdout, &mut execution.stderr] {
+        output.dropped_bytes = output.dropped_bytes.saturating_add(output.retained_bytes);
+        output.dropped_lines = output.dropped_lines.saturating_add(output.retained_lines);
+        output.chunks.clear();
+        output.retained_bytes = 0;
+        output.retained_lines = 0;
+    }
+    execution.attachment = RawAttachmentData::Detached;
+    execution
+}
+
 pub fn recover_persisted_snapshot(
     mut current: DaemonSnapshot,
     persisted: &DaemonPersistedState,
@@ -165,6 +190,7 @@ pub fn recover_persisted_snapshot(
 ) -> (DaemonSnapshot, DaemonRecoveryReport) {
     let previous_boot_changed = persisted.previous_boot_id != current_boot_id;
     let mut lost_jobs = 0;
+    let mut lost_raw_executions = 0;
     let mut lost_terminal_sessions = 0;
     let mut terminal_relaunch_intents = Vec::new();
     current.workspace.clone_from(&persisted.workspace);
@@ -193,6 +219,29 @@ pub fn recover_persisted_snapshot(
                 lost_jobs += 1;
             }
             job
+        })
+        .collect();
+    current.raw_executions = persisted
+        .raw_executions
+        .iter()
+        .cloned()
+        .map(|mut execution| {
+            execution.attachment = RawAttachmentData::Detached;
+            if !matches!(execution.phase, RawExecutionPhaseData::Terminal(_)) {
+                execution.phase = RawExecutionPhaseData::Terminal(RawExecutionOutcomeData::Lost);
+                execution.result = Some(RawExecutionResultData {
+                    schema_version: crate::daemon::RAW_EXECUTION_SCHEMA_VERSION,
+                    outcome: RawExecutionOutcomeData::Lost,
+                    exit_code: None,
+                    message: Some("Raw process ownership was lost when the daemon stopped".into()),
+                    elapsed_ms: execution.elapsed_ms,
+                    durable_reference: None,
+                });
+                execution.sequence = execution.sequence.saturating_add(1);
+                execution.generation = execution.generation.saturating_add(1);
+                lost_raw_executions += 1;
+            }
+            execution
         })
         .collect();
     current.pty_sessions = persisted
@@ -259,6 +308,7 @@ pub fn recover_persisted_snapshot(
             },
             previous_boot_changed,
             lost_jobs,
+            lost_raw_executions,
             lost_terminal_sessions,
             bitbake_reconnect_recommended,
             terminal_relaunch_intents,
@@ -331,6 +381,7 @@ pub fn read_persisted_state(
             reason: "persisted terminal metadata claims a live process survived".into(),
         });
     }
+    validate_persisted_raw_executions(&state.raw_executions)?;
     Ok(Some(state))
 }
 
@@ -351,6 +402,7 @@ pub fn write_persisted_state(
             reason: "live process identity cannot be persisted".into(),
         });
     }
+    validate_persisted_raw_executions(&state.raw_executions)?;
     validate_directory(&paths.directory, true)?;
     if let Ok(metadata) = fs::symlink_metadata(&paths.state) {
         validate_state_file(&paths.state, &metadata)?;
@@ -381,6 +433,23 @@ pub fn write_persisted_state(
         let _ = fs::remove_file(&temporary);
     }
     result?;
+    Ok(())
+}
+
+fn validate_persisted_raw_executions(
+    executions: &[RawExecutionSnapshotData],
+) -> Result<(), DaemonPersistError> {
+    if executions.len() > MAX_RAW_EXECUTION_REQUESTS {
+        return Err(DaemonPersistError::TooLarge);
+    }
+    for execution in executions {
+        execution
+            .validate()
+            .map_err(|error| DaemonPersistError::Unsafe {
+                path: PathBuf::from("raw-execution"),
+                reason: error.to_string(),
+            })?;
+    }
     Ok(())
 }
 
@@ -451,7 +520,11 @@ pub enum DaemonPersistError {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::daemon::{BitBakeState, LifecycleState};
+    use crate::daemon::{
+        BitBakeState, LifecycleState, RAW_EXECUTION_SCHEMA_VERSION, RawExecutionOwnerData,
+        RawInteractionData, RawOutputChunkData, RawOutputStreamData, RawParameterValueData,
+        RawRetainedOutputData, RawSafetyData,
+    };
     use std::os::unix::fs::DirBuilderExt;
 
     fn root(name: &str) -> PathBuf {
@@ -465,6 +538,69 @@ mod tests {
             .create(&path)
             .unwrap();
         path
+    }
+
+    fn raw_job_snapshot() -> RawExecutionSnapshotData {
+        let chunk = RawOutputChunkData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            stream_id: "raw-stream:persist-stdout".into(),
+            stream: RawOutputStreamData::Stdout,
+            sequence: 1,
+            text: "retained before restart\n".into(),
+            truncated_bytes: 0,
+            dropped_lines: 0,
+        };
+        RawExecutionSnapshotData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            request: crate::daemon::RawExecutionRequestData {
+                schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+                request_id: "raw-request:persist-1".into(),
+                catalog_version: 1,
+                command_id: "build.target".into(),
+                parameters: vec![crate::daemon::RawExecutionParameterData {
+                    id: "target".into(),
+                    value: RawParameterValueData::Target("core-image-minimal".into()),
+                }],
+                additional_arguments: Vec::new(),
+                interaction: RawInteractionData::NoninteractiveJob,
+                safety: RawSafetyData::Build,
+                capability_generation: 7,
+                build_directory: "/work/build".into(),
+                preview_digest: "ab".repeat(32),
+            },
+            phase: RawExecutionPhaseData::Running,
+            attachment: RawAttachmentData::Attached,
+            owner: Some(RawExecutionOwnerData::Job("raw-job:persist-1".into())),
+            cancellation_requested: false,
+            queued_unix_ms: 10,
+            started_unix_ms: Some(20),
+            elapsed_ms: 30,
+            result: None,
+            stdout: RawRetainedOutputData {
+                stream_id: chunk.stream_id.clone(),
+                stream: RawOutputStreamData::Stdout,
+                retained_bytes: chunk.text.len() as u64,
+                retained_lines: 1,
+                chunks: vec![chunk],
+                next_sequence: 2,
+                dropped_bytes: 0,
+                dropped_lines: 0,
+                truncated_chunks: 0,
+            },
+            stderr: RawRetainedOutputData {
+                stream_id: "raw-stream:persist-stderr".into(),
+                stream: RawOutputStreamData::Stderr,
+                chunks: Vec::new(),
+                next_sequence: 1,
+                retained_bytes: 0,
+                retained_lines: 0,
+                dropped_bytes: 0,
+                dropped_lines: 0,
+                truncated_chunks: 0,
+            },
+            sequence: 2,
+            generation: 2,
+        }
     }
 
     fn snapshot() -> DaemonSnapshot {
@@ -639,5 +775,50 @@ mod tests {
         assert_eq!(report.terminal_relaunch_intents.len(), 1);
         assert_eq!(report.terminal_relaunch_intents[0].name, "devshell");
         assert_eq!(report.terminal_relaunch_intents[0].cwd, "/work/build");
+    }
+
+    #[test]
+    fn raw_job_recovery_sanitizes_output_and_maps_running_work_to_lost_once() {
+        let mut prior = snapshot();
+        prior.raw_executions = vec![raw_job_snapshot()];
+        let persisted = DaemonPersistedState::capture(
+            &prior,
+            99,
+            "same-boot".into(),
+            Vec::new(),
+            PersistedPreferences::default(),
+        );
+        assert!(persisted.raw_executions[0].stdout.chunks.is_empty());
+        assert_eq!(persisted.raw_executions[0].stdout.retained_bytes, 0);
+        assert!(persisted.raw_executions[0].stdout.dropped_bytes > 0);
+
+        let (recovered, report) = recover_persisted_snapshot(snapshot(), &persisted, "same-boot");
+        let execution = &recovered.raw_executions[0];
+        assert_eq!(
+            execution.phase,
+            RawExecutionPhaseData::Terminal(RawExecutionOutcomeData::Lost)
+        );
+        assert_eq!(execution.attachment, RawAttachmentData::Detached);
+        assert_eq!(
+            execution.result.as_ref().unwrap().outcome,
+            RawExecutionOutcomeData::Lost
+        );
+        execution.validate().unwrap();
+        assert_eq!(report.lost_raw_executions, 1);
+
+        let persisted_again = DaemonPersistedState::capture(
+            &recovered,
+            100,
+            "same-boot".into(),
+            Vec::new(),
+            PersistedPreferences::default(),
+        );
+        let (recovered_again, report_again) =
+            recover_persisted_snapshot(snapshot(), &persisted_again, "same-boot");
+        assert_eq!(report_again.lost_raw_executions, 0);
+        assert_eq!(
+            recovered_again.raw_executions[0],
+            recovered.raw_executions[0]
+        );
     }
 }

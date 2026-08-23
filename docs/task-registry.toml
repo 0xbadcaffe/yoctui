@@ -5794,18 +5794,18 @@ notes = "Define stable request/session/job identity, streams, bounded output, el
 id = "RAW-JOB-001"
 milestone = "M20"
 title = "Execute noninteractive Raw commands as daemon jobs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 618
 required = true
 depends_on = ["RAW-EXEC-MODEL-001", "RAW-CAP-PROBE-001", "CLIENT-ARCH-001"]
 verify = ["cargo test -p yoctui-bitbake raw_job", "cargo test -p yoctui-protocol raw_job", "cargo test -p yoctui-app raw_job", "cargo test -p yoctui -- raw_job"]
-notes = "Revalidate exact capability/executable/build identity in the daemon, spawn native argv, retain bounded stdout/stderr/history, and support cancellation/reconnect/loss."
+notes = "The daemon revalidates the catalog, digest, current capability/build/executable authority, spawns only native argv, and owns namespaced jobs/process groups across client detach. Ordered bounded stdout/stderr, duplicate/stale denial, success/nonzero/spawn/timeout/loss, graceful/forced cancellation, reconnect, and sanitized restart-to-Lost recovery are covered."
 
 [[task]]
 id = "RAW-PTY-001"
 milestone = "M20"
 title = "Execute interactive Raw commands through daemon PTYs"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 619
 required = true
 depends_on = ["RAW-EXEC-MODEL-001", "RAW-CAP-PROBE-001", "PTY-MULTI-001"]

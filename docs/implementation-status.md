@@ -120,7 +120,19 @@ cross-kind identities, stale replacement, duplicate identity, Unicode byte
 overflow, and inconsistent snapshots. The app performs only mechanical
 wire/model conversion and atomically installs valid daemon replicas; no client
 request contains executable, joined-command, PID, writer, or process authority.
-`RAW-JOB-001` is active next.
+`RAW-JOB-001` is complete: `Enter` on a reviewed noninteractive preview now
+emits a typed daemon-only effect. The daemon reconstructs the built-in catalog
+template and expert argv, rechecks the digest, generation, capabilities,
+canonical BitBake executable, and build directory, then spawns native argv
+without a shell. Its namespaced supervisor owns the process group independently
+of client sockets, journals ordered queued/starting/running/cancelling/terminal
+replicas, retains independently bounded Unicode stdout/stderr with explicit
+drop/truncation counters, and maps success, nonzero, spawn failure, timeout,
+graceful/forced cancellation, channel loss, and restart recovery exactly once.
+Duplicate/stale requests and terminal or repeated cancellation fail closed;
+reconnect installs current snapshots, while safe persistence strips output and
+turns unrecoverable live ownership into detached `Lost`. `RAW-PTY-001` is
+active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

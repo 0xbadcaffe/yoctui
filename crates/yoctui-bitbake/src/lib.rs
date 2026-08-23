@@ -27,6 +27,7 @@ mod qa_layer;
 mod qa_report;
 mod qa_task;
 mod qemu;
+mod raw_job;
 mod sdk;
 mod sdk_shell;
 mod sdk_tool;
@@ -181,6 +182,10 @@ pub use qa_task::{
     QaTaskCapabilityInspector, QaTaskCapabilityResponse, QaTaskScopeInput,
 };
 pub use qemu::{QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner};
+pub use raw_job::{
+    RawJobCommandSpec, RawJobPlanner, RawJobPlannerError, RawJobRunner, RawJobRunnerError,
+    RawJobRunnerEvent,
+};
 pub use sdk::{
     SdkArtifactAdapter, SdkArtifactAdapterError, SdkArtifactCancellation, SdkArtifactResponse,
     SdkArtifactScanOutcome,

@@ -2,28 +2,30 @@
 
 ## Task
 
-**ID:** RAW-JOB-001
-**Title:** Execute noninteractive Raw commands as daemon jobs
+**ID:** RAW-PTY-001
+**Title:** Execute interactive Raw commands through daemon PTYs
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Revalidate confirmed noninteractive Raw intent inside the daemon, reconstruct
-and spawn exact native argv without a shell, and retain the bounded job across
-client detach, cancellation, reconnect, and terminal loss.
+Revalidate confirmed interactive Raw intent inside the daemon and route only
+catalog-classified native argv through the existing daemon-owned PTY/session
+architecture with resize, detach/reattach, writer control, and termination.
 
 ## Dependencies
 
 - `RAW-EXEC-MODEL-001` — DONE
 - `RAW-CAP-PROBE-001` — DONE
-- `CLIENT-ARCH-001` — DONE
+- `PTY-MULTI-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-bitbake/src/lib.rs`
-- `crates/yoctui-bitbake/src/raw_job.rs`
+- `crates/yoctui-model/src/raw_mode.rs`
 - `crates/yoctui-protocol/src/daemon.rs`
+- `crates/yoctui-bitbake/src/raw_job.rs`
+- `crates/yoctui-app/src/pty_context.rs`
 - `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-cli/src/daemon_pty.rs`
 - `crates/yoctui-cli/src/client_runtime.rs`
 - `crates/yoctui-cli/src/main.rs`
 - `docs/architecture.md`
@@ -34,41 +36,34 @@ client detach, cancellation, reconnect, and terminal loss.
 
 ## Definition of done
 
-- The daemon accepts only a current versioned `StartRaw` request reviewed
-  against its exact state generation, normalized built-in catalog, connected
-  capability snapshot, capability generation, environment/build identity, and
-  catalog-declared noninteractive interaction and safety classes.
-- Daemon-side planning reconstructs every template and additional argument as
-  native argv, resolves and revalidates the authoritative BitBake executable,
-  recomputes the indexed preview digest, and rejects any mismatch before
-  process construction; it never accepts a command string or invokes a shell.
-- A daemon-owned supervisor allocates non-reused Raw request/job/stream
-  identities, owns the child process group, independently bounds stdout and
-  stderr with explicit drop/truncation accounting, journals lifecycle
-  snapshots, and survives the initiating client connection.
-- Normal completion, nonzero exit, spawn rejection, timeout, cancellation
-  request/acknowledgement, bounded graceful then forced termination, unexpected
-  channel/runner loss, and daemon shutdown/recovery map exactly once to typed
-  terminal state without resurrection from delayed output.
-- Start/cancel commands return their original request correlation, reject
-  stale generation, duplicate work, wrong interaction/owner identity, and
-  cancellation of unowned or terminal work, and publish ordered daemon
-  sequence/generation snapshots for every attached client.
-- Client effects convert the exact confirmed request to `StartRaw`, never start
-  a local Raw process while attached, and install current reconnect snapshots;
-  detach or client EOF does not cancel daemon work.
-- Fake-process, protocol, app, and CLI composition tests cover exact native
-  argv/cwd, zero-spawn denial, bounded Unicode output, success/nonzero/spawn
-  failure/timeout/loss, graceful and forced cancellation, duplicate/stale
-  requests, detach/reattach, reconnect snapshot, and fail-closed tampering.
+- The daemon accepts only a current confirmed request whose reconstructed
+  catalog entry is explicitly `InteractivePty`, with exact current capability,
+  executable, build-directory, safety, and preview-digest authority.
+- The PTY start path receives an immutable typed command identity and native
+  argv; it cannot accept client-supplied executable authority, a joined command,
+  or a shell-evaluation string.
+- A stable Raw session/request identity maps without collision to one daemon
+  PTY session and one Raw execution replica while generic PTY identities cannot
+  be decoded as Raw identities.
+- Existing PTY process-group ownership, emulator bounds, resize, writer lease,
+  input, detach/reattach, termination, exit, and restart-loss behavior remain
+  authoritative and publish ordered Raw plus PTY snapshots.
+- Client EOF or closing the Raw execution view detaches only that client and
+  does not terminate the interactive process; explicit typed termination is
+  required.
+- Noninteractive catalog entries cannot enter the PTY path, interactive entries
+  cannot enter the line-oriented job path, and duplicate/stale/tampered starts
+  fail before spawn.
+- Model, app, and CLI composition tests cover exact native argv/cwd, input and
+  resize, writer transfer, detach/reattach/reconnect, explicit termination,
+  normal exit/loss, identity mismatch, stale authority, and zero-spawn denial.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake raw_job
-cargo test -p yoctui-protocol raw_job
-cargo test -p yoctui-app raw_job
-cargo test -p yoctui -- raw_job
+cargo test -p yoctui-model raw_pty
+cargo test -p yoctui-app raw_pty
+cargo test -p yoctui -- raw_pty
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
