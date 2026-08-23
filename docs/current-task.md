@@ -2,25 +2,24 @@
 
 ## Task
 
-**ID:** RAW-RECIPE-001
-**Title:** Integrate authoritative Raw selectors
+**ID:** RAW-ARG-001
+**Title:** Implement bounded expert argv editor
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Project recipe, image, target, task, and multiconfig choices from existing
-authoritative model inventories into Raw parameter fields while preserving the
-same validated manual-entry boundary where BitBake permits it.
+Implement the Raw form's bounded `Additional arguments` editor and tokenizer
+so quoted user intent becomes native argv elements without invoking or
+emulating a shell.
 
 ## Dependencies
 
 - `RAW-PARAM-001` — DONE
-- `RECIPES-META-001` — DONE
+- `UX-POPUP-EDITOR-005` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
-- `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-app/src/lib.rs`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
@@ -28,23 +27,25 @@ same validated manual-entry boundary where BitBake permits it.
 
 ## Definition of done
 
-- Recipe and image choices come only from the current typed inventories and
-  retain their exact identities.
-- Target choices reuse current/recent authoritative targets without treating a
-  missing inventory as an empty valid selection.
-- Task choices are correlated to the exact selected recipe metadata; a stale
-  recipe response cannot populate another selection.
-- Multiconfig choices use authoritative configured identities when present.
-- Manual target/task entry remains available only for definitions whose
-  BitBake template permits it and passes `RAW-PARAM-001` validation.
-- Model and app tests cover selection, absent/empty/stale inventories, manual
-  entry, and identity-preserving replacement.
+- Unquoted, single-quoted, and double-quoted input produces deterministic
+  native argv elements without retaining grouping quotes.
+- Backslash escapes only the next ordinary character under the documented
+  grammar; it performs no expansion or substitution.
+- Unterminated quotes/escapes, controls, empty option names, excess argument
+  count/element/aggregate bytes, and documented shell operators are rejected
+  with typed validation errors.
+- Empty input is a valid empty argv suffix while quoted empty arguments remain
+  explicit native empty elements.
+- App mapping uses the typed model editor/tokenizer and never constructs a
+  shell command string.
+- Model and app tests cover normal quoting/escaping, exact boundaries, empty
+  arguments, Unicode, every rejected operator, and failure/replacement paths.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_selector
-cargo test -p yoctui-app raw_selector
+cargo test -p yoctui-model raw_argv
+cargo test -p yoctui-app raw_argv
 cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

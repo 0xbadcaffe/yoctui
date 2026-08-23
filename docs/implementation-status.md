@@ -46,7 +46,13 @@ value with explicit byte/range bounds; required and optional emptiness remain
 distinct; names, targets, paths, integers, and text reject option ambiguity,
 control data, shell syntax, traversal, overflow, and kind disagreement.
 Unicode path/text byte boundaries and every normal/failure class are covered.
-`RAW-RECIPE-001` is active next.
+`RAW-RECIPE-001` is complete: recipe and image identities come from current
+typed inventories, targets combine current and newest-first history, tasks are
+correlated to the exact selected recipe metadata, and configured
+multiconfigurations come from the effective workspace value. Unavailable and
+authoritative-empty inventories remain distinct, replacement is immediate,
+and manual input continues through the same typed parameter validator.
+`RAW-ARG-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

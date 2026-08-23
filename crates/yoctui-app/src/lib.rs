@@ -177,6 +177,57 @@ pub fn install_daemon_job_replica(
     jobs.install_replica(app);
 }
 
+pub fn raw_selector_authority(
+    app: &yoctui_model::App,
+    selected_recipe: Option<&str>,
+) -> yoctui_model::RawSelectorAuthority {
+    let workspace_current = app.workspace.build_dir.is_some()
+        || app.workspace.source_dir.is_some()
+        || app.workspace.bitbake_version.is_some()
+        || !app.workspace.variables.is_empty()
+        || !app.workspace.recipes.is_empty();
+    let recent_targets = app
+        .build_history
+        .iter()
+        .rev()
+        .filter_map(|record| record.target.clone())
+        .collect::<Vec<_>>();
+    let metadata = selected_recipe.and_then(|recipe| app.recipe_metadata.get(recipe));
+    let metadata_pending =
+        selected_recipe.is_some_and(|recipe| app.recipe_metadata_loading.contains(recipe));
+    let metadata_error = selected_recipe
+        .and_then(|recipe| app.recipe_metadata_errors.get(recipe))
+        .map(String::as_str);
+    let multiconfig = workspace_current.then(|| {
+        app.workspace
+            .variables
+            .get("BBMULTICONFIG")
+            .map(String::as_str)
+            .unwrap_or("")
+    });
+
+    yoctui_model::RawSelectorAuthority::project(yoctui_model::RawSelectorSources {
+        recipes: workspace_current.then_some(app.workspace.recipes.as_slice()),
+        images: workspace_current.then_some(app.available_images.as_slice()),
+        current_target: app.build.target.as_deref(),
+        recent_targets: Some(&recent_targets),
+        selected_recipe,
+        recipe_metadata: metadata,
+        recipe_metadata_pending: metadata_pending,
+        recipe_metadata_error: metadata_error,
+        multiconfig,
+    })
+}
+
+pub fn raw_selector_for_command(
+    app: &yoctui_model::App,
+    command: &yoctui_model::RawCommand,
+    parameter: &yoctui_model::RawParameterId,
+    selected_recipe: Option<&str>,
+) -> Result<yoctui_model::RawParameterSelector, yoctui_model::RawSelectorError> {
+    command.selector(parameter, &raw_selector_authority(app, selected_recipe))
+}
+
 pub fn reduce_daemon_state(
     state: &mut yoctui_model::DaemonGlobalState,
     action: yoctui_model::DaemonStateAction,
@@ -10442,5 +10493,131 @@ mod tests {
                 .as_deref()
                 .is_some_and(|reason| reason.contains("current environment capability snapshot"))
         );
+    }
+
+    fn raw_selector_command(
+        kind: yoctui_model::RawParameterKind,
+    ) -> (yoctui_model::RawCommand, yoctui_model::RawParameterId) {
+        let command = yoctui_model::RawCatalog::builtin()
+            .commands
+            .into_iter()
+            .find(|command| {
+                matches!(
+                    command.execution,
+                    yoctui_model::RawExecutionPolicy::Executable { .. }
+                ) && command
+                    .parameters
+                    .iter()
+                    .any(|parameter| parameter.kind == kind)
+            })
+            .unwrap();
+        let parameter = command
+            .parameters
+            .iter()
+            .find(|parameter| parameter.kind == kind)
+            .unwrap()
+            .id
+            .clone();
+        (command, parameter)
+    }
+
+    #[test]
+    fn raw_selector_app_projection_replaces_workspace_and_target_inventories() {
+        let mut app = yoctui_model::App::new(10, 1_000);
+        let absent = raw_selector_authority(&app, None);
+        assert!(matches!(
+            absent.recipes,
+            yoctui_model::RawSelectorInventory::Unavailable { .. }
+        ));
+
+        app.workspace.build_dir = Some("/build".into());
+        app.workspace.recipes = vec![yoctui_model::Recipe {
+            name: "busybox".into(),
+            file: Some("/layers/meta/recipes-core/busybox/busybox.bb".into()),
+            ..yoctui_model::Recipe::default()
+        }];
+        app.available_images = vec!["core-image-minimal".into()];
+        app.workspace
+            .variables
+            .insert("BBMULTICONFIG".into(), "lib32 board1".into());
+        app.build.target = Some("core-image-minimal".into());
+        app.build_history.push_back(yoctui_model::BuildRecord {
+            target: Some("busybox".into()),
+            success: true,
+            exit_code: Some(0),
+            elapsed: Some(std::time::Duration::from_secs(1)),
+            completed_tasks: 1,
+            warnings: 0,
+            errors: 0,
+        });
+
+        let initial = raw_selector_authority(&app, None);
+        assert_eq!(initial.recipes.choices().unwrap().len(), 1);
+        assert_eq!(initial.images.choices().unwrap().len(), 1);
+        assert_eq!(initial.targets.choices().unwrap().len(), 2);
+        assert_eq!(initial.multiconfigs.choices().unwrap().len(), 2);
+
+        app.workspace.recipes = vec![yoctui_model::Recipe {
+            name: "bash".into(),
+            file: Some("/layers/meta/recipes-extended/bash/bash.bb".into()),
+            ..yoctui_model::Recipe::default()
+        }];
+        app.available_images.clear();
+        app.build.target = Some("bash".into());
+        app.build_history.clear();
+        let replaced = raw_selector_authority(&app, None);
+        assert_eq!(
+            replaced.recipes.choices().unwrap()[0].value,
+            yoctui_model::RawParameterValue::Recipe("bash".into())
+        );
+        assert_eq!(replaced.images.choices().unwrap().len(), 0);
+        assert_eq!(replaced.targets.choices().unwrap().len(), 1);
+    }
+
+    #[test]
+    fn raw_selector_app_projection_rejects_stale_tasks_but_keeps_valid_manual_entry() {
+        let mut app = yoctui_model::App::new(10, 1_000);
+        app.recipe_metadata.insert(
+            "alpha".into(),
+            yoctui_model::RecipeMetadata {
+                recipe: "alpha".into(),
+                tasks: Some(vec!["do_compile".into()]),
+                ..yoctui_model::RecipeMetadata::default()
+            },
+        );
+        let (command, parameter) = raw_selector_command(yoctui_model::RawParameterKind::Task);
+
+        let alpha = raw_selector_for_command(&app, &command, &parameter, Some("alpha")).unwrap();
+        assert_eq!(alpha.inventory.choices().unwrap().len(), 1);
+
+        let beta = raw_selector_for_command(&app, &command, &parameter, Some("beta")).unwrap();
+        assert!(matches!(
+            beta.inventory,
+            yoctui_model::RawSelectorInventory::Unavailable { .. }
+        ));
+        assert!(beta.manual_entry);
+        assert_eq!(
+            beta.parse_manual("do_install").unwrap(),
+            Some(yoctui_model::RawParameterValue::Task("do_install".into()))
+        );
+        assert!(beta.parse_manual("do_install;touch").is_err());
+
+        app.recipe_metadata.insert(
+            "beta".into(),
+            yoctui_model::RecipeMetadata {
+                recipe: "beta".into(),
+                tasks: Some(Vec::new()),
+                ..yoctui_model::RecipeMetadata::default()
+            },
+        );
+        let empty = raw_selector_for_command(&app, &command, &parameter, Some("beta")).unwrap();
+        assert_eq!(empty.inventory.choices().unwrap().len(), 0);
+
+        app.recipe_metadata_loading.insert("beta".into());
+        let loading = raw_selector_for_command(&app, &command, &parameter, Some("beta")).unwrap();
+        assert!(matches!(
+            loading.inventory,
+            yoctui_model::RawSelectorInventory::Unavailable { .. }
+        ));
     }
 }
