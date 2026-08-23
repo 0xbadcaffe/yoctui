@@ -1248,6 +1248,7 @@ mod tests {
             raw_executions: vec![
                 yoctui_app::raw_execution_snapshot_to_protocol(&cancelled).unwrap(),
             ],
+            raw_history: Vec::new(),
             pty_sessions: Vec::new(),
             pty_screens: Vec::new(),
             clients: Vec::new(),

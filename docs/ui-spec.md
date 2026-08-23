@@ -4222,6 +4222,11 @@ terminal outcome, and durable job/session reference where safe. PID, process
 group, writer lease, secret, complete output, and temporary path authority are
 not persisted. A retained record reopens current compatibility inspection and
 configuration; it cannot replay work without a fresh preview and confirmation.
+Free-form text and file parameter values are omitted rather than risking secret
+or temporary-path retention.
+Removed catalog commands remain explicit stale history records: activating one
+reports that it is unavailable and does not silently discard it, open a form,
+or emit an execution request.
 
 ### Favorites
 

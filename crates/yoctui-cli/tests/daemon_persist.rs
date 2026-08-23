@@ -12,8 +12,9 @@ use yoctui_protocol::{
     daemon::{
         BitBakeState, Capability, ClientHello, ClientId, ClientMessage, DaemonInstanceId,
         DaemonSnapshot, JobId, JobKind, JobSummary, LifecycleState, ProjectProfileSummary,
-        ProtocolVersion, PtyKind, PtySessionId, PtySessionSummary, ServerMessage, Subscription,
-        TerminalDimensions,
+        ProtocolVersion, PtyKind, PtySessionId, PtySessionSummary, RAW_HISTORY_SCHEMA_VERSION,
+        RawExecutionOutcomeData, RawExecutionParameterData, RawHistoryRecordData,
+        RawInteractionData, RawParameterValueData, ServerMessage, Subscription, TerminalDimensions,
     },
     daemon_ipc::{DaemonConnection, runtime_paths_for},
     daemon_lifecycle::read_boot_id,
@@ -48,6 +49,97 @@ fn run(binary: &Path, runtime: &Path, state: &Path, action: &str) -> std::proces
         .env("XDG_STATE_HOME", state)
         .output()
         .unwrap()
+}
+
+fn raw_history_record() -> RawHistoryRecordData {
+    RawHistoryRecordData {
+        schema_version: RAW_HISTORY_SCHEMA_VERSION,
+        request_id: "raw-request:persisted-history".into(),
+        catalog_version: 1,
+        command_id: "build.target".into(),
+        parameters: vec![RawExecutionParameterData {
+            id: "target".into(),
+            value: RawParameterValueData::Target("core-image-minimal".into()),
+        }],
+        interaction: RawInteractionData::NoninteractiveJob,
+        started_unix_ms: 100,
+        ended_unix_ms: 150,
+        outcome: RawExecutionOutcomeData::Succeeded,
+        exit_code: Some(0),
+        durable_reference: Some("raw-durable:persisted-history".into()),
+    }
+}
+
+fn raw_history_snapshot(record: RawHistoryRecordData) -> DaemonSnapshot {
+    DaemonSnapshot {
+        daemon_instance_id: DaemonInstanceId([5; 16]),
+        sequence: 4,
+        generation: 4,
+        workspace: None,
+        project_profile: ProjectProfileSummary::Absent,
+        bitbake: BitBakeState {
+            lifecycle: LifecycleState::Disconnected,
+            version: None,
+            capabilities: Vec::new(),
+            diagnostic: None,
+        },
+        compatibility: None,
+        jobs: Vec::new(),
+        raw_executions: Vec::new(),
+        raw_history: vec![record],
+        pty_sessions: Vec::new(),
+        pty_screens: Vec::new(),
+        clients: Vec::new(),
+        recent_logs: Vec::new(),
+        build_events: Vec::new(),
+        recovery_warnings: Vec::new(),
+    }
+}
+
+#[test]
+fn raw_history_persistence_round_trips_safe_terminal_metadata_and_rejects_future_schema() {
+    let root = unique_temp_root("yoctui-cli-raw-history");
+    let cleanup = Cleanup(root.clone());
+    let paths = persist_paths_for(&root).unwrap();
+    let snapshot = raw_history_snapshot(raw_history_record());
+    let persisted = DaemonPersistedState::capture(
+        &snapshot,
+        200,
+        "boot-one".into(),
+        Vec::new(),
+        PersistedPreferences::default(),
+    );
+    write_persisted_state(&paths, &persisted).unwrap();
+    let loaded = read_persisted_state(&paths).unwrap().unwrap();
+    assert_eq!(loaded.raw_history, snapshot.raw_history);
+    let serialized = fs::read_to_string(&paths.state).unwrap();
+    for prohibited in [
+        "raw-job:",
+        "raw-session:",
+        "process_group",
+        "writer_epoch",
+        "capability_generation",
+        "preview_digest",
+        "build_directory",
+        "stdout",
+        "stderr",
+        "pty_screens",
+    ] {
+        assert!(!serialized.contains(prohibited), "retained {prohibited}");
+    }
+
+    let mut current = raw_history_snapshot(raw_history_record());
+    current.raw_history.clear();
+    current.daemon_instance_id = DaemonInstanceId([6; 16]);
+    let (recovered, _) = recover_persisted_snapshot(current, &loaded, "boot-one");
+    assert_eq!(recovered.raw_history, loaded.raw_history);
+    assert!(recovered.raw_executions.is_empty());
+    assert!(recovered.pty_sessions.is_empty());
+
+    let mut future = loaded;
+    future.raw_history[0].schema_version += 1;
+    assert!(write_persisted_state(&paths, &future).is_err());
+    drop(cleanup);
 }
 
 #[test]
@@ -150,6 +242,7 @@ fn daemon_recovery_restores_history_but_marks_live_work_lost() {
             exit_code: None,
         }],
         raw_executions: Vec::new(),
+        raw_history: Vec::new(),
         pty_sessions: vec![PtySessionSummary {
             id: PtySessionId(6),
             name: "devshell".into(),
@@ -262,6 +355,7 @@ fn reboot_recovery_exposes_only_typed_explicit_relaunch_intent() {
         compatibility: None,
         jobs: Vec::new(),
         raw_executions: Vec::new(),
+        raw_history: Vec::new(),
         pty_sessions: vec![PtySessionSummary {
             id: PtySessionId(9),
             name: "sdk-shell".into(),

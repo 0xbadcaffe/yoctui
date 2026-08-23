@@ -148,7 +148,17 @@ Unicode-safe vertical/horizontal scrolling, local search counts, stream
 selection, typed cancellation, explicit detach/reattach, and close-to-detach
 routes are reducer-owned and tested. Attachment changes remain ordered daemon
 events and never imply cancellation or terminal input. `RAW-HISTORY-001` is
-active next.
+complete: validated terminal replicas now produce versioned, request-unique,
+newest-first history records bounded by count and aggregate encoded bytes. The
+records retain only catalog/command identity, typed parameters, interaction,
+timing, terminal outcome/exit, and safe durable references. Atomic daemon
+persistence rejects malformed, oversized, unordered, duplicate, and unknown-
+version history; restart recovery records abandoned work once as detached
+`Lost` without owner, executable/build/capability authority, argv, messages,
+output, or PTY state. Free-form text and file parameters are conservatively
+omitted from the durable record. Current-catalog activation keeps stale entries
+explicit and can only return to configuration before a fresh preview,
+confirmation, and request. `RAW-FAVORITE-MODEL-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

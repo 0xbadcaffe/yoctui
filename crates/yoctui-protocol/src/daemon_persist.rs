@@ -3,7 +3,7 @@ use crate::daemon::{
     BitBakeCapability, BitBakeState, DaemonInstanceId, DaemonSnapshot, JobSummary, LifecycleState,
     LogRecord, MAX_RAW_EXECUTION_REQUESTS, ProjectProfileSummary, PtyKind, RawAttachmentData,
     RawExecutionOutcomeData, RawExecutionPhaseData, RawExecutionResultData,
-    RawExecutionSnapshotData, TerminalDimensions, WorkspaceIdentity,
+    RawExecutionSnapshotData, RawHistoryRecordData, TerminalDimensions, WorkspaceIdentity,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -42,6 +42,8 @@ pub struct DaemonPersistedState {
     pub job_history: Vec<JobSummary>,
     #[serde(default)]
     pub raw_executions: Vec<RawExecutionSnapshotData>,
+    #[serde(default)]
+    pub raw_history: Vec<RawHistoryRecordData>,
     pub terminal_sessions: Vec<PersistedTerminalSession>,
     pub recent_logs: Vec<LogRecord>,
     pub recovery_warnings: Vec<String>,
@@ -120,6 +122,7 @@ impl DaemonPersistedState {
                 .cloned()
                 .map(sanitize_raw_execution_for_persistence)
                 .collect(),
+            raw_history: snapshot.raw_history.clone(),
             terminal_sessions: snapshot
                 .pty_sessions
                 .iter()
@@ -244,6 +247,15 @@ pub fn recover_persisted_snapshot(
             execution
         })
         .collect();
+    current.raw_history.clone_from(&persisted.raw_history);
+    let terminal_records = current
+        .raw_executions
+        .iter()
+        .filter_map(|execution| RawHistoryRecordData::from_terminal(execution).ok())
+        .collect::<Vec<_>>();
+    for record in terminal_records {
+        crate::daemon::remember_raw_history(&mut current, record);
+    }
     current.pty_sessions = persisted
         .terminal_sessions
         .iter()
@@ -382,6 +394,7 @@ pub fn read_persisted_state(
         });
     }
     validate_persisted_raw_executions(&state.raw_executions)?;
+    validate_persisted_raw_history(&state.raw_history)?;
     Ok(Some(state))
 }
 
@@ -403,6 +416,7 @@ pub fn write_persisted_state(
         });
     }
     validate_persisted_raw_executions(&state.raw_executions)?;
+    validate_persisted_raw_history(&state.raw_history)?;
     validate_directory(&paths.directory, true)?;
     if let Ok(metadata) = fs::symlink_metadata(&paths.state) {
         validate_state_file(&paths.state, &metadata)?;
@@ -451,6 +465,17 @@ fn validate_persisted_raw_executions(
             })?;
     }
     Ok(())
+}
+
+fn validate_persisted_raw_history(
+    records: &[RawHistoryRecordData],
+) -> Result<(), DaemonPersistError> {
+    crate::daemon::validate_raw_history_records(records).map_err(|error| {
+        DaemonPersistError::Unsafe {
+            path: PathBuf::from("raw-history"),
+            reason: error.to_string(),
+        }
+    })
 }
 
 fn validate_directory(path: &Path, private: bool) -> Result<(), DaemonPersistError> {
@@ -619,6 +644,7 @@ mod tests {
             compatibility: None,
             jobs: Vec::new(),
             raw_executions: Vec::new(),
+            raw_history: Vec::new(),
             pty_sessions: Vec::new(),
             pty_screens: Vec::new(),
             clients: Vec::new(),
@@ -805,6 +831,15 @@ mod tests {
         );
         execution.validate().unwrap();
         assert_eq!(report.lost_raw_executions, 1);
+        assert_eq!(recovered.raw_history.len(), 1);
+        assert_eq!(
+            recovered.raw_history[0].outcome,
+            RawExecutionOutcomeData::Lost
+        );
+        assert_eq!(
+            recovered.raw_history[0].request_id,
+            execution.request.request_id
+        );
 
         let persisted_again = DaemonPersistedState::capture(
             &recovered,
@@ -820,5 +855,6 @@ mod tests {
             recovered_again.raw_executions[0],
             recovered.raw_executions[0]
         );
+        assert_eq!(recovered_again.raw_history, recovered.raw_history);
     }
 }

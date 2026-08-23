@@ -29,6 +29,9 @@ pub const MAX_COMPATIBILITY_ITEMS: usize = 256;
 pub const MAX_COMPATIBILITY_TEXT_BYTES: usize = 4_096;
 pub const MAX_COMPATIBILITY_ARGV: usize = 64;
 pub const RAW_EXECUTION_SCHEMA_VERSION: u16 = 1;
+pub const RAW_HISTORY_SCHEMA_VERSION: u16 = 1;
+pub const MAX_RAW_HISTORY_RECORDS: usize = 256;
+pub const MAX_RAW_HISTORY_AGGREGATE_BYTES: usize = 256 * 1024;
 pub const MAX_RAW_EXECUTION_ID_BYTES: usize = 96;
 pub const MAX_RAW_EXECUTION_REQUESTS: usize = 64;
 pub const MAX_RAW_EXECUTION_PARAMETERS: usize = 32;
@@ -262,6 +265,143 @@ pub struct RawExecutionResultData {
     pub durable_reference: Option<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RawHistoryRecordData {
+    pub schema_version: u16,
+    pub request_id: String,
+    pub catalog_version: u16,
+    pub command_id: String,
+    pub parameters: Vec<RawExecutionParameterData>,
+    pub interaction: RawInteractionData,
+    pub started_unix_ms: u64,
+    pub ended_unix_ms: u64,
+    pub outcome: RawExecutionOutcomeData,
+    pub exit_code: Option<i32>,
+    pub durable_reference: Option<String>,
+}
+
+impl RawHistoryRecordData {
+    pub fn from_terminal(
+        execution: &RawExecutionSnapshotData,
+    ) -> Result<Self, RawExecutionProtocolError> {
+        execution.validate()?;
+        let RawExecutionPhaseData::Terminal(outcome) = execution.phase else {
+            return Err(RawExecutionProtocolError::HistoryRequiresTerminal);
+        };
+        let result = execution
+            .result
+            .as_ref()
+            .ok_or(RawExecutionProtocolError::HistoryRequiresTerminal)?;
+        let started_unix_ms = execution
+            .started_unix_ms
+            .unwrap_or(execution.queued_unix_ms);
+        let record = Self {
+            schema_version: RAW_HISTORY_SCHEMA_VERSION,
+            request_id: execution.request.request_id.clone(),
+            catalog_version: execution.request.catalog_version,
+            command_id: execution.request.command_id.clone(),
+            parameters: execution
+                .request
+                .parameters
+                .iter()
+                .filter(|parameter| {
+                    !matches!(
+                        &parameter.value,
+                        RawParameterValueData::File(_) | RawParameterValueData::Text(_)
+                    )
+                })
+                .cloned()
+                .collect(),
+            interaction: execution.request.interaction,
+            started_unix_ms,
+            ended_unix_ms: started_unix_ms.saturating_add(result.elapsed_ms),
+            outcome,
+            exit_code: result.exit_code,
+            durable_reference: result.durable_reference.clone(),
+        };
+        record.validate()?;
+        Ok(record)
+    }
+
+    pub fn validate(&self) -> Result<(), RawExecutionProtocolError> {
+        if self.schema_version != RAW_HISTORY_SCHEMA_VERSION {
+            return Err(RawExecutionProtocolError::UnsupportedHistorySchema(
+                self.schema_version,
+            ));
+        }
+        validate_raw_identity(&self.request_id, "raw-request:", "request")?;
+        validate_raw_catalog_id(&self.command_id, "command")?;
+        if self.catalog_version == 0
+            || self.ended_unix_ms < self.started_unix_ms
+            || self.parameters.len() > MAX_RAW_EXECUTION_PARAMETERS
+            || matches!(self.interaction, RawInteractionData::Unknown)
+            || matches!(self.outcome, RawExecutionOutcomeData::Unknown)
+        {
+            return Err(RawExecutionProtocolError::InvalidHistoryRecord);
+        }
+        let mut parameter_ids = std::collections::BTreeSet::new();
+        for parameter in &self.parameters {
+            parameter.validate()?;
+            if !parameter_ids.insert(&parameter.id) {
+                return Err(RawExecutionProtocolError::DuplicateParameter);
+            }
+        }
+        if let Some(reference) = &self.durable_reference {
+            validate_raw_identity(reference, "raw-durable:", "durable reference")?;
+        }
+        match (self.outcome, self.exit_code) {
+            (RawExecutionOutcomeData::Succeeded, Some(0))
+            | (RawExecutionOutcomeData::Failed, Some(_))
+            | (RawExecutionOutcomeData::Failed, None)
+            | (RawExecutionOutcomeData::Cancelled, Some(_))
+            | (RawExecutionOutcomeData::Cancelled, None)
+            | (RawExecutionOutcomeData::Lost, None) => Ok(()),
+            _ => Err(RawExecutionProtocolError::InvalidHistoryRecord),
+        }
+    }
+}
+
+pub fn validate_raw_history_records(
+    records: &[RawHistoryRecordData],
+) -> Result<(), RawExecutionProtocolError> {
+    if records.len() > MAX_RAW_HISTORY_RECORDS {
+        return Err(RawExecutionProtocolError::TooManyHistoryRecords);
+    }
+    let mut request_ids = std::collections::BTreeSet::new();
+    let mut previous_end = u64::MAX;
+    for record in records {
+        record.validate()?;
+        if !request_ids.insert(&record.request_id) || record.ended_unix_ms > previous_end {
+            return Err(RawExecutionProtocolError::InvalidHistoryOrder);
+        }
+        previous_end = record.ended_unix_ms;
+    }
+    let bytes = serde_json::to_vec(records)
+        .map_err(|_| RawExecutionProtocolError::InvalidHistoryRecord)?
+        .len();
+    if bytes > MAX_RAW_HISTORY_AGGREGATE_BYTES {
+        return Err(RawExecutionProtocolError::HistoryTooLarge);
+    }
+    Ok(())
+}
+
+pub fn remember_raw_history(snapshot: &mut DaemonSnapshot, record: RawHistoryRecordData) {
+    snapshot
+        .raw_history
+        .retain(|current| current.request_id != record.request_id);
+    let insertion = snapshot
+        .raw_history
+        .partition_point(|current| current.ended_unix_ms >= record.ended_unix_ms);
+    snapshot.raw_history.insert(insertion, record);
+    snapshot.raw_history.truncate(MAX_RAW_HISTORY_RECORDS);
+    while serde_json::to_vec(&snapshot.raw_history)
+        .is_ok_and(|bytes| bytes.len() > MAX_RAW_HISTORY_AGGREGATE_BYTES)
+    {
+        snapshot.raw_history.pop();
+    }
+}
+
 impl RawExecutionResultData {
     pub fn validate(&self) -> Result<(), RawExecutionProtocolError> {
         validate_raw_schema(self.schema_version)?;
@@ -365,6 +505,12 @@ pub enum RawExecutionPhaseData {
     Terminal(RawExecutionOutcomeData),
     #[serde(other)]
     Unknown,
+}
+
+impl RawExecutionPhaseData {
+    pub const fn is_terminal(self) -> bool {
+        matches!(self, Self::Terminal(_))
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -640,6 +786,18 @@ pub enum RawExecutionProtocolError {
     InvalidResult,
     #[error("Raw execution snapshot is inconsistent")]
     InvalidSnapshot,
+    #[error("unsupported Raw history schema version {0}")]
+    UnsupportedHistorySchema(u16),
+    #[error("only terminal Raw execution replicas may enter history")]
+    HistoryRequiresTerminal,
+    #[error("invalid Raw history record")]
+    InvalidHistoryRecord,
+    #[error("Raw history has too many records")]
+    TooManyHistoryRecords,
+    #[error("Raw history is not uniquely ordered newest first")]
+    InvalidHistoryOrder,
+    #[error("Raw history exceeds its aggregate byte bound")]
+    HistoryTooLarge,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -1836,6 +1994,8 @@ pub struct DaemonSnapshot {
     pub jobs: Vec<JobSummary>,
     #[serde(default)]
     pub raw_executions: Vec<RawExecutionSnapshotData>,
+    #[serde(default)]
+    pub raw_history: Vec<RawHistoryRecordData>,
     pub pty_sessions: Vec<PtySessionSummary>,
     #[serde(default)]
     pub pty_screens: Vec<PtyScreenSnapshot>,
@@ -2175,6 +2335,7 @@ impl DaemonSnapshotJournal {
                 ));
             }
         }
+        validate_raw_history_records(&snapshot.raw_history)?;
         for screen in &snapshot.pty_screens {
             validate_pty_screen(screen)?;
         }
@@ -2344,6 +2505,10 @@ pub fn apply_sequenced_event(
             );
             if snapshot.raw_executions.len() > MAX_RAW_EXECUTION_REQUESTS {
                 return Err(DaemonSnapshotError::TooManyRawExecutions);
+            }
+            if execution.phase.is_terminal() {
+                remember_raw_history(snapshot, RawHistoryRecordData::from_terminal(execution)?);
+                validate_raw_history_records(&snapshot.raw_history)?;
             }
         }
         DaemonEvent::RawExecutionRemoved { request_id } => {
@@ -2731,6 +2896,7 @@ mod tests {
             compatibility: None,
             jobs: Vec::new(),
             raw_executions: Vec::new(),
+            raw_history: Vec::new(),
             pty_sessions: Vec::new(),
             pty_screens: Vec::new(),
             clients: Vec::new(),
@@ -2938,6 +3104,7 @@ mod tests {
             compatibility: None,
             jobs: Vec::new(),
             raw_executions: Vec::new(),
+            raw_history: Vec::new(),
             pty_sessions: Vec::new(),
             pty_screens: Vec::new(),
             clients: vec![ClientSummary {
@@ -3581,6 +3748,165 @@ mod tests {
             Err(DaemonSnapshotError::StaleRawExecution { .. })
         ));
         assert_eq!(journal.snapshot(), &before);
+    }
+
+    fn terminal_raw_snapshot(
+        sequence: u64,
+        outcome: RawExecutionOutcomeData,
+    ) -> RawExecutionSnapshotData {
+        let mut snapshot = raw_execution_snapshot_fixture(sequence);
+        snapshot.phase = RawExecutionPhaseData::Terminal(outcome);
+        snapshot.cancellation_requested = outcome == RawExecutionOutcomeData::Cancelled;
+        snapshot.elapsed_ms = 50 + sequence;
+        snapshot.result = Some(RawExecutionResultData {
+            schema_version: RAW_EXECUTION_SCHEMA_VERSION,
+            outcome,
+            exit_code: match outcome {
+                RawExecutionOutcomeData::Succeeded => Some(0),
+                RawExecutionOutcomeData::Failed => Some(2),
+                RawExecutionOutcomeData::Cancelled | RawExecutionOutcomeData::Lost => None,
+                RawExecutionOutcomeData::Unknown => unreachable!(),
+            },
+            message: Some("must not be retained".into()),
+            elapsed_ms: snapshot.elapsed_ms,
+            durable_reference: Some("raw-durable:protocol-history".into()),
+        });
+        snapshot
+    }
+
+    #[test]
+    fn raw_history_records_all_terminal_outcomes_without_live_authority() {
+        assert_eq!(
+            RawHistoryRecordData::from_terminal(&raw_execution_snapshot_fixture(1)),
+            Err(RawExecutionProtocolError::HistoryRequiresTerminal)
+        );
+        for outcome in [
+            RawExecutionOutcomeData::Succeeded,
+            RawExecutionOutcomeData::Failed,
+            RawExecutionOutcomeData::Cancelled,
+            RawExecutionOutcomeData::Lost,
+        ] {
+            let record =
+                RawHistoryRecordData::from_terminal(&terminal_raw_snapshot(1, outcome)).unwrap();
+            assert_eq!(record.outcome, outcome);
+            let json = serde_json::to_string(&record).unwrap();
+            for prohibited in [
+                "raw-job:",
+                "owner",
+                "stdout",
+                "stderr",
+                "capability_generation",
+                "build_directory",
+                "preview_digest",
+                "additional_arguments",
+                "must not be retained",
+            ] {
+                assert!(!json.contains(prohibited), "retained {prohibited}: {json}");
+            }
+        }
+        let mut sensitive = terminal_raw_snapshot(1, RawExecutionOutcomeData::Succeeded);
+        sensitive.request.parameters.extend([
+            RawExecutionParameterData {
+                id: "free-text".into(),
+                value: RawParameterValueData::Text("token-like-value".into()),
+            },
+            RawExecutionParameterData {
+                id: "temporary-file".into(),
+                value: RawParameterValueData::File("/tmp/private-input".into()),
+            },
+        ]);
+        let sanitized = RawHistoryRecordData::from_terminal(&sensitive).unwrap();
+        assert!(sanitized.parameters.iter().all(|parameter| !matches!(
+            &parameter.value,
+            RawParameterValueData::Text(_) | RawParameterValueData::File(_)
+        )));
+    }
+
+    #[test]
+    fn raw_history_journal_updates_duplicate_request_idempotently_newest_first() {
+        let base = daemon_snapshot_fixture();
+        let mut journal =
+            DaemonSnapshotJournal::new(base, DaemonSnapshotLimits::default()).unwrap();
+        journal
+            .publish(DaemonEvent::RawExecutionChanged(Box::new(
+                terminal_raw_snapshot(1, RawExecutionOutcomeData::Failed),
+            )))
+            .unwrap();
+        journal
+            .publish(DaemonEvent::RawExecutionChanged(Box::new(
+                terminal_raw_snapshot(2, RawExecutionOutcomeData::Succeeded),
+            )))
+            .unwrap();
+        assert_eq!(journal.snapshot().raw_history.len(), 1);
+        assert_eq!(
+            journal.snapshot().raw_history[0].outcome,
+            RawExecutionOutcomeData::Succeeded
+        );
+
+        let mut second = terminal_raw_snapshot(1, RawExecutionOutcomeData::Lost);
+        second.request.request_id = "raw-request:second".into();
+        second.result.as_mut().unwrap().durable_reference = None;
+        journal
+            .publish(DaemonEvent::RawExecutionChanged(Box::new(second)))
+            .unwrap();
+        assert_eq!(journal.snapshot().raw_history.len(), 2);
+        assert!(
+            journal
+                .snapshot()
+                .raw_history
+                .windows(2)
+                .all(|pair| { pair[0].ended_unix_ms >= pair[1].ended_unix_ms })
+        );
+    }
+
+    #[test]
+    fn raw_history_rejects_unknown_schema_count_aggregate_and_order() {
+        let record = RawHistoryRecordData::from_terminal(&terminal_raw_snapshot(
+            1,
+            RawExecutionOutcomeData::Succeeded,
+        ))
+        .unwrap();
+        let mut future = record.clone();
+        future.schema_version += 1;
+        assert!(matches!(
+            future.validate(),
+            Err(RawExecutionProtocolError::UnsupportedHistorySchema(_))
+        ));
+
+        let mut too_many = Vec::new();
+        for index in 0..=MAX_RAW_HISTORY_RECORDS {
+            let mut item = record.clone();
+            item.request_id = format!("raw-request:bounded-{index}");
+            too_many.push(item);
+        }
+        assert_eq!(
+            validate_raw_history_records(&too_many),
+            Err(RawExecutionProtocolError::TooManyHistoryRecords)
+        );
+
+        let mut oversized = Vec::new();
+        for index in 0..MAX_RAW_HISTORY_RECORDS {
+            let mut item = record.clone();
+            item.request_id = format!("raw-request:large-{index}");
+            item.parameters = vec![RawExecutionParameterData {
+                id: "text".into(),
+                value: RawParameterValueData::Text("x".repeat(MAX_RAW_EXECUTION_PARAMETER_BYTES)),
+            }];
+            oversized.push(item);
+        }
+        assert_eq!(
+            validate_raw_history_records(&oversized),
+            Err(RawExecutionProtocolError::HistoryTooLarge)
+        );
+
+        let mut misordered = vec![record.clone(), record];
+        misordered[0].request_id = "raw-request:older".into();
+        misordered[0].ended_unix_ms -= 1;
+        misordered[1].request_id = "raw-request:newer".into();
+        assert_eq!(
+            validate_raw_history_records(&misordered),
+            Err(RawExecutionProtocolError::InvalidHistoryOrder)
+        );
     }
 
     #[test]

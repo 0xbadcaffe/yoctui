@@ -2867,8 +2867,18 @@ ID and parameter value; removed/changed templates become explicit stale
 favorites. Capability state, process identity, secrets, output, job IDs, and
 temporary authority are not serialized. Raw history uses the daemon's bounded
 safe durable-state boundary for command identity and terminal metadata while
-client presentation selections remain local. Re-execution always creates a
-new reviewed request.
+client presentation selections remain local. A terminal Raw snapshot is reduced
+to a versioned history record containing only request correlation, catalog and
+command IDs, validated typed parameters, interaction, start/end time, outcome,
+exit code, and a separately validated durable reference. Records are unique by
+request identity, newest first, and bounded by both count and aggregate encoded
+bytes. Restart recovery first classifies abandoned work as detached `Lost` and
+then idempotently records that terminal result; job/session owners, executable
+and build authority, capability generation, preview digest, expert argv,
+messages, output, and PTY screens never cross the history persistence boundary.
+Free-form text and file-path parameter values are conservatively omitted from
+history because the catalog does not classify their sensitivity.
+Re-execution always creates a new reviewed request.
 
 Security tests inspect the complete code path for prohibited shell-evaluation
 APIs and hostile values such as semicolons, pipelines, substitutions, and

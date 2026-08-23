@@ -39,7 +39,8 @@ pub const MAX_RAW_PREVIEW_ARGUMENTS: usize = 128;
 pub const MAX_RAW_PREVIEW_ARGUMENT_BYTES: usize = 8_192;
 pub const MAX_RAW_SEARCH_BYTES: usize = 512;
 pub const MAX_RAW_FAVORITES: usize = 256;
-pub const MAX_RAW_HISTORY_STUBS: usize = 256;
+pub const RAW_HISTORY_SCHEMA_VERSION: u16 = 1;
+pub const MAX_RAW_HISTORY_RECORDS: usize = 256;
 pub const MAX_RAW_VIEW_DEPTH: usize = 8;
 pub const MAX_RAW_EXECUTION_ID_BYTES: usize = 96;
 pub const MAX_RAW_EXECUTION_REQUESTS: usize = 64;
@@ -1169,6 +1170,117 @@ pub struct RawExecutionState {
     pub cursor: RawEventCursor,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawHistoryRecord {
+    pub schema_version: u16,
+    pub request_id: RawRequestId,
+    pub catalog_version: u16,
+    pub command: RawCommandId,
+    pub parameters: BTreeMap<RawParameterId, RawParameterValue>,
+    pub interaction: RawInteractionMode,
+    pub started_unix_ms: u64,
+    pub ended_unix_ms: u64,
+    pub outcome: RawExecutionOutcome,
+    pub exit_code: Option<i32>,
+    pub durable_reference: Option<RawDurableReferenceId>,
+}
+
+impl RawHistoryRecord {
+    pub fn from_terminal(execution: &RawExecutionState) -> Result<Self, RawExecutionError> {
+        execution.validate()?;
+        let RawExecutionPhase::Terminal(outcome) = execution.phase else {
+            return Err(RawExecutionError::HistoryRequiresTerminal);
+        };
+        let result = execution
+            .result
+            .as_ref()
+            .ok_or(RawExecutionError::HistoryRequiresTerminal)?;
+        let started_unix_ms = execution
+            .started_unix_ms
+            .unwrap_or(execution.queued_unix_ms);
+        let record = Self {
+            schema_version: RAW_HISTORY_SCHEMA_VERSION,
+            request_id: execution.request.id.clone(),
+            catalog_version: execution.request.catalog_version,
+            command: execution.request.command.clone(),
+            parameters: execution
+                .request
+                .parameters
+                .iter()
+                .filter(|(_, value)| {
+                    !matches!(
+                        value,
+                        RawParameterValue::File(_) | RawParameterValue::Text(_)
+                    )
+                })
+                .map(|(parameter, value)| (parameter.clone(), value.clone()))
+                .collect(),
+            interaction: execution.request.interaction,
+            started_unix_ms,
+            ended_unix_ms: started_unix_ms.saturating_add(result.elapsed_ms),
+            outcome,
+            exit_code: result.exit_code,
+            durable_reference: result.durable_reference.clone(),
+        };
+        record.validate()?;
+        Ok(record)
+    }
+
+    pub fn validate(&self) -> Result<(), RawExecutionError> {
+        if self.schema_version != RAW_HISTORY_SCHEMA_VERSION {
+            return Err(RawExecutionError::UnsupportedHistorySchema(
+                self.schema_version,
+            ));
+        }
+        RawRequestId::new(self.request_id.as_str())?;
+        RawCommandId::new(self.command.as_str()).map_err(|_| RawExecutionError::InvalidCommand)?;
+        if self.catalog_version == 0 || self.ended_unix_ms < self.started_unix_ms {
+            return Err(RawExecutionError::InvalidHistoryRecord);
+        }
+        if self.parameters.len() > MAX_RAW_PARAMETERS {
+            return Err(RawExecutionError::TooManyParameters);
+        }
+        for (parameter, value) in &self.parameters {
+            RawParameterId::new(parameter.as_str())
+                .map_err(|_| RawExecutionError::InvalidParameterValue)?;
+            validate_raw_execution_parameter_value(value)?;
+        }
+        if let Some(reference) = &self.durable_reference {
+            RawDurableReferenceId::new(reference.as_str())?;
+        }
+        match (self.outcome, self.exit_code) {
+            (RawExecutionOutcome::Succeeded, Some(0))
+            | (RawExecutionOutcome::Failed, Some(_))
+            | (RawExecutionOutcome::Failed, None)
+            | (RawExecutionOutcome::Cancelled, Some(_))
+            | (RawExecutionOutcome::Cancelled, None)
+            | (RawExecutionOutcome::Lost, None) => Ok(()),
+            _ => Err(RawExecutionError::InvalidHistoryRecord),
+        }
+    }
+}
+
+pub fn install_raw_history(
+    history: &mut Vec<RawHistoryRecord>,
+    records: impl IntoIterator<Item = RawHistoryRecord>,
+) -> Result<(), RawExecutionError> {
+    let mut replacement = Vec::new();
+    for record in records {
+        record.validate()?;
+        if let Some(index) = replacement
+            .iter()
+            .position(|existing: &RawHistoryRecord| existing.request_id == record.request_id)
+        {
+            replacement.remove(index);
+        }
+        replacement.push(record);
+    }
+    replacement.sort_by_key(|record| std::cmp::Reverse(record.ended_unix_ms));
+    replacement.truncate(MAX_RAW_HISTORY_RECORDS);
+    *history = replacement;
+    Ok(())
+}
+
 impl RawExecutionState {
     pub fn queued(
         request: RawConfirmedExecutionRequest,
@@ -1480,6 +1592,12 @@ pub enum RawExecutionError {
     InvalidResult,
     #[error("Raw execution result message exceeds its byte bound")]
     ResultMessageTooLong,
+    #[error("unsupported Raw history schema version {0}")]
+    UnsupportedHistorySchema(u16),
+    #[error("only terminal Raw execution replicas may enter history")]
+    HistoryRequiresTerminal,
+    #[error("invalid Raw history record")]
+    InvalidHistoryRecord,
 }
 
 #[cfg(test)]
@@ -1810,6 +1928,137 @@ mod raw_execution_tests {
         }
     }
 
+    fn terminal_for_history(
+        request_suffix: &str,
+        outcome: RawExecutionOutcome,
+        ended_unix_ms: u64,
+    ) -> RawExecutionState {
+        let mut state = queued(RawInteractionMode::NoninteractiveJob);
+        state.request.id = RawRequestId::new(format!("raw-request:{request_suffix}")).unwrap();
+        if outcome == RawExecutionOutcome::Succeeded {
+            apply(
+                &mut state,
+                RawExecutionEventKind::Starting {
+                    owner: RawExecutionOwner::Job(
+                        RawJobId::new(format!("raw-job:{request_suffix}")).unwrap(),
+                    ),
+                },
+            );
+            apply(
+                &mut state,
+                RawExecutionEventKind::Running {
+                    started_unix_ms: 100,
+                },
+            );
+        }
+        if outcome == RawExecutionOutcome::Cancelled {
+            apply(&mut state, RawExecutionEventKind::CancellationRequested);
+        }
+        apply(
+            &mut state,
+            RawExecutionEventKind::Finished {
+                result: RawExecutionResult {
+                    outcome,
+                    exit_code: match outcome {
+                        RawExecutionOutcome::Succeeded => Some(0),
+                        RawExecutionOutcome::Failed => Some(2),
+                        RawExecutionOutcome::Cancelled | RawExecutionOutcome::Lost => None,
+                    },
+                    message: Some("not retained".into()),
+                    elapsed_ms: ended_unix_ms.saturating_sub(100),
+                    durable_reference: Some(
+                        RawDurableReferenceId::new(format!("raw-durable:{request_suffix}"))
+                            .unwrap(),
+                    ),
+                },
+            },
+        );
+        state
+    }
+
+    #[test]
+    fn raw_history_accepts_only_terminal_outcomes_and_sanitizes_execution_authority() {
+        assert_eq!(
+            RawHistoryRecord::from_terminal(&queued(RawInteractionMode::NoninteractiveJob)),
+            Err(RawExecutionError::HistoryRequiresTerminal)
+        );
+        for outcome in [
+            RawExecutionOutcome::Succeeded,
+            RawExecutionOutcome::Failed,
+            RawExecutionOutcome::Cancelled,
+            RawExecutionOutcome::Lost,
+        ] {
+            let state = terminal_for_history(&format!("{outcome:?}"), outcome, 150);
+            let record = RawHistoryRecord::from_terminal(&state).unwrap();
+            assert_eq!(record.outcome, outcome);
+            assert_eq!(record.parameters, state.request.parameters);
+            assert_eq!(record.started_unix_ms, state.started_unix_ms.unwrap_or(100));
+            assert_eq!(record.ended_unix_ms, 150);
+        }
+        let mut sensitive = terminal_for_history("sensitive", RawExecutionOutcome::Succeeded, 150);
+        sensitive.request.parameters.insert(
+            RawParameterId::new("free-text").unwrap(),
+            RawParameterValue::Text("token-like-value".into()),
+        );
+        sensitive.request.parameters.insert(
+            RawParameterId::new("temporary-file").unwrap(),
+            RawParameterValue::File("/tmp/private-input".into()),
+        );
+        let sanitized = RawHistoryRecord::from_terminal(&sensitive).unwrap();
+        assert!(
+            !sanitized
+                .parameters
+                .contains_key(&RawParameterId::new("free-text").unwrap())
+        );
+        assert!(
+            !sanitized
+                .parameters
+                .contains_key(&RawParameterId::new("temporary-file").unwrap())
+        );
+    }
+
+    #[test]
+    fn raw_history_install_is_bounded_newest_first_and_replaces_duplicate_requests() {
+        let mut older = RawHistoryRecord::from_terminal(&terminal_for_history(
+            "duplicate",
+            RawExecutionOutcome::Failed,
+            120,
+        ))
+        .unwrap();
+        let replacement = RawHistoryRecord::from_terminal(&terminal_for_history(
+            "duplicate",
+            RawExecutionOutcome::Succeeded,
+            180,
+        ))
+        .unwrap();
+        older.ended_unix_ms = 120;
+        let newest = RawHistoryRecord::from_terminal(&terminal_for_history(
+            "newest",
+            RawExecutionOutcome::Lost,
+            200,
+        ))
+        .unwrap();
+        let mut history = Vec::new();
+        install_raw_history(&mut history, [older, newest.clone(), replacement.clone()]).unwrap();
+        assert_eq!(history.len(), 2);
+        assert_eq!(history[0], newest);
+        assert_eq!(history[1], replacement);
+
+        let many = (0..MAX_RAW_HISTORY_RECORDS + 20).map(|index| {
+            let mut record = replacement.clone();
+            record.request_id = RawRequestId::new(format!("raw-request:item-{index}")).unwrap();
+            record.ended_unix_ms = 100 + index as u64;
+            record
+        });
+        install_raw_history(&mut history, many).unwrap();
+        assert_eq!(history.len(), MAX_RAW_HISTORY_RECORDS);
+        assert!(
+            history
+                .windows(2)
+                .all(|pair| pair[0].ended_unix_ms >= pair[1].ended_unix_ms)
+        );
+    }
+
     #[test]
     fn raw_output_selection_follow_search_scroll_and_session_mapping_are_bounded() {
         let (catalog, _, _) = request_and_preview(RawInteractionMode::NoninteractiveJob);
@@ -2015,7 +2264,7 @@ pub struct RawModeState {
     pub execution: Option<RawCommandId>,
     pub execution_states: BTreeMap<RawRequestId, RawExecutionState>,
     pub output: RawOutputViewState,
-    pub history: Vec<RawCommandId>,
+    pub history: Vec<RawHistoryRecord>,
     pub history_selection: usize,
     pub favorites: Vec<RawCommandId>,
     pub favorite_selection: usize,
@@ -2082,7 +2331,6 @@ pub enum RawModeAction {
         delta: isize,
     },
     ActivateHistory,
-    RememberHistory(RawCommandId),
     OpenFavorites,
     SelectFavorite {
         delta: isize,
@@ -2765,7 +3013,6 @@ pub fn reduce_raw_mode(
                 shifted_index(state.history_selection, state.history.len(), delta)
         }
         RawModeAction::ActivateHistory => activate_raw_retained(state, catalog, true),
-        RawModeAction::RememberHistory(command) => remember_raw_history(state, catalog, command),
         RawModeAction::OpenFavorites => {
             state.favorite_selection = state
                 .favorite_selection
@@ -2902,9 +3149,6 @@ fn reconcile_raw_mode(state: &mut RawModeState, catalog: &RawCatalog) {
     }
     state
         .favorites
-        .retain(|command| catalog.command(command).is_some());
-    state
-        .history
         .retain(|command| catalog.command(command).is_some());
     if state
         .favorite_confirmation
@@ -3307,18 +3551,12 @@ fn request_raw_preview(
     }
 }
 
-fn remember_raw_history(state: &mut RawModeState, catalog: &RawCatalog, command: RawCommandId) {
-    if catalog.command(&command).is_none() {
-        return;
-    }
-    state.history.insert(0, command);
-    state.history.truncate(MAX_RAW_HISTORY_STUBS);
-    state.history_selection = 0;
-}
-
 fn activate_raw_retained(state: &mut RawModeState, catalog: &RawCatalog, history: bool) {
     let command = if history {
-        state.history.get(state.history_selection)
+        state
+            .history
+            .get(state.history_selection)
+            .map(|record| &record.command)
     } else {
         state.favorites.get(state.favorite_selection)
     }
@@ -4805,19 +5043,26 @@ mod raw_mode_state_tests {
     }
 
     #[test]
-    fn raw_mode_history_favorites_and_catalog_replacement_retain_only_exact_ids() {
+    fn raw_history_catalog_replacement_retains_stale_records_without_replay() {
         let original = catalog(1);
         let mut state = RawModeState::new(&original);
         select_build_category(&mut state, &original);
         reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
-        reduce_raw_mode(
-            &mut state,
-            &original,
-            None,
-            RawModeAction::RememberHistory(command("build.target")),
-        );
+        state.history.push(RawHistoryRecord {
+            schema_version: RAW_HISTORY_SCHEMA_VERSION,
+            request_id: RawRequestId::new("raw-request:history-1").unwrap(),
+            catalog_version: 1,
+            command: command("build.target"),
+            parameters: BTreeMap::new(),
+            interaction: RawInteractionMode::NoninteractiveJob,
+            started_unix_ms: 10,
+            ended_unix_ms: 20,
+            outcome: RawExecutionOutcome::Succeeded,
+            exit_code: Some(0),
+            durable_reference: None,
+        });
         assert_eq!(state.favorites, [command("build.target")]);
-        assert_eq!(state.history, [command("build.target")]);
+        assert_eq!(state.history[0].command, command("build.target"));
 
         reduce_raw_mode(&mut state, &original, None, RawModeAction::ToggleFavorite);
         assert!(state.favorite_confirmation.is_some());
@@ -4847,8 +5092,21 @@ mod raw_mode_state_tests {
             RawModeAction::ReprojectCatalog,
         );
         assert!(state.favorites.is_empty());
-        assert!(state.history.is_empty());
+        assert_eq!(state.history.len(), 1);
         assert_ne!(state.command, Some(command("build.target")));
+        reduce_raw_mode(&mut state, &replacement, None, RawModeAction::OpenHistory);
+        reduce_raw_mode(
+            &mut state,
+            &replacement,
+            None,
+            RawModeAction::ActivateHistory,
+        );
+        assert!(
+            state
+                .notification
+                .as_deref()
+                .is_some_and(|message| message.contains("stale or unavailable"))
+        );
     }
 
     #[test]

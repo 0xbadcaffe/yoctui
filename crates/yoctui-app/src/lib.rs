@@ -845,6 +845,70 @@ fn install_raw_execution_snapshots(
     Ok(())
 }
 
+pub fn raw_history_record_from_protocol(
+    wire: &yoctui_protocol::daemon::RawHistoryRecordData,
+) -> Result<yoctui_model::RawHistoryRecord, String> {
+    wire.validate().map_err(|error| error.to_string())?;
+    let mut parameters = std::collections::BTreeMap::new();
+    for parameter in &wire.parameters {
+        let id =
+            yoctui_model::RawParameterId::new(&parameter.id).map_err(|error| error.to_string())?;
+        let value = raw_parameter_from_protocol(&parameter.value)?;
+        if parameters.insert(id, value).is_some() {
+            return Err("duplicate Raw history parameter".into());
+        }
+    }
+    let record = yoctui_model::RawHistoryRecord {
+        schema_version: wire.schema_version,
+        request_id: yoctui_model::RawRequestId::new(&wire.request_id)
+            .map_err(|error| error.to_string())?,
+        catalog_version: wire.catalog_version,
+        command: yoctui_model::RawCommandId::new(&wire.command_id)
+            .map_err(|error| error.to_string())?,
+        parameters,
+        interaction: match wire.interaction {
+            yoctui_protocol::daemon::RawInteractionData::NoninteractiveJob => {
+                yoctui_model::RawInteractionMode::NoninteractiveJob
+            }
+            yoctui_protocol::daemon::RawInteractionData::InteractivePty => {
+                yoctui_model::RawInteractionMode::InteractivePty
+            }
+            yoctui_protocol::daemon::RawInteractionData::Unknown => {
+                return Err("unknown required Raw history interaction".into());
+            }
+        },
+        started_unix_ms: wire.started_unix_ms,
+        ended_unix_ms: wire.ended_unix_ms,
+        outcome: raw_outcome_from_protocol(wire.outcome)?,
+        exit_code: wire.exit_code,
+        durable_reference: wire
+            .durable_reference
+            .as_deref()
+            .map(yoctui_model::RawDurableReferenceId::new)
+            .transpose()
+            .map_err(|error| error.to_string())?,
+    };
+    record.validate().map_err(|error| error.to_string())?;
+    Ok(record)
+}
+
+fn install_raw_history_snapshots(
+    app: &mut yoctui_model::App,
+    records: &[yoctui_protocol::daemon::RawHistoryRecordData],
+) -> Result<(), String> {
+    let records = records
+        .iter()
+        .map(raw_history_record_from_protocol)
+        .collect::<Result<Vec<_>, _>>()?;
+    yoctui_model::install_raw_history(&mut app.raw_mode.history, records)
+        .map_err(|error| error.to_string())?;
+    app.raw_mode.history_selection = app
+        .raw_mode
+        .history_selection
+        .min(app.raw_mode.history.len().saturating_sub(1));
+    Ok(())
+}
+
 pub fn reduce_daemon_state(
     state: &mut yoctui_model::DaemonGlobalState,
     action: yoctui_model::DaemonStateAction,
@@ -1105,6 +1169,7 @@ pub fn daemon_protocol_snapshot(
             .map(daemon_compatibility_protocol),
         jobs,
         raw_executions: Vec::new(),
+        raw_history: Vec::new(),
         pty_sessions,
         pty_screens: Vec::new(),
         clients: Vec::<ClientSummary>::new(),
@@ -1799,8 +1864,17 @@ impl DaemonClientSnapshot {
                     "Raw execution snapshot was rejected and invalidated: {error}"
                 ));
             }
+            if let Some(snapshot) = &self.snapshot
+                && let Err(error) = install_raw_history_snapshots(app, &snapshot.raw_history)
+            {
+                app.raw_mode.history.clear();
+                app.notification = Some(format!(
+                    "Raw history snapshot was rejected and invalidated: {error}"
+                ));
+            }
         } else {
             app.raw_mode.execution_states.clear();
+            app.raw_mode.history.clear();
         }
     }
 
@@ -11989,6 +12063,56 @@ mod tests {
             raw_execution_snapshot_from_protocol(&snapshot).unwrap(),
             state
         );
+    }
+
+    #[test]
+    fn raw_history_app_installs_validated_records_without_recreating_execution_authority() {
+        let mut state = raw_execution_state_fixture();
+        apply_raw_execution_fixture(
+            &mut state,
+            yoctui_model::RawExecutionEventKind::Starting {
+                owner: yoctui_model::RawExecutionOwner::Job(
+                    yoctui_model::RawJobId::new("raw-job:history-app").unwrap(),
+                ),
+            },
+        );
+        apply_raw_execution_fixture(
+            &mut state,
+            yoctui_model::RawExecutionEventKind::Running {
+                started_unix_ms: 20,
+            },
+        );
+        apply_raw_execution_fixture(
+            &mut state,
+            yoctui_model::RawExecutionEventKind::Finished {
+                result: yoctui_model::RawExecutionResult {
+                    outcome: yoctui_model::RawExecutionOutcome::Succeeded,
+                    exit_code: Some(0),
+                    message: Some("not history".into()),
+                    elapsed_ms: 50,
+                    durable_reference: None,
+                },
+            },
+        );
+        let execution = raw_execution_snapshot_to_protocol(&state).unwrap();
+        let wire =
+            yoctui_protocol::daemon::RawHistoryRecordData::from_terminal(&execution).unwrap();
+        let model = raw_history_record_from_protocol(&wire).unwrap();
+        assert_eq!(model.command, state.request.command);
+
+        let global = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            10,
+            "raw-history-app".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&global);
+        snapshot.raw_history = vec![wire];
+        let mut app = yoctui_model::App::new(16, 4_096);
+        DaemonClientSnapshot::default().replace_app(&mut app, snapshot);
+        assert_eq!(app.raw_mode.history, [model]);
+        assert!(app.raw_mode.execution_states.is_empty());
     }
 
     #[test]

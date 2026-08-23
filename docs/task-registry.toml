@@ -5827,18 +5827,18 @@ notes = "The responsive execution workspace renders exact identity/lifecycle/res
 id = "RAW-HISTORY-001"
 milestone = "M20"
 title = "Persist bounded Raw command history"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 621
 required = true
 depends_on = ["RAW-EXEC-MODEL-001"]
 verify = ["cargo test -p yoctui-model raw_history", "cargo test -p yoctui -- raw_history"]
-notes = "Retain bounded safe template/parameter/result metadata without persisting live process authority, unbounded output, or temporary job identity."
+notes = "Versioned terminal-only daemon history is unique by request, newest first, count/byte bounded, atomically persisted, and recovered without owner, authority, argv, output, PTY, message, or temporary job/session state. Stale catalog records remain inspectable but cannot replay work."
 
 [[task]]
 id = "RAW-FAVORITE-MODEL-001"
 milestone = "M20"
 title = "Define persistent Raw favorite model"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 622
 required = true
 depends_on = ["RAW-MODEL-001", "RAW-PARAM-001"]

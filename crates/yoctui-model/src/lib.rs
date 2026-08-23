@@ -7824,12 +7824,6 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         authority.as_ref(),
                         RawModeAction::OpenExecution(request.command.clone()),
                     );
-                    reduce_raw_mode(
-                        &mut app.raw_mode,
-                        builtin_raw_catalog(),
-                        authority.as_ref(),
-                        RawModeAction::RememberHistory(request.command.clone()),
-                    );
                     return Some(Effect::StartRaw(request));
                 }
                 Err(error) => app.raw_mode.notification = Some(error.to_string()),
