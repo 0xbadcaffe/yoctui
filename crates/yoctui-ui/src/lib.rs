@@ -3950,6 +3950,142 @@ fn raw_command_list(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Paragraph::new(lines), inner);
 }
 
+fn raw_parameter_kind_label(kind: yoctui_model::RawParameterKind) -> &'static str {
+    match kind {
+        yoctui_model::RawParameterKind::Recipe => "Recipe",
+        yoctui_model::RawParameterKind::Image => "Image",
+        yoctui_model::RawParameterKind::Target => "Target",
+        yoctui_model::RawParameterKind::Task => "Task",
+        yoctui_model::RawParameterKind::UserInterface => "User interface",
+        yoctui_model::RawParameterKind::File => "File",
+        yoctui_model::RawParameterKind::Integer => "Number",
+        yoctui_model::RawParameterKind::Text => "Value",
+        yoctui_model::RawParameterKind::Multiconfig => "Multiconfig",
+    }
+}
+
+fn raw_parameter_presence_label(presence: yoctui_model::RawParameterPresence) -> &'static str {
+    match presence {
+        yoctui_model::RawParameterPresence::Required => "Required",
+        yoctui_model::RawParameterPresence::Optional => "Optional",
+    }
+}
+
+fn raw_reference_kind_label(kind: yoctui_model::RawReferenceKind) -> &'static str {
+    match kind {
+        yoctui_model::RawReferenceKind::ShellPipeline => "shell pipeline",
+        yoctui_model::RawReferenceKind::Conceptual => "conceptual material",
+        yoctui_model::RawReferenceKind::CompanionTool => "companion tool",
+        yoctui_model::RawReferenceKind::UnsupportedBitBake => "unsupported BitBake command",
+    }
+}
+
+fn raw_interaction_label(interaction: yoctui_model::RawInteractionMode) -> &'static str {
+    match interaction {
+        yoctui_model::RawInteractionMode::NoninteractiveJob => "Noninteractive job",
+        yoctui_model::RawInteractionMode::InteractivePty => "Interactive PTY",
+    }
+}
+
+fn raw_safety_label(safety: yoctui_model::RawSafetyClass) -> &'static str {
+    match safety {
+        yoctui_model::RawSafetyClass::Inspection => "Read only",
+        yoctui_model::RawSafetyClass::Build => "Build/mutating",
+        yoctui_model::RawSafetyClass::MetadataMutation => "Build/mutating (metadata mutation)",
+        yoctui_model::RawSafetyClass::Destructive => "Destructive",
+        yoctui_model::RawSafetyClass::ServerLifecycle => "Server lifecycle",
+    }
+}
+
+fn raw_command_help_text(app: &App) -> String {
+    let catalog = yoctui_model::builtin_raw_catalog();
+    let Some(command) = app.raw_mode.selected_command(catalog) else {
+        return "No Raw command selected.\n\nSelect a command in the Workspace to inspect its exact catalog help."
+            .into();
+    };
+    let availability = command.availability(app.workspace_compatibility.authority());
+    let mut lines = vec![
+        format!("Description: {}", command.reference.description),
+        format!("Reference section: {}", command.reference.heading),
+        format!("Template: {}", raw_command_template(command)),
+        format!(
+            "Availability: {}",
+            raw_availability_label(availability.state)
+        ),
+    ];
+
+    if availability.issues.is_empty() {
+        lines.push("Reason: none".into());
+    } else {
+        for issue in &availability.issues {
+            let capability = issue
+                .capability
+                .map_or_else(|| "reference".into(), |capability| capability.to_string());
+            lines.push(format!("Reason [{capability}]: {}", issue.reason));
+            lines.extend(
+                issue
+                    .limitations
+                    .iter()
+                    .map(|limitation| format!("Limitation [{capability}]: {limitation}")),
+            );
+        }
+    }
+
+    if availability.implementations.is_empty() {
+        lines.push("Implementation: none selected".into());
+    } else {
+        lines.extend(
+            availability
+                .implementations
+                .iter()
+                .map(|(capability, implementation)| {
+                    format!("Implementation [{capability}]: {implementation}")
+                }),
+        );
+    }
+
+    match &command.execution {
+        yoctui_model::RawExecutionPolicy::Executable { template } => {
+            lines.push(format!(
+                "Interaction: {}",
+                raw_interaction_label(template.interaction)
+            ));
+            lines.push(format!("Safety: {}", raw_safety_label(template.safety)));
+        }
+        yoctui_model::RawExecutionPolicy::ReferenceOnly { kind, .. } => {
+            lines.push(format!(
+                "Interaction: Reference only ({})",
+                raw_reference_kind_label(*kind)
+            ));
+            lines.push("Safety: Unsupported reference".into());
+        }
+    }
+
+    if command.parameters.is_empty() {
+        lines.push("Parameters: none".into());
+    } else {
+        lines.push("Parameters:".into());
+        lines.extend(command.parameters.iter().map(|parameter| {
+            format!(
+                "- {} {} · {} · {}",
+                parameter.label,
+                parameter.placeholder,
+                raw_parameter_kind_label(parameter.kind),
+                raw_parameter_presence_label(parameter.presence)
+            )
+        }));
+    }
+    lines.push(format!(
+        "Favorite: {}",
+        if app.raw_mode.is_favorite(&command.id) {
+            "Yes"
+        } else {
+            "No"
+        }
+    ));
+    lines.join("\n")
+}
+
 fn task_inspector_primary(inspector: &TaskInspectorRef<'_>) -> String {
     match inspector {
         TaskInspectorRef::None => {
@@ -4681,7 +4817,7 @@ fn inspector(
         Screen::Testing => testing_inspector_text(app),
         Screen::Security => security_inspector_text(app),
         Screen::Qa => qa_inspector_text(app),
-        Screen::RawMode => "Raw Mode\nStructured catalog-backed BitBake commands. Select catalog material in the Workspace to inspect exact command help.".into(),
+        Screen::RawMode => raw_command_help_text(app),
         Screen::Maintenance => maintenance_inspector_text(app),
         Screen::Compatibility => compatibility_inspector_text(app),
         _ => format!(
@@ -25172,7 +25308,7 @@ mod tests {
                         state: yoctui_model::CapabilityState::AvailableWithLimitations {
                             reason: reason(
                                 "raw.continue.limited",
-                                "Continue is available with a fixture limitation.",
+                                "Continue is available with a fixture limitation and Unicode detail δοκιμή 界界界界界界界界.",
                             ),
                             limitations: vec!["Fixture limitation.".into()],
                         },
@@ -25421,6 +25557,135 @@ mod tests {
             "{stale}"
         );
         assert!(!stale.contains('▶'), "{stale}");
+    }
+
+    #[test]
+    fn raw_command_help_follows_exact_selection_and_renders_every_field() {
+        let mut app = raw_command_list_app();
+        set_raw_command_query(&mut app, "--ui=<ui> <target>");
+        let selected = app
+            .raw_mode
+            .selected_command(yoctui_model::builtin_raw_catalog())
+            .unwrap();
+        let output = rendered_text(&app, 200, 60);
+        for expected in [
+            format!("Description: {}", selected.reference.description),
+            format!("Reference section: {}", selected.reference.heading),
+            format!("Template: {}", raw_command_template(selected)),
+            "Availability: UNKNOWN".into(),
+            "Reason [bitbake.raw.ui]: UI support is unknown.".into(),
+            "Implementation: none selected".into(),
+            "Interaction: Interactive PTY".into(),
+            "Safety: Build/mutating".into(),
+            "Parameters:".into(),
+            "- Ui <ui> · User interface · Required".into(),
+            "- Target <target> · Target · Required".into(),
+            "Favorite: No".into(),
+        ] {
+            assert!(output.contains(&expected), "missing {expected:?}: {output}");
+        }
+
+        let old_description = selected.reference.description.clone();
+        set_raw_command_query(&mut app, "--version");
+        let changed = rendered_text(&app, 200, 60);
+        assert!(
+            changed.contains("Description: Show the installed BitBake version."),
+            "{changed}"
+        );
+        assert!(!changed.contains(&old_description), "{changed}");
+        assert!(changed.contains("Parameters: none"), "{changed}");
+        assert!(
+            changed.contains("Implementation [bitbake.raw.cli]: bitbake.raw.argv"),
+            "{changed}"
+        );
+        let _ = update(
+            &mut app,
+            Action::RawMode(yoctui_model::RawModeAction::ToggleFavorite),
+        );
+        let favorite = rendered_text(&app, 200, 60);
+        assert!(favorite.contains("Favorite: Yes"), "{favorite}");
+    }
+
+    #[test]
+    fn raw_command_help_explains_all_availability_states_and_reference_only_rows() {
+        let mut app = raw_command_list_app();
+        for (query, state, exact_detail) in [
+            (
+                "--version",
+                "AVAILABLE",
+                "Implementation [bitbake.raw.cli]: bitbake.raw.argv",
+            ),
+            (
+                "--continue <target>",
+                "LIMITED",
+                "Reason [bitbake.raw.continue]: Continue is available",
+            ),
+            (
+                "--show-versions",
+                "UNAVAILABLE",
+                "Reason [bitbake.raw.show_versions]: Show versions is unavailable.",
+            ),
+            (
+                "--ui=<ui> <target>",
+                "UNKNOWN",
+                "Reason [bitbake.raw.ui]: UI support is unknown.",
+            ),
+            (
+                "grep '^PACKAGES='",
+                "UNSUPPORTED",
+                "Interaction: Reference only (shell pipeline)",
+            ),
+        ] {
+            set_raw_command_query(&mut app, query);
+            let output = rendered_text(&app, 200, 60);
+            assert!(
+                output.contains(&format!("Availability: {state}")),
+                "{output}"
+            );
+            assert!(output.contains(exact_detail), "{output}");
+        }
+
+        let reference = rendered_text(&app, 200, 60);
+        assert!(reference.contains("Reason [reference]:"), "{reference}");
+        assert!(
+            reference.contains("Safety: Unsupported reference"),
+            "{reference}"
+        );
+        assert!(
+            reference.contains("Implementation: none selected"),
+            "{reference}"
+        );
+    }
+
+    #[test]
+    fn raw_command_help_is_bounded_empty_no_color_and_responsive() {
+        let mut app = raw_command_list_app();
+        set_raw_command_query(&mut app, "--continue <target>");
+        app.focus = FocusTarget::Inspector;
+        app.color_enabled = false;
+        let selection = app.raw_mode.command.clone();
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Inspector: Raw command"), "{output}");
+            assert!(output.contains("Availability: LIMITED"), "{output}");
+            assert!(!output.contains('�'), "{output}");
+            assert_eq!(app.raw_mode.command, selection);
+        }
+
+        set_raw_command_query(&mut app, "definitely-no-such-raw-command");
+        let empty = rendered_text(&app, 100, 30);
+        assert!(empty.contains("No Raw command selected."), "{empty}");
+        assert!(
+            empty.contains("Select a command in the Workspace"),
+            "{empty}"
+        );
+
+        app.raw_mode.command =
+            Some(yoctui_model::RawCommandId::new("stale.command.identity").unwrap());
+        let stale = rendered_text(&app, 80, 24);
+        assert!(stale.contains("No Raw command selected."), "{stale}");
+        let below_minimum = rendered_text(&app, 79, 23);
+        assert!(below_minimum.contains("Yoctui needs at least 80x24"));
     }
 
     #[test]

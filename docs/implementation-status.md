@@ -93,7 +93,14 @@ templates with textual `RUN`/`REF`, five-state capability, and favorite
 markers. Selection and centered scrolling stay bounded across empty, stale,
 large, Unicode, first/last, no-color, and responsive states; reference-only
 rows remain inspectable without opening an execution form. `RAW-HELP-UI-001`
-is active next.
+is complete: `Inspector: Raw command` follows the selected stable catalog ID
+on every render and orders the exact reference description/section/template,
+five-state availability, authoritative reasons and implementations,
+interaction, safety, typed parameters, and favorite state. Executable,
+disabled, and reference-only records remain explainable with explicit text;
+empty/stale selection, long Unicode authority text, no-color mode, and wide,
+medium-overlay, narrow, and below-minimum rendering are covered.
+`RAW-FORM-UI-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

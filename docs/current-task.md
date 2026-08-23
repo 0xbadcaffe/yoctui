@@ -2,18 +2,21 @@
 
 ## Task
 
-**ID:** RAW-HELP-UI-001
-**Title:** Implement selection-following Raw command help
+**ID:** RAW-FORM-UI-001
+**Title:** Implement Raw command parameter form
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Replace the Raw Inspector placeholder with bounded help derived exclusively
-from the exact highlighted catalog record and current capability authority.
+Render the reducer-owned Raw command form as a focus-trapping, responsive
+typed dialog that validates fields and advances only to the existing exact
+native-argv preview.
 
 ## Dependencies
 
-- `RAW-COMMAND-UI-001` — DONE
+- `RAW-HELP-UI-001` — DONE
+- `RAW-RECIPE-001` — DONE
+- `RAW-PREVIEW-001` — DONE
 
 ## Relevant files
 
@@ -27,30 +30,35 @@ from the exact highlighted catalog record and current capability authority.
 
 ## Definition of done
 
-- The Inspector follows the exact highlighted stable command identity and
-  clears explicitly when no command is selected; search, category, catalog,
-  and capability changes update it immediately without cached prose.
-- Content is rendered in the specified order: exact reference description and
-  section, exact template, five-state capability with authoritative reason and
-  selected implementation, interaction mode, safety class, typed parameter
-  definitions, and textual favorite state.
-- Executable, disabled, and reference-only entries remain selectable and
-  explainable; the widget never infers support or suggests that inert shell,
-  filesystem, companion, or conceptual reference entries can run.
-- Long Unicode descriptions, reasons, implementations, templates, and
-  parameter help wrap or clip within bounds without panicking or losing
-  explicit textual meaning in no-color mode.
-- Wide and medium layouts show selection-following help in the Inspector;
-  narrow layouts expose the same content through the existing Inspector
-  overlay without changing command selection or browser focus.
-- TestBackend tests cover every help field and five-state availability, exact
-  selected-record following, empty/stale states, reference-only meaning,
-  responsive rendering, bounds, and no-color accessibility.
+- Enter on an enabled executable command opens a `Run BitBake Command` dialog
+  bound to the exact catalog command, capability generation, and authoritative
+  build directory; disabled and reference-only selections cannot open it.
+- The dialog renders the immutable exact command template, declared typed
+  fields in catalog order, selector/manual-entry authority, current value,
+  inline validation, and the shared bounded Additional arguments editor.
+- Field movement, selector choice, manual editing, validation, and
+  Normal/Insert popup-editor behavior route through typed reducer actions;
+  dialogs trap focus and `Esc`/`q` closes without an execution effect.
+- Enter validates the current document and opens the separate exact preview
+  only when all required fields and additional argv are valid; errors remain
+  inline and no execution begins from the form.
+- Authority/catalog replacement, build identity loss, and stale form identity
+  close or refresh the form exactly as specified, restore pane focus, explain
+  the reason, and emit no start effect.
+- The form remains bounded at every supported breakpoint, including `80x24`,
+  and preserves its title, immutable template, selected field, validation,
+  preview action, and close hint with textual no-color meaning.
+- Model, app routing, and TestBackend tests cover every parameter kind,
+  selector/manual/empty/error paths, additional argv, focus trapping,
+  preview transition, stale authority, resize, Unicode boundaries, and
+  no-color accessibility.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui raw_command_help
+cargo test -p yoctui-model raw_form
+cargo test -p yoctui-app raw_form
+cargo test -p yoctui-ui raw_form
 cargo clippy -p yoctui-model -p yoctui-app -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
