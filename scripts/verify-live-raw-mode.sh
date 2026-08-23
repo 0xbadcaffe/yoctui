@@ -12,6 +12,13 @@ build_dir="$(cd "$build_dir" && pwd -P)"
 if [[ ! -f "$build_dir/conf/bblayers.conf" || ! -f "$build_dir/conf/local.conf" ]]; then echo "live Raw validation: missing conf files in $build_dir" >&2; exit 2; fi
 out="${YOCTUI_RAW_EVIDENCE_DIR:-$repo_root/artifacts/raw-live}"
 mkdir -p "$out"
+set +u
+if [[ -n "${YOCTUI_OE_INIT_BUILD_ENV:-}" && -f "$YOCTUI_OE_INIT_BUILD_ENV" ]]; then
+  source "$YOCTUI_OE_INIT_BUILD_ENV" "$build_dir" >/dev/null
+elif [[ -f "$build_dir/init-build-env" ]]; then
+  source "$build_dir/init-build-env" >/dev/null
+fi
+set -u
 python3 "$repo_root/scripts/live_bitbake_smoke.py" --bridge "$repo_root/crates/yoctui-bitbake/bridge/yoctui_bridge.py" --build-dir "$build_dir" --target "${YOCTUI_LIVE_RAW_TARGET:-base-files}" --task "${YOCTUI_LIVE_RAW_TASK:-listtasks}" --cancel-target "${YOCTUI_LIVE_RAW_CANCEL_TARGET:-core-image-minimal}" --timeout "${YOCTUI_LIVE_TIMEOUT:-300}" >"$out/summary.json.tmp"
 python3 - "$out/summary.json.tmp" "$out/summary.json" "$repo_root" "$build_dir" <<'PY'
 import json, pathlib, subprocess, sys

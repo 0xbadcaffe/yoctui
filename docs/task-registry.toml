@@ -5541,7 +5541,7 @@ notes = "Real PTY output now crosses the maintained emulator, bounded typed PtyS
 id = "LIVE-UI-POKY-001"
 milestone = "M19"
 title = "Validate redesigned UI against real Poky"
-status = "BLOCKED"
+status = "IN_PROGRESS"
 priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
@@ -5942,7 +5942,7 @@ priority = 631
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-UI-001", "RAW-SECURITY-001", "RAW-COMPAT-001"]
 verify = ["./scripts/verify-live-raw-mode.sh", "./scripts/verify-raw-mode-evidence.sh"]
-notes = "User namespaces now pass without sudo. Live execution remains blocked because .yoctui-fresh-build/conf/bblayers.conf references stale /workspace/.yoctui-fresh-poky layer paths, so the bridge cannot report BitBake. Recreate the build against the local Poky checkout (or correct BBLAYERS), then run the two Raw live verification commands."
+notes = "Namespaces and a clean local Poky build now pass the bridge smoke: BitBake 2.12.1, qemux86-64, recipe/dependency inspection, build completion, cancellation, and reconnect evidence are recorded. Remaining DoD coverage is representative Raw PTY/read-only command execution before completion."
 
 [[task]]
 id = "RAW-DOC-001"

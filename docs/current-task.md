@@ -4,13 +4,13 @@
 
 **ID:** RAW-LIVE-001
 **Title:** Validate representative Raw commands against supported BitBake
-**Status:** BLOCKED
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Live validation harnesses are present and namespaces now work without sudo,
-but the available build directory has stale `/workspace/.yoctui-fresh-poky`
-layer paths and BitBake cannot initialize.
+Live validation now runs against a clean local Poky build. The bridge smoke
+has captured BitBake, recipe/dependency, build, cancellation, and reconnect
+evidence; representative Raw PTY/read-only command coverage remains.
 
 ## Dependencies
 
@@ -37,8 +37,6 @@ layer paths and BitBake cannot initialize.
 
 ## Definition of done
 
-- Recreate/correct `.yoctui-fresh-build` so its `BBLAYERS` point to the local
-  Poky checkout.
 - Run `YOCTUI_LIVE_RAW=1 YOCTUI_LIVE_BUILD_DIR=/path/to/build
   ./scripts/verify-live-raw-mode.sh`, then
   `./scripts/verify-raw-mode-evidence.sh`.

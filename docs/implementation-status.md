@@ -184,10 +184,10 @@ search matches category, command identity, labels, and descriptions while
 preserving exact selection and explicit no-match behavior. `RAW-MOUSE-001` is
 active next.
 `RAW-LIVE-001` harnesses are now present and wrap the production bridge smoke
-runner with bounded Raw-live evidence validation. Execution remains blocked
-until a supported build directory and unprivileged user namespaces are
-available; `UI-REGRESSION-001` is complete with workspace regression, utility
-coverage, and compatibility checks passing.
+runner with bounded Raw-live evidence validation. A clean local Poky build now
+passes BitBake 2.12.1/qemux86-64 recipe and dependency inspection, build
+completion, cancellation, and reconnect checks. Representative Raw PTY and
+read-only command coverage remains; `UI-REGRESSION-001` is complete.
 `RAW-COMPAT-001` is complete: the older and current live fixture matrices,
 unknown-future evidence, replacement/stale projections, and zero-spawn denial
 checks pass. `RAW-LIVE-001` remains blocked pending the missing live harness.
