@@ -2,9 +2,9 @@
 pub mod primitives;
 
 use primitives::{
-    ActionListItem, ActionListStyles, DialogShell, DialogStyles, DialogTone, PaneShell, PaneStyles,
-    ResponsiveColumn, StateKind, StateView, StatusTone, action_list, action_list_plain,
-    bounded_dialog_rect, responsive_columns, status_label,
+    ActionListItem, ActionListStyles, BoundedScrollIndicator, DialogShell, DialogStyles,
+    DialogTone, PaneShell, PaneStyles, ResponsiveColumn, StateKind, StateView, StatusTone,
+    action_list, action_list_plain, bounded_dialog_rect, responsive_columns, status_label,
 };
 use ratatui::{
     prelude::*,
@@ -2912,12 +2912,12 @@ fn responsive_shell(
             .split(area)
         };
         navigator(frame, app, panes[0], task_rows);
-        workspace(frame, app, panes[1], now, task_rows);
+        workspace(frame, app, panes[1], terminal_width, now, task_rows);
         inspector(frame, app, panes[2], now, task_rows);
     } else if terminal_width >= 100 {
         let panes = Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(area);
         navigator(frame, app, panes[0], task_rows);
-        workspace(frame, app, panes[1], now, task_rows);
+        workspace(frame, app, panes[1], terminal_width, now, task_rows);
         if app.focus == FocusTarget::Inspector {
             frame.render_widget(Clear, panes[1]);
             inspector(frame, app, panes[1], now, task_rows);
@@ -2929,7 +2929,7 @@ fn responsive_shell(
             FocusTarget::Navigator => navigator(frame, app, rows[1], task_rows),
             FocusTarget::Inspector => inspector(frame, app, rows[1], now, task_rows),
             FocusTarget::Workspace | FocusTarget::Dialog | FocusTarget::CommandPalette => {
-                workspace(frame, app, rows[1], now, task_rows);
+                workspace(frame, app, rows[1], terminal_width, now, task_rows);
             }
         }
     }
@@ -3668,6 +3668,7 @@ fn workspace(
     frame: &mut Frame,
     app: &App,
     area: Rect,
+    terminal_width: u16,
     now: SystemTime,
     task_rows: Option<&[TaskRowRef<'_>]>,
 ) {
@@ -3696,7 +3697,7 @@ fn workspace(
         }
         Screen::Configuration => config(frame, app, area),
         Screen::Bbmask => bbmask(frame, app, area),
-        Screen::RawMode => raw_mode_workspace(frame, app, area),
+        Screen::RawMode => raw_mode_workspace(frame, app, area, terminal_width),
         Screen::Maintenance => maintenance_workspace(frame, app, area),
         Screen::Compatibility => compatibility_workspace(frame, app, area),
         Screen::Help => help(frame, area),
@@ -3705,11 +3706,128 @@ fn workspace(
     }
 }
 
-fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let text = "Structured BitBake command workbench\n\nRaw Mode exposes catalog-backed BitBake templates; it is not an arbitrary shell. Command browsing is local, while execution availability comes only from the current daemon capability snapshot.";
+fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
+    use yoctui_model::{RawBrowserColumn, RawModeView};
+
+    if app.raw_mode.view != RawModeView::Browser {
+        frame.render_widget(
+            Paragraph::new("Raw Mode retained view\n\nEsc returns to the catalog browser.")
+                .block(pane_block(app, "Raw Mode", false))
+                .wrap(Wrap { trim: false }),
+            area,
+        );
+        return;
+    }
+
+    if terminal_width < 100 {
+        match app.raw_mode.browser_column {
+            RawBrowserColumn::Categories => raw_category_browser(frame, app, area),
+            RawBrowserColumn::Commands => raw_command_browser_placeholder(frame, app, area),
+        }
+        return;
+    }
+
+    let columns = Layout::horizontal([Constraint::Percentage(52), Constraint::Min(20)]).split(area);
+    raw_category_browser(frame, app, columns[0]);
+    raw_command_browser_placeholder(frame, app, columns[1]);
+}
+
+fn raw_category_kind_label(kind: yoctui_model::RawCategoryKind) -> &'static str {
+    match kind {
+        yoctui_model::RawCategoryKind::Favorites => "FAVORITES",
+        yoctui_model::RawCategoryKind::Executable => "BITBAKE",
+        yoctui_model::RawCategoryKind::ReferenceOnly => "REFERENCE",
+        yoctui_model::RawCategoryKind::Conceptual => "CONCEPT",
+        yoctui_model::RawCategoryKind::CompanionTools => "COMPANION",
+    }
+}
+
+fn raw_category_kind_style(app: &App, kind: yoctui_model::RawCategoryKind) -> Style {
+    let palette = ThemePalette::for_app(app);
+    match kind {
+        yoctui_model::RawCategoryKind::Favorites => palette.role(palette.warning, Modifier::BOLD),
+        yoctui_model::RawCategoryKind::Executable => palette.role(palette.success, Modifier::BOLD),
+        yoctui_model::RawCategoryKind::ReferenceOnly => {
+            palette.role(palette.informational, Modifier::BOLD)
+        }
+        yoctui_model::RawCategoryKind::Conceptual => palette.role(palette.muted, Modifier::DIM),
+        yoctui_model::RawCategoryKind::CompanionTools => {
+            palette.role(palette.accent, Modifier::BOLD)
+        }
+    }
+}
+
+fn raw_category_browser(frame: &mut Frame, app: &App, area: Rect) {
+    let catalog = yoctui_model::builtin_raw_catalog();
+    let categories = catalog.browser_categories();
+    let selection = app.raw_mode.category.as_ref().and_then(|selected| {
+        categories
+            .iter()
+            .position(|category| &category.id == selected)
+    });
+    let viewport_height = usize::from(area.height.saturating_sub(2));
+    let viewport =
+        yoctui_model::centered_viewport_range(selection, categories.len(), viewport_height);
+    let position =
+        BoundedScrollIndicator::new(viewport.start, viewport.len(), categories.len()).label();
+    let active = app.focus == FocusTarget::Workspace
+        && app.raw_mode.browser_column == yoctui_model::RawBrowserColumn::Categories;
+    let title = format!("Raw Mode / Categories · {position}");
+    let block = pane_block(app, &title, active);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+
+    let shell = PaneShell::new("", active, pane_styles(app));
+    let width = usize::from(inner.width);
+    let viewport_start = viewport.start;
+    let lines = categories[viewport]
+        .iter()
+        .enumerate()
+        .map(|(offset, category)| {
+            let index = viewport_start + offset;
+            let selected = selection == Some(index);
+            let kind = raw_category_kind_label(category.kind);
+            let prefix = format!("{} [{kind}] ", if selected { "▶" } else { " " });
+            let label_width = width.saturating_sub(prefix.chars().count());
+            let label = bounded_cell_text(&category.label, label_width as u16);
+            Line::styled(
+                format!("{prefix}{label}"),
+                if selected {
+                    shell.row_style(true, active)
+                } else {
+                    raw_category_kind_style(app, category.kind)
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+    frame.render_widget(Paragraph::new(lines), inner);
+}
+
+fn raw_command_browser_placeholder(frame: &mut Frame, app: &App, area: Rect) {
+    let catalog = yoctui_model::builtin_raw_catalog();
+    let selected = app
+        .raw_mode
+        .category
+        .as_ref()
+        .and_then(|category| catalog.category(category));
+    let active = app.focus == FocusTarget::Workspace
+        && app.raw_mode.browser_column == yoctui_model::RawBrowserColumn::Commands;
+    let text = selected.map_or_else(
+        || "No Raw category selected.\n\nLeft/h returns to categories.".into(),
+        |category| {
+            format!(
+                "Selected category\n{}\n\nClassification\n{}\n\nLeft/h returns to categories.",
+                category.label,
+                raw_category_kind_label(category.kind)
+            )
+        },
+    );
     frame.render_widget(
         Paragraph::new(text)
-            .block(pane_block(app, "Raw Mode", false))
+            .block(pane_block(app, "Raw Mode / Commands", active))
             .wrap(Wrap { trim: false }),
         area,
     );
@@ -24949,6 +25067,89 @@ mod tests {
     }
 
     #[test]
+    fn raw_category_browser_renders_pinned_order_classification_and_bounds() {
+        let mut app = App::new(16, 4096);
+        let _ = update(&mut app, Action::Open(Screen::RawMode));
+        let wide = rendered_text(&app, 160, 50);
+        for expected in [
+            "[FAVORITES] Favorites",
+            "[BITBAKE] Version and help",
+            "[REFERENCE] Useful paths",
+            "[CONCEPT] Quick conceptual",
+            "[COMPANION] bitbake-setup",
+            "1-32/32",
+        ] {
+            assert!(wide.contains(expected), "missing {expected:?}: {wide}");
+        }
+        assert!(
+            wide.find("[FAVORITES]").unwrap() < wide.find("[BITBAKE]").unwrap(),
+            "{wide}"
+        );
+        assert!(wide.contains('…'), "long category labels must clip: {wide}");
+
+        let _ = update(
+            &mut app,
+            Action::RawMode(yoctui_model::RawModeAction::SelectCategory { delta: isize::MAX }),
+        );
+        let narrow = rendered_text(&app, 80, 24);
+        assert!(
+            narrow.contains("One-screen emergency reference"),
+            "{narrow}"
+        );
+        assert!(narrow.contains("↑"), "{narrow}");
+        assert!(narrow.contains("/32"), "{narrow}");
+
+        let selected = app.raw_mode.category.clone();
+        app.raw_mode.search.query = "reference".into();
+        for (width, height) in [(160, 40), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Categories"), "{width}x{height}: {output}");
+            assert_eq!(app.raw_mode.category, selected);
+            assert_eq!(app.raw_mode.search.query, "reference");
+        }
+        let below_minimum = rendered_text(&app, 79, 23);
+        assert!(below_minimum.contains("Yoctui needs at least 80x24"));
+    }
+
+    #[test]
+    fn raw_category_browser_exposes_column_state_and_no_color_text() {
+        let mut app = App::new(16, 4096);
+        let _ = update(&mut app, Action::Open(Screen::RawMode));
+        app.color_enabled = false;
+        let categories = rendered_text(&app, 80, 24);
+        assert!(
+            categories.contains("▶ [FAVORITES] Favorites"),
+            "{categories}"
+        );
+
+        let _ = update(
+            &mut app,
+            Action::RawMode(yoctui_model::RawModeAction::FocusCommands),
+        );
+        let commands = rendered_text(&app, 80, 24);
+        for expected in [
+            "Commands",
+            "Selected category",
+            "Favorites",
+            "FAVORITES",
+            "Left/h returns to categories",
+        ] {
+            assert!(
+                commands.contains(expected),
+                "missing {expected:?}: {commands}"
+            );
+        }
+
+        let _ = update(
+            &mut app,
+            Action::RawMode(yoctui_model::RawModeAction::FocusCategories),
+        );
+        app.raw_mode.category = None;
+        let unselected = rendered_text(&app, 80, 24);
+        assert!(!unselected.contains('▶'), "{unselected}");
+    }
+
+    #[test]
     fn raw_navigation_renders_responsively_with_exact_shell_help() {
         let mut app = App::new(16, 4096);
         let _ = update(&mut app, Action::Open(Screen::RawMode));
@@ -24956,7 +25157,7 @@ mod tests {
             let output = rendered_text(&app, width, height);
             assert!(output.contains("Raw Mode"), "{width}x{height}: {output}");
             assert!(
-                output.contains("Structured BitBake command workbench"),
+                output.contains("Categories") && output.contains("[FAVORITES] Favorites"),
                 "{width}x{height}: {output}"
             );
         }

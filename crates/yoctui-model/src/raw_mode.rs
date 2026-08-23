@@ -1109,6 +1109,20 @@ impl RawCatalog {
         self.categories.iter().find(|category| &category.id == id)
     }
 
+    /// Category order used by the Raw browser. Favorites is a pinned virtual
+    /// collection; every reference-derived category retains catalog order.
+    pub fn browser_categories(&self) -> Vec<&RawCategory> {
+        self.categories
+            .iter()
+            .filter(|category| category.kind == RawCategoryKind::Favorites)
+            .chain(
+                self.categories
+                    .iter()
+                    .filter(|category| category.kind != RawCategoryKind::Favorites),
+            )
+            .collect()
+    }
+
     pub fn command(&self, id: &RawCommandId) -> Option<&RawCommand> {
         self.commands.iter().find(|command| &command.id == id)
     }
@@ -1229,7 +1243,7 @@ impl RawModeState {
         let mut state = Self {
             catalog_version: catalog.version,
             category: catalog
-                .categories
+                .browser_categories()
                 .first()
                 .map(|category| category.id.clone()),
             command: None,
@@ -1478,7 +1492,7 @@ fn reconcile_raw_mode(state: &mut RawModeState, catalog: &RawCatalog) {
         .is_none_or(|category| catalog.category(category).is_none())
     {
         state.category = catalog
-            .categories
+            .browser_categories()
             .first()
             .map(|category| category.id.clone());
     }
@@ -1516,19 +1530,18 @@ fn shifted_index(current: usize, length: usize, delta: isize) -> usize {
 }
 
 fn select_raw_category(state: &mut RawModeState, catalog: &RawCatalog, delta: isize) {
+    let categories = catalog.browser_categories();
     let current = state
         .category
         .as_ref()
         .and_then(|selected| {
-            catalog
-                .categories
+            categories
                 .iter()
                 .position(|category| &category.id == selected)
         })
         .unwrap_or(0);
-    state.category = catalog
-        .categories
-        .get(shifted_index(current, catalog.categories.len(), delta))
+    state.category = categories
+        .get(shifted_index(current, categories.len(), delta))
         .map(|category| category.id.clone());
     state.command = None;
     reconcile_raw_command(state, catalog);
@@ -3268,6 +3281,37 @@ mod raw_mode_state_tests {
         assert!(state.command.is_none());
         assert_eq!(state.history_selection, 0);
         assert_eq!(state.favorite_selection, 0);
+    }
+
+    #[test]
+    fn raw_category_browser_pins_favorites_before_reference_order() {
+        let catalog = builtin_raw_catalog();
+        let categories = catalog.browser_categories();
+        assert_eq!(categories.len(), crate::RAW_BUILTIN_CATEGORY_COUNT);
+        assert_eq!(categories[0].kind, RawCategoryKind::Favorites);
+        assert_eq!(categories[0].label, "Favorites");
+        assert_eq!(categories[1].reference_heading, "1. Version and help");
+        assert_eq!(
+            categories.last().unwrap().reference_heading,
+            "One-screen emergency reference"
+        );
+
+        let mut state = RawModeState::new(catalog);
+        assert_eq!(state.category, Some(categories[0].id.clone()));
+        reduce_raw_mode(
+            &mut state,
+            catalog,
+            None,
+            RawModeAction::SelectCategory { delta: 1 },
+        );
+        assert_eq!(state.category, Some(categories[1].id.clone()));
+        reduce_raw_mode(
+            &mut state,
+            catalog,
+            None,
+            RawModeAction::SelectCategory { delta: isize::MAX },
+        );
+        assert_eq!(state.category, Some(categories.last().unwrap().id.clone()));
     }
 }
 

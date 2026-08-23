@@ -79,7 +79,15 @@ help, contextual footer, and responsive shell. Navigation remains inspectable
 when the daemon capability state is unknown, while the destination summary
 uses the exact `bitbake.raw.cli` requirement. Responsive TestBackend coverage,
 the reviewed target-design golden, and full model/app/UI suites cover the new
-route. `RAW-CATEGORY-UI-001` is active next.
+route. `RAW-CATEGORY-UI-001` is complete: the Raw reducer now projects a
+browser order with Favorites pinned before the unchanged reference-derived
+catalog order. The responsive Workspace renders a bounded, selection-following
+category viewport with explicit position and textual `FAVORITES`, `BITBAKE`,
+`REFERENCE`, `CONCEPT`, and `COMPANION` classifications; narrow terminals show
+one active browser column and medium/wide terminals preserve both column
+states. Keyboard aliases, no-color meaning, long labels, empty selection,
+first/last bounds, and resize/search identity preservation are covered.
+`RAW-COMMAND-UI-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
