@@ -5563,7 +5563,7 @@ notes = "Publish only current screenshots captured from the real Yoctui binary a
 id = "UI-REGRESSION-001"
 milestone = "M19"
 title = "Verify all existing functionality remains available"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 566
 required = true
 depends_on = ["VISUAL-TEST-003", "INPUT-TEST-002"]
@@ -5937,12 +5937,12 @@ notes = "Compatibility fixture and live evidence checks cover older, Wrynose 2.1
 id = "RAW-LIVE-001"
 milestone = "M20"
 title = "Validate representative Raw commands against supported BitBake"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 631
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-UI-001", "RAW-SECURITY-001", "RAW-COMPAT-001"]
 verify = ["./scripts/verify-live-raw-mode.sh", "./scripts/verify-raw-mode-evidence.sh"]
-notes = "Run representative read-only, build/task, cancellation, reconnect, and interactive PTY commands against current supported environments with exact capability/evidence identities."
+notes = "BLOCKED: required scripts verify-live-raw-mode.sh and verify-raw-mode-evidence.sh are absent from this checkout; live BitBake execution cannot be reproduced. Restore the harness on a supported host, then rerun both verification commands."
 
 [[task]]
 id = "RAW-DOC-001"

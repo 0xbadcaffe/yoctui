@@ -183,6 +183,10 @@ persistence effect. `RAW-SEARCH-001` is complete: bounded case-insensitive
 search matches category, command identity, labels, and descriptions while
 preserving exact selection and explicit no-match behavior. `RAW-MOUSE-001` is
 active next.
+`RAW-LIVE-001` is blocked: the required live harness scripts are absent from
+this checkout, so supported-environment execution and evidence cannot be
+reproduced. The exact missing scripts and rerun commands are recorded in the
+registry; `UI-REGRESSION-001` is active as the next independent task.
 `RAW-COMPAT-001` is complete: the older and current live fixture matrices,
 unknown-future evidence, replacement/stale projections, and zero-spawn denial
 checks pass. `RAW-LIVE-001` is active next.

@@ -2,26 +2,22 @@
 
 ## Task
 
-**ID:** RAW-LIVE-001
-**Title:** Validate representative Raw commands against supported BitBake
+**ID:** UI-REGRESSION-001
+**Title:** Verify all existing functionality remains available
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Run representative read-only, build/task, cancellation, reconnect, and
-interactive PTY commands against supported environments with exact capability
-and evidence identities.
+Prove every pre-existing workspace, daemon/session function, and
+capability-correlated route remains reachable after the UI changes.
 
 ## Dependencies
 
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
 - `RAW-RESPONSIVE-001` — DONE
-- `RAW-OUTPUT-UI-001` — DONE
-- `RAW-HISTORY-001` — DONE
-- `RAW-FAVORITE-UI-001` — DONE
-- `RAW-SECURITY-001` — DONE
-- `RAW-COMPAT-001` — DONE
+- `VISUAL-TEST-003` — DONE
+- `INPUT-TEST-002` — DONE
 
 ## Relevant files
 
@@ -37,16 +33,16 @@ and evidence identities.
 
 ## Definition of done
 
-- Representative commands run only under current capability authority.
-- Cancellation, reconnect, and PTY lifecycle retain request identity and
-  terminal output semantics.
-- Live evidence captures exact supported environment identities.
+- Existing workspace and daemon/session routes remain reachable.
+- Capability-correlated actions retain their typed gating and effects.
+- Regression tests cover utility coverage and compatibility invariants.
 
 ## Verification
 
 ```bash
-./scripts/verify-live-raw-mode.sh
-./scripts/verify-raw-mode-evidence.sh
+cargo test --workspace --all-features ui_regression
+./scripts/verify-utility-coverage.sh
+./scripts/verify-compatibility.sh
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
