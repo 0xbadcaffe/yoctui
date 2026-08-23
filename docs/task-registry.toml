@@ -5563,12 +5563,12 @@ notes = "Publish only current screenshots captured from the real Yoctui binary a
 id = "UI-REGRESSION-001"
 milestone = "M19"
 title = "Verify all existing functionality remains available"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 566
 required = true
 depends_on = ["VISUAL-TEST-003", "INPUT-TEST-002"]
 verify = ["cargo test --workspace --all-features ui_regression", "./scripts/verify-utility-coverage.sh", "./scripts/verify-compatibility.sh"]
-notes = "Prove every pre-existing workspace, daemon/session function, and capability-correlated route remains reachable after redesign."
+notes = "Workspace regression, utility coverage, and compatibility verification pass with all pre-existing typed routes reachable."
 
 [[task]]
 id = "UI-CLEANUP-001"

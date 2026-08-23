@@ -2,22 +2,25 @@
 
 ## Task
 
-**ID:** UI-REGRESSION-001
-**Title:** Verify all existing functionality remains available
-**Status:** IN_PROGRESS
+**ID:** RAW-LIVE-001
+**Title:** Validate representative Raw commands against supported BitBake
+**Status:** BLOCKED
 
 ## Objective
 
-Prove every pre-existing workspace, daemon/session function, and
-capability-correlated route remains reachable after the UI changes.
+Live validation is blocked because the required harness scripts are absent
+from this checkout.
 
 ## Dependencies
 
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
 - `RAW-RESPONSIVE-001` — DONE
-- `VISUAL-TEST-003` — DONE
-- `INPUT-TEST-002` — DONE
+- `RAW-OUTPUT-UI-001` — DONE
+- `RAW-HISTORY-001` — DONE
+- `RAW-FAVORITE-UI-001` — DONE
+- `RAW-SECURITY-001` — DONE
+- `RAW-COMPAT-001` — DONE
 
 ## Relevant files
 
@@ -33,16 +36,15 @@ capability-correlated route remains reachable after the UI changes.
 
 ## Definition of done
 
-- Existing workspace and daemon/session routes remain reachable.
-- Capability-correlated actions retain their typed gating and effects.
-- Regression tests cover utility coverage and compatibility invariants.
+- Restore `scripts/verify-live-raw-mode.sh` and
+  `scripts/verify-raw-mode-evidence.sh` on a supported host.
+- Rerun both live verification commands and capture evidence identities.
 
 ## Verification
 
 ```bash
-cargo test --workspace --all-features ui_regression
-./scripts/verify-utility-coverage.sh
-./scripts/verify-compatibility.sh
+./scripts/verify-live-raw-mode.sh
+./scripts/verify-raw-mode-evidence.sh
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

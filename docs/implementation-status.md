@@ -186,10 +186,12 @@ active next.
 `RAW-LIVE-001` is blocked: the required live harness scripts are absent from
 this checkout, so supported-environment execution and evidence cannot be
 reproduced. The exact missing scripts and rerun commands are recorded in the
-registry; `UI-REGRESSION-001` is active as the next independent task.
+registry; `UI-REGRESSION-001` was selected as the next independent task and is
+now complete: workspace regression, utility coverage, and compatibility checks
+all pass. Work is paused at the documented `RAW-LIVE-001` blocker.
 `RAW-COMPAT-001` is complete: the older and current live fixture matrices,
 unknown-future evidence, replacement/stale projections, and zero-spawn denial
-checks pass. `RAW-LIVE-001` is active next.
+checks pass. `RAW-LIVE-001` remains blocked pending the missing live harness.
 `RAW-RESPONSIVE-001` is complete: Raw browser, Favorites, execution, and
 below-minimum shells retain bounded selection and never panic across wide,
 medium, narrow, and too-small terminals. `RAW-A11Y-001` is complete: no-color
