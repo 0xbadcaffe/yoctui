@@ -1,4 +1,7 @@
-use crate::{CapabilityId, CapabilityState, DaemonCompatibilitySnapshot, Recipe, RecipeMetadata};
+use crate::{
+    CapabilityId, CapabilityState, DaemonCompatibilitySnapshot, PopupEditor, PopupEditorCommand,
+    Recipe, RecipeMetadata,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeSet,
@@ -26,6 +29,10 @@ pub const MAX_RAW_INTEGER_INPUT_BYTES: usize = 10;
 pub const MAX_RAW_PARAMETER_TEXT_BYTES: usize = 512;
 pub const MAX_RAW_MULTICONFIG_BYTES: usize = 128;
 pub const MAX_RAW_INTEGER: u32 = u32::MAX;
+pub const MAX_RAW_ADDITIONAL_INPUT_BYTES: usize = 12_288;
+pub const MAX_RAW_ADDITIONAL_ARGUMENTS: usize = 64;
+pub const MAX_RAW_ADDITIONAL_ARGUMENT_BYTES: usize = 512;
+pub const MAX_RAW_ADDITIONAL_AGGREGATE_BYTES: usize = 8_192;
 
 macro_rules! raw_id {
     ($name:ident, $field:literal) => {
@@ -384,6 +391,163 @@ pub enum RawSelectorError {
         command: RawCommandId,
         parameter: RawParameterId,
     },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub struct RawAdditionalArguments {
+    arguments: Vec<String>,
+}
+
+impl RawAdditionalArguments {
+    pub fn parse(input: &str) -> Result<Self, RawArgvError> {
+        tokenize_raw_additional_arguments(input).map(|arguments| Self { arguments })
+    }
+
+    pub fn as_slice(&self) -> &[String] {
+        &self.arguments
+    }
+
+    pub fn into_vec(self) -> Vec<String> {
+        self.arguments
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawArgvEditor {
+    pub editor: PopupEditor,
+    pub validated: Option<RawAdditionalArguments>,
+    pub validation_error: Option<RawArgvError>,
+}
+
+impl RawArgvEditor {
+    pub fn new(input: impl Into<String>) -> Result<Self, RawArgvError> {
+        let input = input.into();
+        validate_raw_argv_input_bound(&input)?;
+        Ok(Self {
+            editor: PopupEditor::new(input),
+            validated: None,
+            validation_error: None,
+        })
+    }
+
+    pub fn replace_input(&mut self, input: impl Into<String>) -> Result<(), RawArgvError> {
+        let input = input.into();
+        validate_raw_argv_input_bound(&input)?;
+        self.editor = PopupEditor::new(input);
+        self.validated = None;
+        self.validation_error = None;
+        Ok(())
+    }
+
+    pub fn apply(&mut self, command: PopupEditorCommand) -> Result<(), RawArgvError> {
+        let previous = self.editor.clone();
+        let invalidates = match command {
+            PopupEditorCommand::ToggleInsert => {
+                self.editor.editing = !self.editor.editing;
+                false
+            }
+            PopupEditorCommand::Insert(character) if self.editor.editing => {
+                self.editor.insert(&character.to_string());
+                true
+            }
+            PopupEditorCommand::Insert(_) => false,
+            PopupEditorCommand::Backspace if self.editor.editing => {
+                self.editor.backspace();
+                true
+            }
+            PopupEditorCommand::Backspace => false,
+            PopupEditorCommand::Left => {
+                self.editor.left();
+                false
+            }
+            PopupEditorCommand::Right => {
+                self.editor.right();
+                false
+            }
+            PopupEditorCommand::Up => {
+                self.editor.up();
+                false
+            }
+            PopupEditorCommand::Down => {
+                self.editor.down();
+                false
+            }
+            PopupEditorCommand::Home => {
+                self.editor.home();
+                false
+            }
+            PopupEditorCommand::End => {
+                self.editor.end();
+                false
+            }
+            PopupEditorCommand::SelectValue => {
+                self.editor.select_range(0, self.editor.text.len());
+                false
+            }
+            PopupEditorCommand::Copy => {
+                self.editor.copy_selection_or_line();
+                false
+            }
+            PopupEditorCommand::Paste if self.editor.editing => {
+                self.editor.paste();
+                true
+            }
+            PopupEditorCommand::Paste => false,
+        };
+        if let Err(error) = validate_raw_argv_input_bound(&self.editor.text) {
+            self.editor = previous;
+            self.validation_error = Some(error.clone());
+            return Err(error);
+        }
+        if invalidates {
+            self.validated = None;
+            self.validation_error = None;
+        }
+        Ok(())
+    }
+
+    pub fn validate(&mut self) -> Result<&RawAdditionalArguments, RawArgvError> {
+        match RawAdditionalArguments::parse(&self.editor.text) {
+            Ok(arguments) => {
+                self.validated = Some(arguments);
+                self.validation_error = None;
+                Ok(self.validated.as_ref().expect("just installed"))
+            }
+            Err(error) => {
+                self.validated = None;
+                self.validation_error = Some(error.clone());
+                Err(error)
+            }
+        }
+    }
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum RawArgvError {
+    #[error("Raw additional-argument input is {bytes} bytes; maximum is {maximum}")]
+    InputTooLong { bytes: usize, maximum: usize },
+    #[error("Raw additional arguments contain a control character at byte {byte}")]
+    ControlCharacter { byte: usize },
+    #[error("Raw additional arguments end with an escape opened at byte {byte}")]
+    UnterminatedEscape { byte: usize },
+    #[error("Raw additional arguments have an unterminated {quote} quote opened at byte {byte}")]
+    UnterminatedQuote { quote: char, byte: usize },
+    #[error("Raw additional arguments escape a non-ordinary character at byte {byte}")]
+    InvalidEscape { byte: usize, character: char },
+    #[error("Raw additional argument {argument} contains forbidden operator {operator:?}")]
+    ForbiddenOperator { argument: usize, operator: String },
+    #[error("Raw additional argument {argument} has an empty option name")]
+    EmptyOptionName { argument: usize },
+    #[error("Raw additional arguments contain {count} elements; maximum is {maximum}")]
+    TooManyArguments { count: usize, maximum: usize },
+    #[error("Raw additional argument {argument} is {bytes} bytes; maximum is {maximum}")]
+    ArgumentTooLong {
+        argument: usize,
+        bytes: usize,
+        maximum: usize,
+    },
+    #[error("Raw additional arguments contain {bytes} aggregate bytes; maximum is {maximum}")]
+    AggregateTooLong { bytes: usize, maximum: usize },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -1302,6 +1466,144 @@ fn template_references_parameter(
     })
 }
 
+fn tokenize_raw_additional_arguments(input: &str) -> Result<Vec<String>, RawArgvError> {
+    validate_raw_argv_input_bound(input)?;
+    if let Some((byte, _)) = input
+        .char_indices()
+        .find(|(_, character)| character.is_control())
+    {
+        return Err(RawArgvError::ControlCharacter { byte });
+    }
+
+    let mut arguments = Vec::new();
+    let mut current = String::new();
+    let mut token_started = false;
+    let mut quote: Option<(char, usize)> = None;
+    let mut escape = None;
+    for (byte, character) in input.char_indices() {
+        if let Some(escape_byte) = escape.take() {
+            if !raw_ordinary_escaped_character(character) {
+                return Err(RawArgvError::InvalidEscape {
+                    byte: escape_byte,
+                    character,
+                });
+            }
+            current.push(character);
+            token_started = true;
+            validate_raw_argv_element_bound(arguments.len(), &current)?;
+            continue;
+        }
+        if character == '\\' {
+            escape = Some(byte);
+            token_started = true;
+            continue;
+        }
+        if matches!(character, '\'' | '"') {
+            match quote {
+                Some((active, _)) if active == character => quote = None,
+                None => quote = Some((character, byte)),
+                Some(_) => current.push(character),
+            }
+            token_started = true;
+            continue;
+        }
+        if character.is_whitespace() && quote.is_none() {
+            if token_started {
+                push_raw_argv_argument(&mut arguments, std::mem::take(&mut current))?;
+                token_started = false;
+            }
+            continue;
+        }
+        current.push(character);
+        token_started = true;
+        validate_raw_argv_element_bound(arguments.len(), &current)?;
+    }
+
+    if let Some(byte) = escape {
+        return Err(RawArgvError::UnterminatedEscape { byte });
+    }
+    if let Some((quote, byte)) = quote {
+        return Err(RawArgvError::UnterminatedQuote { quote, byte });
+    }
+    if token_started {
+        push_raw_argv_argument(&mut arguments, current)?;
+    }
+    Ok(arguments)
+}
+
+fn validate_raw_argv_input_bound(input: &str) -> Result<(), RawArgvError> {
+    if input.len() > MAX_RAW_ADDITIONAL_INPUT_BYTES {
+        Err(RawArgvError::InputTooLong {
+            bytes: input.len(),
+            maximum: MAX_RAW_ADDITIONAL_INPUT_BYTES,
+        })
+    } else {
+        Ok(())
+    }
+}
+
+fn validate_raw_argv_element_bound(argument: usize, value: &str) -> Result<(), RawArgvError> {
+    if value.len() > MAX_RAW_ADDITIONAL_ARGUMENT_BYTES {
+        Err(RawArgvError::ArgumentTooLong {
+            argument,
+            bytes: value.len(),
+            maximum: MAX_RAW_ADDITIONAL_ARGUMENT_BYTES,
+        })
+    } else {
+        Ok(())
+    }
+}
+
+fn push_raw_argv_argument(
+    arguments: &mut Vec<String>,
+    argument: String,
+) -> Result<(), RawArgvError> {
+    let index = arguments.len();
+    validate_raw_argv_element_bound(index, &argument)?;
+    if index == MAX_RAW_ADDITIONAL_ARGUMENTS {
+        return Err(RawArgvError::TooManyArguments {
+            count: index + 1,
+            maximum: MAX_RAW_ADDITIONAL_ARGUMENTS,
+        });
+    }
+    if empty_raw_option_name(&argument) {
+        return Err(RawArgvError::EmptyOptionName { argument: index });
+    }
+    if let Some(operator) = forbidden_raw_argv_operator(&argument) {
+        return Err(RawArgvError::ForbiddenOperator {
+            argument: index,
+            operator: operator.into(),
+        });
+    }
+    let aggregate = arguments
+        .iter()
+        .map(String::len)
+        .sum::<usize>()
+        .saturating_add(argument.len());
+    if aggregate > MAX_RAW_ADDITIONAL_AGGREGATE_BYTES {
+        return Err(RawArgvError::AggregateTooLong {
+            bytes: aggregate,
+            maximum: MAX_RAW_ADDITIONAL_AGGREGATE_BYTES,
+        });
+    }
+    arguments.push(argument);
+    Ok(())
+}
+
+fn raw_ordinary_escaped_character(character: char) -> bool {
+    !character.is_control() && !matches!(character, '|' | '<' | '>' | ';' | '`')
+}
+
+fn empty_raw_option_name(argument: &str) -> bool {
+    argument.starts_with("-=") || argument.starts_with("--=")
+}
+
+fn forbidden_raw_argv_operator(argument: &str) -> Option<&'static str> {
+    ["$(", "&&", "||", ">>", "|", ">", "<", ";", "`"]
+        .into_iter()
+        .find(|operator| argument.contains(operator))
+}
+
 fn valid_raw_identifier(value: &str, maximum: usize) -> bool {
     !value.is_empty()
         && value.len() <= maximum
@@ -1394,6 +1696,166 @@ fn contains_shell_syntax(value: &str) -> bool {
     value
         .chars()
         .any(|character| matches!(character, '|' | '&' | ';' | '<' | '>' | '`' | '$'))
+}
+
+#[cfg(test)]
+mod raw_argv_tests {
+    use super::*;
+
+    fn parse(input: &str) -> Result<Vec<String>, RawArgvError> {
+        RawAdditionalArguments::parse(input).map(RawAdditionalArguments::into_vec)
+    }
+
+    #[test]
+    fn raw_argv_tokenizes_quotes_escapes_empty_elements_and_unicode_as_native_arguments() {
+        assert_eq!(
+            parse("--flag plain 'single value' \"double value\" escaped\\ space '' \"\" café")
+                .unwrap(),
+            [
+                "--flag",
+                "plain",
+                "single value",
+                "double value",
+                "escaped space",
+                "",
+                "",
+                "café",
+            ]
+        );
+        assert_eq!(parse("").unwrap(), Vec::<String>::new());
+        assert_eq!(
+            parse(r#"a\b \"quoted\" slash\\value"#).unwrap(),
+            ["ab", "\"quoted\"", "slash\\value",]
+        );
+    }
+
+    #[test]
+    fn raw_argv_rejects_every_documented_operator_even_when_quoted_or_assembled() {
+        for (input, operator) in [
+            ("'left|right'", "|"),
+            ("left>right", ">"),
+            ("left>>right", ">>"),
+            ("left<right", "<"),
+            ("left&&right", "&&"),
+            ("left||right", "||"),
+            ("left;right", ";"),
+            ("'$('date')'", "$("),
+            ("`date`", "`"),
+            ("'$''('", "$("),
+        ] {
+            assert_eq!(
+                parse(input),
+                Err(RawArgvError::ForbiddenOperator {
+                    argument: 0,
+                    operator: operator.into(),
+                }),
+                "{input}"
+            );
+        }
+        assert!(matches!(
+            parse("left\\|right"),
+            Err(RawArgvError::InvalidEscape { character: '|', .. })
+        ));
+        assert_eq!(
+            parse("literal&value $HOME (literal)").unwrap(),
+            ["literal&value", "$HOME", "(literal)"]
+        );
+    }
+
+    #[test]
+    fn raw_argv_reports_controls_unterminated_grammar_and_empty_option_names() {
+        for input in ["line\nbreak", "tab\tvalue", "nul\0value"] {
+            assert!(matches!(
+                parse(input),
+                Err(RawArgvError::ControlCharacter { .. })
+            ));
+        }
+        assert!(matches!(
+            parse("'open"),
+            Err(RawArgvError::UnterminatedQuote { quote: '\'', .. })
+        ));
+        assert!(matches!(
+            parse("open\\"),
+            Err(RawArgvError::UnterminatedEscape { .. })
+        ));
+        for input in ["--=value", "-=value"] {
+            assert_eq!(
+                parse(input),
+                Err(RawArgvError::EmptyOptionName { argument: 0 })
+            );
+        }
+        assert_eq!(parse("-- -").unwrap(), ["--", "-"]);
+    }
+
+    #[test]
+    fn raw_argv_enforces_input_element_count_and_aggregate_byte_boundaries() {
+        assert!(parse(&" ".repeat(MAX_RAW_ADDITIONAL_INPUT_BYTES)).is_ok());
+        assert_eq!(
+            parse(&" ".repeat(MAX_RAW_ADDITIONAL_INPUT_BYTES + 1)),
+            Err(RawArgvError::InputTooLong {
+                bytes: MAX_RAW_ADDITIONAL_INPUT_BYTES + 1,
+                maximum: MAX_RAW_ADDITIONAL_INPUT_BYTES,
+            })
+        );
+
+        assert!(parse(&"a".repeat(MAX_RAW_ADDITIONAL_ARGUMENT_BYTES)).is_ok());
+        assert!(matches!(
+            parse(&"a".repeat(MAX_RAW_ADDITIONAL_ARGUMENT_BYTES + 1)),
+            Err(RawArgvError::ArgumentTooLong { .. })
+        ));
+        let unicode = "é".repeat(MAX_RAW_ADDITIONAL_ARGUMENT_BYTES / 2);
+        assert_eq!(unicode.len(), MAX_RAW_ADDITIONAL_ARGUMENT_BYTES);
+        assert!(parse(&unicode).is_ok());
+        assert!(matches!(
+            parse(&(unicode + "é")),
+            Err(RawArgvError::ArgumentTooLong { .. })
+        ));
+
+        let maximum_count = std::iter::repeat_n("x", MAX_RAW_ADDITIONAL_ARGUMENTS)
+            .collect::<Vec<_>>()
+            .join(" ");
+        assert_eq!(
+            parse(&maximum_count).unwrap().len(),
+            MAX_RAW_ADDITIONAL_ARGUMENTS
+        );
+        assert!(matches!(
+            parse(&(maximum_count + " x")),
+            Err(RawArgvError::TooManyArguments { .. })
+        ));
+
+        let aggregate = std::iter::repeat_n(
+            "a".repeat(MAX_RAW_ADDITIONAL_ARGUMENT_BYTES),
+            MAX_RAW_ADDITIONAL_AGGREGATE_BYTES / MAX_RAW_ADDITIONAL_ARGUMENT_BYTES,
+        )
+        .collect::<Vec<_>>()
+        .join(" ");
+        assert!(parse(&aggregate).is_ok());
+        assert!(matches!(
+            parse(&(aggregate + " x")),
+            Err(RawArgvError::AggregateTooLong { .. })
+        ));
+    }
+
+    #[test]
+    fn raw_argv_editor_invalidates_stale_validation_and_replaces_failures() {
+        let mut editor = RawArgvEditor::new("--flag value").unwrap();
+        assert_eq!(editor.validate().unwrap().as_slice(), ["--flag", "value"]);
+        editor.replace_input("'unterminated").unwrap();
+        assert!(editor.validate().is_err());
+        assert!(editor.validated.is_none());
+        assert!(editor.validation_error.is_some());
+
+        editor.replace_input("--next 'two words'").unwrap();
+        assert!(editor.validation_error.is_none());
+        assert_eq!(
+            editor.validate().unwrap().as_slice(),
+            ["--next", "two words"]
+        );
+
+        editor.apply(PopupEditorCommand::ToggleInsert).unwrap();
+        editor.apply(PopupEditorCommand::Insert('x')).unwrap();
+        assert!(editor.validated.is_none());
+    }
 }
 
 #[cfg(test)]

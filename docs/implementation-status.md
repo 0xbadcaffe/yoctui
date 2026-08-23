@@ -52,7 +52,12 @@ correlated to the exact selected recipe metadata, and configured
 multiconfigurations come from the effective workspace value. Unavailable and
 authoritative-empty inventories remain distinct, replacement is immediate,
 and manual input continues through the same typed parameter validator.
-`RAW-ARG-001` is active next.
+`RAW-ARG-001` is complete: the shared popup editor now feeds a typed no-shell
+tokenizer with explicit input, count, element, and aggregate byte ceilings.
+It preserves quoted grouping and empty arguments, applies the documented
+ordinary-character escape grammar, rejects every prohibited operator even
+when assembled across quotes/escapes, and clears stale validated argv on edits
+or replacement. `RAW-PREVIEW-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

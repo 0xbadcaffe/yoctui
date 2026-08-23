@@ -2,50 +2,52 @@
 
 ## Task
 
-**ID:** RAW-ARG-001
-**Title:** Implement bounded expert argv editor
+**ID:** RAW-PREVIEW-001
+**Title:** Implement exact executable and indexed argv preview
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement the Raw form's bounded `Additional arguments` editor and tokenizer
-so quoted user intent becomes native argv elements without invoking or
-emulating a shell.
+Build the immutable Raw execution preview from one validated catalog template,
+typed parameter values, validated additional argv, and the exact current
+environment/capability authority.
 
 ## Dependencies
 
-- `RAW-PARAM-001` — DONE
-- `UX-POPUP-EDITOR-005` — DONE
+- `RAW-ARG-001` — DONE
+- `RAW-CAP-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
-- `crates/yoctui-app/src/lib.rs`
+- `crates/yoctui-ui/src/lib.rs`
+- `docs/ui-spec.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- Unquoted, single-quoted, and double-quoted input produces deterministic
-  native argv elements without retaining grouping quotes.
-- Backslash escapes only the next ordinary character under the documented
-  grammar; it performs no expansion or substitution.
-- Unterminated quotes/escapes, controls, empty option names, excess argument
-  count/element/aggregate bytes, and documented shell operators are rejected
-  with typed validation errors.
-- Empty input is a valid empty argv suffix while quoted empty arguments remain
-  explicit native empty elements.
-- App mapping uses the typed model editor/tokenizer and never constructs a
-  shell command string.
-- Model and app tests cover normal quoting/escaping, exact boundaries, empty
-  arguments, Unicode, every rejected operator, and failure/replacement paths.
+- The preview reconstructs one executable and each argv element independently
+  from the catalog template, typed values, and validated additional arguments.
+- Required, optional, joined, composed, and explicit empty template arguments
+  retain exact native argv semantics and reject missing, extra, or mismatched
+  parameter values with typed errors.
+- Preview rows are indexed and retain executable identity, command/catalog
+  revision, capability generation, environment/build-directory identity,
+  interaction mode, safety class, and exact limitations.
+- A stale or unavailable capability authority cannot produce a preview.
+- No model or widget API exposes a joined command string as execution
+  authority.
+- Model and TestBackend UI tests cover representative templates, optional and
+  empty values, Unicode, additional argv, stale authority, indexed rendering,
+  and narrow-terminal degradation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_argv
-cargo test -p yoctui-app raw_argv
-cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings
+cargo test -p yoctui-model raw_preview
+cargo test -p yoctui-ui raw_preview
+cargo clippy -p yoctui-model -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

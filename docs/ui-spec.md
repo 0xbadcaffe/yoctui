@@ -4139,8 +4139,12 @@ validation, preview action, and close hint.
 Additional arguments are tokenized into native argv without shell evaluation.
 Single and double quotes may group characters and are removed by the tokenizer;
 backslash may escape only the next ordinary character under the documented
-tokenizer grammar. Unterminated quotes, NUL/control bytes, an empty option name,
-excess argument count/length/aggregate bytes, and the shell operators `|`,
+tokenizer grammar. The editor retains at most 12,288 input bytes and validation
+accepts at most 64 arguments, 512 bytes per argument, and 8,192 aggregate
+argument bytes. A backslash cannot make a control character or forbidden
+operator character safe, and the reconstructed argument is checked again.
+Unterminated quotes, NUL/control bytes, an empty option name, excess argument
+count/length/aggregate bytes, and the shell operators `|`,
 `>`, `>>`, `<`, `&&`, `||`, `;`, `$()`, and backticks are rejected. Operator
 characters inside a literal parameter are accepted only when that parameter's
 typed policy explicitly permits them and they still remain one argv element;

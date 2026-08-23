@@ -3617,6 +3617,30 @@ pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
     };
     Some(Action::EditActivePopup(command))
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RawArgvEditorAction {
+    Edit(PopupEditorCommand),
+    Validate,
+}
+
+pub fn raw_argv_editor_action(editing: bool, key: Input) -> Option<RawArgvEditorAction> {
+    if key == Input::Enter {
+        return Some(RawArgvEditorAction::Validate);
+    }
+    let Action::EditActivePopup(command) = popup_editor_action(editing, key)? else {
+        return None;
+    };
+    Some(RawArgvEditorAction::Edit(command))
+}
+
+pub fn validate_raw_argv_editor(
+    editor: &mut yoctui_model::RawArgvEditor,
+) -> Result<Vec<String>, yoctui_model::RawArgvError> {
+    editor
+        .validate()
+        .map(|arguments| arguments.as_slice().to_vec())
+}
 pub fn key_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('b') => None,
@@ -10619,5 +10643,51 @@ mod tests {
             loading.inventory,
             yoctui_model::RawSelectorInventory::Unavailable { .. }
         ));
+    }
+
+    #[test]
+    fn raw_argv_app_mapping_uses_shared_editor_commands_and_explicit_validation() {
+        assert_eq!(
+            raw_argv_editor_action(false, Input::Char('i')),
+            Some(RawArgvEditorAction::Edit(
+                yoctui_model::PopupEditorCommand::ToggleInsert
+            ))
+        );
+        assert_eq!(
+            raw_argv_editor_action(true, Input::Char('x')),
+            Some(RawArgvEditorAction::Edit(
+                yoctui_model::PopupEditorCommand::Insert('x')
+            ))
+        );
+        assert_eq!(
+            raw_argv_editor_action(true, Input::Esc),
+            Some(RawArgvEditorAction::Edit(
+                yoctui_model::PopupEditorCommand::ToggleInsert
+            ))
+        );
+        assert_eq!(
+            raw_argv_editor_action(false, Input::Enter),
+            Some(RawArgvEditorAction::Validate)
+        );
+        assert_eq!(raw_argv_editor_action(false, Input::Char('x')), None);
+    }
+
+    #[test]
+    fn raw_argv_app_validation_returns_native_elements_and_replaces_stale_results() {
+        let mut editor = yoctui_model::RawArgvEditor::new("--flag 'two words'").unwrap();
+        assert_eq!(
+            validate_raw_argv_editor(&mut editor).unwrap(),
+            ["--flag", "two words"]
+        );
+
+        editor.replace_input("left|right").unwrap();
+        assert!(validate_raw_argv_editor(&mut editor).is_err());
+        assert!(editor.validated.is_none());
+
+        editor.replace_input("--next escaped\\ value").unwrap();
+        assert_eq!(
+            validate_raw_argv_editor(&mut editor).unwrap(),
+            ["--next", "escaped value"]
+        );
     }
 }
