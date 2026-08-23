@@ -457,11 +457,30 @@ impl DaemonCompatibilityRuntime {
 fn authoritative_value(output: &str) -> Option<String> {
     output
         .lines()
-        .map(str::trim)
+        .map(strip_terminal_escapes)
+        .map(|line| line.trim().trim_matches('"').trim_matches('\'').to_owned())
         .filter(|line| !line.is_empty())
         .filter(|line| !line.starts_with("NOTE:") && !line.starts_with("WARNING:"))
         .next_back()
-        .map(str::to_owned)
+}
+
+fn strip_terminal_escapes(value: &str) -> String {
+    let mut result = String::with_capacity(value.len());
+    let mut escape = false;
+    for character in value.chars() {
+        if escape {
+            if character.is_ascii_alphabetic() {
+                escape = false;
+            }
+            continue;
+        }
+        if character == '\u{1b}' {
+            escape = true;
+        } else if !character.is_control() {
+            result.push(character);
+        }
+    }
+    result
 }
 
 fn canonical_initialized_build(value: &str) -> Result<PathBuf, DaemonCompatibilityError> {
@@ -753,6 +772,10 @@ mod tests {
     fn authoritative_value_ignores_bitbake_diagnostics() {
         assert_eq!(
             authoritative_value("NOTE: reconnecting\npoky\n"),
+            Some("poky".into())
+        );
+        assert_eq!(
+            authoritative_value("\u{1b}[32mpoky\u{1b}[0m\n"),
             Some("poky".into())
         );
         assert_eq!(authoritative_value("NOTE: reconnecting\n"), None);
