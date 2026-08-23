@@ -8,8 +8,8 @@
 
 ## Objective
 
-Live validation is blocked because the required harness scripts are absent
-from this checkout.
+Live validation harnesses are present, but execution still requires a
+supported build directory and unprivileged user namespaces.
 
 ## Dependencies
 
@@ -36,9 +36,10 @@ from this checkout.
 
 ## Definition of done
 
-- Restore `scripts/verify-live-raw-mode.sh` and
-  `scripts/verify-raw-mode-evidence.sh` on a supported host.
-- Rerun both live verification commands and capture evidence identities.
+- Run `unshare -Ur true` without sudo and make sure it succeeds.
+- Run `YOCTUI_LIVE_RAW=1 YOCTUI_LIVE_BUILD_DIR=/path/to/build
+  ./scripts/verify-live-raw-mode.sh`, then
+  `./scripts/verify-raw-mode-evidence.sh`.
 
 ## Verification
 

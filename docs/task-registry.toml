@@ -5942,7 +5942,7 @@ priority = 631
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-UI-001", "RAW-SECURITY-001", "RAW-COMPAT-001"]
 verify = ["./scripts/verify-live-raw-mode.sh", "./scripts/verify-raw-mode-evidence.sh"]
-notes = "BLOCKED: required scripts verify-live-raw-mode.sh and verify-raw-mode-evidence.sh are absent from this checkout; live BitBake execution cannot be reproduced. Restore the harness on a supported host, then rerun both verification commands."
+notes = "Harnesses are now present, but live execution remains blocked until a supported build directory is supplied and unprivileged namespace creation works without sudo. Run YOCTUI_LIVE_RAW=1 YOCTUI_LIVE_BUILD_DIR=/path/to/build ./scripts/verify-live-raw-mode.sh, then verify-raw-mode-evidence.sh."
 
 [[task]]
 id = "RAW-DOC-001"
