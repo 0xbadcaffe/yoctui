@@ -13779,6 +13779,85 @@ fn indexed_arguments(arguments: &[String]) -> String {
         .join("\n")
 }
 
+pub fn render_raw_execution_preview(
+    frame: &mut Frame,
+    preview: &yoctui_model::RawExecutionPreview,
+    area: Rect,
+) {
+    if area.is_empty() {
+        return;
+    }
+    let block = Block::default()
+        .title("Run BitBake Command")
+        .borders(Borders::ALL);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+
+    let implementations = if preview.implementations.is_empty() {
+        "none".into()
+    } else {
+        preview
+            .implementations
+            .iter()
+            .map(|(capability, implementation)| format!("{}={implementation}", capability.as_str()))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let mut lines = vec![
+        Line::from(format!("Command: {}", preview.command)),
+        Line::from(format!(
+            "Catalog: {}  Capability generation: {}",
+            preview.catalog_version, preview.capability_generation
+        )),
+        Line::from(format!(
+            "Build directory: {}",
+            preview.build_directory.display()
+        )),
+        Line::from(format!(
+            "Interaction: {:?}  Safety: {:?}",
+            preview.interaction, preview.safety
+        )),
+        Line::from(format!("Implementations: {implementations}")),
+    ];
+    if preview.capability_issues.is_empty() {
+        lines.push(Line::from("Capability limitations: none"));
+    } else {
+        lines.push(Line::from("Capability limitations:"));
+        for issue in &preview.capability_issues {
+            lines.push(Line::from(format!("- {}", issue.reason)));
+            lines.extend(
+                issue
+                    .limitations
+                    .iter()
+                    .map(|limitation| Line::from(format!("  - {limitation}"))),
+            );
+        }
+    }
+    lines.push(Line::from(""));
+    lines.push(Line::from("Exact indexed native argv:"));
+    lines.extend(preview.indexed_arguments.iter().map(|argument| {
+        let source = match argument.source {
+            yoctui_model::RawPreviewArgumentSource::Executable => "executable".into(),
+            yoctui_model::RawPreviewArgumentSource::Template { index } => {
+                format!("template {index}")
+            }
+            yoctui_model::RawPreviewArgumentSource::Additional { index } => {
+                format!("additional {index}")
+            }
+        };
+        let value = if argument.value.is_empty() {
+            "EMPTY".into()
+        } else {
+            argument.value.clone()
+        };
+        Line::from(format!("[{}] {value}  ({source})", argument.index))
+    }));
+    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
+}
+
 fn maintenance_dialog(frame: &mut Frame, app: &App, dialog: &MaintenanceDialog, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let (title, body, style) = match dialog {
@@ -24744,5 +24823,107 @@ mod tests {
                 "{width}: {output}"
             );
         }
+    }
+
+    fn raw_preview_fixture() -> yoctui_model::RawExecutionPreview {
+        yoctui_model::RawExecutionPreview {
+            catalog_version: 7,
+            command: yoctui_model::RawCommandId::new("preview.run").unwrap(),
+            executable: yoctui_model::RawExecutable::BitBake,
+            arguments: vec![
+                "-c".into(),
+                "do_compile".into(),
+                "".into(),
+                "café value".into(),
+            ],
+            indexed_arguments: vec![
+                yoctui_model::RawPreviewArgument {
+                    index: 0,
+                    value: "bitbake".into(),
+                    source: yoctui_model::RawPreviewArgumentSource::Executable,
+                },
+                yoctui_model::RawPreviewArgument {
+                    index: 1,
+                    value: "-c".into(),
+                    source: yoctui_model::RawPreviewArgumentSource::Template { index: 0 },
+                },
+                yoctui_model::RawPreviewArgument {
+                    index: 2,
+                    value: "do_compile".into(),
+                    source: yoctui_model::RawPreviewArgumentSource::Template { index: 1 },
+                },
+                yoctui_model::RawPreviewArgument {
+                    index: 3,
+                    value: "".into(),
+                    source: yoctui_model::RawPreviewArgumentSource::Template { index: 2 },
+                },
+                yoctui_model::RawPreviewArgument {
+                    index: 4,
+                    value: "café value".into(),
+                    source: yoctui_model::RawPreviewArgumentSource::Additional { index: 0 },
+                },
+            ],
+            capability_generation: 9,
+            environment: yoctui_model::YoctoEnvironmentIdentity::default(),
+            build_directory: "/work/build".into(),
+            implementations: vec![(
+                yoctui_model::CapabilityId::BitBakeRawCli,
+                "bitbake.raw.argv".into(),
+            )],
+            capability_issues: vec![yoctui_model::RawCapabilityIssue {
+                capability: Some(yoctui_model::CapabilityId::BitBakeRawCli),
+                reason: "Direct probe is limited.".into(),
+                limitations: vec!["Exact fixture limitation.".into()],
+            }],
+            interaction: yoctui_model::RawInteractionMode::NoninteractiveJob,
+            safety: yoctui_model::RawSafetyClass::Build,
+            limitations: vec!["Exact fixture limitation.".into()],
+        }
+    }
+
+    fn rendered_raw_preview(width: u16, height: u16) -> String {
+        let preview = raw_preview_fixture();
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal
+            .draw(|frame| render_raw_execution_preview(frame, &preview, frame.area()))
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect()
+    }
+
+    #[test]
+    fn raw_preview_renders_exact_indexed_authority_without_a_command_string() {
+        let output = rendered_raw_preview(100, 24);
+        for expected in [
+            "Run BitBake Command",
+            "Command: preview.run",
+            "Catalog: 7",
+            "Capability generation: 9",
+            "Build directory: /work/build",
+            "bitbake.raw.cli=bitbake.raw.argv",
+            "Exact fixture limitation.",
+            "Exact indexed native argv:",
+            "[0] bitbake",
+            "[2] do_compile",
+            "[3] EMPTY",
+            "[4] café value",
+        ] {
+            assert!(output.contains(expected), "missing {expected:?}: {output}");
+        }
+        assert!(!output.contains("bitbake -c do_compile"), "{output}");
+    }
+
+    #[test]
+    fn raw_preview_degrades_safely_at_narrow_and_tiny_sizes() {
+        let narrow = rendered_raw_preview(80, 24);
+        assert!(narrow.contains("Run BitBake Command"), "{narrow}");
+        assert!(narrow.contains("[4] café value"), "{narrow}");
+        let tiny = rendered_raw_preview(12, 3);
+        assert!(tiny.contains("Run Bit"), "{tiny}");
     }
 }

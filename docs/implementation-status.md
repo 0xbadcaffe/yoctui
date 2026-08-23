@@ -57,7 +57,15 @@ tokenizer with explicit input, count, element, and aggregate byte ceilings.
 It preserves quoted grouping and empty arguments, applies the documented
 ordinary-character escape grammar, rejects every prohibited operator even
 when assembled across quotes/escapes, and clears stale validated argv on edits
-or replacement. `RAW-PREVIEW-001` is active next.
+or replacement. `RAW-PREVIEW-001` is complete: the normalized catalog now
+reconstructs each literal, required/optional parameter, joined/composed token,
+explicit empty, and additional argument independently. Preview creation binds
+the exact catalog version, daemon capability generation, authoritative build
+directory, selected implementations, interaction/safety classes, and
+limitation evidence; missing, stale, unavailable, or mismatched authority
+fails closed. The TestBackend preview renders indexed native argv without a
+joined command authority and degrades safely through 80x24 and tiny areas.
+`RAW-MODEL-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

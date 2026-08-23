@@ -4,8 +4,8 @@ use crate::{
 };
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::BTreeSet,
-    path::{Component, PathBuf},
+    collections::{BTreeMap, BTreeSet},
+    path::{Component, Path, PathBuf},
 };
 use thiserror::Error;
 
@@ -33,6 +33,8 @@ pub const MAX_RAW_ADDITIONAL_INPUT_BYTES: usize = 12_288;
 pub const MAX_RAW_ADDITIONAL_ARGUMENTS: usize = 64;
 pub const MAX_RAW_ADDITIONAL_ARGUMENT_BYTES: usize = 512;
 pub const MAX_RAW_ADDITIONAL_AGGREGATE_BYTES: usize = 8_192;
+pub const MAX_RAW_PREVIEW_ARGUMENTS: usize = 128;
+pub const MAX_RAW_PREVIEW_ARGUMENT_BYTES: usize = 8_192;
 
 macro_rules! raw_id {
     ($name:ident, $field:literal) => {
@@ -407,8 +409,22 @@ impl RawAdditionalArguments {
         &self.arguments
     }
 
+    pub fn from_vec(arguments: Vec<String>) -> Result<Self, RawArgvError> {
+        let mut validated = Vec::with_capacity(arguments.len());
+        for argument in arguments {
+            push_raw_argv_argument(&mut validated, argument)?;
+        }
+        Ok(Self {
+            arguments: validated,
+        })
+    }
+
     pub fn into_vec(self) -> Vec<String> {
         self.arguments
+    }
+
+    fn validate(&self) -> Result<(), RawArgvError> {
+        Self::from_vec(self.arguments.clone()).map(|_| ())
     }
 }
 
@@ -548,6 +564,93 @@ pub enum RawArgvError {
     },
     #[error("Raw additional arguments contain {bytes} aggregate bytes; maximum is {maximum}")]
     AggregateTooLong { bytes: usize, maximum: usize },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawPreviewRequest {
+    pub catalog_version: u16,
+    pub command: RawCommandId,
+    pub parameters: BTreeMap<RawParameterId, RawParameterValue>,
+    pub additional_arguments: RawAdditionalArguments,
+    pub capability_generation: u64,
+    pub build_directory: PathBuf,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "source", rename_all = "snake_case")]
+pub enum RawPreviewArgumentSource {
+    Executable,
+    Template { index: usize },
+    Additional { index: usize },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawPreviewArgument {
+    pub index: usize,
+    pub value: String,
+    pub source: RawPreviewArgumentSource,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawExecutionPreview {
+    pub catalog_version: u16,
+    pub command: RawCommandId,
+    pub executable: RawExecutable,
+    pub arguments: Vec<String>,
+    pub indexed_arguments: Vec<RawPreviewArgument>,
+    pub capability_generation: u64,
+    pub environment: crate::YoctoEnvironmentIdentity,
+    pub build_directory: PathBuf,
+    pub implementations: Vec<(CapabilityId, String)>,
+    pub capability_issues: Vec<RawCapabilityIssue>,
+    pub interaction: RawInteractionMode,
+    pub safety: RawSafetyClass,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum RawPreviewError {
+    #[error("Raw preview catalog is invalid: {0}")]
+    InvalidCatalog(String),
+    #[error("Raw preview catalog version {received} does not match current version {current}")]
+    StaleCatalog { current: u16, received: u16 },
+    #[error("Raw preview command is unknown: {0}")]
+    UnknownCommand(RawCommandId),
+    #[error("Raw preview command is reference-only: {0}")]
+    ReferenceOnly(RawCommandId),
+    #[error("Raw preview has no current daemon capability authority")]
+    MissingAuthority,
+    #[error(
+        "Raw preview capability generation {received} is stale; current generation is {current}"
+    )]
+    StaleCapabilityGeneration { current: u64, received: u64 },
+    #[error("Raw preview capability is {state:?}: {reasons:?}")]
+    CapabilityUnavailable {
+        state: RawAvailabilityState,
+        reasons: Vec<String>,
+    },
+    #[error("Raw preview has no authoritative build-directory identity")]
+    MissingBuildDirectory,
+    #[error("Raw preview build-directory identity is invalid: {0:?}")]
+    InvalidBuildDirectory(PathBuf),
+    #[error("Raw preview build directory {received:?} does not match {current:?}")]
+    StaleBuildDirectory { current: PathBuf, received: PathBuf },
+    #[error("Raw preview contains an unknown parameter: {0}")]
+    UnknownParameter(RawParameterId),
+    #[error("Raw preview is missing required parameter: {0}")]
+    MissingParameter(RawParameterId),
+    #[error(transparent)]
+    InvalidParameter(#[from] RawParameterError),
+    #[error("Raw preview has invalid additional arguments: {0}")]
+    InvalidAdditionalArguments(RawArgvError),
+    #[error("Raw preview contains too many indexed argv elements: {count} > {maximum}")]
+    TooManyArguments { count: usize, maximum: usize },
+    #[error("Raw preview argv element {argument} is {bytes} bytes; maximum is {maximum}")]
+    ArgumentTooLong {
+        argument: usize,
+        bytes: usize,
+        maximum: usize,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -863,6 +966,116 @@ impl RawCatalog {
 
     pub fn command(&self, id: &RawCommandId) -> Option<&RawCommand> {
         self.commands.iter().find(|command| &command.id == id)
+    }
+
+    pub fn preview(
+        &self,
+        request: &RawPreviewRequest,
+        authority: Option<&DaemonCompatibilitySnapshot>,
+    ) -> Result<RawExecutionPreview, RawPreviewError> {
+        self.validate()
+            .map_err(|error| RawPreviewError::InvalidCatalog(error.to_string()))?;
+        if request.catalog_version != self.version {
+            return Err(RawPreviewError::StaleCatalog {
+                current: self.version,
+                received: request.catalog_version,
+            });
+        }
+        let command = self
+            .command(&request.command)
+            .ok_or_else(|| RawPreviewError::UnknownCommand(request.command.clone()))?;
+        let RawExecutionPolicy::Executable { template } = &command.execution else {
+            return Err(RawPreviewError::ReferenceOnly(command.id.clone()));
+        };
+        let authority = authority.ok_or(RawPreviewError::MissingAuthority)?;
+        if request.capability_generation != authority.snapshot.generation {
+            return Err(RawPreviewError::StaleCapabilityGeneration {
+                current: authority.snapshot.generation,
+                received: request.capability_generation,
+            });
+        }
+        let availability = command.availability(Some(authority));
+        if !availability.is_enabled() {
+            return Err(RawPreviewError::CapabilityUnavailable {
+                state: availability.state,
+                reasons: availability
+                    .issues
+                    .into_iter()
+                    .map(|issue| issue.reason)
+                    .collect(),
+            });
+        }
+        let current_build_directory = authority
+            .snapshot
+            .environment
+            .build_directory
+            .value()
+            .ok_or(RawPreviewError::MissingBuildDirectory)?;
+        if current_build_directory != &request.build_directory {
+            return Err(RawPreviewError::StaleBuildDirectory {
+                current: current_build_directory.clone(),
+                received: request.build_directory.clone(),
+            });
+        }
+        validate_raw_preview_build_directory(current_build_directory)?;
+        validate_raw_preview_parameters(command, &request.parameters)?;
+        request
+            .additional_arguments
+            .validate()
+            .map_err(RawPreviewError::InvalidAdditionalArguments)?;
+
+        let mut arguments = Vec::new();
+        let mut indexed_arguments = vec![RawPreviewArgument {
+            index: 0,
+            value: template.executable.as_str().into(),
+            source: RawPreviewArgumentSource::Executable,
+        }];
+        for (template_index, argument) in template.arguments.iter().enumerate() {
+            let Some(value) = render_raw_template_argument(argument, &request.parameters) else {
+                continue;
+            };
+            push_raw_preview_argument(
+                &mut arguments,
+                &mut indexed_arguments,
+                value,
+                RawPreviewArgumentSource::Template {
+                    index: template_index,
+                },
+            )?;
+        }
+        for (additional_index, value) in request.additional_arguments.as_slice().iter().enumerate()
+        {
+            push_raw_preview_argument(
+                &mut arguments,
+                &mut indexed_arguments,
+                value.clone(),
+                RawPreviewArgumentSource::Additional {
+                    index: additional_index,
+                },
+            )?;
+        }
+        let limitations = availability
+            .issues
+            .iter()
+            .flat_map(|issue| issue.limitations.iter().cloned())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        Ok(RawExecutionPreview {
+            catalog_version: self.version,
+            command: command.id.clone(),
+            executable: template.executable,
+            arguments,
+            indexed_arguments,
+            capability_generation: authority.snapshot.generation,
+            environment: authority.snapshot.environment.clone(),
+            build_directory: current_build_directory.clone(),
+            implementations: availability.implementations,
+            capability_issues: availability.issues,
+            interaction: template.interaction,
+            safety: template.safety,
+            limitations,
+        })
     }
 }
 
@@ -1531,6 +1744,97 @@ fn tokenize_raw_additional_arguments(input: &str) -> Result<Vec<String>, RawArgv
     Ok(arguments)
 }
 
+fn validate_raw_preview_build_directory(path: &Path) -> Result<(), RawPreviewError> {
+    if path.is_absolute()
+        && !path
+            .components()
+            .any(|component| matches!(component, Component::ParentDir))
+    {
+        Ok(())
+    } else {
+        Err(RawPreviewError::InvalidBuildDirectory(path.to_path_buf()))
+    }
+}
+
+fn validate_raw_preview_parameters(
+    command: &RawCommand,
+    values: &BTreeMap<RawParameterId, RawParameterValue>,
+) -> Result<(), RawPreviewError> {
+    if let Some(parameter) = values
+        .keys()
+        .find(|parameter| !command.parameters.iter().any(|item| &item.id == *parameter))
+    {
+        return Err(RawPreviewError::UnknownParameter(parameter.clone()));
+    }
+    for parameter in &command.parameters {
+        match values.get(&parameter.id) {
+            Some(value) => parameter.validate_value(value)?,
+            None if parameter.presence == RawParameterPresence::Required => {
+                return Err(RawPreviewError::MissingParameter(parameter.id.clone()));
+            }
+            None => {}
+        }
+    }
+    Ok(())
+}
+
+fn render_raw_template_argument(
+    argument: &RawArgument,
+    values: &BTreeMap<RawParameterId, RawParameterValue>,
+) -> Option<String> {
+    match argument {
+        RawArgument::Literal { value } => Some(value.clone()),
+        RawArgument::Empty => Some(String::new()),
+        RawArgument::Parameter { parameter } => {
+            values.get(parameter).map(RawParameterValue::argument)
+        }
+        RawArgument::JoinedParameter { prefix, parameter } => values
+            .get(parameter)
+            .map(|value| format!("{prefix}{}", value.argument())),
+        RawArgument::Composed { segments } => {
+            let mut value = String::new();
+            for segment in segments {
+                match segment {
+                    RawArgumentSegment::Literal { value: literal } => value.push_str(literal),
+                    RawArgumentSegment::Parameter { parameter } => {
+                        value.push_str(&values.get(parameter)?.argument());
+                    }
+                }
+            }
+            Some(value)
+        }
+    }
+}
+
+fn push_raw_preview_argument(
+    arguments: &mut Vec<String>,
+    indexed: &mut Vec<RawPreviewArgument>,
+    argument: String,
+    source: RawPreviewArgumentSource,
+) -> Result<(), RawPreviewError> {
+    let index = indexed.len();
+    if index == MAX_RAW_PREVIEW_ARGUMENTS {
+        return Err(RawPreviewError::TooManyArguments {
+            count: index + 1,
+            maximum: MAX_RAW_PREVIEW_ARGUMENTS,
+        });
+    }
+    if argument.len() > MAX_RAW_PREVIEW_ARGUMENT_BYTES {
+        return Err(RawPreviewError::ArgumentTooLong {
+            argument: index,
+            bytes: argument.len(),
+            maximum: MAX_RAW_PREVIEW_ARGUMENT_BYTES,
+        });
+    }
+    indexed.push(RawPreviewArgument {
+        index,
+        value: argument.clone(),
+        source,
+    });
+    arguments.push(argument);
+    Ok(())
+}
+
 fn validate_raw_argv_input_bound(input: &str) -> Result<(), RawArgvError> {
     if input.len() > MAX_RAW_ADDITIONAL_INPUT_BYTES {
         Err(RawArgvError::InputTooLong {
@@ -1696,6 +2000,315 @@ fn contains_shell_syntax(value: &str) -> bool {
     value
         .chars()
         .any(|character| matches!(character, '|' | '&' | ';' | '<' | '>' | '`' | '$'))
+}
+
+#[cfg(test)]
+mod raw_preview_tests {
+    use super::*;
+    use crate::{
+        AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityImplementation, CapabilityImplementationKind, CapabilityReason, CapabilityRecord,
+        CapabilitySnapshot, IdentityAuthority, YoctoEnvironmentIdentity,
+    };
+
+    fn id(value: &str) -> RawParameterId {
+        RawParameterId::new(value).unwrap()
+    }
+
+    fn catalog() -> RawCatalog {
+        RawCatalog {
+            version: 7,
+            categories: vec![RawCategory {
+                id: RawCategoryId::new("preview").unwrap(),
+                label: "Preview".into(),
+                reference_heading: "Preview".into(),
+                kind: RawCategoryKind::Executable,
+            }],
+            commands: vec![RawCommand {
+                id: RawCommandId::new("preview.run").unwrap(),
+                category: RawCategoryId::new("preview").unwrap(),
+                label: "bitbake -c <task> --ui=<ui> mc:<config>:<target> ''".into(),
+                description: "Preview fixture command.".into(),
+                reference: RawReference {
+                    id: RawReferenceId::new("preview.reference").unwrap(),
+                    heading: "Preview".into(),
+                    command: "bitbake -c <task> --ui=<ui> mc:<config>:<target> ''".into(),
+                    description: "Preview fixture command.".into(),
+                },
+                parameters: vec![
+                    RawParameter {
+                        id: id("task"),
+                        label: "Task".into(),
+                        placeholder: "<task>".into(),
+                        kind: RawParameterKind::Task,
+                        presence: RawParameterPresence::Required,
+                    },
+                    RawParameter {
+                        id: id("ui"),
+                        label: "UI".into(),
+                        placeholder: "<ui>".into(),
+                        kind: RawParameterKind::UserInterface,
+                        presence: RawParameterPresence::Optional,
+                    },
+                    RawParameter {
+                        id: id("config"),
+                        label: "Config".into(),
+                        placeholder: "<config>".into(),
+                        kind: RawParameterKind::Multiconfig,
+                        presence: RawParameterPresence::Required,
+                    },
+                    RawParameter {
+                        id: id("target"),
+                        label: "Target".into(),
+                        placeholder: "<target>".into(),
+                        kind: RawParameterKind::Target,
+                        presence: RawParameterPresence::Required,
+                    },
+                ],
+                execution: RawExecutionPolicy::Executable {
+                    template: RawExecutableTemplate {
+                        executable: RawExecutable::BitBake,
+                        arguments: vec![
+                            RawArgument::Literal { value: "-c".into() },
+                            RawArgument::Parameter {
+                                parameter: id("task"),
+                            },
+                            RawArgument::JoinedParameter {
+                                prefix: "--ui=".into(),
+                                parameter: id("ui"),
+                            },
+                            RawArgument::Composed {
+                                segments: vec![
+                                    RawArgumentSegment::Literal {
+                                        value: "mc:".into(),
+                                    },
+                                    RawArgumentSegment::Parameter {
+                                        parameter: id("config"),
+                                    },
+                                    RawArgumentSegment::Literal { value: ":".into() },
+                                    RawArgumentSegment::Parameter {
+                                        parameter: id("target"),
+                                    },
+                                ],
+                            },
+                            RawArgument::Empty,
+                        ],
+                        capabilities: RawCapabilityRequirement::All {
+                            capabilities: vec![CapabilityId::BitBakeRawCli],
+                        },
+                        interaction: RawInteractionMode::NoninteractiveJob,
+                        safety: RawSafetyClass::Build,
+                    },
+                },
+            }],
+        }
+        .normalize()
+        .unwrap()
+    }
+
+    fn authority(generation: u64, available: bool) -> DaemonCompatibilitySnapshot {
+        let state = if available {
+            CapabilityState::AvailableWithLimitations {
+                reason: CapabilityReason::new(
+                    "preview.limited",
+                    "Preview fixture is limited.",
+                    None,
+                )
+                .unwrap(),
+                limitations: vec!["Exact fixture limitation.".into()],
+            }
+        } else {
+            CapabilityState::Unavailable {
+                reason: CapabilityReason::new(
+                    "preview.unavailable",
+                    "Preview fixture is unavailable.",
+                    None,
+                )
+                .unwrap(),
+            }
+        };
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation,
+                environment: YoctoEnvironmentIdentity {
+                    build_directory: AuthoritativeValue::detected(
+                        "/work/build".into(),
+                        IdentityAuthority::InitializedEnvironment,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![CapabilityRecord {
+                    id: CapabilityId::BitBakeRawCli,
+                    state,
+                    evidence: vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: if available {
+                            CapabilityEvidenceOutcome::Positive
+                        } else {
+                            CapabilityEvidenceOutcome::Negative
+                        },
+                        subject: "bitbake --help".into(),
+                        detail: "Exact fixture evidence.".into(),
+                        argv: vec!["bitbake".into(), "--help".into()],
+                    }],
+                }],
+            },
+            implementations: if available {
+                BTreeMap::from([(
+                    CapabilityId::BitBakeRawCli,
+                    CapabilityImplementation {
+                        id: "bitbake.raw.argv".into(),
+                        kind: CapabilityImplementationKind::Command,
+                    },
+                )])
+            } else {
+                BTreeMap::new()
+            },
+        }
+        .normalize()
+        .unwrap()
+    }
+
+    fn request() -> RawPreviewRequest {
+        RawPreviewRequest {
+            catalog_version: 7,
+            command: RawCommandId::new("preview.run").unwrap(),
+            parameters: BTreeMap::from([
+                (id("task"), RawParameterValue::Task("do_compile".into())),
+                (id("config"), RawParameterValue::Multiconfig("lib32".into())),
+                (
+                    id("target"),
+                    RawParameterValue::Target("virtual/kernel".into()),
+                ),
+            ]),
+            additional_arguments: RawAdditionalArguments::parse("--verbose 'café value'").unwrap(),
+            capability_generation: 9,
+            build_directory: "/work/build".into(),
+        }
+    }
+
+    #[test]
+    fn raw_preview_reconstructs_exact_indexed_native_arguments_and_metadata() {
+        let preview = catalog()
+            .preview(&request(), Some(&authority(9, true)))
+            .unwrap();
+        assert_eq!(preview.executable, RawExecutable::BitBake);
+        assert_eq!(
+            preview.arguments,
+            [
+                "-c",
+                "do_compile",
+                "mc:lib32:virtual/kernel",
+                "",
+                "--verbose",
+                "café value",
+            ]
+        );
+        assert_eq!(
+            preview
+                .indexed_arguments
+                .iter()
+                .map(|argument| (argument.index, argument.value.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                (0, "bitbake"),
+                (1, "-c"),
+                (2, "do_compile"),
+                (3, "mc:lib32:virtual/kernel"),
+                (4, ""),
+                (5, "--verbose"),
+                (6, "café value"),
+            ]
+        );
+        assert_eq!(preview.catalog_version, 7);
+        assert_eq!(preview.capability_generation, 9);
+        assert_eq!(preview.build_directory, Path::new("/work/build"));
+        assert_eq!(preview.interaction, RawInteractionMode::NoninteractiveJob);
+        assert_eq!(preview.safety, RawSafetyClass::Build);
+        assert_eq!(preview.limitations, ["Exact fixture limitation."]);
+        assert_eq!(preview.capability_issues.len(), 1);
+        assert_eq!(
+            preview.implementations,
+            [(CapabilityId::BitBakeRawCli, "bitbake.raw.argv".into())]
+        );
+    }
+
+    #[test]
+    fn raw_preview_includes_optional_joined_value_and_preserves_explicit_empty() {
+        let mut request = request();
+        request
+            .parameters
+            .insert(id("ui"), RawParameterValue::UserInterface("knotty".into()));
+        let preview = catalog()
+            .preview(&request, Some(&authority(9, true)))
+            .unwrap();
+        assert_eq!(preview.arguments[2], "--ui=knotty");
+        assert!(preview.arguments.iter().any(String::is_empty));
+    }
+
+    #[test]
+    fn raw_preview_rejects_missing_extra_and_mismatched_parameters() {
+        let catalog = catalog();
+        let authority = authority(9, true);
+
+        let mut missing = request();
+        missing.parameters.remove(&id("task"));
+        assert_eq!(
+            catalog.preview(&missing, Some(&authority)),
+            Err(RawPreviewError::MissingParameter(id("task")))
+        );
+
+        let mut extra = request();
+        extra
+            .parameters
+            .insert(id("other"), RawParameterValue::Text("ordinary".into()));
+        assert_eq!(
+            catalog.preview(&extra, Some(&authority)),
+            Err(RawPreviewError::UnknownParameter(id("other")))
+        );
+
+        let mut mismatch = request();
+        mismatch
+            .parameters
+            .insert(id("task"), RawParameterValue::Target("busybox".into()));
+        assert!(matches!(
+            catalog.preview(&mismatch, Some(&authority)),
+            Err(RawPreviewError::InvalidParameter(
+                RawParameterError::KindMismatch { .. }
+            ))
+        ));
+    }
+
+    #[test]
+    fn raw_preview_fails_closed_for_missing_stale_or_unavailable_authority() {
+        let catalog = catalog();
+        let request = request();
+        assert_eq!(
+            catalog.preview(&request, None),
+            Err(RawPreviewError::MissingAuthority)
+        );
+        assert_eq!(
+            catalog.preview(&request, Some(&authority(10, true))),
+            Err(RawPreviewError::StaleCapabilityGeneration {
+                current: 10,
+                received: 9,
+            })
+        );
+        assert!(matches!(
+            catalog.preview(&request, Some(&authority(9, false))),
+            Err(RawPreviewError::CapabilityUnavailable {
+                state: RawAvailabilityState::Unavailable,
+                ..
+            })
+        ));
+
+        let mut stale_directory = request;
+        stale_directory.build_directory = "/other/build".into();
+        assert!(matches!(
+            catalog.preview(&stale_directory, Some(&authority(9, true))),
+            Err(RawPreviewError::StaleBuildDirectory { .. })
+        ));
+    }
 }
 
 #[cfg(test)]

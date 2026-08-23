@@ -2,52 +2,53 @@
 
 ## Task
 
-**ID:** RAW-PREVIEW-001
-**Title:** Implement exact executable and indexed argv preview
+**ID:** RAW-MODEL-001
+**Title:** Implement Raw Mode application state reducer and actions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Build the immutable Raw execution preview from one validated catalog template,
-typed parameter values, validated additional argv, and the exact current
-environment/capability authority.
+Implement the pure Raw Mode application state, typed actions, and reducer
+transitions that own browsing, exact selection-following help, search, forms,
+preview/output/history/favorite views, and focus restoration.
 
 ## Dependencies
 
-- `RAW-ARG-001` — DONE
+- `RAW-CATALOG-001` — DONE
 - `RAW-CAP-001` — DONE
+- `RAW-PARAM-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
-- `crates/yoctui-ui/src/lib.rs`
-- `docs/ui-spec.md`
+- `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-app/src/lib.rs`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- The preview reconstructs one executable and each argv element independently
-  from the catalog template, typed values, and validated additional arguments.
-- Required, optional, joined, composed, and explicit empty template arguments
-  retain exact native argv semantics and reject missing, extra, or mismatched
-  parameter values with typed errors.
-- Preview rows are indexed and retain executable identity, command/catalog
-  revision, capability generation, environment/build-directory identity,
-  interaction mode, safety class, and exact limitations.
-- A stale or unavailable capability authority cannot produce a preview.
-- No model or widget API exposes a joined command string as execution
-  authority.
-- Model and TestBackend UI tests cover representative templates, optional and
-  empty values, Unicode, additional argv, stale authority, indexed rendering,
-  and narrow-terminal degradation.
+- Raw state owns category, command, help/reference, form, preview, execution,
+  history, favorite, search query/result, selection, and focus-return identity.
+- Typed actions produce deterministic bounded transitions and never parse
+  terminal/process text or construct backend work directly.
+- Selection follows stable catalog identities across filtering and replacement;
+  empty results, stale IDs, and invalid indices clamp or fail closed without a
+  panic.
+- Forms retain typed parameter fields and the shared expert argv editor;
+  opening/cancelling preview preserves or restores the exact prior state.
+- Capability authority replacement immediately reprojects availability and
+  closes a now-unsafe form/preview with an exact reason and no start effect.
+- Model and app tests cover normal browsing, search, selection-following help,
+  form/preview transitions, empty and replacement states, favorites/history
+  navigation, focus restoration, and capability invalidation.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_preview
-cargo test -p yoctui-ui raw_preview
-cargo clippy -p yoctui-model -p yoctui-ui --all-targets --all-features -- -D warnings
+cargo test -p yoctui-model raw_mode
+cargo test -p yoctui-app raw_mode
+cargo clippy -p yoctui-model -p yoctui-app --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
