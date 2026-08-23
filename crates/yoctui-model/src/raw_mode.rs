@@ -741,3 +741,169 @@ mod raw_catalog_model_tests {
         );
     }
 }
+
+#[cfg(test)]
+mod raw_catalog_trace_tests {
+    use super::*;
+    use crate::{
+        RAW_BUILTIN_CATEGORY_COUNT, RAW_BUILTIN_COMMAND_COUNT, RAW_BUILTIN_EXECUTABLE_COUNT,
+        RAW_REFERENCE_SHA256,
+    };
+    use std::collections::BTreeSet;
+
+    const REFERENCE: &str =
+        include_str!("../../../docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md");
+
+    #[derive(Debug)]
+    struct ReferenceEntry<'a> {
+        line: usize,
+        category_heading: &'a str,
+        heading: &'a str,
+        description: &'a str,
+        command: &'a str,
+    }
+
+    fn reference_entries() -> (Vec<&'static str>, Vec<ReferenceEntry<'static>>) {
+        let mut categories = Vec::new();
+        let mut entries = Vec::new();
+        let mut category_heading = "";
+        let mut heading = "";
+        let mut description = "";
+        let mut in_bash = false;
+
+        for (index, line) in REFERENCE.lines().enumerate() {
+            let line_number = index + 1;
+            if line == "```bash" {
+                in_bash = true;
+                description = "";
+                continue;
+            }
+            if in_bash && line == "```" {
+                in_bash = false;
+                description = "";
+                continue;
+            }
+            if !in_bash && line.starts_with("# ") {
+                if line_number != 1 {
+                    category_heading = &line[2..];
+                    heading = category_heading;
+                    categories.push(category_heading);
+                }
+                continue;
+            }
+            if !in_bash && line.starts_with("##") {
+                heading = line.trim_start_matches('#').trim();
+                continue;
+            }
+            if !in_bash {
+                continue;
+            }
+            if let Some(comment) = line.strip_prefix("# ") {
+                description = comment;
+                continue;
+            }
+            if line.is_empty() {
+                continue;
+            }
+            assert!(!category_heading.is_empty(), "line {line_number}");
+            assert!(!description.is_empty(), "line {line_number}");
+            entries.push(ReferenceEntry {
+                line: line_number,
+                category_heading,
+                heading,
+                description,
+                command: line,
+            });
+            description = "";
+        }
+        (categories, entries)
+    }
+
+    fn direct_bitbake(command: &str) -> bool {
+        command.starts_with("bitbake ")
+            && ![" | ", " > ", " && ", " || ", "; "]
+                .iter()
+                .any(|operator| command.contains(operator))
+    }
+
+    #[test]
+    fn raw_catalog_trace_covers_every_reference_command_exactly_once() {
+        let (category_headings, reference_entries) = reference_entries();
+        let catalog = RawCatalog::builtin();
+        assert_eq!(reference_entries.len(), RAW_BUILTIN_COMMAND_COUNT);
+
+        let mut seen_commands = BTreeSet::new();
+        for reference in reference_entries {
+            let reference_id = format!("wrynose-6-0.l{:04}", reference.line);
+            let matches = catalog
+                .commands
+                .iter()
+                .filter(|command| command.reference.id.as_str() == reference_id)
+                .collect::<Vec<_>>();
+            assert_eq!(matches.len(), 1, "reference line {}", reference.line);
+            let command = matches[0];
+            assert!(seen_commands.insert(command.id.clone()));
+            assert_eq!(command.label, reference.command);
+            assert_eq!(command.description, reference.description);
+            assert_eq!(command.reference.heading, reference.heading);
+            assert_eq!(command.reference.command, reference.command);
+            assert_eq!(command.reference.description, reference.description);
+            assert_eq!(
+                catalog
+                    .category(&command.category)
+                    .unwrap()
+                    .reference_heading,
+                reference.category_heading
+            );
+
+            match &command.execution {
+                RawExecutionPolicy::Executable { template } => {
+                    assert!(direct_bitbake(reference.command), "{}", reference.command);
+                    assert_eq!(
+                        template.display_template(&command.parameters).as_deref(),
+                        Some(reference.command)
+                    );
+                }
+                RawExecutionPolicy::ReferenceOnly { kind, .. } => {
+                    assert!(!direct_bitbake(reference.command), "{}", reference.command);
+                    let expected = if reference.command.starts_with("bitbake ") {
+                        RawReferenceKind::ShellPipeline
+                    } else {
+                        RawReferenceKind::CompanionTool
+                    };
+                    assert_eq!(*kind, expected, "{}", reference.command);
+                    assert!(command.parameters.is_empty());
+                }
+            }
+        }
+        assert_eq!(seen_commands.len(), catalog.commands.len());
+
+        let expected_headings = category_headings.into_iter().collect::<BTreeSet<_>>();
+        let actual_headings = catalog
+            .categories
+            .iter()
+            .filter(|category| category.kind != RawCategoryKind::Favorites)
+            .map(|category| category.reference_heading.as_str())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(actual_headings, expected_headings);
+    }
+
+    #[test]
+    fn raw_catalog_trace_counts_classifications_and_unique_references() {
+        let catalog = RawCatalog::builtin();
+        let executable = catalog
+            .commands
+            .iter()
+            .filter(|command| matches!(command.execution, RawExecutionPolicy::Executable { .. }))
+            .count();
+        let references = catalog
+            .commands
+            .iter()
+            .map(|command| command.reference.id.clone())
+            .collect::<BTreeSet<_>>();
+        assert_eq!(catalog.categories.len(), RAW_BUILTIN_CATEGORY_COUNT);
+        assert_eq!(executable, RAW_BUILTIN_EXECUTABLE_COUNT);
+        assert_eq!(references.len(), RAW_BUILTIN_COMMAND_COUNT);
+        assert_eq!(RAW_REFERENCE_SHA256.len(), 64);
+    }
+}

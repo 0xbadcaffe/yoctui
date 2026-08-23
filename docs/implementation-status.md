@@ -29,8 +29,12 @@ all 32 top-level/favorites
 categories and all 464 commands from reference bash blocks. Its 288 direct
 BitBake commands use typed shell-free argv templates; 176 pipelines,
 redirections, setup snippets, and companion commands are explicitly inert.
-`RAW-CATALOG-TRACE-001` is active next to independently verify that generated
-catalog coverage and traceability remain synchronized with the snapshot.
+`RAW-CATALOG-TRACE-001` is complete: its gate independently parses reference
+bash blocks,
+checks every source-line identity, heading, command, description,
+classification, category, and rendered template, verifies the pinned SHA-256,
+and rejects stale generated output. `RAW-CAP-001` is active next to make
+connected-environment availability semantics precise for every executable.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

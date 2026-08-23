@@ -2,46 +2,44 @@
 
 ## Task
 
-**ID:** RAW-CATALOG-TRACE-001
-**Title:** Verify Raw catalog traceability to bundled reference
+**ID:** RAW-CAP-001
+**Title:** Map Raw commands to capability requirements
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify that every generated Raw entry remains traceable to the immutable
-reference snapshot with exact command text and descriptions, and that the
-checked-in generated catalog cannot drift from its deterministic source.
+Define and validate the capability requirement and projected availability
+semantics for every executable Raw command using the connected environment's
+authoritative capability snapshot.
 
 ## Dependencies
 
 - `RAW-CATALOG-001` — DONE
+- `COMPAT-001` — DONE
 
 ## Relevant files
 
 - `crates/yoctui-model/src/raw_mode.rs`
+- `crates/yoctui-model/src/compatibility.rs`
 - `crates/yoctui-model/src/raw_catalog_builtin.rs`
-- `docs/reference/bitbake-cheatsheet-wrynose-6.0-bitbake-2.18.md`
-- `scripts/generate-raw-catalog.py`
-- `scripts/verify-raw-catalog.sh`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- Every bash-block command and its adjacent description maps to exactly one
-  stable source-line reference identity.
-- Category headings, command text, descriptions, classifications, and
-  placeholder agreement are checked independently.
-- The reference hash and generated file freshness fail closed on drift.
-- A repository verification script runs the deterministic generator check and
-  focused model traceability tests.
+- Every executable Raw template carries a non-empty explicit all-of or any-of
+  capability requirement.
+- Available, Limited, Unavailable, Unknown, and Unsupported projections retain
+  exact reasons and do not infer availability from reference version text.
+- Reference-only commands always project Unsupported and cannot become
+  executable through capability state.
+- Tests cover all requirement operators and every projected availability state.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_catalog_trace
-./scripts/verify-raw-catalog.sh
+cargo test -p yoctui-model raw_capability
 cargo clippy -p yoctui-model --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```
