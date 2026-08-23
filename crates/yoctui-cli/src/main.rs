@@ -41,12 +41,13 @@ use yoctui_app::{
     popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
     qa_report_error_action, qa_report_response_action, qa_task_capability_action,
     qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
-    qemu_launch_confirmation_action, qemu_launch_dialog_action, recipe_editor_action,
-    recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
-    sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
-    sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
-    security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
-    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
+    qemu_launch_confirmation_action, qemu_launch_dialog_action, raw_mode_input,
+    recipe_editor_action, recover_daemon_model_metadata, sdk_actions_for_runner_event,
+    sdk_build_confirmation_action, sdk_cancellation_confirmation_action,
+    sdk_native_confirmation_action, sdk_native_dialog_action, sdk_publish_confirmation_action,
+    sdk_publish_dialog_action, sdk_workspace_action, security_actions_for_mapper_event,
+    security_dialog_action, security_workspace_action, settings_action,
+    signature_task_picker_action, signature_workspace_action, tasks_action,
     test_actions_for_runner_event, test_cancellation_confirmation_action,
     test_comparison_confirmation_action, test_comparison_dialog_action,
     test_comparison_workspace_action, test_junit_confirmation_action, test_junit_dialog_action,
@@ -11963,6 +11964,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                                 );
                             }
                         }
+                    }
+                } else if app.screen == yoctui_model::Screen::RawMode {
+                    if let Some(action) = raw_mode_input(&app.raw_mode, input) {
+                        let _ = compatibility_workspace_action(&mut app, Action::RawMode(action));
                     }
                 } else if app.screen == yoctui_model::Screen::Compatibility {
                     if let Some(action) =

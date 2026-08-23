@@ -24,6 +24,7 @@ pub enum WorkspaceDestination {
     Testing,
     Security,
     Qa,
+    RawMode,
     Devtool,
     QemuWic,
     Maintenance,
@@ -36,7 +37,7 @@ pub enum WorkspaceDestination {
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 25] = [
+    pub const ALL: [Self; 26] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
@@ -53,6 +54,7 @@ impl WorkspaceDestination {
         Self::Testing,
         Self::Security,
         Self::Qa,
+        Self::RawMode,
         Self::Devtool,
         Self::QemuWic,
         Self::Maintenance,
@@ -470,6 +472,7 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Qa => WorkspaceDestination::Qa,
         Screen::Layers => WorkspaceDestination::Layers,
         Screen::Configuration | Screen::Bbmask => WorkspaceDestination::Configuration,
+        Screen::RawMode => WorkspaceDestination::RawMode,
         Screen::Maintenance => WorkspaceDestination::Maintenance,
         Screen::Logs => WorkspaceDestination::Logs,
         Screen::Errors => WorkspaceDestination::Errors,
@@ -547,6 +550,7 @@ pub fn workspace_destination_requirement(
         WorkspaceDestination::Qa => {
             WorkspaceEffectRequirement::all_and_any(&[], &[Id::QaTask, Id::YoctoCheckLayer])
         }
+        WorkspaceDestination::RawMode => WorkspaceEffectRequirement::one(Id::BitBakeRawCli),
         WorkspaceDestination::Devtool => WorkspaceEffectRequirement::all_and_any(
             &[],
             &[
@@ -1163,7 +1167,7 @@ mod tests {
 
     #[test]
     fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
-        assert_eq!(WorkspaceDestination::ALL.len(), 25);
+        assert_eq!(WorkspaceDestination::ALL.len(), 26);
         for screen in [
             Screen::Dashboard,
             Screen::Tasks,
@@ -1178,6 +1182,7 @@ mod tests {
             Screen::Testing,
             Screen::Security,
             Screen::Qa,
+            Screen::RawMode,
             Screen::Layers,
             Screen::Configuration,
             Screen::Bbmask,
@@ -1196,9 +1201,30 @@ mod tests {
         assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::ProjectProfiles));
         assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::TerminalSessions));
         assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::Compatibility));
+        assert!(WorkspaceDestination::ALL.contains(&WorkspaceDestination::RawMode));
         for destination in WorkspaceDestination::ALL {
             let _ = workspace_destination_requirement(destination);
         }
+    }
+
+    #[test]
+    fn raw_navigation_uses_the_authoritative_raw_cli_requirement() {
+        assert_eq!(
+            workspace_screen_destination(Screen::RawMode),
+            WorkspaceDestination::RawMode
+        );
+        assert_eq!(
+            workspace_destination_requirement(WorkspaceDestination::RawMode),
+            WorkspaceEffectRequirement::one(CapabilityId::BitBakeRawCli)
+        );
+        assert_eq!(
+            workspace_requirement_availability(
+                None,
+                &workspace_destination_requirement(WorkspaceDestination::RawMode),
+            )
+            .state,
+            WorkspaceAvailabilityState::Unknown
+        );
     }
 
     #[test]

@@ -2,25 +2,23 @@
 
 ## Task
 
-**ID:** RAW-NAV-001
-**Title:** Add Raw Mode Navigator destination
+**ID:** RAW-CATEGORY-UI-001
+**Title:** Implement Raw category browser
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add Raw Mode as one first-class inspectable workspace destination throughout
-the shell's typed screen, compatibility, Navigator, command palette, help,
-footer, and responsive focus-routing surfaces.
+Replace the Raw Mode landing placeholder with the first bounded catalog-backed
+browser level: Favorites pinned first, followed by the exact reference-derived
+category hierarchy and visible category classifications.
 
 ## Dependencies
 
-- `RAW-MODEL-001` — DONE
-- `UI-SHELL-001` — DONE
+- `RAW-NAV-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-model/src/workspace_compatibility.rs`
+- `crates/yoctui-model/src/raw_mode.rs`
 - `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
 - `docs/ui-spec.md`
@@ -30,25 +28,26 @@ footer, and responsive focus-routing surfaces.
 
 ## Definition of done
 
-- `Screen`, labels, workspace destinations, compatibility projection, palette,
-  and typed routing expose exactly one `Raw Mode` identity.
-- Raw Mode appears in the Navigator `TOOLS` group at the specified position
-  without changing unrelated stable destinations or function-key routes.
-- Enter/palette activation opens Raw Mode and normal Navigator/Workspace/
-  Inspector focus cycling remains shared shell behavior.
-- Help and contextual footer expose the authoritative Raw navigation/search/
-  favorite/history bindings without claiming execution availability.
-- Wide, medium, narrow, and below-minimum terminal routing remains safe and
-  selection-preserving; no Raw browser layout is invented in this task.
-- Model, app, and TestBackend tests cover every entry route, compatibility
-  inspection, labels/help/footer, focus routing, and responsive shell state.
+- The outer Raw Workspace renders Favorites before every reference-derived
+  category in catalog order without parsing the Markdown reference at runtime.
+- Executable BitBake, reference-only, conceptual, companion-tool, and Favorites
+  categories have distinct textual classifications that remain meaningful
+  without color.
+- Up/Down and `j`/`k` move one bounded category selection; Right/`l` and Enter
+  activate the command-browser state without inventing the command-list UI
+  owned by `RAW-COMMAND-UI-001`; Left/`h` remains bounded at the outer level.
+- Empty, selected, first, last, and long category states render safely with
+  explicit bounded viewport position.
+- Wide, medium, narrow, and below-minimum layouts preserve category identity,
+  focus, and search state and never panic.
+- TestBackend tests cover catalog order, classification text, selection,
+  scrolling, keyboard routes, accessibility without color, and responsive
+  boundaries.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model raw_navigation
-cargo test -p yoctui-app raw_navigation
-cargo test -p yoctui-ui raw_navigation
+cargo test -p yoctui-ui raw_category
 cargo clippy -p yoctui-model -p yoctui-app -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

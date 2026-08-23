@@ -468,6 +468,7 @@ pub fn compatibility_ui_command_action_definition(
         CommandId::OpenConfiguration => {
             compatibility_ui_destination_action_definition(Screen::Configuration)
         }
+        CommandId::OpenRawMode => compatibility_ui_destination_action_definition(Screen::RawMode),
     }
 }
 
@@ -956,6 +957,11 @@ pub fn compatibility_ui_workspace_action_definitions(
             Action::local("qa.reports", "Import/open QA evidence", "I/R/o/e/l"),
             Action::local("qa.cancel", "Cancel owned QA operation", "c"),
         ],
+        Destination::RawMode => vec![Action::local(
+            "raw.inspect",
+            "Inspect Raw command catalog",
+            "Enter",
+        )],
         Destination::Devtool => vec![
             Action::capability(
                 "devtool.status",
@@ -1387,6 +1393,7 @@ mod tests {
             Screen::Testing,
             Screen::Security,
             Screen::Qa,
+            Screen::RawMode,
             Screen::Layers,
             Screen::Configuration,
             Screen::Bbmask,
@@ -1418,6 +1425,7 @@ mod tests {
             CommandId::OpenLogs,
             CommandId::OpenErrors,
             CommandId::OpenConfiguration,
+            CommandId::OpenRawMode,
             CommandId::OpenCompatibility,
             CommandId::OpenSettings,
             CommandId::ChooseTheme,

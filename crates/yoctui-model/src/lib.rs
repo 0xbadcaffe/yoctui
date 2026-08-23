@@ -107,6 +107,7 @@ pub enum Screen {
     Layers,
     Configuration,
     Bbmask,
+    RawMode,
     Maintenance,
     Logs,
     Errors,
@@ -245,6 +246,7 @@ pub enum InspectorMode {
     File,
     Configuration,
     Utility,
+    RawCommand,
     Log,
     Error,
     Help,
@@ -272,6 +274,7 @@ impl InspectorMode {
             Self::File => "File",
             Self::Configuration => "Configuration",
             Self::Utility => "Utility",
+            Self::RawCommand => "Raw command",
             Self::Log => "Log",
             Self::Error => "Error",
             Self::Help => "Help",
@@ -336,6 +339,7 @@ pub enum CommandId {
     OpenLogs,
     OpenErrors,
     OpenConfiguration,
+    OpenRawMode,
     OpenCompatibility,
     OpenSettings,
     ChooseTheme,
@@ -358,7 +362,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 20] = [
+const NAVIGATOR_SCREENS: [Screen; 21] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
@@ -373,6 +377,7 @@ const NAVIGATOR_SCREENS: [Screen; 20] = [
     Screen::Testing,
     Screen::Security,
     Screen::Qa,
+    Screen::RawMode,
     Screen::Recipes,
     Screen::Images,
     Screen::Maintenance,
@@ -380,7 +385,7 @@ const NAVIGATOR_SCREENS: [Screen; 20] = [
     Screen::Compatibility,
     Screen::Settings,
 ];
-const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 20] = [
+const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 21] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
@@ -395,6 +400,7 @@ const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 20] = [
     WorkspaceDestination::Testing,
     WorkspaceDestination::Security,
     WorkspaceDestination::Qa,
+    WorkspaceDestination::RawMode,
     WorkspaceDestination::Devtool,
     WorkspaceDestination::QemuWic,
     WorkspaceDestination::Maintenance,
@@ -434,7 +440,7 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "TOOLS",
         start: 14,
-        end: 20,
+        end: 21,
     },
 ];
 
@@ -3323,6 +3329,7 @@ pub struct App {
     pub daemon: ClientDaemonView,
     pub workspace_compatibility: WorkspaceCompatibilityState,
     pub compatibility_ui: CompatibilityUiState,
+    pub raw_mode: RawModeState,
     pub pty_selection: usize,
     pub pane_layout: PaneLayout,
     pub screen: Screen,
@@ -3472,6 +3479,7 @@ impl App {
             daemon: ClientDaemonView::default(),
             workspace_compatibility: WorkspaceCompatibilityState::default(),
             compatibility_ui: CompatibilityUiState::default(),
+            raw_mode: RawModeState::new(builtin_raw_catalog()),
             pty_selection: 0,
             pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
             screen: Screen::Dashboard,
@@ -3923,6 +3931,7 @@ impl App {
                 }
             }
             Screen::Configuration | Screen::Bbmask => InspectorMode::Configuration,
+            Screen::RawMode => InspectorMode::RawCommand,
             Screen::Maintenance => InspectorMode::Utility,
             Screen::Logs => InspectorMode::Log,
             Screen::Errors => InspectorMode::Error,
@@ -4524,6 +4533,13 @@ impl App {
                 None,
             ),
             command(
+                CommandId::OpenRawMode,
+                "Open Raw Mode",
+                "Inspect the structured BitBake command catalog",
+                "Ctrl+P raw",
+                None,
+            ),
+            command(
                 CommandId::OpenCompatibility,
                 "Open Compatibility",
                 "Inspect connected environment identity and capability evidence",
@@ -4649,6 +4665,7 @@ pub enum Action {
     ClearCompatibilityQuery,
     FinishCompatibilitySearch,
     EditActivePopup(PopupEditorCommand),
+    RawMode(RawModeAction),
     ConfigureBuildEnvironment(BuildEnvironmentProfile),
     OpenBuildEnvironmentCloneEditor,
     ToggleBuildEnvironmentCloneEditor,
@@ -5808,6 +5825,7 @@ fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenLogs => Action::Open(Screen::Logs),
         CommandId::OpenErrors => Action::Open(Screen::Errors),
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
+        CommandId::OpenRawMode => Action::Open(Screen::RawMode),
         CommandId::OpenCompatibility => Action::Open(Screen::Compatibility),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
         CommandId::ChooseTheme => Action::OpenThemePicker,
@@ -7776,6 +7794,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             .compatibility_ui
             .clear_query(app.workspace_compatibility.authority()),
         Action::FinishCompatibilitySearch => app.compatibility_ui.finish_search(),
+        Action::RawMode(action) => {
+            let authority = app.workspace_compatibility.authority().cloned();
+            reduce_raw_mode(
+                &mut app.raw_mode,
+                builtin_raw_catalog(),
+                authority.as_ref(),
+                action,
+            );
+        }
         Action::EditActivePopup(command) => {
             let (editor, validation_error) = match app.active_dialog_mut() {
                 Some(
@@ -15900,6 +15927,7 @@ mod tests {
                 Screen::Testing,
                 Screen::Security,
                 Screen::Qa,
+                Screen::RawMode,
                 Screen::Recipes,
                 Screen::Images,
                 Screen::Maintenance,
@@ -22910,5 +22938,44 @@ mod tests {
                 .text
                 .contains("destination = \"x\"destination = \"x\"")
         );
+    }
+
+    #[test]
+    fn raw_navigation_is_unique_grouped_and_palette_reachable() {
+        let raw_destinations = NAVIGATOR_SCREENS
+            .iter()
+            .enumerate()
+            .filter_map(|(index, screen)| (*screen == Screen::RawMode).then_some(index))
+            .collect::<Vec<_>>();
+        assert_eq!(raw_destinations, [14]);
+        assert_eq!(
+            NAVIGATOR_COMPATIBILITY_DESTINATIONS[14],
+            WorkspaceDestination::RawMode
+        );
+        assert_eq!(NAVIGATOR_GROUPS[4].label, "TOOLS");
+        assert!((NAVIGATOR_GROUPS[4].start..NAVIGATOR_GROUPS[4].end).contains(&14));
+
+        let mut app = App::new(16, 4096);
+        let raw_commands = app
+            .command_palette_commands()
+            .into_iter()
+            .filter(|command| command.id == CommandId::OpenRawMode)
+            .collect::<Vec<_>>();
+        assert_eq!(raw_commands.len(), 1);
+        assert!(raw_commands[0].enabled());
+        assert_eq!(
+            command_action(&app, CommandId::OpenRawMode),
+            Action::Open(Screen::RawMode)
+        );
+
+        assert_eq!(update(&mut app, Action::Open(Screen::RawMode)), None);
+        assert_eq!(app.navigator_selection, 14);
+        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert_eq!(app.inspector_mode(), InspectorMode::RawCommand);
+        assert_eq!(
+            update(&mut app, Action::CycleFocus { backwards: false }),
+            None
+        );
+        assert_eq!(app.focus, FocusTarget::Inspector);
     }
 }

@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::{BTreeMap, BTreeSet},
     path::{Component, Path, PathBuf},
+    sync::OnceLock,
 };
 use thiserror::Error;
 
@@ -39,6 +40,15 @@ pub const MAX_RAW_SEARCH_BYTES: usize = 512;
 pub const MAX_RAW_FAVORITES: usize = 256;
 pub const MAX_RAW_HISTORY_STUBS: usize = 256;
 pub const MAX_RAW_VIEW_DEPTH: usize = 8;
+
+pub fn builtin_raw_catalog() -> &'static RawCatalog {
+    static CATALOG: OnceLock<RawCatalog> = OnceLock::new();
+    CATALOG.get_or_init(|| {
+        RawCatalog::builtin()
+            .normalize()
+            .expect("the generated Raw catalog is validated by traceability tests")
+    })
+}
 
 macro_rules! raw_id {
     ($name:ident, $field:literal) => {

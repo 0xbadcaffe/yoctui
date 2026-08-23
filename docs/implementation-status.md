@@ -72,7 +72,14 @@ selection, explicit favorite-removal confirmation, and view/focus restoration.
 Catalog replacement clamps or removes stale identities; a safe capability
 generation change closes only the stale preview and refreshes the form, while
 capability/build-identity loss closes unsafe work with an exact notification
-and no backend effect. `RAW-NAV-001` is active next.
+and no backend effect. `RAW-NAV-001` is complete: one Raw Mode identity now
+crosses the typed screen and compatibility catalogs, the first `TOOLS`
+Navigator row, command palette, shared focus and CLI input routing, Inspector,
+help, contextual footer, and responsive shell. Navigation remains inspectable
+when the daemon capability state is unknown, while the destination summary
+uses the exact `bitbake.raw.cli` requirement. Responsive TestBackend coverage,
+the reviewed target-design golden, and full model/app/UI suites cover the new
+route. `RAW-CATEGORY-UI-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

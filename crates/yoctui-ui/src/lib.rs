@@ -755,6 +755,7 @@ fn workspace_destination_label(destination: WorkspaceDestination) -> &'static st
         WorkspaceDestination::Testing => "Testing",
         WorkspaceDestination::Security => "Security",
         WorkspaceDestination::Qa => "QA",
+        WorkspaceDestination::RawMode => "Raw Mode",
         WorkspaceDestination::Devtool => "Devtool",
         WorkspaceDestination::QemuWic => "QEMU / Wic",
         WorkspaceDestination::Maintenance => "Maintenance",
@@ -972,6 +973,9 @@ fn footer_shortcuts(app: &App) -> String {
         Screen::Qa => {
             "Tab view | ↑/↓ select | s scope | / search | f status | r run | I import | R refresh | Enter details | o report | e provider | l source | c cancel"
         }
+        Screen::RawMode => {
+            "←/→ Pane | ↑/↓ Select | Enter Open | / Search | f Favorite | H History | Tab Focus | F1 Help | F10 Menu | q Quit"
+        }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
@@ -1066,6 +1070,10 @@ fn current_search_state(app: &App) -> Option<(bool, bool)> {
         }
         Screen::Security => (app.security.searching, !app.security.query.is_empty()),
         Screen::Qa => (app.qa.searching, !app.qa.query.is_empty()),
+        Screen::RawMode => (
+            app.raw_mode.search.editing,
+            !app.raw_mode.search.query.is_empty(),
+        ),
         Screen::Compatibility => (
             app.compatibility_ui.searching,
             !app.compatibility_ui.query.is_empty(),
@@ -3296,7 +3304,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 20] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 21] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -3323,6 +3331,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         ("Testing", Screen::Testing, WorkspaceDestination::Testing),
         ("Security", Screen::Security, WorkspaceDestination::Security),
         ("QA", Screen::Qa, WorkspaceDestination::Qa),
+        ("Raw Mode", Screen::RawMode, WorkspaceDestination::RawMode),
         ("Devtool", Screen::Recipes, WorkspaceDestination::Devtool),
         ("QEMU / Wic", Screen::Images, WorkspaceDestination::QemuWic),
         (
@@ -3687,12 +3696,23 @@ fn workspace(
         }
         Screen::Configuration => config(frame, app, area),
         Screen::Bbmask => bbmask(frame, app, area),
+        Screen::RawMode => raw_mode_workspace(frame, app, area),
         Screen::Maintenance => maintenance_workspace(frame, app, area),
         Screen::Compatibility => compatibility_workspace(frame, app, area),
         Screen::Help => help(frame, area),
         Screen::Settings => settings_workspace(frame, app, area),
         Screen::BuildEnvironment => build_environment_workspace(frame, app, area),
     }
+}
+
+fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let text = "Structured BitBake command workbench\n\nRaw Mode exposes catalog-backed BitBake templates; it is not an arbitrary shell. Command browsing is local, while execution availability comes only from the current daemon capability snapshot.";
+    frame.render_widget(
+        Paragraph::new(text)
+            .block(pane_block(app, "Raw Mode", false))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
 }
 
 fn task_inspector_primary(inspector: &TaskInspectorRef<'_>) -> String {
@@ -4426,6 +4446,7 @@ fn inspector(
         Screen::Testing => testing_inspector_text(app),
         Screen::Security => security_inspector_text(app),
         Screen::Qa => qa_inspector_text(app),
+        Screen::RawMode => "Raw Mode\nStructured catalog-backed BitBake commands. Select catalog material in the Workspace to inspect exact command help.".into(),
         Screen::Maintenance => maintenance_inspector_text(app),
         Screen::Compatibility => compatibility_inspector_text(app),
         _ => format!(
@@ -14176,7 +14197,7 @@ fn help(frame: &mut Frame, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     let text = format!(
-        "{function_keys}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Edit current workspace search; Ctrl+U clears its typed query   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+        "{function_keys}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, / search, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Edit current workspace search; Ctrl+U clears its typed query   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
     );
     frame.render_widget(
         Paragraph::new(text).block(Block::default().title("Help").borders(Borders::ALL)),
@@ -15410,7 +15431,7 @@ mod tests {
         }
 
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 14;
+        app.navigator_selection = 15;
         let devtool = rendered_text(&app, 180, 58);
         for expected in [
             "Destination: Devtool",
@@ -15460,7 +15481,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 14;
+        app.navigator_selection = 15;
         let unavailable = rendered_text(&app, 180, 56);
         assert!(unavailable.contains("Upgrade recipe"), "{unavailable}");
         assert!(unavailable.contains("[U] — Unavailable"), "{unavailable}");
@@ -15487,7 +15508,7 @@ mod tests {
             },
         );
         yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
-        assert_eq!(app.navigator_selection, 14);
+        assert_eq!(app.navigator_selection, 15);
         let available = rendered_text(&app, 180, 56);
         assert!(available.contains("Upgrade recipe"), "{available}");
         assert!(available.contains("[U] — Available"), "{available}");
@@ -15519,7 +15540,7 @@ mod tests {
             .implementations
             .remove(&yoctui_model::CapabilityId::DevtoolUpgrade);
         yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
-        assert_eq!(app.navigator_selection, 14);
+        assert_eq!(app.navigator_selection, 15);
         let replaced = rendered_text(&app, 180, 56);
         assert!(
             replaced.contains("The reconnected Devtool omits upgrade."),
@@ -16352,7 +16373,7 @@ mod tests {
     fn workbench_navigator_scrolls_the_last_destination_into_view() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 19;
+        app.navigator_selection = 20;
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("TOOLS"), "{output}");
         assert!(output.contains("Settings"), "{output}");
@@ -16390,9 +16411,9 @@ mod tests {
     fn next_generation_navigator_reports_bounded_scroll_position() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 19;
+        app.navigator_selection = 20;
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Navigator 25/25"), "{output}");
+        assert!(output.contains("Navigator 26/26"), "{output}");
         assert!(output.contains("Settings"), "{output}");
     }
 
@@ -20097,9 +20118,9 @@ mod tests {
         let mut app = App::new(32, 8192);
         app.command_palette_open = true;
         app.focus = FocusTarget::CommandPalette;
-        app.command_palette_selection = 15;
+        app.command_palette_selection = 16;
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Commands · 16/16 · rows 7–16"), "{output}");
+        assert!(output.contains("Commands · 17/17 · rows 8–17"), "{output}");
         assert!(output.contains("Open Help"), "{output}");
 
         app.command_palette_query = "nothing matches this".repeat(20);
@@ -24925,5 +24946,31 @@ mod tests {
         assert!(narrow.contains("[4] café value"), "{narrow}");
         let tiny = rendered_raw_preview(12, 3);
         assert!(tiny.contains("Run Bit"), "{tiny}");
+    }
+
+    #[test]
+    fn raw_navigation_renders_responsively_with_exact_shell_help() {
+        let mut app = App::new(16, 4096);
+        let _ = update(&mut app, Action::Open(Screen::RawMode));
+        for (width, height) in [(160, 40), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Raw Mode"), "{width}x{height}: {output}");
+            assert!(
+                output.contains("Structured BitBake command workbench"),
+                "{width}x{height}: {output}"
+            );
+        }
+
+        let below_minimum = rendered_text(&app, 79, 23);
+        assert!(below_minimum.contains("Yoctui needs at least 80x24"));
+
+        let _ = update(&mut app, Action::Open(Screen::Help));
+        let help = rendered_text(&app, 160, 40);
+        assert!(help.contains("Raw Mode: Left/Right browser pane"), "{help}");
+
+        let _ = update(&mut app, Action::Open(Screen::RawMode));
+        let shortcuts = footer_shortcuts(&app);
+        assert!(shortcuts.contains("f Favorite | H History"), "{shortcuts}");
+        assert!(shortcuts.contains("F1 Help | F10 Menu"), "{shortcuts}");
     }
 }
