@@ -101,6 +101,8 @@ pub enum RawParameterPresence {
 pub struct RawParameter {
     pub id: RawParameterId,
     pub label: String,
+    /// Exact token shown in the immutable reference, such as `<recipe>`.
+    pub placeholder: String,
     pub kind: RawParameterKind,
     pub presence: RawParameterPresence,
 }
@@ -143,6 +145,7 @@ pub enum RawArgument {
     Literal {
         value: String,
     },
+    Empty,
     Parameter {
         parameter: RawParameterId,
     },
@@ -150,6 +153,16 @@ pub enum RawArgument {
         prefix: String,
         parameter: RawParameterId,
     },
+    Composed {
+        segments: Vec<RawArgumentSegment>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum RawArgumentSegment {
+    Literal { value: String },
+    Parameter { parameter: RawParameterId },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -194,17 +207,35 @@ pub struct RawExecutableTemplate {
 }
 
 impl RawExecutableTemplate {
-    pub fn display_template(&self) -> String {
+    pub fn display_template(&self, parameters: &[RawParameter]) -> Option<String> {
         let mut tokens = Vec::with_capacity(self.arguments.len() + 1);
         tokens.push(self.executable.as_str().to_owned());
-        tokens.extend(self.arguments.iter().map(|argument| match argument {
-            RawArgument::Literal { value } => value.clone(),
-            RawArgument::Parameter { parameter } => format!("<{parameter}>"),
-            RawArgument::JoinedParameter { prefix, parameter } => {
-                format!("{prefix}<{parameter}>")
-            }
-        }));
-        tokens.join(" ")
+        for argument in &self.arguments {
+            let token = match argument {
+                RawArgument::Literal { value } => value.clone(),
+                RawArgument::Empty => "''".into(),
+                RawArgument::Parameter { parameter } => {
+                    parameter_placeholder(parameters, parameter)?.into()
+                }
+                RawArgument::JoinedParameter { prefix, parameter } => {
+                    format!("{prefix}{}", parameter_placeholder(parameters, parameter)?)
+                }
+                RawArgument::Composed { segments } => {
+                    let mut token = String::new();
+                    for segment in segments {
+                        match segment {
+                            RawArgumentSegment::Literal { value } => token.push_str(value),
+                            RawArgumentSegment::Parameter { parameter } => {
+                                token.push_str(parameter_placeholder(parameters, parameter)?)
+                            }
+                        }
+                    }
+                    token
+                }
+            };
+            tokens.push(token);
+        }
+        Some(tokens.join(" "))
     }
 }
 
@@ -353,7 +384,10 @@ fn validate_command(
     let mut parameters = BTreeSet::new();
     for parameter in &command.parameters {
         validate_id_value("parameter", parameter.id.as_str())?;
-        if !parameters.insert(parameter.id.clone()) || !valid_label(&parameter.label) {
+        if !parameters.insert(parameter.id.clone())
+            || !valid_label(&parameter.label)
+            || !valid_placeholder(&parameter.placeholder)
+        {
             return Err(RawCatalogError::InvalidParameters(command.id.clone()));
         }
     }
@@ -396,6 +430,7 @@ fn validate_executable(
                 }
                 None
             }
+            RawArgument::Empty => None,
             RawArgument::Parameter { parameter } => Some(parameter),
             RawArgument::JoinedParameter { prefix, parameter } => {
                 if !valid_argv_prefix(prefix) {
@@ -403,14 +438,32 @@ fn validate_executable(
                 }
                 Some(parameter)
             }
+            RawArgument::Composed { segments } => {
+                if segments.len() < 2
+                    || segments.len() > MAX_RAW_PARAMETERS * 2 + 1
+                    || segments.iter().any(|segment| match segment {
+                        RawArgumentSegment::Literal { value } => !valid_composed_literal(value),
+                        RawArgumentSegment::Parameter { .. } => false,
+                    })
+                {
+                    return Err(RawCatalogError::UnsafeTemplate(command.id.clone()));
+                }
+                for segment in segments {
+                    if let RawArgumentSegment::Parameter { parameter } = segment {
+                        placeholders.insert(parameter.clone());
+                    }
+                }
+                None
+            }
         };
-        if let Some(parameter) = parameter
-            && !placeholders.insert(parameter.clone())
-        {
-            return Err(RawCatalogError::PlaceholderDisagreement(command.id.clone()));
+        if let Some(parameter) = parameter {
+            placeholders.insert(parameter.clone());
         }
     }
-    if &placeholders != parameters || template.display_template() != command.reference.command {
+    if &placeholders != parameters
+        || template.display_template(&command.parameters).as_deref()
+            != Some(command.reference.command.as_str())
+    {
         return Err(RawCatalogError::PlaceholderDisagreement(command.id.clone()));
     }
     Ok(())
@@ -452,6 +505,14 @@ fn valid_reference_command(value: &str) -> bool {
     valid_bounded_text(value, MAX_RAW_REFERENCE_COMMAND_BYTES)
 }
 
+fn valid_placeholder(value: &str) -> bool {
+    valid_bounded_text(value, MAX_RAW_ARG_BYTES)
+        && !value.chars().any(char::is_whitespace)
+        && !value
+            .chars()
+            .any(|character| matches!(character, '|' | '&' | ';' | '`' | '$'))
+}
+
 fn valid_bounded_text(value: &str, maximum: usize) -> bool {
     !value.is_empty()
         && value.len() <= maximum
@@ -468,6 +529,23 @@ fn valid_argv_fragment(value: &str) -> bool {
 
 fn valid_argv_prefix(value: &str) -> bool {
     valid_argv_fragment(value) && (value.starts_with('-') || value.ends_with('='))
+}
+
+fn valid_composed_literal(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_RAW_ARG_BYTES
+        && !value.chars().any(char::is_whitespace)
+        && !contains_shell_syntax(value)
+}
+
+fn parameter_placeholder<'a>(
+    parameters: &'a [RawParameter],
+    id: &RawParameterId,
+) -> Option<&'a str> {
+    parameters
+        .iter()
+        .find(|parameter| &parameter.id == id)
+        .map(|parameter| parameter.placeholder.as_str())
 }
 
 fn contains_shell_syntax(value: &str) -> bool {
@@ -512,12 +590,14 @@ mod raw_catalog_model_tests {
                     RawParameter {
                         id: id("task"),
                         label: "Task".into(),
+                        placeholder: "<task>".into(),
                         kind: RawParameterKind::Task,
                         presence: RawParameterPresence::Required,
                     },
                     RawParameter {
                         id: id("recipe"),
                         label: "Recipe".into(),
+                        placeholder: "<recipe>".into(),
                         kind: RawParameterKind::Recipe,
                         presence: RawParameterPresence::Required,
                     },
@@ -552,7 +632,10 @@ mod raw_catalog_model_tests {
         let RawExecutionPolicy::Executable { template } = &catalog.commands[0].execution else {
             panic!("fixture must be executable");
         };
-        assert_eq!(template.display_template(), "bitbake -c <task> <recipe>");
+        assert_eq!(
+            template.display_template(&catalog.commands[0].parameters),
+            Some("bitbake -c <task> <recipe>".into())
+        );
     }
 
     #[test]

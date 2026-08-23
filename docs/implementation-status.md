@@ -24,8 +24,13 @@ layout, mouse, and accessibility. `RAW-CATALOG-MODEL-001` is complete: Raw
 Mode now has bounded stable identities, closed category/parameter/interaction/
 safety types, shell-free typed argv parts, explicit execution policy, and
 catalog validation for identity, text, placeholder, capability, and template
-integrity. `RAW-CATALOG-001` is active next to encode the reference command
-surface and classify non-executable material honestly.
+integrity. `RAW-CATALOG-001` is complete: the pinned built-in catalog contains
+all 32 top-level/favorites
+categories and all 464 commands from reference bash blocks. Its 288 direct
+BitBake commands use typed shell-free argv templates; 176 pipelines,
+redirections, setup snippets, and companion commands are explicitly inert.
+`RAW-CATALOG-TRACE-001` is active next to independently verify that generated
+catalog coverage and traceability remain synchronized with the snapshot.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
