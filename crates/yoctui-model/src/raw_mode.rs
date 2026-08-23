@@ -1,6 +1,6 @@
 use crate::{CapabilityId, CapabilityState, DaemonCompatibilitySnapshot};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::{collections::BTreeSet, path::Component};
 use thiserror::Error;
 
 pub const RAW_CATALOG_VERSION: u16 = 1;
@@ -13,6 +13,16 @@ pub const MAX_RAW_LABEL_BYTES: usize = 160;
 pub const MAX_RAW_TEXT_BYTES: usize = 4_096;
 pub const MAX_RAW_REFERENCE_COMMAND_BYTES: usize = 1_024;
 pub const MAX_RAW_ARG_BYTES: usize = 512;
+pub const MAX_RAW_RECIPE_BYTES: usize = 256;
+pub const MAX_RAW_IMAGE_BYTES: usize = 256;
+pub const MAX_RAW_TARGET_BYTES: usize = 256;
+pub const MAX_RAW_TASK_BYTES: usize = 256;
+pub const MAX_RAW_UI_BYTES: usize = 128;
+pub const MAX_RAW_FILE_BYTES: usize = 4_096;
+pub const MAX_RAW_INTEGER_INPUT_BYTES: usize = 10;
+pub const MAX_RAW_PARAMETER_TEXT_BYTES: usize = 512;
+pub const MAX_RAW_MULTICONFIG_BYTES: usize = 128;
+pub const MAX_RAW_INTEGER: u32 = u32::MAX;
 
 macro_rules! raw_id {
     ($name:ident, $field:literal) => {
@@ -105,6 +115,155 @@ pub struct RawParameter {
     pub placeholder: String,
     pub kind: RawParameterKind,
     pub presence: RawParameterPresence,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", content = "value", rename_all = "snake_case")]
+pub enum RawParameterValue {
+    Recipe(String),
+    Image(String),
+    Target(String),
+    Task(String),
+    UserInterface(String),
+    File(String),
+    Integer(u32),
+    Text(String),
+    Multiconfig(String),
+}
+
+impl RawParameterValue {
+    pub const fn kind(&self) -> RawParameterKind {
+        match self {
+            Self::Recipe(_) => RawParameterKind::Recipe,
+            Self::Image(_) => RawParameterKind::Image,
+            Self::Target(_) => RawParameterKind::Target,
+            Self::Task(_) => RawParameterKind::Task,
+            Self::UserInterface(_) => RawParameterKind::UserInterface,
+            Self::File(_) => RawParameterKind::File,
+            Self::Integer(_) => RawParameterKind::Integer,
+            Self::Text(_) => RawParameterKind::Text,
+            Self::Multiconfig(_) => RawParameterKind::Multiconfig,
+        }
+    }
+
+    pub fn argument(&self) -> String {
+        match self {
+            Self::Recipe(value)
+            | Self::Image(value)
+            | Self::Target(value)
+            | Self::Task(value)
+            | Self::UserInterface(value)
+            | Self::File(value)
+            | Self::Text(value)
+            | Self::Multiconfig(value) => value.clone(),
+            Self::Integer(value) => value.to_string(),
+        }
+    }
+}
+
+impl RawParameter {
+    pub fn parse_value(&self, input: &str) -> Result<Option<RawParameterValue>, RawParameterError> {
+        if input.is_empty() {
+            return match self.presence {
+                RawParameterPresence::Optional => Ok(None),
+                RawParameterPresence::Required => Err(RawParameterError::Required {
+                    parameter: self.id.clone(),
+                }),
+            };
+        }
+
+        let value = match self.kind {
+            RawParameterKind::Recipe => RawParameterValue::Recipe(input.to_owned()),
+            RawParameterKind::Image => RawParameterValue::Image(input.to_owned()),
+            RawParameterKind::Target => RawParameterValue::Target(input.to_owned()),
+            RawParameterKind::Task => RawParameterValue::Task(input.to_owned()),
+            RawParameterKind::UserInterface => RawParameterValue::UserInterface(input.to_owned()),
+            RawParameterKind::File => RawParameterValue::File(input.to_owned()),
+            RawParameterKind::Integer => {
+                if input.len() > MAX_RAW_INTEGER_INPUT_BYTES
+                    || !input.bytes().all(|byte| byte.is_ascii_digit())
+                {
+                    return Err(self.invalid(RawParameterInvalidReason::InvalidInteger));
+                }
+                let value = input
+                    .parse::<u64>()
+                    .map_err(|_| self.invalid(RawParameterInvalidReason::InvalidInteger))?;
+                if value > u64::from(MAX_RAW_INTEGER) {
+                    return Err(self.invalid(RawParameterInvalidReason::IntegerOutOfRange));
+                }
+                RawParameterValue::Integer(value as u32)
+            }
+            RawParameterKind::Text => RawParameterValue::Text(input.to_owned()),
+            RawParameterKind::Multiconfig => RawParameterValue::Multiconfig(input.to_owned()),
+        };
+        self.validate_value(&value)?;
+        Ok(Some(value))
+    }
+
+    pub fn validate_value(&self, value: &RawParameterValue) -> Result<(), RawParameterError> {
+        if self.kind != value.kind() {
+            return Err(RawParameterError::KindMismatch {
+                parameter: self.id.clone(),
+                expected: self.kind,
+                actual: value.kind(),
+            });
+        }
+
+        let valid = match value {
+            RawParameterValue::Recipe(value) => valid_raw_identifier(value, MAX_RAW_RECIPE_BYTES),
+            RawParameterValue::Image(value) => valid_raw_identifier(value, MAX_RAW_IMAGE_BYTES),
+            RawParameterValue::Target(value) => valid_raw_target(value),
+            RawParameterValue::Task(value) => valid_raw_identifier(value, MAX_RAW_TASK_BYTES),
+            RawParameterValue::UserInterface(value) => {
+                valid_raw_identifier(value, MAX_RAW_UI_BYTES)
+            }
+            RawParameterValue::File(value) => valid_raw_file(value),
+            RawParameterValue::Integer(_) => true,
+            RawParameterValue::Text(value) => valid_raw_text_parameter(value),
+            RawParameterValue::Multiconfig(value) => {
+                valid_raw_identifier(value, MAX_RAW_MULTICONFIG_BYTES)
+            }
+        };
+        if valid {
+            Ok(())
+        } else {
+            Err(self.invalid(RawParameterInvalidReason::InvalidValue))
+        }
+    }
+
+    fn invalid(&self, reason: RawParameterInvalidReason) -> RawParameterError {
+        RawParameterError::InvalidValue {
+            parameter: self.id.clone(),
+            kind: self.kind,
+            reason,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawParameterInvalidReason {
+    InvalidValue,
+    InvalidInteger,
+    IntegerOutOfRange,
+}
+
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum RawParameterError {
+    #[error("Raw parameter {parameter} is required")]
+    Required { parameter: RawParameterId },
+    #[error("Raw parameter {parameter} expects {expected:?}, but received {actual:?}")]
+    KindMismatch {
+        parameter: RawParameterId,
+        expected: RawParameterKind,
+        actual: RawParameterKind,
+    },
+    #[error("Raw parameter {parameter} has invalid {kind:?} input: {reason:?}")]
+    InvalidValue {
+        parameter: RawParameterId,
+        kind: RawParameterKind,
+        reason: RawParameterInvalidReason,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -803,6 +962,84 @@ fn valid_composed_literal(value: &str) -> bool {
         && !contains_shell_syntax(value)
 }
 
+fn valid_raw_identifier(value: &str, maximum: usize) -> bool {
+    !value.is_empty()
+        && value.len() <= maximum
+        && !value.starts_with('-')
+        && !matches!(value, "." | "..")
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'+' | b'-' | b'_' | b'.'))
+}
+
+fn valid_raw_target(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_RAW_TARGET_BYTES
+        && value
+            .split('/')
+            .all(|segment| valid_raw_identifier(segment, MAX_RAW_TARGET_BYTES))
+}
+
+fn valid_raw_file(value: &str) -> bool {
+    if value.is_empty()
+        || value.len() > MAX_RAW_FILE_BYTES
+        || value.trim() != value
+        || value.starts_with('-')
+        || value.ends_with('/')
+        || value.contains("//")
+        || value.chars().any(char::is_control)
+        || contains_raw_parameter_shell_syntax(value)
+    {
+        return false;
+    }
+    let mut normal_components = 0;
+    for component in std::path::Path::new(value).components() {
+        match component {
+            Component::Normal(_) => normal_components += 1,
+            Component::RootDir => {}
+            Component::CurDir | Component::ParentDir | Component::Prefix(_) => return false,
+        }
+    }
+    normal_components > 0
+}
+
+fn valid_raw_text_parameter(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= MAX_RAW_PARAMETER_TEXT_BYTES
+        && value.trim() == value
+        && !value.starts_with('-')
+        && !value.chars().any(char::is_control)
+        && !contains_raw_parameter_shell_syntax(value)
+}
+
+fn contains_raw_parameter_shell_syntax(value: &str) -> bool {
+    value.chars().any(|character| {
+        matches!(
+            character,
+            '|' | '&'
+                | ';'
+                | '<'
+                | '>'
+                | '`'
+                | '$'
+                | '('
+                | ')'
+                | '{'
+                | '}'
+                | '['
+                | ']'
+                | '*'
+                | '?'
+                | '~'
+                | '!'
+                | '#'
+                | '\\'
+                | '\''
+                | '"'
+        )
+    })
+}
+
 fn parameter_placeholder<'a>(
     parameters: &'a [RawParameter],
     id: &RawParameterId,
@@ -817,6 +1054,200 @@ fn contains_shell_syntax(value: &str) -> bool {
     value
         .chars()
         .any(|character| matches!(character, '|' | '&' | ';' | '<' | '>' | '`' | '$'))
+}
+
+#[cfg(test)]
+mod raw_parameter_tests {
+    use super::*;
+
+    fn parameter(kind: RawParameterKind, presence: RawParameterPresence) -> RawParameter {
+        RawParameter {
+            id: RawParameterId::new("value").unwrap(),
+            label: "Value".into(),
+            placeholder: "<value>".into(),
+            kind,
+            presence,
+        }
+    }
+
+    fn parsed(kind: RawParameterKind, input: &str) -> RawParameterValue {
+        parameter(kind, RawParameterPresence::Required)
+            .parse_value(input)
+            .unwrap()
+            .unwrap()
+    }
+
+    #[test]
+    fn raw_parameter_accepts_every_typed_kind_as_one_argument() {
+        let fixtures = [
+            (
+                RawParameterKind::Recipe,
+                "busybox",
+                RawParameterValue::Recipe("busybox".into()),
+            ),
+            (
+                RawParameterKind::Image,
+                "core-image-minimal",
+                RawParameterValue::Image("core-image-minimal".into()),
+            ),
+            (
+                RawParameterKind::Target,
+                "virtual/kernel",
+                RawParameterValue::Target("virtual/kernel".into()),
+            ),
+            (
+                RawParameterKind::Task,
+                "do_compile",
+                RawParameterValue::Task("do_compile".into()),
+            ),
+            (
+                RawParameterKind::UserInterface,
+                "knotty",
+                RawParameterValue::UserInterface("knotty".into()),
+            ),
+            (
+                RawParameterKind::File,
+                "/tmp/Raw Mode/recipe.bb",
+                RawParameterValue::File("/tmp/Raw Mode/recipe.bb".into()),
+            ),
+            (
+                RawParameterKind::Integer,
+                "4294967295",
+                RawParameterValue::Integer(MAX_RAW_INTEGER),
+            ),
+            (
+                RawParameterKind::Text,
+                "例え:値/=+",
+                RawParameterValue::Text("例え:値/=+".into()),
+            ),
+            (
+                RawParameterKind::Multiconfig,
+                "lib32",
+                RawParameterValue::Multiconfig("lib32".into()),
+            ),
+        ];
+
+        for (kind, input, expected) in fixtures {
+            let value = parsed(kind, input);
+            assert_eq!(value, expected);
+            assert_eq!(value.argument(), input);
+        }
+    }
+
+    #[test]
+    fn raw_parameter_required_and_optional_empty_inputs_remain_distinct() {
+        let required = parameter(RawParameterKind::Target, RawParameterPresence::Required);
+        assert_eq!(
+            required.parse_value(""),
+            Err(RawParameterError::Required {
+                parameter: required.id.clone(),
+            })
+        );
+
+        let optional = parameter(RawParameterKind::Target, RawParameterPresence::Optional);
+        assert_eq!(optional.parse_value(""), Ok(None));
+        assert_eq!(
+            optional.parse_value("busybox").unwrap(),
+            Some(RawParameterValue::Target("busybox".into()))
+        );
+        assert!(optional.parse_value(" ").is_err());
+    }
+
+    #[test]
+    fn raw_parameter_enforces_identifier_and_unicode_byte_boundaries() {
+        for (kind, maximum) in [
+            (RawParameterKind::Recipe, MAX_RAW_RECIPE_BYTES),
+            (RawParameterKind::Image, MAX_RAW_IMAGE_BYTES),
+            (RawParameterKind::Target, MAX_RAW_TARGET_BYTES),
+            (RawParameterKind::Task, MAX_RAW_TASK_BYTES),
+            (RawParameterKind::UserInterface, MAX_RAW_UI_BYTES),
+            (RawParameterKind::Multiconfig, MAX_RAW_MULTICONFIG_BYTES),
+        ] {
+            assert!(
+                parameter(kind, RawParameterPresence::Required)
+                    .parse_value(&"a".repeat(maximum))
+                    .is_ok()
+            );
+            assert!(
+                parameter(kind, RawParameterPresence::Required)
+                    .parse_value(&"a".repeat(maximum + 1))
+                    .is_err()
+            );
+        }
+
+        let text = parameter(RawParameterKind::Text, RawParameterPresence::Required);
+        let exact_unicode = "é".repeat(MAX_RAW_PARAMETER_TEXT_BYTES / 2);
+        assert_eq!(exact_unicode.len(), MAX_RAW_PARAMETER_TEXT_BYTES);
+        assert!(text.parse_value(&exact_unicode).is_ok());
+        assert!(text.parse_value(&(exact_unicode + "é")).is_err());
+        assert!(
+            parameter(RawParameterKind::Recipe, RawParameterPresence::Required)
+                .parse_value("récipe")
+                .is_err()
+        );
+
+        let file = parameter(RawParameterKind::File, RawParameterPresence::Required);
+        assert!(file.parse_value("レイヤ/recipe.bb").is_ok());
+        assert!(
+            file.parse_value(&format!("/{}", "a".repeat(MAX_RAW_FILE_BYTES - 1)))
+                .is_ok()
+        );
+        assert!(
+            file.parse_value(&format!("/{}", "a".repeat(MAX_RAW_FILE_BYTES)))
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn raw_parameter_rejects_shell_syntax_traversal_and_invalid_numbers() {
+        for kind in [
+            RawParameterKind::Recipe,
+            RawParameterKind::Image,
+            RawParameterKind::Target,
+            RawParameterKind::Task,
+            RawParameterKind::UserInterface,
+            RawParameterKind::Text,
+            RawParameterKind::Multiconfig,
+        ] {
+            let parameter = parameter(kind, RawParameterPresence::Required);
+            assert!(parameter.parse_value("--option").is_err());
+            assert!(parameter.parse_value("value;other").is_err());
+            assert!(parameter.parse_value("value\nother").is_err());
+        }
+
+        let file = parameter(RawParameterKind::File, RawParameterPresence::Required);
+        for invalid in [
+            "../recipe.bb",
+            "layers/../recipe.bb",
+            "./recipe.bb",
+            "events$(date).json",
+            "-events.json",
+            "events.json/",
+        ] {
+            assert!(file.parse_value(invalid).is_err(), "{invalid}");
+        }
+
+        let integer = parameter(RawParameterKind::Integer, RawParameterPresence::Required);
+        assert!(integer.parse_value("-1").is_err());
+        assert!(integer.parse_value("1.5").is_err());
+        assert_eq!(
+            integer.parse_value("4294967296"),
+            Err(integer.invalid(RawParameterInvalidReason::IntegerOutOfRange))
+        );
+    }
+
+    #[test]
+    fn raw_parameter_rejects_typed_kind_definition_disagreement() {
+        let recipe = parameter(RawParameterKind::Recipe, RawParameterPresence::Required);
+        assert_eq!(
+            recipe.validate_value(&RawParameterValue::Target("busybox".into())),
+            Err(RawParameterError::KindMismatch {
+                parameter: recipe.id.clone(),
+                expected: RawParameterKind::Recipe,
+                actual: RawParameterKind::Target,
+            })
+        );
+    }
 }
 
 #[cfg(test)]

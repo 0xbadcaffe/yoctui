@@ -41,7 +41,12 @@ and keep reference-only entries Unsupported. `RAW-CAP-PROBE-001` is complete:
 `bitbake --help` evidence, including a dedicated help-text probe for
 multiconfig syntax. The daemon publishes positive, negative, or inconclusive
 results once per environment generation and rejects stale results.
-`RAW-PARAM-001` is active next.
+`RAW-PARAM-001` is complete: every declared kind parses into a closed typed
+value with explicit byte/range bounds; required and optional emptiness remain
+distinct; names, targets, paths, integers, and text reject option ambiguity,
+control data, shell syntax, traversal, overflow, and kind disagreement.
+Unicode path/text byte boundaries and every normal/failure class are covered.
+`RAW-RECIPE-001` is active next.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
