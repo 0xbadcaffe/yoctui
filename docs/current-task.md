@@ -2,17 +2,18 @@
 
 ## Task
 
-**ID:** RAW-MOUSE-001
-**Title:** Add first-class Raw Mode mouse behavior
+**ID:** RAW-RESPONSIVE-001
+**Title:** Implement Raw Mode responsive layouts
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Use shared rendered geometry for category, command, favorite, history, and
-field selection with wheel parity while dialogs and PTYs retain their traps.
+Verify wide category/command/help composition, medium Inspector replacement,
+narrow pane switching, dialogs, output, and too-small terminal safety.
 
 ## Dependencies
 
+- `RAW-OUTPUT-UI-001` — DONE
 - `RAW-FAVORITE-UI-001` — DONE
 - `RAW-SEARCH-001` — DONE
 
@@ -30,16 +31,15 @@ field selection with wheel parity while dialogs and PTYs retain their traps.
 
 ## Definition of done
 
-- Mouse hit-testing uses the same bounded row geometry as keyboard navigation.
-- Wheel and click actions preserve typed identities and focus traps.
-- App and TestBackend tests cover categories, commands, Favorites, history,
-  form fields, narrow bounds, and modal/PTY isolation.
+- Wide, medium, narrow, and below-minimum layouts render without panic.
+- Inspector replacement and pane switching preserve exact selection and focus.
+- TestBackend tests cover dialogs, output, forms, Favorites, and responsive
+  text at supported widths.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app raw_mouse
-cargo test -p yoctui -- raw_mouse
+cargo test -p yoctui-ui raw_responsive
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

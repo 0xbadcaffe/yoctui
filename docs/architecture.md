@@ -2894,6 +2894,8 @@ The Favorites workspace renders the bounded ordered collection directly from
 typed projections; inspect, reorder, removal-confirmation, and reopen actions
 remain reducer transitions. Mutations return the normal atomic session
 persistence effect and never touch project files or daemon state.
+Raw mouse hit-testing remains in the app input adapter and emits the same typed
+selection actions as keyboard navigation; UI widgets remain render-only.
 `session.toml` defaults missing favorite data for legacy sessions, but validates
 the complete favorite collection before app installation or replacement. The
 session reader rejects symlinks and files above 1 MiB. The writer validates and

@@ -3751,6 +3751,11 @@ pub fn mouse_action_for_app(
         return dialog_mouse_action(mouse, app);
     }
     if app.screen == Screen::RawMode
+        && let Some(action) = raw_mouse_action(mouse, app, terminal_width, terminal_height)
+    {
+        return Some(Action::RawMode(action));
+    }
+    if app.screen == Screen::RawMode
         && matches!(
             app.raw_mode.view,
             yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
@@ -3824,6 +3829,87 @@ pub fn mouse_action_for_app(
         return Some(Action::Focus(FocusTarget::Inspector));
     }
     None
+}
+
+fn raw_mouse_action(
+    mouse: MouseInput,
+    app: &yoctui_model::App,
+    terminal_width: u16,
+    terminal_height: u16,
+) -> Option<yoctui_model::RawModeAction> {
+    use yoctui_model::{RawBrowserColumn, RawModeAction, RawModeView};
+    let shell = workbench_shell(terminal_width, terminal_height)?;
+    if !shell.contains(mouse) {
+        return None;
+    }
+    let delta = match mouse.kind {
+        MouseKind::ScrollUp => Some(-1),
+        MouseKind::ScrollDown => Some(1),
+        _ => None,
+    };
+    if let Some(delta) = delta {
+        return Some(match app.raw_mode.view {
+            RawModeView::Favorites => RawModeAction::SelectFavorite { delta },
+            RawModeView::History => RawModeAction::SelectHistory { delta },
+            _ if app.raw_mode.browser_column == RawBrowserColumn::Categories => {
+                RawModeAction::SelectCategory { delta }
+            }
+            _ => RawModeAction::SelectCommand { delta },
+        });
+    }
+    if !matches!(mouse.kind, MouseKind::Down) {
+        return None;
+    }
+    if app.raw_mode.view == RawModeView::Favorites {
+        let row = usize::from(mouse.row.saturating_sub(shell.y + 1));
+        let index = row / 4;
+        return (index < app.raw_mode.favorites.len()).then_some(RawModeAction::SelectFavorite {
+            delta: index as isize - app.raw_mode.favorite_selection as isize,
+        });
+    }
+    if app.raw_mode.view != RawModeView::Browser {
+        return None;
+    }
+    let category_width = if terminal_width >= 100 {
+        shell.width.saturating_mul(52) / 100
+    } else {
+        shell.width
+    };
+    let column = if terminal_width >= 100 && mouse.column >= shell.x + category_width {
+        RawBrowserColumn::Commands
+    } else {
+        app.raw_mode.browser_column
+    };
+    let row = usize::from(mouse.row.saturating_sub(shell.y + 1));
+    match column {
+        RawBrowserColumn::Categories => {
+            let categories = yoctui_model::builtin_raw_catalog().browser_categories();
+            let current = app
+                .raw_mode
+                .category
+                .as_ref()
+                .and_then(|id| categories.iter().position(|item| &item.id == id))
+                .unwrap_or(0);
+            Some(RawModeAction::SelectCategory {
+                delta: row as isize - current as isize,
+            })
+        }
+        RawBrowserColumn::Commands => {
+            let commands = app
+                .raw_mode
+                .visible_commands(yoctui_model::builtin_raw_catalog());
+            let current = app
+                .raw_mode
+                .command
+                .as_ref()
+                .and_then(|id| commands.iter().position(|item| &item.id == id))
+                .unwrap_or(0);
+            let target = row / 2;
+            Some(RawModeAction::SelectCommand {
+                delta: target as isize - current as isize,
+            })
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -8651,7 +8737,7 @@ mod tests {
     }
 
     #[test]
-    fn next_generation_mouse_uses_responsive_regions_and_keyboard_scroll_routes() {
+    fn raw_mouse_uses_responsive_regions_and_keyboard_scroll_routes() {
         let mut app = yoctui_model::App::new(16, 4096);
         app.screen = Screen::Recipes;
 

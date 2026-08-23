@@ -4251,6 +4251,9 @@ The Favorites workspace is a bounded ordered record view. `↑`/`↓` select,
 `[`/`]` reorder, and `x` opens the exact-name removal confirmation. The view
 shows the name, reconstructed command template, defaults, additional argv,
 stale marker, and current availability state at narrow and wide widths.
+Mouse clicks use the same row geometry as keyboard selection; wheel events move
+the active category, command, history, or favorite selection and never bypass
+dialog or PTY focus traps.
 
 ### Capability and responsive behavior
 

@@ -5882,18 +5882,18 @@ notes = "Bounded case-insensitive typed search matches category, command identit
 id = "RAW-MOUSE-001"
 milestone = "M20"
 title = "Add first-class Raw Mode mouse behavior"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 626
 required = true
 depends_on = ["RAW-FAVORITE-UI-001", "RAW-SEARCH-001"]
 verify = ["cargo test -p yoctui-app raw_mouse", "cargo test -p yoctui -- raw_mouse"]
-notes = "Use shared rendered geometry for category/command/favorite/history/field selection and wheel parity while modals and PTYs retain their existing traps."
+notes = "Raw category, command, Favorites, and history clicks/wheel events use bounded row geometry and emit the same typed selection actions while modal and PTY focus traps remain authoritative."
 
 [[task]]
 id = "RAW-RESPONSIVE-001"
 milestone = "M20"
 title = "Implement Raw Mode responsive layouts"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 627
 required = true
 depends_on = ["RAW-OUTPUT-UI-001", "RAW-FAVORITE-UI-001", "RAW-SEARCH-001"]

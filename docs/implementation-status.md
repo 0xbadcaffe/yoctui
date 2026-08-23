@@ -183,6 +183,9 @@ persistence effect. `RAW-SEARCH-001` is complete: bounded case-insensitive
 search matches category, command identity, labels, and descriptions while
 preserving exact selection and explicit no-match behavior. `RAW-MOUSE-001` is
 active next.
+`RAW-MOUSE-001` now maps Raw category, command, Favorites, and history clicks
+and wheel events through shared bounded row geometry while preserving modal and
+PTY focus traps.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
