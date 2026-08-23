@@ -33,8 +33,12 @@ redirections, setup snippets, and companion commands are explicitly inert.
 bash blocks,
 checks every source-line identity, heading, command, description,
 classification, category, and rendered template, verifies the pinned SHA-256,
-and rejects stale generated output. `RAW-CAP-001` is active next to make
-connected-environment availability semantics precise for every executable.
+and rejects stale generated output. `RAW-CAP-001` is complete: Raw projections
+consume only daemon-owned capability records and selected implementations,
+distinguish all-of from any-of, preserve exact limitations and failure reasons,
+and keep reference-only entries Unsupported. `RAW-CAP-PROBE-001` is active
+next to audit and extend direct option probes where the existing capability
+vocabulary is not specific enough for Raw commands.
 Runtime Raw Mode support will come only from the daemon-owned connected-
 environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not

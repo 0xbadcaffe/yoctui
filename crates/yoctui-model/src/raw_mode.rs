@@ -1,4 +1,4 @@
-use crate::CapabilityId;
+use crate::{CapabilityId, CapabilityState, DaemonCompatibilitySnapshot};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use thiserror::Error;
@@ -262,6 +262,71 @@ pub struct RawCommand {
     pub execution: RawExecutionPolicy,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RawAvailabilityState {
+    Available,
+    Limited,
+    Unavailable,
+    Unknown,
+    Unsupported,
+}
+
+impl RawAvailabilityState {
+    pub const fn is_enabled(self) -> bool {
+        matches!(self, Self::Available | Self::Limited)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawCapabilityIssue {
+    pub capability: Option<CapabilityId>,
+    pub reason: String,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RawCommandAvailability {
+    pub state: RawAvailabilityState,
+    pub issues: Vec<RawCapabilityIssue>,
+    pub implementations: Vec<(CapabilityId, String)>,
+}
+
+impl RawCommandAvailability {
+    pub const fn is_enabled(&self) -> bool {
+        self.state.is_enabled()
+    }
+}
+
+impl RawCommand {
+    /// Project this command only from daemon-owned connected-environment
+    /// authority. The bundled reference version never participates.
+    pub fn availability(
+        &self,
+        authority: Option<&DaemonCompatibilitySnapshot>,
+    ) -> RawCommandAvailability {
+        match &self.execution {
+            RawExecutionPolicy::ReferenceOnly { reason, .. } => RawCommandAvailability {
+                state: RawAvailabilityState::Unsupported,
+                issues: vec![RawCapabilityIssue {
+                    capability: None,
+                    reason: reason.clone(),
+                    limitations: Vec::new(),
+                }],
+                implementations: Vec::new(),
+            },
+            RawExecutionPolicy::Executable { template } => match &template.capabilities {
+                RawCapabilityRequirement::All { capabilities } => {
+                    project_raw_capabilities(authority, capabilities, RawRequirementOperator::All)
+                }
+                RawCapabilityRequirement::Any { capabilities } => {
+                    project_raw_capabilities(authority, capabilities, RawRequirementOperator::Any)
+                }
+            },
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RawCatalog {
     pub version: u16,
@@ -359,6 +424,206 @@ pub enum RawCatalogError {
     InvalidCapabilityRequirement(RawCommandId),
     #[error("Raw command {0} does not have a coherent execution policy")]
     InvalidExecutionPolicy(RawCommandId),
+}
+
+#[derive(Debug, Clone, Copy)]
+enum RawRequirementOperator {
+    All,
+    Any,
+}
+
+struct RawCapabilityResult {
+    id: CapabilityId,
+    state: RawAvailabilityState,
+    reason: Option<String>,
+    limitations: Vec<String>,
+    implementation: Option<String>,
+}
+
+impl RawCapabilityResult {
+    fn is_enabled(&self) -> bool {
+        self.state.is_enabled() && self.implementation.is_some()
+    }
+
+    fn issue(&self) -> Option<RawCapabilityIssue> {
+        self.reason.as_ref().map(|reason| RawCapabilityIssue {
+            capability: Some(self.id),
+            reason: reason.clone(),
+            limitations: self.limitations.clone(),
+        })
+    }
+}
+
+fn project_raw_capabilities(
+    authority: Option<&DaemonCompatibilitySnapshot>,
+    capabilities: &[CapabilityId],
+    operator: RawRequirementOperator,
+) -> RawCommandAvailability {
+    let results = capabilities
+        .iter()
+        .copied()
+        .map(|id| raw_capability_result(authority, id))
+        .collect::<Vec<_>>();
+
+    let selected = match operator {
+        RawRequirementOperator::All if results.iter().all(RawCapabilityResult::is_enabled) => {
+            Some(results.iter().collect::<Vec<_>>())
+        }
+        RawRequirementOperator::Any => results
+            .iter()
+            .find(|result| result.state == RawAvailabilityState::Available && result.is_enabled())
+            .or_else(|| results.iter().find(|result| result.is_enabled()))
+            .map(|result| vec![result]),
+        RawRequirementOperator::All => None,
+    };
+
+    if let Some(selected) = selected {
+        let limited = selected
+            .iter()
+            .any(|result| result.state == RawAvailabilityState::Limited);
+        return RawCommandAvailability {
+            state: if limited {
+                RawAvailabilityState::Limited
+            } else {
+                RawAvailabilityState::Available
+            },
+            issues: selected
+                .iter()
+                .filter_map(|result| result.issue())
+                .collect(),
+            implementations: selected
+                .iter()
+                .filter_map(|result| {
+                    result
+                        .implementation
+                        .as_ref()
+                        .map(|implementation| (result.id, implementation.clone()))
+                })
+                .collect(),
+        };
+    }
+
+    let failures = results
+        .iter()
+        .filter(|result| !result.is_enabled())
+        .collect::<Vec<_>>();
+    let state = if failures
+        .iter()
+        .any(|result| result.state == RawAvailabilityState::Unknown)
+    {
+        RawAvailabilityState::Unknown
+    } else if !failures.is_empty()
+        && failures
+            .iter()
+            .all(|result| result.state == RawAvailabilityState::Unsupported)
+    {
+        RawAvailabilityState::Unsupported
+    } else {
+        RawAvailabilityState::Unavailable
+    };
+    RawCommandAvailability {
+        state,
+        issues: failures
+            .iter()
+            .filter_map(|result| result.issue())
+            .collect(),
+        implementations: Vec::new(),
+    }
+}
+
+fn raw_capability_result(
+    authority: Option<&DaemonCompatibilitySnapshot>,
+    id: CapabilityId,
+) -> RawCapabilityResult {
+    let Some(authority) = authority else {
+        return RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Unknown,
+            reason: Some(format!(
+                "No current environment capability snapshot: {}.",
+                id.as_str()
+            )),
+            limitations: Vec::new(),
+            implementation: None,
+        };
+    };
+    let Some(record) = authority.snapshot.capability(id) else {
+        return RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Unknown,
+            reason: Some(format!("{} has no capability evidence.", id.as_str())),
+            limitations: Vec::new(),
+            implementation: None,
+        };
+    };
+    let implementation = authority
+        .implementations
+        .get(&id)
+        .map(|implementation| implementation.id.clone());
+    match &record.state {
+        CapabilityState::Available if implementation.is_some() => RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Available,
+            reason: None,
+            limitations: Vec::new(),
+            implementation,
+        },
+        CapabilityState::Available => RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Unknown,
+            reason: Some(format!(
+                "{} is enabled but has no selected implementation.",
+                id.as_str()
+            )),
+            limitations: Vec::new(),
+            implementation: None,
+        },
+        CapabilityState::AvailableWithLimitations {
+            reason,
+            limitations,
+        } if implementation.is_some() => RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Limited,
+            reason: Some(reason.message.clone()),
+            limitations: limitations.clone(),
+            implementation,
+        },
+        CapabilityState::AvailableWithLimitations {
+            reason,
+            limitations,
+        } => RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Unknown,
+            reason: Some(format!(
+                "{} {} is limited but has no selected implementation.",
+                reason.message,
+                id.as_str()
+            )),
+            limitations: limitations.clone(),
+            implementation: None,
+        },
+        CapabilityState::Unavailable { reason } => RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Unavailable,
+            reason: Some(reason.message.clone()),
+            limitations: Vec::new(),
+            implementation: None,
+        },
+        CapabilityState::Unknown { reason } => RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Unknown,
+            reason: Some(reason.message.clone()),
+            limitations: Vec::new(),
+            implementation: None,
+        },
+        CapabilityState::Unsupported { reason } => RawCapabilityResult {
+            id,
+            state: RawAvailabilityState::Unsupported,
+            reason: Some(reason.message.clone()),
+            limitations: Vec::new(),
+            implementation: None,
+        },
+    }
 }
 
 fn validate_command(
@@ -905,5 +1170,228 @@ mod raw_catalog_trace_tests {
         assert_eq!(executable, RAW_BUILTIN_EXECUTABLE_COUNT);
         assert_eq!(references.len(), RAW_BUILTIN_COMMAND_COUNT);
         assert_eq!(RAW_REFERENCE_SHA256.len(), 64);
+    }
+}
+
+#[cfg(test)]
+mod raw_capability_tests {
+    use super::*;
+    use crate::{
+        CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
+        CapabilityImplementation, CapabilityImplementationKind, CapabilityReason, CapabilityRecord,
+        CapabilitySnapshot, YoctoEnvironmentIdentity,
+    };
+    use std::collections::BTreeMap;
+
+    fn reason(message: &str) -> CapabilityReason {
+        CapabilityReason::new("test.raw", message, None).unwrap()
+    }
+
+    fn authority(
+        records: Vec<(CapabilityId, CapabilityState, Option<&str>)>,
+    ) -> DaemonCompatibilitySnapshot {
+        let capabilities = records
+            .iter()
+            .map(|(id, state, _)| CapabilityRecord {
+                id: *id,
+                state: state.clone(),
+                evidence: match state {
+                    CapabilityState::Available
+                    | CapabilityState::AvailableWithLimitations { .. } => {
+                        vec![CapabilityEvidence {
+                            kind: CapabilityEvidenceKind::DirectProbe,
+                            outcome: CapabilityEvidenceOutcome::Positive,
+                            subject: id.as_str().into(),
+                            detail: "positive Raw fixture evidence".into(),
+                            argv: vec!["fixture".into()],
+                        }]
+                    }
+                    CapabilityState::Unavailable { .. } => vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: CapabilityEvidenceOutcome::Negative,
+                        subject: id.as_str().into(),
+                        detail: "negative Raw fixture evidence".into(),
+                        argv: vec!["fixture".into()],
+                    }],
+                    CapabilityState::Unknown { .. } | CapabilityState::Unsupported { .. } => {
+                        Vec::new()
+                    }
+                },
+            })
+            .collect();
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity::default(),
+                capabilities,
+            },
+            implementations: records
+                .into_iter()
+                .filter_map(|(id, _, implementation)| {
+                    implementation.map(|implementation| {
+                        (
+                            id,
+                            CapabilityImplementation {
+                                id: implementation.into(),
+                                kind: CapabilityImplementationKind::Command,
+                            },
+                        )
+                    })
+                })
+                .collect::<BTreeMap<_, _>>(),
+        }
+        .normalize()
+        .unwrap()
+    }
+
+    fn command(line: usize) -> RawCommand {
+        RawCatalog::builtin()
+            .commands
+            .into_iter()
+            .find(|command| command.reference.id.as_str() == format!("wrynose-6-0.l{line:04}"))
+            .unwrap()
+    }
+
+    fn with_requirement(requirement: RawCapabilityRequirement) -> RawCommand {
+        let mut command = command(167);
+        let RawExecutionPolicy::Executable { template } = &mut command.execution else {
+            unreachable!()
+        };
+        template.capabilities = requirement;
+        command
+    }
+
+    #[test]
+    fn raw_capability_builtin_commands_have_explicit_fail_closed_requirements() {
+        let catalog = RawCatalog::builtin();
+        for command in &catalog.commands {
+            match &command.execution {
+                RawExecutionPolicy::Executable { template } => {
+                    assert!(!template.capabilities.capabilities().is_empty());
+                    let availability = command.availability(None);
+                    assert_eq!(availability.state, RawAvailabilityState::Unknown);
+                    assert!(!availability.issues.is_empty());
+                }
+                RawExecutionPolicy::ReferenceOnly { reason, .. } => {
+                    let availability = command.availability(None);
+                    assert_eq!(availability.state, RawAvailabilityState::Unsupported);
+                    assert_eq!(availability.issues[0].reason, *reason);
+                    assert!(availability.implementations.is_empty());
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn raw_capability_all_of_preserves_available_and_limited_reasons() {
+        let command = with_requirement(RawCapabilityRequirement::All {
+            capabilities: vec![
+                CapabilityId::BitBakeBuild,
+                CapabilityId::BitBakeEnvironmentDump,
+            ],
+        });
+        let authority = authority(vec![
+            (
+                CapabilityId::BitBakeBuild,
+                CapabilityState::Available,
+                Some("bitbake.argv"),
+            ),
+            (
+                CapabilityId::BitBakeEnvironmentDump,
+                CapabilityState::AvailableWithLimitations {
+                    reason: reason("Environment output is truncated."),
+                    limitations: vec!["Maximum 4 MiB output.".into()],
+                },
+                Some("bitbake.environment.argv"),
+            ),
+        ]);
+        let availability = command.availability(Some(&authority));
+        assert_eq!(availability.state, RawAvailabilityState::Limited);
+        assert!(availability.is_enabled());
+        assert_eq!(
+            availability.issues[0].reason,
+            "Environment output is truncated."
+        );
+        assert_eq!(
+            availability.issues[0].limitations,
+            vec!["Maximum 4 MiB output."]
+        );
+        assert_eq!(availability.implementations.len(), 2);
+    }
+
+    #[test]
+    fn raw_capability_any_of_prefers_fully_available_implementation() {
+        let command = with_requirement(RawCapabilityRequirement::Any {
+            capabilities: vec![
+                CapabilityId::BitBakeEnvironmentDump,
+                CapabilityId::BitBakeBuild,
+            ],
+        });
+        let authority = authority(vec![
+            (
+                CapabilityId::BitBakeEnvironmentDump,
+                CapabilityState::AvailableWithLimitations {
+                    reason: reason("Fallback output is limited."),
+                    limitations: vec!["Recipe scope only.".into()],
+                },
+                Some("bitbake.environment.fallback"),
+            ),
+            (
+                CapabilityId::BitBakeBuild,
+                CapabilityState::Available,
+                Some("bitbake.argv"),
+            ),
+        ]);
+        let availability = command.availability(Some(&authority));
+        assert_eq!(availability.state, RawAvailabilityState::Available);
+        assert!(availability.issues.is_empty());
+        assert_eq!(
+            availability.implementations,
+            vec![(CapabilityId::BitBakeBuild, "bitbake.argv".into())]
+        );
+    }
+
+    #[test]
+    fn raw_capability_preserves_unavailable_unknown_and_unsupported_states() {
+        for (state, expected, message) in [
+            (
+                CapabilityState::Unavailable {
+                    reason: reason("Required option was not found."),
+                },
+                RawAvailabilityState::Unavailable,
+                "Required option was not found.",
+            ),
+            (
+                CapabilityState::Unknown {
+                    reason: reason("Probe did not complete."),
+                },
+                RawAvailabilityState::Unknown,
+                "Probe did not complete.",
+            ),
+            (
+                CapabilityState::Unsupported {
+                    reason: reason("Backend cannot expose this operation."),
+                },
+                RawAvailabilityState::Unsupported,
+                "Backend cannot expose this operation.",
+            ),
+        ] {
+            let authority = authority(vec![(CapabilityId::BitBakeBuild, state, None)]);
+            let availability = command(167).availability(Some(&authority));
+            assert_eq!(availability.state, expected);
+            assert_eq!(availability.issues[0].reason, message);
+            assert!(!availability.is_enabled());
+        }
+    }
+
+    #[test]
+    fn raw_capability_missing_record_is_unknown_without_version_inference() {
+        let authority = authority(Vec::new());
+        let availability = command(167).availability(Some(&authority));
+        assert_eq!(availability.state, RawAvailabilityState::Unknown);
+        assert_eq!(
+            availability.issues[0].reason,
+            "bitbake.build has no capability evidence."
+        );
     }
 }
