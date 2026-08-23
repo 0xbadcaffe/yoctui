@@ -273,6 +273,18 @@ impl DaemonCompatibilityRuntime {
                 .await
                 {
                     if let Some(value) = authoritative_value(&value) {
+                        let value = if matches!(
+                            variable,
+                            "MACHINE"
+                                | "DISTRO"
+                                | "DISTRO_VERSION"
+                                | "DISTRO_CODENAME"
+                                | "OE_VERSION"
+                        ) {
+                            authoritative_token(&value).unwrap_or(value)
+                        } else {
+                            value
+                        };
                         datastore.insert(variable.to_owned(), value);
                     }
                 }
@@ -481,6 +493,24 @@ fn strip_terminal_escapes(value: &str) -> String {
         }
     }
     result
+}
+
+fn valid_identity_token(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 128
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'+' | b'.' | b'-'))
+}
+
+fn authoritative_token(value: &str) -> Option<String> {
+    value
+        .lines()
+        .map(strip_terminal_escapes)
+        .map(|line| line.trim().trim_matches('"').trim_matches('\'').to_owned())
+        .filter(|line| valid_identity_token(line))
+        .next_back()
+        .map(|value| value)
 }
 
 fn canonical_initialized_build(value: &str) -> Result<PathBuf, DaemonCompatibilityError> {
@@ -779,6 +809,10 @@ mod tests {
             Some("poky".into())
         );
         assert_eq!(authoritative_value("NOTE: reconnecting\n"), None);
+        assert_eq!(
+            authoritative_token("poky\nThe variable 'DISTRO' is not defined"),
+            Some("poky".into())
+        );
     }
     use std::{
         collections::{BTreeMap, BTreeSet},
