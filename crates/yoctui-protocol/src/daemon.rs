@@ -1112,9 +1112,7 @@ fn validate_environment(
         })?;
     }
     validate_detected(&environment.distro, |distro| {
-        if !valid_id(&distro.name) {
-            return Err(CompatibilityProtocolError::InvalidText("distro"));
-        }
+        valid_token(&distro.name, "distro")?;
         if let Some(version) = &distro.version {
             valid_text(version, "distro version")?;
         }
@@ -1310,6 +1308,14 @@ fn valid_id(value: &str) -> bool {
         && value
             .bytes()
             .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
+}
+
+fn valid_token(value: &str, field: &'static str) -> Result<(), CompatibilityProtocolError> {
+    valid_text(value, field)?;
+    if value.chars().any(char::is_whitespace) {
+        return Err(CompatibilityProtocolError::InvalidText(field));
+    }
+    Ok(())
 }
 
 fn valid_path(value: &str, field: &'static str) -> Result<(), CompatibilityProtocolError> {
@@ -2974,7 +2980,7 @@ mod tests {
         let mut snapshot = compatibility_snapshot_fixture(1);
         snapshot.environment.distro = CompatibilityDetected::Detected {
             value: CompatibilityDistroIdentity {
-                name: "Poky".into(),
+                name: "Poky+custom".into(),
                 version: Some("5.2.4".into()),
             },
             authority: CompatibilityIdentityAuthority::BitBakeDatastore,
