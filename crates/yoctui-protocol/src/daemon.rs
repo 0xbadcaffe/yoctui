@@ -1307,9 +1307,9 @@ fn valid_text(value: &str, field: &'static str) -> Result<(), CompatibilityProto
 fn valid_id(value: &str) -> bool {
     !value.is_empty()
         && value.len() <= 128
-        && value.bytes().all(|byte| {
-            byte.is_ascii_lowercase() || byte.is_ascii_digit() || matches!(byte, b'.' | b'_' | b'-')
-        })
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'_' | b'-'))
 }
 
 fn valid_path(value: &str, field: &'static str) -> Result<(), CompatibilityProtocolError> {
@@ -2967,6 +2967,19 @@ mod tests {
 
         assert_eq!(decoded, snapshot);
         assert!(decoded.capabilities[0].state.is_enabled());
+    }
+
+    #[test]
+    fn compatibility_snapshot_accepts_case_preserving_distro_identity() {
+        let mut snapshot = compatibility_snapshot_fixture(1);
+        snapshot.environment.distro = CompatibilityDetected::Detected {
+            value: CompatibilityDistroIdentity {
+                name: "Poky".into(),
+                version: Some("5.2.4".into()),
+            },
+            authority: CompatibilityIdentityAuthority::BitBakeDatastore,
+        };
+        snapshot.validate().unwrap();
     }
 
     #[test]
