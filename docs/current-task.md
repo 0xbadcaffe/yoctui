@@ -4,14 +4,15 @@
 
 **ID:** LIVE-UI-POKY-001
 **Title:** Validate redesigned UI against real Poky
-**Status:** IN_PROGRESS
+**Status:** BLOCKED
 
 ## Objective
 
 The Raw workbench is complete. Global completion is blocked by the separate
 real-Poky redesigned-UI evidence task. The host now permits the required user
-namespace, and the live harness reaches daemon startup; a cold BitBake
-compatibility negotiation exceeds the previous 60-second client deadline.
+namespace and the daemon completes cold compatibility startup within the
+extended bounded deadline, but overlapping live Poky builds exhaust host
+resources and the harness is SIGKILLed before it can write a manifest.
 
 ## Dependencies
 
@@ -38,6 +39,8 @@ compatibility negotiation exceeds the previous 60-second client deadline.
 
 - Run `unshare -Ur true` and the live UI evidence harness commands.
 - Capture and verify the required real-Poky evidence manifest.
+- Before retrying, ensure no other live Poky builds write the shared evidence
+  directory or consume the host's available memory and swap.
 
 ## Verification
 

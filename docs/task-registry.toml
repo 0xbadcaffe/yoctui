@@ -5541,12 +5541,12 @@ notes = "Real PTY output now crosses the maintained emulator, bounded typed PtyS
 id = "LIVE-UI-POKY-001"
 milestone = "M19"
 title = "Validate redesigned UI against real Poky"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
 verify = ["unshare -Ur true", "YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
-notes = "IN_PROGRESS: `unshare -Ur true` now passes and the live harness reaches cold daemon compatibility negotiation, but ten sequential authoritative `bitbake-getvar` queries exceed the previous 60-second `daemon start` handshake deadline. The bounded startup window is now 180 seconds; rerun the live harness to capture and verify the manifest."
+notes = "BLOCKED after the startup fix: `unshare -Ur true` passes, the cold daemon starts within the 180-second bounded handshake, startup/inspection checks pass, and the live build plus active Tasks capture begin. The harness then exits 137 (SIGKILL) before manifest generation while overlapping live Poky builds share the default evidence path and consume host swap. Reproduce only after those builds are stopped or complete, with a unique YOCTUI_NEXT_UI_EVIDENCE directory."
 
 [[task]]
 id = "README-UI-001"

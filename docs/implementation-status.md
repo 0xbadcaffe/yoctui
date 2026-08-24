@@ -207,11 +207,13 @@ environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
 implicitly executable.
 
-`LIVE-UI-POKY-001` is `IN_PROGRESS`: the host now permits the unprivileged user
-namespace and the live harness reaches daemon startup. Cold authoritative
-compatibility negotiation makes sequential `bitbake-getvar` queries exceed the
-former 60-second startup handshake window, so the bounded window is now 180
-seconds before rerunning the real-Poky evidence capture.
+`LIVE-UI-POKY-001` is `BLOCKED`: the host now permits the unprivileged user
+namespace, the cold daemon starts within its 180-second bounded handshake, and
+the live harness completes startup/inspection checks, accepts the real build,
+and captures active Tasks. It is then SIGKILLed with exit 137 before manifest
+generation while overlapping live Poky builds share the default evidence path
+and exhaust host swap. A clean retry requires those builds to finish or stop
+and a unique `YOCTUI_NEXT_UI_EVIDENCE` directory.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session
