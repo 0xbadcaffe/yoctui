@@ -5541,12 +5541,12 @@ notes = "Real PTY output now crosses the maintained emulator, bounded typed PtyS
 id = "LIVE-UI-POKY-001"
 milestone = "M19"
 title = "Validate redesigned UI against real Poky"
-status = "BLOCKED"
+status = "IN_PROGRESS"
 priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
 verify = ["unshare -Ur true", "YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
-notes = "BLOCKED on the current host: `unshare -Ur true` fails with `Operation not permitted`, and `YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh` exits 2 before evidence capture because unprivileged user namespaces are unavailable. The evidence verifier consequently reports missing `manifest.json`. Rerun the prerequisite and live harness when the host permits user namespaces."
+notes = "IN_PROGRESS: `unshare -Ur true` now passes and the live harness reaches cold daemon compatibility negotiation, but ten sequential authoritative `bitbake-getvar` queries exceed the previous 60-second `daemon start` handshake deadline. The bounded startup window is now 180 seconds; rerun the live harness to capture and verify the manifest."
 
 [[task]]
 id = "README-UI-001"

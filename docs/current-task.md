@@ -4,14 +4,14 @@
 
 **ID:** LIVE-UI-POKY-001
 **Title:** Validate redesigned UI against real Poky
-**Status:** BLOCKED
+**Status:** IN_PROGRESS
 
 ## Objective
 
 The Raw workbench is complete. Global completion is blocked by the separate
-real-Poky redesigned-UI evidence task; this host currently denies the
-unprivileged user namespace required by BitBake, so the live harness exits
-before evidence capture.
+real-Poky redesigned-UI evidence task. The host now permits the required user
+namespace, and the live harness reaches daemon startup; a cold BitBake
+compatibility negotiation exceeds the previous 60-second client deadline.
 
 ## Dependencies
 
@@ -37,8 +37,7 @@ before evidence capture.
 ## Definition of done
 
 - Run `unshare -Ur true` and the live UI evidence harness commands.
-- If the host prerequisite remains unavailable, retain `BLOCKED` and record
-  the exact reproduction rather than claiming live evidence.
+- Capture and verify the required real-Poky evidence manifest.
 
 ## Verification
 

@@ -1818,6 +1818,9 @@ async fn daemon_cli(_command: DaemonCliCommand) -> Result<()> {
 }
 
 #[cfg(unix)]
+const DAEMON_STARTUP_TIMEOUT: Duration = Duration::from_secs(180);
+
+#[cfg(unix)]
 fn start_daemon() -> Result<()> {
     use yoctui_protocol::daemon_ipc::{DaemonConnection, runtime_paths};
     let paths = runtime_paths()?;
@@ -1846,7 +1849,7 @@ fn start_daemon() -> Result<()> {
     let mut child = command
         .spawn()
         .context("could not start the Yoctui daemon")?;
-    let deadline = Instant::now() + Duration::from_secs(60);
+    let deadline = Instant::now() + DAEMON_STARTUP_TIMEOUT;
     loop {
         if let Some(status) = child.try_wait()? {
             anyhow::bail!("Yoctui daemon exited during startup with {status}");
@@ -1861,8 +1864,9 @@ fn start_daemon() -> Result<()> {
         }
         if Instant::now() >= deadline {
             anyhow::bail!(
-                "Yoctui daemon did not become available at {} within 60 seconds",
-                paths.socket.display()
+                "Yoctui daemon did not become available at {} within {} seconds",
+                paths.socket.display(),
+                DAEMON_STARTUP_TIMEOUT.as_secs()
             );
         }
         std::thread::sleep(Duration::from_millis(25));

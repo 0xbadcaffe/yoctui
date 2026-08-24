@@ -207,10 +207,11 @@ environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
 implicitly executable.
 
-`LIVE-UI-POKY-001` is `BLOCKED`: the fresh checkout is present, but the host
-denies the unprivileged user namespace required by BitBake. Reproduction is
-`unshare -Ur true` → `Operation not permitted`; the live harness exits 2 before
-capture. The next independent task, `UI-REGRESSION-001`, is now active.
+`LIVE-UI-POKY-001` is `IN_PROGRESS`: the host now permits the unprivileged user
+namespace and the live harness reaches daemon startup. Cold authoritative
+compatibility negotiation makes sequential `bitbake-getvar` queries exceed the
+former 60-second startup handshake window, so the bounded window is now 180
+seconds before rerunning the real-Poky evidence capture.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session
