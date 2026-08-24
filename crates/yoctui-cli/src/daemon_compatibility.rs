@@ -271,22 +271,17 @@ impl DaemonCompatibilityRuntime {
                     process_environment,
                 )
                 .await
+                    && let Some(value) = authoritative_value(&value)
                 {
-                    if let Some(value) = authoritative_value(&value) {
-                        let value = if matches!(
-                            variable,
-                            "MACHINE"
-                                | "DISTRO"
-                                | "DISTRO_VERSION"
-                                | "DISTRO_CODENAME"
-                                | "OE_VERSION"
-                        ) {
-                            authoritative_token(&value).unwrap_or(value)
-                        } else {
-                            value
-                        };
-                        datastore.insert(variable.to_owned(), value);
-                    }
+                    let value = if matches!(
+                        variable,
+                        "MACHINE" | "DISTRO" | "DISTRO_VERSION" | "DISTRO_CODENAME" | "OE_VERSION"
+                    ) {
+                        authoritative_token(&value).unwrap_or(value)
+                    } else {
+                        value
+                    };
+                    datastore.insert(variable.to_owned(), value);
                 }
             }
         }
@@ -472,8 +467,7 @@ fn authoritative_value(output: &str) -> Option<String> {
         .map(strip_terminal_escapes)
         .map(|line| line.trim().trim_matches('"').trim_matches('\'').to_owned())
         .filter(|line| !line.is_empty())
-        .filter(|line| !line.starts_with("NOTE:") && !line.starts_with("WARNING:"))
-        .next_back()
+        .rfind(|line| !line.starts_with("NOTE:") && !line.starts_with("WARNING:"))
 }
 
 fn strip_terminal_escapes(value: &str) -> String {
@@ -508,9 +502,7 @@ fn authoritative_token(value: &str) -> Option<String> {
         .lines()
         .map(strip_terminal_escapes)
         .map(|line| line.trim().trim_matches('"').trim_matches('\'').to_owned())
-        .filter(|line| valid_identity_token(line))
-        .next_back()
-        .map(|value| value)
+        .rfind(|line| valid_identity_token(line))
 }
 
 fn canonical_initialized_build(value: &str) -> Result<PathBuf, DaemonCompatibilityError> {

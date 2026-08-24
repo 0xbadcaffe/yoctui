@@ -9,8 +9,9 @@
 ## Objective
 
 The Raw workbench is complete. Global completion is blocked by the separate
-real-Poky redesigned-UI evidence task; namespace access is fixed, but the
-bridge build session still disconnects during compatibility negotiation.
+real-Poky redesigned-UI evidence task; this host currently denies the
+unprivileged user namespace required by BitBake, so the live harness exits
+before evidence capture.
 
 ## Dependencies
 
@@ -36,6 +37,8 @@ bridge build session still disconnects during compatibility negotiation.
 ## Definition of done
 
 - Run `unshare -Ur true` and the live UI evidence harness commands.
+- If the host prerequisite remains unavailable, retain `BLOCKED` and record
+  the exact reproduction rather than claiming live evidence.
 
 ## Verification
 

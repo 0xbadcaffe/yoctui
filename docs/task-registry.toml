@@ -5546,7 +5546,7 @@ priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
 verify = ["unshare -Ur true", "YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
-notes = "BLOCKED after unprivileged user namespaces were enabled: the live harness starts Poky and captures startup/recipe evidence, but the bridge build session disconnects during compatibility negotiation with an invalid authoritative distro identity. Reproduction: `YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" YOCTUI_LIVE_CACHE_SOURCE=\"$PWD/.yoctui-fresh-build\" ./scripts/test-live-next-generation-ui.sh`; evidence stops before manifest generation. The Rust startup probe now filters BitBake diagnostics; bridge-side negotiation still needs live investigation."
+notes = "BLOCKED on the current host: `unshare -Ur true` fails with `Operation not permitted`, and `YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh` exits 2 before evidence capture because unprivileged user namespaces are unavailable. The evidence verifier consequently reports missing `manifest.json`. Rerun the prerequisite and live harness when the host permits user namespaces."
 
 [[task]]
 id = "README-UI-001"
