@@ -9940,6 +9940,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         if let Some(runtime) = daemon_runtime.as_mut()
             && let Err(error) = runtime.poll(&mut app)
         {
+            eprintln!("yoctui daemon client disconnected: {error}");
             app.notification = Some(format!("Daemon connection lost: {error}"));
             daemon_runtime = None;
             app.daemon.status = yoctui_model::ClientReplicaStatus::Disconnected;
