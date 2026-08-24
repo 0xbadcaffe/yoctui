@@ -5546,7 +5546,7 @@ priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
 verify = ["unshare -Ur true", "YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
-notes = "BLOCKED after the startup fix: `unshare -Ur true` passes, the cold daemon starts within the 180-second bounded handshake, startup/inspection checks pass, and the live build plus active Tasks capture begin. The harness then exits 137 (SIGKILL) before manifest generation while overlapping live Poky builds share the default evidence path and consume host swap. Reproduce only after those builds are stopped or complete, with a unique YOCTUI_NEXT_UI_EVIDENCE directory."
+notes = "BLOCKED on external storage quota: `unshare -Ur true` passes; a single isolated run with unique evidence output and `BB_NUMBER_THREADS=2` reaches daemon startup, startup/inspection checks, active Tasks capture, and native build execution. `ncurses-native:do_configure` then fails with `Disk quota exceeded` (EDQUOT) after about 4 GiB of temporary build output, despite free filesystem blocks and inodes. The harness cannot create its manifest. Reproduce only after project quota is increased, using a unique YOCTUI_NEXT_UI_EVIDENCE directory."
 
 [[task]]
 id = "README-UI-001"

@@ -11,8 +11,9 @@
 The Raw workbench is complete. Global completion is blocked by the separate
 real-Poky redesigned-UI evidence task. The host now permits the required user
 namespace and the daemon completes cold compatibility startup within the
-extended bounded deadline, but overlapping live Poky builds exhaust host
-resources and the harness is SIGKILLed before it can write a manifest.
+extended bounded deadline. A single isolated, two-thread Poky build reaches
+native task execution but fails with `EDQUOT` (`Disk quota exceeded`) before it
+can write the evidence manifest.
 
 ## Dependencies
 
@@ -39,8 +40,9 @@ resources and the harness is SIGKILLed before it can write a manifest.
 
 - Run `unshare -Ur true` and the live UI evidence harness commands.
 - Capture and verify the required real-Poky evidence manifest.
-- Before retrying, ensure no other live Poky builds write the shared evidence
-  directory or consume the host's available memory and swap.
+- Before retrying, provide enough project quota for the cold Poky build (the
+  isolated run failed after 4 GiB of temporary build output despite free blocks
+  and inodes), then use a unique `YOCTUI_NEXT_UI_EVIDENCE` directory.
 
 ## Verification
 

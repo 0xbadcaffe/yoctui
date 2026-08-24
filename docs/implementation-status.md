@@ -207,13 +207,14 @@ environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
 implicitly executable.
 
-`LIVE-UI-POKY-001` is `BLOCKED`: the host now permits the unprivileged user
-namespace, the cold daemon starts within its 180-second bounded handshake, and
-the live harness completes startup/inspection checks, accepts the real build,
-and captures active Tasks. It is then SIGKILLed with exit 137 before manifest
-generation while overlapping live Poky builds share the default evidence path
-and exhaust host swap. A clean retry requires those builds to finish or stop
-and a unique `YOCTUI_NEXT_UI_EVIDENCE` directory.
+`LIVE-UI-POKY-001` is `BLOCKED` on external storage quota: the host permits
+the user namespace; an isolated two-thread run starts the cold daemon within
+its 180-second bound, completes startup/inspection checks, accepts the real
+build, and captures active Tasks. `ncurses-native:do_configure` then receives
+`EDQUOT` (`Disk quota exceeded`) after about 4 GiB of temporary build output,
+despite free filesystem blocks and inodes, so no manifest can be generated.
+A retry requires increased project quota and a unique
+`YOCTUI_NEXT_UI_EVIDENCE` directory.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session
