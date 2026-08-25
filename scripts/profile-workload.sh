@@ -6,11 +6,12 @@ mkdir -p artifacts/profile
 summary="$(mktemp)"
 trap 'rm -f "$summary"' EXIT
 frames="${YOCTUI_PROFILE_FRAMES:-6000}"
+profile_target_dir="${YOCTUI_PROFILE_TARGET_DIR:-$repo_root/target/ui-performance}"
 if [[ ! "$frames" =~ ^[1-9][0-9]*$ ]]; then
   printf '%s\n' 'YOCTUI_PROFILE_FRAMES must be a positive integer' >&2
   exit 2
 fi
-YOCTUI_PROFILE_FRAMES="$frames" \
+CARGO_TARGET_DIR="$profile_target_dir" YOCTUI_PROFILE_FRAMES="$frames" \
   cargo bench -q -p yoctui --bench workbench_profile 2>&1 | tee "$summary"
 if ! grep -Eq "^yoctui workbench profile: frames=$frames checksum=[0-9a-f]{16} elapsed_ms=[1-9][0-9]*$" "$summary"; then
   printf '%s\n' 'deterministic workbench profile did not complete' >&2
