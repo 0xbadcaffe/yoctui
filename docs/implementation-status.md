@@ -207,14 +207,15 @@ environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
 implicitly executable.
 
-`LIVE-UI-POKY-001` is `BLOCKED` on external storage quota: the host permits
-the user namespace; an isolated two-thread run starts the cold daemon within
-its 180-second bound, completes startup/inspection checks, accepts the real
-build, and captures active Tasks. `ncurses-native:do_configure` then receives
-`EDQUOT` (`Disk quota exceeded`) after about 4 GiB of temporary build output,
-despite free filesystem blocks and inodes, so no manifest can be generated.
-A retry requires increased project quota and a unique
-`YOCTUI_NEXT_UI_EVIDENCE` directory.
+`LIVE-UI-POKY-001` is `IN_PROGRESS`. The host now passes `unshare -Ur true`,
+and the storage quota blocker is cleared: a fresh isolated run crossed 5.6 GiB
+and completed `ncurses-native`. That run exposed a separate Poky/pseudo failure
+in `sysvinit-inittab:do_install`: the recipe's piped `tail --bytes=5` reports
+`couldn't allocate absolute path for ''` and cannot open standard input. The
+BitBake server then retains the failed worker client and the daemon job remains
+Running instead of reaching a typed terminal state. Resolve both issues, rerun
+with a unique `YOCTUI_NEXT_UI_EVIDENCE` directory, and capture the complete
+manifest before closing the task.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session

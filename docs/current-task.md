@@ -4,16 +4,18 @@
 
 **ID:** LIVE-UI-POKY-001
 **Title:** Validate redesigned UI against real Poky
-**Status:** BLOCKED
+**Status:** IN_PROGRESS
 
 ## Objective
 
-The Raw workbench is complete. Global completion is blocked by the separate
-real-Poky redesigned-UI evidence task. The host now permits the required user
-namespace and the daemon completes cold compatibility startup within the
-extended bounded deadline. A single isolated, two-thread Poky build reaches
-native task execution but fails with `EDQUOT` (`Disk quota exceeded`) before it
-can write the evidence manifest.
+The Raw workbench is complete. Global completion is waiting on the separate
+real-Poky redesigned-UI evidence task. The host now permits `unshare -Ur true`,
+and the storage quota blocker is gone: an isolated retry crossed 5.6 GiB and
+completed `ncurses-native`, the prior failure point. The retry instead exposed
+a Poky/pseudo failure in `sysvinit-inittab:do_install` while `tail` reads its
+pipeline input (`couldn't allocate absolute path for ''`), after which the
+BitBake server retains a client descriptor and the Yoctui job remains Running.
+The harness therefore cannot yet produce its completion manifest.
 
 ## Dependencies
 
@@ -40,9 +42,12 @@ can write the evidence manifest.
 
 - Run `unshare -Ur true` and the live UI evidence harness commands.
 - Capture and verify the required real-Poky evidence manifest.
-- Before retrying, provide enough project quota for the cold Poky build (the
-  isolated run failed after 4 GiB of temporary build output despite free blocks
-  and inodes), then use a unique `YOCTUI_NEXT_UI_EVIDENCE` directory.
+- Reproduce and resolve the `sysvinit-inittab:do_install` pseudo failure without
+  weakening the real-Poky acceptance target.
+- Ensure a failed BitBake worker reaches a typed terminal job state instead of
+  leaving the daemon job Running indefinitely.
+- Retry with a unique `YOCTUI_NEXT_UI_EVIDENCE` directory and retain sufficient
+  cold-build storage.
 
 ## Verification
 
