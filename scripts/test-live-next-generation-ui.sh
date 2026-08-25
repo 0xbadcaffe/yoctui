@@ -95,7 +95,8 @@ active_deadline=$((SECONDS + 180))
 captured_active_task=0
 while (( SECONDS < active_deadline && SECONDS < deadline )); do
   python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
-    --binary "$binary" --build-dir "$build_dir" --output "$evidence/active-tasks" --mode tasks --backend process
+    --binary "$binary" --build-dir "$build_dir" --output "$evidence/active-tasks" \
+    --mode tasks --backend process --seconds 0.5
   if grep -Fq '▶ Running' "$evidence/active-tasks.txt" && \
     grep -Fq 'Log Viewer' "$evidence/active-tasks.txt"; then
     captured_active_task=1
