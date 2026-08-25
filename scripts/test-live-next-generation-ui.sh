@@ -51,6 +51,7 @@ printf '\nBB_DISKMON_DIRS = ""\nINHERIT += "rm_work"\n' >>"$build_dir/conf/local
 # The live target never launches QEMU; omit its optional graphical host stack so
 # a cold image build does not compile Mesa/LLVM solely for an unused display.
 printf 'PACKAGECONFIG:remove:pn-qemu-native = "sdl virglrenderer epoxy"\n' >>"$build_dir/conf/local.conf"
+printf 'PACKAGECONFIG:remove:pn-qemu-system-native = "sdl virglrenderer epoxy"\n' >>"$build_dir/conf/local.conf"
 if ! command -v lz4c >/dev/null 2>&1; then
   printf 'HOSTTOOLS:remove = "lz4c"\n' >>"$build_dir/conf/local.conf"
 fi
