@@ -43,8 +43,8 @@
 │                        ││                                                                                       │┌System Status──────────────────────────────┐
 │                        ││                                                                                       ││✓ Daemon Connected · version unavailable ·…│
 │                        ││                                                                                       ││– BitBake Disconnected · v2.12.1 · Jobs 0  │
-│                        ││                                                                                       ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
-│L: core  R: 2  P:--     ││                                                                                       ││! Build FS unavailable · Workspace /work/.…│
+│                        ││                                                                                       ││! Compat Degraded g1 · A63 L14 U5 ?25 · PT…│
+│L: core  R: 2  P:--     ││                                                                                       ││! Build FS unavailable · Workspace /home/b…│
 └────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
-│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      18:34:08│
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      21:23:28│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

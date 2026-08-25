@@ -1,27 +1,27 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: poky  •  ▶ Parsing  •  Target: core-image-minimal  •  Machine: qemux86-64                       Daemon: ✓ Connected  •  BitBake: ✓ Running│
 ┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
-│▾ Layers                ││                                 Overall  0%  18/3837                                  ││Task        do_populate_sysroot_setscene   │
-│  ▱ core                ││Active 3  Waiting 3665  Warnings 0  Errors 0  Elapsed 00:00:02                         ││Recipe      makedevs-native                │
-│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          makedevs-native                │
-│  ▱ yoctobsp            ││do_populate_sysr makedevs-native       ✓ Succeeded   00:00:00  ██████████ 100%         ││PV          unavailable                    │
-│▾ Recipes               ││do_populate_lic_ ttyrun                ✓ Succeeded   00:00:00  ██████████ 100%         ││PR          unavailable                    │
-│  ▸ discovering…        ││do_create_spdx_s socat                 ✓ Succeeded   00:00:00  ██████████ 100%         ││State       ✓ Succeeded                    │
-│▾ Images                ││do_populate_lic_ debianutils-native    ✓ Succeeded   00:00:00  ██████████ 100%         ││Progress    100%                           │
-│  ▱ none discovered     ││do_populate_sysr qemu-system-native    ▶ Running     00:00:01  progress unknown▹▹▹▹▹▸▸▸││                                           │
-│▾ Tasks                 ││do_populate_lic_ ncurses               ✓ Succeeded   00:00:00  ██████████ 100%         ││                                           │
-│  ▱ Build               ││do_create_packag opkg-utils            ✓ Succeeded   00:00:00  ██████████ 100%         │└───────────────────────────────────────────┘
-│  ▱ Test                ││do_populate_lic_ rpm-native            ✓ Succeeded   00:00:00  ██████████ 100%         │┌Secondary facts · Paths · Dependencies─────┐
-│  ▱ QA                  ││do_package_qa_se shadow-securetty      ✓ Succeeded   00:00:00  ██████████ 100%         ││Worker      unavailable                    │
-│  ▱ Devtool             │└───────────────────────────────────────────────────────────────────────────────────────┘│PID         11990                          │
-│  ▱ Wic                 │┌Log Viewer — do_populate_sysroot_setscene (makedevs-native) · ▶ Follow─────────────────┐│Started     18:31:37                       │
-│  ▱ SDK                 ││Waiting for typed log entries for the selected task.                                   ││Elapsed     00:00:00                       │
+│▾ Layers                ││████████████████████████████████Overall  98%  3796/3837 █████████████████████████████  ││Task        do_rootfs                      │
+│  ▱ core                ││Active 1  Waiting 0  Warnings 0  Errors 0  Elapsed 00:00:02                            ││Recipe      core-image-minimal             │
+│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          core-image-minimal             │
+│  ▱ yoctobsp            ││do_rootfs        core-image-minimal    ▶ Running     00:00:02  ▎░░░░░░░░░ 3%           ││PV          unavailable                    │
+│▾ Recipes               ││do_create_spdx_s acl                   · Queued      --        --                      ││PR          unavailable                    │
+│  ▸ discovering…        ││do_populate_sysr acl                   · Queued      --        --                      ││State       ▶ Running                      │
+│▾ Images                ││do_recipe_qa_set acl                   · Queued      --        --                      ││Progress    3%                             │
+│  ▱ none discovered     ││do_create_packag alsa-lib              · Queued      --        --                      ││                                           │
+│▾ Tasks                 ││do_create_spdx_s alsa-lib              · Queued      --        --                      ││                                           │
+│  ▱ Build               ││do_populate_lic_ alsa-lib              · Queued      --        --                      │└───────────────────────────────────────────┘
+│  ▱ Test                ││do_populate_sysr alsa-lib              · Queued      --        --                      │┌Secondary facts · Paths · Dependencies─────┐
+│  ▱ QA                  ││do_recipe_qa_set alsa-lib              · Queued      --        --                      ││Worker      unavailable                    │
+│  ▱ Devtool             │└───────────────────────────────────────────────────────────────────────────────────────┘│PID         40843                          │
+│  ▱ Wic                 │┌Log Viewer — do_rootfs (core-image-minimal) · ▶ Follow─────────────────────────────────┐│Started     21:22:00                       │
+│  ▱ SDK                 ││Waiting for typed log entries for the selected task.                                   ││Elapsed     00:00:02                       │
 │  ▱ Security            ││                                                                                       ││Workdir     unavailable                    │
 │  ▱ Utility             ││                                                                                       ││Log file                                   │
-│▾ Targets               ││                                                                                       ││/work/.yoctui-next-ui-live.QO7YU1/build/tmp│
-│  ▱ qemux86-64          ││                                                                                       ││/work/x86_64-linux/makedevs-native/1.0.1/te│
-│                        ││                                                                                       ││mp/log.do_populate_sysroot_setscene.11990  │
-│                        ││                                                                                       ││Dependencies none reported                 │
+│▾ Targets               ││                                                                                       ││/home/bspguy-dev/projects/yoctui/.yoctui-ne│
+│  ▱ qemux86-64          ││                                                                                       ││xt-ui-live.TLuBKK/build/tmp/work/qemux86_64│
+│                        ││                                                                                       ││-poky-linux/core-image-minimal/1.0/temp/log│
+│                        ││                                                                                       ││.do_rootfs.40843                           │
 │                        ││                                                                                       │└───────────────────────────────────────────┘
 │                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
 │                        ││                                                                                       ││Waiting for typed log entries for the      │
@@ -39,12 +39,12 @@
 │                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
 │                        │└───────────────────────────────────────────────────────────────────────────────────────┘│✓ Build History        [h] — Local         │
 │                        │┌Telemetry · bounded 60-sample histories────────────────────────────────────────────────┐│~ Build options        [B] — Limited       │
-│                        ││█████████████████████│███                  │███████████████████ │R 1.4 MiB/s   ▂█      │└───────────────────────────────────────────┘
-│                        ││█████████████████████│███                  │███████████████████ │W 458.6 KiB/s  █      │┌System Status──────────────────────────────┐
-│                        ││█████████████████████│███                  │███████████████████ │                      ││✓ Daemon Connected · version unavailable ·…│
-│                        ││████CPU 98% · 8c ████│███    RAM 16%       │████BUILD FS 96% ██ │                      ││✓ BitBake Running · v2.12.1 · Jobs unavail…│
-│                        ││█████████████████████│███                  │███████████████████ │                      ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
-│L: core  R: 1  P:11990  ││█████████████████████│███                  │███████████████████ │                      ││✕ Build FS 96% · 14.7/456.3 GiB free · Wor…│
+│                        ││████                 │███                  │████████████████████│R 143.9 MiB/s █▇      │└───────────────────────────────────────────┘
+│                        ││████                 │███                  │████████████████████│W 0 B/s               │┌System Status──────────────────────────────┐
+│                        ││████                 │███                  │████████████████████│                      ││✓ Daemon Connected · version unavailable ·…│
+│                        ││████CPU 18% · 8c     │███    RAM 14%       │████BUILD FS 99% ███│                      ││✓ BitBake Running · v2.12.1 · Jobs 1       │
+│                        ││████                 │███                  │████████████████████│                      ││! Compat Degraded g1 · A63 L14 U5 ?25 · PT…│
+│L: core  R: 1  P:40843  ││████                 │███                  │████████████████████│                      ││✕ Build FS 99% · 3.9/456.3 GiB free · Work…│
 └────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
-│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit                               ▶ BitBake parsing  18:31:39│
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit                               ▶ BitBake parsing  21:22:02│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

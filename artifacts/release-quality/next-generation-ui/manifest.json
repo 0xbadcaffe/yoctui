@@ -1,9 +1,9 @@
 {
-  "binary_sha256": "7ed7dd20ccf666eb40ee3cb8dbaec0fbec43c521e9f71c842d2847757b6dba9e",
+  "binary_sha256": "2f727df8ccafdbd2f79882df895aa7b4cfd332b092990e2682c686fb20f69ec8",
   "bitbake_version": "BitBake Build Tool Core version 2.12.1",
-  "build_directory": "/work/.yoctui-next-ui-live.QO7YU1/build",
+  "build_directory": "/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.TLuBKK/build",
   "distro": "poky",
-  "finished_utc": "2026-08-25T18:34:25Z",
+  "finished_utc": "2026-08-25T21:23:46Z",
   "host": "Linux 7.0.0-30-generic x86_64",
   "label": "live",
   "machine": "qemux86-64",
@@ -22,8 +22,8 @@
     "terminal": "passed"
   },
   "schema": 1,
-  "source_commit": "b9b9ba974de810bbfb51ba214156e17a5de44608",
-  "started_utc": "2026-08-25T17:57:05Z",
+  "source_commit": "d11f6c791cd2d2169d45f89cc89aca066cf42b08",
+  "started_utc": "2026-08-25T20:47:34Z",
   "target": "core-image-minimal",
   "yocto_release": "5.2.4"
 }
