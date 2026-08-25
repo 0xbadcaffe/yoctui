@@ -25,7 +25,7 @@ RUSTFLAGS="${RUSTFLAGS:+$RUSTFLAGS }-C force-frame-pointers=yes" \
 cargo flamegraph \
   -p yoctui \
   --deterministic \
-  --cmd 'record -F 499 -e cycles:u --call-graph dwarf,8192 -g' \
+  --cmd 'record -F 499 -e cycles:u --call-graph fp -g' \
   --min-width 0.01 \
   --post-process 'python3 scripts/filter-flamegraph-stacks.py' \
   --title 'Yoctui workbench CPU profile' \
