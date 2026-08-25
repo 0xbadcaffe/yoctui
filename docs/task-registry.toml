@@ -5585,12 +5585,12 @@ notes = "Stable production rendering now has private shell, widgets, workspaces,
 id = "M13-UI-001"
 milestone = "M19"
 title = "Complete next-generation Yoctui TUI"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 568
 required = true
 depends_on = ["FOUNDATION-UI-001", "FOUNDATION-UI-002", "FOUNDATION-UI-003", "NAV-UI-001", "TASKS-UI-001", "TASKS-UI-002", "TASKS-UI-003", "LOG-UI-001", "LOG-UI-002", "JOB-UI-001", "JOB-UI-002", "INSPECTOR-UI-001", "INSPECTOR-UI-002", "INSPECTOR-UI-003", "METRICS-MODEL-001", "METRICS-MODEL-002", "METRICS-UI-001", "METRICS-UI-002", "METRICS-UI-003", "METRICS-UI-004", "METRICS-UI-005", "METRICS-UI-006", "SYSTEM-UI-001", "SYSTEM-UI-002", "HEADER-UI-001", "FOOTER-UI-001", "FOOTER-UI-002", "SEARCH-UI-001", "PALETTE-UI-001", "DIALOG-UI-001", "MOUSE-UI-001", "A11Y-UI-001", "PERF-UI-001", "PERF-UI-002", "RESPONSIVE-UI-001", "VISUAL-TEST-001", "VISUAL-TEST-002", "VISUAL-TEST-003", "INPUT-TEST-001", "INPUT-TEST-002", "INPUT-TEST-003", "PTY-UI-TEST-001", "LIVE-UI-POKY-001", "README-UI-001", "UI-REGRESSION-001", "UI-CLEANUP-001"]
 verify = ["./scripts/verify-next-generation-ui.sh", "./scripts/verify-completion.sh"]
-notes = "Parent gate closes only when the redesigned typed workbench matches the visual hierarchy, degrades responsively, retains all functionality, passes every visual/input/PTY/accessibility/performance/live-evidence check, and the full non-weakened completion gate passes."
+notes = "All 48 required next-generation UI tasks and all 540 required product tasks are DONE. The redesigned typed workbench passes the complete workspace, semantic/golden/style, breakpoint, mouse, PTY, accessibility, isolated performance, strict Clippy, formatting, roadmap, product, and exact supported-host live Poky evidence checks; the full non-weakened repository completion gate is the terminal acceptance."
 
 [[task]]
 id = "RAW-REF-001"

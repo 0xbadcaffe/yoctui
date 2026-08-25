@@ -6,6 +6,7 @@ cd "$repo_root"
 
 frames="${YOCTUI_UI_PERF_FRAMES:-500}"
 max_ns_per_frame="${YOCTUI_UI_PERF_MAX_NS_PER_FRAME:-10000000}"
+perf_target_dir="${YOCTUI_UI_PERF_TARGET_DIR:-$repo_root/target/ui-performance}"
 if [[ ! "$frames" =~ ^[1-9][0-9]*$ ]]; then
   printf '%s\n' 'YOCTUI_UI_PERF_FRAMES must be a positive integer' >&2
   exit 2
@@ -27,7 +28,8 @@ printf 'terminal=160x48\nframes_per_scenario=%s\nmax_ns_per_frame=%s\n' \
 
 for scenario in idle active-build large-metadata log-heavy telemetry; do
   output="$work_dir/$scenario.log"
-  YOCTUI_PROFILE_FRAMES="$frames" YOCTUI_PROFILE_SCENARIO="$scenario" \
+  CARGO_TARGET_DIR="$perf_target_dir" \
+    YOCTUI_PROFILE_FRAMES="$frames" YOCTUI_PROFILE_SCENARIO="$scenario" \
     cargo bench -q -p yoctui --bench workbench_profile 2>&1 | tee "$output"
   result="$(sed -n "s/^yoctui ui performance: scenario=$scenario frames=$frames checksum=\([0-9a-f]\{16\}\) elapsed_ms=\([0-9][0-9]*\) ns_per_frame=\([0-9][0-9]*\)$/\1 \2 \3/p" "$output")"
   if [[ -z "$result" ]]; then

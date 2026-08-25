@@ -77,6 +77,7 @@ host="$(uname -srm)"
 "$binary" daemon start | tee -a "$evidence/daemon.log"
 "$binary" --backend bridge --build-dir "$build_dir" doctor >"$evidence/doctor.txt" 2>&1
 "$binary" --backend bridge --build-dir "$build_dir" inspect >"$evidence/inspect.txt"
+sed -i 's/[[:space:]]\+$//' "$evidence/inspect.txt"
 "$binary" --backend bridge --build-dir "$build_dir" layers >"$evidence/layers.txt"
 "$binary" --backend bridge --build-dir "$build_dir" recipes >"$evidence/recipes.txt"
 grep -Fq 'MACHINE=qemux86-64' "$evidence/inspect.txt"

@@ -1,11 +1,11 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: poky  •  ✓ Completed  •  Target: core-image-minimal  •  Machine: qemux86-64                Daemon: ✓ Connected  •  BitBake: – Disconnected│
 ┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
-│▾ Layers                ││███████████████████████████████Overall  100%  3837/3837 ███████████████████████████████││Task        do_create_spdx_setscene        │
+│▾ Layers                ││███████████████████████████████Overall  100%  3837/3837 ███████████████████████████████││Task        do_create_package_spdx_setscene│
 │  ▱ core                ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                  ││Recipe      acl                            │
 │  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          acl                            │
-│  ▱ yoctobsp            ││do_create_spdx_s acl                   ? Lost        --        --                      ││PV          unavailable                    │
-│▾ Recipes               ││do_populate_lic_ acl                   ? Lost        --        --                      ││PR          unavailable                    │
+│  ▱ yoctobsp            ││do_create_packag acl                   ? Lost        --        --                      ││PV          unavailable                    │
+│▾ Recipes               ││do_create_spdx_s acl                   ? Lost        --        --                      ││PR          unavailable                    │
 │  ▸ discovering…        ││do_populate_sysr acl                   ? Lost        --        --                      ││State       ? Lost                         │
 │▾ Images                ││do_recipe_qa_set acl                   ? Lost        --        --                      ││Progress    unknown                        │
 │  ▱ none discovered     ││do_create_packag alsa-lib              ? Lost        --        --                      ││                                           │
@@ -21,7 +21,7 @@
 │▾ Targets               ││do_create_spdx_s autoconf              ? Lost        --        --                      ││Dependencies none reported                 │
 │  ▱ qemux86-64          ││do_populate_lic_ autoconf              ? Lost        --        --                      ││                                           │
 │                        │└───────────────────────────────────────────────────────────────────────────────────────┘│                                           │
-│                        │┌Log Viewer — do_create_spdx_setscene (acl) · ▶ Follow──────────────────────────────────┐│                                           │
+│                        │┌Log Viewer — do_create_package_spdx_setscene (acl) · ▶ Follow──────────────────────────┐│                                           │
 │                        ││Waiting for typed log entries for the selected task.                                   │└───────────────────────────────────────────┘
 │                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
 │                        ││                                                                                       ││Waiting for typed log entries for the      │
@@ -44,7 +44,7 @@
 │                        ││                                                                                       ││✓ Daemon Connected · version unavailable ·…│
 │                        ││                                                                                       ││– BitBake Disconnected · v2.12.1 · Jobs 0  │
 │                        ││                                                                                       ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
-│L: core  R: 1  P:--     ││                                                                                       ││! Build FS unavailable · Workspace /worksp…│
+│L: core  R: 1  P:--     ││                                                                                       ││! Build FS unavailable · Workspace /work/.…│
 └────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
-│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      17:08:46│
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      18:33:15│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

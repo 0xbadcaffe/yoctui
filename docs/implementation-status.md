@@ -189,8 +189,7 @@ reconnect, native-argv read-only, and PTY read-only evidence. `RAW-DOC-001` is
 complete and the Raw parent gate is complete; `UI-REGRESSION-001` is complete.
 `RAW-COMPAT-001` is complete: the older and current live fixture matrices,
 unknown-future evidence, replacement/stale projections, and zero-spawn denial
-checks pass. The global completion gate still has the separately blocked
-`README-UI-001` and downstream UI tasks remaining.
+checks pass. The formerly blocked README and downstream UI work are complete.
 `RAW-RESPONSIVE-001` is complete: Raw browser, Favorites, execution, and
 below-minimum shells retain bounded selection and never panic across wide,
 medium, narrow, and too-small terminals. `RAW-A11Y-001` is complete: no-color
@@ -227,8 +226,16 @@ identities, and `scripts/check-docs.sh` rejects missing or stale renders.
 `UI-CLEANUP-001` is `DONE`. Stable rendering responsibilities now live behind
 private `shell`, `widgets`, `workspaces`, `dialogs`, `telemetry`, `theme`, and
 `layout` modules. The public renderer/theme API and strict target-design golden
-are unchanged; all 214 UI tests and strict UI clippy pass. `M13-UI-001` is
-active for the complete next-generation and repository gates.
+are unchanged; all 214 UI tests and strict UI clippy pass.
+
+`M13-UI-001` is `DONE`. All 48 required next-generation UI tasks and all 540
+required product tasks are terminal. The aggregate gate passes the complete
+workspace, semantic/golden/style, breakpoint, mouse, PTY, accessibility,
+performance, strict Clippy, formatting, roadmap, product, and exact live Poky
+evidence checks. Performance artifacts use an isolated release target so host
+benchmarking cannot replace the supported-container binary bound into the live
+manifest. The full non-weakened repository completion gate is the terminal
+acceptance for this state.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session

@@ -4,7 +4,7 @@
 
 **ID:** M13-UI-001
 **Title:** Complete next-generation Yoctui TUI
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -41,3 +41,7 @@ and the full non-weakened repository completion gate all pass together.
 ./scripts/verify-next-generation-ui.sh
 ./scripts/verify-completion.sh
 ```
+
+The next-generation gate passes with 48/48 required UI tasks and the roadmap
+reports all 540 required product tasks complete. The full repository gate is
+the terminal acceptance command for this committed state.
