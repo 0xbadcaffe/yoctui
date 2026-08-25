@@ -37,6 +37,9 @@ started_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 git clone --local --no-hardlinks "$source_poky" "$work_root/poky" >/dev/null
 poky_revision="$(git -C "$work_root/poky" rev-parse HEAD)"
 poky_branch="$(git -C "$source_poky" branch --show-current)"
+if [[ -z "$poky_branch" ]]; then
+  poky_branch="$(git -C "$source_poky" describe --tags --exact-match HEAD)"
+fi
 set +u
 source "$work_root/poky/oe-init-build-env" "$build_dir" >/dev/null
 set -u
