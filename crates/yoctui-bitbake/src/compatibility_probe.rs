@@ -1,13 +1,16 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs,
+    fs, io,
     path::{Component, Path, PathBuf},
     process::Stdio,
     time::Duration,
 };
 
 use thiserror::Error;
-use tokio::{io::AsyncReadExt, process::Command};
+use tokio::{
+    io::AsyncReadExt,
+    process::{Child, Command},
+};
 use yoctui_model::{
     AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
     CapabilityProbeSpec, CapabilityToolId, ToolIdentity, YoctoEnvironmentIdentity,
@@ -19,6 +22,33 @@ const MAX_PROBE_OUTPUT_LIMIT: usize = 1024 * 1024;
 const MAX_PROBE_CONTEXT_VALUES: usize = 1_024;
 const MAX_PROBE_ENVIRONMENT_VALUES: usize = 1_024;
 const MAX_PROBE_TEXT_BYTES: usize = 4_096;
+const PROBE_SPAWN_ATTEMPTS: usize = 4;
+const PROBE_SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
+
+#[cfg(unix)]
+fn is_transient_probe_spawn_error(error: &io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ETXTBSY)
+}
+
+#[cfg(not(unix))]
+fn is_transient_probe_spawn_error(_error: &io::Error) -> bool {
+    false
+}
+
+async fn spawn_probe_process(command: &mut Command) -> io::Result<Child> {
+    for attempt in 1..=PROBE_SPAWN_ATTEMPTS {
+        match command.spawn() {
+            Ok(child) => return Ok(child),
+            Err(error)
+                if attempt < PROBE_SPAWN_ATTEMPTS && is_transient_probe_spawn_error(&error) =>
+            {
+                tokio::time::sleep(PROBE_SPAWN_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("the bounded compatibility probe spawn loop always returns")
+}
 
 #[derive(Debug, Clone)]
 pub struct CapabilityProbeContext {
@@ -426,7 +456,7 @@ async fn run_read_only(
         .kill_on_drop(true);
     #[cfg(unix)]
     command.process_group(0);
-    let mut child = match command.spawn() {
+    let mut child = match spawn_probe_process(&mut command).await {
         Ok(child) => child,
         Err(error) => return ProbeProcessResult::Failed(error.to_string()),
     };
@@ -937,6 +967,16 @@ mod tests {
             )
             .await;
         assert_eq!(stale.status, CapabilityProbeStatus::Inconclusive);
+    }
+
+    #[test]
+    fn compatibility_probe_spawn_retry_classifies_only_text_file_busy_as_transient() {
+        assert!(is_transient_probe_spawn_error(
+            &io::Error::from_raw_os_error(libc::ETXTBSY)
+        ));
+        assert!(!is_transient_probe_spawn_error(
+            &io::Error::from_raw_os_error(libc::ENOENT)
+        ));
     }
 
     #[cfg(unix)]
