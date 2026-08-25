@@ -33,7 +33,7 @@ impl Drop for DaemonGuard {
     }
 }
 
-fn attach(runtime: &Path) -> DaemonConnection {
+fn attach(runtime: &Path) -> (DaemonConnection, u64) {
     let paths = runtime_paths_for(runtime.to_path_buf(), unsafe { libc::geteuid() }).unwrap();
     let mut connection = DaemonConnection::connect(&paths, Duration::from_secs(2)).unwrap();
     connection
@@ -69,11 +69,11 @@ fn attach(runtime: &Path) -> DaemonConnection {
             resume: None,
         })
         .unwrap();
-    assert!(matches!(
-        connection.receive::<ServerMessage>().unwrap(),
-        ServerMessage::Attached { .. }
-    ));
-    connection
+    let ServerMessage::Attached { snapshot, .. } = connection.receive::<ServerMessage>().unwrap()
+    else {
+        panic!("daemon did not return an attached snapshot");
+    };
+    (connection, snapshot.sequence)
 }
 
 fn receive_command_result(connection: &mut DaemonConnection) {
@@ -118,7 +118,7 @@ fn pty_integration_real_prompt_input_resize_and_writer_lease() {
         String::from_utf8_lossy(&start.stderr)
     );
 
-    let mut connection = attach(&runtime);
+    let (mut connection, attached_sequence) = attach(&runtime);
     let cwd = runtime.join("pty-work");
     fs::create_dir_all(&cwd).unwrap();
     connection
@@ -145,7 +145,28 @@ fn pty_integration_real_prompt_input_resize_and_writer_lease() {
             },
         }))
         .unwrap();
-    receive_command_result(&mut connection);
+    let mut saw_create_event = false;
+    for _ in 0..30 {
+        match connection.receive::<ServerMessage>().unwrap() {
+            ServerMessage::Event(event) => {
+                assert_eq!(event.sequence, attached_sequence + 1);
+                saw_create_event = true;
+            }
+            ServerMessage::CommandResult(result) => {
+                assert!(matches!(
+                    result.outcome,
+                    yoctui_protocol::daemon::CommandOutcome::Accepted
+                ));
+                break;
+            }
+            ServerMessage::Ping { .. } => {}
+            other => panic!("expected create event or command result, got {other:?}"),
+        }
+    }
+    assert!(
+        saw_create_event,
+        "PTY creation event skipped the requesting client"
+    );
     connection
         .send(&ClientMessage::Attach {
             workspace: None,

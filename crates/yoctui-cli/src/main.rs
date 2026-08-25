@@ -2698,19 +2698,21 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                 BuildRequest { targets, task, force },
                             ) {
                                 Ok(job_id) => {
-                                    daemon_journal.publish(
+                                    let reset_event = daemon_journal.publish(
                                         yoctui_protocol::daemon::DaemonEvent::Build(
                                             yoctui_protocol::daemon::DaemonBuildEvent::Reset {
                                                 targets: build_targets.clone(),
                                             },
                                         ),
                                     )?;
+                                    connection.send(&ServerMessage::Event(reset_event))?;
                                     let mut bitbake = daemon_journal.snapshot().bitbake.clone();
                                     bitbake.lifecycle = yoctui_protocol::daemon::LifecycleState::Connecting;
                                     bitbake.diagnostic = None;
-                                    daemon_journal.publish(
+                                    let bitbake_event = daemon_journal.publish(
                                         yoctui_protocol::daemon::DaemonEvent::BitBakeChanged(bitbake),
                                     )?;
+                                    connection.send(&ServerMessage::Event(bitbake_event))?;
                                     let event = daemon_journal.publish(
                                         yoctui_protocol::daemon::DaemonEvent::JobChanged(
                                             yoctui_protocol::daemon::JobSummary {
@@ -3060,7 +3062,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             dimensions,
                         } => match pty_supervisor.start_new(name, kind, cwd, command, dimensions) {
                             Ok(session_id) => {
-                                let _ = daemon_journal.publish(
+                                let event = daemon_journal.publish(
                                     yoctui_protocol::daemon::DaemonEvent::PtyChanged(
                                         yoctui_protocol::daemon::PtySessionSummary {
                                             id: yoctui_protocol::daemon::PtySessionId(session_id.0),
@@ -3077,6 +3079,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                         },
                                     ),
                                 )?;
+                                connection.send(&ServerMessage::Event(event))?;
                                 CommandOutcome::Accepted
                             }
                             Err(message) => CommandOutcome::Rejected {
@@ -3109,7 +3112,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             if let Some(daemon_raw::DaemonRawCancel::Pty { state, .. }) =
                                 raw_supervisor.cancel_pty(yoctui_model::PtySessionId(session_id.0))?
                             {
-                                daemon_journal.publish(
+                                let event = daemon_journal.publish(
                                     yoctui_protocol::daemon::DaemonEvent::RawExecutionChanged(
                                         Box::new(
                                             yoctui_app::raw_execution_snapshot_to_protocol(&state)
@@ -3117,6 +3120,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                         ),
                                     ),
                                 )?;
+                                connection.send(&ServerMessage::Event(event))?;
                             }
                             match pty_supervisor.terminate(yoctui_model::PtySessionId(session_id.0)) {
                                 Ok(()) => CommandOutcome::Accepted,
