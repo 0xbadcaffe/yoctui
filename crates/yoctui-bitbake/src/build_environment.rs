@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, path::PathBuf, time::Duration};
+use std::{collections::BTreeMap, path::PathBuf, process::Output, time::Duration};
 use thiserror::Error;
 use tokio::{
     process::Command,
@@ -7,6 +7,18 @@ use tokio::{
 use yoctui_model::{BuildEnvironmentCloneRequest, BuildEnvironmentProfile};
 
 const MAX_OUTPUT: usize = 64 * 1024;
+const SPAWN_ATTEMPTS: usize = 4;
+const SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
+
+#[cfg(unix)]
+fn is_transient_spawn_error(error: &std::io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ETXTBSY)
+}
+
+#[cfg(not(unix))]
+fn is_transient_spawn_error(_error: &std::io::Error) -> bool {
+    false
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuildEnvironmentResponse {
@@ -132,15 +144,7 @@ impl BuildEnvironmentAdapter {
         request: BuildEnvironmentCloneRequest,
     ) -> Result<BuildEnvironmentClonePreview, BuildEnvironmentAdapterError> {
         let preview = self.preview_clone(&request)?;
-        let output = timeout(
-            self.timeout,
-            Command::new(&self.git_program)
-                .args(&preview.clone_argv)
-                .output(),
-        )
-        .await
-        .map_err(|_: Elapsed| BuildEnvironmentAdapterError::Timeout)?
-        .map_err(|error| BuildEnvironmentAdapterError::Failed(error.to_string()))?;
+        let output = self.run_git(&preview.clone_argv).await?;
         if output.stdout.len() > MAX_OUTPUT || output.stderr.len() > MAX_OUTPUT {
             return Err(BuildEnvironmentAdapterError::OutputTooLarge);
         }
@@ -150,13 +154,7 @@ impl BuildEnvironmentAdapter {
             ));
         }
         if let Some(checkout) = &preview.checkout_argv {
-            let output = timeout(
-                self.timeout,
-                Command::new(&self.git_program).args(checkout).output(),
-            )
-            .await
-            .map_err(|_: Elapsed| BuildEnvironmentAdapterError::Timeout)?
-            .map_err(|error| BuildEnvironmentAdapterError::Failed(error.to_string()))?;
+            let output = self.run_git(checkout).await?;
             if !output.status.success() {
                 return Err(BuildEnvironmentAdapterError::Failed(
                     String::from_utf8_lossy(&output.stderr).trim().to_owned(),
@@ -164,6 +162,27 @@ impl BuildEnvironmentAdapter {
             }
         }
         Ok(preview)
+    }
+
+    async fn run_git(&self, argv: &[String]) -> Result<Output, BuildEnvironmentAdapterError> {
+        for attempt in 1..=SPAWN_ATTEMPTS {
+            match timeout(
+                self.timeout,
+                Command::new(&self.git_program).args(argv).output(),
+            )
+            .await
+            {
+                Err(_elapsed) => return Err(BuildEnvironmentAdapterError::Timeout),
+                Ok(Ok(output)) => return Ok(output),
+                Ok(Err(error)) if attempt < SPAWN_ATTEMPTS && is_transient_spawn_error(&error) => {
+                    tokio::time::sleep(SPAWN_RETRY_DELAY).await;
+                }
+                Ok(Err(error)) => {
+                    return Err(BuildEnvironmentAdapterError::Failed(error.to_string()));
+                }
+            }
+        }
+        unreachable!("the bounded build environment spawn loop always returns")
     }
 
     pub fn validate(
@@ -357,5 +376,16 @@ mod tests {
         adapter.clone_poky(request).await.unwrap();
         assert!(destination.is_dir());
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn poky_clone_retries_only_text_file_busy_spawn_errors() {
+        assert!(is_transient_spawn_error(
+            &std::io::Error::from_raw_os_error(libc::ETXTBSY,)
+        ));
+        assert!(!is_transient_spawn_error(
+            &std::io::Error::from_raw_os_error(libc::ENOENT),
+        ));
     }
 }
