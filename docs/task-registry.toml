@@ -5546,7 +5546,7 @@ priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
 verify = ["unshare -Ur true", "YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
-notes = "IN_PROGRESS after clearing both external blockers: `unshare -Ur true` passes, and a fresh isolated run crossed 5.6 GiB and completed ncurses-native without EDQUOT. The run then failed in sysvinit-inittab:do_install because pseudo rejected piped tail standard input with `couldn't allocate absolute path for ''`; BitBake retained that failed worker client and the daemon job remained Running. Resolve the Poky/pseudo failure and terminal-state propagation, then retry with a unique YOCTUI_NEXT_UI_EVIDENCE directory and sufficient cold-build storage."
+notes = "IN_PROGRESS with the blocker diagnosed: `/` is ext4 without user quotas and `unshare -Ur true` passes. The pseudo failure reproduced on unsupported Ubuntu 26.04/glibc 2.43, newer than Poky 5.2.4's uninative glibc 2.42. A supported Ubuntu 24.04/glibc 2.39 container crossed the former EDQUOT, ncurses-native, and sysvinit-inittab failure points and is completing the full core-image-minimal build plus successful, failed, terminal, and reconnect UI evidence."
 
 [[task]]
 id = "README-UI-001"

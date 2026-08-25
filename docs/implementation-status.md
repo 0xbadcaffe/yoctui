@@ -207,15 +207,14 @@ environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
 implicitly executable.
 
-`LIVE-UI-POKY-001` is `IN_PROGRESS`. The host now passes `unshare -Ur true`,
-and the storage quota blocker is cleared: a fresh isolated run crossed 5.6 GiB
-and completed `ncurses-native`. That run exposed a separate Poky/pseudo failure
-in `sysvinit-inittab:do_install`: the recipe's piped `tail --bytes=5` reports
-`couldn't allocate absolute path for ''` and cannot open standard input. The
-BitBake server then retains the failed worker client and the daemon job remains
-Running instead of reaching a typed terminal state. Resolve both issues, rerun
-with a unique `YOCTUI_NEXT_UI_EVIDENCE` directory, and capture the complete
-manifest before closing the task.
+`LIVE-UI-POKY-001` is `IN_PROGRESS`. The host passes `unshare -Ur true`, and
+`/` is ext4 without user quotas, so the failed `setquota` command cannot apply
+and quota is not the blocker. The later `sysvinit-inittab:do_install` pseudo
+symptom reproduced on unsupported Ubuntu 26.04/glibc 2.43, newer than Poky
+5.2.4's uninative glibc 2.42. A supported Ubuntu 24.04/glibc 2.39 container has
+crossed the former EDQUOT, `ncurses-native`, and pseudo failure points and is
+running the complete `core-image-minimal` plus safe-failure, terminal, and
+reconnect evidence sequence in a unique evidence directory.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session

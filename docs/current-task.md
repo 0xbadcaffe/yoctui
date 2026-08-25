@@ -9,13 +9,14 @@
 ## Objective
 
 The Raw workbench is complete. Global completion is waiting on the separate
-real-Poky redesigned-UI evidence task. The host now permits `unshare -Ur true`,
-and the storage quota blocker is gone: an isolated retry crossed 5.6 GiB and
-completed `ncurses-native`, the prior failure point. The retry instead exposed
-a Poky/pseudo failure in `sysvinit-inittab:do_install` while `tail` reads its
-pipeline input (`couldn't allocate absolute path for ''`), after which the
-BitBake server retains a client descriptor and the Yoctui job remains Running.
-The harness therefore cannot yet produce its completion manifest.
+real-Poky redesigned-UI evidence task. The host permits `unshare -Ur true`, and
+`/` is an ext4 mount without user quotas, so the attempted `setquota` command
+cannot apply and quota is not the blocker. The later
+`sysvinit-inittab:do_install` pseudo symptom was reproduced only on the
+unsupported Ubuntu 26.04 host, whose glibc 2.43 is newer than Poky 5.2.4's
+uninative glibc 2.42. A supported Ubuntu 24.04/glibc 2.39 container has crossed
+both prior failure points and is running the full `core-image-minimal` evidence
+harness to completion.
 
 ## Dependencies
 
@@ -42,10 +43,10 @@ The harness therefore cannot yet produce its completion manifest.
 
 - Run `unshare -Ur true` and the live UI evidence harness commands.
 - Capture and verify the required real-Poky evidence manifest.
-- Reproduce and resolve the `sysvinit-inittab:do_install` pseudo failure without
-  weakening the real-Poky acceptance target.
-- Ensure a failed BitBake worker reaches a typed terminal job state instead of
-  leaving the daemon job Running indefinitely.
+- Complete the build on a Poky-supported host without weakening the real-Poky
+  acceptance target.
+- Prove the harness's intentional missing target reaches a typed `Failed` job
+  state instead of leaving the daemon job `Running` indefinitely.
 - Retry with a unique `YOCTUI_NEXT_UI_EVIDENCE` directory and retain sufficient
   cold-build storage.
 
