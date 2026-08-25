@@ -2,44 +2,42 @@
 
 ## Task
 
-**ID:** README-UI-001
-**Title:** Update README screenshots and UI documentation
+**ID:** UI-CLEANUP-001
+**Title:** Refactor rendering modules after behavior stabilizes
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Publish current redesigned-UI screenshots derived only from the canonical
-real-Poky evidence bundle. Bind the README presentation to the tested Yoctui
-binary, Poky revision, and evidence manifest rather than fixture-only media.
+Split the stable next-generation renderer into explicit
+shell/widgets/workspaces/dialogs/telemetry/theme/layout modules without
+changing typed behavior, golden output, accessibility, or responsive geometry.
 
 ## Dependencies
 
+- `README-UI-001` — DONE
+- `UI-REGRESSION-001` — DONE
 - `LIVE-UI-POKY-001` — DONE
-- `VISUAL-TEST-003` — DONE
-- `PTY-UI-TEST-001` — DONE
 
 ## Relevant files
 
-- `README.md`
-- `docs/media/`
-- `artifacts/release-quality/next-generation-ui/`
-- `scripts/check-docs.sh`
-- `scripts/verify-next-generation-ui-evidence.sh`
+- `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-ui/src/`
+- `docs/architecture.md`
 - `docs/implementation-status.md`
 - `docs/task-registry.toml`
 - `docs/current-task.md`
 
 ## Definition of done
 
-- Replace fixture-only README presentation with current real-Poky UI views.
-- Generate media deterministically from the canonical semantic captures.
-- State the exact binary/source/Poky provenance represented by the media.
-- Keep documentation links, media, and live evidence verification passing.
+- Establish the required rendering-module boundaries.
+- Preserve the public UI API and all typed input/rendering behavior.
+- Keep visual snapshots, responsive layouts, and golden output unchanged.
+- Pass UI tests, strict UI clippy, roadmap validation, and the parent UI gate.
 
 ## Verification
 
 ```bash
-./scripts/verify-next-generation-ui-evidence.sh
-./scripts/check-docs.sh
+cargo test -p yoctui-ui
+cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ```

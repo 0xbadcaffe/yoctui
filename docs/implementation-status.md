@@ -217,6 +217,13 @@ captures. The earlier quota command was inapplicable because `/` has no user
 quotas; the host-only pseudo symptom came from unsupported Ubuntu 26.04/glibc
 2.43. `README-UI-001` is active next.
 
+`README-UI-001` is `DONE`. The README now presents live running-task/log,
+successful completion, and intentional typed-failure views generated
+deterministically from the canonical semantic PTY captures. The SVG metadata
+binds every view to the exact tested source, binary, Poky, BitBake, and target
+identities, and `scripts/check-docs.sh` rejects missing or stale renders.
+`UI-CLEANUP-001` is active next.
+
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session
 metadata only. Real output now crosses the maintained emulator, a dimension/

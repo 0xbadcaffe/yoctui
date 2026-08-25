@@ -5552,12 +5552,12 @@ notes = "Supported Ubuntu 24.04/glibc 2.39 live validation passed against Poky d
 id = "README-UI-001"
 milestone = "M19"
 title = "Update README screenshots and UI documentation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 565
 required = true
 depends_on = ["LIVE-UI-POKY-001"]
 verify = ["./scripts/verify-next-generation-ui-evidence.sh", "./scripts/check-docs.sh"]
-notes = "Publish only current screenshots captured from the real Yoctui binary and bind them to the tested binary/evidence manifest."
+notes = "README now publishes active-task/log, successful completion, and typed safe-failure SVGs rendered deterministically from the canonical real-Poky semantic captures. Each SVG embeds the exact source, binary, Poky, BitBake, and target provenance; the documentation gate regenerates them in check mode."
 
 [[task]]
 id = "UI-REGRESSION-001"
@@ -5574,7 +5574,7 @@ notes = "Workspace regression, utility coverage, and compatibility verification 
 id = "UI-CLEANUP-001"
 milestone = "M19"
 title = "Refactor rendering modules after behavior stabilizes"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 567
 required = true
 depends_on = ["README-UI-001", "UI-REGRESSION-001"]

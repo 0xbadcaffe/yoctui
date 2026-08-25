@@ -215,6 +215,9 @@ PY
 
 for media in \
   docs/media/yoctui-demo.gif \
+  docs/media/yoctui-live-active-tasks.svg \
+  docs/media/yoctui-live-completion.svg \
+  docs/media/yoctui-live-failed-task.svg \
   artifacts/flamegraph/yoctui.svg \
   artifacts/flamegraph/summary.txt
 do
@@ -223,6 +226,8 @@ do
     exit 1
   fi
 done
+
+python3 scripts/render-next-generation-ui-screenshots.py --check
 
 cli_help="$(cargo run -q -p yoctui -- --help)"
 for expected in \

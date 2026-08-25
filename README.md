@@ -13,11 +13,20 @@ tasks and logs, launch QEMU, create Wic images, and handle QA or maintenance
 without losing your terminal context. BitBake remains the authority; Yoctui
 organizes and controls it.
 
-![Yoctui terminal demo](docs/media/yoctui-demo.gif)
+![Yoctui following a running real-Poky task and its log](docs/media/yoctui-live-active-tasks.svg)
 
-_Recorded from the real Yoctui binary using deterministic fixture metadata so
-the demo is reproducible. Live compatibility is documented separately and is
-never inferred from this recording._
+_Real `core-image-minimal` validation on Poky `yocto-5.2.4` / BitBake 2.12.1,
+captured from the tested Yoctui binary. The image embeds the exact source,
+binary, and Poky identities from the [verified live manifest](artifacts/release-quality/next-generation-ui/manifest.json)._
+
+### Live terminal outcomes
+
+The same evidence run records the successful build boundary and a deliberately
+missing target as distinct typed outcomes—no fixture backend or inferred state.
+
+![Yoctui after core-image-minimal completes](docs/media/yoctui-live-completion.svg)
+
+![Yoctui showing the intentional missing-target failure](docs/media/yoctui-live-failed-task.svg)
 
 ## What is inside
 
