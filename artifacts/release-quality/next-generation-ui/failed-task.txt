@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: poky  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Disconnected│
+┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
+│▾ Layers                ││Overall  progress unknown▹▹▹▹▹▸▸▸  0/?                                                 ││No task selected.                          │
+│  ▱ core                ││Active 0  Waiting 0  Warnings 0  Errors 1  Elapsed --                                  ││Task facts appear as typed BitBake events  │
+│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││arrive.                                    │
+│  ▱ yoctobsp            ││                                                                                       ││                                           │
+│▾ Recipes               ││                                                                                       ││                                           │
+│  ▸ discovering…        ││                                                                                       ││                                           │
+│▾ Images                ││                                                                                       ││                                           │
+│  ▱ none discovered     ││                                                                                       ││                                           │
+│▾ Tasks                 ││                                                                                       ││                                           │
+│  ▱ Build               ││                                                                                       │└───────────────────────────────────────────┘
+│  ▱ Test                ││                                                                                       │┌Secondary facts · Paths · Dependencies─────┐
+│  ▱ QA                  ││                                                                                       ││Secondary facts, paths, and dependencies   │
+│  ▱ Devtool             ││                                                                                       ││unavailable.                               │
+│  ▱ Wic                 ││                                                                                       ││                                           │
+│  ▱ SDK                 ││                                                                                       ││                                           │
+│  ▱ Security            ││                                                                                       ││                                           │
+│  ▱ Utility             ││                                                                                       ││                                           │
+│▾ Targets               ││                                                                                       ││                                           │
+│  ▱ qemux86-64          ││                                                                                       ││                                           │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│                                           │
+│                        │┌Log Viewer — no task selected · ▶ Follow───────────────────────────────────────────────┐│                                           │
+│                        ││No task-specific log is available.                                                     │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
+│                        ││                                                                                       ││No task-specific log is available.         │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌Contextual Actions─────────────────────────┐
+│                        ││                                                                                       ││× Cancel active build  [c] — Disabled      │
+│                        ││                                                                                       ││  Reason: No active build can be cancelled.│
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│  Reason: Direct probing was inconclusive; │
+│                        │┌Job History · Active 0 · Queued 0 · Failed 0 · Recent complete 0 · Daemon-owned 2──────┐│  Limitation: Modern Tinfoil API family is │
+│                        ││Status        Operation       Type         Target / Context         Started   Elapsed  ││  Implementation: tinfoil.adapter.modern   │
+│                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
+│                        ││                                                                                       ││✓ Build History        [h] — Local         │
+│                        ││                                                                                       │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌System Status──────────────────────────────┐
+│                        ││                                                                                       ││✓ Daemon Connected · version unavailable ·…│
+│                        ││                                                                                       ││– BitBake Disconnected · v2.12.1 · Jobs 0  │
+│                        ││                                                                                       ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
+│L: core  R: 2  P:--     ││                                                                                       ││! Build FS unavailable · Workspace /worksp…│
+└────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      17:09:39│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

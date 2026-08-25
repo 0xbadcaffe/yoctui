@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: poky  •  ✓ Completed  •  Target: core-image-minimal  •  Machine: qemux86-64                Daemon: ✓ Connected  •  BitBake: – Disconnected│
+┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
+│▾ Layers                ││███████████████████████████████Overall  100%  3837/3837 ███████████████████████████████││Task        do_create_spdx_setscene        │
+│  ▱ core                ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                  ││Recipe      acl                            │
+│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          acl                            │
+│  ▱ yoctobsp            ││do_create_spdx_s acl                   ? Lost        --        --                      ││PV          unavailable                    │
+│▾ Recipes               ││do_populate_lic_ acl                   ? Lost        --        --                      ││PR          unavailable                    │
+│  ▸ discovering…        ││do_populate_sysr acl                   ? Lost        --        --                      ││State       ? Lost                         │
+│▾ Images                ││do_recipe_qa_set acl                   ? Lost        --        --                      ││Progress    unknown                        │
+│  ▱ none discovered     ││do_create_packag alsa-lib              ? Lost        --        --                      ││                                           │
+│▾ Tasks                 ││do_create_spdx_s alsa-lib              ? Lost        --        --                      ││                                           │
+│  ▱ Build               ││do_populate_lic_ alsa-lib              ? Lost        --        --                      │└───────────────────────────────────────────┘
+│  ▱ Test                ││do_populate_sysr alsa-lib              ? Lost        --        --                      │┌Secondary facts · Paths · Dependencies─────┐
+│  ▱ QA                  ││do_recipe_qa_set alsa-lib              ? Lost        --        --                      ││Worker      unavailable                    │
+│  ▱ Devtool             ││do_rm_work       alsa-lib              ? Lost        --        --                      ││PID         unavailable                    │
+│  ▱ Wic                 ││do_create_spdx_s attr                  ? Lost        --        --                      ││Started     unavailable                    │
+│  ▱ SDK                 ││do_populate_sysr attr                  ? Lost        --        --                      ││Elapsed     unavailable                    │
+│  ▱ Security            ││do_recipe_qa_set attr                  ? Lost        --        --                      ││Workdir     unavailable                    │
+│  ▱ Utility             ││do_create_packag autoconf              ? Lost        --        --                      ││Log file    unavailable                    │
+│▾ Targets               ││do_create_spdx_s autoconf              ? Lost        --        --                      ││Dependencies none reported                 │
+│  ▱ qemux86-64          ││do_populate_lic_ autoconf              ? Lost        --        --                      ││                                           │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│                                           │
+│                        │┌Log Viewer — do_create_spdx_setscene (acl) · ▶ Follow──────────────────────────────────┐│                                           │
+│                        ││Waiting for typed log entries for the selected task.                                   │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
+│                        ││                                                                                       ││Waiting for typed log entries for the      │
+│                        ││                                                                                       ││selected task.                             │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       ││                                           │
+│                        ││                                                                                       │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌Contextual Actions─────────────────────────┐
+│                        ││                                                                                       ││× Cancel active build  [c] — Disabled      │
+│                        ││                                                                                       ││  Reason: No active build can be cancelled.│
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│  Reason: Direct probing was inconclusive; │
+│                        │┌Job History · Active 0 · Queued 0 · Failed 0 · Recent complete 0 · Daemon-owned 1──────┐│  Limitation: Modern Tinfoil API family is │
+│                        ││Status        Operation       Type         Target / Context         Started   Elapsed  ││  Implementation: tinfoil.adapter.modern   │
+│                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
+│                        ││                                                                                       ││✓ Build History        [h] — Local         │
+│                        ││                                                                                       │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌System Status──────────────────────────────┐
+│                        ││                                                                                       ││✓ Daemon Connected · version unavailable ·…│
+│                        ││                                                                                       ││– BitBake Disconnected · v2.12.1 · Jobs 0  │
+│                        ││                                                                                       ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
+│L: core  R: 1  P:--     ││                                                                                       ││! Build FS unavailable · Workspace /worksp…│
+└────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      17:08:46│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

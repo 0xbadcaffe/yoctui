@@ -1,0 +1,14 @@
+build directory: /workspace/.yoctui-next-ui-live.z9HaUz/build
+BitBake version: 2.12.1
+Yocto/OpenEmbedded release: 5.2.4
+BBLAYERS=   /workspace/.yoctui-next-ui-live.z9HaUz/poky/meta   /workspace/.yoctui-next-ui-live.z9HaUz/poky/meta-poky   /workspace/.yoctui-next-ui-live.z9HaUz/poky/meta-yocto-bsp   
+TMPDIR=/workspace/.yoctui-next-ui-live.z9HaUz/build/tmp
+DL_DIR=/workspace/.yoctui-live-cache/downloads
+WKS_FILE=qemux86-directdisk.wks
+PACKAGE_CLASSES=package_rpm
+MACHINE=qemux86-64
+DEPLOY_DIR_IMAGE=/workspace/.yoctui-next-ui-live.z9HaUz/build/tmp/deploy/images/qemux86-64
+SSTATE_DIR=/workspace/.yoctui-live-cache/sstate-cache
+BB_NUMBER_THREADS=8
+PARALLEL_MAKE=-j 8
+DISTRO=poky

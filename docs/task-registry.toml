@@ -5541,18 +5541,18 @@ notes = "Real PTY output now crosses the maintained emulator, bounded typed PtyS
 id = "LIVE-UI-POKY-001"
 milestone = "M19"
 title = "Validate redesigned UI against real Poky"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 564
 required = true
 depends_on = ["VISUAL-TEST-003", "PTY-UI-TEST-001", "PERF-UI-002"]
 verify = ["unshare -Ur true", "YOCTUI_POKY_SOURCE=\"$PWD/.yoctui-fresh-poky\" ./scripts/test-live-next-generation-ui.sh", "./scripts/verify-next-generation-ui-evidence.sh"]
-notes = "IN_PROGRESS with the blocker diagnosed: `/` is ext4 without user quotas and `unshare -Ur true` passes. The pseudo failure reproduced on unsupported Ubuntu 26.04/glibc 2.43, newer than Poky 5.2.4's uninative glibc 2.42. A supported Ubuntu 24.04/glibc 2.39 container crossed the former EDQUOT, ncurses-native, and sysvinit-inittab failure points and is completing the full core-image-minimal build plus successful, failed, terminal, and reconnect UI evidence."
+notes = "Supported Ubuntu 24.04/glibc 2.39 live validation passed against Poky d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1 (yocto-5.2.4), BitBake 2.12.1, qemux86-64, and core-image-minimal. Canonical evidence verifies startup, environment, recipes, layers, a real running task/log frame, build completion, intentional typed failure, terminal, and daemon reconnect against source commit 6a14272433ff6e8048fcfcb116e8c4884a17e3a5. `/` has no user quotas; quota was not the blocker."
 
 [[task]]
 id = "README-UI-001"
 milestone = "M19"
 title = "Update README screenshots and UI documentation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 565
 required = true
 depends_on = ["LIVE-UI-POKY-001"]

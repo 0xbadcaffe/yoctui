@@ -190,7 +190,7 @@ complete and the Raw parent gate is complete; `UI-REGRESSION-001` is complete.
 `RAW-COMPAT-001` is complete: the older and current live fixture matrices,
 unknown-future evidence, replacement/stale projections, and zero-spawn denial
 checks pass. The global completion gate still has the separately blocked
-`LIVE-UI-POKY-001` and downstream UI tasks remaining.
+`README-UI-001` and downstream UI tasks remaining.
 `RAW-RESPONSIVE-001` is complete: Raw browser, Favorites, execution, and
 below-minimum shells retain bounded selection and never panic across wide,
 medium, narrow, and too-small terminals. `RAW-A11Y-001` is complete: no-color
@@ -207,14 +207,15 @@ environment capability snapshot; shell pipelines, filesystem recipes,
 companion commands, and conceptual sections in the reference are not
 implicitly executable.
 
-`LIVE-UI-POKY-001` is `IN_PROGRESS`. The host passes `unshare -Ur true`, and
-`/` is ext4 without user quotas, so the failed `setquota` command cannot apply
-and quota is not the blocker. The later `sysvinit-inittab:do_install` pseudo
-symptom reproduced on unsupported Ubuntu 26.04/glibc 2.43, newer than Poky
-5.2.4's uninative glibc 2.42. A supported Ubuntu 24.04/glibc 2.39 container has
-crossed the former EDQUOT, `ncurses-native`, and pseudo failure points and is
-running the complete `core-image-minimal` plus safe-failure, terminal, and
-reconnect evidence sequence in a unique evidence directory.
+`LIVE-UI-POKY-001` is `DONE`. Supported Ubuntu 24.04/glibc 2.39 validation
+built `core-image-minimal` for qemux86-64 from Poky
+`d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1` (`yocto-5.2.4`) with BitBake
+2.12.1. The canonical manifest binds the tested binary and source commit to
+startup, environment, recipes, layers, a real running task/log frame, build
+completion, intentional typed failure, terminal, and daemon reconnect
+captures. The earlier quota command was inapplicable because `/` has no user
+quotas; the host-only pseudo symptom came from unsupported Ubuntu 26.04/glibc
+2.43. `README-UI-001` is active next.
 
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session

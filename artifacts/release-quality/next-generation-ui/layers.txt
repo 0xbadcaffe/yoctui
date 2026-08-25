@@ -1,0 +1,3 @@
+core /workspace/.yoctui-next-ui-live.z9HaUz/poky/meta
+yocto /workspace/.yoctui-next-ui-live.z9HaUz/poky/meta-poky
+yoctobsp /workspace/.yoctui-next-ui-live.z9HaUz/poky/meta-yocto-bsp

@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: poky  •  ▶ Parsing  •  Target: core-image-minimal  •  Machine: qemux86-64                       Daemon: ✓ Connected  •  BitBake: ✓ Running│
+┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
+│▾ Layers                ││                                  Overall  0%  6/3837                                  ││Task        do_populate_lic_setscene       │
+│  ▱ core                ││Active 1  Waiting 3818  Warnings 0  Errors 0  Elapsed 00:00:02                         ││Recipe      qemu-helper-native             │
+│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          qemu-helper-native             │
+│  ▱ yoctobsp            ││do_populate_lic_ qemu-helper-native    ✓ Succeeded   00:00:00  ██████████ 100%         ││PV          unavailable                    │
+│▾ Recipes               ││do_populate_lic_ qemu-system-native    ✓ Succeeded   00:00:00  ██████████ 100%         ││PR          unavailable                    │
+│  ▸ discovering…        ││do_populate_lic_ libtirpc-native       ✓ Succeeded   00:00:00  ██████████ 100%         ││State       ✓ Succeeded                    │
+│▾ Images                ││do_populate_lic_ pixman-native         ✓ Succeeded   00:00:00  ██████████ 100%         ││Progress    100%                           │
+│  ▱ none discovered     ││do_create_packag debianutils-native    ✓ Succeeded   00:00:00  ██████████ 100%         ││                                           │
+│▾ Tasks                 ││do_populate_lic_ tar-native            ✓ Succeeded   00:00:00  ██████████ 100%         ││                                           │
+│  ▱ Build               ││do_populate_lic_ diffutils-native      ▶ Running     00:00:00  progress unknown▹▹▹▹▹▹▹▸│└───────────────────────────────────────────┘
+│  ▱ Test                ││do_populate_lic_ alsa-lib              · Queued      --        --                      │┌Secondary facts · Paths · Dependencies─────┐
+│  ▱ QA                  ││do_create_image_ core-image-minimal    · Queued      --        --                      ││Worker      unavailable                    │
+│  ▱ Devtool             │└───────────────────────────────────────────────────────────────────────────────────────┘│PID         614                            │
+│  ▱ Wic                 │┌Log Viewer — do_populate_lic_setscene (qemu-helper-native) · ▶ Follow──────────────────┐│Started     17:06:56                       │
+│  ▱ SDK                 ││Waiting for typed log entries for the selected task.                                   ││Elapsed     00:00:00                       │
+│  ▱ Security            ││                                                                                       ││Workdir     unavailable                    │
+│  ▱ Utility             ││                                                                                       ││Log file                                   │
+│▾ Targets               ││                                                                                       ││/workspace/.yoctui-next-ui-live.z9HaUz/buil│
+│  ▱ qemux86-64          ││                                                                                       ││d/tmp/work/x86_64-linux/qemu-helper-native/│
+│                        ││                                                                                       ││1.0/temp/log.do_populate_lic_setscene.614  │
+│                        ││                                                                                       ││Dependencies none reported                 │
+│                        ││                                                                                       │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
+│                        ││                                                                                       ││Waiting for typed log entries for the      │
+│                        ││                                                                                       ││selected task.                             │
+│                        ││                                                                                       ││                                           │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│                                           │
+│                        │┌Job History · Active 0 · Queued 0 · Failed 0 · Recent complete 0 · Daemon-owned 1──────┐│                                           │
+│                        ││Status        Operation       Type         Target / Context         Started   Elapsed  ││                                           │
+│                        ││                                                                                       │└───────────────────────────────────────────┘
+│                        ││                                                                                       │┌Contextual Actions─────────────────────────┐
+│                        ││                                                                                       ││~ Cancel active build  [c] — Limited       │
+│                        ││                                                                                       ││  Reason: Direct probing was inconclusive; │
+│                        ││                                                                                       ││  Limitation: Modern Tinfoil API family is │
+│                        ││                                                                                       ││  Implementation: tinfoil.adapter.modern   │
+│                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│✓ Build History        [h] — Local         │
+│                        │┌Telemetry · bounded 60-sample histories────────────────────────────────────────────────┐│~ Build options        [B] — Limited       │
+│                        ││█████████████████████│███                  │███████████████████ │R 1.6 MiB/s   █       │└───────────────────────────────────────────┘
+│                        ││█████████████████████│███                  │███████████████████ │W 0 B/s               │┌System Status──────────────────────────────┐
+│                        ││█████████████████████│███                  │███████████████████ │                      ││✓ Daemon Connected · version unavailable ·…│
+│                        ││████CPU 98% · 8c ████│███    RAM 15%       │████BUILD FS 95% ██ │                      ││✓ BitBake Running · v2.12.1 · Jobs unavail…│
+│                        ││█████████████████████│███                  │███████████████████ │                      ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
+│L: core  R: 1  P:614    ││█████████████████████│███                  │███████████████████ │                      ││✕ Build FS 95% · 22.8/456.3 GiB free · Wor…│
+└────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit                               ▶ BitBake parsing  17:06:56│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
