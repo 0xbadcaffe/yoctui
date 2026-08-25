@@ -90,10 +90,23 @@ yocto_release="$(sed -n 's/^Yocto\/OpenEmbedded release: //p' "$evidence/inspect
 : >"$evidence/build-status.log"
 "$binary" daemon build core-image-minimal
 "$binary" daemon status >>"$evidence/build-status.log" 2>&1 || true
-python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
-  --binary "$binary" --build-dir "$build_dir" --output "$evidence/active-tasks" --mode tasks --backend process
-
 deadline=$((SECONDS + timeout_seconds))
+active_deadline=$((SECONDS + 180))
+captured_active_task=0
+while (( SECONDS < active_deadline && SECONDS < deadline )); do
+  python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
+    --binary "$binary" --build-dir "$build_dir" --output "$evidence/active-tasks" --mode tasks --backend process
+  if grep -Fq '▶ Running' "$evidence/active-tasks.txt" && \
+    grep -Fq 'Log Viewer' "$evidence/active-tasks.txt"; then
+    captured_active_task=1
+    break
+  fi
+  status="$($binary daemon status 2>&1 || true)"
+  printf '%s\n' "$status" >>"$evidence/build-status.log"
+  grep -q 'job .*Failed\|job .*Lost\|job .*Exited' <<<"$status" && break
+done
+(( captured_active_task == 1 ))
+
 seen_running=0
 grep -q 'job .*Running' "$evidence/build-status.log" && seen_running=1 || true
 while (( SECONDS < deadline )); do
