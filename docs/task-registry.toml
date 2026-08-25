@@ -5574,18 +5574,18 @@ notes = "Workspace regression, utility coverage, and compatibility verification 
 id = "UI-CLEANUP-001"
 milestone = "M19"
 title = "Refactor rendering modules after behavior stabilizes"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 567
 required = true
 depends_on = ["README-UI-001", "UI-REGRESSION-001"]
 verify = ["cargo test -p yoctui-ui", "cargo clippy -p yoctui-ui --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Split stable rendering into shell/widgets/workspaces/dialogs/telemetry/theme/layout modules without changing typed behavior or golden output."
+notes = "Stable production rendering now has private shell, widgets, workspaces, dialogs, telemetry, theme, and layout modules with explicit documented ownership. The public render/render_at/SemanticTheme surface is unchanged; all 214 UI tests including the strict golden and every responsive/theme/accessibility path pass with strict UI clippy."
 
 [[task]]
 id = "M13-UI-001"
 milestone = "M19"
 title = "Complete next-generation Yoctui TUI"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 568
 required = true
 depends_on = ["FOUNDATION-UI-001", "FOUNDATION-UI-002", "FOUNDATION-UI-003", "NAV-UI-001", "TASKS-UI-001", "TASKS-UI-002", "TASKS-UI-003", "LOG-UI-001", "LOG-UI-002", "JOB-UI-001", "JOB-UI-002", "INSPECTOR-UI-001", "INSPECTOR-UI-002", "INSPECTOR-UI-003", "METRICS-MODEL-001", "METRICS-MODEL-002", "METRICS-UI-001", "METRICS-UI-002", "METRICS-UI-003", "METRICS-UI-004", "METRICS-UI-005", "METRICS-UI-006", "SYSTEM-UI-001", "SYSTEM-UI-002", "HEADER-UI-001", "FOOTER-UI-001", "FOOTER-UI-002", "SEARCH-UI-001", "PALETTE-UI-001", "DIALOG-UI-001", "MOUSE-UI-001", "A11Y-UI-001", "PERF-UI-001", "PERF-UI-002", "RESPONSIVE-UI-001", "VISUAL-TEST-001", "VISUAL-TEST-002", "VISUAL-TEST-003", "INPUT-TEST-001", "INPUT-TEST-002", "INPUT-TEST-003", "PTY-UI-TEST-001", "LIVE-UI-POKY-001", "README-UI-001", "UI-REGRESSION-001", "UI-CLEANUP-001"]

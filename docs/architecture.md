@@ -488,6 +488,16 @@ Owns:
 
 Widgets must be deterministic from model state.
 
+The stable renderer is split by presentation responsibility. `shell` owns
+workbench progress and pacing projection; `layout` owns responsive pane
+topology; `workspaces` owns typed `Screen` dispatch; `dialogs` owns popup
+shells and geometry; `telemetry` owns meter thresholds and gauges; `theme`
+owns semantic state-to-style projection; and `widgets` owns bounded shared
+text/metadata helpers. `lib.rs` retains the public `render`, `render_at`, and
+`SemanticTheme` surface plus feature-specific renderers. These private modules
+may consume only the same typed model state as the root renderer and may not
+introduce backend parsing, state mutation, or independent geometry policy.
+
 `yoctui-ui::primitives` is the render-only reuse boundary for pane shells,
 section headers, focused and inactive selection, separators, textual status
 labels, empty/loading/unavailable/error presentation, bounded scroll labels,

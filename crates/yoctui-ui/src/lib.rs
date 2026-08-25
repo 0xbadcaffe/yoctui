@@ -1,5 +1,20 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
+mod dialogs;
+mod layout;
 pub mod primitives;
+mod shell;
+mod telemetry;
+mod theme;
+mod widgets;
+mod workspaces;
+
+use dialogs::*;
+use layout::*;
+use shell::*;
+use telemetry::*;
+use theme::*;
+use widgets::*;
+use workspaces::*;
 
 use primitives::{
     ActionListItem, ActionListStyles, BoundedScrollIndicator, DialogShell, DialogStyles,
@@ -53,14 +68,6 @@ use yoctui_model::{
 const LITERAL_REFERENCE_WIDTH: u16 = 160;
 const WIDE_WORKBENCH_MIN_WIDTH: u16 = 130;
 
-fn matches_metadata(query: &str, values: &[&str]) -> bool {
-    let query = query.to_lowercase();
-    query.is_empty()
-        || values
-            .iter()
-            .any(|value| value.to_lowercase().contains(query.as_str()))
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SearchNavigation {
     Results,
@@ -71,26 +78,6 @@ enum SearchNavigation {
 enum SearchExit {
     Done,
     Close,
-}
-
-fn bounded_cell_text(value: &str, width: u16) -> String {
-    if Line::from(value).width() <= usize::from(width) {
-        return value.to_owned();
-    }
-    if width == 0 {
-        return String::new();
-    }
-    let budget = usize::from(width.saturating_sub(1));
-    let mut output = String::new();
-    for character in value.chars() {
-        output.push(character);
-        if Line::from(output.as_str()).width() > budget {
-            output.pop();
-            break;
-        }
-    }
-    output.push('…');
-    output
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -165,13 +152,6 @@ fn search_line(
         palette.role(palette.informational, Modifier::BOLD)
     };
     Line::styled(bounded_cell_text(&text, width), style)
-}
-
-fn timestamp_text(timestamp: SystemTime) -> String {
-    timestamp.duration_since(UNIX_EPOCH).map_or_else(
-        |_| "before Unix epoch".into(),
-        |duration| format!("{}s since Unix epoch", duration.as_secs()),
-    )
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -459,85 +439,6 @@ impl SemanticTheme {
     }
 }
 
-fn selected_style(app: &App, active: bool) -> Style {
-    if active {
-        PaneShell::new("", false, pane_styles(app)).row_style(true, true)
-    } else {
-        Style::default()
-    }
-}
-
-fn dialog_styles(app: &App) -> DialogStyles {
-    let palette = ThemePalette::for_app(app);
-    DialogStyles {
-        base: palette.base(),
-        focused_border: palette.focus(),
-        heading: palette.role(palette.heading, Modifier::BOLD),
-        selected: palette.selected(),
-        disabled: palette.role(palette.disabled, Modifier::DIM),
-        validation: palette.role(palette.error, Modifier::BOLD),
-        hint: palette.role(palette.secondary_foreground, Modifier::DIM),
-        destructive: palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED),
-    }
-}
-
-fn dialog_shell(app: &App, title: impl Into<String>, tone: DialogTone) -> DialogShell {
-    DialogShell::new(title, tone, dialog_styles(app))
-}
-
-fn dialog_block(app: &App, title: impl Into<String>, tone: DialogTone) -> Block<'static> {
-    dialog_shell(app, title, tone).block()
-}
-
-fn selected_log_style(app: &App, severity: Severity) -> Style {
-    let palette = ThemePalette::for_app(app);
-    let style = severity_style(app, severity);
-    if palette.attribute_only {
-        style.add_modifier(Modifier::REVERSED | Modifier::BOLD)
-    } else {
-        style
-            .bg(palette.selection_background)
-            .add_modifier(Modifier::BOLD)
-    }
-}
-
-fn severity_style(app: &App, severity: Severity) -> Style {
-    let palette = ThemePalette::for_app(app);
-    match severity {
-        Severity::Trace => palette.role(palette.disabled, Modifier::DIM),
-        Severity::Info => palette.role(palette.informational, Modifier::ITALIC),
-        Severity::Warning => palette.role(palette.warning, Modifier::BOLD),
-        Severity::Error => palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED),
-    }
-}
-
-fn build_status_style(app: &App) -> Style {
-    let palette = ThemePalette::for_app(app);
-    match app.build.status {
-        yoctui_model::BuildStatus::Completed => palette.role(palette.success, Modifier::BOLD),
-        yoctui_model::BuildStatus::Cancelled => palette.role(palette.warning, Modifier::BOLD),
-        yoctui_model::BuildStatus::Failed => {
-            palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
-        }
-        yoctui_model::BuildStatus::LoadingWorkspace
-        | yoctui_model::BuildStatus::Parsing
-        | yoctui_model::BuildStatus::Running
-        | yoctui_model::BuildStatus::Cancelling => palette.role(palette.running, Modifier::BOLD),
-        yoctui_model::BuildStatus::Idle => palette.role(palette.disabled, Modifier::DIM),
-    }
-}
-
-fn clear_popup(frame: &mut Frame, app: &App, area: Rect) {
-    frame.render_widget(Clear, area);
-    let palette = ThemePalette::for_app(app);
-    frame.render_widget(
-        Block::default()
-            .style(palette.base())
-            .border_style(palette.focus()),
-        area,
-    );
-}
-
 fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
     let bitbake_source = ["bb", "bbappend", "inc", "conf", "wks", "wks.in"]
         .iter()
@@ -633,92 +534,6 @@ fn numbered_source_preview(content: &str, file_name: &str, app: &App) -> Text<'s
         );
     }
     source
-}
-
-fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
-    if task_progress.is_some() {
-        return "";
-    }
-    if app.reduced_motion {
-        return " active";
-    }
-    const FAST: [&str; 8] = [
-        "▸▸▸▸▸▸▸▸",
-        "▹▸▸▸▸▸▸▸",
-        "▹▹▸▸▸▸▸▸",
-        "▹▹▹▸▸▸▸▸",
-        "▹▹▹▹▸▸▸▸",
-        "▹▹▹▹▹▸▸▸",
-        "▹▹▹▹▹▹▸▸",
-        "▹▹▹▹▹▹▹▸",
-    ];
-    FAST[(app.animation_frame as usize
-        / if app.animation_speed == yoctui_model::AnimationSpeed::Slow {
-            3
-        } else {
-            1
-        })
-        % FAST.len()]
-}
-
-fn task_progress_bar(progress: u8) -> String {
-    const WIDTH: usize = 10;
-    const PARTIAL: [&str; 8] = ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉"];
-    let progress = progress.min(100);
-    let eighths = usize::from(progress) * WIDTH * 8 / 100;
-    let filled = eighths / 8;
-    let partial = eighths % 8;
-    let occupied = filled + usize::from(partial > 0);
-    format!(
-        "{}{}{} {progress}%",
-        "█".repeat(filled),
-        PARTIAL[partial],
-        "░".repeat(WIDTH.saturating_sub(occupied))
-    )
-}
-
-fn utilization_percent(total: Option<u64>, available: Option<u64>) -> Option<u8> {
-    let (total, available) = (total?, available?);
-    if total == 0 || available > total {
-        return None;
-    }
-    let used = total - available;
-    u8::try_from((u128::from(used) * 100 / u128::from(total)).min(100)).ok()
-}
-
-fn build_pace(app: &App) -> String {
-    build_pace_at(app, SystemTime::now())
-}
-
-fn build_pace_at(app: &App, now: SystemTime) -> String {
-    let Some(elapsed) = app
-        .build
-        .started
-        .and_then(|started| now.duration_since(started).ok())
-        .filter(|elapsed| elapsed.as_secs() > 0)
-    else {
-        return "avg --/m · ETA --".into();
-    };
-    let Ok(completed) = u64::try_from(app.build.completed) else {
-        return "avg --/m · ETA --".into();
-    };
-    if completed == 0 {
-        return "avg --/m · ETA --".into();
-    }
-    let seconds = elapsed.as_secs();
-    let rate_tenths = completed.saturating_mul(600) / seconds;
-    let eta = app.build.total.and_then(|total| {
-        let remaining = total.saturating_sub(app.build.completed);
-        u64::try_from(remaining)
-            .ok()
-            .map(|remaining| Duration::from_secs(remaining.saturating_mul(seconds) / completed))
-    });
-    format!(
-        "avg {}.{}/m · ETA {}",
-        rate_tenths / 10,
-        rate_tenths % 10,
-        eta.map(format_duration).unwrap_or_else(|| "--".into())
-    )
 }
 
 fn pane_focus_shortcuts(focus: FocusTarget) -> Option<&'static str> {
@@ -2897,70 +2712,6 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn responsive_shell(
-    frame: &mut Frame,
-    app: &App,
-    area: Rect,
-    terminal_width: u16,
-    now: SystemTime,
-) {
-    if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
-        terminal_session_panes(frame, app, area);
-        return;
-    }
-    if app.screen == Screen::Signatures {
-        signatures_workspace(frame, app, area, terminal_width);
-        return;
-    }
-    let task_rows = (app.screen == Screen::Tasks).then(|| app.visible_task_row_refs_at(now));
-    let task_rows = task_rows.as_deref();
-    if terminal_width >= WIDE_WORKBENCH_MIN_WIDTH {
-        let panes = if app.screen == Screen::Tasks && terminal_width == 160 {
-            Layout::horizontal([
-                Constraint::Length(26),
-                Constraint::Length(89),
-                Constraint::Length(45),
-            ])
-            .split(area)
-        } else if app.screen == Screen::Tasks {
-            Layout::horizontal([
-                Constraint::Length(22),
-                Constraint::Percentage(56),
-                Constraint::Min(32),
-            ])
-            .split(area)
-        } else {
-            Layout::horizontal([
-                Constraint::Length(22),
-                Constraint::Percentage(43),
-                Constraint::Min(28),
-            ])
-            .split(area)
-        };
-        navigator(frame, app, panes[0], task_rows);
-        workspace(frame, app, panes[1], terminal_width, now, task_rows);
-        inspector(frame, app, panes[2], now, task_rows);
-    } else if terminal_width >= 100 {
-        let panes = Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(area);
-        navigator(frame, app, panes[0], task_rows);
-        workspace(frame, app, panes[1], terminal_width, now, task_rows);
-        if app.focus == FocusTarget::Inspector {
-            frame.render_widget(Clear, panes[1]);
-            inspector(frame, app, panes[1], now, task_rows);
-        }
-    } else {
-        let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
-        pane_switcher(frame, app, rows[0]);
-        match app.focus {
-            FocusTarget::Navigator => navigator(frame, app, rows[1], task_rows),
-            FocusTarget::Inspector => inspector(frame, app, rows[1], now, task_rows),
-            FocusTarget::Workspace | FocusTarget::Dialog | FocusTarget::CommandPalette => {
-                workspace(frame, app, rows[1], terminal_width, now, task_rows);
-            }
-        }
-    }
-}
-
 fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
     let layout = &app.pane_layout;
     let mut panes = Vec::new();
@@ -3688,48 +3439,6 @@ fn literal_project_navigator(
         ])),
         sections[1],
     );
-}
-
-fn workspace(
-    frame: &mut Frame,
-    app: &App,
-    area: Rect,
-    terminal_width: u16,
-    now: SystemTime,
-    task_rows: Option<&[TaskRowRef<'_>]>,
-) {
-    match app.screen {
-        Screen::Dashboard => dashboard(frame, app, area),
-        Screen::Tasks => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
-        Screen::BuildHistory => build_history(frame, app, area, now),
-        Screen::Dependencies => dependencies(frame, app, area),
-        Screen::Signatures => signature_records(frame, app, area),
-        Screen::LayerRelationships => layer_relationships(frame, app, area),
-        Screen::Logs => logs(frame, app, area),
-        Screen::Errors => errors(frame, app, area),
-        Screen::Recipes => recipes(frame, app, area),
-        Screen::Packages => packages_workspace(frame, app, area),
-        Screen::Images => images_workspace(frame, app, area),
-        Screen::Sdk => sdk_workspace(frame, app, area),
-        Screen::Testing => testing_workspace(frame, app, area),
-        Screen::Security => security_workspace(frame, app, area),
-        Screen::Qa => qa_workspace(frame, app, area),
-        Screen::Layers => {
-            if let Some(browser) = app.layer_browser.as_ref() {
-                layer_browser(frame, app, browser, area)
-            } else {
-                layers(frame, app, area)
-            }
-        }
-        Screen::Configuration => config(frame, app, area),
-        Screen::Bbmask => bbmask(frame, app, area),
-        Screen::RawMode => raw_mode_workspace(frame, app, area, terminal_width),
-        Screen::Maintenance => maintenance_workspace(frame, app, area),
-        Screen::Compatibility => compatibility_workspace(frame, app, area),
-        Screen::Help => help(frame, area),
-        Screen::Settings => settings_workspace(frame, app, area),
-        Screen::BuildEnvironment => build_environment_workspace(frame, app, area),
-    }
 }
 
 fn raw_mode_workspace(frame: &mut Frame, app: &App, area: Rect, terminal_width: u16) {
@@ -5456,75 +5165,6 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         regions[1],
     );
 }
-fn telemetry_meter_style(app: &App, percent: u8) -> Style {
-    let palette = ThemePalette::for_app(app);
-    if percent >= 90 {
-        palette.role(palette.error, Modifier::BOLD)
-    } else if percent >= 70 {
-        palette.role(palette.warning, Modifier::BOLD)
-    } else {
-        palette.role(palette.progress, Modifier::BOLD)
-    }
-}
-
-fn cpu_meter_style(app: &App, percent: u8) -> Style {
-    let palette = ThemePalette::for_app(app);
-    if percent >= 90 {
-        palette.role(palette.error, Modifier::BOLD)
-    } else if percent >= 70 {
-        palette.role(palette.warning, Modifier::BOLD)
-    } else {
-        palette.role(palette.graph_cpu, Modifier::BOLD)
-    }
-}
-
-fn cpu_gauge_label(cpu: u8, cores: Option<u16>, width: u16) -> String {
-    match (cores, width) {
-        (Some(cores), 28..) => format!("CPU {cpu:>3}% · {cores} cores"),
-        (Some(cores), 16..) => format!("CPU {cpu}% · {cores}c"),
-        (None, 28..) => format!("CPU {cpu:>3}%"),
-        _ => format!("CPU {cpu}%"),
-    }
-}
-
-fn render_cpu_gauge(frame: &mut Frame, app: &App, area: Rect) {
-    if area.is_empty() {
-        return;
-    }
-    let palette = ThemePalette::for_app(app);
-    if let Some(cpu) = app.host_telemetry.cpu_utilization_percent {
-        let cpu = cpu.min(100);
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(cpu) / 100.0)
-                .label(cpu_gauge_label(
-                    cpu,
-                    app.host_telemetry.logical_cpu_count,
-                    area.width,
-                ))
-                .gauge_style(cpu_meter_style(app, cpu)),
-            area,
-        );
-    } else {
-        frame.render_widget(
-            Paragraph::new("CPU ! unavailable")
-                .style(palette.role(palette.disabled, Modifier::DIM)),
-            area,
-        );
-    }
-}
-
-fn memory_meter_style(app: &App, percent: u8) -> Style {
-    let palette = ThemePalette::for_app(app);
-    if percent >= 90 {
-        palette.role(palette.error, Modifier::BOLD)
-    } else if percent >= 80 {
-        palette.role(palette.warning, Modifier::BOLD)
-    } else {
-        palette.role(palette.graph_memory, Modifier::BOLD)
-    }
-}
-
 fn format_bytes_pair(used: u64, total: u64) -> String {
     const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
     let mut divisor = 1_u64;
@@ -6840,10 +6480,6 @@ fn tasks_workspace(
     } else {
         render_task_table(frame, app, area, rows, now);
     }
-}
-
-fn dialog_popup_rect(area: Rect, preferred_width: u16, preferred_height: u16) -> Rect {
-    bounded_dialog_rect(area, preferred_width, preferred_height)
 }
 
 fn sdk_kind_label(kind: SdkArtifactKind) -> &'static str {

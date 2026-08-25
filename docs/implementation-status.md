@@ -224,6 +224,12 @@ binds every view to the exact tested source, binary, Poky, BitBake, and target
 identities, and `scripts/check-docs.sh` rejects missing or stale renders.
 `UI-CLEANUP-001` is active next.
 
+`UI-CLEANUP-001` is `DONE`. Stable rendering responsibilities now live behind
+private `shell`, `widgets`, `workspaces`, `dialogs`, `telemetry`, `theme`, and
+`layout` modules. The public renderer/theme API and strict target-design golden
+are unchanged; all 214 UI tests and strict UI clippy pass. `M13-UI-001` is
+active for the complete next-generation and repository gates.
+
 `PTY-UI-TEST-001` is `DONE`: the audit found that daemon PTY output was
 journaled but discarded by the interactive replica, leaving panes with session
 metadata only. Real output now crosses the maintained emulator, a dimension/
