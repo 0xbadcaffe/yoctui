@@ -322,10 +322,10 @@ Progress counts required registry tasks, including the parent completion gate.
 | 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **12/38 (31.6%)** |
+| **M21 total** | | | **13/38 (34.2%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **552/578 (95.5%)**. The research/spec,
+tasks makes overall required progress **553/578 (95.7%)**. The research/spec,
 six-scene production-renderer acceptance baseline, exact cell goldens, semantic
 captures, executable implementation-gap ledger, and reusable dependency
 admission/notices/SBOM/offline-build gate are complete. The validated

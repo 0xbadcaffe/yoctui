@@ -6102,12 +6102,12 @@ notes = "throbber-widgets-tui 0.11.1 is admitted with default features disabled 
 id = "UX-TELEMETRY-001"
 milestone = "M21"
 title = "Polish telemetry gauges meters and zoomed charts"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 712
 required = true
 depends_on = ["UX-WIDGET-PRIMITIVES-001"]
 verify = ["cargo test -p yoctui-model ux_telemetry", "cargo test -p yoctui-ui ux_telemetry", "./scripts/test-next-generation-ui-performance.sh"]
-notes = "Use existing typed histories for compact sparklines and expanded charts, exact units, missing-sample gaps, resource meters, safe zoom, and responsive collapse."
+notes = "One pure HostTelemetryProjection now bounds six CPU/RAM/disk/network histories, preserves exact percent or B/s units and valid zeroes, and distinguishes current, retained-history partial, and unavailable state. The compact strip and expanded Tasks Context zoom share that projection and semantic theme roles; zoom retains bounded Job History, filesystem capacity, textual responsive collapse, and state-preserving restore. Focused model/UI, existing telemetry regression, Unicode/large/no-color/reduced-motion, performance, and roadmap gates pass."
 
 [[task]]
 id = "UX-LOGS-001"

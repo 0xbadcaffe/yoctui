@@ -34,6 +34,12 @@ pub(super) fn responsive_shell(
             FocusTarget::Workspace if app.screen == Screen::Signatures => {
                 signatures_workspace(frame, app, rows[1], terminal_width);
             }
+            FocusTarget::Workspace
+                if app.screen == Screen::Tasks
+                    && app.workspace_subfocus == yoctui_model::WorkspaceSubfocus::Context =>
+            {
+                render_tasks_context_zoom(frame, app, rows[1], now);
+            }
             FocusTarget::Workspace => {
                 workspace(frame, app, rows[1], terminal_width, now, task_rows);
             }

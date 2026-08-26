@@ -26,6 +26,7 @@ mod recipetool;
 mod scroll;
 mod sdk;
 mod security;
+mod telemetry_projection;
 mod terminal_emulation;
 mod testing;
 mod utility_compatibility;
@@ -71,6 +72,7 @@ use std::{
     path::{Component, Path, PathBuf},
     time::{Duration, SystemTime},
 };
+pub use telemetry_projection::*;
 pub use terminal_emulation::*;
 pub use testing::*;
 use thiserror::Error;

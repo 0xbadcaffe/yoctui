@@ -405,6 +405,19 @@ that optional host source. Medium similarly omits its two-line `I/O` cell when
 disk rates are unsupported. Vertical separators and semantic graph roles are
 shared across themes; no-color and reduced-motion retain the same text.
 
+Zooming the Tasks `Workspace/Context` subfocus keeps a bounded Job History at
+the top and gives the remaining body to expanded telemetry charts. CPU, RAM,
+disk read/write, and network RX/TX each retain an independent semantic role and
+an exact current-unit label; the build-filesystem gauge remains distinct when
+its configured path exists. Every chart uses at most the latest 60 valid
+samples. A missing current sample with retained history says `partial` and
+keeps the older trail visible, while a wholly absent series says `unavailable`;
+neither becomes zero. Genuine zero samples remain numeric. When height is too
+small for both tiers, telemetry takes the body and each series collapses to its
+text before its graph. The same Context identity and breadcrumb survive wide,
+medium, and narrow zoom, and restoring zoom preserves history selection and
+all workspace state.
+
 CPU, RAM, and Build FS retain their cells when sampled. Disk I/O and network
 cells appear only on supported hosts. The strip stores and displays bounded
 history only. It does not increase redraw frequency: new points arrive on the

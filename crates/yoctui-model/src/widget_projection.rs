@@ -271,6 +271,7 @@ pub struct HistoryProjection {
     pub state: WidgetState,
     pub role: WidgetRole,
     pub current: Option<u64>,
+    pub value_suffix: Option<String>,
     pub points: Vec<u64>,
     pub detail: Option<String>,
 }
@@ -306,15 +307,27 @@ impl HistoryProjection {
             state,
             role,
             current,
+            value_suffix: None,
             points,
             detail: Some(detail.into()).filter(|detail| !detail.is_empty()),
         }
     }
 
+    pub fn with_value_suffix(mut self, suffix: impl Into<String>) -> Self {
+        self.value_suffix = Some(suffix.into()).filter(|suffix| !suffix.is_empty());
+        self
+    }
+
     pub fn text(&self, unicode: bool, reduced_motion: bool) -> String {
-        let current = self
-            .current
-            .map_or_else(|| self.state.label().to_owned(), |value| value.to_string());
+        let current = self.current.map_or_else(
+            || self.state.label().to_owned(),
+            |value| {
+                format!(
+                    "{value}{}",
+                    self.value_suffix.as_deref().unwrap_or_default()
+                )
+            },
+        );
         let detail = self
             .detail
             .as_deref()

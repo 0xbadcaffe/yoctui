@@ -19,8 +19,8 @@ use workspaces::*;
 use primitives::{
     ActionListItem, ActionListStyles, BoundedScrollIndicator, DialogShell, DialogStyles,
     DialogTone, PaneShell, PaneStyles, ResponsiveColumn, StateKind, StateView, StatusTone,
-    WidgetStyles, action_list, action_list_plain, bounded_dialog_rect, responsive_columns,
-    status_label,
+    WidgetRenderOptions, WidgetStyles, action_list, action_list_plain, bounded_dialog_rect,
+    render_history_chart, responsive_columns, status_label,
 };
 use ratatui::{
     prelude::*,
@@ -54,13 +54,13 @@ use yoctui_model::{
     SecurityDialog, SecurityInventoryState, SecurityOperation, SecurityOutputStream,
     SecurityReport, SecurityScope, SecuritySessionStatus, SecurityView, Severity,
     SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind,
-    SplitAxis, TaskInspectorRef, TaskRowRef, TaskState, TestComparisonCategory,
-    TestComparisonState, TestExecutableCapability, TestJunitExportState, TestLaunchDialog,
-    TestLaunchField, TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme,
-    TransientStatusKind, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
-    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
-    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
-    WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
+    SplitAxis, TaskInspectorRef, TaskRowRef, TaskState, TelemetryMetric, TelemetrySeriesProjection,
+    TestComparisonCategory, TestComparisonState, TestExecutableCapability, TestJunitExportState,
+    TestLaunchDialog, TestLaunchField, TestLaunchPreview, TestResultInventoryState,
+    TestWorkspaceView, Theme, TransientStatusKind, VariableIdentity, WicCapability, WicCompression,
+    WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState,
+    WicDevicePickerDialog, WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId,
+    WicWritePhraseDialog, WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
@@ -5312,9 +5312,7 @@ fn format_rate(bytes_per_second: u64) -> String {
 struct RateHistory<'a> {
     label: &'a str,
     compact_label: &'a str,
-    current: Option<u64>,
-    samples: &'a [u64],
-    graph_color: Color,
+    series: &'a TelemetrySeriesProjection,
 }
 
 fn render_rate_history(frame: &mut Frame, app: &App, area: Rect, rate: RateHistory<'_>) {
@@ -5327,12 +5325,12 @@ fn render_rate_history(frame: &mut Frame, app: &App, area: Rect, rate: RateHisto
     } else {
         rate.compact_label
     };
-    let text = rate.current.map_or_else(
+    let text = rate.series.history.current.map_or_else(
         || format!("{label} ! unavailable"),
         |rate| format!("{label} {}", format_rate(rate)),
     );
-    let text_style = if rate.current.is_some() {
-        palette.role(rate.graph_color, Modifier::BOLD)
+    let text_style = if rate.series.history.current.is_some() {
+        palette.widget_styles().role(rate.series.history.role)
     } else {
         palette.role(palette.disabled, Modifier::DIM)
     };
@@ -5349,21 +5347,30 @@ fn render_rate_history(frame: &mut Frame, app: &App, area: Rect, rate: RateHisto
     frame.render_widget(Paragraph::new(text).style(text_style), columns[0]);
     frame.render_widget(
         Sparkline::default()
-            .data(rate.samples)
-            .max(rate.samples.iter().copied().max().unwrap_or(1).max(1))
-            .style(palette.role(rate.graph_color, Modifier::BOLD)),
+            .data(&rate.series.history.points)
+            .max(
+                rate.series
+                    .history
+                    .points
+                    .iter()
+                    .copied()
+                    .max()
+                    .unwrap_or(1)
+                    .max(1),
+            )
+            .style(palette.widget_styles().role(rate.series.history.role)),
         columns[1],
     );
 }
 
-fn render_disk_io(frame: &mut Frame, app: &App, read_area: Rect, write_area: Rect) {
-    let palette = ThemePalette::for_app(app);
-    let read_history = app
-        .host_telemetry_history
-        .disk_read_bytes_per_second
-        .iter()
-        .copied()
-        .collect::<Vec<_>>();
+fn render_disk_io_projection(
+    frame: &mut Frame,
+    app: &App,
+    projection: &yoctui_model::HostTelemetryProjection,
+    read_area: Rect,
+    write_area: Rect,
+) {
+    let read = projection.series(TelemetryMetric::DiskReadRate);
     render_rate_history(
         frame,
         app,
@@ -5371,17 +5378,10 @@ fn render_disk_io(frame: &mut Frame, app: &App, read_area: Rect, write_area: Rec
         RateHistory {
             label: "Read",
             compact_label: "R",
-            current: app.host_telemetry.disk_read_bytes_per_second,
-            samples: &read_history,
-            graph_color: palette.graph_disk_read,
+            series: read,
         },
     );
-    let write_history = app
-        .host_telemetry_history
-        .disk_write_bytes_per_second
-        .iter()
-        .copied()
-        .collect::<Vec<_>>();
+    let write = projection.series(TelemetryMetric::DiskWriteRate);
     render_rate_history(
         frame,
         app,
@@ -5389,21 +5389,25 @@ fn render_disk_io(frame: &mut Frame, app: &App, read_area: Rect, write_area: Rec
         RateHistory {
             label: "Write",
             compact_label: "W",
-            current: app.host_telemetry.disk_write_bytes_per_second,
-            samples: &write_history,
-            graph_color: palette.graph_disk_write,
+            series: write,
         },
     );
 }
 
-fn render_network_io(frame: &mut Frame, app: &App, receive_area: Rect, transmit_area: Rect) {
-    let palette = ThemePalette::for_app(app);
-    let receive_history = app
-        .host_telemetry_history
-        .network_receive_bytes_per_second
-        .iter()
-        .copied()
-        .collect::<Vec<_>>();
+#[cfg(test)]
+fn render_disk_io(frame: &mut Frame, app: &App, read_area: Rect, write_area: Rect) {
+    let projection = app.host_telemetry_projection();
+    render_disk_io_projection(frame, app, &projection, read_area, write_area);
+}
+
+fn render_network_io_projection(
+    frame: &mut Frame,
+    app: &App,
+    projection: &yoctui_model::HostTelemetryProjection,
+    receive_area: Rect,
+    transmit_area: Rect,
+) {
+    let receive = projection.series(TelemetryMetric::NetworkReceiveRate);
     render_rate_history(
         frame,
         app,
@@ -5411,17 +5415,10 @@ fn render_network_io(frame: &mut Frame, app: &App, receive_area: Rect, transmit_
         RateHistory {
             label: "RX",
             compact_label: "RX",
-            current: app.host_telemetry.network_receive_bytes_per_second,
-            samples: &receive_history,
-            graph_color: palette.graph_network_rx,
+            series: receive,
         },
     );
-    let transmit_history = app
-        .host_telemetry_history
-        .network_transmit_bytes_per_second
-        .iter()
-        .copied()
-        .collect::<Vec<_>>();
+    let transmit = projection.series(TelemetryMetric::NetworkTransmitRate);
     render_rate_history(
         frame,
         app,
@@ -5429,11 +5426,15 @@ fn render_network_io(frame: &mut Frame, app: &App, receive_area: Rect, transmit_
         RateHistory {
             label: "TX",
             compact_label: "TX",
-            current: app.host_telemetry.network_transmit_bytes_per_second,
-            samples: &transmit_history,
-            graph_color: palette.graph_network_tx,
+            series: transmit,
         },
     );
+}
+
+#[cfg(test)]
+fn render_network_io(frame: &mut Frame, app: &App, receive_area: Rect, transmit_area: Rect) {
+    let projection = app.host_telemetry_projection();
+    render_network_io_projection(frame, app, &projection, receive_area, transmit_area);
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -5453,52 +5454,36 @@ fn telemetry_strip_mode(area: Rect) -> TelemetryStripMode {
     }
 }
 
-fn disk_io_supported(app: &App) -> bool {
-    app.host_telemetry.disk_read_bytes_per_second.is_some()
-        || app.host_telemetry.disk_write_bytes_per_second.is_some()
-        || !app
-            .host_telemetry_history
-            .disk_read_bytes_per_second
-            .is_empty()
-        || !app
-            .host_telemetry_history
-            .disk_write_bytes_per_second
-            .is_empty()
+fn disk_io_supported(projection: &yoctui_model::HostTelemetryProjection) -> bool {
+    projection
+        .series(TelemetryMetric::DiskReadRate)
+        .is_supported()
+        || projection
+            .series(TelemetryMetric::DiskWriteRate)
+            .is_supported()
 }
 
-fn network_io_supported(app: &App) -> bool {
-    app.host_telemetry
-        .network_receive_bytes_per_second
-        .is_some()
-        || app
-            .host_telemetry
-            .network_transmit_bytes_per_second
-            .is_some()
-        || !app
-            .host_telemetry_history
-            .network_receive_bytes_per_second
-            .is_empty()
-        || !app
-            .host_telemetry_history
-            .network_transmit_bytes_per_second
-            .is_empty()
+fn network_io_supported(projection: &yoctui_model::HostTelemetryProjection) -> bool {
+    projection
+        .series(TelemetryMetric::NetworkReceiveRate)
+        .is_supported()
+        || projection
+            .series(TelemetryMetric::NetworkTransmitRate)
+            .is_supported()
 }
 
 fn telemetry_available(app: &App) -> bool {
-    app.host_telemetry.cpu_utilization_percent.is_some()
-        || utilization_percent(
-            app.host_telemetry.memory_total_bytes,
-            app.host_telemetry.memory_available_bytes,
-        )
-        .is_some()
+    let projection = app.host_telemetry_projection();
+    projection
+        .series
+        .iter()
+        .any(TelemetrySeriesProjection::is_supported)
         || (app.workspace.build_dir.is_some()
             && utilization_percent(
                 app.host_telemetry.disk_total_bytes,
                 app.host_telemetry.disk_available_bytes,
             )
             .is_some())
-        || disk_io_supported(app)
-        || network_io_supported(app)
 }
 
 #[derive(Clone, Copy)]
@@ -5516,6 +5501,7 @@ enum TelemetryCell {
 fn render_telemetry_cell(
     frame: &mut Frame,
     app: &App,
+    projection: &yoctui_model::HostTelemetryProjection,
     area: Rect,
     cell: TelemetryCell,
     divider: bool,
@@ -5531,17 +5517,21 @@ fn render_telemetry_cell(
         TelemetryCell::Cpu => render_cpu_gauge(frame, app, inner),
         TelemetryCell::Ram => render_ram_gauge(frame, app, inner),
         TelemetryCell::BuildFilesystem => render_disk_gauge(frame, app, inner),
-        TelemetryCell::DiskRead => render_disk_io(frame, app, inner, Rect::default()),
-        TelemetryCell::DiskWrite => render_disk_io(frame, app, Rect::default(), inner),
+        TelemetryCell::DiskRead => {
+            render_disk_io_projection(frame, app, projection, inner, Rect::default());
+        }
+        TelemetryCell::DiskWrite => {
+            render_disk_io_projection(frame, app, projection, Rect::default(), inner);
+        }
         TelemetryCell::NetworkReceive => {
-            render_network_io(frame, app, inner, Rect::default());
+            render_network_io_projection(frame, app, projection, inner, Rect::default());
         }
         TelemetryCell::NetworkTransmit => {
-            render_network_io(frame, app, Rect::default(), inner);
+            render_network_io_projection(frame, app, projection, Rect::default(), inner);
         }
         TelemetryCell::DiskIo => {
             let rows = Layout::vertical([Constraint::Length(1); 2]).split(inner);
-            render_disk_io(frame, app, rows[0], rows[1]);
+            render_disk_io_projection(frame, app, projection, rows[0], rows[1]);
         }
     }
 }
@@ -5552,6 +5542,7 @@ fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
         return;
     }
     let palette = ThemePalette::for_app(app);
+    let projection = app.host_telemetry_projection();
     let block = Block::default()
         .title("Telemetry · bounded 60-sample histories")
         .borders(Borders::ALL)
@@ -5566,17 +5557,17 @@ fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
     ];
     match mode {
         TelemetryStripMode::Wide => {
-            if disk_io_supported(app) {
+            if disk_io_supported(&projection) {
                 cells.extend([TelemetryCell::DiskRead, TelemetryCell::DiskWrite]);
             }
-            if network_io_supported(app) {
+            if network_io_supported(&projection) {
                 cells.extend([
                     TelemetryCell::NetworkReceive,
                     TelemetryCell::NetworkTransmit,
                 ]);
             }
         }
-        TelemetryStripMode::Medium if disk_io_supported(app) => {
+        TelemetryStripMode::Medium if disk_io_supported(&projection) => {
             cells.push(TelemetryCell::DiskIo);
         }
         TelemetryStripMode::Medium | TelemetryStripMode::Hidden => {}
@@ -5584,8 +5575,64 @@ fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
     let count = u32::try_from(cells.len()).unwrap_or(1);
     let areas = Layout::horizontal(vec![Constraint::Ratio(1, count); cells.len()]).split(inner);
     for (index, (cell, area)) in cells.into_iter().zip(areas.iter().copied()).enumerate() {
-        render_telemetry_cell(frame, app, area, cell, index + 1 < areas.len());
+        render_telemetry_cell(frame, app, &projection, area, cell, index + 1 < areas.len());
     }
+}
+
+fn render_expanded_telemetry(frame: &mut Frame, app: &App, area: Rect) {
+    if area.is_empty() {
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
+    let block = Block::default()
+        .title("Telemetry charts · latest 60 valid samples · missing samples are not zero")
+        .borders(Borders::ALL)
+        .style(palette.base());
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+
+    let projection = app.host_telemetry_projection();
+    let has_filesystem = app.workspace.build_dir.is_some();
+    let row_count = projection.series.len() + usize::from(has_filesystem);
+    let denominator = u32::try_from(row_count).unwrap_or(1).max(1);
+    let rows = Layout::vertical(vec![Constraint::Ratio(1, denominator); row_count]).split(inner);
+    let mut row_index = 0;
+    if has_filesystem {
+        render_disk_gauge(frame, app, rows[row_index]);
+        row_index += 1;
+    }
+    let options = WidgetRenderOptions {
+        unicode: true,
+        reduced_motion: app.reduced_motion,
+    };
+    for (series, row) in projection
+        .series
+        .iter()
+        .zip(rows.iter().copied().skip(row_index))
+    {
+        render_history_chart(
+            frame,
+            row,
+            &series.history,
+            palette.widget_styles(),
+            options,
+        );
+    }
+}
+
+fn render_tasks_context_zoom(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+    if area.height < 12 {
+        render_expanded_telemetry(frame, app, area);
+        return;
+    }
+    let history_height = area.height.div_ceil(4).clamp(5, 10);
+    let rows =
+        Layout::vertical([Constraint::Length(history_height), Constraint::Min(1)]).split(area);
+    render_job_history(frame, app, rows[0], now);
+    render_expanded_telemetry(frame, app, rows[1]);
 }
 
 fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
@@ -22241,6 +22288,102 @@ mod tests {
         assert!(tasks.contains("Tasks:"), "{tasks}");
         assert!(tasks.contains("Log Viewer"), "{tasks}");
         assert!(tasks.contains("Job History"), "{tasks}");
+    }
+
+    #[test]
+    fn ux_telemetry_expanded_context_uses_exact_units_and_retained_valid_history() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Workspace;
+        app.workspace_subfocus = yoctui_model::WorkspaceSubfocus::Context;
+        app.zoomed_pane = Some(FocusTarget::Workspace);
+        app.workspace.build_dir = Some("/work/构建/build".into());
+        for sample in [
+            yoctui_model::HostTelemetry {
+                cpu_utilization_percent: Some(25),
+                memory_total_bytes: Some(16 * 1024_u64.pow(3)),
+                memory_available_bytes: Some(8 * 1024_u64.pow(3)),
+                disk_total_bytes: Some(100 * 1024_u64.pow(3)),
+                disk_available_bytes: Some(40 * 1024_u64.pow(3)),
+                disk_read_bytes_per_second: Some(2_048),
+                disk_write_bytes_per_second: Some(4_096),
+                network_receive_bytes_per_second: Some(6_144),
+                network_transmit_bytes_per_second: Some(8_192),
+                ..yoctui_model::HostTelemetry::default()
+            },
+            yoctui_model::HostTelemetry {
+                cpu_utilization_percent: Some(42),
+                memory_total_bytes: Some(16 * 1024_u64.pow(3)),
+                memory_available_bytes: Some(4 * 1024_u64.pow(3)),
+                disk_total_bytes: Some(100 * 1024_u64.pow(3)),
+                disk_available_bytes: Some(40 * 1024_u64.pow(3)),
+                disk_read_bytes_per_second: None,
+                disk_write_bytes_per_second: Some(0),
+                network_receive_bytes_per_second: None,
+                network_transmit_bytes_per_second: Some(16_384),
+                ..yoctui_model::HostTelemetry::default()
+            },
+        ] {
+            let _ =
+                yoctui_model::update(&mut app, yoctui_model::Action::HostTelemetryUpdated(sample));
+        }
+
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("ZOOM · Tasks · Workspace/Context"),
+                "{output}"
+            );
+            assert!(output.contains("CPU 42%"), "{output}");
+            assert!(output.contains("RAM 75%"), "{output}");
+            assert!(output.contains("Disk read partial"), "{output}");
+            assert!(!output.contains("Disk read 0 B/s"), "{output}");
+            assert!(output.contains("Disk write 0 B/s"), "{output}");
+            assert!(output.contains("Network RX partial"), "{output}");
+            assert!(output.contains("Network TX 16384 B/s"), "{output}");
+            assert!(!output.contains('\u{fffd}'), "{output}");
+        }
+
+        let wide = rendered_text(&app, 160, 50);
+        assert!(wide.contains("BUILD FS  60%"), "{wide}");
+        assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
+    }
+
+    #[test]
+    fn ux_telemetry_expanded_context_handles_empty_partial_large_and_no_color_inputs() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Workspace;
+        app.workspace_subfocus = yoctui_model::WorkspaceSubfocus::Context;
+        app.zoomed_pane = Some(FocusTarget::Workspace);
+        app.color_enabled = false;
+        app.reduced_motion = true;
+
+        let empty = rendered_text(&app, 160, 50);
+        for label in [
+            "CPU unavailable",
+            "RAM unavailable",
+            "Disk read unavailable",
+            "Disk write unavailable",
+            "Network RX unavailable",
+            "Network TX unavailable",
+        ] {
+            assert!(empty.contains(label), "missing {label}: {empty}");
+        }
+        assert!(!empty.contains("0 B/s"), "{empty}");
+
+        app.host_telemetry.disk_write_bytes_per_second = Some(u64::MAX);
+        app.host_telemetry_history
+            .disk_write_bytes_per_second
+            .extend(0..10_000);
+        app.workspace.build_dir = Some("/非常に/長い/構建目录/".repeat(200).into());
+        app.host_telemetry.disk_total_bytes = Some(u64::MAX);
+        app.host_telemetry.disk_available_bytes = Some(1);
+        for (width, height) in [(200, 60), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("18446744073709551615 B/s"), "{output}");
+            assert!(!output.contains('\u{fffd}'), "{output}");
+        }
     }
     #[test]
     fn next_generation_system_status_is_authoritative_dense_and_responsive() {

@@ -246,6 +246,15 @@ only current typed values and history. Widgets may derive display ratios,
 average task velocity, and ETA from model state, but never read procfs, call
 filesystem APIs, or reinterpret raw operating-system text.
 
+`yoctui_model::HostTelemetryProjection` is the renderer-independent history
+boundary for CPU, RAM, disk read/write, and network RX/TX. It converts current
+typed samples plus each reducer-owned deque into six fixed semantic series,
+bounds every copy to `HOST_TELEMETRY_HISTORY_SAMPLES`, attaches exact `%` or
+`B/s` suffixes, and distinguishes available, partial retained-history, and
+unavailable state. A valid zero stays available. Compact and expanded UI
+renderers consume this same projection; responsive layout may allocate chart
+geometry but cannot reinterpret missing samples or add points.
+
 `TELEMETRY_PROVENANCE` is the closed audit of host and daemon metrics. Each
 entry fixes its source, unit, host support, nominal cadence, delta requirement,
 history capacity, precision, renderability, and unavailable behavior. Host

@@ -54,7 +54,6 @@ real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-
 real_yoctui_anchors = ["Tasks: core-image-minimal", "Overall  40%  4/10", "do_compile", "72%", "Log Viewer", "Job History", "19:28:27"]
 implementation_tasks = ["UX-PROGRESS-001", "UX-TELEMETRY-001", "UX-LOGS-001"]
 open_gaps = [
-  { task = "UX-TELEMETRY-001", description = "complete the concept's exact resource meters and compact histories" },
   { task = "UX-LOGS-001", description = "complete follow, position, search, filter-chip, bookmark, and loss-accounting affordances" },
 ]
 anchors = [
