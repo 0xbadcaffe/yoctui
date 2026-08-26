@@ -553,34 +553,7 @@ fn with_focus_shortcuts(app: &App, shortcuts: &str) -> String {
 }
 
 fn workspace_destination_label(destination: WorkspaceDestination) -> &'static str {
-    match destination {
-        WorkspaceDestination::Dashboard => "Dashboard",
-        WorkspaceDestination::Recipes => "Recipes",
-        WorkspaceDestination::Layers => "Layers",
-        WorkspaceDestination::Configuration => "Configuration",
-        WorkspaceDestination::Tasks => "Tasks",
-        WorkspaceDestination::BuildHistory => "Build History",
-        WorkspaceDestination::Logs => "Logs",
-        WorkspaceDestination::Errors => "Errors",
-        WorkspaceDestination::Dependencies => "Dependencies",
-        WorkspaceDestination::Signatures => "Signatures",
-        WorkspaceDestination::Packages => "Packages",
-        WorkspaceDestination::Images => "Images",
-        WorkspaceDestination::Sdk => "SDK",
-        WorkspaceDestination::Testing => "Testing",
-        WorkspaceDestination::Security => "Security",
-        WorkspaceDestination::Qa => "QA",
-        WorkspaceDestination::RawMode => "Raw Mode",
-        WorkspaceDestination::Devtool => "Devtool",
-        WorkspaceDestination::QemuWic => "QEMU / Wic",
-        WorkspaceDestination::Maintenance => "Maintenance",
-        WorkspaceDestination::ProjectProfiles => "Project Profiles",
-        WorkspaceDestination::TerminalSessions => "Terminal Sessions",
-        WorkspaceDestination::BuildEnvironment => "Build Environment",
-        WorkspaceDestination::Compatibility => "Compatibility",
-        WorkspaceDestination::Settings => "Settings",
-        WorkspaceDestination::Help => "Help",
-    }
+    destination.label()
 }
 
 fn compatibility_destination_detail(
@@ -2524,6 +2497,15 @@ fn command_palette_detail_lines(
             palette.role(palette.secondary_foreground, Modifier::DIM),
         ));
     }
+    values.push((
+        format!(
+            "Action: {} · Menu: {} · Safety: {}",
+            command.action_id.as_str(),
+            command.menu_path.join(" > "),
+            command.safety.label()
+        ),
+        palette.role(palette.secondary_foreground, Modifier::DIM),
+    ));
     values
         .into_iter()
         .take(maximum)
@@ -14813,7 +14795,7 @@ fn bbmask_assignment(value: &str) -> String {
         value.replace('\\', "\\\\").replace('"', "\\\"")
     )
 }
-fn help(frame: &mut Frame, area: Rect) {
+fn help(frame: &mut Frame, app: &App, area: Rect) {
     let function_keys = FUNCTION_SHORTCUTS
         .chunks(5)
         .map(|shortcuts| {
@@ -14825,11 +14807,27 @@ fn help(frame: &mut Frame, area: Rect) {
         })
         .collect::<Vec<_>>()
         .join("\n");
+    let catalog_actions = yoctui_model::global_operator_action_definitions()
+        .into_iter()
+        .filter(|action| action.footer_priority >= 55)
+        .map(|action| {
+            format!(
+                "[{}] {:>10}  {:<24}  {}",
+                action.help_group.label(),
+                action.shortcut,
+                action.label,
+                action.menu_path.join(" > ")
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
     let text = format!(
-        "{function_keys}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, / search, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Edit current workspace search; Ctrl+U clears its typed query   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+        "{function_keys}\n\nAction catalog\n{catalog_actions}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, / search, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Edit current workspace search; Ctrl+U clears its typed query   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
     );
     frame.render_widget(
-        Paragraph::new(text).block(Block::default().title("Help").borders(Borders::ALL)),
+        Paragraph::new(text)
+            .style(ThemePalette::for_app(app).base())
+            .block(Block::default().title("Help").borders(Borders::ALL)),
         area,
     )
 }
@@ -21028,6 +21026,25 @@ mod tests {
         app.command_palette_query = "nothing matches this".into();
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("No commands match"));
+    }
+
+    #[test]
+    fn ux_action_catalog_projects_alias_search_palette_details_and_help() {
+        let mut app = App::new(10, 1_000);
+        app.command_palette_open = true;
+        app.command_palette_query = "capabilities".into();
+        let output = rendered_text(&app, 100, 25);
+        assert!(output.contains("Open Compatibility"), "{output}");
+        assert!(output.contains("environment identity"), "{output}");
+
+        app.command_palette_open = false;
+        app.command_palette_query.clear();
+        app.screen = Screen::Help;
+        let output = rendered_text(&app, 160, 50);
+        assert!(output.contains("Action catalog"), "{output}");
+        assert!(output.contains("Build > Build image"), "{output}");
+        assert!(output.contains("[Navigate]"), "{output}");
+        assert!(output.contains("Open Tasks"), "{output}");
     }
     #[test]
     fn command_palette_selection_description_and_shortcut_render_in_all_themes() {

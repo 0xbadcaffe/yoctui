@@ -4334,6 +4334,16 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
+The implemented catalog currently contains 17 global commands and 99
+contextual workspace operations. Every entry has a validated lowercase stable
+ID, typed scope and target, complete presentation/search metadata, explicit
+local and environment requirements, safety class, footer priority, and Help
+group. The command palette, contextual compatibility action presentations, and
+the catalog section of Help consume those definitions directly. The catalog
+corrects the former false `F5` image-build hint to the real `B` route; `F5`
+remains Logs. The keymap and menu tasks extend configuration and presentation
+from these IDs without creating a second action inventory.
+
 `F10` opens a focus-trapped Workspace/Build/Navigate/View/Tools/Help menu.
 Arrow keys move, `Enter` opens/activates, `Esc` moves outward, and bounded typed
 prefix selection may select by label. The selected-item action route is `a` or

@@ -611,13 +611,18 @@ pub struct CompatibilityUiWorkspaceActionPresentation {
     pub id: &'static str,
     pub label: &'static str,
     pub shortcut: &'static str,
+    pub description: String,
+    pub menu_path: Vec<&'static str>,
+    pub safety: crate::OperatorActionSafety,
+    pub footer_priority: u8,
+    pub help_group: crate::OperatorActionHelpGroup,
     pub availability: CompatibilityUiActionAvailability,
 }
 
 /// Closed contextual action inventory. It represents the useful operations
 /// users can launch from each workspace; renderers consume this data and never
 /// embed capability IDs or release policy.
-pub fn compatibility_ui_workspace_action_definitions(
+pub(crate) fn compatibility_ui_workspace_action_seeds(
     destination: crate::WorkspaceDestination,
 ) -> Vec<CompatibilityUiWorkspaceActionDefinition> {
     use crate::WorkspaceDestination as Destination;
@@ -1067,21 +1072,42 @@ pub fn compatibility_ui_workspace_action_definitions(
     }
 }
 
+/// Backward-compatible compatibility projection sourced from the canonical
+/// operator action catalog.
+pub fn compatibility_ui_workspace_action_definitions(
+    destination: crate::WorkspaceDestination,
+) -> Vec<CompatibilityUiWorkspaceActionDefinition> {
+    crate::workspace_operator_action_definitions(destination)
+        .into_iter()
+        .map(|action| CompatibilityUiWorkspaceActionDefinition {
+            id: action.id.as_str(),
+            label: action.label,
+            shortcut: action.shortcut,
+            requirement: action.requirement,
+        })
+        .collect()
+}
+
 pub fn compatibility_ui_workspace_action_presentations(
     compatibility: &WorkspaceCompatibilityState,
     destination: crate::WorkspaceDestination,
 ) -> Vec<CompatibilityUiWorkspaceActionPresentation> {
-    compatibility_ui_workspace_action_definitions(destination)
+    crate::workspace_operator_action_definitions(destination)
         .into_iter()
         .map(|definition| {
             let availability = compatibility_ui_action_definition_availability(
                 compatibility,
-                &CompatibilityUiActionDefinition::gated(definition.requirement),
+                &CompatibilityUiActionDefinition::gated(definition.requirement.clone()),
             );
             CompatibilityUiWorkspaceActionPresentation {
-                id: definition.id,
+                id: definition.id.as_str(),
                 label: definition.label,
                 shortcut: definition.shortcut,
+                description: definition.description,
+                menu_path: definition.menu_path,
+                safety: definition.safety,
+                footer_priority: definition.footer_priority,
+                help_group: definition.help_group,
                 availability,
             }
         })

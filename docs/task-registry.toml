@@ -6003,12 +6003,12 @@ notes = "All 13 candidates now have exact audited versions, SPDX expressions, cr
 id = "UX-ACTION-CATALOG-001"
 milestone = "M21"
 title = "Unify all operator actions in one typed catalog"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 703
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo test -p yoctui-model ux_action_catalog", "cargo test -p yoctui-app ux_action_catalog", "cargo test -p yoctui-ui ux_action_catalog"]
-notes = "Give every action a stable ID, scope, menu path, description, shortcut aliases, requirements, safety class, palette keywords, footer priority, Help grouping, availability, and exact disabled reason."
+notes = "The model-owned catalog contains 116 validated unique entries: 17 global commands and 99 contextual workspace operations. Every entry carries stable ID, typed scope/target, menu path, label, description, aliases, keywords, displayed/default bindings, local and compatibility requirements, safety, footer priority, and Help group. Palette metadata/search and workspace compatibility presentations derive from it; Help projects its prioritized global actions. Local and daemon availability compose one exact disabled reason, the false F5 image-build hint is corrected to B, and focused model/app/UI parity tests plus the full UI suite pass."
 
 [[task]]
 id = "UX-KEYMAP-MODEL-001"

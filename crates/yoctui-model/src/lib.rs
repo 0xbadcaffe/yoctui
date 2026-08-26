@@ -1,4 +1,5 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
+mod action_catalog;
 mod bitbake_layers;
 mod bitbake_restart;
 mod compatibility;
@@ -27,6 +28,7 @@ mod utility_menu;
 mod wic;
 mod workspace_compatibility;
 
+pub use action_catalog::*;
 pub use bitbake_layers::*;
 pub use bitbake_restart::*;
 pub use compatibility::*;
@@ -347,10 +349,17 @@ pub enum CommandId {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaletteCommand {
+    pub action_id: OperatorActionId,
     pub id: CommandId,
     pub label: &'static str,
-    pub description: &'static str,
+    pub description: String,
     pub shortcut: &'static str,
+    pub menu_path: Vec<&'static str>,
+    pub aliases: Vec<&'static str>,
+    pub palette_keywords: Vec<&'static str>,
+    pub safety: OperatorActionSafety,
+    pub footer_priority: u8,
+    pub help_group: OperatorActionHelpGroup,
     pub disabled_reason: Option<String>,
     pub compatibility_state: WorkspaceAvailabilityState,
     pub compatibility_reason: Option<String>,
@@ -4417,11 +4426,30 @@ impl App {
         self.dialogs.front_mut()
     }
     pub fn command_palette_commands(&self) -> Vec<PaletteCommand> {
-        let workspace_missing = self.workspace.build_dir.is_none();
-        let recipe_missing = self.screen != Screen::Recipes
-            || self.workspace.recipes.get(self.recipe_selection).is_none();
-        let command =
-            |id, label, description, shortcut, local_disabled_reason: Option<&'static str>| {
+        global_operator_action_definitions()
+            .into_iter()
+            .map(|definition| {
+                let OperatorActionTarget::Command(id) = definition.target else {
+                    unreachable!("global catalog entries target command IDs")
+                };
+                let local_disabled_reason = match definition.local_requirement {
+                    OperatorActionLocalRequirement::None => None,
+                    OperatorActionLocalRequirement::WorkspaceLoaded => self
+                        .workspace
+                        .build_dir
+                        .is_none()
+                        .then_some("Load a Yocto workspace first"),
+                    OperatorActionLocalRequirement::ImageRecipeAvailable => (!self
+                        .workspace
+                        .recipes
+                        .iter()
+                        .any(|recipe| recipe.name.contains("image")))
+                    .then_some("No image recipes are available"),
+                    OperatorActionLocalRequirement::SelectedRecipe => (self.screen
+                        != Screen::Recipes
+                        || self.workspace.recipes.get(self.recipe_selection).is_none())
+                    .then_some("Open Recipes and select a recipe"),
+                };
                 let compatibility =
                     compatibility_ui_command_action_availability(&self.workspace_compatibility, id);
                 let compatibility_reason = compatibility.exact_reason();
@@ -4433,143 +4461,25 @@ impl App {
                     })
                 });
                 PaletteCommand {
+                    action_id: definition.id,
                     id,
-                    label,
-                    description,
-                    shortcut,
+                    label: definition.label,
+                    description: definition.description,
+                    shortcut: definition.shortcut,
+                    menu_path: definition.menu_path,
+                    aliases: definition.aliases,
+                    palette_keywords: definition.palette_keywords,
+                    safety: definition.safety,
+                    footer_priority: definition.footer_priority,
+                    help_group: definition.help_group,
                     disabled_reason,
                     compatibility_state: compatibility.state,
                     compatibility_reason,
                     compatibility_limitations: compatibility.limitations,
                     implementations: compatibility.implementations,
                 }
-            };
-        vec![
-            command(
-                CommandId::BuildImage,
-                "Build image",
-                "Open image build options for the active machine",
-                "F5",
-                workspace_missing.then_some("Load a Yocto workspace first"),
-            ),
-            command(
-                CommandId::SelectImage,
-                "Select image",
-                "Choose an image recipe discovered in active layers",
-                "i",
-                (!self
-                    .workspace
-                    .recipes
-                    .iter()
-                    .any(|recipe| recipe.name.contains("image")))
-                .then_some("No image recipes are available"),
-            ),
-            command(
-                CommandId::BuildSelectedRecipe,
-                "Build selected recipe",
-                "Confirm and build the selected recipe",
-                "b",
-                recipe_missing.then_some("Open Recipes and select a recipe"),
-            ),
-            command(
-                CommandId::EditBbmask,
-                "Edit BBMASK",
-                "Preview and save the effective BBMASK value",
-                "x then e",
-                workspace_missing.then_some("Load a Yocto workspace first"),
-            ),
-            command(
-                CommandId::OpenDashboard,
-                "Open Dashboard",
-                "Show build status, task progress, and recent output",
-                "Esc",
-                None,
-            ),
-            command(
-                CommandId::OpenLayers,
-                "Open Layers",
-                "Browse active layer metadata and files",
-                "y",
-                None,
-            ),
-            command(
-                CommandId::OpenRecipes,
-                "Open Recipes",
-                "Browse recipes and typed recipe actions",
-                "r",
-                None,
-            ),
-            command(
-                CommandId::OpenImages,
-                "Open Images",
-                "Browse image recipes and artifacts",
-                "i",
-                None,
-            ),
-            command(
-                CommandId::OpenTasks,
-                "Open Tasks",
-                "Inspect active and completed BitBake tasks",
-                "t",
-                None,
-            ),
-            command(
-                CommandId::OpenLogs,
-                "Open Logs",
-                "Inspect retained structured build logs",
-                "l",
-                None,
-            ),
-            command(
-                CommandId::OpenErrors,
-                "Open Errors",
-                "Inspect retained warnings and errors",
-                "e",
-                None,
-            ),
-            command(
-                CommandId::OpenConfiguration,
-                "Open Configuration",
-                "Inspect effective BitBake variables and provenance",
-                "v",
-                None,
-            ),
-            command(
-                CommandId::OpenRawMode,
-                "Open Raw Mode",
-                "Inspect the structured BitBake command catalog",
-                "Ctrl+P raw",
-                None,
-            ),
-            command(
-                CommandId::OpenCompatibility,
-                "Open Compatibility",
-                "Inspect connected environment identity and capability evidence",
-                "none",
-                None,
-            ),
-            command(
-                CommandId::OpenSettings,
-                "Open Settings",
-                "Edit persistent visual and log preferences",
-                "none",
-                None,
-            ),
-            command(
-                CommandId::ChooseTheme,
-                "Choose theme",
-                "Preview and apply a named workbench palette",
-                "Ctrl+P theme",
-                None,
-            ),
-            command(
-                CommandId::OpenHelp,
-                "Open Help",
-                "Show all global and contextual shortcuts",
-                "?",
-                None,
-            ),
-        ]
+            })
+            .collect()
     }
     pub fn filtered_command_palette_commands(&self) -> Vec<PaletteCommand> {
         let query = self.command_palette_query.trim().to_lowercase();
@@ -4580,6 +4490,13 @@ impl App {
                     || command.label.to_lowercase().contains(&query)
                     || command.description.to_lowercase().contains(&query)
                     || command.shortcut.to_lowercase().contains(&query)
+                    || command.action_id.as_str().contains(&query)
+                    || command
+                        .menu_path
+                        .iter()
+                        .chain(&command.aliases)
+                        .chain(&command.palette_keywords)
+                        .any(|value| value.to_lowercase().contains(&query))
             })
             .collect()
     }

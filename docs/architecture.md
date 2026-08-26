@@ -2954,6 +2954,18 @@ capability evaluation remains outside renderers. Menu selection cannot execute
 an action directly; it emits the same typed activation action and effects as
 the existing palette or shortcut route.
 
+`yoctui-model::action_catalog` now supplies 116 validated definitions: 17
+global command targets and 99 contextual workspace targets. `OperatorActionId`
+is the stable identity; scope, menu path, label, description, aliases, palette
+keywords, displayed and default bindings, local requirement, compatibility
+requirement, safety, footer priority, Help group, and typed target travel
+together. The existing compatibility inventory is crate-private seed data and
+its public presentations are rebuilt from the catalog. `App` constructs the
+palette from the global catalog, composes local selection/workspace failures
+with daemon-owned compatibility availability, and retains the exact disabled
+reason. UI palette search/detail, contextual action lists, and Help consume the
+same metadata; renderers do not classify capabilities or safety.
+
 Rootfs composition follows the normal boundary. Protocol owns versioned typed
 package/tree/size/limitation records; `yoctui-bitbake` alone correlates image
 manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;
