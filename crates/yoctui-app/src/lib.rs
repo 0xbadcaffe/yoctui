@@ -3700,6 +3700,111 @@ pub enum Input {
     End,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum KeymapInputResult {
+    Action(Box<Action>),
+    Pending,
+    Unmatched,
+}
+
+impl KeymapInputResult {
+    pub fn action(self) -> Option<Action> {
+        match self {
+            Self::Action(action) => Some(*action),
+            Self::Pending | Self::Unmatched => None,
+        }
+    }
+}
+
+pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapInputResult {
+    if app.active_dialog().is_some()
+        || app.command_palette_open
+        || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
+    {
+        app.keymap_chord.clear();
+        return KeymapInputResult::Unmatched;
+    }
+    let stroke = key_stroke(key);
+    let workspace = yoctui_model::workspace_screen_destination(app.screen);
+    match app
+        .effective_keymap
+        .resolve_input(&mut app.keymap_chord, workspace, stroke)
+    {
+        yoctui_model::KeymapResolution::Pending => KeymapInputResult::Pending,
+        yoctui_model::KeymapResolution::Unmatched => key_action(key)
+            .filter(|action| !catalog_routed_action(action))
+            .map(Box::new)
+            .map_or(KeymapInputResult::Unmatched, KeymapInputResult::Action),
+        yoctui_model::KeymapResolution::Activated(action_id) => {
+            let definition = yoctui_model::global_operator_action_definitions()
+                .into_iter()
+                .find(|definition| definition.id == action_id)
+                .expect("effective keymaps retain catalog action IDs");
+            let yoctui_model::OperatorActionTarget::Command(command) = definition.target else {
+                unreachable!("the current effective keymap contains command targets")
+            };
+            KeymapInputResult::Action(Box::new(yoctui_model::command_action(app, command)))
+        }
+    }
+}
+
+fn key_stroke(key: Input) -> yoctui_model::KeyStroke {
+    use yoctui_model::KeyStroke as Stroke;
+    match key {
+        Input::Char(character) => Stroke::Char(character),
+        Input::Esc => Stroke::Esc,
+        Input::Enter => Stroke::Enter,
+        Input::CtrlC => Stroke::CtrlC,
+        Input::CtrlV => Stroke::CtrlV,
+        Input::CtrlB => Stroke::CtrlB,
+        Input::CtrlP => Stroke::CtrlP,
+        Input::CtrlU => Stroke::CtrlU,
+        Input::F1 => Stroke::F1,
+        Input::F2 => Stroke::F2,
+        Input::F3 => Stroke::F3,
+        Input::F4 => Stroke::F4,
+        Input::F5 => Stroke::F5,
+        Input::F6 => Stroke::F6,
+        Input::F7 => Stroke::F7,
+        Input::F8 => Stroke::F8,
+        Input::F9 => Stroke::F9,
+        Input::F10 => Stroke::F10,
+        Input::Tab => Stroke::Tab,
+        Input::BackTab => Stroke::BackTab,
+        Input::CtrlS => Stroke::CtrlS,
+        Input::Up => Stroke::Up,
+        Input::Down => Stroke::Down,
+        Input::Backspace => Stroke::Backspace,
+        Input::Left => Stroke::Left,
+        Input::Right => Stroke::Right,
+        Input::Home => Stroke::Home,
+        Input::End => Stroke::End,
+    }
+}
+
+fn catalog_routed_action(action: &Action) -> bool {
+    matches!(
+        action,
+        Action::Open(
+            Screen::Dashboard
+                | Screen::Layers
+                | Screen::Recipes
+                | Screen::Images
+                | Screen::Tasks
+                | Screen::Logs
+                | Screen::Errors
+                | Screen::Configuration
+                | Screen::RawMode
+                | Screen::Compatibility
+                | Screen::Settings
+                | Screen::Help
+        ) | Action::OpenBuildOptions
+            | Action::BeginSelectedRecipeBuild
+            | Action::BeginBbmaskEdit
+            | Action::OpenThemePicker
+    )
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MouseKind {
     Down,
@@ -6548,6 +6653,53 @@ mod tests {
             assert_eq!(definition.footer_priority, presentation.footer_priority);
             assert_eq!(definition.help_group, presentation.help_group);
         }
+    }
+
+    #[test]
+    fn ux_keymap_routes_scoped_defaults_custom_chords_and_traps_dialogs() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = yoctui_model::Screen::Images;
+        assert!(matches!(
+            keymap_action_for_app(&mut app, Input::Char('i')),
+            KeymapInputResult::Action(action) if matches!(*action, Action::OpenImagePicker(_))
+        ));
+
+        app.install_keymap(yoctui_model::KeymapPreferences {
+            schema_version: yoctui_model::KEYMAP_SCHEMA_VERSION,
+            overrides: vec![yoctui_model::KeymapOverride {
+                action_id: "navigate.logs".into(),
+                scope: yoctui_model::KeymapScope::Global,
+                sequences: vec!["z".parse().unwrap(), "g l".parse().unwrap()],
+            }],
+        })
+        .unwrap();
+        app.screen = yoctui_model::Screen::Dashboard;
+        assert_eq!(
+            keymap_action_for_app(&mut app, Input::Char('l')),
+            KeymapInputResult::Unmatched,
+            "an overridden default must not leak through the legacy router"
+        );
+        assert_eq!(
+            keymap_action_for_app(&mut app, Input::Char('z')),
+            KeymapInputResult::Action(Box::new(Action::Open(yoctui_model::Screen::Logs)))
+        );
+        assert_eq!(
+            keymap_action_for_app(&mut app, Input::Char('g')),
+            KeymapInputResult::Pending
+        );
+        assert_eq!(
+            keymap_action_for_app(&mut app, Input::Char('l')),
+            KeymapInputResult::Action(Box::new(Action::Open(yoctui_model::Screen::Logs)))
+        );
+
+        app.dialogs
+            .push_back(yoctui_model::Dialog::QuitConfirmation);
+        app.focus = yoctui_model::FocusTarget::Dialog;
+        assert_eq!(
+            keymap_action_for_app(&mut app, Input::Char('z')),
+            KeymapInputResult::Unmatched
+        );
+        assert!(!app.keymap_chord.is_pending());
     }
 
     #[test]

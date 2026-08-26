@@ -6014,12 +6014,12 @@ notes = "The model-owned catalog contains 116 validated unique entries: 17 globa
 id = "UX-KEYMAP-MODEL-001"
 milestone = "M21"
 title = "Implement scoped configurable keybinding model"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 704
 required = true
 depends_on = ["UX-ACTION-CATALOG-001"]
 verify = ["cargo test -p yoctui-model ux_keymap", "cargo test -p yoctui-app ux_keymap", "cargo test -p yoctui -- ux_keymap"]
-notes = "Define stable defaults, aliases, multi-key chords, context scopes, terminal-prefix reservations, collision and reachability validation, atomic persistence, and legacy preference migration by action ID."
+notes = "Added keymap schema v1 with closed typed strokes, bounded one-to-three-key sequences, exact global/workspace scopes, catalog-default replacement by stable action ID, workspace-before-global chord resolution, reset, and deterministic effective report. Validation rejects future schemas, unknown IDs, scope movement, oversized input, duplicate overrides, equal/prefix collisions, global/terminal Ctrl+B prefixes, and removal of the last Help or Dashboard route. App routing suppresses overridden legacy fallthrough and traps dialogs/palette; schema-0 aliases migrate and session.toml validates through the existing atomic private writer. Focused model/app/CLI tests cover normal and failure paths."
 
 [[task]]
 id = "UX-KEYMAP-UI-001"

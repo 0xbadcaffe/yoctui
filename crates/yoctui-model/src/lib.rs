@@ -8,6 +8,7 @@ mod compatibility_ui;
 mod daemon_state;
 mod embedded_shell;
 mod image;
+mod keymap;
 mod maintenance;
 mod package;
 mod pane_layout;
@@ -37,6 +38,7 @@ pub use compatibility_ui::*;
 pub use daemon_state::*;
 pub use embedded_shell::*;
 pub use image::*;
+pub use keymap::*;
 pub use maintenance::*;
 pub use package::*;
 pub use pane_layout::*;
@@ -3342,6 +3344,9 @@ pub struct App {
     pub raw_request_generation: u64,
     pub pty_selection: usize,
     pub pane_layout: PaneLayout,
+    pub keymap_preferences: KeymapPreferences,
+    pub effective_keymap: EffectiveKeymap,
+    pub keymap_chord: KeymapChordState,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -3493,6 +3498,9 @@ impl App {
             raw_request_generation: 0,
             pty_selection: 0,
             pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
+            keymap_preferences: KeymapPreferences::default(),
+            effective_keymap: EffectiveKeymap::default(),
+            keymap_chord: KeymapChordState::default(),
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
@@ -3626,6 +3634,22 @@ impl App {
         app.screen = Screen::BuildEnvironment;
         app.focus = FocusTarget::Navigator;
         app
+    }
+    pub fn install_keymap(&mut self, preferences: KeymapPreferences) -> Result<(), KeymapError> {
+        let preferences = preferences.migrate()?;
+        let effective = EffectiveKeymap::from_preferences(&preferences)?;
+        self.keymap_preferences = preferences;
+        self.effective_keymap = effective;
+        self.keymap_chord.clear();
+        Ok(())
+    }
+    pub fn reset_keymap(&mut self) {
+        self.keymap_preferences = KeymapPreferences::default();
+        self.effective_keymap = EffectiveKeymap::default();
+        self.keymap_chord.clear();
+    }
+    pub fn effective_keymap_report(&self) -> String {
+        self.effective_keymap.report()
     }
     pub fn elapsed(&self) -> Option<Duration> {
         self.build
@@ -5725,7 +5749,7 @@ pub const THEMES: [Theme; 8] = [
     Theme::HighContrast,
 ];
 
-fn command_action(app: &App, id: CommandId) -> Action {
+pub fn command_action(app: &App, id: CommandId) -> Action {
     match id {
         CommandId::BuildImage => Action::OpenBuildOptions,
         CommandId::SelectImage => Action::OpenImagePicker(

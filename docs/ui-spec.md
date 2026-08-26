@@ -4363,6 +4363,24 @@ editing rejects active same-scope collisions, reserved terminal-prefix
 conflicts, invalid sequences, and removal of the last reachable route to a
 critical action. Reset and effective-keymap export are mandatory.
 
+The implemented schema is `yoctui` keymap version 1. A sequence contains one
+to three closed typed strokes; equality and prefix ambiguity are both
+collisions. Overrides replace all defaults for one catalog action in its exact
+binding scope, while omitted actions retain every catalog default and alias.
+Workspace bindings take precedence over global bindings, so `i` can select an
+image in Images without changing the global Open Images route. `x e` is a real
+bounded Configuration chord. `Ctrl+B` cannot begin a global or Terminal
+Sessions binding because the PTY prefix remains authoritative. Help and
+Dashboard cannot lose their last configured route.
+
+The general app input boundary resolves this effective keymap only after
+dialogs, the palette, editors/search fields, and terminal ownership have had
+their input. Existing specialized workspace routes that are not command-target
+catalog entries remain on their typed handlers until their dependent M21 menu,
+focus, and scrolling tasks project them into the same model. A rejected or
+overridden catalog default cannot leak back through the legacy global router.
+Keymap preference rendering and capture controls belong to the next task.
+
 ### Focus zoom and scrolling
 
 Exactly one pane, subview, menu, dialog, palette, or terminal owns input. Focus

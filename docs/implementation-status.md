@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-4/38 (10.5%); overall required registry progress is 544/578 (94.1%).
+5/38 (13.2%); overall required registry progress is 545/578 (94.3%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -34,8 +34,12 @@ offline build. No candidate entered the workspace dependency graph.
 workspace actions now carry validated stable IDs, scope, menu/search/Help/footer
 metadata, local and compatibility requirements, safety, and typed targets. The
 palette and workspace presentations project the catalog, exact disabled reasons
-compose local and daemon authority, and model/app/UI parity tests pass. The
-scoped configurable keymap is next.
+compose local and daemon authority, and model/app/UI parity tests pass.
+`UX-KEYMAP-MODEL-001` is complete: schema-versioned scoped preferences now
+produce one deterministic effective command keymap with bounded typed chords,
+workspace-before-global resolution, collision/prefix/reserved-key/reachability
+validation, reset/report support, modal-safe app routing, and atomic migrated
+session persistence. Discoverable keybinding preferences are next.
 
 ### Completed baseline through M20
 

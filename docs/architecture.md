@@ -2966,6 +2966,26 @@ with daemon-owned compatibility availability, and retains the exact disabled
 reason. UI palette search/detail, contextual action lists, and Help consume the
 same metadata; renderers do not classify capabilities or safety.
 
+`yoctui-model::keymap` owns schema-versioned preferences, closed key strokes,
+one-to-three-stroke sequences, exact global/workspace scopes, effective
+bindings, pending-chord state, deterministic reports, reset, and validation.
+Overrides resolve by `OperatorActionId` and replace, rather than supplement,
+one action's defaults. Construction rejects unknown IDs, scope movement,
+invalid or oversized input, duplicate overrides, equal or prefix collisions,
+global/terminal `Ctrl+B` prefixes, and unreachable critical Help or Dashboard
+routes. Schema 0 aliases migrate to schema 1 before use.
+
+`yoctui-app::keymap_action_for_app` converts the app-owned closed `Input` into
+model strokes and maps activated catalog command targets back to the existing
+typed `Action`; it has no terminal-event or filesystem authority. The CLI calls
+it at the general-routing seam after modal/editor/search/PTY owners and
+suppresses legacy fallthrough for an overridden catalog action. `session.toml`
+stores the preferences and reuses the existing bounded, private,
+fsync-and-rename writer; loading migrates and validates before installation,
+and failed validation never replaces the previous file. Specialized contextual
+handlers remain typed and are moved onto catalog IDs by their dependent M21
+interaction tasks.
+
 Rootfs composition follows the normal boundary. Protocol owns versioned typed
 package/tree/size/limitation records; `yoctui-bitbake` alone correlates image
 manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;

@@ -36,7 +36,7 @@ use yoctui_app::{
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
-    key_action, logs_action, maintenance_dialog_action, maintenance_workspace_action,
+    keymap_action_for_app, logs_action, maintenance_dialog_action, maintenance_workspace_action,
     model_action_from_backend_event, mouse_action_for_app, package_workspace_action,
     popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
     qa_report_error_action, qa_report_response_action, qa_task_capability_action,
@@ -239,6 +239,8 @@ struct Session {
     pane_layout: Option<yoctui_model::PaneLayout>,
     #[serde(default)]
     raw_favorites: Vec<yoctui_model::RawFavorite>,
+    #[serde(default)]
+    keymap: yoctui_model::KeymapPreferences,
 }
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -824,8 +826,12 @@ fn read_session(path: Option<&Path>) -> Result<Session> {
     }
     let text = fs::read_to_string(path)
         .with_context(|| format!("could not read session file {}", path.display()))?;
-    let session: Session = toml::from_str(&text)
+    let mut session: Session = toml::from_str(&text)
         .with_context(|| format!("invalid session file {}", path.display()))?;
+    session.keymap = std::mem::take(&mut session.keymap)
+        .migrate()
+        .map_err(anyhow::Error::msg)
+        .with_context(|| format!("invalid keymap in session file {}", path.display()))?;
     validate_raw_favorites(&session.raw_favorites)
         .map_err(anyhow::Error::msg)
         .with_context(|| format!("invalid Raw favorites in session file {}", path.display()))?;
@@ -844,6 +850,9 @@ fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
     validate_raw_favorites(&session.raw_favorites)
         .map_err(anyhow::Error::msg)
         .context("invalid Raw favorites cannot be persisted")?;
+    yoctui_model::EffectiveKeymap::from_preferences(&session.keymap)
+        .map_err(anyhow::Error::msg)
+        .context("invalid keymap cannot be persisted")?;
     let text = toml::to_string(session)?;
     if text.len() as u64 > MAX_SESSION_BYTES {
         anyhow::bail!("session file exceeds the 1 MiB limit");
@@ -899,6 +908,12 @@ fn install_session_raw_favorites(session: &Session, app: &mut App) -> Result<()>
     Ok(())
 }
 
+fn install_session_keymap(session: &Session, app: &mut App) -> Result<()> {
+    app.install_keymap(session.keymap.clone())
+        .map_err(anyhow::Error::msg)
+        .context("could not install the persisted keymap")
+}
+
 fn persist_settings(
     path: Option<&Path>,
     session: &mut Session,
@@ -915,6 +930,7 @@ fn persist_settings(
     updated.log_wrap = Some(app.logs.wrap);
     updated.log_follow = Some(app.logs.follow);
     updated.pane_layout = Some(app.pane_layout.clone());
+    updated.keymap = app.keymap_preferences.clone();
     write_session(path, &updated)?;
     *session = updated;
     Ok(())
@@ -9735,6 +9751,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     app.animation_speed = animation_speed;
     app.reduced_motion = reduced_motion;
     install_session_raw_favorites(&session, &mut app)?;
+    install_session_keymap(&session, &mut app)?;
     if let Some(layout) = session.pane_layout.clone()
         && layout.validate().is_ok()
     {
@@ -12402,7 +12419,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                         _ => {}
                     }
-                } else if let Some(action) = key_action(input) {
+                } else if let Some(action) = keymap_action_for_app(&mut app, input).action() {
                     if matches!(action, Action::Cancel) {
                         if devtool_jobs.active_job_id().is_some() {
                             if let Some(job_action) = devtool_jobs.request_cancellation() {
@@ -12725,6 +12742,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
         session.color_enabled = Some(app.color_enabled);
     }
     session.pane_layout = Some(app.pane_layout.clone());
+    session.keymap = app.keymap_preferences.clone();
     session.recent_build_dirs = std::iter::once(session_build_dir)
         .chain(session.recent_build_dirs)
         .fold(Vec::new(), |mut directories, directory| {
@@ -13677,6 +13695,7 @@ mod tests {
                 recent_build_dirs: vec![PathBuf::from("/build")],
                 pane_layout: None,
                 raw_favorites: Vec::new(),
+                keymap: yoctui_model::KeymapPreferences::default(),
             },
         )
         .unwrap();
@@ -13699,10 +13718,64 @@ mod tests {
                 recent_build_dirs: vec![PathBuf::from("/build")],
                 pane_layout: None,
                 raw_favorites: Vec::new(),
+                keymap: yoctui_model::KeymapPreferences::default(),
             }
         );
         fs::remove_file(&path).unwrap();
         fs::remove_dir(&directory).unwrap();
+    }
+
+    #[test]
+    fn ux_keymap_persistence_migrates_routes_and_rejects_invalid_atomically() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-keymap-persistence-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("session.toml");
+        fs::write(
+            &path,
+            "[keymap]\nschema_version = 0\n[[keymap.bindings]]\naction = 'navigate.logs'\nkeys = ['z', 'g l']\n",
+        )
+        .unwrap();
+
+        let session = read_session(Some(&path)).unwrap();
+        assert_eq!(
+            session.keymap.schema_version,
+            yoctui_model::KEYMAP_SCHEMA_VERSION
+        );
+        let mut app = App::new(8, 1024);
+        install_session_keymap(&session, &mut app).unwrap();
+        assert!(matches!(
+            keymap_action_for_app(&mut app, Input::Char('z')),
+            yoctui_app::KeymapInputResult::Action(action)
+                if matches!(*action, Action::Open(Screen::Logs))
+        ));
+        assert_eq!(
+            keymap_action_for_app(&mut app, Input::Char('g')),
+            yoctui_app::KeymapInputResult::Pending
+        );
+        assert!(matches!(
+            keymap_action_for_app(&mut app, Input::Char('l')),
+            yoctui_app::KeymapInputResult::Action(action)
+                if matches!(*action, Action::Open(Screen::Logs))
+        ));
+
+        write_session(Some(&path), &session).unwrap();
+        let before = fs::read(&path).unwrap();
+        let mut invalid = session;
+        invalid.keymap.overrides[0].sequences = vec!["e".parse().unwrap()];
+        assert!(write_session(Some(&path), &invalid).is_err());
+        assert_eq!(fs::read(&path).unwrap(), before);
+        assert!(fs::read_dir(&directory).unwrap().all(|entry| {
+            !entry
+                .unwrap()
+                .file_name()
+                .to_string_lossy()
+                .ends_with(".tmp")
+        }));
+
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
     }
 
     fn persistent_raw_favorite() -> yoctui_model::RawFavorite {

@@ -2,47 +2,46 @@
 
 ## Task
 
-**ID:** UX-KEYMAP-MODEL-001
-**Title:** Implement scoped configurable keybinding model
+**ID:** UX-KEYMAP-UI-001
+**Title:** Add discoverable keybinding preferences and report
 **Status:** NOT_STARTED
 
 ## Objective
 
-Create the versioned model-owned keymap that binds configurable key sequences
-to stable operator action IDs without collisions or unreachable critical
-actions.
+Make the effective keymap searchable, understandable, safely editable,
+resettable, and exportable from the real Settings workspace.
 
 ## Dependencies
 
-- `UX-ACTION-CATALOG-001` — DONE
+- `UX-KEYMAP-MODEL-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/action_catalog.rs`
-- new keymap model and reducer state
+- `crates/yoctui-model/src/keymap.rs`
+- Settings reducer state in `crates/yoctui-model/src/lib.rs`
 - `crates/yoctui-app/src/lib.rs`
-- session preference persistence and migration
+- `crates/yoctui-ui/src/lib.rs`
+- `crates/yoctui-cli/src/main.rs`
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 
 ## Definition of done
 
-- Define bounded validated single-key and multi-key chord sequences.
-- Scope bindings globally or to exact action contexts using stable catalog IDs.
-- Preserve documented defaults and aliases while allowing explicit overrides.
-- Reject active same-scope collisions, reserved terminal-prefix conflicts,
-  invalid sequences, and removal of the last route to a critical action.
-- Persist atomically with schema versioning and migrate legacy preferences.
-- Project one effective keymap for app input routing and later UI consumers.
+- Render searchable effective bindings grouped by exact scope and action metadata.
+- Distinguish default, custom, pending capture, conflict, and disabled states in text.
+- Add focus-trapped capture/edit, remove, per-action reset, and reset-all controls.
+- Refuse invalid/conflicting/unreachable edits with the model's exact reason.
+- Export the deterministic effective-keymap report through a bounded typed effect.
+- Persist successful edits atomically and retain retryable dirty state on failure.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_keymap
-cargo test -p yoctui-app ux_keymap
-cargo test -p yoctui -- ux_keymap
+cargo test -p yoctui-ui ux_keymap_preferences
+cargo test -p yoctui-app ux_keymap_preferences
+cargo test -p yoctui -- ux_keymap_persistence
 ./scripts/verify-roadmap.sh
 ```
 
-The keymap must not weaken dialog/editor/terminal focus traps. Discoverable
-editing UI and F10 menu rendering remain in their dependent tasks.
+This task presents and edits the existing model. It does not introduce the F10
+application/context menus owned by `UX-MENU-001`.

@@ -192,7 +192,7 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             description: "Preview and save the effective BBMASK value",
             aliases: &["mask recipes", "configuration mask"],
             keywords: &["configure", "bbmask", "recipe", "mask"],
-            bindings: &["x", "e"],
+            bindings: &["x e"],
             local_requirement: Local::WorkspaceLoaded,
             safety: Safety::ConfirmationRequired,
             footer_priority: 55,
