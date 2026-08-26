@@ -1,0 +1,127 @@
+schema_version = 1
+pack_id = "m21-workbench-concepts-v1"
+generated_on = "2026-08-26"
+generator = "Codex built-in image generation"
+format = "png"
+pixel_width = 1586
+pixel_height = 992
+logical_columns = 160
+logical_rows = 50
+theme = "dark-pro"
+authority = "human-reviewed visual direction only"
+exact_pixel_golden = false
+
+[validation]
+authoritative_spec = "docs/ui-spec.md"
+exact_cell_golden = "required from Ratatui TestBackend during implementation"
+deterministic_png = "required from pinned font and renderer during implementation"
+concept_comparison = "manual hierarchy, density, focus, palette, and affordance review"
+live_evidence = "verified PTY ANSI, semantic text, metadata, and raster capture"
+
+[[scenario]]
+id = "idle-dashboard"
+file = "01-idle-dashboard.png"
+sha256 = "07e95f6364ccb7900ba8b213940e89fce0dd602679bfd2324a6aae38b8fbaba5"
+workspace = "Dashboard"
+state = "daemon current; BitBake idle"
+anchors = [
+  "persistent header, Navigator, Workspace, Inspector, and footer",
+  "Dashboard selected with one focused Workspace border",
+  "Build Overview and Recent Builds",
+  "CPU, RAM, build-filesystem, and sstate meters with numeric values",
+  "Quick Actions and Project Inspector",
+]
+known_non_authoritative = [
+  "illustrative filesystem paths and historical timestamps",
+  "semicircular meters are visual direction; widget implementation may use line gauges",
+]
+
+[[scenario]]
+id = "active-build-tasks"
+file = "02-active-build-tasks.png"
+sha256 = "f04284e25cfe95d7e4eaebaffdfdda1f1bc806bd16743dd33eb2d06c3a674343"
+workspace = "Tasks"
+state = "daemon current; BitBake running; bash:do_compile selected at 72 percent"
+anchors = [
+  "7,240 of 10,056 determinate build progress at 72 percent",
+  "selected active task row and Task Inspector agree",
+  "following bounded live log with retained and dropped counts",
+  "Job History and compact telemetry remain visible",
+  "cancel and context actions stay discoverable",
+]
+known_non_authoritative = [
+  "compiler log lines and paths are illustrative fixture content",
+  "final tier heights remain governed by the UI specification",
+]
+
+[[scenario]]
+id = "failed-build-errors"
+file = "03-failed-build-errors.png"
+sha256 = "13aae79e57e1809479121497883a9f58c1eb399accadc515076b3cd48d486dcb"
+workspace = "Errors"
+state = "daemon current; BitBake failed; bash:do_compile error selected"
+anchors = [
+  "failed lifecycle is explicit in header and result summary",
+  "structured errors and warnings table",
+  "paused correlated log with match position, loss accounting, and scrollbar",
+  "textual filter checkbox states",
+  "destructive recovery action states that confirmation is required",
+]
+known_non_authoritative = [
+  "diagnostic source paths and timestamps are illustrative fixture content",
+  "generated typography is not a source for exact terminal glyphs",
+]
+
+[[scenario]]
+id = "rootfs-composition"
+file = "04-rootfs-composition.png"
+sha256 = "43bc7057b6ea7f8fde0144d553c1570b3ea416a0f47ad919f99b589b7fb1c6d7"
+workspace = "Images / Rootfs composition"
+state = "current installed-package manifest; BitBake idle"
+anchors = [
+  "installed-packages and filesystem-tree authorities are separate",
+  "composition chart is paired with an exact sortable table",
+  "Other category is explicit",
+  "checked, unchecked, indeterminate, and disabled package rows use text markers",
+  "drill-down tree retains textual position and scrollbar",
+]
+known_non_authoritative = [
+  "pie geometry is illustrative and exact values belong to the table",
+  "generated action shortcut letters are not authoritative",
+]
+
+[[scenario]]
+id = "editor-application-menu"
+file = "05-editor-application-menu.png"
+sha256 = "b03cf58fed711a2e33ec53e1335b91fecf837bc61348158e3d72c55e54fa0411"
+workspace = "Recipes / Editor"
+state = "modified recipe editor; BitBake idle; F10 Build menu owns focus"
+anchors = [
+  "stable F10 menu groups and one focus-trapped dropdown",
+  "disabled cancel action includes exact reason",
+  "multiline editor exposes mode, cursor, encoding, and modified state",
+  "validation diagnostic and diff preview remain visible",
+  "save, build-saved, and external-editor routes are discoverable",
+]
+known_non_authoritative = [
+  "recipe text and checksums are illustrative fixture content",
+  "menu and editor geometry must be derived from deterministic layout code",
+]
+
+[[scenario]]
+id = "terminal-sessions"
+file = "06-terminal-sessions.png"
+sha256 = "18c9f05a21a16f26c5af525b5ad0db46bf234d96ba35cdeb4ac279895aea2638"
+workspace = "Terminal Sessions"
+state = "two PTY panes; local writer and remote read-only client"
+anchors = [
+  "session tabs and two bounded split PTY panes",
+  "writer and read-only ownership are textual",
+  "upper writer pane alone owns focus",
+  "lower scrollback search exposes match and dropped-history counts",
+  "Ctrl+B prefix help exposes split, zoom, copy/search, detach, close, and literal prefix",
+]
+known_non_authoritative = [
+  "shell output, PTY dimensions, client IDs, and paths are illustrative fixture content",
+  "footer items must ultimately project from the action catalog",
+]

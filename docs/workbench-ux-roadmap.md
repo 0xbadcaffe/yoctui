@@ -320,6 +320,16 @@ that the new milestone has only its research/specification task complete.
 
 ## Test strategy
 
+The pre-implementation visual-direction pack lives in
+[`docs/design/m21/concepts`](design/m21/concepts/README.md). Its six PNG scenes
+and manifest provide manual hierarchy, density, focus, palette, and affordance
+anchors for Dashboard, Tasks, Errors, rootfs composition, the editor/menu, and
+terminal sessions. The generated images are not exact goldens. Implementing
+tasks must derive deterministic cell goldens from typed `TestBackend` fixtures
+and may then rasterize those buffers with a pinned font for exact PNG diffs.
+`./scripts/verify-m21-concept-pack.py` protects the concept pack's files,
+dimensions, hashes, anchors, and lossless format.
+
 | Layer | Required evidence |
 |---|---|
 | Model | Pure reducer tests for action catalog projection, key collisions/chords, focus/subfocus, zoom restore, every scroll transition, editor history, checkbox state, rootfs normalization, terminal presentation, and stale-generation rejection. |
