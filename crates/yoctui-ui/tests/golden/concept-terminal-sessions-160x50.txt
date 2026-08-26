@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                          Daemon: ✓ Connected  •  BitBake: – Exited│
+┌ shell · writer local-1 #1 Running ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│2 viewer(s) | selection 1                                                                                                                                     │
+│bspguy@builder:~/yocto/build$ bitbake-layers show-layers                                                                                                      │
+│layer                 path                                                                                                                                    │
+│meta                  /home/user/yocto/meta                                                                                                                   │
+│meta-poky             /home/user/yocto/meta-poky                                                                                                              │
+│meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp                                                                                                         │
+│bspguy@builder:~/yocto/build$                                                                                                                                 │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌ devshell:busybox · read-only #2 Running ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│2 viewer(s) | selection 1                                                                                                                                     │
+│busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                                                                              │
+│CC      coreutils/ls.o                                                                                                                                        │
+│CC      coreutils/cp.o                                                                                                                                        │
+│LD      busybox_unstripped                                                                                                                                    │
+│busybox-devshell$                                                                                                                                             │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+│                                                                                                                                                              │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+B options   Ctrl+B prefix   Tab focus   ↑/↓ package progress   i image   ! shell   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit  19:28:27
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

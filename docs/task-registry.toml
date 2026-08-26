@@ -5981,12 +5981,12 @@ notes = "The Ratatui app, built-in widget, and third-party widget showcases were
 id = "UX-CONCEPT-VALIDATION-001"
 milestone = "M21"
 title = "Validate visual concepts through the production Yoctui renderer"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 701
 required = true
 depends_on = ["UX-SPEC-001"]
-verify = ["cargo test -p yoctui-ui concept_screen_contracts", "./scripts/verify-m21-concept-screens.sh", "./scripts/verify-m21-concept-pack.py", "./scripts/check-docs.sh"]
-notes = "Render all six concept scenario identities from typed state through production render_at at 160x50, check semantic anchors, review full cell/style goldens, and maintain an executable gap ledger tied to incomplete implementation tasks. Generated PNGs remain non-authoritative visual direction."
+verify = ["cargo test -p yoctui-ui concept_screen_contracts", "python3 scripts/test-m21-concept-screen-verifier.py", "./scripts/verify-m21-concept-screens.sh", "./scripts/verify-m21-concept-pack.py", "./scripts/check-docs.sh"]
+notes = "All six concept identities now render from typed fixtures through production render_at at 160x50. Reviewed text captures and complete symbol/style goldens cover idle Dashboard, active Tasks, failed Errors, current Images/rootfs evidence, the current recipe editor, and split terminal sessions. The manifest verifies semantic anchors and 14 explicit gaps against incomplete owner tasks; failure tests reject corrupt dimensions, missing captures/anchors, and completed gap owners. Generated PNGs remain non-authoritative visual direction."
 
 [[task]]
 id = "UX-LICENSE-001"

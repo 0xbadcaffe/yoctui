@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64                        Daemon: ✓ Connected  •  BitBake: ✕ Failed│
+┌Navigator───────────┐┌Errors and warnings (1 retained; 0 warning / 0 error records evicte┐┌Inspector: Error───────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││Time    Severi Recipe  Task   Summary            Build             ││▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       ││70107s  Error  bash_5. do_com ERROR: bash:do_com core-image-minimal││Category: BitBake error                                            │
+│▾ CONTENT           ││                                                                   ││Summary: ERROR: bash:do_compile failed with exit code 1            │
+│  ? Layers          ││                                                                   ││Time: 70107s since Unix epoch                                      │
+│  ? Recipes         ││                                                                   ││Build: core-image-minimal                                          │
+│  ? Packages        ││                                                                   ││Recipe: bash_5.2.21-2  Task: do_compile                            │
+│  ? Images          ││                                                                   ││Source log: /home/user/yocto/build/tmp/log.do_compile.85873        │
+│  ? SDK             ││                                                                   ││Event metadata: severity=Error, protected=true,                    │
+│▾ BUILD             ││                                                                   ││build=core-image-minimal,                                          │
+│  ? Tasks           ││                                                                   ││source=/home/user/yocto/build/tmp/log.do_compile.85873             │
+│  ▱ Logs        LIVE││                                                                   ││                                                                   │
+│  ▱ Errors         2││                                                                   ││Full message:                                                      │
+│  ? Configuration   ││                                                                   ││ERROR: bash:do_compile failed with exit code 1                     │
+│  ? Dependencies    ││                                                                   ││                                                                   │
+│▾ VALIDATE          ││                                                                   ││Suggested actions:                                                 │
+│  ? Testing         ││                                                                   ││- Inspect the matching retained log context.                       │
+│  ? Security        ││                                                                   ││- Open the source log and inspect surrounding output.              │
+│  ? QA              ││                                                                   ││- Inspect the recipe task and its metadata.                        │
+│▾ TOOLS             ││                                                                   ││                                                                   │
+│  ? Raw Mode        ││                                                                   ││Related diagnostics:                                               │
+│  ? Devtool         ││                                                                   ││none                                                               │
+│  ? QEMU / Wic      ││                                                                   ││                                                                   │
+│  ? Maintenance     ││                                                                   ││▾ RELATED PATHS                                                    │
+│  ▱ Build environmen││                                                                   ││/home/user/yocto/build/tmp/log.do_compile.85873                    │
+│  ▱ Compatibility   ││                                                                   ││                                                                   │
+│  ▱ Settings        ││                                                                   ││▾ CONTEXTUAL ACTIONS                                               │
+│                    ││                                                                   ││✓ Inspect retained diagnostic source  [Enter/o] — Local            │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    │└───────────────────────────────────────────────────────────────────┘│                                                                   │
+│                    │┌Selected diagnostic────────────────────────────────────────────────┐│                                                                   │
+│                    ││Category: BitBake error                                            ││                                                                   │
+│                    ││Summary: ERROR: bash:do_compile failed with exit code 1            ││                                                                   │
+│                    ││Time: 70107s since Unix epoch                                      ││                                                                   │
+│                    ││Build: core-image-minimal                                          ││                                                                   │
+│                    ││Recipe: bash_5.2.21-2  Task: do_compile                            ││                                                                   │
+│                    ││Source log: /home/user/yocto/build/tmp/log.do_compile.85873        ││                                                                   │
+│                    ││Event metadata: severity=Error, protected=true,                    ││                                                                   │
+│                    ││build=core-image-minimal,                                          ││                                                                   │
+│                    ││source=/home/user/yocto/build/tmp/log.do_compile.85873             ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+↑/↓ select   Enter logs   o open source   Esc dashboard   Tab Inspector   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F1 Help   F10 Menu   q Quit  19:28:27
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

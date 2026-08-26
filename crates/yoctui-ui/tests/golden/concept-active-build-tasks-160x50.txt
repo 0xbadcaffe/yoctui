@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64                      Daemon: ✓ Connected  •  BitBake: ✓ Running│
+┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
+│▾ Layers                ││██████████████████████████████████Overall  40%  4/10                                   ││Task        do_compile                     │
+│  ▱ poky                ││Active 1  Waiting 5  Warnings 0  Errors 0  Elapsed 00:16:18                            ││Recipe      bash_5.2.21-2                  │
+│  ▱ meta                ││Task             Recipe                Status        Time      Progress                ││PN          bash_5.2.21-2                  │
+│  ▱ meta-poky           ││do_fetch         bash_5.2.21-2         ✓ Succeeded   00:00:01  ██████████ 100%         ││PV          unavailable                    │
+│  ▱ meta-yocto-bsp      ││do_unpack        bash_5.2.21-2         ✓ Succeeded   00:00:01  ██████████ 100%         ││PR          unavailable                    │
+│  ▱ meta-oe             ││do_patch         bash_5.2.21-2         ✓ Succeeded   00:00:01  ██████████ 100%         ││State       ▶ Running                      │
+│  ▱ meta-python         ││do_configure     bash_5.2.21-2         ✓ Succeeded   00:00:01  ██████████ 100%         ││Progress    72%                            │
+│  ▱ meta-networking     ││do_compile       bash_5.2.21-2         ▶ Running     00:09:50  ███████▏░░ 72%          ││                                           │
+│▾ Recipes               ││5 waiting tasks  unavailable           ○ Waiting     --        metadata unavailable    ││                                           │
+│  ▸ busybox             ││                                                                                       │└───────────────────────────────────────────┘
+│  ▸ bash                ││                                                                                       │┌Secondary facts · Paths · Dependencies─────┐
+│  ▸ core-image-minimal  ││                                                                                       ││Worker      worker-1                       │
+│▾ Images                │└───────────────────────────────────────────────────────────────────────────────────────┘│PID         35421                          │
+│  ▱ core-image-minimal  │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow─────────────────────────────────────┐│Started     19:18:37                       │
+│  ▱ core-image-full-cmdl│││ NOTE: Executing Tasks                                                                ││Elapsed     00:09:50                       │
+│▾ Tasks                 │││ NOTE: Started: do_compile                                                            ││Workdir     unavailable                    │
+│  ▱ Build               │││ |  CC     builtins/histfile.o                                                        ││Log file                                   │
+│  ▱ Test                │││ |  CC     builtins/jobs.o                                                            ││/home/user/yocto/build/tmp/work/qemux86-64-│
+│  ▱ QA                  │││ |  CC     execute_cmd.o                                                              ││poky-linux/bash/5.2.21-r2/temp/log.do_compi│
+│  ▱ Devtool             │││ [ 72%] Linking bash                                                                  ││le.85873                                   │
+│  ▱ Wic                 ││                                                                                       ││Dependencies none reported                 │
+│  ▱ SDK                 ││                                                                                       │└───────────────────────────────────────────┘
+│  ▱ Security            ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
+│  ▱ Utility             ││                                                                                       │││ NOTE: Executing Tasks                    │
+│▾ Targets               ││                                                                                       │││ NOTE: Started: do_compile                │
+│  ▱ qemux86-64          ││                                                                                       │││ |  CC     builtins/histfile.o            │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘││ |  CC     builtins/jobs.o                │
+│                        │┌Job History · Active 0 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1──────┐││ |  CC     execute_cmd.o                  │
+│                        ││Status        Operation       Type         Target / Context         Started   Elapsed  │││ [ 72%] Linking bash                      │
+│                        ││✓ Succeeded   core-image-mini Build        core-image-minimal       19:12:10  00:04:55 │└───────────────────────────────────────────┘
+│                        ││✓ Succeeded   busybox         Build        busybox                  19:11:42  00:00:17 │┌Contextual Actions─────────────────────────┐
+│                        ││✕ Failed      core-image-mini Build        core-image-minimal       19:08:33  00:01:48 ││? Cancel active build  [c] — Unknown       │
+│                        ││✓ Succeeded   virtual/kernel  Build        virtual/kernel           19:07:18  00:00:54 ││  Reason: No current environment capability│
+│                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
+│                        ││                                                                                       ││✓ Build History        [h] — Local         │
+│                        ││                                                                                       ││? Build options        [B] — Unknown       │
+│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│  Reason: No current environment capability│
+│                        │┌Telemetry · bounded 60-sample histories────────────────────────────────────────────────┐│                                           │
+│                        ││███████                     │RAM ! unavailable           │BUILD FS ! unavailable       │└───────────────────────────────────────────┘
+│                        ││███████                     │                            │                             │┌System Status──────────────────────────────┐
+│                        ││███████                     │                            │                             ││✓ Daemon Connected · version unavailable ·…│
+│                        ││███████   CPU  24%          │                            │                             ││✓ BitBake Running · v2.8.0 · Jobs 1        │
+│                        ││███████                     │                            │                             ││! Compat Unavailable · PTY 1 · Clients 1   │
+│L: poky  R: 858  P:35421││███████                     │                            │                             ││! Build FS unavailable · Workspace /home/u…│
+└────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit                      ▶ Build running · 1 active  19:28:27│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

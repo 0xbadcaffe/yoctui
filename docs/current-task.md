@@ -2,14 +2,14 @@
 
 ## Task
 
-**ID:** UX-CONCEPT-VALIDATION-001
-**Title:** Validate the six visual concepts through the production Yoctui renderer
+**ID:** UX-LICENSE-001
+**Title:** Establish third-party widget license and supply-chain gate
 **Status:** NOT_STARTED
 
 ## Objective
 
-Create an executable acceptance baseline for all six M21 concept scenes using
-typed fixtures and Yoctui's production Ratatui renderer.
+Create the reusable dependency-admission gate required before any showcased
+third-party widget is added to Yoctui.
 
 ## Dependencies
 
@@ -17,34 +17,32 @@ typed fixtures and Yoctui's production Ratatui renderer.
 
 ## Relevant files
 
-- `crates/yoctui-ui/src/lib.rs`
-- `crates/yoctui-ui/tests/golden/`
-- `docs/design/m21/concepts/manifest.toml`
-- `docs/ui-spec.md`
+- `Cargo.toml`
+- `Cargo.lock`
+- `deny.toml`
 - `docs/workbench-ux-roadmap.md`
-- `scripts/update-m21-concept-screen-goldens.sh`
-- `scripts/verify-m21-concept-screens.sh`
+- third-party notice and SBOM configuration
+- `scripts/verify-third-party-notices.sh`
+- `scripts/verify-widget-dependencies.sh`
 
 ## Definition of done
 
-- Idle Dashboard, active Tasks, failed Errors, Images/rootfs, editor/menu, and
-  terminal-session fixtures render through production `render_at` at `160x50`.
-- Every scenario checks reviewed semantic anchors and serializes every Ratatui
-  cell symbol and style into an explicit-update golden.
-- The concept manifest maps each scene to its implementation tasks and names
-  every remaining concept gap without weakening the passing current baseline.
-- The verifier rejects missing/stale goldens, unregistered gap tasks, completed
-  tasks that still claim gaps, and accidental use of generated PNGs as exact
-  pixel authority.
-- Documentation distinguishes AI concept direction, deterministic real-Yoctui
-  acceptance, and live PTY evidence.
+- Refresh exact candidate crate versions, SPDX licenses, sources/checksums,
+  MSRVs, Ratatui compatibility, enabled features, and transitive dependencies.
+- Reject any crate or feature set that violates repository policy.
+- Generate and verify complete third-party notices and an auditable SBOM.
+- Prove the selected dependency graph builds from the lockfile without network.
+- Document explicit adopt, adapt, defer, or reject decisions without importing
+  showcase application code or assets.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui concept_screen_contracts
-./scripts/verify-m21-concept-screens.sh
-./scripts/verify-m21-concept-pack.py
-./scripts/check-docs.sh
+cargo deny check
+./scripts/verify-third-party-notices.sh
+./scripts/verify-widget-dependencies.sh
 ./scripts/verify-roadmap.sh
 ```
+
+Do not add a widget dependency in this task. This task creates the gate that
+later widget-specific tasks must pass immediately before adoption.

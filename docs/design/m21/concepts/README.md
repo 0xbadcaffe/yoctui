@@ -43,11 +43,23 @@ pixel comparison is appropriate only for deterministic implementation PNGs in
 a pinned rendering environment. PNG is required; JPEG is not accepted for
 goldens because lossy compression changes text pixels.
 
+The same six scenario identities now render through Yoctui's production
+`render_at` path at `160x50`. Every scene has a reviewed full cell/style golden
+and a readable semantic capture under `crates/yoctui-ui/tests/golden`. The
+manifest maps those real-renderer artifacts to semantic anchors and to explicit
+open implementation gaps. A gap cannot remain after its owning registry task
+is complete.
+
 Verify the pack's declared files, dimensions, hashes, anchors, and lossless
 format with:
 
 ```bash
 ./scripts/verify-m21-concept-pack.py
+./scripts/verify-m21-concept-screens.sh
 ```
+
+Intentional production-renderer changes use
+`./scripts/update-m21-concept-screen-goldens.sh`; every resulting cell and text
+diff must be reviewed. The update command never changes the generated PNGs.
 
 The generation specifications are retained in [`prompts.md`](prompts.md).

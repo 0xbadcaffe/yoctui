@@ -305,18 +305,19 @@ Progress counts required registry tasks, including the parent completion gate.
 
 | Phase | Scope | Task IDs | Progress |
 |---|---|---|---:|
-| 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 1/3 |
+| 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 2/3 |
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 0/6 |
 | 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 0/10 |
 | 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 0/5 |
 | 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **1/38 (2.6%)** |
+| **M21 total** | | | **2/38 (5.3%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **541/578 (93.6%)** while honestly showing
-that the new milestone has only its research/specification task complete.
+tasks makes overall required progress **542/578 (93.8%)**. The research/spec,
+six-scene production-renderer acceptance baseline, exact cell goldens, semantic
+captures, and executable implementation-gap ledger are complete.
 
 ## Test strategy
 

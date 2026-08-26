@@ -15268,6 +15268,374 @@ mod tests {
         app
     }
 
+    fn concept_idle_dashboard_app() -> App {
+        let mut app = literal_reference_app();
+        app.screen = Screen::Dashboard;
+        app.focus = FocusTarget::Workspace;
+        app.build.status = BuildStatus::Idle;
+        app.build.started = None;
+        app.build.completed = 0;
+        app.build.total = None;
+        app.tasks.clear();
+        app.completed_tasks.clear();
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Exited;
+        app.daemon.jobs.clear();
+        app.daemon.pty_sessions.clear();
+        app.daemon.pty_screens.clear();
+        if let Some(telemetry) = app.daemon.telemetry.as_mut() {
+            telemetry.active_jobs = 0;
+            telemetry.pty_sessions = 0;
+        }
+        app
+    }
+
+    fn concept_failed_errors_app() -> App {
+        let mut app = literal_reference_app();
+        app.screen = Screen::Errors;
+        app.focus = FocusTarget::Workspace;
+        app.build.status = BuildStatus::Failed;
+        app.build.errors = 1;
+        app.build.exit_code = Some(1);
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Failed;
+        let failed_task = app
+            .tasks
+            .get_mut(&yoctui_model::TaskId("bash:do_compile".into()))
+            .expect("literal fixture has the selected compile task");
+        failed_task.state = yoctui_model::TaskState::Failed;
+        failed_task.progress = None;
+        failed_task.finished = Some(literal_now());
+        let _ = update(
+            &mut app,
+            Action::Log(yoctui_model::LogEntry {
+                id: 0,
+                severity: Severity::Error,
+                message: "ERROR: bash:do_compile failed with exit code 1".into(),
+                recipe: Some("bash_5.2.21-2".into()),
+                task: Some("do_compile".into()),
+                path: Some("/home/user/yocto/build/tmp/log.do_compile.85873".into()),
+                timestamp: literal_now(),
+                build: Some("core-image-minimal".into()),
+                protected: true,
+                diagnostic: None,
+            }),
+        );
+        app
+    }
+
+    fn concept_rootfs_app() -> App {
+        let mut app = concept_idle_dashboard_app();
+        app.screen = Screen::Images;
+        app.focus = FocusTarget::Workspace;
+        app.build.target = Some("core-image-minimal".into());
+        app.workspace.recipes.push(yoctui_model::Recipe {
+            name: "core-image-minimal".into(),
+            version: Some("1.0".into()),
+            layer: Some("poky".into()),
+            ..Default::default()
+        });
+        let path = PathBuf::from(
+            "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal-qemux86-64.rootfs.ext4",
+        );
+        let artifact = yoctui_model::ImageArtifact {
+            identity: yoctui_model::ImageArtifactIdentity {
+                machine: "qemux86-64".into(),
+                image: "core-image-minimal".into(),
+                path: path.clone(),
+            },
+            kind: yoctui_model::ImageArtifactKind::RootFilesystem,
+            size_bytes: ImageArtifactField::Available(184 * 1024 * 1024),
+            modified_unix_seconds: ImageArtifactField::Available(1_777_231_023),
+            checksums: ImageArtifactField::Available(vec![yoctui_model::ImageChecksum {
+                algorithm: "sha256".into(),
+                digest: "6d8d5e7d0f5546a0".into(),
+                source: PathBuf::from(
+                    "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.sha256",
+                ),
+            }]),
+            manifests: ImageArtifactField::Available(vec![PathBuf::from(
+                "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.manifest",
+            )]),
+            licenses: ImageArtifactField::Available(vec![PathBuf::from(
+                "/home/user/yocto/build/tmp/deploy/licenses/core-image-minimal/license.manifest",
+            )]),
+            spdx: ImageArtifactField::Available(vec![PathBuf::from(
+                "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.spdx.json",
+            )]),
+            wic_files: ImageArtifactField::Available(Vec::new()),
+        };
+        app.image_artifact_selection = Some(artifact.identity.clone());
+        app.image_artifacts = ImageArtifactInventoryState::Available {
+            request: yoctui_model::ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: ImageArtifactField::Available(PathBuf::from(
+                    "/home/user/yocto/build/tmp/deploy/images/qemux86-64",
+                )),
+                artifacts: vec![artifact],
+            },
+        };
+        app
+    }
+
+    fn concept_editor_menu_app() -> App {
+        let mut app = concept_idle_dashboard_app();
+        app.screen = Screen::Recipes;
+        app.focus = FocusTarget::Dialog;
+        app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
+            recipe: "bash".into(),
+            root: PathBuf::from("/home/user/yocto/meta/recipes-extended/bash"),
+            files: vec![
+                PathBuf::from("bash_5.2.bb"),
+                PathBuf::from("files/0001-fix-build.patch"),
+            ],
+            selection: 0,
+            content: concat!(
+                "SUMMARY = \"GNU Bourne Again Shell\"\n",
+                "LICENSE = \"GPL-3.0-only\"\n",
+                "SRC_URI = \"https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz\"\n",
+                "inherit autotools\n\n",
+                "do_install:append() {\n",
+                "    install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash\n",
+                "}\n",
+            )
+            .into(),
+            editing: true,
+            dirty: true,
+        }));
+        app
+    }
+
+    fn concept_terminal_sessions_app() -> App {
+        let mut app = concept_idle_dashboard_app();
+        app.screen = Screen::Dashboard;
+        app.focus = FocusTarget::Workspace;
+        let first = app.pane_layout.focused;
+        app.pane_layout
+            .split(first, SplitAxis::Vertical)
+            .expect("concept fixture can split its terminal layout");
+        app.pty_selection = 0;
+        app.daemon.pty_sessions = [
+            yoctui_model::ClientDaemonPtySummary {
+                id: 1,
+                name: "shell · writer local-1".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 2,
+            },
+            yoctui_model::ClientDaemonPtySummary {
+                id: 2,
+                name: "devshell:busybox · read-only".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 2,
+            },
+        ]
+        .into();
+        app.daemon.pty_screens = vec![
+            yoctui_model::ClientDaemonPtyScreen {
+                session_id: 1,
+                columns: 88,
+                rows_count: 18,
+                cursor_column: 35,
+                cursor_row: 6,
+                rows: vec![
+                    "bspguy@builder:~/yocto/build$ bitbake-layers show-layers".into(),
+                    "layer                 path".into(),
+                    "meta                  /home/user/yocto/meta".into(),
+                    "meta-poky             /home/user/yocto/meta-poky".into(),
+                    "meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp".into(),
+                    "bspguy@builder:~/yocto/build$".into(),
+                ],
+                scrollback_lines: 0,
+            },
+            yoctui_model::ClientDaemonPtyScreen {
+                session_id: 2,
+                columns: 88,
+                rows_count: 18,
+                cursor_column: 18,
+                cursor_row: 5,
+                rows: vec![
+                    "busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs".into(),
+                    "CC      coreutils/ls.o".into(),
+                    "CC      coreutils/cp.o".into(),
+                    "LD      busybox_unstripped".into(),
+                    "busybox-devshell$".into(),
+                ],
+                scrollback_lines: 312,
+            },
+        ];
+        if let Some(telemetry) = app.daemon.telemetry.as_mut() {
+            telemetry.pty_sessions = 2;
+        }
+        app
+    }
+
+    fn concept_text_capture(terminal: &Terminal<TestBackend>) -> String {
+        let buffer = terminal.backend().buffer();
+        let mut output = String::new();
+        for y in 0..TARGET_GOLDEN_HEIGHT {
+            let mut row = (0..TARGET_GOLDEN_WIDTH)
+                .map(|x| buffer[(x, y)].symbol())
+                .collect::<String>();
+            while row.ends_with(' ') {
+                row.pop();
+            }
+            output.push_str(&row);
+            output.push('\n');
+        }
+        output
+    }
+
+    #[test]
+    fn concept_screen_contracts_render_through_production_renderer() {
+        let mut active = literal_reference_app();
+        active.focus = FocusTarget::Workspace;
+        let scenes = [
+            (
+                "idle-dashboard",
+                concept_idle_dashboard_app(),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-idle-dashboard-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-idle-dashboard-160x50.cells"
+                )),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-idle-dashboard-160x50.txt"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-idle-dashboard-160x50.txt"
+                )),
+            ),
+            (
+                "active-build-tasks",
+                active,
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-active-build-tasks-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-active-build-tasks-160x50.cells"
+                )),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-active-build-tasks-160x50.txt"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-active-build-tasks-160x50.txt"
+                )),
+            ),
+            (
+                "failed-build-errors",
+                concept_failed_errors_app(),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-failed-build-errors-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-failed-build-errors-160x50.cells"
+                )),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-failed-build-errors-160x50.txt"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-failed-build-errors-160x50.txt"
+                )),
+            ),
+            (
+                "rootfs-composition",
+                concept_rootfs_app(),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-rootfs-composition-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-rootfs-composition-160x50.cells"
+                )),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-rootfs-composition-160x50.txt"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-rootfs-composition-160x50.txt"
+                )),
+            ),
+            (
+                "editor-application-menu",
+                concept_editor_menu_app(),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-editor-application-menu-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-editor-application-menu-160x50.cells"
+                )),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-editor-application-menu-160x50.txt"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-editor-application-menu-160x50.txt"
+                )),
+            ),
+            (
+                "terminal-sessions",
+                concept_terminal_sessions_app(),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-terminal-sessions-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-terminal-sessions-160x50.cells"
+                )),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-terminal-sessions-160x50.txt"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/concept-terminal-sessions-160x50.txt"
+                )),
+            ),
+        ];
+
+        let update_goldens = std::env::var_os("YOCTUI_UPDATE_CONCEPT_GOLDENS").is_some();
+        for (name, app, cell_path, cell_fixture, text_path, text_fixture) in scenes {
+            let mut terminal =
+                Terminal::new(TestBackend::new(TARGET_GOLDEN_WIDTH, TARGET_GOLDEN_HEIGHT)).unwrap();
+            terminal
+                .draw(|frame| render_at(frame, &app, literal_now()))
+                .unwrap();
+            let actual_cells = literal_cells(&terminal);
+            let actual_text = concept_text_capture(&terminal);
+            if update_goldens {
+                fs::write(cell_path, serialize_target_golden(&actual_cells)).unwrap();
+                fs::write(text_path, actual_text).unwrap();
+            } else {
+                assert_target_golden(name, &parse_target_golden(cell_fixture), &actual_cells);
+                assert_eq!(
+                    text_fixture, actual_text,
+                    "concept screen {name} semantic capture changed; use the explicit update script only after reviewing the UI change"
+                );
+            }
+        }
+    }
+
     #[test]
     fn literal_reference_cell_and_style_golden() {
         let app = literal_reference_app();

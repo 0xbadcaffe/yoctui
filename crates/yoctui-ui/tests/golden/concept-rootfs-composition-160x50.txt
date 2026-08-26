@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                          Daemon: ✓ Connected  •  BitBake: – Exited│
+┌Navigator───────────┐┌Images─────────────────────────────────────────────────────────────┐┌Inspector: Artifact────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││MACHINE qemux86-64 | build target core-image-minimal | 2 image     ││▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       ││recipe target(s)                                                   ││runqemu capability                                                 │
+│▾ CONTENT           ││Recipe targets: core-image-minimal, core-image-minimal             ││not inspected                                                      │
+│  ? Layers          ││/ [IDLE] Query: <empty> · 1/1 · ↑/↓                                ││Launch: runqemu capability has not been inspected.                 │
+│  ? Recipes         ││Image target                 Kind             Size       Timestamp ││                                                                   │
+│  ? Packages        ││  File                                                             ││Managed runqemu session                                            │
+│  ? Images          ││core-image-minimal           root filesystem  192937984  1777231023││No session has been launched.                                      │
+│  ? SDK             ││  core-image-minimal-qemux86-64.rootfs.ext4                        ││Wic: not inspected | Create disabled | Device write: disabled: Wic │
+│▾ BUILD             ││                                                                   ││capability has not been inspected. | Outputs and protected devices │
+│  ? Tasks           ││                                                                   ││not loaded                                                         │
+│  ▱ Logs        LIVE││                                                                   ││Selected artifact                                                  │
+│  ▱ Errors          ││                                                                   ││Machine: qemux86-64                                                │
+│  ? Configuration   ││                                                                   ││Image: core-image-minimal                                          │
+│  ? Dependencies    ││                                                                   ││Kind: root filesystem                                              │
+│▾ VALIDATE          ││                                                                   ││Path:                                                              │
+│  ? Testing         ││                                                                   ││/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-mini│
+│  ? Security        ││                                                                   ││mal-qemux86-64.rootfs.ext4                                         │
+│  ? QA              ││                                                                   ││Deploy directory:                                                  │
+│▾ TOOLS             ││                                                                   ││/home/user/yocto/build/tmp/deploy/images/qemux86-64                │
+│  ? Raw Mode        ││                                                                   ││Size: 192937984 bytes                                              │
+│  ? Devtool         ││                                                                   ││Timestamp: 1777231023s since Unix epoch                            │
+│  ? QEMU / Wic      ││                                                                   ││Limitations:                                                       │
+│  ? Maintenance     ││                                                                   ││none                                                               │
+│  ▱ Build environmen││                                                                   ││                                                                   │
+│  ▱ Compatibility   ││                                                                   ││Checksums:                                                         │
+│  ▱ Settings        ││                                                                   ││sha256 6d8d5e7d0f5546a0                                            │
+│                    ││                                                                   ││(/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-min│
+│                    ││                                                                   ││imal.sha256)                                                       │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││Manifests:                                                         │
+│                    ││                                                                   ││/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-mini│
+│                    ││                                                                   ││mal.manifest                                                       │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││Licenses:                                                          │
+│                    ││                                                                   ││/home/user/yocto/build/tmp/deploy/licenses/core-image-minimal/licen│
+│                    ││                                                                   ││se.manifest                                                        │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││SPDX/SBOM:                                                         │
+│                    ││                                                                   ││/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-mini│
+│                    ││                                                                   ││mal.spdx.json                                                      │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││Wic files:                                                         │
+│                    ││                                                                   ││none                                                               │
+│                    ││                                                                   ││                                                                   │
+└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+↑/↓ select   Q QEMU   W create Wic   D write device   x cancel   [/] output   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit       19:28:27
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

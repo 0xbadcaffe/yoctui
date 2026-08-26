@@ -24,6 +24,13 @@ file = "01-idle-dashboard.png"
 sha256 = "07e95f6364ccb7900ba8b213940e89fce0dd602679bfd2324a6aae38b8fbaba5"
 workspace = "Dashboard"
 state = "daemon current; BitBake idle"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt"
+real_yoctui_anchors = ["Status: Idle", "Tasks: 0/?", "Daemon: ✓ Connected", "19:28:27"]
+implementation_tasks = ["UX-DASHBOARD-001"]
+open_gaps = [
+  { task = "UX-DASHBOARD-001", description = "compose the concept's build overview, recent builds, quick actions, and complete resource-meter hierarchy" },
+]
 anchors = [
   "persistent header, Navigator, Workspace, Inspector, and footer",
   "Dashboard selected with one focused Workspace border",
@@ -42,6 +49,15 @@ file = "02-active-build-tasks.png"
 sha256 = "f04284e25cfe95d7e4eaebaffdfdda1f1bc806bd16743dd33eb2d06c3a674343"
 workspace = "Tasks"
 state = "daemon current; BitBake running; bash:do_compile selected at 72 percent"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.txt"
+real_yoctui_anchors = ["Tasks: core-image-minimal", "Overall  40%  4/10", "do_compile", "72%", "Log Viewer", "Job History", "19:28:27"]
+implementation_tasks = ["UX-PROGRESS-001", "UX-TELEMETRY-001", "UX-LOGS-001"]
+open_gaps = [
+  { task = "UX-PROGRESS-001", description = "add the complete hierarchical build, phase, selected-task, and job progress contract" },
+  { task = "UX-TELEMETRY-001", description = "complete the concept's exact resource meters and compact histories" },
+  { task = "UX-LOGS-001", description = "complete follow, position, search, filter-chip, bookmark, and loss-accounting affordances" },
+]
 anchors = [
   "7,240 of 10,056 determinate build progress at 72 percent",
   "selected active task row and Task Inspector agree",
@@ -60,6 +76,14 @@ file = "03-failed-build-errors.png"
 sha256 = "13aae79e57e1809479121497883a9f58c1eb399accadc515076b3cd48d486dcb"
 workspace = "Errors"
 state = "daemon current; BitBake failed; bash:do_compile error selected"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt"
+real_yoctui_anchors = ["Inspector: Error", "ERROR: bash:do_compile failed with exit code 1", "do_compile", "Daemon: ✓ Connected", "19:28:27"]
+implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001"]
+open_gaps = [
+  { task = "UX-LOGS-001", description = "add paused correlated-log search position, richer filters, bookmarks, and retained-loss presentation" },
+  { task = "UX-CHECKBOX-001", description = "replace ad hoc filter markers with accessible checked, unchecked, indeterminate, and disabled states" },
+]
 anchors = [
   "failed lifecycle is explicit in header and result summary",
   "structured errors and warnings table",
@@ -78,6 +102,15 @@ file = "04-rootfs-composition.png"
 sha256 = "43bc7057b6ea7f8fde0144d553c1570b3ea416a0f47ad919f99b589b7fb1c6d7"
 workspace = "Images / Rootfs composition"
 state = "current installed-package manifest; BitBake idle"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt"
+real_yoctui_anchors = ["Images", "root filesystem", "Selected artifact", "core-image-minimal", "SPDX/SBOM", "19:28:27"]
+implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001"]
+open_gaps = [
+  { task = "UX-ROOTFS-MODEL-001", description = "define installed-package and filesystem-tree composition authorities, totals, grouping, selection, and limitations" },
+  { task = "UX-ROOTFS-ADAPTER-001", description = "load correlated manifest/pkgdata and bounded IMAGE_ROOTFS evidence" },
+  { task = "UX-ROOTFS-UI-001", description = "add composition tabs, pie or bar view, exact table, checkboxes, and drill-down tree" },
+]
 anchors = [
   "installed-packages and filesystem-tree authorities are separate",
   "composition chart is paired with an exact sortable table",
@@ -96,6 +129,15 @@ file = "05-editor-application-menu.png"
 sha256 = "b03cf58fed711a2e33ec53e1335b91fecf837bc61348158e3d72c55e54fa0411"
 workspace = "Recipes / Editor"
 state = "modified recipe editor; BitBake idle; F10 Build menu owns focus"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt"
+real_yoctui_anchors = ["Recipe editor: bash", "Workspace file tree: bash", "bash_5.2.bb (editing modified)", "Ctrl+B build recipe"]
+implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001"]
+open_gaps = [
+  { task = "UX-MENU-001", description = "add the focus-trapped F10 Workspace/Build/Navigate/View/Tools/Help menu projected from the action catalog" },
+  { task = "UX-TEXTAREA-MODEL-001", description = "add explicit modes, selection, history, validation spans, and diff/save lifecycle" },
+  { task = "UX-TEXTAREA-UI-001", description = "render line numbers, mode/cursor status, validation, and diff preview without a second state authority" },
+]
 anchors = [
   "stable F10 menu groups and one focus-trapped dropdown",
   "disabled cancel action includes exact reason",
@@ -114,6 +156,14 @@ file = "06-terminal-sessions.png"
 sha256 = "18c9f05a21a16f26c5af525b5ad0db46bf234d96ba35cdeb4ac279895aea2638"
 workspace = "Terminal Sessions"
 state = "two PTY panes; local writer and remote read-only client"
+real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
+real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt"
+real_yoctui_anchors = ["shell · writer local-1", "devshell:busybox · read-only", "2 viewer(s) | selection 1", "bitbake-layers show-layers", "Ctrl+B prefix", "19:28:27"]
+implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001"]
+open_gaps = [
+  { task = "UX-TERMINAL-EVAL-001", description = "complete the evidence-based tui-term compatibility decision against typed terminal replicas" },
+  { task = "UX-TERMINAL-UX-001", description = "add the first-class destination, tabs, writer lease/take-control, search/copy, dropped-history, session actions, and prefix-help states" },
+]
 anchors = [
   "session tabs and two bounded split PTY panes",
   "writer and read-only ownership are textual",

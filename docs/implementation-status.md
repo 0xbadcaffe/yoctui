@@ -19,10 +19,13 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-1/38 (2.6%); overall required registry progress is 541/578 (93.6%).
-`UX-CONCEPT-VALIDATION-001` is the next task: it turns the six generated PNG
-concepts into production-renderer semantic/cell acceptance scenes and an
-explicit implementation-gap ledger. `UX-LICENSE-001` follows and intentionally
+2/38 (5.3%); overall required registry progress is 542/578 (93.8%).
+`UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
+typed fixtures through production `render_at` at `160x50`, with reviewed
+semantic captures and exact cell/style goldens. The manifest checks semantic
+anchors and maps 14 honest implementation gaps to incomplete owner tasks;
+failure tests reject corrupt dimensions, missing captures or anchors, and gaps
+whose owner is already complete. `UX-LICENSE-001` is next and intentionally
 admits no dependency until the reusable license, notice, source, feature, MSRV,
 SBOM, and locked-build gate exists.
 
