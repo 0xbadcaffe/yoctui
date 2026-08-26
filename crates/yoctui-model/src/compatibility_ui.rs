@@ -461,6 +461,8 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::PreviousSubfocus
         | CommandId::NextSubfocus
         | CommandId::TogglePaneZoom
+        | CommandId::ScrollFirst
+        | CommandId::ScrollLast
         | CommandId::OpenDashboard
         | CommandId::OpenLogs
         | CommandId::OpenErrors
@@ -654,7 +656,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::capability(
                 "recipes.dependencies",
                 "Dependencies",
-                "d",
+                "A",
                 Id::BitBakeRecipeDependencies,
             ),
             Action::capability(

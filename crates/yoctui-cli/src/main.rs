@@ -28,7 +28,7 @@ use std::{
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, MenuInputResult, MouseInput, MouseKind,
-    PrefixCommand, PrefixEvent, PrefixState, build_environment_action,
+    PrefixCommand, PrefixEvent, PrefixState, build_environment_action, collection_scroll_delta,
     compatibility_ui_inspector_action, compatibility_workspace_action,
     config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
     config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
@@ -57,7 +57,7 @@ use yoctui_app::{
     test_results_import_action, test_results_workspace_action, testing_workspace_action,
     wic_actions_for_runner_event, wic_cancellation_confirmation_action,
     wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
-    wic_write_confirmation_action, wic_write_phrase_action,
+    wic_write_confirmation_action, wic_write_phrase_action, workspace_collection_action,
 };
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, BuildEnvironmentAdapter, DevtoolCommandSpec,
@@ -11266,7 +11266,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         Input::Char('/') => {
                             compatibility_workspace_action(&mut app, Action::BeginMetadataSearch)
                         }
-                        Input::Char('g') => compatibility_workspace_action(
+                        Input::Char('i') => compatibility_workspace_action(
                             &mut app,
                             Action::SetLayerInspectorMode(LayerInspectorMode::Git),
                         ),
@@ -11705,6 +11705,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     app.screen == Screen::Settings && app.settings_dirty,
                     input,
                 ) {
+                    let _ = compatibility_workspace_action(&mut app, action);
+                } else if collection_scroll_delta(input).is_some()
+                    && let Some(action) = workspace_collection_action(&app, input)
+                {
                     let _ = compatibility_workspace_action(&mut app, action);
                 } else if app.screen == Screen::Packages
                     && package_workspace_action(app.package_searching, input).is_some()
@@ -12178,17 +12182,17 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == yoctui_model::Screen::Dashboard
-                    && matches!(input, Input::Up | Input::Down)
+                    && collection_scroll_delta(input).is_some()
                 {
-                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let delta = collection_scroll_delta(input).expect("scroll key was checked");
                     let _ = compatibility_workspace_action(
                         &mut app,
                         Action::ScrollBuildTasks { delta },
                     );
                 } else if app.screen == yoctui_model::Screen::BuildHistory
-                    && matches!(input, Input::Up | Input::Down)
+                    && collection_scroll_delta(input).is_some()
                 {
-                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let delta = collection_scroll_delta(input).expect("scroll key was checked");
                     let _ = compatibility_workspace_action(
                         &mut app,
                         Action::SelectBuildHistory { delta },
@@ -12226,7 +12230,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         &mut app,
                         Action::BeginSelectedRecipeDevtoolDeploy,
                     );
-                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('g') {
+                } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('A') {
                     if let Some(Effect::GetDependencies(recipe)) = compatibility_workspace_action(
                         &mut app,
                         Action::BeginSelectedRecipeDependencies,
@@ -12261,9 +12265,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let _ =
                         compatibility_workspace_action(&mut app, Action::BeginCurrentImageBuild);
                 } else if app.screen == yoctui_model::Screen::Recipes
-                    && matches!(input, Input::Up | Input::Down)
+                    && collection_scroll_delta(input).is_some()
                 {
-                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let delta = collection_scroll_delta(input).expect("scroll key was checked");
                     let _ =
                         compatibility_workspace_action(&mut app, Action::SelectRecipe { delta });
                 } else if app.screen == yoctui_model::Screen::Recipes && input == Input::Char('C') {
@@ -12280,9 +12284,9 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         Action::BeginSelectedRecipeCleanState,
                     );
                 } else if app.screen == yoctui_model::Screen::Layers
-                    && matches!(input, Input::Up | Input::Down)
+                    && collection_scroll_delta(input).is_some()
                 {
-                    let delta = if input == Input::Up { -1 } else { 1 };
+                    let delta = collection_scroll_delta(input).expect("scroll key was checked");
                     let _ = compatibility_workspace_action(&mut app, Action::SelectLayer { delta });
                 } else if app.screen == yoctui_model::Screen::Layers && input == Input::Enter {
                     if let Some(Effect::LoadLayerBrowserDirectory {
@@ -12400,10 +12404,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         let _ = compatibility_workspace_action(&mut app, action);
                     }
                 } else if app.screen == yoctui_model::Screen::Configuration
-                    && matches!(
-                        input,
-                        Input::Up | Input::Down | Input::Char('k') | Input::Char('j')
-                    )
+                    && collection_scroll_delta(input).is_some()
                 {
                     if let Some(action) = config_workspace_action(false, input) {
                         let _ = compatibility_workspace_action(&mut app, action);
@@ -12879,6 +12880,8 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Right => Some(Input::Right),
         KeyCode::Home => Some(Input::Home),
         KeyCode::End => Some(Input::End),
+        KeyCode::PageUp => Some(Input::PageUp),
+        KeyCode::PageDown => Some(Input::PageDown),
         _ => None,
     }
 }
@@ -14528,9 +14531,32 @@ mod tests {
             Some(Input::End)
         );
         assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::PageUp, KeyModifiers::NONE)),
+            Some(Input::PageUp)
+        );
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::PageDown, KeyModifiers::NONE)),
+            Some(Input::PageDown)
+        );
+        assert_eq!(
             input_from_key(KeyEvent::new(KeyCode::Char('v'), KeyModifiers::CONTROL)),
             Some(Input::CtrlV)
         );
+    }
+
+    #[test]
+    fn ux_scroll_real_terminal_page_and_edge_keys_decode_without_aliasing() {
+        for (key, input) in [
+            (KeyCode::PageUp, Input::PageUp),
+            (KeyCode::PageDown, Input::PageDown),
+            (KeyCode::Home, Input::Home),
+            (KeyCode::End, Input::End),
+        ] {
+            assert_eq!(
+                input_from_key(KeyEvent::new(key, KeyModifiers::NONE)),
+                Some(input)
+            );
+        }
     }
 
     #[test]

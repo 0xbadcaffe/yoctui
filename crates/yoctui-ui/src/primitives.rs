@@ -428,12 +428,11 @@ pub struct BoundedScrollIndicator {
 
 impl BoundedScrollIndicator {
     pub fn new(offset: usize, viewport: usize, total: usize) -> Self {
-        let viewport = viewport.max(1);
-        let maximum = total.saturating_sub(viewport);
+        let bounded = yoctui_model::BoundedScroll::new(offset, offset, viewport.max(1), total);
         Self {
-            offset: offset.min(maximum),
-            viewport,
-            total,
+            offset: bounded.offset,
+            viewport: bounded.viewport,
+            total: bounded.total,
         }
     }
 

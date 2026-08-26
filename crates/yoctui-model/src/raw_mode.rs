@@ -2088,8 +2088,8 @@ mod raw_execution_tests {
             },
         );
         assert!(!mode.output.follow);
-        assert_eq!(mode.output.vertical_scroll, 1_000_000);
-        assert_eq!(mode.output.horizontal_scroll, 1_000_000);
+        assert_eq!(mode.output.vertical_scroll, 0);
+        assert_eq!(mode.output.horizontal_scroll, 0);
         reduce_raw_mode(&mut mode, &catalog, None, RawModeAction::BeginOutputSearch);
         for character in "héllo".chars() {
             reduce_raw_mode(
@@ -3364,10 +3364,17 @@ pub fn reduce_raw_mode(
             vertical,
             horizontal,
         } => {
-            state.output.vertical_scroll =
-                shifted_unbounded(state.output.vertical_scroll, vertical);
-            state.output.horizontal_scroll =
-                shifted_unbounded(state.output.horizontal_scroll, horizontal);
+            let (maximum_vertical, maximum_horizontal) = raw_output_scroll_bounds(state);
+            state.output.vertical_scroll = shifted_index(
+                state.output.vertical_scroll,
+                maximum_vertical.saturating_add(1),
+                vertical,
+            );
+            state.output.horizontal_scroll = shifted_index(
+                state.output.horizontal_scroll,
+                maximum_horizontal.saturating_add(1),
+                horizontal,
+            );
             if vertical != 0 {
                 state.output.follow = false;
             }
@@ -3431,11 +3438,31 @@ pub fn reduce_raw_mode(
     reconcile_raw_mode(state, catalog);
 }
 
-fn shifted_unbounded(current: usize, delta: isize) -> usize {
-    if delta < 0 {
-        current.saturating_sub(delta.unsigned_abs())
-    } else {
-        current.saturating_add(delta as usize).min(1_000_000)
+fn raw_output_scroll_bounds(state: &RawModeState) -> (usize, usize) {
+    let Some(execution) = state.selected_execution() else {
+        return (0, 0);
+    };
+    let output = match state.output.stream {
+        RawOutputStream::Stdout => &execution.stdout,
+        RawOutputStream::Stderr => &execution.stderr,
+    };
+    let maximum_horizontal = output
+        .chunks
+        .iter()
+        .flat_map(|chunk| chunk.text.lines())
+        .map(|line| line.chars().count())
+        .max()
+        .unwrap_or(0)
+        .saturating_sub(1);
+    (output.retained_lines.saturating_sub(1), maximum_horizontal)
+}
+
+fn reconcile_raw_output_scroll(state: &mut RawModeState) {
+    let (maximum_vertical, maximum_horizontal) = raw_output_scroll_bounds(state);
+    state.output.vertical_scroll = state.output.vertical_scroll.min(maximum_vertical);
+    state.output.horizontal_scroll = state.output.horizontal_scroll.min(maximum_horizontal);
+    if state.output.follow {
+        state.output.vertical_scroll = 0;
     }
 }
 
@@ -3561,6 +3588,7 @@ fn reconcile_raw_mode(state: &mut RawModeState, catalog: &RawCatalog) {
     state.favorite_selection = state
         .favorite_selection
         .min(state.favorites.len().saturating_sub(1));
+    reconcile_raw_output_scroll(state);
 }
 
 fn reconcile_raw_command(state: &mut RawModeState, catalog: &RawCatalog) {

@@ -6008,7 +6008,7 @@ priority = 703
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo test -p yoctui-model ux_action_catalog", "cargo test -p yoctui-app ux_action_catalog", "cargo test -p yoctui-ui ux_action_catalog"]
-notes = "The model-owned catalog contains 122 validated unique entries: 23 global commands and 99 contextual workspace operations. Every entry carries stable ID, typed scope/target, menu path, label, description, aliases, keywords, displayed/default bindings, local and compatibility requirements, safety, footer priority, and Help group. Palette metadata/search and workspace compatibility presentations derive from it; Help projects its prioritized global actions. Local and daemon availability compose one exact disabled reason, the false F5 image-build hint is corrected to B, and six later focus/subfocus/zoom commands extend the catalog without a second inventory. Focused model/app/UI parity tests plus the full UI suite pass."
+notes = "The model-owned catalog contains 124 validated unique entries: 25 global commands and 99 contextual workspace operations. Every entry carries stable ID, typed scope/target, menu path, label, description, aliases, keywords, displayed/default bindings, local and compatibility requirements, safety, footer priority, and Help group. Palette metadata/search and workspace compatibility presentations derive from it; Help projects its prioritized global actions. Local and daemon availability compose one exact disabled reason, the false F5 image-build hint is corrected to B, six focus/subfocus/zoom commands and two collection-edge commands extend the catalog without a second inventory. Focused model/app/UI parity tests plus the full UI suite pass."
 
 [[task]]
 id = "UX-KEYMAP-MODEL-001"
@@ -6058,12 +6058,12 @@ notes = "Model-owned Workspace Main/Secondary/Context and Inspector Facts/Output
 id = "UX-SCROLL-001"
 milestone = "M21"
 title = "Standardize scrolling across every workspace"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 708
 required = true
 depends_on = ["UX-KEYMAP-MODEL-001"]
 verify = ["cargo test -p yoctui-model ux_scroll", "cargo test -p yoctui-app ux_scroll", "cargo test -p yoctui-ui ux_scroll", "cargo test -p yoctui -- ux_scroll"]
-notes = "Unify row/page/top/bottom, gg/G, horizontal, mouse-wheel, follow/search jump, resize, filter, and eviction semantics with retained textual position and property coverage."
+notes = "A pure model-owned BoundedScroll contract now normalizes row/page/first/last movement, resize reconciliation, visible ranges, textual positions, and stable-identity replacement with property coverage. Real PageUp/PageDown/Home/End and catalog gg/G keys plus mouse wheel share one app workspace dispatcher over existing typed reducers; recipe dependency and layer Git mnemonics moved to A/i to remove the g prefix conflict. Constant-time edge movement is applied to Navigator and primary collections. Logs preserve selected retained identity across filter/search and retention eviction, follow pins the tail while manual/search/correlated jumps pause exactly, horizontal offsets remain bounded, and Raw output clamps vertical/horizontal state to retained line/character bounds. Production rendering verifies textual positions at wide, medium, narrow, and no-color states; CLI verifies real terminal decoding."
 
 [[task]]
 id = "UX-WIDGET-PRIMITIVES-001"

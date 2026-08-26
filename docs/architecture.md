@@ -2967,7 +2967,7 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 122 validated definitions: 23
+`yoctui-model::action_catalog` now supplies 124 validated definitions: 25
 global command targets and 99 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
@@ -3010,6 +3010,16 @@ focus, subfocus, and zoom through the same catalog/menu/palette activation path.
 to act while Dialog or CommandPalette owns input. `yoctui-ui::responsive_shell`
 projects zoom as a single body pane plus breadcrumb at every supported
 breakpoint; rendering and resize cannot mutate the retained authority.
+
+`yoctui-model::scroll` owns the pure bounded selection, offset, viewport,
+range-label, row/page/edge movement, and stable-identity reconciliation
+contract. `ScrollCurrent` maps the two catalog edge commands back onto existing
+workspace reducer actions; it does not own an inventory. `yoctui-app` converts
+closed terminal keys into common signed deltas and uses one current-workspace
+dispatcher for keyboard and mouse wheel input. Reducers clamp against their
+authoritative filtered rows, while `yoctui-ui` derives transient scroll labels
+from the model contract. Log eviction/search and Raw retained-output bounds are
+reconciled in model state, never inferred by widgets.
 
 `KeymapPreferencesUiState` is also model-owned. It bounds the query and
 selection, holds only a typed pending capture plus an exact validation error,

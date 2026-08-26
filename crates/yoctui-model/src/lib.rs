@@ -22,6 +22,7 @@ mod qemu;
 mod raw_catalog_builtin;
 mod raw_mode;
 mod recipetool;
+mod scroll;
 mod sdk;
 mod security;
 mod terminal_emulation;
@@ -57,6 +58,7 @@ pub use raw_catalog_builtin::{
 };
 pub use raw_mode::*;
 pub use recipetool::*;
+pub use scroll::*;
 pub use sdk::*;
 pub use security::*;
 use serde::{Deserialize, Serialize};
@@ -361,6 +363,8 @@ pub enum CommandId {
     PreviousSubfocus,
     NextSubfocus,
     TogglePaneZoom,
+    ScrollFirst,
+    ScrollLast,
     OpenHelp,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3171,6 +3175,9 @@ impl LogState {
         }
     }
     pub fn insert(&mut self, mut entry: LogEntry) {
+        let selected_id = (!self.follow)
+            .then(|| self.selected().map(|entry| entry.id))
+            .flatten();
         if entry.diagnostic.is_none()
             && matches!(entry.severity, Severity::Warning | Severity::Error)
         {
@@ -3233,7 +3240,7 @@ impl LogState {
             self.retained_bytes = self.retained_bytes.saturating_sub(old.message.len());
             self.record_drop(&old);
         }
-        self.clamp_selection();
+        self.reconcile_selection(selected_id);
         if self.follow {
             self.selection = self.filtered().count().saturating_sub(1);
             self.scroll_offset = 0;
@@ -3308,6 +3315,15 @@ impl LogState {
             .filtered()
             .count()
             .saturating_sub(self.selection.saturating_add(1));
+    }
+
+    fn reconcile_selection(&mut self, selected_id: Option<u64>) {
+        let retained_selection = selected_id
+            .and_then(|selected_id| self.filtered().position(|entry| entry.id == selected_id));
+        if let Some(selection) = retained_selection {
+            self.selection = selection;
+        }
+        self.clamp_selection();
     }
 }
 fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
@@ -4736,6 +4752,9 @@ pub enum Action {
     },
     ResetPaneSubfocus,
     TogglePaneZoom,
+    ScrollCurrent {
+        to_end: bool,
+    },
     Focus(FocusTarget),
     OpenCommandPalette,
     SelectCommandPalette {
@@ -5970,6 +5989,8 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::PreviousSubfocus => Action::CyclePaneSubfocus { backwards: true },
         CommandId::NextSubfocus => Action::CyclePaneSubfocus { backwards: false },
         CommandId::TogglePaneZoom => Action::TogglePaneZoom,
+        CommandId::ScrollFirst => Action::ScrollCurrent { to_end: false },
+        CommandId::ScrollLast => Action::ScrollCurrent { to_end: true },
         CommandId::OpenHelp => Action::Open(Screen::Help),
     }
 }
@@ -7411,6 +7432,74 @@ fn select_package_identity(
     }
 }
 
+fn current_collection_edge_action(app: &App, to_end: bool) -> Option<Action> {
+    let delta = if to_end { isize::MAX } else { isize::MIN };
+    Some(match app.screen {
+        Screen::Dashboard | Screen::Tasks => Action::ScrollBuildTasks { delta },
+        Screen::BuildHistory => Action::SelectBuildHistory { delta },
+        Screen::Dependencies => Action::SelectDependencyGraphNode { delta },
+        Screen::Signatures => Action::SelectSignatureRecord { delta },
+        Screen::Recipes => Action::SelectRecipe { delta },
+        Screen::Packages => Action::SelectPackage { delta },
+        Screen::Images => Action::SelectImageArtifact { delta },
+        Screen::Sdk => Action::SelectSdkArtifact { delta },
+        Screen::Testing => match app.test_view {
+            TestWorkspaceView::Launches => Action::SelectTestFamily { delta },
+            TestWorkspaceView::Results if app.test_result_drilled => {
+                Action::SelectTestCase { delta }
+            }
+            TestWorkspaceView::Results => Action::SelectTestResult { delta },
+            TestWorkspaceView::Comparison => Action::SelectTestComparisonTransition { delta },
+        },
+        Screen::Security => Action::Security(if app.security.view == SecurityView::Cves {
+            SecurityAction::SelectFinding(delta)
+        } else if app.security.drilled {
+            SecurityAction::SelectComponent(delta)
+        } else {
+            SecurityAction::SelectReport(delta)
+        }),
+        Screen::Qa => Action::Qa(if app.qa.drilled {
+            QaAction::SelectFinding(delta)
+        } else if app.qa.view == QaView::LayerQa {
+            QaAction::SelectLayer(delta)
+        } else {
+            QaAction::SelectCheck(delta)
+        }),
+        Screen::Layers if app.layer_browser.is_some() => Action::SelectLayerBrowserEntry { delta },
+        Screen::Layers => Action::SelectLayer { delta },
+        Screen::Configuration => Action::SelectConfigVariable { delta },
+        Screen::RawMode => Action::RawMode(match app.raw_mode.view {
+            RawModeView::Browser if app.raw_mode.browser_column == RawBrowserColumn::Categories => {
+                RawModeAction::SelectCategory { delta }
+            }
+            RawModeView::Browser => RawModeAction::SelectCommand { delta },
+            RawModeView::History => RawModeAction::SelectHistory { delta },
+            RawModeView::Favorites => RawModeAction::SelectFavorite { delta },
+            RawModeView::Execution => RawModeAction::ScrollOutput {
+                vertical: if to_end { isize::MIN } else { isize::MAX },
+                horizontal: 0,
+            },
+            RawModeView::Form | RawModeView::Preview => return None,
+        }),
+        Screen::Maintenance => Action::Maintenance(MaintenanceAction::Select {
+            delta,
+            row_count: match app.maintenance.view {
+                MaintenanceView::Sstate => 2,
+                MaintenanceView::Services => 1,
+                MaintenanceView::Release | MaintenanceView::Integrations => 4,
+            },
+        }),
+        Screen::Logs => Action::ScrollLogs {
+            delta: delta.saturating_neg(),
+        },
+        Screen::Errors => Action::SelectError { delta },
+        Screen::BuildEnvironment => Action::SelectBuildEnvironmentField { delta },
+        Screen::Compatibility => Action::SelectCompatibilityCapability { delta },
+        Screen::Settings => Action::SelectSetting { delta },
+        Screen::LayerRelationships | Screen::Bbmask | Screen::Help => return None,
+    })
+}
+
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
         && matches!(
@@ -7426,6 +7515,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 | Action::CyclePaneSubfocus { .. }
                 | Action::ResetPaneSubfocus
                 | Action::TogglePaneZoom
+                | Action::ScrollCurrent { .. }
                 | Action::Focus(
                     FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector
                 )
@@ -7437,6 +7527,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::ScrollCurrent { to_end } => {
+            let action = current_collection_edge_action(app, to_end)?;
+            return update(app, action);
+        }
         Action::ProjectProfileAbsent => {
             app.project_profile = ProjectProfileState::Absent;
         }
@@ -7607,27 +7701,28 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::SelectNavigator { delta } => {
-            let backwards = delta.is_negative();
-            for _ in 0..delta.unsigned_abs() {
-                let mut candidate = app.navigator_selection;
-                loop {
-                    let next = if backwards {
-                        candidate.checked_sub(1)
-                    } else {
-                        candidate
-                            .checked_add(1)
-                            .filter(|next| *next < NAVIGATOR_SCREENS.len())
-                    };
-                    let Some(next) = next else {
-                        break;
-                    };
-                    candidate = next;
-                    if app.navigator_selection_is_visible(candidate) {
-                        app.navigator_selection = candidate;
-                        break;
-                    }
-                }
-            }
+            let visible = (0..NAVIGATOR_SCREENS.len())
+                .filter(|selection| app.navigator_selection_is_visible(*selection))
+                .collect::<Vec<_>>();
+            let next = if let Some(current) = visible
+                .iter()
+                .position(|selection| *selection == app.navigator_selection)
+            {
+                shifted_index(current, delta, visible.len())
+            } else if delta.is_negative() {
+                let current = visible
+                    .iter()
+                    .rposition(|selection| *selection < app.navigator_selection)
+                    .unwrap_or(0);
+                shifted_index(current, delta.saturating_add(1), visible.len())
+            } else {
+                let current = visible
+                    .iter()
+                    .position(|selection| *selection > app.navigator_selection)
+                    .unwrap_or_else(|| visible.len().saturating_sub(1));
+                shifted_index(current, delta.saturating_sub(1), visible.len())
+            };
+            app.navigator_selection = visible.get(next).copied().unwrap_or(0);
         }
         Action::SelectNavigatorAt { index } => {
             if index < NAVIGATOR_SCREENS.len() && app.navigator_selection_is_visible(index) {
@@ -8939,13 +9034,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .as_ref()
                 .and_then(|identity| visible.iter().position(|candidate| candidate == identity))
                 .unwrap_or(0);
-            let next = if delta.is_negative() {
-                current.saturating_sub(delta.unsigned_abs())
-            } else {
-                current
-                    .saturating_add(delta as usize)
-                    .min(visible.len().saturating_sub(1))
-            };
+            let next = shifted_index(current, delta, visible.len());
             app.image_artifact_selection = Some(visible[next].clone());
         }
         Action::BeginImageArtifactSearch => app.image_artifact_searching = true,
@@ -9157,13 +9246,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .as_ref()
                 .and_then(|identity| visible.iter().position(|candidate| candidate == identity))
                 .unwrap_or(0);
-            let next = if delta.is_negative() {
-                current.saturating_sub(delta.unsigned_abs())
-            } else {
-                current
-                    .saturating_add(delta as usize)
-                    .min(visible.len().saturating_sub(1))
-            };
+            let next = shifted_index(current, delta, visible.len());
             app.sdk_artifact_selection = Some(visible[next].clone());
         }
         Action::BeginSdkArtifactSearch => app.sdk_artifact_searching = true,
@@ -12714,14 +12797,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ScrollBuildTasks { delta } => {
             let task_count = app.visible_task_rows().len();
-            app.task_progress_scroll = if delta.is_negative() {
-                app.task_progress_scroll
-                    .saturating_sub(delta.unsigned_abs())
-            } else {
-                app.task_progress_scroll
-                    .saturating_add(delta as usize)
-                    .min(task_count.saturating_sub(1))
-            };
+            app.task_progress_scroll = shifted_index(app.task_progress_scroll, delta, task_count);
         }
         Action::CycleTaskStateFilter => {
             app.task_filters.state = app.task_filters.state.next();
@@ -12947,6 +13023,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CycleLogSeverity => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
             app.logs.filter = match app.logs.filter {
                 None => Some(Severity::Info),
                 Some(Severity::Info) => Some(Severity::Warning),
@@ -12954,20 +13031,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 Some(Severity::Error) | Some(Severity::Trace) => None,
             };
             app.logs.jump_target = None;
-            app.logs.clamp_selection();
+            app.logs.reconcile_selection(selected_id);
         }
         Action::ScrollLogs { delta } => {
             app.logs.follow = false;
             app.logs.paused_len = Some(app.logs.entries.len());
             let count = app.logs.filtered().count();
-            app.logs.selection = if delta.is_negative() {
-                app.logs
-                    .selection
-                    .saturating_add(delta.unsigned_abs())
-                    .min(count.saturating_sub(1))
-            } else {
-                app.logs.selection.saturating_sub(delta as usize)
-            };
+            app.logs.selection = shifted_index(app.logs.selection, delta.saturating_neg(), count);
             app.logs.scroll_offset = count.saturating_sub(app.logs.selection.saturating_add(1));
         }
         Action::BeginLogSearch => {
@@ -12977,16 +13047,19 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.paused_len = Some(app.logs.entries.len());
         }
         Action::AppendLogQuery(character) if app.logs.searching => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
             app.logs.query.push(character);
-            app.logs.clamp_selection();
+            app.logs.reconcile_selection(selected_id);
         }
         Action::BackspaceLogQuery if app.logs.searching => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
             app.logs.query.pop();
-            app.logs.clamp_selection();
+            app.logs.reconcile_selection(selected_id);
         }
         Action::ClearLogQuery => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
             app.logs.query.clear();
-            app.logs.clamp_selection();
+            app.logs.reconcile_selection(selected_id);
         }
         Action::FinishLogSearch => app.logs.searching = false,
         Action::NextLogMatch if !app.logs.query.is_empty() => {
@@ -13024,6 +13097,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
         }
         Action::CycleLogRecipeFilter => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
             app.logs.jump_target = None;
             let mut values = app
                 .logs
@@ -13034,9 +13108,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             values.sort();
             values.dedup();
             app.logs.recipe_filter = next_filter(&values, app.logs.recipe_filter.take());
-            app.logs.clamp_selection();
+            app.logs.reconcile_selection(selected_id);
         }
         Action::CycleLogTaskFilter => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
             app.logs.jump_target = None;
             let mut values = app
                 .logs
@@ -13047,9 +13122,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             values.sort();
             values.dedup();
             app.logs.task_filter = next_filter(&values, app.logs.task_filter.take());
-            app.logs.clamp_selection();
+            app.logs.reconcile_selection(selected_id);
         }
         Action::CycleLogBuildFilter => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
             app.logs.jump_target = None;
             let mut values = app
                 .logs
@@ -13060,7 +13136,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             values.sort();
             values.dedup();
             app.logs.build_filter = next_filter(&values, app.logs.build_filter.take());
-            app.logs.clamp_selection();
+            app.logs.reconcile_selection(selected_id);
         }
         Action::OpenSelectedLogSource => {
             if let Some(path) = app.logs.selected().and_then(|entry| entry.path.clone()) {
@@ -13076,13 +13152,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::SelectError { delta } => {
             let count = app.logs.diagnostics().count();
-            app.error_selection = if delta.is_negative() {
-                app.error_selection.saturating_sub(delta.unsigned_abs())
-            } else {
-                app.error_selection
-                    .saturating_add(delta as usize)
-                    .min(count.saturating_sub(1))
-            };
+            app.error_selection = shifted_index(app.error_selection, delta, count);
         }
         Action::JumpToSelectedError => {
             let id = {
@@ -13126,13 +13196,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .iter()
                 .position(|index| *index == app.recipe_selection)
                 .unwrap_or(0);
-            let position = if delta.is_negative() {
-                position.saturating_sub(delta.unsigned_abs())
-            } else {
-                position
-                    .saturating_add(delta as usize)
-                    .min(matches.len().saturating_sub(1))
-            };
+            let position = shifted_index(position, delta, matches.len());
             app.recipe_selection = matches.get(position).copied().unwrap_or(0);
         }
         Action::BeginSelectedRecipeBuild => {
@@ -14055,13 +14119,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .as_ref()
                 .and_then(|identity| visible.iter().position(|candidate| candidate == identity))
                 .unwrap_or(0);
-            let next = if delta.is_negative() {
-                current.saturating_sub(delta.unsigned_abs())
-            } else {
-                current
-                    .saturating_add(delta as usize)
-                    .min(visible.len().saturating_sub(1))
-            };
+            let next = shifted_index(current, delta, visible.len());
             app.package_selection = Some(visible[next].clone());
             app.package_dependency_selection = 0;
         }
@@ -14704,13 +14762,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::SelectLayer { delta } => {
-            app.layer_selection = if delta.is_negative() {
-                app.layer_selection.saturating_sub(delta.unsigned_abs())
-            } else {
-                app.layer_selection
-                    .saturating_add(delta as usize)
-                    .min(app.workspace.layers.len().saturating_sub(1))
-            };
+            app.layer_selection =
+                shifted_index(app.layer_selection, delta, app.workspace.layers.len());
         }
         Action::OpenSelectedLayer => {
             if let Some(layer) = app.workspace.layers.get(app.layer_selection) {
@@ -14801,13 +14854,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .iter()
                     .position(|index| *index == browser.selection)
                     .unwrap_or(0);
-                let position = if delta.is_negative() {
-                    position.saturating_sub(delta.unsigned_abs())
-                } else {
-                    position
-                        .saturating_add(delta as usize)
-                        .min(matches.len().saturating_sub(1))
-                };
+                let position = shifted_index(position, delta, matches.len());
                 browser.selection = matches.get(position).copied().unwrap_or(0);
                 if browser.selected_entry().is_some_and(|entry| entry.is_dir) {
                     browser.preview.clear();
@@ -16774,6 +16821,69 @@ mod tests {
         assert_eq!(
             logs.entries.front().map(|entry| entry.severity),
             Some(Severity::Error)
+        );
+    }
+    #[test]
+    fn ux_scroll_log_eviction_and_filtering_retain_selected_identity_when_present() {
+        let mut navigator = App::new(8, 1_000);
+        let _ = update(
+            &mut navigator,
+            Action::SelectNavigator { delta: isize::MAX },
+        );
+        assert_eq!(
+            navigator.navigator_selection,
+            NAVIGATOR_SCREENS.len() - 1,
+            "edge navigation must not iterate once per signed delta"
+        );
+        let _ = update(
+            &mut navigator,
+            Action::SelectNavigator { delta: isize::MIN },
+        );
+        assert_eq!(navigator.navigator_selection, 0);
+
+        let mut tasks = App::new(8, 1_000);
+        tasks.screen = Screen::Tasks;
+        for index in 0..15 {
+            let id = TaskId(format!("scroll-task-{index}"));
+            tasks.tasks.insert(
+                id.clone(),
+                TaskInfo::active(id, "busybox".into(), "do_compile".into()),
+            );
+        }
+        let _ = update(&mut tasks, Action::ScrollCurrent { to_end: true });
+        assert_eq!(tasks.task_progress_scroll, 14);
+        let _ = update(&mut tasks, Action::ScrollCurrent { to_end: false });
+        assert_eq!(tasks.task_progress_scroll, 0);
+
+        let mut logs = LogState::new(3, 1_000);
+        logs.insert(log("alpha"));
+        logs.insert(log("beta"));
+        logs.insert(log("gamma"));
+        logs.follow = false;
+        logs.paused_len = Some(3);
+        logs.selection = 1;
+        let beta_id = logs.selected().unwrap().id;
+
+        logs.insert(log("delta"));
+        assert_eq!(logs.selected().map(|entry| entry.id), Some(beta_id));
+        assert_eq!(
+            logs.selection, 0,
+            "eviction before the row shifts its index"
+        );
+
+        let mut app = App::new(8, 1_000);
+        app.logs.insert(log("alpha"));
+        app.logs.insert(log("beta match"));
+        app.logs.follow = false;
+        app.logs.paused_len = Some(2);
+        app.logs.selection = 1;
+        let beta_id = app.logs.selected().unwrap().id;
+        let _ = update(&mut app, Action::BeginLogSearch);
+        let _ = update(&mut app, Action::AppendLogQuery('b'));
+        assert_eq!(app.logs.selected().map(|entry| entry.id), Some(beta_id));
+        assert_eq!(
+            app.logs.selection, 0,
+            "filtering recomputes the stable row index"
         );
     }
     #[test]

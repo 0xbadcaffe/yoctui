@@ -102,7 +102,7 @@ are context rather than an independent reconstruction of `bblayers.conf`.
   `Enter` or `e` edits a selected file, `Ctrl+S` saves, and `Esc` returns.
 - Press `o` from the configured-layer inventory to use the configured external
   editor. Yoctui suspends and restores the terminal around that process.
-- In the layer browser, `g`, `m`, and `d` switch Inspector context among Git,
+- In the layer browser, `i`, `m`, and `d` switch Inspector context among Git,
   metadata, and relationships. Binary and oversized previews remain bounded.
 
 ### Recipes and Devtool
@@ -116,7 +116,7 @@ selected recipe's tasks, sources, patches, packages, and status.
   diffconfig, and diffsigs stay disabled unless the recipe reports that task.
 - `e` opens the exact provider, `o` selects an authoritative task log, and `p`
   selects a resolved local patch. Yoctui never guesses these paths.
-- `g` opens the typed Dependencies workspace. `Z` opens signature history for
+- `A` opens the typed Dependencies workspace. `Z` opens signature history for
   an authoritative recipe/task; choose sides with `1` and `2`, then `c` to
   compare. Lower-case `z` remains the confirmed BitBake `diffsigs` task.
 - `t` refreshes Devtool status. `d` previews `devtool modify` when needed or

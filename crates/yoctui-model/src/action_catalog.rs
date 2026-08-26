@@ -101,7 +101,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 23] = [
+const GLOBAL_COMMANDS: [CommandId; 25] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -124,6 +124,8 @@ const GLOBAL_COMMANDS: [CommandId; 23] = [
     CommandId::PreviousSubfocus,
     CommandId::NextSubfocus,
     CommandId::TogglePaneZoom,
+    CommandId::ScrollFirst,
+    CommandId::ScrollLast,
     CommandId::OpenHelp,
 ];
 
@@ -347,6 +349,24 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             "Toggle pane zoom",
             "Zoom or restore the focused pane without changing its state",
         ),
+        CommandId::ScrollFirst => navigation(
+            "navigate.collection-first",
+            "First row",
+            "Move to the first retained row in the active collection",
+            &["top", "start"],
+            &["navigate", "scroll", "first", "top", "collection"],
+            &["g g", "Home"],
+            55,
+        ),
+        CommandId::ScrollLast => navigation(
+            "navigate.collection-last",
+            "Last row",
+            "Move to the last retained row in the active collection",
+            &["bottom", "end"],
+            &["navigate", "scroll", "last", "bottom", "collection"],
+            &["G", "End"],
+            55,
+        ),
         CommandId::OpenHelp => GlobalMetadata {
             id: "help.open",
             scope: Scope::Global,
@@ -462,6 +482,8 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         | CommandId::PreviousSubfocus
         | CommandId::NextSubfocus
         | CommandId::TogglePaneZoom => "F10 View",
+        CommandId::ScrollFirst => "gg / Home",
+        CommandId::ScrollLast => "G / End",
         CommandId::OpenHelp => "? / F1",
     }
 }
@@ -490,7 +512,9 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         | CommandId::FocusInspector
         | CommandId::PreviousSubfocus
         | CommandId::NextSubfocus
-        | CommandId::TogglePaneZoom => None,
+        | CommandId::TogglePaneZoom
+        | CommandId::ScrollFirst
+        | CommandId::ScrollLast => None,
     }
 }
 
@@ -712,7 +736,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 122, "23 global plus 99 workspace actions");
+        assert_eq!(catalog.len(), 124, "25 global plus 99 workspace actions");
         assert!(
             catalog
                 .iter()

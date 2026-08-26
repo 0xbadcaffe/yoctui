@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-8/38 (21.1%); overall required registry progress is 548/578 (94.8%).
+9/38 (23.7%); overall required registry progress is 549/578 (95.0%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -30,7 +30,7 @@ candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
 compatibility, decisions, and a resolved CycloneDX graph; the real 236-package
 workspace graph has generated notices/SBOM and passes `cargo deny` plus a locked
 offline build. No candidate entered the workspace dependency graph.
-`UX-ACTION-CATALOG-001` is complete: 23 global commands and 99 contextual
+`UX-ACTION-CATALOG-001` is complete: 25 global commands and 99 contextual
 workspace actions now carry validated stable IDs, scope, menu/search/Help/footer
 metadata, local and compatibility requirements, safety, and typed targets. The
 palette and workspace presentations project the catalog, exact disabled reasons
@@ -52,7 +52,12 @@ subfocus and pane-only zoom retain exact selections and offsets, zoom has a
 responsive textual breadcrumb, outward Esc restores one ownership layer at a
 time, modal/terminal traps remain intact, and six read-only catalog commands
 provide direct F10 View/palette focus, subfocus, and zoom access. Standardized
-scrolling is next.
+scrolling is also complete: one pure bounded row/page/edge/viewport contract,
+one keyboard/mouse workspace dispatcher, real PageUp/PageDown/Home/End and
+catalog `gg`/`G` routes, constant-time edge jumps, stable log identity across
+filtering and eviction, retained Raw output bounds, textual responsive ranges,
+and property tests now agree across model, app, production UI, and CLI. Shared
+widget primitives are next.
 
 ### Completed baseline through M20
 

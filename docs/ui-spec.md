@@ -918,7 +918,7 @@ Inside the layer browser/editor:
 - `r`: refresh
 - `.`: toggle hidden files
 - `/`: search
-- `g`: Git details
+- `i`: Git details
 - `m`: metadata view
 - `d`: dependencies view
 - `Esc`: return to the configured-layer inventory
@@ -1829,7 +1829,7 @@ but never a task log unless the backend explicitly supplies one.
 
 State presentation is explicit:
 
-- not loaded: explain that Recipes `g` starts dependency inspection
+- not loaded: explain that Recipes `A` starts dependency inspection
 - loading: show the exact requested root and no stale graph rows
 - available-empty: show the root and `no dependency edges reported`
 - available: show the typed rows and Inspector
@@ -4334,7 +4334,7 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
-The implemented catalog currently contains 23 global commands and 99
+The implemented catalog currently contains 25 global commands and 99
 contextual workspace operations. Every entry has a validated lowercase stable
 ID, typed scope and target, complete presentation/search metadata, explicit
 local and environment requirements, safety class, footer priority, and Help
@@ -4370,6 +4370,23 @@ searches, `Ctrl+U` clears, `n`/`N` moves through matches, `Enter` is the primary
 open action, `Space` toggles checkable state, `a` opens actions, and `?` opens
 contextual Help. A focused popup editor or terminal owns its documented input
 instead of these workspace routes.
+
+The implemented collection route normalizes real terminal PageUp/PageDown,
+Home/End, `gg`/`G`, arrows, `j`/`k`, and Workspace mouse-wheel input before
+emitting the existing typed selection actions. A page is ten rows until a
+workspace supplies a measured viewport; every reducer still clamps against its
+current filtered authoritative inventory. `gg`/Home and `G`/End are catalog
+commands, so menus, palette, Help, effective bindings, and keyboard activation
+share one route. The former single-`g` conflicts are now `A` for selected-recipe
+dependency analysis and `i` for layer-browser Git Inspector context.
+
+`BoundedScroll` is the pure selection/offset/viewport/total contract. Resize,
+empty or replaced inventories, and extreme deltas reconcile in constant time,
+keep selection visible, and expose a textual current range. Log filtering and
+retention eviction first reconcile the selected retained log ID; follow pins
+the retained tail, while any vertical move pauses follow at an exact retained
+position. Raw output vertical and horizontal positions clamp to retained line
+and character bounds rather than a synthetic maximum.
 
 Custom bindings are keyed by stable action ID and scoped context. Loading or
 editing rejects active same-scope collisions, reserved terminal-prefix

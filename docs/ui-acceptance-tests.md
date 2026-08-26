@@ -49,7 +49,7 @@ entry is disabled:
 | --- | --- |
 | Global | `?` Help; `F5` build; `Ctrl+P` command palette; `/` search; `Tab`/`Shift+Tab` focus; `Esc` dashboard/out; `q` quit confirmation; `Ctrl+C` cancel; arrows and `j/k` selection; `Enter` activate; `Backspace` edit/delete where offered |
 | Navigator | `j/k` or `Up/Down` move; `Enter` open; `Tab` workspace; `Shift+Tab` inspector |
-| Layers/files | `Right/l` expand, `Left/h` collapse, `Enter` open/toggle, `e` edit, `o` external editor, `R` relationships, `r` refresh, `.` hidden files, `/` search, `g` Git, `m` metadata, `d` dependencies |
+| Layers/files | `Right/l` expand, `Left/h` collapse, `Enter` open/toggle, `e` edit, `o` external editor, `R` relationships, `r` refresh, `.` hidden files, `/` search, `i` Git, `m` metadata, `d` dependencies |
 | Tasks | `f` state filter, `F` field filter, `/` edit filter, `d` duration filter, `c` cancel |
 | Logs/errors | `f` follow, `w` wrap, `n/N` next/previous match, `s/R/T/B` filters, `o` source, `C` copy |
 | Recipes/config/dependencies | `b` build, `i` image, `r` refresh/recipes, `v` configuration, `o` provider, `L` task log, `1/2` comparison sides, `c` compare, `e` editor |

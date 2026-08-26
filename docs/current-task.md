@@ -2,46 +2,44 @@
 
 ## Task
 
-**ID:** UX-SCROLL-001
-**Title:** Standardize scrolling across every workspace
+**ID:** UX-WIDGET-PRIMITIVES-001
+**Title:** Build shared gauges meters charts tabs and scrollbar primitives
 **Status:** NOT_STARTED
 
 ## Objective
 
-Give every bounded collection and document one predictable typed scrolling
-model without replacing stable selections, search state, or follow authority.
+Create render-only semantic primitives for the visual workbench vocabulary
+without introducing widget-owned domain state or a second data authority.
 
 ## Dependencies
 
-- `UX-KEYMAP-MODEL-001` — DONE
+- `UX-SPEC-001` — DONE
 
 ## Relevant files
 
-- shared typed scroll model and reducer helpers
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-ui/src/lib.rs`
-- workspace-specific model and rendering modules
+- `crates/yoctui-ui/src/primitives.rs`
+- `crates/yoctui-ui/src/widgets.rs`
+- `crates/yoctui-ui/src/theme.rs`
+- typed model projections consumed by visual widgets
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 
 ## Definition of done
 
-- Row, page, top/bottom, `gg`/`G`, and horizontal scrolling are consistent.
-- Mouse wheel, follow/pause, search jumps, and correlated jumps share bounds.
-- Resize, filtering, inventory replacement, and retention eviction clamp safely.
-- Stable selected identity is retained whenever the authoritative row remains.
-- Every scrollable view exposes textual current/total or retained-range state.
-- Property coverage proves offsets and selections cannot escape bounded state.
+- Determinate gauges and meters always include exact numeric text.
+- Histories, charts, bars, tabs, legends, and scrollbars use semantic roles.
+- Unknown, unavailable, partial, empty, and terminal states remain explicit.
+- ASCII, no-color, high-contrast, and reduced-motion fallbacks retain meaning.
+- Responsive bounds and large/empty/Unicode inputs never panic or clip controls.
+- Every primitive is render-only over typed bounded projections.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_scroll
-cargo test -p yoctui-app ux_scroll
-cargo test -p yoctui-ui ux_scroll
-cargo test -p yoctui -- ux_scroll
+cargo test -p yoctui-ui ux_widget_primitives
+cargo test -p yoctui-model ux_widget_projection
 ./scripts/verify-roadmap.sh
 ```
 
-Scrolling is presentation state over typed bounded collections; it cannot
-create a second inventory, log-retention, or backend authority.
+Third-party widgets remain behind the completed license/dependency admission
+gate; small native primitives are preferred when they preserve the boundary.

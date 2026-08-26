@@ -47,7 +47,9 @@ impl ApplicationMenuGroup {
             | CommandId::OpenTasks
             | CommandId::OpenLogs
             | CommandId::OpenErrors
-            | CommandId::OpenConfiguration => Self::Navigate,
+            | CommandId::OpenConfiguration
+            | CommandId::ScrollFirst
+            | CommandId::ScrollLast => Self::Navigate,
             CommandId::ChooseTheme
             | CommandId::FocusNavigator
             | CommandId::FocusWorkspace

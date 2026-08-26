@@ -730,7 +730,7 @@ fn footer_shortcuts(app: &App) -> String {
             WorkspaceDestination::Layers,
             with_focus_shortcuts(
                 app,
-                "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | g Git | m metadata | d deps",
+                "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | i Git | m metadata | d deps",
             ),
         );
     }
@@ -27200,5 +27200,26 @@ mod tests {
         let shortcuts = footer_shortcuts(&app);
         assert!(shortcuts.contains("f Favorite | H History"), "{shortcuts}");
         assert!(shortcuts.contains("F1 Help | F10 Menu"), "{shortcuts}");
+    }
+
+    #[test]
+    fn ux_scroll_production_renderer_exposes_bounded_position_at_every_breakpoint() {
+        let mut app = App::new(16, 4_096);
+        let _ = update(&mut app, Action::Open(Screen::RawMode));
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("/32"), "{width}x{height}: {output}");
+            assert!(output.contains('↓'), "{width}x{height}: {output}");
+        }
+
+        let _ = update(
+            &mut app,
+            Action::RawMode(yoctui_model::RawModeAction::SelectCategory { delta: isize::MAX }),
+        );
+        app.color_enabled = false;
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("/32"), "{output}");
+        assert!(output.contains('↑'), "{output}");
+        assert!(!output.contains('�'), "{output}");
     }
 }

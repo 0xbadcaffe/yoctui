@@ -3698,6 +3698,8 @@ pub enum Input {
     Right,
     Home,
     End,
+    PageUp,
+    PageDown,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3781,6 +3783,24 @@ pub fn input_key_stroke(key: Input) -> yoctui_model::KeyStroke {
         Input::Right => Stroke::Right,
         Input::Home => Stroke::Home,
         Input::End => Stroke::End,
+        Input::PageUp => Stroke::PageUp,
+        Input::PageDown => Stroke::PageDown,
+    }
+}
+
+const DEFAULT_COLLECTION_PAGE_ROWS: isize = 10;
+
+/// Resolve the common collection vocabulary into one signed selection delta.
+/// Reducers still clamp against their authoritative filtered inventory.
+pub fn collection_scroll_delta(key: Input) -> Option<isize> {
+    match key {
+        Input::Up | Input::Char('k') => Some(-1),
+        Input::Down | Input::Char('j') => Some(1),
+        Input::PageUp => Some(-DEFAULT_COLLECTION_PAGE_ROWS),
+        Input::PageDown => Some(DEFAULT_COLLECTION_PAGE_ROWS),
+        Input::Home => Some(isize::MIN),
+        Input::End | Input::Char('G') => Some(isize::MAX),
+        _ => None,
     }
 }
 
@@ -3863,7 +3883,7 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "dashboard.build" => Input::Char('B'),
         "dashboard.cancel" => Input::Char('c'),
         "recipes.metadata" => Input::Enter,
-        "recipes.dependencies" => Input::Char('g'),
+        "recipes.dependencies" => Input::Char('A'),
         "recipes.build" => Input::Char('b'),
         "recipes.force_task" => Input::Char('f'),
         "recipes.signatures" => Input::Char('z'),
@@ -4099,7 +4119,7 @@ pub fn mouse_action_for_app(
             } else {
                 Input::Down
             };
-            return workspace_wheel_action(app, key);
+            return workspace_collection_action(app, key);
         }
         if matches!(mouse.kind, MouseKind::Down) {
             if let Some(action) = workspace_tab_click(app, region.area, mouse) {
@@ -4381,8 +4401,8 @@ fn dialog_mouse_action(mouse: MouseInput, app: &yoctui_model::App) -> Option<Act
     }
 }
 
-fn workspace_wheel_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
-    let delta = if key == Input::Up { -1 } else { 1 };
+pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    let delta = collection_scroll_delta(key)?;
     match app.screen {
         Screen::Dashboard | Screen::Tasks => tasks_action(app.task_filter_editing, key),
         Screen::BuildHistory => Some(Action::SelectBuildHistory { delta }),
@@ -4797,6 +4817,28 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
             _ => None,
         };
     }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return match state.view {
+            RawModeView::Browser => Some(match state.browser_column {
+                RawBrowserColumn::Categories => RawModeAction::SelectCategory { delta },
+                RawBrowserColumn::Commands => RawModeAction::SelectCommand { delta },
+            }),
+            RawModeView::History => Some(RawModeAction::SelectHistory { delta }),
+            RawModeView::Favorites => Some(RawModeAction::SelectFavorite { delta }),
+            RawModeView::Execution => {
+                let vertical = match key {
+                    Input::Home => isize::MAX,
+                    Input::End | Input::Char('G') => isize::MIN,
+                    _ => delta.saturating_neg(),
+                };
+                Some(RawModeAction::ScrollOutput {
+                    vertical,
+                    horizontal: 0,
+                })
+            }
+            RawModeView::Form | RawModeView::Preview => None,
+        };
+    }
     match state.view {
         RawModeView::Browser => match key {
             Input::Char('/') => Some(RawModeAction::BeginSearch),
@@ -4987,6 +5029,11 @@ pub fn key_action(key: Input) -> Option<Action> {
 }
 
 pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
+    if focus == FocusTarget::Navigator
+        && let Some(delta) = collection_scroll_delta(key)
+    {
+        return Some(Action::SelectNavigator { delta });
+    }
     match (focus, key) {
         (
             FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector,
@@ -5038,6 +5085,9 @@ pub fn focus_action_for_app(app: &yoctui_model::App, key: Input) -> Option<Actio
 }
 
 pub fn settings_action(key: Input) -> Option<Action> {
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectSetting { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectSetting { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectSetting { delta: 1 }),
@@ -5064,6 +5114,9 @@ pub fn compatibility_ui_inspector_action(searching: bool, key: Input) -> Option<
             _ => None,
         };
     }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectCompatibilityCapability { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectCompatibilityCapability { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectCompatibilityCapability { delta: 1 }),
@@ -5089,6 +5142,9 @@ pub fn compatibility_ui_inspector_action(searching: bool, key: Input) -> Option<
 }
 
 pub fn build_environment_action(key: Input) -> Option<Action> {
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectBuildEnvironmentField { delta });
+    }
     match key {
         Input::Char('e') => Some(Action::OpenBuildEnvironmentEditor),
         Input::Char('c') => Some(Action::OpenBuildEnvironmentCloneEditor),
@@ -5112,6 +5168,9 @@ pub fn tasks_action(editing: bool, key: Input) -> Option<Action> {
             _ => None,
         };
     }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::ScrollBuildTasks { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::ScrollBuildTasks { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::ScrollBuildTasks { delta: 1 }),
@@ -5131,6 +5190,11 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
             Input::Enter | Input::Esc => Some(Action::FinishLogSearch),
             _ => None,
         };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::ScrollLogs {
+            delta: delta.saturating_neg(),
+        });
     }
     match key {
         Input::Up | Input::Char('k') => Some(Action::ScrollLogs { delta: 1 }),
@@ -5153,6 +5217,9 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
     }
 }
 pub fn errors_action(key: Input) -> Option<Action> {
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectError { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectError { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectError { delta: 1 }),
@@ -5162,6 +5229,9 @@ pub fn errors_action(key: Input) -> Option<Action> {
     }
 }
 pub fn dependency_workspace_action(key: Input) -> Option<Action> {
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectDependencyGraphNode { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectDependencyGraphNode { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectDependencyGraphNode { delta: 1 }),
@@ -5182,6 +5252,9 @@ pub fn signature_task_picker_action(key: Input) -> Option<Action> {
     }
 }
 pub fn signature_workspace_action(key: Input) -> Option<Action> {
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectSignatureRecord { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectSignatureRecord { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectSignatureRecord { delta: 1 }),
@@ -5207,6 +5280,9 @@ pub fn package_workspace_action(searching: bool, key: Input) -> Option<Action> {
             Input::Enter | Input::Esc => Some(Action::FinishPackageSearch),
             _ => None,
         };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectPackage { delta });
     }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectPackage { delta: -1 }),
@@ -5236,6 +5312,9 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
             Input::Enter | Input::Esc => Some(Action::FinishImageArtifactSearch),
             _ => None,
         };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectImageArtifact { delta });
     }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectImageArtifact { delta: -1 }),
@@ -5278,6 +5357,9 @@ pub fn sdk_workspace_action(searching: bool, key: Input) -> Option<Action> {
             Input::Enter | Input::Esc => Some(Action::FinishSdkArtifactSearch),
             _ => None,
         };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectSdkArtifact { delta });
     }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectSdkArtifact { delta: -1 }),
@@ -5371,6 +5453,9 @@ pub fn sdk_cancellation_confirmation_action(key: Input) -> Option<Action> {
 }
 
 pub fn testing_workspace_action(key: Input) -> Option<Action> {
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectTestFamily { delta });
+    }
     match key {
         Input::Tab => Some(Action::CycleTestView),
         Input::Up | Input::Char('k') => Some(Action::SelectTestFamily { delta: -1 }),
@@ -5396,6 +5481,15 @@ pub fn security_workspace_action(
             Input::Enter | Input::Esc => security(SecurityAction::FinishSearch),
             _ => None,
         };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return security(if view == SecurityView::Cves {
+            SecurityAction::SelectFinding(delta)
+        } else if drilled {
+            SecurityAction::SelectComponent(delta)
+        } else {
+            SecurityAction::SelectReport(delta)
+        });
     }
     match key {
         Input::Tab => security(SecurityAction::CycleView),
@@ -5470,6 +5564,15 @@ pub fn qa_workspace_action(
             Input::Enter | Input::Esc => qa(QaAction::FinishSearch),
             _ => None,
         };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return qa(if drilled {
+            QaAction::SelectFinding(delta)
+        } else if view == QaView::LayerQa {
+            QaAction::SelectLayer(delta)
+        } else {
+            QaAction::SelectCheck(delta)
+        });
     }
     match key {
         Input::Tab => qa(QaAction::CycleView),
@@ -5557,6 +5660,9 @@ pub fn maintenance_workspace_action(
     key: Input,
 ) -> Option<Action> {
     let maintenance = |action| Some(Action::Maintenance(action));
+    if let Some(delta) = collection_scroll_delta(key) {
+        return maintenance(MaintenanceAction::Select { delta, row_count });
+    }
     match key {
         Input::Char('[') => maintenance(MaintenanceAction::CycleView { backwards: true }),
         Input::Char(']') | Input::Tab => {
@@ -6030,6 +6136,13 @@ pub fn test_results_workspace_action(searching: bool, drilled: bool, key: Input)
             _ => None,
         };
     }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(if drilled {
+            Action::SelectTestCase { delta }
+        } else {
+            Action::SelectTestResult { delta }
+        });
+    }
     match key {
         Input::Tab => Some(Action::CycleTestView),
         Input::Up | Input::Char('k') if drilled => Some(Action::SelectTestCase { delta: -1 }),
@@ -6053,6 +6166,9 @@ pub fn test_results_workspace_action(searching: bool, drilled: bool, key: Input)
 }
 
 pub fn test_comparison_workspace_action(key: Input) -> Option<Action> {
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectTestComparisonTransition { delta });
+    }
     match key {
         Input::Tab => Some(Action::CycleTestView),
         Input::Up | Input::Char('k') => Some(Action::SelectTestComparisonTransition { delta: -1 }),
@@ -6235,6 +6351,9 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
             _ => None,
         };
     }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectLayerBrowserEntry { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectLayerBrowserEntry { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectLayerBrowserEntry { delta: 1 }),
@@ -6247,7 +6366,7 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('.') => Some(Action::ToggleLayerBrowserHidden),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::CtrlU => Some(Action::ClearMetadataQuery),
-        Input::Char('g') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git)),
+        Input::Char('i') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git)),
         Input::Char('m') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Metadata)),
         Input::Char('d') => Some(Action::SetLayerInspectorMode(
             LayerInspectorMode::Dependencies,
@@ -6265,6 +6384,9 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
             _ => None,
         };
     }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectRecipe { delta });
+    }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectRecipe { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectRecipe { delta: 1 }),
@@ -6274,7 +6396,7 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('e') => Some(Action::OpenSelectedRecipeProvider),
         Input::Char('o') => Some(Action::BeginSelectedRecipeTaskLog),
         Input::Char('p') => Some(Action::BeginSelectedRecipePatchReview),
-        Input::Char('g') => Some(Action::BeginSelectedRecipeDependencies),
+        Input::Char('A') => Some(Action::BeginSelectedRecipeDependencies),
         Input::Char('f') => Some(Action::BeginSelectedRecipeForceTask),
         Input::Char('v') => Some(Action::BeginSelectedRecipeDevshell),
         Input::Char('K') => Some(Action::BeginSelectedRecipeDiffconfig),
@@ -6376,6 +6498,9 @@ pub fn config_workspace_action(searching: bool, key: Input) -> Option<Action> {
             Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
             _ => None,
         };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectConfigVariable { delta });
     }
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectConfigVariable { delta: -1 }),
@@ -9704,7 +9829,7 @@ mod tests {
             Some(Action::ToggleLayerBrowserHidden)
         );
         assert_eq!(
-            layer_tree_action(false, Input::Char('g')),
+            layer_tree_action(false, Input::Char('i')),
             Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git))
         );
         assert_eq!(
@@ -9723,7 +9848,7 @@ mod tests {
             Some(Action::BeginSelectedRecipeMetadata)
         );
         assert_eq!(
-            recipes_workspace_action(false, Input::Char('g')),
+            recipes_workspace_action(false, Input::Char('A')),
             Some(Action::BeginSelectedRecipeDependencies)
         );
         assert_eq!(
@@ -12404,7 +12529,7 @@ mod tests {
         let mut app = yoctui_model::App::new(16, 4096);
         app.screen = Screen::RawMode;
         assert_eq!(
-            workspace_wheel_action(&app, Input::Down),
+            workspace_collection_action(&app, Input::Down),
             Some(Action::RawMode(
                 yoctui_model::RawModeAction::SelectCategory { delta: 1 }
             ))
@@ -12829,7 +12954,7 @@ mod tests {
         assert_eq!(key_action(Input::Char('a')), Some(Action::OpenContextMenu));
         assert_eq!(
             context_menu_activation_input("recipes.dependencies"),
-            Some(Input::Char('g'))
+            Some(Input::Char('A'))
         );
         assert!(
             yoctui_model::operator_action_catalog()
@@ -12886,6 +13011,50 @@ mod tests {
         assert_eq!(
             menu_action(&app, Input::Esc),
             Some(MenuInputResult::Reduce(Box::new(Action::CloseMenu)))
+        );
+    }
+
+    #[test]
+    fn ux_scroll_common_keys_map_to_typed_bounded_collection_actions() {
+        assert_eq!(collection_scroll_delta(Input::Up), Some(-1));
+        assert_eq!(collection_scroll_delta(Input::Char('j')), Some(1));
+        assert_eq!(collection_scroll_delta(Input::PageUp), Some(-10));
+        assert_eq!(collection_scroll_delta(Input::PageDown), Some(10));
+        assert_eq!(collection_scroll_delta(Input::Home), Some(isize::MIN));
+        assert_eq!(collection_scroll_delta(Input::End), Some(isize::MAX));
+        assert_eq!(collection_scroll_delta(Input::Char('G')), Some(isize::MAX));
+
+        let mut chord_app = yoctui_model::App::new(8, 1_000);
+        assert_eq!(
+            keymap_action_for_app(&mut chord_app, Input::Char('g')),
+            KeymapInputResult::Pending
+        );
+        assert_eq!(
+            keymap_action_for_app(&mut chord_app, Input::Char('g')),
+            KeymapInputResult::Action(Box::new(Action::ScrollCurrent { to_end: false }))
+        );
+
+        assert_eq!(
+            tasks_action(false, Input::PageDown),
+            Some(Action::ScrollBuildTasks { delta: 10 })
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Home),
+            Some(Action::SelectRecipe { delta: isize::MIN })
+        );
+        assert_eq!(
+            logs_action(false, Input::End),
+            Some(Action::ScrollLogs { delta: -isize::MAX })
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::PageDown),
+            Some(Action::SelectNavigator { delta: 10 })
+        );
+
+        let state = yoctui_model::RawModeState::new(yoctui_model::builtin_raw_catalog());
+        assert_eq!(
+            raw_mode_input(&state, Input::PageDown),
+            Some(yoctui_model::RawModeAction::SelectCategory { delta: 10 })
         );
     }
 }
