@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-13/38 (34.2%); overall required registry progress is 553/578 (95.7%).
+14/38 (36.8%); overall required registry progress is 554/578 (95.8%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -74,7 +74,13 @@ current samples from wholly unavailable history, and drives both the compact
 strip and expanded Tasks Context charts. Context zoom retains bounded Job
 History and build-filesystem capacity, collapses to exact text at narrow
 heights, and remains safe for empty, partial, maximum-sized, Unicode,
-no-color, and reduced-motion inputs. Bounded log-explorer polish is next.
+no-color, and reduced-motion inputs. Bounded log-explorer polish is also
+complete: a viewport-only projection, exact typed source/time filters,
+explicit follow/search/position state, retained bookmarks, exact correlated
+task/error/job-history jumps, responsive action/filter presentation, preferred
+retention and loss accounting, and UTF-8-safe 64 KiB copy plus 256 KiB export
+caps are covered across model, app, and production UI regressions. A separate
+Yoctui self-diagnostic log view is next.
 
 ### Completed baseline through M20
 

@@ -828,7 +828,11 @@ fn footer_shortcuts(app: &App) -> String {
             "↑/↓ or j/k select | 1 All | 2 Available | 3 Limited | 4 Unavailable | 5 Attention | / search | Tab focus"
         }
         Screen::Logs => {
-            "↑/↓ select | ←/→ horizontal | f follow | w wrap | s severity | R/T/B filters | / search | n/N match | o source | C copy"
+            if app.logs.follow {
+                "↑/↓ select | ←/→ horizontal | f pause | w wrap | s/R/T/B/S/I filters | / search | n/N match | m bookmark | [/] bookmarks | o source | C copy | E export"
+            } else {
+                "↑/↓ select | ←/→ horizontal | f follow | w wrap | s/R/T/B/S/I filters | / search | n/N match | m bookmark | [/] bookmarks | o source | C copy | E export"
+            }
         }
         Screen::Errors => {
             "↑/↓ select | Enter logs | o open source | Esc dashboard | ? help | q quit"
@@ -4922,7 +4926,7 @@ fn inspector(
             || "No logs retained.".into(),
             |entry| {
                 format!(
-                    "Time: {}\nSeverity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\nProtected: {}",
+                    "Time: {}\nSeverity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\nProtected: {}\nBookmarked: {}",
                     timestamp_text(entry.timestamp),
                     entry.severity,
                     entry.build.as_deref().unwrap_or("unavailable"),
@@ -4933,6 +4937,11 @@ fn inspector(
                         .as_ref()
                         .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
                     if entry.protected { "yes" } else { "no" },
+                    if app.logs.is_bookmarked(entry.id) {
+                        "yes"
+                    } else {
+                        "no"
+                    },
                 )
             },
         ),
@@ -12046,7 +12055,74 @@ fn compact_log_activity(app: &App, width: u16) -> String {
     if detailed && app.logs.coalesced > 0 {
         segments.push(format!("↺ {} coalesced", app.logs.coalesced));
     }
+    if !app.logs.bookmarks.is_empty() {
+        segments.push(format!("★ {} bookmarked", app.logs.bookmarks.len()));
+    }
     segments.join(" · ")
+}
+
+fn log_filter_chips(app: &App, width: u16) -> String {
+    let source = app.logs.source_filter.as_ref().map_or("all", |_| "on");
+    let time = app.logs.time_range.label();
+    if width < 80 {
+        return format!(
+            "Filters R:{} T:{} B:{} S:{source} I:{time}",
+            if app.logs.recipe_filter.is_some() {
+                "on"
+            } else {
+                "all"
+            },
+            if app.logs.task_filter.is_some() {
+                "on"
+            } else {
+                "all"
+            },
+            if app.logs.build_filter.is_some() {
+                "on"
+            } else {
+                "all"
+            },
+        );
+    }
+    format!(
+        "Filters R:{} · T:{} · B:{} · S:{} · I:{time}",
+        app.logs.recipe_filter.as_deref().unwrap_or("all"),
+        app.logs.task_filter.as_deref().unwrap_or("all"),
+        app.logs.build_filter.as_deref().unwrap_or("all"),
+        app.logs.source_filter.as_ref().map_or_else(
+            || "all".into(),
+            |path| path.file_name().map_or_else(
+                || path.display().to_string(),
+                |name| name.to_string_lossy().into()
+            ),
+        ),
+    )
+}
+
+fn log_actions(app: &App, width: u16) -> String {
+    app.logs.selected().map_or_else(
+        || "Actions unavailable — no selected entry · E Export view".into(),
+        |entry| {
+            let bookmark = if app.logs.is_bookmarked(entry.id) {
+                "Remove"
+            } else {
+                "Bookmark"
+            };
+            if width >= 96 {
+                let mut value = format!(
+                    "Actions C Copy entry · E Export view · m {bookmark} bookmark · [/] bookmarks"
+                );
+                if entry.path.is_some() {
+                    value.push_str(" · o Open source log");
+                }
+                value
+            } else if entry.path.is_some() {
+                format!("Actions C Copy · o Open source log · E Export · m {bookmark} · [/] Marks")
+            } else {
+                format!("Actions C Copy · E Export · m {bookmark} · [/] Marks")
+            }
+        },
+    )
 }
 
 fn case_insensitive_ranges(value: &str, query: &str) -> Vec<(usize, usize)> {
@@ -12133,15 +12209,11 @@ fn selected_log_context(app: &App) -> String {
 fn logs(frame: &mut Frame, app: &App, area: Rect) {
     let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(3)]).split(area);
     let log_area = chunks[1];
-    let all_visible = app.logs.filtered().collect::<Vec<_>>();
     let height = log_area.height.saturating_sub(3) as usize;
-    let selection = app.logs.selection.min(all_visible.len().saturating_sub(1));
-    let end = selection
-        .saturating_add(1)
-        .max(height)
-        .min(all_visible.len());
-    let start = end.saturating_sub(height);
-    let visible = &all_visible[start..end];
+    let window = app.logs.window(height);
+    let selection = window.selection;
+    let start = window.start;
+    let visible = &window.entries;
     let mode = format!(
         "{}  ·  wrap {}  ·  severity {}",
         compact_log_activity(app, 40),
@@ -12150,12 +12222,8 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             .filter
             .map_or_else(|| "all".into(), |severity| format!("{severity:?}"))
     );
-    let filters = format!(
-        "Filters  R recipe: {}  ·  T task: {}  ·  B build: {}",
-        app.logs.recipe_filter.as_deref().unwrap_or("all"),
-        app.logs.task_filter.as_deref().unwrap_or("all"),
-        app.logs.build_filter.as_deref().unwrap_or("all")
-    );
+    let content_width = chunks[0].width.saturating_sub(2);
+    let filters = log_filter_chips(app, content_width);
     let pressure = if app.logs.dropped > 0 || app.logs.coalesced > 0 {
         format!(
             "{} evicted [W {} E {}], {} coalesced; retained {}/{} bytes",
@@ -12176,36 +12244,26 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         app,
         &app.logs.query,
         app.logs.searching,
-        (!all_visible.is_empty()).then_some(selection),
-        all_visible.len(),
+        (window.total > 0).then_some(selection),
+        window.total,
         SearchNavigation::Matches,
         SearchExit::Done,
         chunks[0].width.saturating_sub(2),
     );
-    let actions = app.logs.selected().map_or_else(
-        || "Actions  unavailable — no selected entry".into(),
-        |entry| {
-            let mut value = "Actions  C Copy full entry".to_owned();
-            if entry.path.is_some() {
-                value.push_str("  ·  o Open source log");
-            }
-            value
-        },
-    );
+    let actions = log_actions(app, content_width);
     frame.render_widget(
         Paragraph::new(vec![
-            Line::from(mode),
-            Line::from(actions),
-            Line::from(filters),
+            Line::from(bounded_cell_text(&mode, content_width)),
+            Line::from(bounded_cell_text(&actions, content_width)),
+            Line::from(bounded_cell_text(&filters, content_width)),
             search,
-            Line::from(pressure),
+            Line::from(bounded_cell_text(&pressure, content_width)),
         ])
         .block(pane_block(
             app,
             "Log activity",
             app.focus == FocusTarget::Workspace,
-        ))
-        .wrap(Wrap { trim: false }),
+        )),
         chunks[0],
     );
     let vertical = app.logs.vertical_position().map_or_else(
@@ -12228,7 +12286,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         },
     );
     let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
-    if all_visible.is_empty() {
+    if window.total == 0 {
         let inner = block.inner(log_area);
         frame.render_widget(block, log_area);
         let state = StateView {
@@ -12258,13 +12316,18 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             for (line_index, message) in log.message.lines().enumerate() {
                 let prefix = if line_index == 0 {
                     format!(
-                        "{} {} {} ",
+                        "{} {} {} {} ",
                         if selected { "▶" } else { " " },
+                        if app.logs.is_bookmarked(log.id) {
+                            "★"
+                        } else {
+                            " "
+                        },
                         log_severity_label(log.severity),
                         log.recipe.as_deref().unwrap_or("")
                     )
                 } else {
-                    "    ".into()
+                    "     ".into()
                 };
                 let style = if selected {
                     selected_log_style(app, log.severity)
@@ -12291,7 +12354,11 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             .skip(horizontal_offset)
             .collect::<String>();
         Row::new(vec![
-            Cell::from(log_severity_label(l.severity)),
+            Cell::from(if app.logs.is_bookmarked(l.id) {
+                format!("★ {}", log_severity_label(l.severity))
+            } else {
+                log_severity_label(l.severity).into()
+            }),
             Cell::from(l.recipe.as_deref().unwrap_or("")),
             Cell::from(l.task.as_deref().unwrap_or("")),
             Cell::from(Line::from(log_search_spans(app, &message))),
@@ -25127,7 +25194,7 @@ mod tests {
             output.contains("[EDITING] Query: needle▏ · 1/1"),
             "{output}"
         );
-        assert!(output.contains("build: core-image-minimal"), "{output}");
+        assert!(output.contains("B:core-image-minimal"), "{output}");
         let _ = rendered_text(&app, 50, 16);
     }
 
@@ -25171,7 +25238,7 @@ mod tests {
             "Ⅱ Paused",
             "! Warning",
             "✕ Error",
-            "C Copy full entry",
+            "C Copy",
             "o Open source log",
             "[FILTERED] Query: needle · 2/2",
         ] {
@@ -25204,7 +25271,7 @@ mod tests {
         app.logs.entries.back_mut().unwrap().path = None;
         let no_source = rendered_text(&app, 180, 30);
         assert!(!no_source.contains("o Open source log"), "{no_source}");
-        assert!(no_source.contains("C Copy full entry"), "{no_source}");
+        assert!(no_source.contains("C Copy"), "{no_source}");
 
         let mut empty = App::new(20, 4_000);
         empty.screen = Screen::Logs;
@@ -25291,6 +25358,64 @@ mod tests {
         );
         assert!(output.contains("Ⅱ Paused"), "{output}");
         assert!(output.contains("◆ Filtered"), "{output}");
+    }
+
+    #[test]
+    fn ux_logs_workspace_renders_virtualized_bookmarks_filter_chips_and_bounded_actions() {
+        let mut app = App::new(1_000, 500_000);
+        app.screen = Screen::Logs;
+        for index in 0..300 {
+            app.logs.insert(yoctui_model::LogEntry {
+                id: 0,
+                severity: if index == 299 {
+                    Severity::Warning
+                } else {
+                    Severity::Info
+                },
+                message: format!("bounded-log-{index:03}-日志"),
+                recipe: Some("busybox".into()),
+                task: Some("do_compile".into()),
+                path: Some("/logs/build.log".into()),
+                timestamp: SystemTime::UNIX_EPOCH + Duration::from_secs(index),
+                build: Some("core-image-minimal".into()),
+                protected: index == 299,
+                diagnostic: None,
+            });
+        }
+        app.logs.follow = false;
+        app.logs.paused_len = Some(app.logs.entries.len());
+        app.logs.selection = 299;
+        app.logs.source_filter = Some("/logs/build.log".into());
+        app.logs.time_range = yoctui_model::LogTimeRange::LastFiveMinutes;
+        assert!(app.logs.toggle_selected_bookmark());
+
+        for (width, height, wrap, color) in [
+            (160, 40, false, true),
+            (100, 30, true, true),
+            (80, 24, false, false),
+        ] {
+            app.logs.wrap = wrap;
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("bounded-log-299"), "{output}");
+            assert!(output.contains("★"), "{output}");
+            if width >= 120 {
+                assert!(output.contains("/logs/build.log"), "{output}");
+            } else {
+                assert!(output.contains("S:on"), "{output}");
+            }
+            assert!(output.contains("I:5m"), "{output}");
+            assert!(output.contains("E Export"), "{output}");
+            assert!(output.contains("m Remove"), "{output}");
+            assert!(!output.contains('\u{fffd}'), "{output}");
+        }
+
+        let window = app.logs.window(5);
+        assert_eq!(window.entries.len(), 5);
+        assert_eq!(
+            window.entries.last().unwrap().message,
+            "bounded-log-299-日志"
+        );
     }
 
     #[test]

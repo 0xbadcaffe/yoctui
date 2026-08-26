@@ -787,8 +787,8 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
         )],
         Destination::Logs => vec![Action::local(
             "logs.inspect",
-            "Filter/copy/open retained logs",
-            "/C/o",
+            "Filter/bookmark/copy/export/open retained logs",
+            "/m/[/]/C/E/o",
         )],
         Destination::Errors => vec![Action::local(
             "errors.inspect",

@@ -3129,6 +3129,51 @@ impl Default for BuildState {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum LogTimeRange {
+    All,
+    LastMinute,
+    LastFiveMinutes,
+    LastHour,
+}
+
+impl LogTimeRange {
+    pub const fn label(&self) -> &'static str {
+        match self {
+            Self::All => "all",
+            Self::LastMinute => "1m",
+            Self::LastFiveMinutes => "5m",
+            Self::LastHour => "1h",
+        }
+    }
+
+    const fn maximum_age(&self) -> Option<Duration> {
+        match self {
+            Self::All => None,
+            Self::LastMinute => Some(Duration::from_secs(60)),
+            Self::LastFiveMinutes => Some(Duration::from_secs(5 * 60)),
+            Self::LastHour => Some(Duration::from_secs(60 * 60)),
+        }
+    }
+
+    const fn next(&self) -> Self {
+        match self {
+            Self::All => Self::LastMinute,
+            Self::LastMinute => Self::LastFiveMinutes,
+            Self::LastFiveMinutes => Self::LastHour,
+            Self::LastHour => Self::All,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LogWindow<'a> {
+    pub entries: Vec<&'a LogEntry>,
+    pub start: usize,
+    pub total: usize,
+    pub selection: usize,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogState {
     pub entries: VecDeque<LogEntry>,
     pub max_entries: usize,
@@ -3145,12 +3190,15 @@ pub struct LogState {
     pub recipe_filter: Option<String>,
     pub task_filter: Option<String>,
     pub build_filter: Option<String>,
+    pub source_filter: Option<PathBuf>,
+    pub time_range: LogTimeRange,
     pub query: String,
     pub searching: bool,
     pub scroll_offset: usize,
     pub horizontal_offset: usize,
     pub selection: usize,
     pub jump_target: Option<u64>,
+    pub bookmarks: BTreeSet<u64>,
     next_id: u64,
 }
 impl LogState {
@@ -3171,12 +3219,15 @@ impl LogState {
             recipe_filter: None,
             task_filter: None,
             build_filter: None,
+            source_filter: None,
+            time_range: LogTimeRange::All,
             query: String::new(),
             searching: false,
             scroll_offset: 0,
             horizontal_offset: 0,
             selection: 0,
             jump_target: None,
+            bookmarks: BTreeSet::new(),
             next_id: 1,
         }
     }
@@ -3244,6 +3295,7 @@ impl LogState {
                 self.paused_len = self.paused_len.map(|visible| visible.saturating_sub(1));
             }
             self.retained_bytes = self.retained_bytes.saturating_sub(old.message.len());
+            self.bookmarks.remove(&old.id);
             self.record_drop(&old);
         }
         self.reconcile_selection(selected_id);
@@ -3255,6 +3307,13 @@ impl LogState {
     pub fn filtered(&self) -> impl Iterator<Item = &LogEntry> {
         let query = self.query.to_lowercase();
         let visible_len = self.paused_len.unwrap_or(self.entries.len());
+        let newest_timestamp = self
+            .entries
+            .iter()
+            .take(visible_len)
+            .map(|entry| entry.timestamp)
+            .max();
+        let maximum_age = self.time_range.maximum_age();
         self.entries.iter().take(visible_len).filter(move |e| {
             self.jump_target == Some(e.id)
                 || (self.filter.is_none_or(|s| s == e.severity)
@@ -3270,6 +3329,15 @@ impl LogState {
                         .build_filter
                         .as_ref()
                         .is_none_or(|build| e.build.as_ref() == Some(build))
+                    && self
+                        .source_filter
+                        .as_ref()
+                        .is_none_or(|source| e.path.as_ref() == Some(source))
+                    && maximum_age.is_none_or(|maximum_age| {
+                        newest_timestamp
+                            .and_then(|newest| newest.duration_since(e.timestamp).ok())
+                            .is_some_and(|age| age <= maximum_age)
+                    })
                     && (query.is_empty() || e.message.to_lowercase().contains(&query)))
         })
     }
@@ -3302,8 +3370,77 @@ impl LogState {
     pub fn match_position(&self) -> Option<(usize, usize)> {
         self.vertical_position()
     }
+    pub fn window(&self, viewport: usize) -> LogWindow<'_> {
+        let total = self.visible_count();
+        let selection = self.selection.min(total.saturating_sub(1));
+        let end = selection.saturating_add(1).max(viewport).min(total);
+        let start = end.saturating_sub(viewport);
+        let entries = self
+            .filtered()
+            .skip(start)
+            .take(viewport)
+            .collect::<Vec<_>>();
+        LogWindow {
+            entries,
+            start,
+            total,
+            selection,
+        }
+    }
+    pub fn is_bookmarked(&self, id: u64) -> bool {
+        self.bookmarks.contains(&id)
+    }
+    pub fn toggle_selected_bookmark(&mut self) -> bool {
+        let Some(id) = self.selected().map(|entry| entry.id) else {
+            return false;
+        };
+        if !self.bookmarks.remove(&id) {
+            self.bookmarks.insert(id);
+        }
+        true
+    }
+    pub fn select_bookmark(&mut self, forward: bool) -> bool {
+        let retained = self
+            .entries
+            .iter()
+            .filter(|entry| self.bookmarks.contains(&entry.id))
+            .map(|entry| entry.id)
+            .collect::<Vec<_>>();
+        if retained.is_empty() {
+            return false;
+        }
+        let current = self.selected().map(|entry| entry.id);
+        let position =
+            current.and_then(|id| retained.iter().position(|candidate| *candidate == id));
+        let target = if forward {
+            retained[(position.map_or(0, |position| position + 1)) % retained.len()]
+        } else {
+            retained[position.map_or(retained.len() - 1, |position| {
+                position.checked_sub(1).unwrap_or(retained.len() - 1)
+            })]
+        };
+        self.jump_to(target)
+    }
+    pub fn jump_to(&mut self, id: u64) -> bool {
+        if !self.entries.iter().any(|entry| entry.id == id) {
+            return false;
+        }
+        self.jump_target = Some(id);
+        self.follow = false;
+        self.paused_len = Some(self.entries.len());
+        let selection = self
+            .filtered()
+            .position(|entry| entry.id == id)
+            .unwrap_or(0);
+        let count = self.visible_count();
+        self.selection = selection;
+        self.scroll_offset = count.saturating_sub(selection.saturating_add(1));
+        true
+    }
     fn is_important(&self, entry: &LogEntry) -> bool {
-        entry.protected || matches!(entry.severity, Severity::Warning | Severity::Error)
+        entry.protected
+            || self.bookmarks.contains(&entry.id)
+            || matches!(entry.severity, Severity::Warning | Severity::Error)
     }
     fn record_drop(&mut self, entry: &LogEntry) {
         self.dropped += 1;
@@ -5467,8 +5604,14 @@ pub enum Action {
     CycleLogRecipeFilter,
     CycleLogTaskFilter,
     CycleLogBuildFilter,
+    CycleLogSourceFilter,
+    CycleLogTimeRange,
+    ToggleSelectedLogBookmark,
+    NextLogBookmark,
+    PreviousLogBookmark,
     OpenSelectedLogSource,
     CopySelectedLog,
+    ExportFilteredLogs,
     SelectError {
         delta: isize,
     },
@@ -5860,6 +6003,157 @@ pub fn format_log_details(entry: &LogEntry) -> String {
             .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
         entry.message,
     )
+}
+
+pub const MAX_LOG_COPY_BYTES: usize = 64 * 1024;
+pub const MAX_LOG_EXPORT_BYTES: usize = 256 * 1024;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LogExport {
+    pub content: String,
+    pub included: usize,
+    pub omitted: usize,
+    pub truncated: bool,
+}
+
+fn push_bounded(output: &mut String, value: &str, maximum_bytes: usize) -> bool {
+    let available = maximum_bytes.saturating_sub(output.len());
+    if value.len() <= available {
+        output.push_str(value);
+        return true;
+    }
+    let mut keep = available.min(value.len());
+    while keep > 0 && !value.is_char_boundary(keep) {
+        keep -= 1;
+    }
+    output.push_str(&value[..keep]);
+    false
+}
+
+fn append_truncation_marker(output: &mut String, marker: &str, maximum_bytes: usize) {
+    if marker.len() > maximum_bytes {
+        return;
+    }
+    if output.len().saturating_add(marker.len()) > maximum_bytes {
+        let mut keep = maximum_bytes - marker.len();
+        while keep > 0 && !output.is_char_boundary(keep) {
+            keep -= 1;
+        }
+        output.truncate(keep);
+    }
+    output.push_str(marker);
+}
+
+pub fn format_log_details_bounded(entry: &LogEntry) -> String {
+    let header = format!(
+        "Severity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\n\n",
+        entry.severity,
+        entry.build.as_deref().unwrap_or("unavailable"),
+        entry.recipe.as_deref().unwrap_or("unavailable"),
+        entry.task.as_deref().unwrap_or("unavailable"),
+        entry
+            .path
+            .as_ref()
+            .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+    );
+    let marker = "\n[copy truncated at 64 KiB]";
+    let content_limit = MAX_LOG_COPY_BYTES.saturating_sub(marker.len());
+    let mut output =
+        String::with_capacity(MAX_LOG_COPY_BYTES.min(header.len() + entry.message.len()));
+    let complete = push_bounded(&mut output, &header, content_limit)
+        && push_bounded(&mut output, &entry.message, content_limit);
+    if !complete {
+        append_truncation_marker(&mut output, marker, MAX_LOG_COPY_BYTES);
+    }
+    output
+}
+
+pub fn format_log_export(logs: &LogState) -> LogExport {
+    let total = logs.visible_count();
+    let mut content = String::with_capacity(MAX_LOG_EXPORT_BYTES.min(logs.retained_bytes));
+    let header = format!(
+        "Yoctui bounded log export\nVisible entries: {total}\nEvicted: {} [warnings {} errors {}]\nCoalesced: {}\n\n",
+        logs.dropped, logs.dropped_warnings, logs.dropped_errors, logs.coalesced
+    );
+    let marker = "\n[export truncated at 256 KiB]";
+    let content_limit = MAX_LOG_EXPORT_BYTES.saturating_sub(marker.len());
+    let mut truncated = !push_bounded(&mut content, &header, content_limit);
+    let mut included = 0;
+    if !truncated {
+        for entry in logs.filtered() {
+            let entry_header = format!(
+                "--- Log {} · {:?} ---\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\n",
+                entry.id,
+                entry.severity,
+                entry.build.as_deref().unwrap_or("unavailable"),
+                entry.recipe.as_deref().unwrap_or("unavailable"),
+                entry.task.as_deref().unwrap_or("unavailable"),
+                entry
+                    .path
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+            );
+            if !push_bounded(&mut content, &entry_header, content_limit)
+                || !push_bounded(&mut content, &entry.message, content_limit)
+                || !push_bounded(&mut content, "\n\n", content_limit)
+            {
+                truncated = true;
+                break;
+            }
+            included += 1;
+        }
+    }
+    if truncated {
+        append_truncation_marker(&mut content, marker, MAX_LOG_EXPORT_BYTES);
+    }
+    LogExport {
+        content,
+        included,
+        omitted: total.saturating_sub(included),
+        truncated,
+    }
+}
+
+fn selected_correlated_log_id(app: &App) -> Option<u64> {
+    let (build, recipe, task) = match app.screen {
+        Screen::Tasks => match app
+            .visible_task_row_refs_at(SystemTime::now())
+            .get(app.task_progress_scroll)
+            .copied()
+        {
+            Some(TaskRowRef::Task { task, .. }) => {
+                (None, Some(task.recipe.as_str()), Some(task.task.as_str()))
+            }
+            Some(TaskRowRef::WaitingSummary(_)) | None => return None,
+        },
+        Screen::BuildHistory => match app
+            .job_history_rows()
+            .get(app.build_history_selection)
+            .copied()
+        {
+            Some(JobHistoryRowRef::Background(job)) => (
+                job.context.target.as_deref(),
+                job.context.recipe.as_deref(),
+                job.context.task.as_deref(),
+            ),
+            Some(JobHistoryRowRef::Build(record)) => (record.target.as_deref(), None, None),
+            None => return None,
+        },
+        _ => return None,
+    };
+    if build.is_none() && recipe.is_none() && task.is_none() {
+        return None;
+    }
+    app.logs
+        .entries
+        .iter()
+        .rev()
+        .find(|entry| {
+            build.is_none_or(|build| entry.build.as_deref() == Some(build))
+                && recipe.is_none_or(|recipe| entry.recipe.as_deref() == Some(recipe))
+                && task.is_none_or(|task| entry.task.as_deref() == Some(task))
+        })
+        .map(|entry| entry.id)
 }
 
 fn is_pane_focus(target: FocusTarget) -> bool {
@@ -7636,6 +7930,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::Open(s) => {
+            let correlated_log_id = (s == Screen::Logs)
+                .then(|| selected_correlated_log_id(app))
+                .flatten();
             app.screen = s;
             app.focus = FocusTarget::Workspace;
             app.focus_return = None;
@@ -7648,6 +7945,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .position(|candidate| *candidate == s)
             {
                 app.navigator_selection = index;
+            }
+            if let Some(id) = correlated_log_id {
+                app.logs.jump_to(id);
             }
             if s == Screen::Packages
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
@@ -13144,6 +13444,41 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.logs.build_filter = next_filter(&values, app.logs.build_filter.take());
             app.logs.reconcile_selection(selected_id);
         }
+        Action::CycleLogSourceFilter => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
+            app.logs.jump_target = None;
+            let mut values = app
+                .logs
+                .entries
+                .iter()
+                .filter_map(|entry| entry.path.clone())
+                .collect::<Vec<_>>();
+            values.sort();
+            values.dedup();
+            app.logs.source_filter = next_filter(&values, app.logs.source_filter.take());
+            app.logs.reconcile_selection(selected_id);
+        }
+        Action::CycleLogTimeRange => {
+            let selected_id = app.logs.selected().map(|entry| entry.id);
+            app.logs.jump_target = None;
+            app.logs.time_range = app.logs.time_range.next();
+            app.logs.reconcile_selection(selected_id);
+        }
+        Action::ToggleSelectedLogBookmark => {
+            if !app.logs.toggle_selected_bookmark() {
+                app.notification = Some("No retained log entry is selected to bookmark.".into());
+            }
+        }
+        Action::NextLogBookmark => {
+            if !app.logs.select_bookmark(true) {
+                app.notification = Some("No retained log bookmarks are available.".into());
+            }
+        }
+        Action::PreviousLogBookmark => {
+            if !app.logs.select_bookmark(false) {
+                app.notification = Some("No retained log bookmarks are available.".into());
+            }
+        }
         Action::OpenSelectedLogSource => {
             if let Some(path) = app.logs.selected().and_then(|entry| entry.path.clone()) {
                 return Some(Effect::OpenInEditor(path));
@@ -13152,9 +13487,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::CopySelectedLog => {
             if let Some(entry) = app.logs.selected() {
-                return Some(Effect::CopyToClipboard(format_log_details(entry)));
+                return Some(Effect::CopyToClipboard(format_log_details_bounded(entry)));
             }
             app.notification = Some("No log entry is selected to copy.".into());
+        }
+        Action::ExportFilteredLogs => {
+            let export = format_log_export(&app.logs);
+            app.notification = Some(format!(
+                "Prepared bounded log export: {} entries, {} omitted.",
+                export.included, export.omitted
+            ));
+            return Some(Effect::CopyToClipboard(export.content));
         }
         Action::SelectError { delta } => {
             let count = app.logs.diagnostics().count();
@@ -13167,18 +13510,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .nth(app.error_selection)
                     .map(|entry| entry.id)
             };
-            if let Some(id) = id {
-                app.logs.jump_target = Some(id);
-                app.logs.follow = false;
-                app.logs.paused_len = Some(app.logs.entries.len());
-                let selection = app
-                    .logs
-                    .filtered()
-                    .position(|entry| entry.id == id)
-                    .unwrap_or(0);
-                let count = app.logs.filtered().count();
-                app.logs.selection = selection;
-                app.logs.scroll_offset = count.saturating_sub(selection.saturating_add(1));
+            if let Some(id) = id
+                && app.logs.jump_to(id)
+            {
                 app.screen = Screen::Logs;
             }
         }
@@ -15589,7 +15923,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     None
 }
 
-fn next_filter(values: &[String], current: Option<String>) -> Option<String> {
+fn next_filter<T: Clone + PartialEq>(values: &[T], current: Option<T>) -> Option<T> {
     let Some(current) = current else {
         return values.first().cloned();
     };
@@ -19632,6 +19966,160 @@ mod tests {
         };
         assert!(details.contains("Build: core-image-minimal"));
         assert!(details.contains("compiler output"));
+    }
+    #[test]
+    fn ux_logs_virtualized_window_and_source_time_filters_stay_bounded() {
+        let mut logs = LogState::new(12_000, 2_000_000);
+        for index in 0..10_000 {
+            let mut entry = log(&format!("entry-{index:05}"));
+            entry.path = Some(PathBuf::from(format!("/logs/source-{}", index % 3)));
+            entry.timestamp = SystemTime::UNIX_EPOCH + Duration::from_secs(index as u64);
+            logs.insert(entry);
+        }
+        logs.follow = false;
+        logs.paused_len = Some(logs.entries.len());
+        logs.selection = 9_000;
+        let window = logs.window(7);
+        assert_eq!(window.entries.len(), 7);
+        assert_eq!(window.start, 8_994);
+        assert_eq!(window.total, 10_000);
+        assert_eq!(window.entries.last().unwrap().message, "entry-09000");
+
+        logs.source_filter = Some(PathBuf::from("/logs/source-0"));
+        logs.time_range = LogTimeRange::LastMinute;
+        let filtered = logs.filtered().collect::<Vec<_>>();
+        assert!(filtered.len() <= 21);
+        assert!(
+            filtered
+                .iter()
+                .all(|entry| entry.path.as_deref() == Some(Path::new("/logs/source-0")))
+        );
+        assert!(filtered.iter().all(|entry| {
+            SystemTime::UNIX_EPOCH
+                .checked_add(Duration::from_secs(9_999))
+                .and_then(|latest| latest.duration_since(entry.timestamp).ok())
+                .is_some_and(|age| age <= Duration::from_secs(60))
+        }));
+    }
+
+    #[test]
+    fn ux_logs_bookmarks_survive_preferred_eviction_and_support_correlated_jumps() {
+        let mut app = App::new(3, 1_000);
+        for message in ["first", "second", "third"] {
+            let _ = update(&mut app, Action::Log(log(message)));
+        }
+        app.logs.follow = false;
+        app.logs.paused_len = Some(app.logs.entries.len());
+        app.logs.selection = 0;
+        let first_id = app.logs.selected().unwrap().id;
+        let _ = update(&mut app, Action::ToggleSelectedLogBookmark);
+        assert!(app.logs.is_bookmarked(first_id));
+
+        let _ = update(&mut app, Action::Log(log("fourth")));
+        assert!(app.logs.entries.iter().any(|entry| entry.id == first_id));
+        assert!(
+            !app.logs
+                .entries
+                .iter()
+                .any(|entry| entry.message == "second")
+        );
+
+        app.logs.paused_len = None;
+        let third_id = app
+            .logs
+            .entries
+            .iter()
+            .find(|entry| entry.message == "third")
+            .unwrap()
+            .id;
+        assert!(app.logs.jump_to(third_id));
+        let _ = update(&mut app, Action::ToggleSelectedLogBookmark);
+        let _ = update(&mut app, Action::NextLogBookmark);
+        assert_eq!(app.logs.selected().map(|entry| entry.id), Some(first_id));
+        let _ = update(&mut app, Action::PreviousLogBookmark);
+        assert_eq!(app.logs.selected().map(|entry| entry.id), Some(third_id));
+
+        assert!(!app.logs.jump_to(u64::MAX));
+        assert_eq!(app.logs.selected().map(|entry| entry.id), Some(third_id));
+    }
+
+    #[test]
+    fn ux_logs_tasks_errors_and_job_history_open_exact_correlated_records() {
+        let mut tasks = App::new(20, 4_000);
+        tasks.screen = Screen::Tasks;
+        let task = TaskInfo::active(
+            TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        let _ = update(&mut tasks, Action::TaskStarted(task));
+        let _ = update(&mut tasks, Action::Log(log("unrelated")));
+        let correlated = tagged_log(
+            "busybox",
+            "do_compile",
+            Severity::Warning,
+            "exact task warning",
+        );
+        let _ = update(&mut tasks, Action::Log(correlated));
+        let expected = tasks.logs.entries.back().unwrap().id;
+        let _ = update(&mut tasks, Action::Open(Screen::Logs));
+        assert_eq!(tasks.logs.selected().map(|entry| entry.id), Some(expected));
+        assert!(!tasks.logs.follow);
+
+        tasks.error_selection = 0;
+        tasks.screen = Screen::Errors;
+        let _ = update(&mut tasks, Action::JumpToSelectedError);
+        assert_eq!(tasks.logs.selected().map(|entry| entry.id), Some(expected));
+
+        let mut history = App::new(20, 4_000);
+        history.screen = Screen::BuildHistory;
+        history.build_history.push_back(BuildRecord {
+            target: Some("core-image-minimal".into()),
+            success: true,
+            exit_code: Some(0),
+            elapsed: Some(Duration::from_secs(1)),
+            completed_tasks: 1,
+            warnings: 0,
+            errors: 0,
+        });
+        let mut entry = log("matching build output");
+        entry.build = Some("core-image-minimal".into());
+        history.logs.insert(entry);
+        let expected = history.logs.entries.back().unwrap().id;
+        let _ = update(&mut history, Action::Open(Screen::Logs));
+        assert_eq!(
+            history.logs.selected().map(|entry| entry.id),
+            Some(expected)
+        );
+    }
+
+    #[test]
+    fn ux_logs_copy_and_filtered_export_are_unicode_safe_and_hard_bounded() {
+        let mut app = App::new(200, 2_000_000);
+        for index in 0..100 {
+            let _ = update(
+                &mut app,
+                Action::Log(log(&format!("{index:03}-{}", "構".repeat(40_000)))),
+            );
+        }
+        let Some(Effect::CopyToClipboard(copy)) = update(&mut app, Action::CopySelectedLog) else {
+            panic!("selected log copy must remain a typed effect");
+        };
+        assert!(copy.len() <= MAX_LOG_COPY_BYTES);
+        assert!(copy.ends_with("[copy truncated at 64 KiB]"));
+
+        let export = format_log_export(&app.logs);
+        assert!(export.content.len() <= MAX_LOG_EXPORT_BYTES);
+        assert!(export.truncated);
+        assert!(export.included < 100);
+        assert!(export.omitted > 0);
+        assert!(export.content.ends_with("[export truncated at 256 KiB]"));
+        let Some(Effect::CopyToClipboard(effect_export)) =
+            update(&mut app, Action::ExportFilteredLogs)
+        else {
+            panic!("filtered export must use the typed clipboard effect");
+        };
+        assert_eq!(effect_export, export.content);
     }
     #[test]
     fn log_terminal_diagnostics_are_protected_and_observable() {

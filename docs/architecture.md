@@ -532,11 +532,19 @@ cancellation, and lost-backend paths retain their exact states.
 
 `yoctui_model::LogState` owns the bounded visible-result projection used by
 the Log Viewer. Its vertical and horizontal position methods clamp selection
-and character offsets against the filtered retained entries. The UI adds
+and character offsets against the filtered retained entries. `LogWindow`
+counts within the bounded store but collects at most one viewport of borrowed
+entry references. Exact source filters, newest-retained-relative time ranges,
+and a retained-ID bookmark set remain reducer-owned. Bookmarks participate in
+preferred retention but are removed when hard bounds evict their entry; typed
+task, job-history, error, and bookmark jumps reuse one exact-ID reconciliation
+method without clearing filters. The UI adds
 context labels and case-insensitive hit spans only after receiving normalized
 typed `LogEntry` messages; ANSI stripping remains in the BitBake/process
-adapter. Full-entry copy and source-log opening continue through existing typed
-model actions and effects.
+adapter. Source-log opening and clipboard output continue through existing
+typed effects. Model formatters hard-cap an entry copy at 64 KiB and a filtered
+export at 256 KiB, retain UTF-8 boundaries, and append explicit truncation and
+omission accounting.
 
 `yoctui_model::App::job_history_rows` is the borrowed presentation projection
 for retained work. It merges background jobs and completed `BuildRecord`s

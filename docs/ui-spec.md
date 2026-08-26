@@ -1423,15 +1423,20 @@ Required features:
 - recipe filter
 - task filter
 - selected build filter
+- exact source-path filter
+- newest-retained-relative time-range filter
+- retained-entry bookmarks
 - source-path display
 - open source log in editor
 - copy selected line/details
+- copy a bounded filtered export
 - bounded retention and eviction counters
 
 The workspace is split into a five-line `Log activity` section and a primary
 `Log Viewer` section. The activity section keeps follow/pause and wrap state,
 active severity/recipe/task/build filters, visible search query/result
-position, retention pressure, and currently enabled actions visible. The
+position, exact source/time filter chips, bookmark count, retention pressure,
+and currently enabled actions visible. The
 Viewer title is:
 
 ```text
@@ -1454,17 +1459,39 @@ different explicit empty states. The log stream has no separate loading state:
 backend connection/reconnect state remains in System Status, and typed error
 records render as errors rather than a fabricated workspace-loading failure.
 
+Rendering requests a model-owned viewport window and allocates references only
+for the visible rows; it never collects the complete filtered result on a
+frame. Counting may scan the bounded retained store, but a `v`-row Viewer owns
+at most `v` row references. Source filtering compares the exact typed path.
+Time ranges cycle `all`, `1m`, `5m`, and `1h`, anchored to the newest retained
+typed timestamp so rendering needs no wall-clock mutation. Wide filter chips
+show exact values; compact chips retain `R/T/B/S/I` plus `all`, `on`, or the
+exact time range. The Inspector retains the full selected source path.
+
 Every severity has a text marker (`· Trace`, `i Info`, `! Warning`, `✕ Error`)
 as well as semantic styling. Incremental search highlights every visible
 case-insensitive match with the semantic accent role; no-color uses bold and
 underline attributes. Rendering consumes only the adapter-normalized retained
 message. It never parses ANSI or raw BitBake output.
 
-The selected log entry appears in the Inspector with full multiline content
-and metadata. `C Copy full entry` copies that complete structured retained
-entry through the existing typed clipboard effect. `o Open source log` is
+The selected log entry appears in the Inspector with full multiline content,
+bookmark state, and metadata. `C Copy entry` copies structured retained data
+through the existing typed clipboard effect, capped at 64 KiB with an explicit
+UTF-8-safe truncation marker. `E Export view` copies a deterministic header,
+loss counters, and filtered structured entries through the same typed effect,
+capped at 256 KiB with included/omitted counts and an explicit marker.
+`o Open source log` is
 listed only when the selected entry contains an authoritative source path; the
 action remains typed and is omitted otherwise.
+
+`m` toggles the selected retained ID in a bounded bookmark set. `]` and `[`
+jump to the next/previous retained bookmark with wraparound, temporarily
+exposing an exact bookmarked ID without clearing user filters. Bookmarked
+ordinary entries receive the same preferred-retention treatment as diagnostics,
+but hard entry/byte bounds still win; eviction removes the stale bookmark and
+increments ordinary or warning/error loss counters. Opening Logs from a
+selected Task or Job History record jumps to the newest exact recipe/task or
+build-correlated retained ID when one exists. Errors uses the same typed jump.
 
 Controls:
 
@@ -1476,9 +1503,11 @@ Controls:
 - `n`/`N` selects the next/previous search match
 - `Ctrl+U` clears the retained log query without changing other filters
 - `s`, `R`, `T`, and `B` cycle severity, recipe, task, and build filters
+- `S` cycles exact retained source paths; `I` cycles the time range
+- `m` toggles a bookmark; `]`/`[` select next/previous bookmarks
 - `o` opens the selected source path in the configured editor
-- `C` copies structured selected-entry details when a supported clipboard tool
-  is available
+- `C` copies bounded structured selected-entry details and `E` copies the
+  bounded filtered export when a supported clipboard tool is available
 
 Retention prefers warnings, errors, cancellation records, disconnects, and
 final results over ordinary informational entries. Repeated adjacent ordinary

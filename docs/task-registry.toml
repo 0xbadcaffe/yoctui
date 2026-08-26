@@ -6113,12 +6113,12 @@ notes = "One pure HostTelemetryProjection now bounds six CPU/RAM/disk/network hi
 id = "UX-LOGS-001"
 milestone = "M21"
 title = "Polish the bounded BitBake log explorer"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 713
 required = true
 depends_on = ["UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001"]
 verify = ["cargo test -p yoctui-model ux_logs", "cargo test -p yoctui-app ux_logs", "cargo test -p yoctui-ui ux_logs"]
-notes = "Add virtualized ranges, consistent scrolling, obvious follow/pause, search position, typed filter chips, bookmarks and correlated jumps, wrapped/unwrapped modes, loss accounting, and bounded export/copy."
+notes = "A model-owned LogWindow collects at most one visible viewport while exact source and newest-retained-relative time filters, explicit follow/pause, stable search and scrolling, retained-ID bookmarks, preferred eviction, loss accounting, and exact task/error/job-history jumps remain reducer-owned. Selected-entry copy is UTF-8-safe and capped at 64 KiB; deterministic filtered export is capped at 256 KiB with loss, included, omitted, and truncation accounting. Responsive/no-color UI, keyboard routes, Unicode, large-store bounds, and existing log regressions pass."
 
 [[task]]
 id = "UX-INTERNAL-LOG-001"

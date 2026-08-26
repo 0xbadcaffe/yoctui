@@ -5211,8 +5211,14 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('R') => Some(Action::CycleLogRecipeFilter),
         Input::Char('T') => Some(Action::CycleLogTaskFilter),
         Input::Char('B') => Some(Action::CycleLogBuildFilter),
+        Input::Char('S') => Some(Action::CycleLogSourceFilter),
+        Input::Char('I') => Some(Action::CycleLogTimeRange),
+        Input::Char('m') => Some(Action::ToggleSelectedLogBookmark),
+        Input::Char(']') => Some(Action::NextLogBookmark),
+        Input::Char('[') => Some(Action::PreviousLogBookmark),
         Input::Char('o') => Some(Action::OpenSelectedLogSource),
         Input::Char('C') => Some(Action::CopySelectedLog),
+        Input::Char('E') => Some(Action::ExportFilteredLogs),
         _ => None,
     }
 }
@@ -9741,6 +9747,23 @@ mod tests {
             Some(Action::AppendLogQuery('x'))
         );
         assert_eq!(logs_action(true, Input::Esc), Some(Action::FinishLogSearch));
+    }
+    #[test]
+    fn ux_logs_keyboard_routes_source_time_bookmarks_and_bounded_export() {
+        for (input, expected) in [
+            (Input::Char('S'), Action::CycleLogSourceFilter),
+            (Input::Char('I'), Action::CycleLogTimeRange),
+            (Input::Char('m'), Action::ToggleSelectedLogBookmark),
+            (Input::Char(']'), Action::NextLogBookmark),
+            (Input::Char('['), Action::PreviousLogBookmark),
+            (Input::Char('E'), Action::ExportFilteredLogs),
+        ] {
+            assert_eq!(logs_action(false, input), Some(expected));
+        }
+        assert_eq!(
+            logs_action(true, Input::Char('m')),
+            Some(Action::AppendLogQuery('m'))
+        );
     }
     #[test]
     fn search_clear_shortcut_maps_to_every_typed_domain() {
