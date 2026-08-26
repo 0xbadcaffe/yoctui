@@ -1870,13 +1870,21 @@ Layout:
 - inspector: selected node details, reverse/outgoing context, limitations, and
   path explanation
 
-Graph rendering must degrade gracefully in terminals. A tree/path view is mandatory; a visual graph is optional.
+Graph rendering degrades deterministically: terminals at least 130 columns use
+a topology projection, 100–129 use a tree, and narrower supported terminals use
+a compact table. All three retain the same typed relationship, stable source
+position, selection marker, and partial/clipping facts. No-color uses ASCII
+branches; the Inspector is the complete screen-reader text projection.
 
 The center rows come only from normalized `DependencyGraphState` nodes and use
 their deterministic model order. Each row shows recipe or task kind, its exact
 identity, and incoming/outgoing edge counts. Build, runtime, and task edge
 families are named in the Inspector; widgets never infer an edge from names,
 logs, or provider paths. `↑`/`↓` or `k`/`j` changes the selected typed identity.
+A linear-time adjacency index projects at most 8,192 rows and 64 levels;
+cycles/cross-edges are reported without revisiting identities, and disconnected
+authoritative nodes remain visible. Collapse, filtering, and row/depth clipping
+report hidden counts.
 Selection survives refresh when that identity remains, otherwise it returns to
 the graph root (or the first reported node if no root node exists).
 
@@ -1904,6 +1912,11 @@ Workspace shortcuts:
 - `o`: open only the selected node's absolute typed provider path
 - `L`: open only the selected task's absolute typed log path
 - `r`: refresh the same typed graph root
+- `←`/`→` or `h`/`l`: collapse or expand the selected identity
+- `Space`: toggle selected expansion
+- `/`: edit the bounded identity filter; `Ctrl+U` clears it
+- `v`: toggle forward/reverse traversal, anchoring reverse view at the current
+  typed selection so subsequent navigation remains stable
 - `Tab`/`Shift+Tab`: use the global pane focus cycle
 - `Esc`: return to Dashboard through the global action
 
@@ -1927,6 +1940,10 @@ pane switching retain the same selected identity and content. The global
 too-small view remains authoritative below 80×24. All supported breakpoint
 sizes must render empty, partial, cyclic, deeply bounded, and long-path data
 without panic.
+
+Mouse wheel uses the same typed selection reducer as keyboard navigation. A
+primary click resolves the exact projected row identity in the app layer; the
+stateless renderer never owns selection, expansion, filtering, or offsets.
 
 ---
 

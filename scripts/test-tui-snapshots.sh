@@ -4,7 +4,7 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 cargo build -p yoctui >/dev/null
 python3 - "$repo_root" <<'PY'
-import os, pty, select, struct, subprocess, sys, termios, fcntl, time, tempfile, re
+import atexit, os, pty, select, struct, subprocess, sys, termios, fcntl, time, tempfile, re
 root = sys.argv[1]
 artifact = os.path.join(root, 'artifacts', 'release-quality', 'snapshots')
 os.makedirs(artifact, exist_ok=True)
@@ -20,9 +20,29 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
             path = os.path.join(tmp, directory)
             os.mkdir(path, mode=0o700)
             isolated_env[variable] = path
+        binary = os.path.join(root, 'target/debug/yoctui')
+        build_dir = os.path.join(tmp, 'build')
+        daemon_prefix = [binary, '--backend', 'process', '--build-dir', build_dir, 'daemon']
+        subprocess.run(
+            daemon_prefix + ['start'],
+            check=True,
+            env=isolated_env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        stop_daemon = daemon_prefix + ['stop']
+        atexit.register(
+            lambda command=stop_daemon, environment=isolated_env: subprocess.run(
+                command,
+                env=environment,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                check=False,
+            )
+        )
         master, slave = pty.openpty()
         fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack('HHHH', height, width, 0, 0))
-        proc = subprocess.Popen([os.path.join(root, 'target/debug/yoctui'), '--backend', 'process', '--build-dir', os.path.join(tmp, 'build'), '--no-color'], stdin=slave, stdout=slave, stderr=slave, start_new_session=True, env=isolated_env)
+        proc = subprocess.Popen([binary, '--backend', 'process', '--build-dir', build_dir, '--no-color'], stdin=slave, stdout=slave, stderr=slave, start_new_session=True, env=isolated_env)
         os.close(slave)
         raw = bytearray(); deadline = time.monotonic() + 8
         while time.monotonic() < deadline and b'yoctui' not in raw.lower():
@@ -45,6 +65,13 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
         except subprocess.TimeoutExpired:
             proc.kill(); proc.wait(timeout=2)
         os.close(master)
+        subprocess.run(
+            stop_daemon,
+            env=isolated_env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
         text = bytes(raw).decode('utf-8', 'replace')
         normalized = re.sub(r'\x1b\[[0-9;?]*[ -/]*[@-~]', '', text)
         normalized = '\n'.join(line.rstrip() for line in normalized.splitlines() if line.strip())

@@ -4147,6 +4147,11 @@ pub fn mouse_action_for_app(
             {
                 return Some(action);
             }
+            if app.screen == Screen::Dependencies
+                && let Some(action) = dependency_row_click(app, region.area, mouse)
+            {
+                return Some(action);
+            }
             return Some(Action::Focus(FocusTarget::Workspace));
         }
         return None;
@@ -4484,7 +4489,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
     match app.screen {
         Screen::Dashboard | Screen::Tasks => tasks_action(app.task_filter_editing, key),
         Screen::BuildHistory => Some(Action::SelectBuildHistory { delta }),
-        Screen::Dependencies => dependency_workspace_action(key),
+        Screen::Dependencies => dependency_workspace_action(app.dependency_graph_searching, key),
         Screen::Signatures => signature_workspace_action(key),
         Screen::Recipes => recipes_workspace_action(app.metadata_searching, key),
         Screen::Packages => package_workspace_action(app.package_searching, key),
@@ -4598,6 +4603,41 @@ fn task_row_click(app: &yoctui_model::App, area: MouseRect, mouse: MouseInput) -
     (clicked < rows.len()).then_some(Action::ScrollBuildTasks {
         delta: clicked as isize - app.task_progress_scroll as isize,
     })
+}
+
+fn dependency_row_click(
+    app: &yoctui_model::App,
+    area: MouseRect,
+    mouse: MouseInput,
+) -> Option<Action> {
+    let graph = app.dependency_graph.graph()?;
+    let anchor = app.dependency_graph_anchor.as_ref().unwrap_or(&graph.root);
+    let projection = graph.project(
+        anchor,
+        app.dependency_graph_reverse,
+        &app.dependency_graph_query,
+        &app.dependency_graph_collapsed,
+        64,
+        8_192,
+    );
+    let first_row = area.y.saturating_add(2);
+    let visible_rows = usize::from(area.height.saturating_sub(3)).max(1);
+    if mouse.row < first_row || mouse.row >= first_row.saturating_add(visible_rows as u16) {
+        return None;
+    }
+    let selected = app
+        .dependency_graph_selection
+        .as_ref()
+        .and_then(|identity| projection.rows.iter().position(|row| &row.id == identity))
+        .unwrap_or(0);
+    let viewport_start = selected.saturating_add(1).saturating_sub(visible_rows);
+    let clicked = viewport_start + usize::from(mouse.row - first_row);
+    projection
+        .rows
+        .get(clicked)
+        .map(|row| Action::SelectDependencyGraphNodeAt {
+            identity: row.id.clone(),
+        })
 }
 
 fn terminal_session_mouse_action(
@@ -5365,7 +5405,16 @@ pub fn errors_action(key: Input) -> Option<Action> {
         _ => None,
     }
 }
-pub fn dependency_workspace_action(key: Input) -> Option<Action> {
+pub fn dependency_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendDependencyGraphQuery(character)),
+            Input::Backspace => Some(Action::BackspaceDependencyGraphQuery),
+            Input::CtrlU => Some(Action::ClearDependencyGraphQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishDependencyGraphSearch),
+            _ => None,
+        };
+    }
     if let Some(delta) = collection_scroll_delta(key) {
         return Some(Action::SelectDependencyGraphNode { delta });
     }
@@ -5376,6 +5425,12 @@ pub fn dependency_workspace_action(key: Input) -> Option<Action> {
         Input::Char('o') => Some(Action::OpenSelectedDependencyProvider),
         Input::Char('L') => Some(Action::OpenSelectedDependencyTaskLog),
         Input::Char('r') => Some(Action::RefreshDependencyGraph),
+        Input::Char('/') => Some(Action::BeginDependencyGraphSearch),
+        Input::CtrlU => Some(Action::ClearDependencyGraphQuery),
+        Input::Char('v') => Some(Action::ToggleDependencyGraphReverse),
+        Input::Left | Input::Char('h') => Some(Action::CollapseSelectedDependencyGraphNode),
+        Input::Right | Input::Char('l') => Some(Action::ExpandSelectedDependencyGraphNode),
+        Input::Char(' ') => Some(Action::ToggleSelectedDependencyGraphNode),
         _ => None,
     }
 }
@@ -10137,32 +10192,90 @@ mod tests {
         );
     }
     #[test]
-    fn dependency_workspace_maps_typed_navigation_refresh_and_open_actions() {
+    fn ux_dependency_graph_maps_typed_navigation_filter_topology_and_open_actions() {
         assert_eq!(
-            dependency_workspace_action(Input::Up),
+            dependency_workspace_action(false, Input::Up),
             Some(Action::SelectDependencyGraphNode { delta: -1 })
         );
         assert_eq!(
-            dependency_workspace_action(Input::Char('j')),
+            dependency_workspace_action(false, Input::Char('j')),
             Some(Action::SelectDependencyGraphNode { delta: 1 })
         );
         assert_eq!(
-            dependency_workspace_action(Input::Enter),
+            dependency_workspace_action(false, Input::Enter),
             Some(Action::OpenSelectedDependencyRecipe)
         );
         assert_eq!(
-            dependency_workspace_action(Input::Char('o')),
+            dependency_workspace_action(false, Input::Char('o')),
             Some(Action::OpenSelectedDependencyProvider)
         );
         assert_eq!(
-            dependency_workspace_action(Input::Char('L')),
+            dependency_workspace_action(false, Input::Char('L')),
             Some(Action::OpenSelectedDependencyTaskLog)
         );
         assert_eq!(
-            dependency_workspace_action(Input::Char('r')),
+            dependency_workspace_action(false, Input::Char('r')),
             Some(Action::RefreshDependencyGraph)
         );
-        assert_eq!(dependency_workspace_action(Input::Char('x')), None);
+        assert_eq!(
+            dependency_workspace_action(false, Input::Char('v')),
+            Some(Action::ToggleDependencyGraphReverse)
+        );
+        assert_eq!(
+            dependency_workspace_action(false, Input::Left),
+            Some(Action::CollapseSelectedDependencyGraphNode)
+        );
+        assert_eq!(
+            dependency_workspace_action(false, Input::Right),
+            Some(Action::ExpandSelectedDependencyGraphNode)
+        );
+        assert_eq!(
+            dependency_workspace_action(false, Input::Char('/')),
+            Some(Action::BeginDependencyGraphSearch)
+        );
+        assert_eq!(
+            dependency_workspace_action(true, Input::Char('b')),
+            Some(Action::AppendDependencyGraphQuery('b'))
+        );
+        assert_eq!(
+            dependency_workspace_action(true, Input::Esc),
+            Some(Action::FinishDependencyGraphSearch)
+        );
+        assert_eq!(dependency_workspace_action(false, Input::Char('x')), None);
+    }
+    #[test]
+    fn ux_dependency_graph_mouse_click_selects_exact_projected_identity() {
+        let root = DependencyNodeId::recipe("root");
+        let child = DependencyNodeId::recipe("child");
+        let (graph, _) = DependencyGraph::normalize(
+            root.clone(),
+            Vec::new(),
+            vec![DependencyEdge {
+                from: root,
+                to: child.clone(),
+                kind: DependencyEdgeKind::Build,
+            }],
+            10,
+            10,
+        );
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Dependencies;
+        app.focus = FocusTarget::Workspace;
+        app.dependency_graph = DependencyGraphState::Available(graph);
+        let action = mouse_action_for_app(
+            MouseInput {
+                kind: MouseKind::Down,
+                column: 24,
+                row: 5,
+            },
+            &app,
+            160,
+            48,
+        );
+        assert_eq!(
+            action,
+            Some(Action::SelectDependencyGraphNodeAt { identity: child })
+        );
     }
     #[test]
     fn recipe_bitbake_action_maps_standard_and_forced_task_controls() {

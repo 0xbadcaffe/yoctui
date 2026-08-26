@@ -146,10 +146,10 @@ default_features = false
 enabled_features = []
 transitive_closure = 48
 transitive_sha256 = "d6e10c93ca38b7a17a07dff646fd3509843d13de3f3cf8b57917cf18047b9ccc"
-decision = "defer"
+decision = "reject"
 admitted = false
 owner_task = "UX-DEPENDENCY-GRAPH-001"
-reason = "Topology rendering needs bounded typed graph and text-fallback evidence before a renderer is selected."
+reason = "Reject after the bounded projection spike: reducer-owned stable identity, reverse anchor, filtering, expansion, exact mouse selection, responsive topology/tree/table layouts, and ASCII/no-color text parity are complete without tui-nodes state or its 48-package closure."
 
 [[candidate]]
 name = "tui-piechart"

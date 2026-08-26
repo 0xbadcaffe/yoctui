@@ -2,45 +2,44 @@
 
 ## Task
 
-**ID:** UX-DEPENDENCY-GRAPH-001
-**Title:** Add navigable dependency topology visualization
+**ID:** UX-ROOTFS-MODEL-001
+**Title:** Define typed root filesystem composition state
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add a bounded, navigable dependency-topology view over authoritative recipe and
-package dependency data with stable selection and a complete text fallback.
+Define image-correlated installed-package and filesystem-tree composition
+authority with exact totals, bounded grouping/drilldown, stable selection, and
+honest lifecycle/limitation states.
 
 ## Dependencies
 
-- `UX-LIST-TREE-001` — DONE
-- `UX-LICENSE-001` — DONE
+- `UX-SPEC-001` — DONE
+- `IMAGES-001` — DONE
+- `PKG-001` — DONE
 
 ## Relevant files
 
-- dependency graph normalization and workspace reducer state
-- dependency workspace keyboard/mouse routes
-- graph/tree/table render adapters and responsive fallbacks
-- `tui-nodes` candidate decision and compliance evidence
-- `docs/ui-spec.md`
-- `docs/architecture.md`
+- rootfs composition model and protocol records
+- image-artifact correlation and generation identity
+- installed-package and filesystem-tree authority states
+- grouping, totals, percentages, drilldown, selection, and limitations
+- model/protocol/app normalization tests
 
 ## Definition of done
 
-- Nodes and edges retain authoritative stable identities, direction, cycles,
-  missing/partial authority, and hard count/depth bounds.
-- Keyboard and mouse navigation, expand/collapse, path inspection, reverse view,
-  filtering, and exact provider/log jumps are typed and selection-stable.
-- Wide topology, medium tree, narrow table, ASCII, no-color, and screen-reader
-  text projections preserve the same relationships and numeric position.
-- The `tui-nodes` spike is either admitted without a second state authority or
-  rejected with tested custom-renderer parity evidence.
+- Installed-package and filesystem-tree authorities remain separate and are
+  correlated to an exact image artifact and request generation.
+- Exact bytes, counts, totals, percentages, grouped `Other`, and drilldown rows
+  are deterministic, bounded, and overflow-safe.
+- Not-loaded, loading, available-empty, available, partial, unavailable, and
+  failed states preserve limitations without presenting stale data as current.
+- Selection survives replacement by stable identity and falls back explicitly.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_dependency_graph
-cargo test -p yoctui-app ux_dependency_graph
-cargo test -p yoctui-ui ux_dependency_graph
-cargo deny check
+cargo test -p yoctui-model ux_rootfs
+cargo test -p yoctui-protocol ux_rootfs
+cargo test -p yoctui-app ux_rootfs
 ```

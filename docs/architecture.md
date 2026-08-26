@@ -116,6 +116,18 @@ parse those formats. The legacy direct build/runtime lists remain a temporary
 compatibility input while acquisition and workspace tasks migrate to the graph
 state.
 
+`DependencyGraph::project` builds one deterministic adjacency index and emits a
+hard-bounded tree projection without becoming a second graph authority. The
+reducer alone owns the exact selected identity, reverse anchor, 256-byte filter,
+and collapsed identities. Projection rows retain source position, typed parent
+edge, depth, child/collapse state, disconnected authority, and explicit counts
+for filtering, clipping, depth, and cycle/cross-edge references. Stateless UI
+adapters render those same rows as wide topology, medium tree, or narrow table;
+the no-color path uses ASCII branches and the Inspector provides a complete
+screen-reader relationship/path description. `tui-nodes` is rejected because
+it would add widget-owned state and a 48-package closure without improving that
+parity boundary.
+
 Capable bridges acquire dependency graphs through BitBake's structured
 `generateDepTreeEvent` server command. The Python boundary validates and
 bounds the `pn`, `depends`, `rdepends-pn`, `providermap`, and `tdepends`

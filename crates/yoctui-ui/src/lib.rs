@@ -11926,6 +11926,56 @@ fn dependency_why_built(graph: &DependencyGraph, selected: &DependencyNodeId) ->
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DependencyLayoutMode {
+    Topology,
+    Tree,
+    Table,
+}
+
+fn dependency_layout_mode(terminal_width: u16) -> DependencyLayoutMode {
+    if terminal_width >= 130 {
+        DependencyLayoutMode::Topology
+    } else if terminal_width >= 100 {
+        DependencyLayoutMode::Tree
+    } else {
+        DependencyLayoutMode::Table
+    }
+}
+
+fn dependency_tree_label(
+    row: &yoctui_model::DependencyProjectionRow,
+    selected: bool,
+    ascii: bool,
+) -> String {
+    let indent = "  ".repeat(row.depth.min(64));
+    let branch = if row.depth == 0 {
+        ""
+    } else if ascii {
+        "`-"
+    } else {
+        "└─"
+    };
+    let expansion = match (row.has_children, row.collapsed) {
+        (true, true) => "+ ",
+        (true, false) => "- ",
+        (false, _) => "  ",
+    };
+    let relation = row
+        .edge_kind
+        .map(|kind| format!("[{}] ", dependency_edge_kind_text(kind)))
+        .unwrap_or_default();
+    format!(
+        "{}{}{}{}{}{}",
+        if selected { "> " } else { "  " },
+        indent,
+        branch,
+        expansion,
+        relation,
+        dependency_identity_text(&row.id)
+    )
+}
+
 fn dependency_inspector(app: &App) -> String {
     match &app.dependency_graph {
         DependencyGraphState::NotLoaded => {
@@ -11964,11 +12014,35 @@ fn dependency_inspector(app: &App) -> String {
                 }
                 _ => "none".into(),
             };
+            let position = graph
+                .nodes
+                .iter()
+                .position(|candidate| candidate.id == node.id)
+                .map_or_else(
+                    || "unavailable".into(),
+                    |index| format!("{} of {}", index + 1, graph.nodes.len()),
+                );
             format!(
-                "Root: {}\nSelected: {} ({})\nProvider: {}\nTask log: {}\n\nReverse / incoming:\n{}\n\nDependencies / outgoing:\n{}\n\nWhy built:\n{}\n\nLimitations:\n{}",
+                "Root: {}\nSelected: {} ({})\nPosition: {}\nView: {}\nFilter: {}{}\nProvider: {}\nTask log: {}\n\nReverse / incoming:\n{}\n\nDependencies / outgoing:\n{}\n\nWhy built:\n{}\n\nLimitations:\n{}\n\nControls: arrows/jk navigate; left/right collapse/expand; space toggles; / filters; v reverses; Enter opens recipe; o opens provider; L opens task log.",
                 dependency_identity_text(&graph.root),
                 dependency_identity_text(&node.id),
                 dependency_kind_text(&node.id),
+                position,
+                if app.dependency_graph_reverse {
+                    "reverse dependencies"
+                } else {
+                    "forward dependencies"
+                },
+                if app.dependency_graph_query.is_empty() {
+                    "none"
+                } else {
+                    &app.dependency_graph_query
+                },
+                if app.dependency_graph_searching {
+                    " (editing)"
+                } else {
+                    ""
+                },
                 node.provider
                     .as_ref()
                     .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
@@ -12058,52 +12132,130 @@ fn dependencies(frame: &mut Frame, app: &App, area: Rect) {
         counts.entry(&edge.from).or_default().1 += 1;
         counts.entry(&edge.to).or_default().0 += 1;
     }
+    let anchor = app.dependency_graph_anchor.as_ref().unwrap_or(&graph.root);
+    let projection = graph.project(
+        anchor,
+        app.dependency_graph_reverse,
+        &app.dependency_graph_query,
+        &app.dependency_graph_collapsed,
+        64,
+        8_192,
+    );
     let selected_index = app
         .dependency_graph_selection
         .as_ref()
-        .and_then(|selected| graph.nodes.iter().position(|node| &node.id == selected))
+        .and_then(|selected| projection.rows.iter().position(|row| &row.id == selected))
         .unwrap_or(0);
     let capacity = area.height.saturating_sub(3).max(1) as usize;
     let start = selected_index.saturating_add(1).saturating_sub(capacity);
-    let end = graph.nodes.len().min(start.saturating_add(capacity));
-    let rows = graph.nodes[start..end].iter().map(|node| {
-        let (incoming, outgoing) = counts.get(&node.id).copied().unwrap_or_default();
-        Row::new(vec![
-            Cell::from(dependency_kind_text(&node.id)),
-            Cell::from(dependency_identity_text(&node.id)),
-            Cell::from(incoming.to_string()),
-            Cell::from(outgoing.to_string()),
-        ])
-        .style(selected_style(
-            app,
-            app.dependency_graph_selection.as_ref() == Some(&node.id),
-        ))
+    let end = projection.rows.len().min(start.saturating_add(capacity));
+    let mode = dependency_layout_mode(frame.area().width);
+    let rows = projection.rows[start..end].iter().map(|row| {
+        let selected = app.dependency_graph_selection.as_ref() == Some(&row.id);
+        let (incoming, outgoing) = counts.get(&row.id).copied().unwrap_or_default();
+        let position = format!("{}/{}", row.source_index + 1, projection.source_total);
+        let cells = match mode {
+            DependencyLayoutMode::Topology => vec![
+                Cell::from(position),
+                Cell::from(dependency_tree_label(row, selected, app.color_forced_off)),
+                Cell::from(incoming.to_string()),
+                Cell::from(outgoing.to_string()),
+            ],
+            DependencyLayoutMode::Tree => vec![
+                Cell::from(position),
+                Cell::from(dependency_tree_label(row, selected, app.color_forced_off)),
+                Cell::from(row.depth.to_string()),
+            ],
+            DependencyLayoutMode::Table => vec![
+                Cell::from(position),
+                Cell::from(dependency_kind_text(&row.id)),
+                Cell::from(dependency_identity_text(&row.id)),
+                Cell::from(
+                    row.edge_kind
+                        .map(dependency_edge_kind_text)
+                        .unwrap_or("root"),
+                ),
+                Cell::from(incoming.to_string()),
+                Cell::from(outgoing.to_string()),
+            ],
+        };
+        Row::new(cells).style(selected_style(app, selected))
     });
-    frame.render_widget(
-        Table::new(
-            rows,
-            [
-                Constraint::Length(8),
-                Constraint::Min(18),
+    let (headers, constraints): (Vec<&str>, Vec<Constraint>) = match mode {
+        DependencyLayoutMode::Topology => (
+            vec!["Pos", "Topology / relationship", "In", "Out"],
+            vec![
+                Constraint::Length(9),
+                Constraint::Min(24),
                 Constraint::Length(4),
                 Constraint::Length(4),
             ],
-        )
-        .header(
-            Row::new(["Kind", "Identity", "In", "Out"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(
-            Block::default()
-                .title(format!(
-                    "Dependency graph: {} · {} nodes · {} edges{}",
-                    dependency_identity_text(&graph.root),
-                    graph.nodes.len(),
-                    graph.edges.len(),
-                    if partial { " · partial" } else { "" }
-                ))
-                .borders(Borders::ALL),
         ),
+        DependencyLayoutMode::Tree => (
+            vec!["Pos", "Tree / relationship", "Depth"],
+            vec![
+                Constraint::Length(9),
+                Constraint::Min(20),
+                Constraint::Length(5),
+            ],
+        ),
+        DependencyLayoutMode::Table => (
+            vec!["Pos", "Kind", "Identity", "Rel", "In", "Out"],
+            vec![
+                Constraint::Length(7),
+                Constraint::Length(7),
+                Constraint::Min(12),
+                Constraint::Length(7),
+                Constraint::Length(3),
+                Constraint::Length(3),
+            ],
+        ),
+    };
+    let limitations = projection.hidden_by_filter
+        + projection.hidden_by_collapse
+        + projection.truncated_depth
+        + projection.truncated_rows;
+    frame.render_widget(
+        Table::new(rows, constraints)
+            .header(Row::new(headers).style(Style::default().add_modifier(Modifier::BOLD)))
+            .block(
+                Block::default()
+                    .title(format!(
+                        "Dependency {}: {} · {} nodes · {} edges · {}{}{}{}",
+                        match mode {
+                            DependencyLayoutMode::Topology => "topology",
+                            DependencyLayoutMode::Tree => "tree",
+                            DependencyLayoutMode::Table => "table",
+                        },
+                        dependency_identity_text(&graph.root),
+                        graph.nodes.len(),
+                        graph.edges.len(),
+                        if app.dependency_graph_reverse {
+                            "reverse"
+                        } else {
+                            "forward"
+                        },
+                        if app.dependency_graph_searching {
+                            " · search editing"
+                        } else {
+                            ""
+                        },
+                        if app.dependency_graph_query.is_empty() {
+                            String::new()
+                        } else {
+                            format!(" · filter={}", app.dependency_graph_query)
+                        },
+                        if partial || limitations > 0 || projection.cycle_edges > 0 {
+                            format!(
+                                " · partial/hidden={} cycles={}",
+                                limitations, projection.cycle_edges
+                            )
+                        } else {
+                            String::new()
+                        }
+                    ))
+                    .borders(Borders::ALL),
+            ),
         area,
     );
 }
@@ -23320,7 +23472,7 @@ mod tests {
         assert!(!job_summary_label(&app, 100).contains("Daemon-owned"));
     }
     #[test]
-    fn dependency_workspace_renders_typed_partial_graph_paths_and_responsive_states() {
+    fn ux_dependency_graph_renders_typed_partial_paths_and_responsive_modes() {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Dependencies;
         let root = DependencyNodeId::recipe("image");
@@ -23357,16 +23509,14 @@ mod tests {
         };
         app.dependency_graph_selection = Some(task);
         let output = rendered_text(&app, 160, 36);
-        assert!(output.contains("Dependency graph"));
+        assert!(output.contains("Dependency topology"));
         assert!(output.contains("busybox:do_compile"));
         assert!(output.contains("runtime edges unavailable"));
         assert!(output.contains("--task-->"));
         assert!(output.contains("/layers/meta/busybox.bb"));
         assert!(output.contains("Reverse / incoming"));
-        for width in [129, 100, 80] {
-            let output = rendered_text(&app, width, 24);
-            assert!(output.contains("Dependency graph"));
-        }
+        assert!(rendered_text(&app, 110, 24).contains("Dependency tree"));
+        assert!(rendered_text(&app, 80, 24).contains("Dependency table"));
 
         app.focus = FocusTarget::Inspector;
         app.dependency_graph_selection = Some(orphan);
@@ -23387,7 +23537,7 @@ mod tests {
         assert!(rendered_text(&app, 80, 24).contains("server unavailable"));
     }
     #[test]
-    fn dependency_workspace_reports_path_bounds_without_panicking() {
+    fn ux_dependency_graph_reports_path_bounds_without_panicking() {
         let root = DependencyNodeId::recipe("node-0");
         let mut nodes = Vec::new();
         let mut edges = Vec::new();
@@ -23409,6 +23559,27 @@ mod tests {
         app.dependency_graph = DependencyGraphState::Available(graph);
         app.dependency_graph_selection = Some(selected);
         assert!(rendered_text(&app, 80, 24).contains("path limit reached"));
+    }
+    #[test]
+    fn ux_dependency_graph_ascii_and_unicode_rows_preserve_relationship_and_position_text() {
+        let row = yoctui_model::DependencyProjectionRow {
+            id: DependencyNodeId::task("busybox", "do_compile"),
+            parent: Some(DependencyNodeId::recipe("image")),
+            edge_kind: Some(DependencyEdgeKind::Task),
+            depth: 2,
+            source_index: 3,
+            has_children: true,
+            collapsed: false,
+        };
+        let unicode = dependency_tree_label(&row, true, false);
+        let ascii = dependency_tree_label(&row, true, true);
+        for text in [&unicode, &ascii] {
+            assert!(text.contains("[task]"));
+            assert!(text.contains("busybox:do_compile"));
+            assert!(text.starts_with("> "));
+        }
+        assert!(unicode.contains("└─"));
+        assert!(ascii.contains("`-"));
     }
     #[test]
     fn dashboard_renders_colored_task_progress_labels() {

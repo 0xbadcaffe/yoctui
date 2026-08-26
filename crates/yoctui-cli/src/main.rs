@@ -12106,10 +12106,10 @@ async fn tui(
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
                 } else if app.screen == Screen::Dependencies
-                    && dependency_workspace_action(input).is_some()
+                    && dependency_workspace_action(app.dependency_graph_searching, input).is_some()
                 {
-                    let action =
-                        dependency_workspace_action(input).expect("Dependency action was checked");
+                    let action = dependency_workspace_action(app.dependency_graph_searching, input)
+                        .expect("Dependency action was checked");
                     match compatibility_workspace_action(&mut app, action) {
                         Some(Effect::GetDependencies(recipe)) => {
                             load_dependency_graph(&mut app, backend.as_mut(), recipe).await;
@@ -15100,7 +15100,7 @@ mod tests {
             (KeyCode::Char('r'), Action::RefreshDependencyGraph),
         ] {
             let input = input_from_key(KeyEvent::new(code, KeyModifiers::NONE)).unwrap();
-            assert_eq!(dependency_workspace_action(input), Some(expected));
+            assert_eq!(dependency_workspace_action(false, input), Some(expected));
         }
     }
 

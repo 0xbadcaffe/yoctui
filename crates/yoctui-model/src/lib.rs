@@ -2473,6 +2473,163 @@ pub enum DependencyPathResult {
     Unreachable,
     LimitReached,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DependencyProjectionRow {
+    pub id: DependencyNodeId,
+    pub parent: Option<DependencyNodeId>,
+    pub edge_kind: Option<DependencyEdgeKind>,
+    pub depth: usize,
+    pub source_index: usize,
+    pub has_children: bool,
+    pub collapsed: bool,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DependencyGraphProjection {
+    pub anchor: DependencyNodeId,
+    pub reverse: bool,
+    pub rows: Vec<DependencyProjectionRow>,
+    pub source_total: usize,
+    pub hidden_by_filter: usize,
+    pub hidden_by_collapse: usize,
+    pub truncated_depth: usize,
+    pub truncated_rows: usize,
+    pub cycle_edges: usize,
+}
+pub const DEPENDENCY_GRAPH_MAX_QUERY_BYTES: usize = 256;
+impl DependencyGraph {
+    /// Build a deterministic, reducer-owned tree projection over the graph.
+    /// Cross-edges and cycles remain authoritative in `edges`; the projection
+    /// visits each identity once and reports references that would revisit it.
+    pub fn project(
+        &self,
+        anchor: &DependencyNodeId,
+        reverse: bool,
+        query: &str,
+        collapsed: &BTreeSet<DependencyNodeId>,
+        max_depth: usize,
+        max_rows: usize,
+    ) -> DependencyGraphProjection {
+        let anchor = if self.contains(anchor) {
+            anchor.clone()
+        } else {
+            self.root.clone()
+        };
+        let mut adjacency =
+            BTreeMap::<DependencyNodeId, Vec<(DependencyNodeId, DependencyEdgeKind)>>::new();
+        for edge in &self.edges {
+            let (from, to) = if reverse {
+                (&edge.to, &edge.from)
+            } else {
+                (&edge.from, &edge.to)
+            };
+            adjacency
+                .entry(from.clone())
+                .or_default()
+                .push((to.clone(), edge.kind));
+        }
+        for values in adjacency.values_mut() {
+            values.sort();
+        }
+        let neighbors = |id: &DependencyNodeId| adjacency.get(id).cloned().unwrap_or_default();
+
+        let mut reachable = BTreeSet::from([anchor.clone()]);
+        let mut reach_queue = VecDeque::from([anchor.clone()]);
+        while let Some(current) = reach_queue.pop_front() {
+            for (next, _) in neighbors(&current) {
+                if reachable.insert(next.clone()) {
+                    reach_queue.push_back(next);
+                }
+            }
+        }
+
+        let normalized_query = query.to_lowercase();
+        let matches_query = |id: &DependencyNodeId| {
+            if normalized_query.is_empty() {
+                return true;
+            }
+            let label = match id {
+                DependencyNodeId::Recipe(recipe) => recipe.clone(),
+                DependencyNodeId::Task { recipe, task } => format!("{recipe}:{task}"),
+            };
+            label.to_lowercase().contains(&normalized_query)
+        };
+        let source_indexes = self
+            .nodes
+            .iter()
+            .enumerate()
+            .map(|(index, node)| (node.id.clone(), index))
+            .collect::<BTreeMap<_, _>>();
+        let mut queue = VecDeque::from([(anchor.clone(), None, None, 0_usize)]);
+        let mut seen = BTreeSet::new();
+        let mut candidates = Vec::new();
+        let mut hidden_by_collapse = 0;
+        let mut truncated_depth = 0;
+        let mut cycle_edges = 0;
+        while let Some((id, parent, edge_kind, depth)) = queue.pop_front() {
+            if !seen.insert(id.clone()) {
+                cycle_edges += 1;
+                continue;
+            }
+            let children = neighbors(&id);
+            let is_collapsed = collapsed.contains(&id) && !children.is_empty();
+            candidates.push(DependencyProjectionRow {
+                source_index: source_indexes.get(&id).copied().unwrap_or(0),
+                id: id.clone(),
+                parent,
+                edge_kind,
+                depth,
+                has_children: !children.is_empty(),
+                collapsed: is_collapsed,
+            });
+            if is_collapsed {
+                hidden_by_collapse += children.len();
+            } else if depth >= max_depth {
+                truncated_depth += children.len();
+            } else {
+                for (child, kind) in children {
+                    if seen.contains(&child) {
+                        cycle_edges += 1;
+                    } else {
+                        queue.push_back((child, Some(id.clone()), Some(kind), depth + 1));
+                    }
+                }
+            }
+        }
+        // Preserve disconnected authoritative nodes as top-level rows. Nodes
+        // hidden by a collapsed reachable branch must not leak back in here.
+        for node in &self.nodes {
+            if !reachable.contains(&node.id) && seen.insert(node.id.clone()) {
+                candidates.push(DependencyProjectionRow {
+                    id: node.id.clone(),
+                    parent: None,
+                    edge_kind: None,
+                    depth: 0,
+                    source_index: source_indexes.get(&node.id).copied().unwrap_or(0),
+                    has_children: !neighbors(&node.id).is_empty(),
+                    collapsed: collapsed.contains(&node.id),
+                });
+            }
+        }
+        let before_filter = candidates.len();
+        candidates.retain(|row| row.id == anchor || matches_query(&row.id));
+        let hidden_by_filter = before_filter.saturating_sub(candidates.len());
+        let row_limit = max_rows.max(1);
+        let truncated_rows = candidates.len().saturating_sub(row_limit);
+        candidates.truncate(row_limit);
+
+        DependencyGraphProjection {
+            anchor,
+            reverse,
+            rows: candidates,
+            source_total: self.nodes.len(),
+            hidden_by_filter,
+            hidden_by_collapse,
+            truncated_depth,
+            truncated_rows,
+            cycle_edges,
+        }
+    }
+}
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum DependencyGraphState {
     #[default]
@@ -3445,6 +3602,11 @@ pub struct App {
     pub dependency_selection: usize,
     pub dependency_graph: DependencyGraphState,
     pub dependency_graph_selection: Option<DependencyNodeId>,
+    pub dependency_graph_anchor: Option<DependencyNodeId>,
+    pub dependency_graph_reverse: bool,
+    pub dependency_graph_query: String,
+    pub dependency_graph_searching: bool,
+    pub dependency_graph_collapsed: BTreeSet<DependencyNodeId>,
     pub signature_dump: SignatureDumpState,
     pub signature_selection: Option<SignatureIdentity>,
     pub signature_comparison: SignatureComparisonState,
@@ -3610,6 +3772,11 @@ impl App {
             dependency_selection: 0,
             dependency_graph: DependencyGraphState::NotLoaded,
             dependency_graph_selection: None,
+            dependency_graph_anchor: None,
+            dependency_graph_reverse: false,
+            dependency_graph_query: String::new(),
+            dependency_graph_searching: false,
+            dependency_graph_collapsed: BTreeSet::new(),
             signature_dump: SignatureDumpState::NotLoaded,
             signature_selection: None,
             signature_comparison: SignatureComparisonState::NotSelected,
@@ -5592,6 +5759,18 @@ pub enum Action {
     SelectDependencyGraphNode {
         delta: isize,
     },
+    SelectDependencyGraphNodeAt {
+        identity: DependencyNodeId,
+    },
+    ToggleDependencyGraphReverse,
+    CollapseSelectedDependencyGraphNode,
+    ExpandSelectedDependencyGraphNode,
+    ToggleSelectedDependencyGraphNode,
+    BeginDependencyGraphSearch,
+    AppendDependencyGraphQuery(char),
+    BackspaceDependencyGraphQuery,
+    ClearDependencyGraphQuery,
+    FinishDependencyGraphSearch,
     RefreshDependencyGraph,
     OpenSelectedDependencyRecipe,
     OpenSelectedDependencyProvider,
@@ -6684,6 +6863,12 @@ fn resolve_config_source(app: &App, path: &Path) -> Result<PathBuf, String> {
 
 fn set_dependency_graph(app: &mut App, graph: DependencyGraph, limitations: Option<Vec<String>>) {
     let previous = app.dependency_graph_selection.take();
+    app.dependency_graph_collapsed
+        .retain(|identity| graph.contains(identity));
+    app.dependency_graph_anchor = app
+        .dependency_graph_anchor
+        .take()
+        .filter(|identity| graph.contains(identity));
     app.dependency_graph_selection = previous
         .filter(|selected| graph.contains(selected))
         .or_else(|| graph.contains(&graph.root).then(|| graph.root.clone()))
@@ -14055,6 +14240,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::BeginDependencyGraph { root } => {
             app.dependency_graph = DependencyGraphState::Loading { root: root.clone() };
             app.dependency_graph_selection = Some(root.clone());
+            app.dependency_graph_anchor = None;
             return Some(Effect::GetDependencies(root.recipe_name().to_owned()));
         }
         Action::DependencyGraphLoaded(graph) => {
@@ -14073,23 +14259,85 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::SelectDependencyGraphNode { delta } => {
             let graph = app.dependency_graph.graph()?;
-            if graph.nodes.is_empty() {
+            let anchor = app.dependency_graph_anchor.as_ref().unwrap_or(&graph.root);
+            let projection = graph.project(
+                anchor,
+                app.dependency_graph_reverse,
+                &app.dependency_graph_query,
+                &app.dependency_graph_collapsed,
+                64,
+                8_192,
+            );
+            if projection.rows.is_empty() {
                 app.dependency_graph_selection = None;
                 return None;
             }
             let current = app
                 .dependency_graph_selection
                 .as_ref()
-                .and_then(|selected| graph.nodes.iter().position(|node| &node.id == selected))
+                .and_then(|selected| projection.rows.iter().position(|row| &row.id == selected))
                 .unwrap_or(0);
             let next = if delta.is_negative() {
                 current.saturating_sub(delta.unsigned_abs())
             } else {
                 current
                     .saturating_add(delta as usize)
-                    .min(graph.nodes.len().saturating_sub(1))
+                    .min(projection.rows.len().saturating_sub(1))
             };
-            app.dependency_graph_selection = Some(graph.nodes[next].id.clone());
+            app.dependency_graph_selection = Some(projection.rows[next].id.clone());
+        }
+        Action::SelectDependencyGraphNodeAt { identity } => {
+            let graph = app.dependency_graph.graph()?;
+            if graph.contains(&identity) {
+                app.dependency_graph_selection = Some(identity);
+            }
+        }
+        Action::ToggleDependencyGraphReverse => {
+            app.dependency_graph_reverse = !app.dependency_graph_reverse;
+            app.dependency_graph_anchor = app
+                .dependency_graph_reverse
+                .then(|| app.dependency_graph_selection.clone())
+                .flatten();
+        }
+        Action::CollapseSelectedDependencyGraphNode => {
+            if let Some(selected) = app.dependency_graph_selection.clone() {
+                app.dependency_graph_collapsed.insert(selected);
+            }
+        }
+        Action::ExpandSelectedDependencyGraphNode => {
+            if let Some(selected) = &app.dependency_graph_selection {
+                app.dependency_graph_collapsed.remove(selected);
+            }
+        }
+        Action::ToggleSelectedDependencyGraphNode => {
+            if let Some(selected) = app.dependency_graph_selection.clone()
+                && !app.dependency_graph_collapsed.remove(&selected)
+            {
+                app.dependency_graph_collapsed.insert(selected);
+            }
+        }
+        Action::BeginDependencyGraphSearch => {
+            app.dependency_graph_searching = true;
+        }
+        Action::AppendDependencyGraphQuery(character) => {
+            if app.dependency_graph_searching
+                && !character.is_control()
+                && app.dependency_graph_query.len() + character.len_utf8()
+                    <= DEPENDENCY_GRAPH_MAX_QUERY_BYTES
+            {
+                app.dependency_graph_query.push(character);
+            }
+        }
+        Action::BackspaceDependencyGraphQuery => {
+            if app.dependency_graph_searching {
+                app.dependency_graph_query.pop();
+            }
+        }
+        Action::ClearDependencyGraphQuery => {
+            app.dependency_graph_query.clear();
+        }
+        Action::FinishDependencyGraphSearch => {
+            app.dependency_graph_searching = false;
         }
         Action::RefreshDependencyGraph => {
             let Some(root) = app.dependency_graph.root().cloned() else {
@@ -17955,7 +18203,7 @@ mod tests {
         assert_eq!(app.recipe_selection, 1);
     }
     #[test]
-    fn dependency_graph_normalizes_nodes_edges_and_reverse_lookup() {
+    fn ux_dependency_graph_normalizes_nodes_edges_and_reverse_lookup() {
         let root = DependencyNodeId::recipe("image");
         let library = DependencyNodeId::recipe("library");
         let compile = DependencyNodeId::task("library", "do_compile");
@@ -18012,7 +18260,7 @@ mod tests {
         assert_eq!(graph.incoming(&compile)[0].from, library);
     }
     #[test]
-    fn dependency_graph_finds_deterministic_bounded_paths_through_cycles() {
+    fn ux_dependency_graph_finds_deterministic_bounded_paths_through_cycles() {
         let root = DependencyNodeId::recipe("root");
         let a = DependencyNodeId::recipe("a");
         let b = DependencyNodeId::recipe("b");
@@ -18055,7 +18303,7 @@ mod tests {
         );
     }
     #[test]
-    fn dependency_graph_reducer_preserves_identity_and_explicit_states() {
+    fn ux_dependency_graph_reducer_preserves_identity_and_explicit_states() {
         let root = DependencyNodeId::recipe("image");
         let selected = DependencyNodeId::recipe("library");
         let edge = DependencyEdge {
@@ -18117,7 +18365,7 @@ mod tests {
         );
     }
     #[test]
-    fn dependency_graph_normalization_reports_hard_bounds() {
+    fn ux_dependency_graph_normalization_reports_hard_bounds() {
         let root = DependencyNodeId::recipe("root");
         let (graph, report) = DependencyGraph::normalize(
             root.clone(),
@@ -18140,7 +18388,109 @@ mod tests {
         assert!(report.is_partial());
     }
     #[test]
-    fn dependency_workspace_routes_only_typed_identity_provider_and_task_log() {
+    fn ux_dependency_graph_projection_bounds_cycles_filters_reverse_and_collapse() {
+        let root = DependencyNodeId::recipe("root");
+        let a = DependencyNodeId::recipe("a");
+        let b = DependencyNodeId::recipe("b");
+        let detached = DependencyNodeId::recipe("detached");
+        let edge = |from: &DependencyNodeId, to: &DependencyNodeId| DependencyEdge {
+            from: from.clone(),
+            to: to.clone(),
+            kind: DependencyEdgeKind::Build,
+        };
+        let (graph, _) = DependencyGraph::normalize(
+            root.clone(),
+            vec![DependencyNode::identity(detached.clone())],
+            vec![edge(&root, &a), edge(&a, &b), edge(&b, &a)],
+            20,
+            20,
+        );
+
+        let projection = graph.project(&root, false, "", &BTreeSet::new(), 64, 20);
+        assert_eq!(
+            projection
+                .rows
+                .iter()
+                .map(|row| row.id.clone())
+                .collect::<Vec<_>>(),
+            [root.clone(), a.clone(), b.clone(), detached.clone()]
+        );
+        assert!(projection.cycle_edges >= 1);
+        assert_eq!(projection.source_total, 4);
+        assert_eq!(projection.rows[2].depth, 2);
+
+        let collapsed = BTreeSet::from([a.clone()]);
+        let projection = graph.project(&root, false, "", &collapsed, 64, 20);
+        assert!(!projection.rows.iter().any(|row| row.id == b));
+        assert!(projection.hidden_by_collapse >= 1);
+        assert!(projection.rows.iter().any(|row| row.id == detached));
+
+        let filtered = graph.project(&root, false, "b", &BTreeSet::new(), 64, 20);
+        assert_eq!(
+            filtered
+                .rows
+                .iter()
+                .map(|row| row.id.clone())
+                .collect::<Vec<_>>(),
+            [root.clone(), b.clone()]
+        );
+        assert_eq!(filtered.rows[1].source_index, 1);
+
+        let reverse = graph.project(&b, true, "", &BTreeSet::new(), 64, 2);
+        assert_eq!(reverse.anchor, b);
+        assert!(reverse.reverse);
+        assert_eq!(reverse.rows.len(), 2);
+        assert!(reverse.truncated_rows > 0);
+    }
+    #[test]
+    fn ux_dependency_graph_reducer_owns_filter_reverse_expansion_and_exact_selection() {
+        let root = DependencyNodeId::recipe("root");
+        let child = DependencyNodeId::recipe("child");
+        let (graph, _) = DependencyGraph::normalize(
+            root.clone(),
+            Vec::new(),
+            vec![DependencyEdge {
+                from: root.clone(),
+                to: child.clone(),
+                kind: DependencyEdgeKind::Runtime,
+            }],
+            10,
+            10,
+        );
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::DependencyGraphLoaded(graph));
+        let _ = update(
+            &mut app,
+            Action::SelectDependencyGraphNodeAt {
+                identity: child.clone(),
+            },
+        );
+        let _ = update(&mut app, Action::ToggleDependencyGraphReverse);
+        assert!(app.dependency_graph_reverse);
+        assert_eq!(app.dependency_graph_anchor, Some(child.clone()));
+
+        let _ = update(&mut app, Action::CollapseSelectedDependencyGraphNode);
+        assert!(app.dependency_graph_collapsed.contains(&child));
+        let _ = update(&mut app, Action::ExpandSelectedDependencyGraphNode);
+        assert!(!app.dependency_graph_collapsed.contains(&child));
+        let _ = update(&mut app, Action::BeginDependencyGraphSearch);
+        let _ = update(&mut app, Action::AppendDependencyGraphQuery('c'));
+        let _ = update(&mut app, Action::AppendDependencyGraphQuery('h'));
+        assert_eq!(app.dependency_graph_query, "ch");
+        for _ in 0..DEPENDENCY_GRAPH_MAX_QUERY_BYTES {
+            let _ = update(&mut app, Action::AppendDependencyGraphQuery('x'));
+        }
+        assert_eq!(
+            app.dependency_graph_query.len(),
+            DEPENDENCY_GRAPH_MAX_QUERY_BYTES
+        );
+        assert!(app.dependency_graph_searching);
+        let _ = update(&mut app, Action::FinishDependencyGraphSearch);
+        assert!(!app.dependency_graph_searching);
+        assert_eq!(app.dependency_graph_selection, Some(child));
+    }
+    #[test]
+    fn ux_dependency_graph_routes_only_typed_identity_provider_and_task_log() {
         let root = DependencyNodeId::recipe("image");
         let task = DependencyNodeId::task("busybox", "do_compile");
         let (graph, _) = DependencyGraph::normalize(

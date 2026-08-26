@@ -6179,12 +6179,12 @@ notes = "ListTreeProjection now bounds stable IDs/labels, 8,192 rows, 64 levels,
 id = "UX-DEPENDENCY-GRAPH-001"
 milestone = "M21"
 title = "Add navigable dependency topology visualization"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 719
 required = true
 depends_on = ["UX-LIST-TREE-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-model ux_dependency_graph", "cargo test -p yoctui-ui ux_dependency_graph", "cargo test -p yoctui-app ux_dependency_graph"]
-notes = "Evaluate tui-nodes and Canvas using bounded typed dependency projections. Keyboard navigation, why-built paths, clipping, selection, no-color text, table/tree fallback, and performance determine adoption."
+notes = "DependencyGraph::project builds a deterministic bounded forward/reverse adjacency projection over authoritative recipe/task identities, preserving cycles/cross-edges as reported references, disconnected nodes, source positions, collapse/filter/depth/count limitations, and stable selection. Reducer-owned search (256 bytes), reverse anchors, expansion, keyboard and exact mouse-row actions drive wide topology, medium tree, narrow table, ASCII/no-color, and screen-reader Inspector text; provider/log/recipe jumps remain exact typed actions. tui-nodes is rejected because its renderer state and 48-package closure add no parity value; it remains absent from Cargo manifests and the lockfile."
 
 [[task]]
 id = "UX-ROOTFS-MODEL-001"
