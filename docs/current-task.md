@@ -2,44 +2,43 @@
 
 ## Task
 
-**ID:** UX-ROOTFS-MODEL-001
-**Title:** Define typed root filesystem composition state
+**ID:** UX-ROOTFS-ADAPTER-001
+**Title:** Acquire bounded authoritative rootfs composition
 **Status:** NOT_STARTED
 
 ## Objective
 
-Define image-correlated installed-package and filesystem-tree composition
-authority with exact totals, bounded grouping/drilldown, stable selection, and
-honest lifecycle/limitation states.
+Acquire installed-package composition from the exact image manifest/pkgdata and
+optional filesystem composition from the correlated BitBake-reported
+`IMAGE_ROOTFS`, without escaping the active build or following symlinks.
 
 ## Dependencies
 
-- `UX-SPEC-001` — DONE
-- `IMAGES-001` — DONE
-- `PKG-001` — DONE
+- `UX-ROOTFS-MODEL-001` — DONE
 
 ## Relevant files
 
-- rootfs composition model and protocol records
-- image-artifact correlation and generation identity
-- installed-package and filesystem-tree authority states
-- grouping, totals, percentages, drilldown, selection, and limitations
-- model/protocol/app normalization tests
+- rootfs adapter and backend response/event wiring
+- exact image manifest and generated pkgdata correlation
+- optional `IMAGE_ROOTFS` acquisition and canonical containment
+- no-follow traversal, hard-link deduplication, special-file accounting
+- cancellation, stale denial, and count/depth/byte/time bounds
 
 ## Definition of done
 
-- Installed-package and filesystem-tree authorities remain separate and are
-  correlated to an exact image artifact and request generation.
-- Exact bytes, counts, totals, percentages, grouped `Other`, and drilldown rows
-  are deterministic, bounded, and overflow-safe.
-- Not-loaded, loading, available-empty, available, partial, unavailable, and
-  failed states preserve limitations without presenting stale data as current.
-- Selection survives replacement by stable identity and falls back explicitly.
+- Manifest and pkgdata records match the selected image/machine identity; no
+  filename guessing or stale generation is accepted.
+- Filesystem scanning starts only from canonical `IMAGE_ROOTFS` contained by
+  the active build, never follows symlinks, and deduplicates hard links.
+- Regular files, directories, symlinks, and special files retain exact counts
+  under entry, depth, byte, elapsed-time, and cancellation bounds.
+- Missing/cleaned work state is unavailable; every bound or partial source is
+  reported as an exact limitation without stale data.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_rootfs
-cargo test -p yoctui-protocol ux_rootfs
-cargo test -p yoctui-app ux_rootfs
+cargo test -p yoctui-bitbake ux_rootfs
+python3 -m pytest bridge/tests -k rootfs
+cargo test -p yoctui -- ux_rootfs
 ```

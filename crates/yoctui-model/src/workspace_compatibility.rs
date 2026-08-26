@@ -606,6 +606,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::OpenLayerBrowserEditor { .. }
         | Effect::GetImageArtifacts(_)
         | Effect::CancelImageArtifactOperation
+        | Effect::GetRootfsComposition(_)
         | Effect::GetSdkArtifacts(_)
         | Effect::CancelSdkArtifactOperation
         | Effect::CancelSignatureOperation

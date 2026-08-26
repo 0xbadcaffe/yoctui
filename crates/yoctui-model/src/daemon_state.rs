@@ -2,9 +2,9 @@ use crate::{
     App, BackgroundJobs, BuildEnvironmentState, BuildRecord, BuildState, CapabilityId,
     CapabilityImplementation, CapabilitySnapshot, CompletedTask, FocusTarget,
     ImageArtifactInventoryState, LogState, MaintenanceState, PackageDetailState, PackageIdentity,
-    PackageInventoryState, ProjectProfileState, QaState, QemuCapability, QemuSession, Screen,
-    SdkArtifactInventoryState, SdkSession, SdkToolCapability, SecurityState,
-    SignatureComparisonState, SignatureDumpState, TaskId, TaskInfo, TestCapability,
+    PackageInventoryState, ProjectProfileState, QaState, QemuCapability, QemuSession,
+    RootfsCompositionState, Screen, SdkArtifactInventoryState, SdkSession, SdkToolCapability,
+    SecurityState, SignatureComparisonState, SignatureDumpState, TaskId, TaskInfo, TestCapability,
     TestComparisonState, TestJunitExportState, TestResultInventoryState, TestSession, Theme,
     WicCapability, WicDeviceInventoryState, WicOutputInventoryState, WicSession, Workspace,
 };
@@ -331,6 +331,7 @@ pub struct DaemonJobState {
     pub package_inventory: PackageInventoryState,
     pub package_details: HashMap<PackageIdentity, PackageDetailState>,
     pub image_artifacts: ImageArtifactInventoryState,
+    pub rootfs_composition: RootfsCompositionState,
     pub sdk_artifacts: SdkArtifactInventoryState,
     pub sdk_tool_capability: SdkToolCapability,
     pub sdk_sessions: VecDeque<SdkSession>,
@@ -365,6 +366,7 @@ impl DaemonJobState {
             package_inventory: app.package_inventory.clone(),
             package_details: app.package_details.clone(),
             image_artifacts: app.image_artifacts.clone(),
+            rootfs_composition: app.rootfs_composition.clone(),
             sdk_artifacts: app.sdk_artifacts.clone(),
             sdk_tool_capability: app.sdk_tool_capability.clone(),
             sdk_sessions: app.sdk_sessions.clone(),
@@ -398,6 +400,7 @@ impl DaemonJobState {
         app.package_inventory = self.package_inventory.clone();
         app.package_details = self.package_details.clone();
         app.image_artifacts = self.image_artifacts.clone();
+        app.rootfs_composition = self.rootfs_composition.clone();
         app.sdk_artifacts = self.sdk_artifacts.clone();
         app.sdk_tool_capability = self.sdk_tool_capability.clone();
         app.sdk_sessions = self.sdk_sessions.clone();

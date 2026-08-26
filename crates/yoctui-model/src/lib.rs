@@ -26,6 +26,7 @@ mod qemu;
 mod raw_catalog_builtin;
 mod raw_mode;
 mod recipetool;
+mod rootfs;
 mod scroll;
 mod sdk;
 mod security;
@@ -69,6 +70,7 @@ pub use raw_catalog_builtin::{
 };
 pub use raw_mode::*;
 pub use recipetool::*;
+pub use rootfs::*;
 pub use scroll::*;
 pub use sdk::*;
 pub use security::*;
@@ -3625,6 +3627,11 @@ pub struct App {
     pub image_artifact_query: String,
     pub image_artifact_searching: bool,
     pub image_artifact_request_generation: u64,
+    pub rootfs_composition: RootfsCompositionState,
+    pub rootfs_request_generation: u64,
+    pub rootfs_group_selection: Option<RootfsGroupIdentity>,
+    pub rootfs_package_selection: Option<PackageIdentity>,
+    pub rootfs_entry_selection: Option<RootfsPathIdentity>,
     pub sdk_artifacts: SdkArtifactInventoryState,
     pub sdk_artifact_selection: Option<SdkArtifactIdentity>,
     pub sdk_artifact_query: String,
@@ -3795,6 +3802,11 @@ impl App {
             image_artifact_query: String::new(),
             image_artifact_searching: false,
             image_artifact_request_generation: 0,
+            rootfs_composition: RootfsCompositionState::NotLoaded,
+            rootfs_request_generation: 0,
+            rootfs_group_selection: None,
+            rootfs_package_selection: None,
+            rootfs_entry_selection: None,
             sdk_artifacts: SdkArtifactInventoryState::NotLoaded,
             sdk_artifact_selection: None,
             sdk_artifact_query: String::new(),
@@ -5091,6 +5103,34 @@ pub enum Action {
     BeginSelectedImageArtifactBuild,
     OpenSelectedImageArtifact,
     OpenSelectedImageArtifactAssociation(ImageArtifactAssociation),
+    BeginSelectedRootfsComposition,
+    RefreshRootfsComposition,
+    RootfsCompositionLoaded {
+        request: RootfsCompositionRequest,
+        composition: RootfsComposition,
+    },
+    RootfsCompositionPartial {
+        request: RootfsCompositionRequest,
+        composition: RootfsComposition,
+        limitations: Vec<String>,
+    },
+    RootfsCompositionUnavailable {
+        request: RootfsCompositionRequest,
+        reason: String,
+    },
+    RootfsCompositionFailed {
+        request: RootfsCompositionRequest,
+        message: String,
+    },
+    SelectRootfsGroup {
+        delta: isize,
+    },
+    SelectRootfsPackage {
+        delta: isize,
+    },
+    SelectRootfsEntry {
+        delta: isize,
+    },
     BeginSdkBuild(SdkBuildAction),
     ConfirmSdkBuild,
     CancelSdkBuild,
@@ -7027,6 +7067,168 @@ fn image_artifact_operation_is_loading(app: &App) -> bool {
         app.image_artifacts,
         ImageArtifactInventoryState::Loading { .. }
     )
+}
+
+fn next_rootfs_generation(app: &mut App) -> u64 {
+    app.rootfs_request_generation = app.rootfs_request_generation.wrapping_add(1).max(1);
+    app.rootfs_request_generation
+}
+
+fn begin_rootfs_composition(app: &mut App, image: ImageArtifactIdentity) -> Option<Effect> {
+    let request = RootfsCompositionRequest {
+        generation: next_rootfs_generation(app),
+        image,
+    };
+    if let Err(message) = request.validate() {
+        app.notification = Some(format!("Rootfs composition is unavailable: {message}."));
+        return None;
+    }
+    app.rootfs_composition = RootfsCompositionState::Loading {
+        request: request.clone(),
+    };
+    Some(Effect::GetRootfsComposition(request))
+}
+
+fn normalize_rootfs_limitations(mut limitations: Vec<String>) -> Vec<String> {
+    limitations.retain(|value| {
+        !value.is_empty()
+            && value.len() <= MAX_ROOTFS_TEXT_BYTES
+            && !value.chars().any(char::is_control)
+    });
+    limitations.sort();
+    limitations.dedup();
+    limitations.truncate(MAX_ROOTFS_LIMITATIONS);
+    limitations
+}
+
+fn append_rootfs_report_limitations(
+    limitations: &mut Vec<String>,
+    report: &RootfsNormalizationReport,
+) {
+    if report.invalid_packages > 0 || report.duplicate_packages > 0 {
+        limitations.push(format!(
+            "Model validation dropped {} invalid and {} duplicate installed-package record(s).",
+            report.invalid_packages, report.duplicate_packages
+        ));
+    }
+    if report.invalid_entries > 0 || report.duplicate_entries > 0 || report.orphan_entries > 0 {
+        limitations.push(format!(
+            "Model validation found {} invalid, {} duplicate, and {} orphan filesystem entry record(s).",
+            report.invalid_entries, report.duplicate_entries, report.orphan_entries
+        ));
+    }
+    if report.truncated_packages > 0 || report.truncated_entries > 0 || report.truncated_depth > 0 {
+        limitations.push(format!(
+            "Model bounds truncated {} package(s), {} filesystem entry record(s), and {} over-depth path(s).",
+            report.truncated_packages, report.truncated_entries, report.truncated_depth
+        ));
+    }
+    if report.invalid_limitations > 0 || report.truncated_limitations > 0 {
+        limitations.push(format!(
+            "Model bounds rejected {} and truncated {} limitation message(s).",
+            report.invalid_limitations, report.truncated_limitations
+        ));
+    }
+    if report.arithmetic_overflow > 0 {
+        limitations.push("Rootfs totals exceeded the u64 display range.".into());
+    }
+}
+
+fn rootfs_group_rows(app: &App) -> Vec<RootfsGroupRow> {
+    app.rootfs_composition
+        .composition()
+        .and_then(RootfsComposition::package_inventory)
+        .map(|inventory| inventory.grouped(12))
+        .unwrap_or_default()
+}
+
+fn reconcile_rootfs_selection(
+    app: &mut App,
+    previous_group: Option<RootfsGroupIdentity>,
+    previous_package: Option<PackageIdentity>,
+    previous_entry: Option<RootfsPathIdentity>,
+) {
+    let groups = rootfs_group_rows(app);
+    app.rootfs_group_selection = previous_group
+        .filter(|identity| groups.iter().any(|row| &row.identity == identity))
+        .or_else(|| groups.first().map(|row| row.identity.clone()));
+    let members = app
+        .rootfs_group_selection
+        .as_ref()
+        .and_then(|selected| groups.iter().find(|row| &row.identity == selected))
+        .map(|row| row.members.as_slice())
+        .unwrap_or_default();
+    app.rootfs_package_selection = previous_package
+        .filter(|identity| members.contains(identity))
+        .or_else(|| members.first().cloned());
+    let entries = app
+        .rootfs_composition
+        .composition()
+        .and_then(RootfsComposition::filesystem_tree)
+        .map(|tree| tree.entries.as_slice())
+        .unwrap_or_default();
+    app.rootfs_entry_selection = previous_entry
+        .filter(|identity| entries.iter().any(|entry| &entry.identity == identity))
+        .or_else(|| entries.first().map(|entry| entry.identity.clone()));
+}
+
+fn set_rootfs_composition(
+    app: &mut App,
+    request: RootfsCompositionRequest,
+    composition: RootfsComposition,
+    limitations: Vec<String>,
+) {
+    let previous_group = app.rootfs_group_selection.take();
+    let previous_package = app.rootfs_package_selection.take();
+    let previous_entry = app.rootfs_entry_selection.take();
+    let (composition, mut report) = normalize_rootfs_composition(&request, composition);
+    let Some(composition) = composition else {
+        app.rootfs_composition = RootfsCompositionState::Failed {
+            request,
+            message: "backend returned rootfs composition for a different or invalid image".into(),
+        };
+        app.notification = Some("Rootfs composition failed model identity validation.".into());
+        return;
+    };
+    if composition.totals().1 {
+        report.arithmetic_overflow = 1;
+    }
+    let mut limitations = limitations;
+    append_rootfs_report_limitations(&mut limitations, &report);
+    if composition.is_partial() && limitations.is_empty() {
+        limitations.push("One rootfs authority is partial or unavailable.".into());
+    }
+    let limitations = normalize_rootfs_limitations(limitations);
+    app.rootfs_composition = if composition.is_unavailable() {
+        let mut reasons = Vec::new();
+        if let RootfsAuthority::Unavailable { reason } = &composition.installed_packages {
+            reasons.push(reason.as_str());
+        }
+        if let RootfsAuthority::Unavailable { reason } = &composition.filesystem_tree {
+            reasons.push(reason.as_str());
+        }
+        RootfsCompositionState::Unavailable {
+            request,
+            reason: reasons.join("; "),
+        }
+    } else if composition.is_empty() && limitations.is_empty() {
+        RootfsCompositionState::AvailableEmpty {
+            request,
+            composition,
+        }
+    } else if limitations.is_empty() {
+        RootfsCompositionState::Available {
+            request,
+            composition,
+        }
+    } else {
+        RootfsCompositionState::Partial {
+            request,
+            composition,
+            limitations,
+        }
+    };
+    reconcile_rootfs_selection(app, previous_group, previous_package, previous_entry);
 }
 
 fn begin_sdk_artifact_inventory(app: &mut App) -> Option<Effect> {
@@ -9560,6 +9762,138 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!(
                 "The selected image artifact has no authoritative {label} path."
             ));
+        }
+        Action::BeginSelectedRootfsComposition => {
+            let Some(image) = app
+                .selected_image_artifact()
+                .map(|artifact| artifact.identity.clone())
+            else {
+                app.notification =
+                    Some("Select an authoritative deployed image artifact first.".into());
+                return None;
+            };
+            return begin_rootfs_composition(app, image);
+        }
+        Action::RefreshRootfsComposition => {
+            let image = app
+                .rootfs_composition
+                .request()
+                .map(|request| request.image.clone())
+                .or_else(|| {
+                    app.selected_image_artifact()
+                        .map(|artifact| artifact.identity.clone())
+                });
+            let Some(image) = image else {
+                app.notification =
+                    Some("No rootfs composition image is available to refresh.".into());
+                return None;
+            };
+            return begin_rootfs_composition(app, image);
+        }
+        Action::RootfsCompositionLoaded {
+            request,
+            composition,
+        } => {
+            if matches!(
+                &app.rootfs_composition,
+                RootfsCompositionState::Loading { request: pending } if pending == &request
+            ) {
+                set_rootfs_composition(app, request, composition, Vec::new());
+            }
+        }
+        Action::RootfsCompositionPartial {
+            request,
+            composition,
+            limitations,
+        } => {
+            if matches!(
+                &app.rootfs_composition,
+                RootfsCompositionState::Loading { request: pending } if pending == &request
+            ) {
+                set_rootfs_composition(app, request, composition, limitations);
+            }
+        }
+        Action::RootfsCompositionUnavailable { request, reason } => {
+            if matches!(
+                &app.rootfs_composition,
+                RootfsCompositionState::Loading { request: pending } if pending == &request
+            ) {
+                app.rootfs_composition = RootfsCompositionState::Unavailable {
+                    request,
+                    reason: reason.clone(),
+                };
+                app.notification = Some(format!("Rootfs composition is unavailable: {reason}"));
+            }
+        }
+        Action::RootfsCompositionFailed { request, message } => {
+            if matches!(
+                &app.rootfs_composition,
+                RootfsCompositionState::Loading { request: pending } if pending == &request
+            ) {
+                app.rootfs_composition = RootfsCompositionState::Failed {
+                    request,
+                    message: message.clone(),
+                };
+                app.notification = Some(format!("Rootfs composition failed: {message}"));
+            }
+        }
+        Action::SelectRootfsGroup { delta } => {
+            let rows = rootfs_group_rows(app);
+            if rows.is_empty() {
+                app.rootfs_group_selection = None;
+                app.rootfs_package_selection = None;
+                return None;
+            }
+            let current = app
+                .rootfs_group_selection
+                .as_ref()
+                .and_then(|identity| rows.iter().position(|row| &row.identity == identity))
+                .unwrap_or(0);
+            let next = shifted_index(current, delta, rows.len());
+            app.rootfs_group_selection = Some(rows[next].identity.clone());
+            app.rootfs_package_selection = rows[next].members.first().cloned();
+        }
+        Action::SelectRootfsPackage { delta } => {
+            let rows = rootfs_group_rows(app);
+            let Some(row) = app
+                .rootfs_group_selection
+                .as_ref()
+                .and_then(|identity| rows.iter().find(|row| &row.identity == identity))
+            else {
+                app.rootfs_package_selection = None;
+                return None;
+            };
+            let current = app
+                .rootfs_package_selection
+                .as_ref()
+                .and_then(|identity| row.members.iter().position(|member| member == identity))
+                .unwrap_or(0);
+            if !row.members.is_empty() {
+                app.rootfs_package_selection =
+                    Some(row.members[shifted_index(current, delta, row.members.len())].clone());
+            }
+        }
+        Action::SelectRootfsEntry { delta } => {
+            let entries = app
+                .rootfs_composition
+                .composition()
+                .and_then(RootfsComposition::filesystem_tree)
+                .map(|tree| tree.entries.as_slice())
+                .unwrap_or_default();
+            if entries.is_empty() {
+                app.rootfs_entry_selection = None;
+                return None;
+            }
+            let current = app
+                .rootfs_entry_selection
+                .as_ref()
+                .and_then(|identity| entries.iter().position(|entry| &entry.identity == identity))
+                .unwrap_or(0);
+            app.rootfs_entry_selection = Some(
+                entries[shifted_index(current, delta, entries.len())]
+                    .identity
+                    .clone(),
+            );
         }
         Action::BeginSdkBuild(action) => {
             let Some(image) = app.build.target.clone() else {
@@ -16231,6 +16565,7 @@ pub enum Effect {
     CancelPackageOperation,
     GetImageArtifacts(ImageArtifactRequest),
     CancelImageArtifactOperation,
+    GetRootfsComposition(RootfsCompositionRequest),
     GetSdkArtifacts(SdkArtifactInventoryRequest),
     CancelSdkArtifactOperation,
     InspectSdkTools,
@@ -22450,6 +22785,216 @@ mod tests {
             app.active_dialog(),
             Some(Dialog::RecipeTaskConfirmation(BuildRequest { targets, .. }))
                 if targets == &vec!["core-image-minimal".to_owned()]
+        ));
+    }
+
+    #[test]
+    fn ux_rootfs_reducer_correlates_generation_lifecycle_and_stable_drilldown_selection() {
+        let mut app = App::new(20, 20_000);
+        let artifact = ImageArtifact {
+            identity: ImageArtifactIdentity {
+                machine: "qemux86-64".into(),
+                image: "core-image-minimal".into(),
+                path: "/build/tmp/deploy/images/qemux86-64/core-image-minimal.ext4".into(),
+            },
+            kind: ImageArtifactKind::RootFilesystem,
+            size_bytes: ImageArtifactField::Available(42),
+            modified_unix_seconds: ImageArtifactField::Available(10),
+            checksums: ImageArtifactField::Unavailable,
+            manifests: ImageArtifactField::Unavailable,
+            licenses: ImageArtifactField::Unavailable,
+            spdx: ImageArtifactField::Unavailable,
+            wic_files: ImageArtifactField::Unavailable,
+        };
+        app.image_artifacts = ImageArtifactInventoryState::Available {
+            request: ImageArtifactRequest {
+                generation: 1,
+                machine: artifact.identity.machine.clone(),
+            },
+            inventory: ImageArtifactInventory {
+                machine: artifact.identity.machine.clone(),
+                deploy_directory: ImageArtifactField::Available(
+                    "/build/tmp/deploy/images/qemux86-64".into(),
+                ),
+                artifacts: vec![artifact.clone()],
+            },
+        };
+        app.image_artifact_selection = Some(artifact.identity.clone());
+        let request = RootfsCompositionRequest {
+            generation: 1,
+            image: artifact.identity.clone(),
+        };
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRootfsComposition),
+            Some(Effect::GetRootfsComposition(request.clone()))
+        );
+        let package = |name: &str, category: &str| RootfsInstalledPackage {
+            identity: PackageIdentity::new(name),
+            recipe: Some(name.into()),
+            category: category.into(),
+            installed_size_bytes: 100,
+            file_count: 2,
+        };
+        let composition = RootfsComposition {
+            image: artifact.identity.clone(),
+            installed_packages: RootfsAuthority::Available(RootfsPackageInventory {
+                packages: vec![package("busybox", "base"), package("glibc", "runtime")],
+            }),
+            filesystem_tree: RootfsAuthority::Available(RootfsFilesystemTree {
+                entries: vec![
+                    RootfsEntry {
+                        identity: RootfsPathIdentity("/".into()),
+                        kind: RootfsEntryKind::Directory,
+                        size_bytes: 0,
+                        package: None,
+                    },
+                    RootfsEntry {
+                        identity: RootfsPathIdentity("/usr".into()),
+                        kind: RootfsEntryKind::Directory,
+                        size_bytes: 0,
+                        package: None,
+                    },
+                ],
+            }),
+        };
+        let stale = RootfsCompositionRequest {
+            generation: 99,
+            image: artifact.identity.clone(),
+        };
+        let _ = update(
+            &mut app,
+            Action::RootfsCompositionLoaded {
+                request: stale,
+                composition: composition.clone(),
+            },
+        );
+        assert!(matches!(
+            app.rootfs_composition,
+            RootfsCompositionState::Loading { .. }
+        ));
+        let _ = update(
+            &mut app,
+            Action::RootfsCompositionLoaded {
+                request: request.clone(),
+                composition: composition.clone(),
+            },
+        );
+        assert!(matches!(
+            app.rootfs_composition,
+            RootfsCompositionState::Available { .. }
+        ));
+        assert_eq!(
+            app.rootfs_group_selection,
+            Some(RootfsGroupIdentity::Category("base".into()))
+        );
+        assert_eq!(
+            app.rootfs_package_selection,
+            Some(PackageIdentity::new("busybox"))
+        );
+        let _ = update(&mut app, Action::SelectRootfsEntry { delta: 1 });
+        assert_eq!(
+            app.rootfs_entry_selection,
+            Some(RootfsPathIdentity("/usr".into()))
+        );
+        let _ = update(&mut app, Action::SelectRootfsGroup { delta: 1 });
+        assert_eq!(
+            app.rootfs_group_selection,
+            Some(RootfsGroupIdentity::Category("runtime".into()))
+        );
+        assert_eq!(
+            app.rootfs_package_selection,
+            Some(PackageIdentity::new("glibc"))
+        );
+
+        let Effect::GetRootfsComposition(refresh) =
+            update(&mut app, Action::RefreshRootfsComposition).unwrap()
+        else {
+            panic!("expected rootfs refresh effect")
+        };
+        assert_eq!(refresh.generation, 2);
+        assert_eq!(refresh.image, artifact.identity);
+        let _ = update(
+            &mut app,
+            Action::RootfsCompositionPartial {
+                request: refresh,
+                composition,
+                limitations: vec!["pkgdata sizes partial".into()],
+            },
+        );
+        assert!(matches!(
+            app.rootfs_composition,
+            RootfsCompositionState::Partial { .. }
+        ));
+        assert_eq!(
+            app.rootfs_group_selection,
+            Some(RootfsGroupIdentity::Category("runtime".into()))
+        );
+        assert_eq!(
+            app.rootfs_package_selection,
+            Some(PackageIdentity::new("glibc"))
+        );
+        assert_eq!(
+            app.rootfs_entry_selection,
+            Some(RootfsPathIdentity("/usr".into()))
+        );
+
+        let Effect::GetRootfsComposition(empty_request) =
+            update(&mut app, Action::RefreshRootfsComposition).unwrap()
+        else {
+            panic!("expected rootfs refresh effect")
+        };
+        let _ = update(
+            &mut app,
+            Action::RootfsCompositionLoaded {
+                request: empty_request,
+                composition: RootfsComposition {
+                    image: artifact.identity.clone(),
+                    installed_packages: RootfsAuthority::Available(
+                        RootfsPackageInventory::default(),
+                    ),
+                    filesystem_tree: RootfsAuthority::Available(RootfsFilesystemTree::default()),
+                },
+            },
+        );
+        assert!(matches!(
+            app.rootfs_composition,
+            RootfsCompositionState::AvailableEmpty { .. }
+        ));
+        assert_eq!(app.rootfs_group_selection, None);
+        assert_eq!(app.rootfs_entry_selection, None);
+
+        let Effect::GetRootfsComposition(unavailable) =
+            update(&mut app, Action::RefreshRootfsComposition).unwrap()
+        else {
+            panic!("expected rootfs refresh effect")
+        };
+        let _ = update(
+            &mut app,
+            Action::RootfsCompositionUnavailable {
+                request: unavailable,
+                reason: "manifest absent".into(),
+            },
+        );
+        assert!(matches!(
+            app.rootfs_composition,
+            RootfsCompositionState::Unavailable { .. }
+        ));
+
+        let Effect::GetRootfsComposition(failed) =
+            update(&mut app, Action::RefreshRootfsComposition).unwrap()
+        else {
+            panic!("expected rootfs refresh effect")
+        };
+        let _ = update(
+            &mut app,
+            Action::RootfsCompositionFailed {
+                request: failed,
+                message: "adapter failed".into(),
+            },
+        );
+        assert!(matches!(
+            app.rootfs_composition,
+            RootfsCompositionState::Failed { .. }
         ));
     }
 

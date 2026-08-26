@@ -6190,12 +6190,12 @@ notes = "DependencyGraph::project builds a deterministic bounded forward/reverse
 id = "UX-ROOTFS-MODEL-001"
 milestone = "M21"
 title = "Define typed root filesystem composition state"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 720
 required = true
 depends_on = ["UX-SPEC-001", "IMAGES-001", "PKG-001"]
 verify = ["cargo test -p yoctui-model ux_rootfs", "cargo test -p yoctui-protocol ux_rootfs", "cargo test -p yoctui-app ux_rootfs"]
-notes = "Model image-correlated installed-package and filesystem-tree authorities, exact bytes/counts/percentages, Other grouping, drilldown, loading/partial/unavailable/failed states, limitations, bounds, generations, and stable selection."
+notes = "RootfsCompositionRequest correlates a non-zero generation to one exact ImageArtifactIdentity. Separate installed-package and logical-filesystem authorities normalize stable package/path identities under 8,192-package, 65,536-entry, 64-depth, 4 KiB-path, 512-byte-text, and 64-limitation bounds; duplicates, invalid/orphan/depth/count loss and overflow are explicit. Exact installed/filesystem bytes and counts remain separate, percentage basis points use u128 arithmetic, bounded category projection retains inspectable Other membership, and tree child/descendant drilldown is typed. Reducers deny stale generations, preserve group/package/path selection, and distinguish not-loaded, loading, available-empty, available, partial, unavailable, and failed. Protocol schema v1 rejects unknown variants/unsafe paths/bounds; app conversion is mechanical and typed."
 
 [[task]]
 id = "UX-ROOTFS-ADAPTER-001"

@@ -3146,6 +3146,18 @@ manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;
 and drill down; UI renders pie/bar/table/tree projections without filesystem or
 BitBake parsing.
 
+Schema v1 binds a non-zero request generation to one exact machine/image/path
+artifact identity. Installed-package and logical-filesystem authorities remain
+separate typed values, each independently available, partial, or unavailable.
+The model caps packages at 8,192, entries at 65,536, logical depth at 64, paths
+at 4 KiB, text at 512 bytes, and limitation lists at 64. Normalization reports
+invalid, duplicate, orphan, depth/count-truncated, and overflow outcomes;
+package-reported bytes/files never substitute for filesystem bytes/entry-kind
+counts. Group percentages use overflow-safe basis-point arithmetic and retain
+exact members behind an explicit bounded `Other` identity. Reducers reject
+stale request generations and preserve category, package, and logical-path
+selection by stable identity across replacement.
+
 The daemon remains the only terminal emulator and PTY owner. A `tui-term`
 integration is valid only as a renderer over the existing typed replica. It
 cannot introduce client-side ANSI parsing, a second `vt100::Parser`, a separate

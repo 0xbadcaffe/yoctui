@@ -6,6 +6,7 @@ pub mod daemon_ipc;
 pub mod daemon_lifecycle;
 #[cfg(unix)]
 pub mod daemon_persist;
+pub mod rootfs;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use thiserror::Error;

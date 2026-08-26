@@ -101,7 +101,6 @@ real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-
 real_yoctui_anchors = ["Images", "root filesystem", "Selected artifact", "core-image-minimal", "SPDX/SBOM", "19:28:27"]
 implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001"]
 open_gaps = [
-  { task = "UX-ROOTFS-MODEL-001", description = "define installed-package and filesystem-tree composition authorities, totals, grouping, selection, and limitations" },
   { task = "UX-ROOTFS-ADAPTER-001", description = "load correlated manifest/pkgdata and bounded IMAGE_ROOTFS evidence" },
   { task = "UX-ROOTFS-UI-001", description = "add composition tabs, pie or bar view, exact table, checkboxes, and drill-down tree" },
 ]

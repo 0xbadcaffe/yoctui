@@ -40,6 +40,107 @@ use yoctui_model::{
     VariableDetail, VariableIdentity, WicCapability, WicOutput, WicOutputStream, WicSessionId,
 };
 
+pub fn backend_event_from_rootfs_data(
+    data: yoctui_protocol::rootfs::RootfsCompositionData,
+) -> Result<BackendEvent, String> {
+    use yoctui_protocol::rootfs::{RootfsAuthorityData as WireAuthority, RootfsEntryKindData};
+
+    data.validate().map_err(|error| error.to_string())?;
+    let image = yoctui_model::ImageArtifactIdentity {
+        machine: data.request.image.machine,
+        image: data.request.image.image,
+        path: data.request.image.path.into(),
+    };
+    let request = yoctui_model::RootfsCompositionRequest {
+        generation: data.request.generation,
+        image: image.clone(),
+    };
+    let installed_packages = match data.installed_packages {
+        WireAuthority::Available { records } => {
+            yoctui_model::RootfsAuthority::Available(yoctui_model::RootfsPackageInventory {
+                packages: records
+                    .into_iter()
+                    .map(|record| yoctui_model::RootfsInstalledPackage {
+                        identity: yoctui_model::PackageIdentity::new(record.name),
+                        recipe: record.recipe,
+                        category: record.category,
+                        installed_size_bytes: record.installed_size_bytes,
+                        file_count: record.file_count,
+                    })
+                    .collect(),
+            })
+        }
+        WireAuthority::Partial {
+            records,
+            limitations,
+        } => yoctui_model::RootfsAuthority::Partial {
+            value: yoctui_model::RootfsPackageInventory {
+                packages: records
+                    .into_iter()
+                    .map(|record| yoctui_model::RootfsInstalledPackage {
+                        identity: yoctui_model::PackageIdentity::new(record.name),
+                        recipe: record.recipe,
+                        category: record.category,
+                        installed_size_bytes: record.installed_size_bytes,
+                        file_count: record.file_count,
+                    })
+                    .collect(),
+            },
+            limitations,
+        },
+        WireAuthority::Unavailable { reason } => {
+            yoctui_model::RootfsAuthority::Unavailable { reason }
+        }
+    };
+    let convert_entries = |records: Vec<yoctui_protocol::rootfs::RootfsEntryData>| {
+        yoctui_model::RootfsFilesystemTree {
+            entries: records
+                .into_iter()
+                .map(|record| yoctui_model::RootfsEntry {
+                    identity: yoctui_model::RootfsPathIdentity(record.path.into()),
+                    kind: match record.kind {
+                        RootfsEntryKindData::Directory => yoctui_model::RootfsEntryKind::Directory,
+                        RootfsEntryKindData::RegularFile => {
+                            yoctui_model::RootfsEntryKind::RegularFile
+                        }
+                        RootfsEntryKindData::Symlink => yoctui_model::RootfsEntryKind::Symlink,
+                        RootfsEntryKindData::Other => yoctui_model::RootfsEntryKind::Other,
+                        RootfsEntryKindData::Unknown => {
+                            unreachable!("validated rootfs wire data rejects unknown kinds")
+                        }
+                    },
+                    size_bytes: record.size_bytes,
+                    package: record.package.map(yoctui_model::PackageIdentity::new),
+                })
+                .collect(),
+        }
+    };
+    let filesystem_tree = match data.filesystem_entries {
+        WireAuthority::Available { records } => {
+            yoctui_model::RootfsAuthority::Available(convert_entries(records))
+        }
+        WireAuthority::Partial {
+            records,
+            limitations,
+        } => yoctui_model::RootfsAuthority::Partial {
+            value: convert_entries(records),
+            limitations,
+        },
+        WireAuthority::Unavailable { reason } => {
+            yoctui_model::RootfsAuthority::Unavailable { reason }
+        }
+    };
+    Ok(BackendEvent::RootfsComposition {
+        request,
+        composition: yoctui_model::RootfsComposition {
+            image,
+            installed_packages,
+            filesystem_tree,
+        },
+        limitations: data.limitations,
+    })
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecipetoolActionAvailability {
     pub capability: yoctui_model::CapabilityId,
@@ -3186,6 +3287,9 @@ impl BuildJobCoordinator {
             | BackendEvent::PackageDetailFailed { .. }
             | BackendEvent::ImageArtifacts { .. }
             | BackendEvent::ImageArtifactsFailed { .. }
+            | BackendEvent::RootfsComposition { .. }
+            | BackendEvent::RootfsCompositionUnavailable { .. }
+            | BackendEvent::RootfsCompositionFailed { .. }
             | BackendEvent::RecipeSources { .. }
             | BackendEvent::RecipeMetadata(_)
             | BackendEvent::LayerRelationships(_)
@@ -3645,6 +3749,30 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
         }
         BackendEvent::ImageArtifactsFailed { request, message } => {
             Some(Action::ImageArtifactInventoryFailed { request, message })
+        }
+        BackendEvent::RootfsComposition {
+            request,
+            composition,
+            limitations,
+        } => {
+            if limitations.is_empty() {
+                Some(Action::RootfsCompositionLoaded {
+                    request,
+                    composition,
+                })
+            } else {
+                Some(Action::RootfsCompositionPartial {
+                    request,
+                    composition,
+                    limitations,
+                })
+            }
+        }
+        BackendEvent::RootfsCompositionUnavailable { request, reason } => {
+            Some(Action::RootfsCompositionUnavailable { request, reason })
+        }
+        BackendEvent::RootfsCompositionFailed { request, message } => {
+            Some(Action::RootfsCompositionFailed { request, message })
         }
         BackendEvent::RecipeSources { recipe, paths } => {
             Some(Action::RecipeSourcesLoaded { recipe, paths })
@@ -8908,6 +9036,67 @@ mod tests {
                 limitations: vec!["one symlink was not followed".into()],
             })
         );
+    }
+
+    #[test]
+    fn ux_rootfs_protocol_crosses_app_boundary_as_typed_correlated_action() {
+        use yoctui_protocol::rootfs::{
+            ROOTFS_COMPOSITION_SCHEMA_VERSION, RootfsAuthorityData, RootfsCompositionData,
+            RootfsCompositionRequestData, RootfsEntryData, RootfsEntryKindData,
+            RootfsImageIdentityData, RootfsInstalledPackageData,
+        };
+
+        let data = RootfsCompositionData {
+            schema_version: ROOTFS_COMPOSITION_SCHEMA_VERSION,
+            request: RootfsCompositionRequestData {
+                generation: 4,
+                image: RootfsImageIdentityData {
+                    machine: "qemux86-64".into(),
+                    image: "core-image-minimal".into(),
+                    path: "/build/tmp/deploy/images/qemux86-64/image.ext4".into(),
+                },
+            },
+            installed_packages: RootfsAuthorityData::Available {
+                records: vec![RootfsInstalledPackageData {
+                    name: "busybox".into(),
+                    recipe: Some("busybox".into()),
+                    category: "base".into(),
+                    installed_size_bytes: 1_024,
+                    file_count: 12,
+                }],
+            },
+            filesystem_entries: RootfsAuthorityData::Partial {
+                records: vec![RootfsEntryData {
+                    path: "/bin/busybox".into(),
+                    kind: RootfsEntryKindData::RegularFile,
+                    size_bytes: 1_024,
+                    package: Some("busybox".into()),
+                }],
+                limitations: vec!["hard-link count unavailable".into()],
+            },
+            limitations: vec!["manifest versions unavailable".into()],
+        };
+        let event = backend_event_from_rootfs_data(data).unwrap();
+        let action = model_action_from_backend_event(event).unwrap();
+        let Action::RootfsCompositionPartial {
+            request,
+            composition,
+            limitations,
+        } = action
+        else {
+            panic!("expected typed partial rootfs composition action")
+        };
+        assert_eq!(request.generation, 4);
+        assert_eq!(request.image.image, "core-image-minimal");
+        assert_eq!(
+            composition.package_inventory().unwrap().packages[0].identity,
+            yoctui_model::PackageIdentity::new("busybox")
+        );
+        assert_eq!(
+            composition.filesystem_tree().unwrap().entries[0].kind,
+            yoctui_model::RootfsEntryKind::RegularFile
+        );
+        assert_eq!(limitations, ["manifest versions unavailable"]);
     }
 
     #[test]

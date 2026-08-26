@@ -249,9 +249,9 @@ use yoctui_model::{
     DependencyNodeId, DevtoolCapability, DevtoolGitState, DevtoolOperation, DevtoolStatus,
     DevtoolStatusError, DevtoolWorkspace, ImageArtifactInventory, ImageArtifactRequest, Layer,
     LogEntry, PackageDetail, PackageDetailRequest, PackageInventoryRequest, PackageSummary, Recipe,
-    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, Severity,
-    SignatureComparisonRequest, SignatureDifference, SignatureRecord, SignatureTarget, TaskStats,
-    VariableOperation, Workspace,
+    RecipeBuildStatus, RecipeIdentity, RecipeMetadata, RecipeWorkspaceStatus, RootfsComposition,
+    RootfsCompositionRequest, Severity, SignatureComparisonRequest, SignatureDifference,
+    SignatureRecord, SignatureTarget, TaskStats, VariableOperation, Workspace,
 };
 use yoctui_protocol::{
     Command, DependencyEdgeData, DependencyEdgeKindData, DependencyGraphData, DependencyNodeData,
@@ -1254,6 +1254,19 @@ pub enum BackendEvent {
     },
     ImageArtifactsFailed {
         request: ImageArtifactRequest,
+        message: String,
+    },
+    RootfsComposition {
+        request: RootfsCompositionRequest,
+        composition: RootfsComposition,
+        limitations: Vec<String>,
+    },
+    RootfsCompositionUnavailable {
+        request: RootfsCompositionRequest,
+        reason: String,
+    },
+    RootfsCompositionFailed {
+        request: RootfsCompositionRequest,
         message: String,
     },
     RecipeSources {
