@@ -182,10 +182,10 @@ default_features = false
 enabled_features = []
 transitive_closure = 46
 transitive_sha256 = "b8f2601b0538eb18c4161ef277efd5eda05378dd94d553e70f1439067e0d017d"
-decision = "adopt"
+decision = "reject"
 admitted = false
-owner_task = "UX-SCROLL-001"
-reason = "Approved for a renderer spike while reducer-owned offsets, focus routing, viewport bounds, and deterministic TestBackend behavior remain authoritative."
+owner_task = "UX-LIST-TREE-001"
+reason = "Rejected after the list/tree spike: the existing ScrollState plus variable_height_window projection covers bounded documents and cards without reconstructing a widget-owned scroll position or adding the 46-package candidate closure."
 
 [[candidate]]
 name = "tui-term"
@@ -218,10 +218,10 @@ default_features = false
 enabled_features = []
 transitive_closure = 46
 transitive_sha256 = "22b8c10eaedd78259b3aac4d8d132da6154eb76db9eff0e73c9494e40353af3b"
-decision = "adopt"
+decision = "reject"
 admitted = false
 owner_task = "UX-LIST-TREE-001"
-reason = "Approved for a bounded external-state adapter spike with stable IDs, reducer-owned expansion/selection, and an exact text fallback."
+reason = "Rejected after the external-state spike: LayerBrowser and ListTreeProjection already own stable IDs, bounded expansion, selection, cycle/depth/count limits, viewport projection, and exact Unicode/ASCII text without duplicating TreeState or adding the 46-package candidate closure."
 
 [[candidate]]
 name = "tui-widget-list"
@@ -236,7 +236,7 @@ default_features = false
 enabled_features = []
 transitive_closure = 46
 transitive_sha256 = "ca9281dfa1e0628c415a40d29c07c375b96baf8f82de4caa2b7eaab715927df7"
-decision = "adopt"
+decision = "reject"
 admitted = false
 owner_task = "UX-LIST-TREE-001"
-reason = "Approved for a variable-height list spike with bounded model projections and reducer-owned position/selection."
+reason = "Rejected after the variable-height spike: the bounded variable_height_window model projection keeps selection visible for 1-16-row cards while existing Ratatui tables render it statelessly; the candidate has unknown MSRV and would duplicate list position/state."

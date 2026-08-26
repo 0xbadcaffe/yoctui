@@ -13911,6 +13911,12 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         .iter()
         .position(|(index, _)| *index == browser.selection);
     let tree = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(left[1]);
+    let visible_rows = usize::from(tree[1].height.saturating_sub(2));
+    let viewport = yoctui_model::variable_height_window(
+        std::iter::repeat_n(1, entries.len()),
+        filtered_selection,
+        visible_rows,
+    );
     frame.render_widget(
         Paragraph::new(search_line(
             app,
@@ -13926,42 +13932,59 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
     );
     frame.render_widget(
         Table::new(
-            entries.into_iter().map(|(index, entry)| {
-                let name = entry.path.file_name().map_or_else(
-                    || entry.path.display().to_string(),
-                    |name| name.to_string_lossy().into_owned(),
-                );
-                let marker = if entry.is_dir {
-                    if browser.expanded.contains(&entry.path) {
-                        "▾"
+            entries
+                .into_iter()
+                .skip(viewport.start)
+                .take(viewport.end.saturating_sub(viewport.start))
+                .map(|(index, entry)| {
+                    let name = entry.path.file_name().map_or_else(
+                        || entry.path.display().to_string(),
+                        |name| name.to_string_lossy().into_owned(),
+                    );
+                    let marker = if entry.is_dir {
+                        if browser.expanded.contains(&entry.path) {
+                            "▾"
+                        } else {
+                            "▸"
+                        }
                     } else {
-                        "▸"
-                    }
-                } else {
-                    " "
-                };
-                let git = match entry.git {
-                    GitFileState::Modified => " M",
-                    GitFileState::Untracked => " ?",
-                    GitFileState::Ignored => " I",
-                    GitFileState::Clean => "  ",
-                    GitFileState::Unavailable => " -",
-                };
-                let indent = "  ".repeat(entry.depth);
-                Row::new([format!(
-                    "{indent}{marker} {name}{}{git}",
-                    if entry.is_dir { "/" } else { "" }
-                )])
-                .style(selected_style(app, index == browser.selection))
-            }),
+                        " "
+                    };
+                    let git = match entry.git {
+                        GitFileState::Modified => " M",
+                        GitFileState::Untracked => " ?",
+                        GitFileState::Ignored => " I",
+                        GitFileState::Clean => "  ",
+                        GitFileState::Unavailable => " -",
+                    };
+                    let indent = "  ".repeat(entry.depth);
+                    Row::new([format!(
+                        "{indent}{marker} {name}{}{git}",
+                        if entry.is_dir { "/" } else { "" }
+                    )])
+                    .style(selected_style(app, index == browser.selection))
+                }),
             [Constraint::Min(1)],
         )
         .block(
             Block::default()
                 .title(format!(
-                    "{} tree | hidden {}",
+                    "{} tree | hidden {} | rows {}-{} of {}{}{}",
                     browser.layer,
-                    if browser.show_hidden { "on" } else { "off" }
+                    if browser.show_hidden { "on" } else { "off" },
+                    viewport.start.saturating_add(usize::from(viewport.end > 0)),
+                    viewport.end,
+                    browser.entries.len(),
+                    if browser.tree_truncated {
+                        " | bounded"
+                    } else {
+                        ""
+                    },
+                    if browser.cycle_entries > 0 {
+                        " | cycle rejected"
+                    } else {
+                        ""
+                    }
                 ))
                 .borders(Borders::ALL),
         ),
@@ -23775,7 +23798,7 @@ mod tests {
         assert!(output.contains("Ctrl+B build recipe"));
     }
     #[test]
-    fn layer_tree_renders_configured_layers_git_state_and_numbered_preview() {
+    fn ux_list_tree_layer_browser_renders_external_state_and_numbered_preview() {
         let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Layers;

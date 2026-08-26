@@ -12,6 +12,7 @@ mod focus;
 mod image;
 mod internal_log;
 mod keymap;
+mod list_tree;
 mod maintenance;
 mod menu;
 mod package;
@@ -51,6 +52,7 @@ pub use focus::*;
 pub use image::*;
 pub use internal_log::*;
 pub use keymap::*;
+pub use list_tree::*;
 pub use maintenance::*;
 pub use menu::*;
 pub use package::*;
@@ -2910,6 +2912,8 @@ pub struct LayerBrowser {
     pub preview_kind: PreviewKind,
     pub preview_truncated: bool,
     pub inspector_mode: LayerInspectorMode,
+    pub tree_truncated: bool,
+    pub cycle_entries: usize,
 }
 impl LayerBrowser {
     pub fn new(layer: String, root: PathBuf) -> Self {
@@ -2928,6 +2932,8 @@ impl LayerBrowser {
             preview_kind: PreviewKind::Unavailable,
             preview_truncated: false,
             inspector_mode: LayerInspectorMode::Preview,
+            tree_truncated: false,
+            cycle_entries: 0,
         }
     }
     pub fn selected_entry(&self) -> Option<&LayerBrowserEntry> {
@@ -2940,33 +2946,50 @@ impl LayerBrowser {
             nodes: &HashMap<PathBuf, Vec<LayerBrowserEntry>>,
             expanded: &HashSet<PathBuf>,
             show_hidden: bool,
-            output: &mut Vec<LayerBrowserEntry>,
+            state: &mut (Vec<LayerBrowserEntry>, HashSet<PathBuf>, bool, usize),
         ) {
+            if depth > LIST_TREE_MAX_DEPTH || state.0.len() >= LIST_TREE_MAX_ROWS {
+                state.2 = true;
+                return;
+            }
+            if !state.1.insert(directory.clone()) {
+                state.3 += 1;
+                return;
+            }
             let Some(children) = nodes.get(directory) else {
+                state.1.remove(directory);
                 return;
             };
             for child in children {
+                if state.0.len() == LIST_TREE_MAX_ROWS {
+                    state.2 = true;
+                    break;
+                }
                 if child.is_hidden && !show_hidden {
                     continue;
                 }
                 let mut visible = child.clone();
                 visible.depth = depth;
-                output.push(visible);
+                state.0.push(visible);
                 if child.is_dir && expanded.contains(&child.path) {
-                    collect(&child.path, depth + 1, nodes, expanded, show_hidden, output);
+                    collect(&child.path, depth + 1, nodes, expanded, show_hidden, state);
                 }
             }
+            state.1.remove(directory);
         }
-        let mut entries = Vec::new();
+        let mut state = (Vec::new(), HashSet::new(), false, 0usize);
         collect(
             &self.root,
             0,
             &self.nodes,
             &self.expanded,
             self.show_hidden,
-            &mut entries,
+            &mut state,
         );
+        let (entries, _, truncated, cycles) = state;
         self.entries = entries;
+        self.tree_truncated = truncated;
+        self.cycle_entries = cycles;
         self.selection = preferred
             .and_then(|path| self.entries.iter().position(|entry| &entry.path == path))
             .unwrap_or_else(|| self.selection.min(self.entries.len().saturating_sub(1)));
@@ -18911,6 +18934,39 @@ mod tests {
         );
         let _ = update(&mut app, Action::LayerBrowserUp);
         assert_eq!(app.layer_browser.as_ref().unwrap().entries.len(), 1);
+    }
+
+    #[test]
+    fn ux_list_tree_layer_flatten_rejects_cycles_and_hard_bounds_depth() {
+        let root = PathBuf::from("/layers/meta-cycle");
+        let child = root.join("child");
+        let mut browser = LayerBrowser::new("meta-cycle".into(), root.clone());
+        browser.nodes.insert(
+            root.clone(),
+            vec![LayerBrowserEntry {
+                path: child.clone(),
+                is_dir: true,
+                ..LayerBrowserEntry::default()
+            }],
+        );
+        browser.nodes.insert(
+            child.clone(),
+            vec![LayerBrowserEntry {
+                path: root.clone(),
+                is_dir: true,
+                ..LayerBrowserEntry::default()
+            }],
+        );
+        browser.expanded.insert(child);
+        browser.rebuild(None);
+        assert_eq!(browser.cycle_entries, 1);
+        assert!(browser.entries.len() <= LIST_TREE_MAX_ROWS);
+        assert!(
+            browser
+                .entries
+                .iter()
+                .all(|entry| entry.depth <= LIST_TREE_MAX_DEPTH)
+        );
     }
     #[test]
     fn layer_tree_hidden_filter_and_search_keep_selection_bounded() {

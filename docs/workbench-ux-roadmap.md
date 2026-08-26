@@ -252,11 +252,12 @@ The user-facing terminal work continues regardless of that dependency choice:
 
 ### Dependency graphs, trees, scroll views, and variable-height lists
 
-`tui-nodes`, `tui-tree-widget`, `tui-scrollview`, and `tui-widget-list` receive
-focused adoption spikes. They may render only bounded typed projections and
-must externalize or reconstruct state from Yoctui model values. Primary uses
-are dependency topology, layer/rootfs trees, long Help/Inspector documents, and
-variable-height diagnostic/job cards. Each has a table/text fallback.
+`tui-nodes` retains a focused dependency-graph spike. The completed list/tree
+spike rejected `tui-tree-widget`, `tui-scrollview`, and `tui-widget-list`:
+Yoctui's stable-ID tree, `ScrollState`, and bounded variable-height viewport
+already provide the complete external authority, cycle/depth/count limits, and
+Unicode/ASCII text projection. Adopting their widget states would duplicate
+selection, expansion, offset, or height authority.
 
 ### Optional image and large-text widgets
 
@@ -286,10 +287,10 @@ refresh its candidate before changing `Cargo.lock`.
 | [`tui-menu`](https://crates.io/crates/tui-menu) | 0.3.1 | MIT OR Apache-2.0 | not declared | Reject; menus must project the typed action catalog directly. |
 | [`tui-nodes`](https://crates.io/crates/tui-nodes) | 0.10.0 | MIT | not declared | Defer until bounded topology and fallback evidence. |
 | [`tui-piechart`](https://crates.io/crates/tui-piechart) | 1.0.2 | MIT | 1.74.0 | Defer until exact table/no-color equivalence. |
-| [`tui-scrollview`](https://crates.io/crates/tui-scrollview) | 0.6.7 | MIT OR Apache-2.0 | 1.88.0 | Adopt for a reducer-owned offset adapter spike. |
+| [`tui-scrollview`](https://crates.io/crates/tui-scrollview) | 0.6.7 | MIT OR Apache-2.0 | 1.88.0 | Rejected; retain reducer-owned scroll projection. |
 | [`tui-term`](https://crates.io/crates/tui-term) | 0.3.4 | MIT | 1.86.0 | Defer pending typed-replica equivalence. |
-| [`tui-tree-widget`](https://crates.io/crates/tui-tree-widget) | 0.24.1 | MIT | 1.86.0 | Adopt for an external-state bounded adapter spike. |
-| [`tui-widget-list`](https://crates.io/crates/tui-widget-list) | 0.15.3 | MIT | not declared | Adopt for a bounded variable-height list spike. |
+| [`tui-tree-widget`](https://crates.io/crates/tui-tree-widget) | 0.24.1 | MIT | 1.86.0 | Rejected; retain stable-ID stateless tree renderer. |
+| [`tui-widget-list`](https://crates.io/crates/tui-widget-list) | 0.15.3 | MIT | not declared | Rejected; retain bounded variable-height projection. |
 
 MIT, Apache-2.0, and Zlib are already allowed by `deny.toml`, but allowlisting is
 not sufficient compliance. Before adoption:
@@ -319,15 +320,15 @@ Progress counts required registry tasks, including the parent completion gate.
 |---|---|---|---:|
 | 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 3/3 |
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 6/6 |
-| 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 9/10 |
+| 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 10/10 |
 | 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 0/5 |
 | 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **18/38 (47.4%)** |
+| **M21 total** | | | **19/38 (50.0%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **558/578 (96.5%)**. The research/spec,
+tasks makes overall required progress **559/578 (96.7%)**. The research/spec,
 six-scene production-renderer acceptance baseline, exact cell goldens, semantic
 captures, executable implementation-gap ledger, and reusable dependency
 admission/notices/SBOM/offline-build gate are complete. The validated

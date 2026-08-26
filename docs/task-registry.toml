@@ -6168,12 +6168,12 @@ notes = "CheckboxState owns checked, unchecked, indeterminate, disabled-reason, 
 id = "UX-LIST-TREE-001"
 milestone = "M21"
 title = "Evaluate and integrate tree scrollview and variable-list adapters"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 718
 required = true
 depends_on = ["UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-model ux_list_tree", "cargo test -p yoctui-ui ux_list_tree", "cargo test -p yoctui-app ux_list_tree"]
-notes = "Spike tui-tree-widget, tui-scrollview, and tui-widget-list against external model state for layer/rootfs trees, long documents, and variable-height cards, with text fallbacks and large-data bounds."
+notes = "ListTreeProjection now bounds stable IDs/labels, 8,192 rows, 64 levels, duplicate IDs, expansion markers, and 1-16-row variable-height viewports with Unicode/ASCII text. LayerBrowser flattening rejects recursive path cycles, reports depth/count truncation, and the production layer tree renders only the model-selected viewport; keyboard routes remain typed. tui-tree-widget, tui-scrollview, and tui-widget-list are rejected after their spikes because TreeState/ScrollViewState/ListState would duplicate existing reducer authority; all remain absent from the dependency graph."
 
 [[task]]
 id = "UX-DEPENDENCY-GRAPH-001"

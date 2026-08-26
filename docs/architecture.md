@@ -3007,6 +3007,14 @@ Crossterm events directly; `yoctui-app` maps input and mouse geometry to typed
 actions. A candidate that cannot meet this rule remains a design reference or
 is replaced by a small render-only adapter.
 
+List and tree virtualization uses `ListTreeProjection` and
+`variable_height_window`: stable string/path identities, expansion, selection,
+1-16-row card heights, viewport position, and 8,192-row/64-depth limits remain
+model values. Layer flattening rejects recursive path cycles and reports count
+or depth truncation. The evaluated tree, scrollview, and widget-list candidates
+were rejected because their state objects duplicate these authorities; Ratatui
+tables and paragraphs render only the bounded returned window.
+
 `yoctui_model::widget_projection` is the renderer-independent visual-value
 boundary. It owns overflow-safe fractions, bounded newest-first histories,
 bounded bar/tab/legend collections, model-reconciled scrollbar geometry, and
