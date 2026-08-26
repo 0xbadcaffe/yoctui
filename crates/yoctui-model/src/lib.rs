@@ -10,6 +10,7 @@ mod embedded_shell;
 mod image;
 mod keymap;
 mod maintenance;
+mod menu;
 mod package;
 mod pane_layout;
 mod project_profile;
@@ -40,6 +41,7 @@ pub use embedded_shell::*;
 pub use image::*;
 pub use keymap::*;
 pub use maintenance::*;
+pub use menu::*;
 pub use package::*;
 pub use pane_layout::*;
 pub use project_profile::*;
@@ -139,6 +141,7 @@ pub enum FunctionKey {
 pub enum FunctionShortcutRoute {
     Open(Screen),
     CommandPalette,
+    ApplicationMenu,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -208,7 +211,7 @@ pub const FUNCTION_SHORTCUTS: [FunctionShortcut; 10] = [
         key: FunctionKey::F10,
         key_label: "F10",
         action_label: "Menu",
-        route: FunctionShortcutRoute::CommandPalette,
+        route: FunctionShortcutRoute::ApplicationMenu,
     },
 ];
 
@@ -220,6 +223,7 @@ pub fn function_shortcut_action(key: FunctionKey) -> Action {
     match shortcut.route {
         FunctionShortcutRoute::Open(screen) => Action::Open(screen),
         FunctionShortcutRoute::CommandPalette => Action::OpenCommandPalette,
+        FunctionShortcutRoute::ApplicationMenu => Action::OpenApplicationMenu,
     }
 }
 /// The one active target in Yoctui's persistent workbench shell.
@@ -3350,6 +3354,7 @@ pub struct App {
     pub effective_keymap: EffectiveKeymap,
     pub keymap_chord: KeymapChordState,
     pub keymap_preferences_ui: KeymapPreferencesUiState,
+    pub menu: MenuState,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -3505,6 +3510,7 @@ impl App {
             effective_keymap: EffectiveKeymap::default(),
             keymap_chord: KeymapChordState::default(),
             keymap_preferences_ui: KeymapPreferencesUiState::default(),
+            menu: MenuState::default(),
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
@@ -4528,6 +4534,127 @@ impl App {
             })
             .collect()
     }
+    pub fn application_menu_items(&self, group: ApplicationMenuGroup) -> Vec<MenuItem> {
+        self.command_palette_commands()
+            .into_iter()
+            .filter(|command| ApplicationMenuGroup::for_command(command.id) == group)
+            .map(|command| MenuItem {
+                action_id: command.action_id,
+                target: OperatorActionTarget::Command(command.id),
+                label: command.label,
+                description: command.description,
+                shortcut: command.shortcut,
+                disabled_reason: command.disabled_reason,
+                safety: command.safety,
+            })
+            .collect()
+    }
+    pub fn context_menu_items(&self, destination: WorkspaceDestination) -> Vec<MenuItem> {
+        workspace_operator_action_definitions(destination)
+            .into_iter()
+            .map(|definition| {
+                let availability = compatibility_ui_action_availability(
+                    &self.workspace_compatibility,
+                    &definition.requirement,
+                );
+                let disabled_reason =
+                    context_action_local_disabled_reason(self, destination, definition.id.as_str())
+                        .or_else(|| {
+                            (!availability.enabled).then(|| {
+                                availability.exact_reason().unwrap_or_else(|| {
+                                    "The connected environment does not enable this operation."
+                                        .into()
+                                })
+                            })
+                        });
+                MenuItem {
+                    action_id: definition.id,
+                    target: definition.target,
+                    label: definition.label,
+                    description: definition.description,
+                    shortcut: definition.shortcut,
+                    disabled_reason,
+                    safety: definition.safety,
+                }
+            })
+            .collect()
+    }
+    pub fn active_menu_items(&self) -> Vec<MenuItem> {
+        match self.menu.kind {
+            Some(MenuKind::Application) => self.application_menu_items(self.menu.group()),
+            Some(MenuKind::Context(destination)) => self.context_menu_items(destination),
+            None => Vec::new(),
+        }
+    }
+    pub fn selected_menu_item(&self) -> Option<MenuItem> {
+        self.active_menu_items()
+            .get(self.menu.item_selection)
+            .cloned()
+    }
+}
+
+fn context_action_local_disabled_reason(
+    app: &App,
+    destination: WorkspaceDestination,
+    action_id: &str,
+) -> Option<String> {
+    let workspace_required = matches!(
+        destination,
+        WorkspaceDestination::Dashboard
+            | WorkspaceDestination::Recipes
+            | WorkspaceDestination::Layers
+            | WorkspaceDestination::Configuration
+            | WorkspaceDestination::Tasks
+            | WorkspaceDestination::Dependencies
+            | WorkspaceDestination::Signatures
+            | WorkspaceDestination::Packages
+            | WorkspaceDestination::Images
+            | WorkspaceDestination::Sdk
+            | WorkspaceDestination::Testing
+            | WorkspaceDestination::Security
+            | WorkspaceDestination::Qa
+            | WorkspaceDestination::RawMode
+            | WorkspaceDestination::Devtool
+            | WorkspaceDestination::QemuWic
+            | WorkspaceDestination::Maintenance
+    );
+    if workspace_required && app.workspace.build_dir.is_none() {
+        return Some("Load a Yocto workspace first.".into());
+    }
+    if destination == WorkspaceDestination::Recipes
+        && action_id != "recipes.metadata"
+        && app.workspace.recipes.get(app.recipe_selection).is_none()
+    {
+        return Some("Select a recipe first.".into());
+    }
+    if destination == WorkspaceDestination::Packages
+        && action_id != "packages.inventory"
+        && action_id != "packages.cancel"
+        && app.selected_package().is_none()
+    {
+        return Some("Select a package first.".into());
+    }
+    if destination == WorkspaceDestination::Images
+        && matches!(
+            action_id,
+            "images.build" | "images.qemu" | "images.wic" | "images.device_write"
+        )
+        && app.selected_image_artifact().is_none()
+    {
+        return Some("Select a deployed image artifact first.".into());
+    }
+    if matches!(action_id, "dashboard.cancel" | "tasks.cancel")
+        && !matches!(
+            app.build.status,
+            BuildStatus::LoadingWorkspace
+                | BuildStatus::Parsing
+                | BuildStatus::Running
+                | BuildStatus::Cancelling
+        )
+    {
+        return Some("No active build is available to cancel.".into());
+    }
+    None
 }
 fn contains_case_insensitive(value: &str, query: &str) -> bool {
     query.is_empty() || value.to_lowercase().contains(&query.to_lowercase())
@@ -4593,6 +4720,17 @@ pub enum Action {
     ClearCommandPaletteQuery,
     ActivateCommandPalette,
     CloseCommandPalette,
+    OpenApplicationMenu,
+    OpenContextMenu,
+    SelectMenuGroup {
+        delta: isize,
+    },
+    SelectMenuItem {
+        delta: isize,
+    },
+    AppendMenuPrefix(char),
+    BackspaceMenuPrefix,
+    CloseMenu,
     SelectSetting {
         delta: isize,
     },
@@ -5715,7 +5853,8 @@ fn enqueue_build_completion(app: &mut App) {
 fn modal_focus(app: &App) -> Option<FocusTarget> {
     if app.command_palette_open {
         Some(FocusTarget::CommandPalette)
-    } else if app.keymap_preferences_ui.open
+    } else if app.menu.is_open()
+        || app.keymap_preferences_ui.open
         || dialog_is_open(app)
         || (app.screen == Screen::RawMode
             && matches!(app.raw_mode.view, RawModeView::Form | RawModeView::Preview))
@@ -7680,6 +7819,72 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::CloseCommandPalette => {
             app.command_palette_open = false;
         }
+        Action::OpenApplicationMenu => {
+            app.command_palette_open = false;
+            app.menu.open_application();
+        }
+        Action::OpenContextMenu => {
+            app.command_palette_open = false;
+            app.menu
+                .open_context(workspace_screen_destination(app.screen));
+        }
+        Action::SelectMenuGroup { delta } if app.menu.kind == Some(MenuKind::Application) => {
+            let current = app.menu.group_selection;
+            app.menu.group_selection = if delta.is_negative() {
+                current.saturating_sub(delta.unsigned_abs())
+            } else {
+                current
+                    .saturating_add(delta as usize)
+                    .min(ApplicationMenuGroup::ALL.len().saturating_sub(1))
+            };
+            app.menu.item_selection = 0;
+            app.menu.typed_prefix.clear();
+        }
+        Action::SelectMenuGroup { .. } => {}
+        Action::SelectMenuItem { delta } if app.menu.is_open() => {
+            let count = app.active_menu_items().len();
+            app.menu.item_selection = if delta.is_negative() {
+                app.menu.item_selection.saturating_sub(delta.unsigned_abs())
+            } else {
+                app.menu
+                    .item_selection
+                    .saturating_add(delta as usize)
+                    .min(count.saturating_sub(1))
+            };
+            app.menu.typed_prefix.clear();
+        }
+        Action::SelectMenuItem { .. } => {}
+        Action::AppendMenuPrefix(character)
+            if app.menu.is_open()
+                && !character.is_control()
+                && app.menu.typed_prefix.chars().count() < MAX_MENU_PREFIX_CHARS =>
+        {
+            app.menu.typed_prefix.push(character);
+            let prefix = app.menu.typed_prefix.to_lowercase();
+            if let Some(index) = app
+                .active_menu_items()
+                .iter()
+                .position(|item| item.label.to_lowercase().starts_with(&prefix))
+            {
+                app.menu.item_selection = index;
+            }
+        }
+        Action::AppendMenuPrefix(_) => {}
+        Action::BackspaceMenuPrefix if app.menu.is_open() => {
+            app.menu.typed_prefix.pop();
+            if !app.menu.typed_prefix.is_empty() {
+                let prefix = app.menu.typed_prefix.to_lowercase();
+                if let Some(index) = app
+                    .active_menu_items()
+                    .iter()
+                    .position(|item| item.label.to_lowercase().starts_with(&prefix))
+                {
+                    app.menu.item_selection = index;
+                }
+            }
+        }
+        Action::BackspaceMenuPrefix => {}
+        Action::CloseMenu => app.menu.close(),
         Action::SelectSetting { delta } => {
             app.settings_selection = if delta.is_negative() {
                 app.settings_selection.saturating_sub(delta.unsigned_abs())
@@ -15400,6 +15605,7 @@ mod tests {
                 match shortcut.route {
                     FunctionShortcutRoute::Open(screen) => Action::Open(screen),
                     FunctionShortcutRoute::CommandPalette => Action::OpenCommandPalette,
+                    FunctionShortcutRoute::ApplicationMenu => Action::OpenApplicationMenu,
                 }
             );
         }

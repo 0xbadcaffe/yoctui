@@ -451,6 +451,10 @@ mod tests {
                     assert!(app.command_palette_open);
                     assert_eq!(app.focus, FocusTarget::CommandPalette);
                 }
+                FunctionShortcutRoute::ApplicationMenu => {
+                    assert!(app.menu.is_open());
+                    assert_eq!(app.focus, FocusTarget::Dialog);
+                }
             }
         }
 

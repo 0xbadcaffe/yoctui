@@ -27,27 +27,28 @@ use std::{
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use yoctui_app::{
-    BuildJobCoordinator, DevtoolJobCoordinator, Input, MouseInput, MouseKind, PrefixCommand,
-    PrefixEvent, PrefixState, build_environment_action, compatibility_ui_inspector_action,
-    compatibility_workspace_action, config_compare_dialog_action, config_edit_confirmation_action,
-    config_scope_picker_action, config_source_picker_action, config_workspace_action,
-    daemon_job_state_from_app, daemon_protocol_snapshot, dependency_workspace_action,
-    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
-    devtool_finish_confirmation_action, devtool_finish_picker_action,
+    BuildJobCoordinator, DevtoolJobCoordinator, Input, MenuInputResult, MouseInput, MouseKind,
+    PrefixCommand, PrefixEvent, PrefixState, build_environment_action,
+    compatibility_ui_inspector_action, compatibility_workspace_action,
+    config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
+    config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
+    daemon_protocol_snapshot, dependency_workspace_action, devtool_deploy_confirmation_action,
+    devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
     keymap_action_for_app, keymap_preferences_action, logs_action, maintenance_dialog_action,
-    maintenance_workspace_action, model_action_from_backend_event, mouse_action_for_app,
-    package_workspace_action, popup_editor_action, qa_dialog_action, qa_layer_capability_action,
-    qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
-    qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
-    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
-    qemu_launch_dialog_action, raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
-    sdk_actions_for_runner_event, sdk_build_confirmation_action,
-    sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
-    sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
-    security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
-    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
+    maintenance_workspace_action, menu_action, model_action_from_backend_event,
+    mouse_action_for_app, package_workspace_action, popup_editor_action, qa_dialog_action,
+    qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
+    qa_report_response_action, qa_task_capability_action, qa_workspace_action,
+    qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
+    qemu_launch_confirmation_action, qemu_launch_dialog_action, raw_mode_input,
+    recipe_editor_action, recover_daemon_model_metadata, sdk_actions_for_runner_event,
+    sdk_build_confirmation_action, sdk_cancellation_confirmation_action,
+    sdk_native_confirmation_action, sdk_native_dialog_action, sdk_publish_confirmation_action,
+    sdk_publish_dialog_action, sdk_workspace_action, security_actions_for_mapper_event,
+    security_dialog_action, security_workspace_action, settings_action,
+    signature_task_picker_action, signature_workspace_action, tasks_action,
     test_actions_for_runner_event, test_cancellation_confirmation_action,
     test_comparison_confirmation_action, test_comparison_dialog_action,
     test_comparison_workspace_action, test_junit_confirmation_action, test_junit_dialog_action,
@@ -10140,14 +10141,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 continue;
             }
             if let Event::Mouse(mouse) = terminal_event {
-                let kind = match mouse.kind {
-                    crossterm::event::MouseEventKind::Down(_) => Some(MouseKind::Down),
-                    crossterm::event::MouseEventKind::Drag(_) => Some(MouseKind::Drag),
-                    crossterm::event::MouseEventKind::Up(_) => Some(MouseKind::Up),
-                    crossterm::event::MouseEventKind::ScrollUp => Some(MouseKind::ScrollUp),
-                    crossterm::event::MouseEventKind::ScrollDown => Some(MouseKind::ScrollDown),
-                    _ => None,
-                };
+                let kind = mouse_kind_from_event(mouse.kind);
                 let terminal_size = terminal.size()?;
                 if let Some(kind) = kind
                     && let Some(action) = mouse_action_for_app(
@@ -10169,7 +10163,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                 let Some(mut input) = input_from_key(k) else {
                     continue;
                 };
-                if app.active_dialog().is_none() {
+                if app.active_dialog().is_none() && !app.menu.is_open() {
                     match prefix_state.feed(input, Instant::now()) {
                         PrefixEvent::Awaiting => {
                             app.notification = Some(
@@ -10268,6 +10262,35 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                         }
                         PrefixEvent::Literal(next) => input = next,
                     }
+                }
+                let mut replayed_context_action = false;
+                if app.menu.is_open() {
+                    match menu_action(&app, input) {
+                        Some(MenuInputResult::Reduce(action)) => {
+                            let _ = compatibility_workspace_action(&mut app, *action);
+                            continue;
+                        }
+                        Some(MenuInputResult::ActivateCommand(command)) => {
+                            let _ = compatibility_workspace_action(&mut app, Action::CloseMenu);
+                            let action = yoctui_model::command_action(&app, command);
+                            let _ = compatibility_workspace_action(&mut app, action);
+                            continue;
+                        }
+                        Some(MenuInputResult::ActivateContext(replay)) => {
+                            let _ = compatibility_workspace_action(&mut app, Action::CloseMenu);
+                            input = replay;
+                            replayed_context_action = true;
+                        }
+                        None => continue,
+                    }
+                }
+                if !replayed_context_action && input == Input::F10 {
+                    let _ = compatibility_workspace_action(&mut app, Action::OpenApplicationMenu);
+                    continue;
+                }
+                if !replayed_context_action && input == Input::Char('a') {
+                    let _ = compatibility_workspace_action(&mut app, Action::OpenContextMenu);
+                    continue;
                 }
                 if app.command_palette_open {
                     let effect = match input {
@@ -12812,6 +12835,20 @@ fn notification_input_action(
     }
 }
 
+fn mouse_kind_from_event(kind: crossterm::event::MouseEventKind) -> Option<MouseKind> {
+    match kind {
+        crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Right) => {
+            Some(MouseKind::ContextDown)
+        }
+        crossterm::event::MouseEventKind::Down(_) => Some(MouseKind::Down),
+        crossterm::event::MouseEventKind::Drag(_) => Some(MouseKind::Drag),
+        crossterm::event::MouseEventKind::Up(_) => Some(MouseKind::Up),
+        crossterm::event::MouseEventKind::ScrollUp => Some(MouseKind::ScrollUp),
+        crossterm::event::MouseEventKind::ScrollDown => Some(MouseKind::ScrollDown),
+        _ => None,
+    }
+}
+
 fn input_from_key(key: KeyEvent) -> Option<Input> {
     match key.code {
         KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlC),
@@ -14532,6 +14569,34 @@ mod tests {
                 Some(expected)
             );
         }
+    }
+
+    #[test]
+    fn ux_menu_terminal_f10_and_right_click_decode_without_bypassing_typed_routes() {
+        assert_eq!(
+            input_from_key(KeyEvent::new(KeyCode::F(10), KeyModifiers::NONE)),
+            Some(Input::F10)
+        );
+        assert_eq!(
+            mouse_kind_from_event(crossterm::event::MouseEventKind::Down(
+                crossterm::event::MouseButton::Right,
+            )),
+            Some(MouseKind::ContextDown)
+        );
+        assert_eq!(
+            mouse_kind_from_event(crossterm::event::MouseEventKind::Down(
+                crossterm::event::MouseButton::Left,
+            )),
+            Some(MouseKind::Down)
+        );
+
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenApplicationMenu);
+        assert!(app.menu.is_open());
+        assert!(matches!(
+            menu_action(&app, Input::Esc),
+            Some(MenuInputResult::Reduce(action)) if *action == Action::CloseMenu
+        ));
     }
 
     #[test]

@@ -2,24 +2,23 @@
 
 ## Task
 
-**ID:** UX-MENU-001
-**Title:** Implement typed application and context menus
+**ID:** UX-FOCUS-001
+**Title:** Polish pane subfocus zoom and focus restoration
 **Status:** NOT_STARTED
 
 ## Objective
 
-Project the operator action catalog into focus-trapped F10 application menus and
-selected-item context menus that use the existing typed action routes.
+Add typed pane subfocus, reversible workspace zoom, visible focus identity, and
+predictable outward navigation without weakening modal or terminal ownership.
 
 ## Dependencies
 
-- `UX-ACTION-CATALOG-001` — DONE
+- `UX-MENU-001` — DONE
 - `UX-KEYMAP-MODEL-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/action_catalog.rs`
-- new typed menu model and reducer state
+- typed focus/subfocus/zoom model and reducer state
 - `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-cli/src/main.rs`
@@ -28,22 +27,22 @@ selected-item context menus that use the existing typed action routes.
 
 ## Definition of done
 
-- F10 opens stable Workspace/Build/Navigate/View/Tools/Help groups.
-- Arrow keys, bounded typed-prefix selection, Enter, and outward Esc are trapped.
-- `a` and right click open the selected item's contextual catalog actions.
-- Disabled actions remain visible with exact local/capability/safety reasons.
-- Activation emits the same typed route and confirmation as palette/keybindings.
-- Menus render safely at wide, medium, narrow, no-color, and reduced-motion states.
+- Every visible pane and subview has typed, textual focus identity.
+- Zoom is reversible and restores exact focus, selection, and offsets.
+- `Esc` moves outward predictably and direct menu/palette focus actions work.
+- Resize preserves valid focus and never targets hidden or disabled regions.
+- Dialog and terminal ownership remain trapped across keyboard and mouse input.
+- Wide, medium, narrow, no-color, and reduced-motion rendering remains safe.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_menu
-cargo test -p yoctui-app ux_menu
-cargo test -p yoctui-ui ux_menu
-cargo test -p yoctui -- ux_menu
+cargo test -p yoctui-model ux_focus
+cargo test -p yoctui-app ux_focus
+cargo test -p yoctui-ui ux_focus
+cargo test -p yoctui -- ux_focus
 ./scripts/verify-roadmap.sh
 ```
 
-Menus are catalog projections; they cannot introduce new backend behavior or
-bypass the existing compatibility and confirmation boundaries.
+Focus and zoom remain client-local presentation state; they cannot create a
+second backend or terminal authority.

@@ -1385,7 +1385,9 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     responsive_shell(frame, app, chunks[1], area.width, now);
     workbench_footer(frame, app, chunks[2], now);
     let screen_area = area;
-    if app.keymap_preferences_ui.open {
+    if app.menu.is_open() {
+        menu_overlay(frame, app, area);
+    } else if app.keymap_preferences_ui.open {
         keymap_preferences_overlay(frame, app, area);
     } else if app.command_palette_open {
         command_palette(frame, app, area);
@@ -11225,6 +11227,163 @@ fn keymap_preferences_overlay(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
+    let items = app.active_menu_items();
+    let width = area.width.saturating_sub(4).min(94);
+    let height = area
+        .height
+        .saturating_sub(2)
+        .min(
+            u16::try_from(items.len())
+                .unwrap_or(u16::MAX)
+                .saturating_add(10),
+        )
+        .min(28);
+    if width < 36 || height < 10 {
+        return;
+    }
+    let popup = Rect::new(
+        (area.width.saturating_sub(width)) / 2,
+        (area.height.saturating_sub(height)) / 2,
+        width,
+        height,
+    );
+    clear_popup(frame, app, popup);
+    let palette = ThemePalette::for_app(app);
+    let title = match app.menu.kind {
+        Some(yoctui_model::MenuKind::Application) => "Application menu · focus trapped".into(),
+        Some(yoctui_model::MenuKind::Context(destination)) => {
+            format!("{} actions · focus trapped", destination.label())
+        }
+        None => return,
+    };
+    let outer = dialog_block(app, title, DialogTone::Standard);
+    let inner = outer.inner(popup);
+    frame.render_widget(outer, popup);
+    if inner.is_empty() {
+        return;
+    }
+    let regions = Layout::vertical([
+        Constraint::Length(2),
+        Constraint::Min(4),
+        Constraint::Length(4),
+        Constraint::Length(1),
+    ])
+    .split(inner);
+    let groups = yoctui_model::ApplicationMenuGroup::ALL
+        .iter()
+        .enumerate()
+        .map(|(index, group)| {
+            if app.menu.kind == Some(yoctui_model::MenuKind::Application)
+                && index == app.menu.group_selection
+            {
+                format!("[{}]", group.label())
+            } else {
+                group.label().to_owned()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("  ");
+    let prefix = if app.menu.typed_prefix.is_empty() {
+        "type-ahead: <empty>".into()
+    } else {
+        format!("type-ahead: {}_", app.menu.typed_prefix)
+    };
+    frame.render_widget(
+        Paragraph::new(vec![Line::raw(groups), Line::raw(prefix)]).style(palette.base()),
+        regions[0],
+    );
+
+    let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
+    let visible = usize::from(regions[1].height.saturating_sub(3)).max(1);
+    let start = selected
+        .saturating_sub(visible / 2)
+        .min(items.len().saturating_sub(visible));
+    let rows = items
+        .iter()
+        .enumerate()
+        .skip(start)
+        .take(visible)
+        .map(|(index, item)| {
+            let availability = item.disabled_reason.as_deref().unwrap_or("available");
+            let safety = match item.safety {
+                yoctui_model::OperatorActionSafety::ReadOnly => "read-only",
+                yoctui_model::OperatorActionSafety::ConfirmationRequired => "confirm",
+                yoctui_model::OperatorActionSafety::DestructiveConfirmation => "DESTRUCTIVE",
+            };
+            Row::new([
+                format!(
+                    "{} {}",
+                    if index == selected { ">" } else { " " },
+                    item.label
+                ),
+                item.shortcut.to_owned(),
+                safety.to_owned(),
+                availability.to_owned(),
+            ])
+            .style(if index == selected {
+                selected_style(app, true)
+            } else if item.enabled() {
+                palette.base()
+            } else {
+                palette.role(palette.disabled, Modifier::DIM)
+            })
+        });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Percentage(34),
+                Constraint::Length(14),
+                Constraint::Length(12),
+                Constraint::Percentage(45),
+            ],
+        )
+        .header(
+            Row::new(["Action", "Shortcut", "Safety", "Availability"])
+                .style(palette.role(palette.heading, Modifier::BOLD)),
+        )
+        .block(
+            Block::default()
+                .title("Catalog actions")
+                .borders(Borders::ALL),
+        ),
+        regions[1],
+    );
+
+    let detail = items.get(selected).map_or_else(
+        || "No contextual catalog actions are available for this workspace.".into(),
+        |item| {
+            format!(
+                "{}\n{} · {}",
+                item.description,
+                item.action_id.as_str(),
+                item.disabled_reason
+                    .as_deref()
+                    .unwrap_or("available through the existing typed route")
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(detail)
+            .block(
+                Block::default()
+                    .title("Selected action")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+        regions[2],
+    );
+    frame.render_widget(
+        Paragraph::new(bounded_cell_text(
+            "Esc/F10 close · Enter activate · ↑/↓ items · ←/→ groups · type prefix · Backspace",
+            regions[3].width,
+        ))
+        .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+        regions[3],
+    );
+}
+
 fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let status = match &app.build_environment {
         BuildEnvironmentState::Unconfigured => "not configured".to_owned(),
@@ -18194,6 +18353,42 @@ mod tests {
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("Conflict/disabled"), "{output}");
         assert!(output.contains("exact test reason"), "{output}");
+    }
+
+    #[test]
+    fn ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_states() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenApplicationMenu);
+        for (width, height) in [(160, 40), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("Application menu"),
+                "{width}x{height}: {output}"
+            );
+            assert!(output.contains("[Workspace]"), "{output}");
+            assert!(output.contains("Build"), "{output}");
+            assert!(output.contains("Navigate"), "{output}");
+            assert!(output.contains("View"), "{output}");
+            assert!(output.contains("Tools"), "{output}");
+            assert!(output.contains("Help"), "{output}");
+            assert!(output.contains("Edit BBMASK"), "{output}");
+            assert!(output.contains("Load a Yocto workspace first"), "{output}");
+            assert!(output.contains("Esc/F10 close"), "{output}");
+        }
+
+        let _ = update(&mut app, Action::CloseMenu);
+        app.screen = Screen::Recipes;
+        app.workspace.build_dir = Some("/work/build".into());
+        app.reduced_motion = true;
+        app.color_enabled = false;
+        let _ = update(&mut app, Action::OpenContextMenu);
+        let _ = update(&mut app, Action::SelectMenuItem { delta: 2 });
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("Recipes actions"), "{output}");
+        assert!(output.contains("Build selected recipe"), "{output}");
+        assert!(output.contains("confirm"), "{output}");
+        assert!(output.contains("Select a recipe first."), "{output}");
+        assert!(output.contains("> Build selected reci"), "{output}");
     }
 
     #[test]

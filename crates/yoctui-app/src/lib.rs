@@ -3718,6 +3718,7 @@ impl KeymapInputResult {
 
 pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapInputResult {
     if app.keymap_preferences_ui.open
+        || app.menu.is_open()
         || app.active_dialog().is_some()
         || app.command_palette_open
         || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
@@ -3819,6 +3820,138 @@ pub fn keymap_preferences_action(app: &yoctui_model::App, key: Input) -> Option<
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum MenuInputResult {
+    Reduce(Box<Action>),
+    ActivateCommand(yoctui_model::CommandId),
+    ActivateContext(Input),
+}
+
+pub fn menu_action(app: &yoctui_model::App, key: Input) -> Option<MenuInputResult> {
+    if !app.menu.is_open() {
+        return None;
+    }
+    let reduce = |action| Some(MenuInputResult::Reduce(Box::new(action)));
+    match key {
+        Input::Esc | Input::F10 => reduce(Action::CloseMenu),
+        Input::Left => reduce(Action::SelectMenuGroup { delta: -1 }),
+        Input::Right => reduce(Action::SelectMenuGroup { delta: 1 }),
+        Input::Up | Input::Char('k') => reduce(Action::SelectMenuItem { delta: -1 }),
+        Input::Down | Input::Char('j') => reduce(Action::SelectMenuItem { delta: 1 }),
+        Input::Backspace => reduce(Action::BackspaceMenuPrefix),
+        Input::Enter => {
+            let item = app.selected_menu_item()?;
+            if !item.enabled() {
+                return None;
+            }
+            match item.target {
+                yoctui_model::OperatorActionTarget::Command(command) => {
+                    Some(MenuInputResult::ActivateCommand(command))
+                }
+                yoctui_model::OperatorActionTarget::Workspace { legacy_id, .. } => {
+                    context_menu_activation_input(legacy_id).map(MenuInputResult::ActivateContext)
+                }
+            }
+        }
+        Input::Char(character) => reduce(Action::AppendMenuPrefix(character)),
+        _ => None,
+    }
+}
+
+pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
+    let input = match action_id {
+        "dashboard.build" => Input::Char('B'),
+        "dashboard.cancel" => Input::Char('c'),
+        "recipes.metadata" => Input::Enter,
+        "recipes.dependencies" => Input::Char('g'),
+        "recipes.build" => Input::Char('b'),
+        "recipes.force_task" => Input::Char('f'),
+        "recipes.signatures" => Input::Char('z'),
+        "recipes.cve" => Input::Char('V'),
+        "recipes.spdx" => Input::Char('X'),
+        "recipes.devtool_modify" => Input::Char('d'),
+        "recipes.devtool_update" => Input::Char('u'),
+        "recipes.devtool_finish" => Input::Char('F'),
+        "recipes.devtool_deploy" => Input::Char('P'),
+        "recipes.devtool_reset" => Input::Char('D'),
+        "recipes.open" => Input::Enter,
+        "layers.inventory" => Input::Char('r'),
+        "layers.relationships" => Input::Char('R'),
+        "layers.create" => Input::Char('c'),
+        "layers.add" => Input::Char('a'),
+        "layers.remove" => Input::Char('x'),
+        "layers.open" => Input::Enter,
+        "configuration.getvar" => Input::Char('r'),
+        "configuration.inspect" => Input::Enter,
+        "configuration.edit" => Input::Char('E'),
+        "tasks.inventory" => Input::F2,
+        "tasks.build" => Input::Char('B'),
+        "tasks.cancel" => Input::Char('c'),
+        "tasks.logs" => Input::Char('l'),
+        "tasks.history" => Input::Char('h'),
+        "build_history.inspect"
+        | "errors.inspect"
+        | "dependencies.open"
+        | "packages.detail"
+        | "raw.inspect"
+        | "terminal.server" => Input::Enter,
+        "logs.inspect" => Input::Char('/'),
+        "dependencies.refresh" | "signatures.dump" | "devtool.status" => Input::Char('r'),
+        "signatures.compare" => Input::Char('c'),
+        "signatures.open" => Input::Char('e'),
+        "packages.inventory" => Input::Char('R'),
+        "packages.navigate" => Input::Char('d'),
+        "packages.cancel" => Input::Char('c'),
+        "images.build" => Input::Char('b'),
+        "images.qemu" | "qemu_wic.qemu" => Input::Char('Q'),
+        "images.wic" | "qemu_wic.wic" => Input::Char('W'),
+        "images.device_write" | "qemu_wic.write" => Input::Char('D'),
+        "images.artifacts" | "sdk.artifacts" => Input::Char('R'),
+        "images.cancel" | "qemu_wic.cancel" => Input::Char('x'),
+        "sdk.standard" => Input::Char('s'),
+        "sdk.extensible" => Input::Char('E'),
+        "sdk.testsdk" => Input::Char('t'),
+        "sdk.testsdkext" => Input::Char('T'),
+        "sdk.publish" => Input::Char('P'),
+        "sdk.native" => Input::Char('n'),
+        "sdk.cancel" | "security.cancel" | "qa.cancel" => Input::Char('c'),
+        "testing.oe_selftest"
+        | "testing.bitbake_selftest"
+        | "testing.testimage"
+        | "testing.testsdk"
+        | "testing.testsdkext"
+        | "testing.ptest"
+        | "qa.recipe"
+        | "qa.layer" => Input::Char('r'),
+        "testing.compare" => Input::Char('c'),
+        "testing.import" | "security.reports" | "qa.reports" => Input::Char('I'),
+        "testing.cancel" => Input::Char('x'),
+        "security.cve" => Input::Char('V'),
+        "security.spdx" => Input::Char('X'),
+        "security.package_map" => Input::Char('M'),
+        "devtool.edit" => Input::Char('e'),
+        "devtool.modify" => Input::Char('d'),
+        "devtool.update" => Input::Char('u'),
+        "devtool.finish" => Input::Char('F'),
+        "devtool.deploy" | "devtool.undeploy" => Input::Char('P'),
+        "devtool.reset" => Input::Char('D'),
+        "devtool.upgrade" => Input::Char('U'),
+        "maintenance.readiness" => Input::Char('c'),
+        "maintenance.cleanup" => Input::Char('d'),
+        "maintenance.prserv" => Input::Char('e'),
+        "maintenance.locked" => Input::Char('l'),
+        "maintenance.history" => Input::Char('h'),
+        "maintenance.archive" => Input::Char('a'),
+        "maintenance.cancel" => Input::Char('x'),
+        "maintenance.evidence" => Input::Char('o'),
+        "terminal.devshell" => Input::Char('s'),
+        "terminal.menuconfig" => Input::Char('m'),
+        "terminal.cancel" => Input::Char('c'),
+        _ => return None,
+    };
+    Some(input)
+}
+
 fn catalog_routed_action(action: &Action) -> bool {
     matches!(
         action,
@@ -3845,6 +3978,7 @@ fn catalog_routed_action(action: &Action) -> bool {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MouseKind {
     Down,
+    ContextDown,
     Drag,
     Up,
     ScrollUp,
@@ -3860,6 +3994,7 @@ pub struct MouseInput {
 
 pub fn mouse_action(mouse: MouseInput, terminal_width: u16) -> Option<Action> {
     match mouse.kind {
+        MouseKind::ContextDown => Some(Action::OpenContextMenu),
         MouseKind::ScrollUp if mouse.column < 24 => Some(Action::SelectNavigator { delta: -1 }),
         MouseKind::ScrollDown if mouse.column < 24 => Some(Action::SelectNavigator { delta: 1 }),
         MouseKind::ScrollUp | MouseKind::ScrollDown => Some(Action::ScrollLogs {
@@ -3889,8 +4024,14 @@ pub fn mouse_action_for_app(
     terminal_width: u16,
     terminal_height: u16,
 ) -> Option<Action> {
+    if app.menu.is_open() {
+        return None;
+    }
     if app.active_dialog().is_some() {
         return dialog_mouse_action(mouse, app);
+    }
+    if matches!(mouse.kind, MouseKind::ContextDown) {
+        return Some(Action::OpenContextMenu);
     }
     if app.screen == Screen::RawMode
         && let Some(action) = raw_mouse_action(mouse, app, terminal_width, terminal_height)
@@ -4209,13 +4350,13 @@ fn narrow_switcher_target(focus: FocusTarget, column: u16) -> Option<FocusTarget
 }
 
 fn dialog_mouse_action(mouse: MouseInput, app: &yoctui_model::App) -> Option<Action> {
-    if matches!(mouse.kind, MouseKind::Down) {
+    if matches!(mouse.kind, MouseKind::Down | MouseKind::ContextDown) {
         return Some(Action::Focus(FocusTarget::Dialog));
     }
     let delta = match mouse.kind {
         MouseKind::ScrollUp => -1,
         MouseKind::ScrollDown => 1,
-        MouseKind::Drag | MouseKind::Up | MouseKind::Down => return None,
+        MouseKind::Drag | MouseKind::Up | MouseKind::Down | MouseKind::ContextDown => return None,
     };
     match app.active_dialog()? {
         yoctui_model::Dialog::ThemePicker { .. } => Some(Action::SelectTheme { delta }),
@@ -4369,6 +4510,7 @@ fn terminal_session_mouse_action(
                 })
                 .map(|(index, (_, pane))| Action::SelectPtyPane { pane, index })
         }
+        MouseKind::ContextDown => None,
         MouseKind::Drag => terminal_resize_action(mouse, app, shell),
         MouseKind::ScrollUp => Some(Action::SelectPtySession { delta: -1 }),
         MouseKind::ScrollDown => Some(Action::SelectPtySession { delta: 1 }),
@@ -4815,6 +4957,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('v') => Some(Action::Open(Screen::Configuration)),
         Input::Char('x') => Some(Action::Open(Screen::Bbmask)),
         Input::Char('B') => Some(Action::OpenBuildOptions),
+        Input::Char('a') => Some(Action::OpenContextMenu),
         Input::Char('?') => Some(Action::Open(Screen::Help)),
         Input::Char('q') | Input::CtrlC => Some(Action::Quit),
         Input::CtrlP => Some(Action::OpenCommandPalette),
@@ -12619,5 +12762,58 @@ mod tests {
 
         client.disconnect_app(&mut app);
         assert!(app.raw_mode.execution_states.is_empty());
+    }
+
+    #[test]
+    fn ux_menu_keyboard_context_mouse_and_catalog_activation_share_typed_routes() {
+        let mut app = yoctui_model::App::new(16, 4_096);
+        assert_eq!(key_action(Input::F10), Some(Action::OpenApplicationMenu));
+        let _ = yoctui_model::update(&mut app, Action::OpenApplicationMenu);
+        assert_eq!(
+            menu_action(&app, Input::Right),
+            Some(MenuInputResult::Reduce(Box::new(Action::SelectMenuGroup {
+                delta: 1
+            })))
+        );
+        let _ = yoctui_model::update(&mut app, Action::SelectMenuGroup { delta: 1 });
+        assert_eq!(app.menu.group(), yoctui_model::ApplicationMenuGroup::Build);
+        assert_eq!(
+            menu_action(&app, Input::Enter),
+            None,
+            "build stays disabled without a workspace"
+        );
+
+        let _ = yoctui_model::update(&mut app, Action::CloseMenu);
+        app.screen = Screen::Recipes;
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::ContextDown,
+                    column: 40,
+                    row: 8,
+                },
+                &app,
+                160,
+                48,
+            ),
+            Some(Action::OpenContextMenu)
+        );
+        assert_eq!(key_action(Input::Char('a')), Some(Action::OpenContextMenu));
+        assert_eq!(
+            context_menu_activation_input("recipes.dependencies"),
+            Some(Input::Char('g'))
+        );
+        assert!(
+            yoctui_model::operator_action_catalog()
+                .into_iter()
+                .filter_map(|definition| match definition.target {
+                    yoctui_model::OperatorActionTarget::Workspace { legacy_id, .. } => {
+                        Some(legacy_id)
+                    }
+                    yoctui_model::OperatorActionTarget::Command(_) => None,
+                })
+                .all(|id| context_menu_activation_input(id).is_some()),
+            "every contextual catalog entry must retain a typed legacy route"
+        );
     }
 }

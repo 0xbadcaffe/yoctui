@@ -19,11 +19,11 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-6/38 (15.8%); overall required registry progress is 546/578 (94.5%).
+7/38 (18.4%); overall required registry progress is 547/578 (94.6%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
-anchors and maps 14 honest implementation gaps to incomplete owner tasks;
+anchors and maps 13 honest implementation gaps to incomplete owner tasks;
 failure tests reject corrupt dimensions, missing captures or anchors, and gaps
 whose owner is already complete. `UX-LICENSE-001` is complete: thirteen widget
 candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
@@ -43,7 +43,11 @@ session persistence. `UX-KEYMAP-UI-001` is complete: Settings now provides a
 searchable scoped binding table, text default/custom/disabled/critical state,
 focus-trapped bounded capture, exact conflict/reachability errors, remove and
 reset controls, bounded report export, atomic save, and retryable failure. Typed
-application and context menus are next.
+application and context menus are also complete: F10 exposes the fixed six-group
+catalog projection, `a` and right click expose current-workspace actions, bounded
+type-ahead and arrows stay focus trapped, exact local/capability denials and
+safety classes remain visible, and activation reuses existing typed routes and
+confirmation boundaries. Pane subfocus, zoom, and focus restoration are next.
 
 ### Completed baseline through M20
 

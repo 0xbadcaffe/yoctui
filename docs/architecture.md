@@ -2954,6 +2954,19 @@ capability evaluation remains outside renderers. Menu selection cannot execute
 an action directly; it emits the same typed activation action and effects as
 the existing palette or shortcut route.
 
+`yoctui-model::menu` owns the fixed six-group application taxonomy, menu kind,
+bounded selection, and bounded type-ahead state. `App::application_menu_items`
+composes global catalog commands with the same local and daemon availability
+used by the palette; `App::context_menu_items` composes the current workspace
+catalog definitions with exact selection/workspace and capability denials.
+`yoctui-app::menu_action` traps keyboard input and resolves enabled targets only:
+global targets return their existing `CommandId`, while contextual targets map
+their stable legacy identity to the already typed workspace input. The CLI
+closes the overlay before redispatch and therefore reuses the normal reducer,
+adapter, confirmation, and effect-routing path. Crossterm right-button input is
+normalized to a distinct context action; renderers receive only typed menu
+state and cannot activate anything.
+
 `yoctui-model::action_catalog` now supplies 116 validated definitions: 17
 global command targets and 99 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette

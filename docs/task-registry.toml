@@ -5986,7 +5986,7 @@ priority = 701
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo test -p yoctui-ui concept_screen_contracts", "python3 scripts/test-m21-concept-screen-verifier.py", "./scripts/verify-m21-concept-screens.sh", "./scripts/verify-m21-concept-pack.py", "./scripts/check-docs.sh"]
-notes = "All six concept identities now render from typed fixtures through production render_at at 160x50. Reviewed text captures and complete symbol/style goldens cover idle Dashboard, active Tasks, failed Errors, current Images/rootfs evidence, the current recipe editor, and split terminal sessions. The manifest verifies semantic anchors and 14 explicit gaps against incomplete owner tasks; failure tests reject corrupt dimensions, missing captures/anchors, and completed gap owners. Generated PNGs remain non-authoritative visual direction."
+notes = "All six concept identities now render from typed fixtures through production render_at at 160x50. Reviewed text captures and complete symbol/style goldens cover idle Dashboard, active Tasks, failed Errors, current Images/rootfs evidence, the current recipe editor, and split terminal sessions. After completion of the typed application/context menu, the manifest verifies semantic anchors and 13 explicit gaps against incomplete owner tasks; failure tests reject corrupt dimensions, missing captures/anchors, and completed gap owners. Generated PNGs remain non-authoritative visual direction."
 
 [[task]]
 id = "UX-LICENSE-001"
@@ -6036,12 +6036,12 @@ notes = "Settings now opens a focus-trapped effective-keymap overlay derived fro
 id = "UX-MENU-001"
 milestone = "M21"
 title = "Implement typed application and context menus"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 706
 required = true
 depends_on = ["UX-ACTION-CATALOG-001", "UX-KEYMAP-MODEL-001"]
 verify = ["cargo test -p yoctui-model ux_menu", "cargo test -p yoctui-app ux_menu", "cargo test -p yoctui-ui ux_menu", "cargo test -p yoctui -- ux_menu"]
-notes = "F10 opens Workspace/Build/Navigate/View/Tools/Help menus and the selected-item action route opens a contextual menu. Both project the action catalog, trap focus, show disabled reasons, and preserve confirmation boundaries."
+notes = "A reducer-owned menu model now projects the catalog into fixed Workspace/Build/Navigate/View/Tools/Help groups and current-workspace context rows. F10, a, and distinct right-click routing open focus-trapped bounded overlays; arrows, 32-character type-ahead, Backspace, Enter, Esc, and outward F10 are typed and trapped. Rows retain stable IDs, shortcuts, safety class, and exact local/capability denial. Enabled activation closes first and reuses the existing CommandId or workspace input route, preserving compatibility revalidation and confirmation. Focused model/app/UI/CLI tests cover bounds, disabled activation, all 99 contextual route identities, wide/medium/narrow, no-color, reduced motion, and mouse decoding."
 
 [[task]]
 id = "UX-FOCUS-001"

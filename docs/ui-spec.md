@@ -4341,14 +4341,27 @@ local and environment requirements, safety class, footer priority, and Help
 group. The command palette, contextual compatibility action presentations, and
 the catalog section of Help consume those definitions directly. The catalog
 corrects the former false `F5` image-build hint to the real `B` route; `F5`
-remains Logs. The keymap and menu tasks extend configuration and presentation
-from these IDs without creating a second action inventory.
+remains Logs. The keymap and menu implementations extend configuration and
+presentation from these IDs without creating a second action inventory.
 
 `F10` opens a focus-trapped Workspace/Build/Navigate/View/Tools/Help menu.
 Arrow keys move, `Enter` opens/activates, `Esc` moves outward, and bounded typed
 prefix selection may select by label. The selected-item action route is `a` or
 right click. Disabled entries remain visible and explain the exact missing
 selection, authority, capability, or safety prerequisite.
+
+The implemented application menu keeps those six groups in a fixed order and
+projects its rows from the global command catalog. The contextual menu projects
+the active workspace destination's catalog actions; it never invents an
+operation for a selected row. Both overlays retain one bounded selection and a
+32-character type-ahead prefix, trap unmatched input, render their selected
+stable action ID, shortcut, safety class, and exact disabled reason, and close
+outward with `Esc` or `F10`. Activation closes the menu before invoking the
+existing typed command action or workspace input route, so compatibility
+revalidation and normal/destructive confirmations remain unchanged. A right
+click is decoded separately from left-click focus and opens the same contextual
+projection. Reduced motion and no-color use the same textual markers and safety
+labels, and the overlay remains bounded at wide, medium, and `80x24` layouts.
 
 The shared F1–F10 destinations in section 24 remain unchanged. Collection
 navigation consistently supports arrows and `j`/`k`, `PageUp`/`PageDown`,
