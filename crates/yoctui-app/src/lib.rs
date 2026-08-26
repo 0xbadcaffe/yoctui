@@ -4446,7 +4446,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
             },
             key,
         ),
-        Screen::Logs => logs_action(app.logs.searching, key),
+        Screen::Logs => log_workspace_action(app, key),
         Screen::Errors => errors_action(key),
         Screen::BuildEnvironment => build_environment_action(key),
         Screen::Compatibility => {
@@ -4484,6 +4484,12 @@ fn workspace_tab_click(
         Screen::Testing if (25..37).contains(&column) => {
             Some(Action::SelectTestView(TestWorkspaceView::Comparison))
         }
+        Screen::Logs if column < 16 => (app.log_workspace_view
+            != yoctui_model::LogWorkspaceView::BitBake)
+            .then_some(Action::CycleLogWorkspaceView),
+        Screen::Logs if (18..42).contains(&column) => (app.log_workspace_view
+            != yoctui_model::LogWorkspaceView::Yoctui)
+            .then_some(Action::CycleLogWorkspaceView),
         _ => None,
     }
 }
@@ -5197,6 +5203,7 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
         });
     }
     match key {
+        Input::Char('v') => Some(Action::CycleLogWorkspaceView),
         Input::Up | Input::Char('k') => Some(Action::ScrollLogs { delta: 1 }),
         Input::Down | Input::Char('j') => Some(Action::ScrollLogs { delta: -1 }),
         Input::Left => Some(Action::ScrollLogsHorizontally { delta: -8 }),
@@ -5220,6 +5227,41 @@ pub fn logs_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('C') => Some(Action::CopySelectedLog),
         Input::Char('E') => Some(Action::ExportFilteredLogs),
         _ => None,
+    }
+}
+
+pub fn internal_logs_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendInternalLogQuery(character)),
+            Input::Backspace => Some(Action::BackspaceInternalLogQuery),
+            Input::CtrlU => Some(Action::ClearInternalLogQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishInternalLogSearch),
+            _ => None,
+        };
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::ScrollInternalLogs { delta });
+    }
+    match key {
+        Input::Char('v') => Some(Action::CycleLogWorkspaceView),
+        Input::Char('f') => Some(Action::ToggleInternalLogFollow),
+        Input::Char('s') => Some(Action::CycleInternalLogLevelFilter),
+        Input::Char('T') => Some(Action::CycleInternalLogTargetFilter),
+        Input::Char('/') => Some(Action::BeginInternalLogSearch),
+        Input::CtrlU => Some(Action::ClearInternalLogQuery),
+        Input::Char('c') => Some(Action::ClearInternalLogs),
+        Input::Char('E') => Some(Action::ExportInternalLogs),
+        _ => None,
+    }
+}
+
+pub fn log_workspace_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    match app.log_workspace_view {
+        yoctui_model::LogWorkspaceView::BitBake => logs_action(app.logs.searching, key),
+        yoctui_model::LogWorkspaceView::Yoctui => {
+            internal_logs_action(app.internal_logs.searching, key)
+        }
     }
 }
 pub fn errors_action(key: Input) -> Option<Action> {
@@ -9764,6 +9806,25 @@ mod tests {
             logs_action(true, Input::Char('m')),
             Some(Action::AppendLogQuery('m'))
         );
+    }
+    #[test]
+    fn ux_internal_log_keyboard_routes_only_the_separate_diagnostic_authority() {
+        for (input, expected) in [
+            (Input::Char('v'), Action::CycleLogWorkspaceView),
+            (Input::Char('f'), Action::ToggleInternalLogFollow),
+            (Input::Char('s'), Action::CycleInternalLogLevelFilter),
+            (Input::Char('T'), Action::CycleInternalLogTargetFilter),
+            (Input::Char('/'), Action::BeginInternalLogSearch),
+            (Input::Char('c'), Action::ClearInternalLogs),
+            (Input::Char('E'), Action::ExportInternalLogs),
+        ] {
+            assert_eq!(internal_logs_action(false, input), Some(expected));
+        }
+        assert_eq!(
+            internal_logs_action(true, Input::Char('x')),
+            Some(Action::AppendInternalLogQuery('x'))
+        );
+        assert_eq!(internal_logs_action(false, Input::Char('B')), None);
     }
     #[test]
     fn search_clear_shortcut_maps_to_every_typed_domain() {

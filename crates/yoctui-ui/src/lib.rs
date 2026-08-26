@@ -37,30 +37,31 @@ use yoctui_model::{
     DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
     DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
     Dialog, FUNCTION_SHORTCUTS, FocusTarget, FunctionKey, FunctionShortcutRoute, GitFileState,
-    ImageArtifactField, ImageArtifactInventoryState, JobHistoryRowRef, LayerBrowser,
-    LayerBrowserEntry, LayerInspectorMode, MaintenanceCapability, MaintenanceCapabilitySnapshot,
-    MaintenanceDialog, MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot,
-    MaintenanceOperation, MaintenanceOperationPreview, MaintenanceServiceDiagnostics,
-    MaintenanceSessionStatus, MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface,
-    MaintenanceView, NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity,
-    PackageInventoryState, PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily,
-    QaDialog, QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream,
-    QaReportFailureKind, QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView,
-    QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
-    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
-    RecipeIdentity, Screen, SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind,
-    SdkNativeDialog, SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation,
-    SdkPublishDraft, SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability,
-    SecurityDialog, SecurityInventoryState, SecurityOperation, SecurityOutputStream,
-    SecurityReport, SecurityScope, SecuritySessionStatus, SecurityView, Severity,
-    SignatureComparisonState, SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind,
-    SplitAxis, TaskInspectorRef, TaskRowRef, TaskState, TelemetryMetric, TelemetrySeriesProjection,
-    TestComparisonCategory, TestComparisonState, TestExecutableCapability, TestJunitExportState,
-    TestLaunchDialog, TestLaunchField, TestLaunchPreview, TestResultInventoryState,
-    TestWorkspaceView, Theme, TransientStatusKind, VariableIdentity, WicCapability, WicCompression,
-    WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState,
-    WicDevicePickerDialog, WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId,
-    WicWritePhraseDialog, WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
+    ImageArtifactField, ImageArtifactInventoryState, InternalLogLevel, JobHistoryRowRef,
+    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView, MaintenanceCapability,
+    MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
+    MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
+    MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
+    MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, NAVIGATOR_GROUPS,
+    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
+    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
+    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
+    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
+    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
+    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen,
+    SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
+    SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
+    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
+    SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
+    SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
+    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskInspectorRef,
+    TaskRowRef, TaskState, TelemetryMetric, TelemetrySeriesProjection, TestComparisonCategory,
+    TestComparisonState, TestExecutableCapability, TestJunitExportState, TestLaunchDialog,
+    TestLaunchField, TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme,
+    TransientStatusKind, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
+    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
+    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
+    WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
@@ -827,13 +828,20 @@ fn footer_shortcuts(app: &App) -> String {
         Screen::Compatibility => {
             "↑/↓ or j/k select | 1 All | 2 Available | 3 Limited | 4 Unavailable | 5 Attention | / search | Tab focus"
         }
-        Screen::Logs => {
-            if app.logs.follow {
-                "↑/↓ select | ←/→ horizontal | f pause | w wrap | s/R/T/B/S/I filters | / search | n/N match | m bookmark | [/] bookmarks | o source | C copy | E export"
-            } else {
-                "↑/↓ select | ←/→ horizontal | f follow | w wrap | s/R/T/B/S/I filters | / search | n/N match | m bookmark | [/] bookmarks | o source | C copy | E export"
+        Screen::Logs => match app.log_workspace_view {
+            LogWorkspaceView::BitBake if app.logs.follow => {
+                "v diagnostics | ↑/↓ select | ←/→ horizontal | f pause | w wrap | s/R/T/B/S/I filters | / search | m bookmark | C copy | E export"
             }
-        }
+            LogWorkspaceView::BitBake => {
+                "v diagnostics | ↑/↓ select | ←/→ horizontal | f follow | w wrap | s/R/T/B/S/I filters | / search | m bookmark | C copy | E export"
+            }
+            LogWorkspaceView::Yoctui if app.internal_logs.follow => {
+                "v BitBake | ↑/↓ select | f pause | s level | T target | / search | E export | c clear"
+            }
+            LogWorkspaceView::Yoctui => {
+                "v BitBake | ↑/↓ select | f follow | s level | T target | / search | E export | c clear"
+            }
+        },
         Screen::Errors => {
             "↑/↓ select | Enter logs | o open source | Esc dashboard | ? help | q quit"
         }
@@ -881,7 +889,13 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
 
 fn current_search_state(app: &App) -> Option<(bool, bool)> {
     let state = match app.screen {
-        Screen::Logs => (app.logs.searching, !app.logs.query.is_empty()),
+        Screen::Logs => match app.log_workspace_view {
+            LogWorkspaceView::BitBake => (app.logs.searching, !app.logs.query.is_empty()),
+            LogWorkspaceView::Yoctui => (
+                app.internal_logs.searching,
+                !app.internal_logs.query.is_empty(),
+            ),
+        },
         Screen::Recipes | Screen::Layers | Screen::Configuration => {
             (app.metadata_searching, !app.metadata_query.is_empty())
         }
@@ -4719,7 +4733,9 @@ fn inspector_related_paths(app: &App) -> Vec<String> {
                     .get(app.layer_selection)
                     .map(|layer| layer.path.clone())
             }),
-        Screen::Logs => app.logs.selected().and_then(|entry| entry.path.clone()),
+        Screen::Logs if app.log_workspace_view == LogWorkspaceView::BitBake => {
+            app.logs.selected().and_then(|entry| entry.path.clone())
+        }
         Screen::Errors => app
             .logs
             .diagnostics()
@@ -4922,29 +4938,39 @@ fn inspector(
             },
         ),
         Screen::Configuration => config_inspector(app),
-        Screen::Logs => app.logs.selected().map_or_else(
-            || "No logs retained.".into(),
-            |entry| {
-                format!(
-                    "Time: {}\nSeverity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\nProtected: {}\nBookmarked: {}",
-                    timestamp_text(entry.timestamp),
-                    entry.severity,
-                    entry.build.as_deref().unwrap_or("unavailable"),
-                    entry.recipe.as_deref().unwrap_or("unavailable"),
-                    entry.task.as_deref().unwrap_or("unavailable"),
-                    entry
-                        .path
-                        .as_ref()
-                        .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
-                    if entry.protected { "yes" } else { "no" },
-                    if app.logs.is_bookmarked(entry.id) {
-                        "yes"
-                    } else {
-                        "no"
-                    },
-                )
-            },
-        ),
+        Screen::Logs => match app.log_workspace_view {
+            LogWorkspaceView::BitBake => app.logs.selected().map_or_else(
+                || "No BitBake logs retained.".into(),
+                |entry| {
+                    format!(
+                        "Authority: BitBake domain log\nTime: {}\nSeverity: {:?}\nBuild: {}\nRecipe: {}\nTask: {}\nSource: {}\nProtected: {}\nBookmarked: {}",
+                        timestamp_text(entry.timestamp),
+                        entry.severity,
+                        entry.build.as_deref().unwrap_or("unavailable"),
+                        entry.recipe.as_deref().unwrap_or("unavailable"),
+                        entry.task.as_deref().unwrap_or("unavailable"),
+                        entry.path.as_ref().map_or_else(
+                            || "unavailable".into(),
+                            |path| path.display().to_string()
+                        ),
+                        if entry.protected { "yes" } else { "no" },
+                        if app.logs.is_bookmarked(entry.id) { "yes" } else { "no" },
+                    )
+                },
+            ),
+            LogWorkspaceView::Yoctui => app.internal_logs.selected().map_or_else(
+                || "No Yoctui self-diagnostics retained.".into(),
+                |entry| {
+                    format!(
+                        "Authority: local Yoctui tracing\nTime: {}\nLevel: {}\nTarget: {}\nRecord ID: {}\n\nThis entry is never interpreted as BitBake output.",
+                        timestamp_text(entry.timestamp),
+                        entry.level.label(),
+                        entry.target,
+                        entry.id
+                    )
+                },
+            ),
+        },
         Screen::Errors => app
             .logs
             .diagnostics()
@@ -4984,7 +5010,13 @@ fn inspector(
     let secondary = matches!(app.screen, Screen::Dashboard | Screen::BuildHistory)
         .then(|| job_summary_label(app, area.width));
     let recent_output = match app.screen {
-        Screen::Logs => app.logs.selected().map(|entry| entry.message.as_str()),
+        Screen::Logs => match app.log_workspace_view {
+            LogWorkspaceView::BitBake => app.logs.selected().map(|entry| entry.message.as_str()),
+            LogWorkspaceView::Yoctui => app
+                .internal_logs
+                .selected()
+                .map(|entry| entry.message.as_str()),
+        },
         Screen::BuildHistory => app
             .job_history_rows()
             .get(app.build_history_selection)
@@ -12206,7 +12238,18 @@ fn selected_log_context(app: &App) -> String {
     )
 }
 
+fn log_workspace_tabs(view: LogWorkspaceView) -> String {
+    match view {
+        LogWorkspaceView::BitBake => "[▶ BitBake logs]  [  Yoctui diagnostics]".into(),
+        LogWorkspaceView::Yoctui => "[  BitBake logs]  [▶ Yoctui diagnostics]".into(),
+    }
+}
+
 fn logs(frame: &mut Frame, app: &App, area: Rect) {
+    if app.log_workspace_view == LogWorkspaceView::Yoctui {
+        internal_logs(frame, app, area);
+        return;
+    }
     let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(3)]).split(area);
     let log_area = chunks[1];
     let height = log_area.height.saturating_sub(3) as usize;
@@ -12215,7 +12258,8 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     let start = window.start;
     let visible = &window.entries;
     let mode = format!(
-        "{}  ·  wrap {}  ·  severity {}",
+        "{}  ·  {}  ·  wrap {}  ·  severity {}",
+        log_workspace_tabs(app.log_workspace_view),
         compact_log_activity(app, 40),
         if app.logs.wrap { "on" } else { "off" },
         app.logs
@@ -12386,6 +12430,183 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         .block(block),
         log_area,
     )
+}
+
+fn internal_log_level_label(level: InternalLogLevel) -> &'static str {
+    match level {
+        InternalLogLevel::Trace => "· Trace",
+        InternalLogLevel::Debug => "◇ Debug",
+        InternalLogLevel::Info => "i Info",
+        InternalLogLevel::Warning => "! Warning",
+        InternalLogLevel::Error => "✕ Error",
+    }
+}
+
+fn internal_log_severity(level: InternalLogLevel) -> Severity {
+    match level {
+        InternalLogLevel::Trace | InternalLogLevel::Debug => Severity::Trace,
+        InternalLogLevel::Info => Severity::Info,
+        InternalLogLevel::Warning => Severity::Warning,
+        InternalLogLevel::Error => Severity::Error,
+    }
+}
+
+fn internal_log_search_spans(app: &App, message: &str) -> Vec<Span<'static>> {
+    let ranges = case_insensitive_ranges(message, &app.internal_logs.query);
+    if ranges.is_empty() {
+        return vec![Span::raw(message.to_owned())];
+    }
+    let palette = ThemePalette::for_app(app);
+    let hit_style = if app.color_enabled {
+        palette.role(palette.accent, Modifier::BOLD | Modifier::UNDERLINED)
+    } else {
+        Style::default().add_modifier(Modifier::BOLD | Modifier::UNDERLINED)
+    };
+    let mut spans = Vec::new();
+    let mut cursor = 0;
+    for (start, end) in ranges {
+        if cursor < start {
+            spans.push(Span::raw(message[cursor..start].to_owned()));
+        }
+        spans.push(Span::styled(message[start..end].to_owned(), hit_style));
+        cursor = end;
+    }
+    if cursor < message.len() {
+        spans.push(Span::raw(message[cursor..].to_owned()));
+    }
+    spans
+}
+
+fn internal_logs(frame: &mut Frame, app: &App, area: Rect) {
+    let chunks = Layout::vertical([Constraint::Length(7), Constraint::Min(3)]).split(area);
+    let list_area = chunks[1];
+    let content_width = chunks[0].width.saturating_sub(2);
+    let height = list_area.height.saturating_sub(3) as usize;
+    let window = app.internal_logs.window(height);
+    let selection = window.selection;
+    let mode = format!(
+        "{}  ·  {}  ·  {} retained",
+        log_workspace_tabs(app.log_workspace_view),
+        if app.internal_logs.follow {
+            "▶ Following"
+        } else {
+            "Ⅱ Paused"
+        },
+        app.internal_logs.entries.len()
+    );
+    let actions = "Actions E Export diagnostics · c Clear retained diagnostics";
+    let filters = format!(
+        "Filters s level: {} · T target: {}",
+        app.internal_logs
+            .level_filter
+            .map_or("all", InternalLogLevel::label),
+        app.internal_logs.target_filter.as_deref().unwrap_or("all")
+    );
+    let search = search_line(
+        app,
+        &app.internal_logs.query,
+        app.internal_logs.searching,
+        (window.total > 0).then_some(selection),
+        window.total,
+        SearchNavigation::Results,
+        SearchExit::Done,
+        content_width,
+    );
+    let pressure = format!(
+        "Retention evicted {} · ingress dropped {} · retained {}/{} bytes",
+        app.internal_logs.evicted,
+        app.internal_logs.ingress_dropped,
+        app.internal_logs.retained_bytes,
+        app.internal_logs.max_bytes
+    );
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::from(bounded_cell_text(&mode, content_width)),
+            Line::from(bounded_cell_text(actions, content_width)),
+            Line::from(bounded_cell_text(&filters, content_width)),
+            search,
+            Line::from(bounded_cell_text(&pressure, content_width)),
+        ])
+        .block(pane_block(
+            app,
+            "Yoctui self-diagnostic activity",
+            app.focus == FocusTarget::Workspace,
+        )),
+        chunks[0],
+    );
+
+    let position = app.internal_logs.vertical_position().map_or_else(
+        || "0/0".into(),
+        |(current, total)| format!("{current}/{total}"),
+    );
+    let title = format!(
+        "Yoctui diagnostics — local tracing · {} · {position}",
+        if app.internal_logs.follow {
+            "following"
+        } else {
+            "paused"
+        }
+    );
+    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
+    if window.total == 0 {
+        let inner = block.inner(list_area);
+        frame.render_widget(block, list_area);
+        let state = StateView {
+            kind: StateKind::Empty,
+            summary: if app.internal_logs.entries.is_empty() {
+                "No Yoctui self-diagnostics retained.".into()
+            } else {
+                "No Yoctui diagnostics match the active filters or search.".into()
+            },
+            detail: Some(
+                "This local tracing authority is separate from BitBake Logs; v switches views."
+                    .into(),
+            ),
+            action: None,
+        };
+        let palette = ThemePalette::for_app(app);
+        frame.render_widget(
+            state.paragraph(
+                palette.role(palette.muted, Modifier::BOLD),
+                palette.role(palette.secondary_foreground, Modifier::DIM),
+            ),
+            inner,
+        );
+        return;
+    }
+
+    let rows = window.entries.iter().enumerate().map(|(offset, entry)| {
+        let selected = window.start + offset == selection;
+        let severity = internal_log_severity(entry.level);
+        Row::new([
+            Cell::from(timestamp_text(entry.timestamp)),
+            Cell::from(internal_log_level_label(entry.level)),
+            Cell::from(entry.target.as_str()),
+            Cell::from(Line::from(internal_log_search_spans(app, &entry.message))),
+        ])
+        .style(if selected {
+            selected_log_style(app, severity)
+        } else {
+            severity_style(app, severity)
+        })
+    });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(14),
+                Constraint::Length(11),
+                Constraint::Length(24),
+                Constraint::Min(10),
+            ],
+        )
+        .header(
+            Row::new(["Time", "Level", "Target", "Message"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(block),
+        list_area,
+    );
 }
 fn errors(frame: &mut Frame, app: &App, area: Rect) {
     let errors = app.logs.diagnostics().collect::<Vec<_>>();
@@ -25415,6 +25636,68 @@ mod tests {
         assert_eq!(
             window.entries.last().unwrap().message,
             "bounded-log-299-日志"
+        );
+    }
+
+    #[test]
+    fn ux_internal_log_view_is_separate_bounded_responsive_and_nonvisual() {
+        let mut app = App::new(512, 256 * 1024);
+        app.screen = Screen::Logs;
+        app.log_workspace_view = LogWorkspaceView::Yoctui;
+        app.logs.insert(yoctui_model::LogEntry {
+            id: 0,
+            severity: Severity::Error,
+            message: "BITBAKE-DOMAIN-ONLY".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: None,
+            timestamp: SystemTime::UNIX_EPOCH,
+            build: None,
+            protected: true,
+            diagnostic: None,
+        });
+        for index in 0..2_000 {
+            app.internal_logs.insert(yoctui_model::InternalLogRecord {
+                id: 0,
+                timestamp: SystemTime::UNIX_EPOCH + Duration::from_secs(index),
+                level: if index == 1_999 {
+                    InternalLogLevel::Error
+                } else {
+                    InternalLogLevel::Debug
+                },
+                target: if index % 2 == 0 {
+                    "yoctui::runtime".into()
+                } else {
+                    "yoctui::adapter".into()
+                },
+                message: format!("d{index:04}-self-diagnostic-日志"),
+            });
+        }
+        app.internal_logs.follow = false;
+        app.internal_logs.paused_len = Some(app.internal_logs.entries.len());
+        app.internal_logs.selection = app.internal_logs.visible_count().saturating_sub(1);
+        app.internal_logs.ingress_dropped = 3;
+
+        for (width, height, color) in [(160, 40, true), (100, 30, true), (80, 24, false)] {
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Yoctui diagnostics"), "{output}");
+            assert!(output.contains("local tracing"), "{output}");
+            assert!(output.contains("d1999"), "{output}");
+            assert!(output.contains("✕ Error"), "{output}");
+            assert!(output.contains("ingress dropped 3"), "{output}");
+            assert!(output.contains("E Export"), "{output}");
+            assert!(!output.contains("BITBAKE-DOMAIN-ONLY"), "{output}");
+            assert!(!output.contains('\u{fffd}'), "{output}");
+        }
+
+        let window = app.internal_logs.window(7);
+        assert_eq!(window.entries.len(), 7);
+        app.internal_logs.level_filter = Some(InternalLogLevel::Warning);
+        let filtered_empty = rendered_text(&app, 100, 30);
+        assert!(
+            filtered_empty.contains("No Yoctui diagnostics match"),
+            "{filtered_empty}"
         );
     }
 

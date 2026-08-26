@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-14/38 (36.8%); overall required registry progress is 554/578 (95.8%).
+15/38 (39.5%); overall required registry progress is 555/578 (96.0%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -79,8 +79,13 @@ complete: a viewport-only projection, exact typed source/time filters,
 explicit follow/search/position state, retained bookmarks, exact correlated
 task/error/job-history jumps, responsive action/filter presentation, preferred
 retention and loss accounting, and UTF-8-safe 64 KiB copy plus 256 KiB export
-caps are covered across model, app, and production UI regressions. A separate
-Yoctui self-diagnostic log view is next.
+caps are covered across model, app, and production UI regressions. The separate
+Yoctui self-diagnostic view is also complete without admitting `tui-logger`:
+the existing tracing stack feeds a nonblocking bounded local-client capture,
+while an independent typed store owns level/target/query filters, follow,
+selection, viewport rows, ingress/retention loss, clear, and capped export.
+Textual authority labels and tests prove it never enters BitBake logs, Errors,
+or task/job correlation. The reducer-owned multiline editor extension is next.
 
 ### Completed baseline through M20
 

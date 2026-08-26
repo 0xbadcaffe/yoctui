@@ -1515,6 +1515,49 @@ entries may be coalesced. Evicted warning/error counts and the coalesced count
 remain visible. If only protected records exceed a configured limit, eviction
 is still bounded and explicitly counted.
 
+### Yoctui self-diagnostics view
+
+The Logs workspace begins with two textual views, `[BitBake logs]` and
+`[Yoctui diagnostics]`; `v` switches between them and either label can be
+clicked. They are separate typed authorities. A Yoctui tracing record never
+enters `LogState`, gains recipe/task/build/source metadata, appears in Errors,
+or participates in BitBake correlation. The diagnostic Inspector begins with
+`Authority: local Yoctui tracing`; the BitBake Inspector begins with
+`Authority: BitBake domain log`.
+
+The Yoctui view captures only tracing emitted by the local interactive client
+after tracing initialization. It does not claim that daemon-process tracing is
+present. Each record retains a timestamp, `Trace`/`Debug`/`Info`/`Warning`/
+`Error` level, exact tracing target, bounded formatted fields, and a stable
+retained ID. Every level has a text marker (`·`, `◇`, `i`, `!`, or `✕`) in
+addition to semantic styling.
+
+Capture ingress is a 1,024-record nonblocking channel and the runtime drains at
+most 256 records per frame. A formatted ingress event is capped at 64 KiB; the
+independent model store then enforces its configured entry and byte bounds.
+Queue loss and retention eviction are separate saturating counters and remain
+visible even after `c` clears retained entries. Rendering uses an
+`InternalLogWindow` with at most the visible row count, so a high-volume store
+does not allocate every filtered row per frame.
+
+The view owns independent follow/pause, selection, exact level and target
+filters, and case-insensitive target/message query state. Empty retention and
+filtered-empty are distinct. `E` copies a deterministic diagnostic export
+through the existing clipboard effect, capped at 256 KiB with included,
+omitted, ingress-loss, retention-loss, and truncation accounting. It has no
+source-open, bookmark, BitBake filter, or domain-log copy actions.
+
+Yoctui diagnostic controls:
+
+- `v` switches back to BitBake logs
+- `↑`/`↓`, `k`/`j`, Page Up/Down, Home, and End move bounded selection and
+  pause follow
+- `f` toggles follow and selects the newest matching record when resumed
+- `s` cycles the level filter; `T` cycles exact retained tracing targets
+- `/` starts query editing; `Enter`/`Esc` finishes and `Ctrl+U` clears it
+- `E` copies the bounded filtered export; `c` clears retained diagnostics while
+  preserving both loss counters
+
 ---
 
 ## 14. Errors workspace

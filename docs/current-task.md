@@ -2,43 +2,46 @@
 
 ## Task
 
-**ID:** UX-INTERNAL-LOG-001
-**Title:** Add a separate Yoctui self-diagnostic log view
+**ID:** UX-TEXTAREA-MODEL-001
+**Title:** Extend the reducer-owned multiline editor model
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add a bounded self-diagnostic log view for Yoctui tracing while keeping internal
-diagnostics and BitBake domain logs as separate typed authorities.
+Extend the existing reducer-owned editor into a reusable bounded multiline
+model with explicit modes, selection, history, search/replace, validation, and
+safe save lifecycle state.
 
 ## Dependencies
 
-- `UX-LOGS-001` — DONE
-- `UX-LICENSE-001` — DONE
+- `UX-KEYMAP-MODEL-001` — DONE
+- `UX-SCROLL-001` — DONE
 
 ## Relevant files
 
-- typed bounded internal diagnostic state and tracing adapter
-- internal-log filters, retention, navigation, and export
-- self-diagnostic workspace or focused view and Inspector details
-- admitted dependency evidence and generated notices/SBOM
+- reducer-owned popup and workspace editor state
+- typed editor actions and app input mapping
+- validation spans, diff/conflict, and atomic-save lifecycle projections
+- property and Unicode boundary tests
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 
 ## Definition of done
 
-- The tui-logger candidate is evaluated against the existing license and
-  dependency-admission policy before any graph change.
-- Internal tracing diagnostics never enter the BitBake domain-log authority.
-- Internal retention, filters, selection, loss counters, and export remain
-  bounded and typed.
-- Empty, filtered-empty, high-volume, Unicode, narrow, and no-color states are
-  honest and panic-free.
+- Multiline Unicode cursor, selection, word/line/page motion, line numbers, and
+  wrap metadata remain reducer-owned and bounded.
+- Normal, Insert, and Visual modes are explicit; bracketed paste and clipboard
+  remain typed effects.
+- Bounded undo/redo and search/replace preserve valid UTF-8 positions.
+- Validation spans, diff preview, external conflicts, atomic save, and recovery
+  after save failure are distinct typed states.
+- Property tests cover large and adversarial edit sequences without panics or
+  unbounded history.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_internal_log
-cargo test -p yoctui-ui ux_internal_log
-cargo deny check
+cargo test -p yoctui-model ux_textarea
+cargo test -p yoctui-app ux_textarea
+cargo test -p yoctui-model --features proptest ux_textarea
 ```

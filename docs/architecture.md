@@ -546,6 +546,26 @@ typed effects. Model formatters hard-cap an entry copy at 64 KiB and a filtered
 export at 256 KiB, retain UTF-8 boundaries, and append explicit truncation and
 omission accounting.
 
+`yoctui_model::InternalLogState` is a second, deliberately disjoint authority
+for local Yoctui self-diagnostics. It owns independent entry/byte bounds,
+stable IDs, follow horizon, level/target/query filters, selection, ingress-loss
+and retention-loss counters, and an `InternalLogWindow` that collects at most
+one viewport of references. Its 256 KiB formatter exports only internal typed
+records through the existing clipboard effect. No conversion exists between
+`InternalLogRecord` and BitBake `LogEntry`, so internal tracing cannot gain
+domain identity, feed Errors, or satisfy task/job correlation.
+
+The interactive CLI installs `internal_tracing::InternalTracingLayer` alongside
+the existing stderr formatting layer and the configured `EnvFilter`; the
+rejected `tui-logger` candidate does not enter the dependency graph. The layer
+uses `try_send` into a 1,024-record bounded standard-library channel, caps field
+formatting at 64 KiB on UTF-8 boundaries, and atomically counts full/disconnected
+loss without blocking a tracing call. The TUI loop drains at most 256 records
+per frame and reduces them through typed `Action::InternalLog` or
+`Action::InternalLogIngressDropped`. This capture scope is the local interactive
+client after subscriber initialization; daemon-process tracing is not
+represented as present.
+
 `yoctui_model::App::job_history_rows` is the borrowed presentation projection
 for retained work. It merges background jobs and completed `BuildRecord`s
 without copying either source, orders nonterminal background jobs first, and

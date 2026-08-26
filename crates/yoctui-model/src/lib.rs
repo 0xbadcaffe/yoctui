@@ -9,6 +9,7 @@ mod daemon_state;
 mod embedded_shell;
 mod focus;
 mod image;
+mod internal_log;
 mod keymap;
 mod maintenance;
 mod menu;
@@ -45,6 +46,7 @@ pub use daemon_state::*;
 pub use embedded_shell::*;
 pub use focus::*;
 pub use image::*;
+pub use internal_log::*;
 pub use keymap::*;
 pub use maintenance::*;
 pub use menu::*;
@@ -3633,7 +3635,9 @@ pub struct App {
     pub task_filters: TaskFilters,
     pub task_filter_field: TaskFilterField,
     pub task_filter_editing: bool,
+    pub log_workspace_view: LogWorkspaceView,
     pub logs: LogState,
+    pub internal_logs: InternalLogState,
     pub should_quit: bool,
     pub notification: Option<String>,
     pub command_palette_open: bool,
@@ -3796,7 +3800,9 @@ impl App {
             task_filters: TaskFilters::default(),
             task_filter_field: TaskFilterField::default(),
             task_filter_editing: false,
+            log_workspace_view: LogWorkspaceView::BitBake,
             logs: LogState::new(max_entries, max_bytes),
+            internal_logs: InternalLogState::new(max_entries, max_bytes),
             should_quit: false,
             notification: None,
             command_palette_open: false,
@@ -5585,6 +5591,22 @@ pub enum Action {
         delta: isize,
     },
     Cancel,
+    CycleLogWorkspaceView,
+    InternalLog(InternalLogRecord),
+    InternalLogIngressDropped(usize),
+    ToggleInternalLogFollow,
+    ScrollInternalLogs {
+        delta: isize,
+    },
+    BeginInternalLogSearch,
+    AppendInternalLogQuery(char),
+    BackspaceInternalLogQuery,
+    ClearInternalLogQuery,
+    FinishInternalLogSearch,
+    CycleInternalLogLevelFilter,
+    CycleInternalLogTargetFilter,
+    ClearInternalLogs,
+    ExportInternalLogs,
     ToggleLogFollow,
     ToggleLogWrap,
     CycleLogSeverity,
@@ -13314,6 +13336,54 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return Some(Effect::Cancel);
             }
         }
+        Action::CycleLogWorkspaceView => {
+            app.log_workspace_view = match app.log_workspace_view {
+                LogWorkspaceView::BitBake => LogWorkspaceView::Yoctui,
+                LogWorkspaceView::Yoctui => LogWorkspaceView::BitBake,
+            };
+            app.logs.searching = false;
+            app.internal_logs.searching = false;
+        }
+        Action::InternalLog(record) => app.internal_logs.insert(record),
+        Action::InternalLogIngressDropped(count) => app.internal_logs.note_ingress_dropped(count),
+        Action::ToggleInternalLogFollow => app.internal_logs.toggle_follow(),
+        Action::ScrollInternalLogs { delta } => app.internal_logs.scroll(delta),
+        Action::BeginInternalLogSearch => {
+            app.internal_logs.searching = true;
+            app.internal_logs.follow = false;
+            app.internal_logs.paused_len = Some(app.internal_logs.entries.len());
+        }
+        Action::AppendInternalLogQuery(character) if app.internal_logs.searching => {
+            let selected_id = app.internal_logs.selected().map(|entry| entry.id);
+            app.internal_logs.query.push(character);
+            app.internal_logs.reconcile_selection(selected_id);
+        }
+        Action::BackspaceInternalLogQuery if app.internal_logs.searching => {
+            let selected_id = app.internal_logs.selected().map(|entry| entry.id);
+            app.internal_logs.query.pop();
+            app.internal_logs.reconcile_selection(selected_id);
+        }
+        Action::ClearInternalLogQuery => {
+            let selected_id = app.internal_logs.selected().map(|entry| entry.id);
+            app.internal_logs.query.clear();
+            app.internal_logs.reconcile_selection(selected_id);
+        }
+        Action::FinishInternalLogSearch => app.internal_logs.searching = false,
+        Action::CycleInternalLogLevelFilter => app.internal_logs.cycle_level_filter(),
+        Action::CycleInternalLogTargetFilter => app.internal_logs.cycle_target_filter(),
+        Action::ClearInternalLogs => {
+            app.internal_logs.clear();
+            app.notification =
+                Some("Cleared retained Yoctui diagnostics; loss counters remain.".into());
+        }
+        Action::ExportInternalLogs => {
+            let export = format_internal_log_export(&app.internal_logs);
+            app.notification = Some(format!(
+                "Prepared bounded internal diagnostic export: {} entries, {} omitted.",
+                export.included, export.omitted
+            ));
+            return Some(Effect::CopyToClipboard(export.content));
+        }
         Action::ToggleLogFollow => {
             app.logs.follow = !app.logs.follow;
             app.logs.paused_len = (!app.logs.follow).then_some(app.logs.entries.len());
@@ -15722,7 +15792,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             select_first_matching_recipe(app);
         }
         Action::FinishMetadataSearch => app.metadata_searching = false,
-        Action::AppendLogQuery(_)
+        Action::AppendInternalLogQuery(_)
+        | Action::BackspaceInternalLogQuery
+        | Action::AppendLogQuery(_)
         | Action::BackspaceLogQuery
         | Action::NextLogMatch
         | Action::PreviousLogMatch

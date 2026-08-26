@@ -6124,12 +6124,12 @@ notes = "A model-owned LogWindow collects at most one visible viewport while exa
 id = "UX-INTERNAL-LOG-001"
 milestone = "M21"
 title = "Add a separate Yoctui self-diagnostic log view"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 714
 required = true
 depends_on = ["UX-LOGS-001", "UX-LICENSE-001"]
-verify = ["cargo test -p yoctui-model ux_internal_log", "cargo test -p yoctui-ui ux_internal_log", "cargo deny check"]
-notes = "Evaluate tui-logger for bounded tracing diagnostics only. Internal logs and BitBake domain logs remain separate typed authorities with distinct filters, retention, and export."
+verify = ["cargo test -p yoctui-model ux_internal_log", "cargo test -p yoctui-app ux_internal_log", "cargo test -p yoctui-ui ux_internal_log", "cargo test -p yoctui ux_internal_log", "cargo deny check"]
+notes = "The audited tui-logger candidate remains rejected and absent from the graph. A custom Layer on the existing tracing-subscriber stack nonblockingly captures the filtered local interactive client into a 1,024-record channel, caps UTF-8 events at 64 KiB, drains 256 records per frame, and reports ingress loss. InternalLogState owns distinct bounded retention, stable IDs, follow, level/target/query filters, viewport projection, eviction loss, and 256 KiB export. The Logs tabs, Inspector authority labels, responsive/no-color renderer, and typed model/app/CLI tests prove that internal diagnostics never enter BitBake LogState, Errors, or correlations."
 
 [[task]]
 id = "UX-TEXTAREA-MODEL-001"

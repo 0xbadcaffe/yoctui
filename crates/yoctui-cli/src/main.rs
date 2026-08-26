@@ -26,6 +26,7 @@ use std::{
 };
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
+use tracing_subscriber::prelude::*;
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, MenuInputResult, MouseInput, MouseKind,
     PrefixCommand, PrefixEvent, PrefixState, build_environment_action, collection_scroll_delta,
@@ -36,8 +37,8 @@ use yoctui_app::{
     devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action_for_app,
-    images_workspace_action, keymap_action_for_app, keymap_preferences_action, logs_action,
-    maintenance_dialog_action, maintenance_workspace_action, menu_action,
+    images_workspace_action, keymap_action_for_app, keymap_preferences_action,
+    log_workspace_action, maintenance_dialog_action, maintenance_workspace_action, menu_action,
     model_action_from_backend_event, mouse_action_for_app, package_workspace_action,
     popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
     qa_report_error_action, qa_report_response_action, qa_task_capability_action,
@@ -128,6 +129,7 @@ mod daemon_security;
 mod daemon_test;
 #[cfg(unix)]
 mod daemon_wic;
+mod internal_tracing;
 mod maintenance_cli;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
@@ -1035,9 +1037,14 @@ async fn main() -> Result<()> {
     }
     let session = read_session(session_path(config_path(&cli).as_deref()).as_deref())?;
     let config = resolve_config(&cli, &session)?;
-    tracing_subscriber::fmt()
-        .with_env_filter(config.log_level.clone())
-        .with_writer(std::io::stderr)
+    let (internal_tracing_layer, internal_tracing_capture) =
+        internal_tracing::bounded_channel(1_024);
+    let tracing_filter = tracing_subscriber::EnvFilter::try_new(config.log_level.clone())
+        .context("invalid Yoctui tracing filter")?;
+    tracing_subscriber::registry()
+        .with(tracing_filter)
+        .with(tracing_subscriber::fmt::layer().with_writer(std::io::stderr))
+        .with(internal_tracing_layer)
         .init();
     let build_dir = config.build_dir.clone();
     if let Some(Command::Doctor { json }) = &cli.command {
@@ -1082,7 +1089,7 @@ async fn main() -> Result<()> {
         )
         .await;
     }
-    tui(config, targets, session).await
+    tui(config, targets, session, internal_tracing_capture).await
 }
 
 async fn load_workspace(backend: Backend, build_dir: PathBuf) -> Result<yoctui_model::Workspace> {
@@ -8986,8 +8993,8 @@ async fn copy_to_clipboard(app: &mut App, content: String) {
     })
     .await;
     app.notification = Some(match result {
-        Ok(Ok(program)) => format!("Selected log details copied with {program}."),
-        Ok(Err(error)) => format!("Could not copy selected log details: {error}"),
+        Ok(Ok(program)) => format!("Content copied with {program}."),
+        Ok(Err(error)) => format!("Could not copy content: {error}"),
         Err(error) => format!("Clipboard task failed: {error}"),
     });
 }
@@ -9716,7 +9723,12 @@ async fn refresh_workspace(
     }
 }
 
-async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Result<()> {
+async fn tui(
+    config: Config,
+    targets: Vec<String>,
+    mut session: Session,
+    mut internal_tracing_capture: internal_tracing::InternalTracingCapture,
+) -> Result<()> {
     let Config {
         backend: backend_kind,
         mut build_dir,
@@ -9958,6 +9970,13 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
     #[cfg(unix)]
     let mut termination = termination_receiver()?;
     loop {
+        let (internal_records, ingress_dropped) = internal_tracing_capture.drain(256);
+        if ingress_dropped > 0 {
+            let _ = update(&mut app, Action::InternalLogIngressDropped(ingress_dropped));
+        }
+        for record in internal_records {
+            let _ = update(&mut app, Action::InternalLog(record));
+        }
         #[cfg(unix)]
         if termination_requested(&mut termination) {
             break;
@@ -12056,11 +12075,10 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                     let action = tasks_action(app.task_filter_editing, input)
                         .expect("Tasks action was checked");
                     let _ = compatibility_workspace_action(&mut app, action);
-                } else if app.screen == Screen::Logs
-                    && logs_action(app.logs.searching, input).is_some()
+                } else if app.screen == Screen::Logs && log_workspace_action(&app, input).is_some()
                 {
-                    let action =
-                        logs_action(app.logs.searching, input).expect("Logs action was checked");
+                    let action = log_workspace_action(&app, input)
+                        .expect("Logs workspace action was checked");
                     match compatibility_workspace_action(&mut app, action) {
                         Some(Effect::OpenInEditor(path)) => {
                             open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
