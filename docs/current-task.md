@@ -2,46 +2,47 @@
 
 ## Task
 
-**ID:** M13-UI-001
-**Title:** Complete next-generation Yoctui TUI
-**Status:** DONE
+**ID:** UX-LICENSE-001
+**Title:** Establish third-party widget license and supply-chain gate
+**Status:** NOT_STARTED
 
 ## Objective
 
-Close the parent next-generation UI milestone only after the redesigned typed
-workbench, real-Poky evidence, live documentation, rendering-module cleanup,
-and the full non-weakened repository completion gate all pass together.
+Create the reusable dependency-admission gate required before any showcased
+third-party widget is added to Yoctui.
 
 ## Dependencies
 
-- `LIVE-UI-POKY-001` — DONE
-- `README-UI-001` — DONE
-- `UI-REGRESSION-001` — DONE
-- `UI-CLEANUP-001` — DONE
-- All other registered M19 UI children — DONE
+- `UX-SPEC-001` — DONE
 
 ## Relevant files
 
-- `scripts/verify-next-generation-ui.sh`
-- `scripts/verify-completion.sh`
-- `docs/implementation-status.md`
-- `docs/task-registry.toml`
-- `docs/current-task.md`
+- `Cargo.toml`
+- `Cargo.lock`
+- `deny.toml`
+- `docs/workbench-ux-roadmap.md`
+- third-party notice and SBOM configuration
+- `scripts/verify-third-party-notices.sh`
+- `scripts/verify-widget-dependencies.sh`
 
 ## Definition of done
 
-- Pass the complete next-generation UI verification script.
-- Pass the full repository completion gate without weakening checks.
-- Confirm all required tasks and milestone parents are terminally complete.
-- Commit the terminal governance state with no task left active.
+- Refresh exact candidate crate versions, SPDX licenses, sources/checksums,
+  MSRVs, Ratatui compatibility, enabled features, and transitive dependencies.
+- Reject any crate or feature set that violates repository policy.
+- Generate and verify complete third-party notices and an auditable SBOM.
+- Prove the selected dependency graph builds from the lockfile without network.
+- Document explicit adopt, adapt, defer, or reject decisions without importing
+  showcase application code or assets.
 
 ## Verification
 
 ```bash
-./scripts/verify-next-generation-ui.sh
-./scripts/verify-completion.sh
+cargo deny check
+./scripts/verify-third-party-notices.sh
+./scripts/verify-widget-dependencies.sh
+./scripts/verify-roadmap.sh
 ```
 
-The next-generation gate passes with 48/48 required UI tasks and the roadmap
-reports all 540 required product tasks complete. The full repository gate is
-the terminal acceptance command for this committed state.
+Do not add a widget dependency in this task. This task creates the gate that
+later widget-specific tasks must pass immediately before adoption.

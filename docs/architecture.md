@@ -2921,3 +2921,45 @@ requires capability-correlated commands against the exact supported BitBake
 environment and records command IDs, selected implementations, environment
 identity, results, and evidence without upgrading the bundled reference into a
 release claim.
+
+## M21 widget integration boundary
+
+The one-stop workbench milestone may add Ratatui built-ins and reviewed
+third-party renderers, but it does not change dependency direction or state
+ownership. `yoctui-model` owns the action catalog, keybindings, menu/focus/zoom,
+scroll offsets, editor state, checkbox selection, rootfs composition, terminal
+presentation state, and all bounded lifecycle values. It cannot depend on
+Ratatui or a widget crate merely because that crate normally owns `WidgetState`.
+
+`yoctui-ui` may construct a widget state transiently from model values only
+when rendering cannot mutate the model authority and the complete state can be
+projected back deterministically. Widget event helpers never receive raw
+Crossterm events directly; `yoctui-app` maps input and mouse geometry to typed
+actions. A candidate that cannot meet this rule remains a design reference or
+is replaced by a small render-only adapter.
+
+The action catalog is model-owned and projects mechanically through the app/UI
+layers into menus, palette, Help, footer, mouse routes, and preferences. Backend
+capability evaluation remains outside renderers. Menu selection cannot execute
+an action directly; it emits the same typed activation action and effects as
+the existing palette or shortcut route.
+
+Rootfs composition follows the normal boundary. Protocol owns versioned typed
+package/tree/size/limitation records; `yoctui-bitbake` alone correlates image
+manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;
+`yoctui-app` maps correlated responses; model reducers normalize, select, group,
+and drill down; UI renders pie/bar/table/tree projections without filesystem or
+BitBake parsing.
+
+The daemon remains the only terminal emulator and PTY owner. A `tui-term`
+integration is valid only as a renderer over the existing typed replica. It
+cannot introduce client-side ANSI parsing, a second `vt100::Parser`, a separate
+screen state, or behavior that differs between attached clients. The existing
+typed-cell renderer remains authoritative unless equivalence and bounds are
+proved.
+
+Third-party adoption requires current source/checksum, SPDX license, notices,
+MSRV, enabled-feature, transitive-dependency, Ratatui compatibility, locked
+offline build, SBOM, and `cargo deny` evidence. Optional image/render features
+must retain deterministic text/TestBackend fallbacks and cannot add blocking
+work to the draw loop.

@@ -5965,3 +5965,410 @@ required = true
 depends_on = ["RAW-REF-001", "RAW-SPEC-001", "RAW-CATALOG-MODEL-001", "RAW-CATALOG-001", "RAW-CATALOG-TRACE-001", "RAW-CAP-001", "RAW-CAP-PROBE-001", "RAW-PARAM-001", "RAW-RECIPE-001", "RAW-ARG-001", "RAW-PREVIEW-001", "RAW-MODEL-001", "RAW-NAV-001", "RAW-CATEGORY-UI-001", "RAW-COMMAND-UI-001", "RAW-HELP-UI-001", "RAW-FORM-UI-001", "RAW-EXEC-MODEL-001", "RAW-JOB-001", "RAW-PTY-001", "RAW-OUTPUT-UI-001", "RAW-HISTORY-001", "RAW-FAVORITE-MODEL-001", "RAW-FAVORITE-PERSIST-001", "RAW-FAVORITE-UI-001", "RAW-SEARCH-001", "RAW-MOUSE-001", "RAW-RESPONSIVE-001", "RAW-A11Y-001", "RAW-SECURITY-001", "RAW-COMPAT-001", "RAW-LIVE-001", "RAW-DOC-001"]
 verify = ["./scripts/verify-raw-mode.sh", "./scripts/verify-completion.sh"]
 notes = "All Raw Mode child tasks, live evidence, documentation, security, compatibility, and Raw-specific completion checks pass. The unrelated global UI completion gate remains blocked by LIVE-UI-POKY-001."
+
+[[task]]
+id = "UX-SPEC-001"
+milestone = "M21"
+title = "Research and specify the one-stop Yocto workbench UX"
+status = "DONE"
+priority = 700
+required = true
+depends_on = ["M13-UI-001", "RAW-001"]
+verify = ["./scripts/verify-workbench-ux-roadmap.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "The Ratatui app, built-in widget, and third-party widget showcases were mapped onto Yoctui's existing typed architecture. The authoritative roadmap defines menus, keybindings, focus, scrolling, progress, logs, editors, checkboxes, rootfs composition, terminal integration, licenses, tests, phases, and measurable completion without treating showcase code or assets as reusable by default."
+
+[[task]]
+id = "UX-LICENSE-001"
+milestone = "M21"
+title = "Establish third-party widget license and supply-chain gate"
+status = "NOT_STARTED"
+priority = 701
+required = true
+depends_on = ["UX-SPEC-001"]
+verify = ["cargo deny check", "./scripts/verify-third-party-notices.sh", "./scripts/verify-widget-dependencies.sh"]
+notes = "Refresh candidate versions, SPDX expressions, notices, source/checksums, MSRV, Ratatui 0.30 compatibility, enabled features, transitive graph, SBOM output, and locked offline builds before any showcased crate is adopted."
+
+[[task]]
+id = "UX-ACTION-CATALOG-001"
+milestone = "M21"
+title = "Unify all operator actions in one typed catalog"
+status = "NOT_STARTED"
+priority = 702
+required = true
+depends_on = ["UX-SPEC-001"]
+verify = ["cargo test -p yoctui-model ux_action_catalog", "cargo test -p yoctui-app ux_action_catalog", "cargo test -p yoctui-ui ux_action_catalog"]
+notes = "Give every action a stable ID, scope, menu path, description, shortcut aliases, requirements, safety class, palette keywords, footer priority, Help grouping, availability, and exact disabled reason."
+
+[[task]]
+id = "UX-KEYMAP-MODEL-001"
+milestone = "M21"
+title = "Implement scoped configurable keybinding model"
+status = "NOT_STARTED"
+priority = 703
+required = true
+depends_on = ["UX-ACTION-CATALOG-001"]
+verify = ["cargo test -p yoctui-model ux_keymap", "cargo test -p yoctui-app ux_keymap", "cargo test -p yoctui -- ux_keymap"]
+notes = "Define stable defaults, aliases, multi-key chords, context scopes, terminal-prefix reservations, collision and reachability validation, atomic persistence, and legacy preference migration by action ID."
+
+[[task]]
+id = "UX-KEYMAP-UI-001"
+milestone = "M21"
+title = "Add discoverable keybinding preferences and report"
+status = "NOT_STARTED"
+priority = 704
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001"]
+verify = ["cargo test -p yoctui-ui ux_keymap_preferences", "cargo test -p yoctui-app ux_keymap_preferences", "cargo test -p yoctui -- ux_keymap_persistence"]
+notes = "Render searchable bindings grouped by scope, conflicts and disabled reasons, capture/edit/reset controls, and an exportable effective keymap while keeping critical actions reachable."
+
+[[task]]
+id = "UX-MENU-001"
+milestone = "M21"
+title = "Implement typed application and context menus"
+status = "NOT_STARTED"
+priority = 705
+required = true
+depends_on = ["UX-ACTION-CATALOG-001", "UX-KEYMAP-MODEL-001"]
+verify = ["cargo test -p yoctui-model ux_menu", "cargo test -p yoctui-app ux_menu", "cargo test -p yoctui-ui ux_menu", "cargo test -p yoctui -- ux_menu"]
+notes = "F10 opens Workspace/Build/Navigate/View/Tools/Help menus and the selected-item action route opens a contextual menu. Both project the action catalog, trap focus, show disabled reasons, and preserve confirmation boundaries."
+
+[[task]]
+id = "UX-FOCUS-001"
+milestone = "M21"
+title = "Polish pane subfocus zoom and focus restoration"
+status = "NOT_STARTED"
+priority = 706
+required = true
+depends_on = ["UX-MENU-001", "UX-KEYMAP-MODEL-001"]
+verify = ["cargo test -p yoctui-model ux_focus", "cargo test -p yoctui-app ux_focus", "cargo test -p yoctui-ui ux_focus", "cargo test -p yoctui -- ux_focus"]
+notes = "Add typed subfocus and reversible zoom, visible textual focus, exact outward Esc behavior, direct menu/palette focus actions, resize preservation, and modal/terminal ownership invariants."
+
+[[task]]
+id = "UX-SCROLL-001"
+milestone = "M21"
+title = "Standardize scrolling across every workspace"
+status = "NOT_STARTED"
+priority = 707
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001"]
+verify = ["cargo test -p yoctui-model ux_scroll", "cargo test -p yoctui-app ux_scroll", "cargo test -p yoctui-ui ux_scroll", "cargo test -p yoctui -- ux_scroll"]
+notes = "Unify row/page/top/bottom, gg/G, horizontal, mouse-wheel, follow/search jump, resize, filter, and eviction semantics with retained textual position and property coverage."
+
+[[task]]
+id = "UX-WIDGET-PRIMITIVES-001"
+milestone = "M21"
+title = "Build shared gauges meters charts tabs and scrollbar primitives"
+status = "NOT_STARTED"
+priority = 708
+required = true
+depends_on = ["UX-SPEC-001"]
+verify = ["cargo test -p yoctui-ui ux_widget_primitives", "cargo test -p yoctui-model ux_widget_projection"]
+notes = "Create render-only semantic wrappers for determinate gauges/meters, histories, tabs, charts, bars, scrollbars, legends, fallbacks, and responsive layout without adding a second state authority."
+
+[[task]]
+id = "UX-PROGRESS-001"
+milestone = "M21"
+title = "Implement hierarchical build task and job progress"
+status = "NOT_STARTED"
+priority = 709
+required = true
+depends_on = ["UX-WIDGET-PRIMITIVES-001"]
+verify = ["cargo test -p yoctui-model ux_progress", "cargo test -p yoctui-ui ux_progress", "cargo test -p yoctui-app ux_progress"]
+notes = "Separate build, parse/runqueue, selected task, background job, resource, and sstate progress; label estimates and preserve unknown values and exact numeric text."
+
+[[task]]
+id = "UX-THROBBER-001"
+milestone = "M21"
+title = "Adopt one accessible indeterminate activity language"
+status = "NOT_STARTED"
+priority = 710
+required = true
+depends_on = ["UX-PROGRESS-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-model ux_throbber", "cargo test -p yoctui-ui ux_throbber", "cargo deny check"]
+notes = "Evaluate and, if compliant, integrate throbber-widgets-tui symbols through reducer-owned ticks; reduced motion, ASCII, no-color, terminal outcomes, and no-fabricated-progress tests are mandatory."
+
+[[task]]
+id = "UX-TELEMETRY-001"
+milestone = "M21"
+title = "Polish telemetry gauges meters and zoomed charts"
+status = "NOT_STARTED"
+priority = 711
+required = true
+depends_on = ["UX-WIDGET-PRIMITIVES-001"]
+verify = ["cargo test -p yoctui-model ux_telemetry", "cargo test -p yoctui-ui ux_telemetry", "./scripts/test-next-generation-ui-performance.sh"]
+notes = "Use existing typed histories for compact sparklines and expanded charts, exact units, missing-sample gaps, resource meters, safe zoom, and responsive collapse."
+
+[[task]]
+id = "UX-LOGS-001"
+milestone = "M21"
+title = "Polish the bounded BitBake log explorer"
+status = "NOT_STARTED"
+priority = 712
+required = true
+depends_on = ["UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001"]
+verify = ["cargo test -p yoctui-model ux_logs", "cargo test -p yoctui-app ux_logs", "cargo test -p yoctui-ui ux_logs"]
+notes = "Add virtualized ranges, consistent scrolling, obvious follow/pause, search position, typed filter chips, bookmarks and correlated jumps, wrapped/unwrapped modes, loss accounting, and bounded export/copy."
+
+[[task]]
+id = "UX-INTERNAL-LOG-001"
+milestone = "M21"
+title = "Add a separate Yoctui self-diagnostic log view"
+status = "NOT_STARTED"
+priority = 713
+required = true
+depends_on = ["UX-LOGS-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-model ux_internal_log", "cargo test -p yoctui-ui ux_internal_log", "cargo deny check"]
+notes = "Evaluate tui-logger for bounded tracing diagnostics only. Internal logs and BitBake domain logs remain separate typed authorities with distinct filters, retention, and export."
+
+[[task]]
+id = "UX-TEXTAREA-MODEL-001"
+milestone = "M21"
+title = "Extend the reducer-owned multiline editor model"
+status = "NOT_STARTED"
+priority = 714
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001", "UX-SCROLL-001"]
+verify = ["cargo test -p yoctui-model ux_textarea", "cargo test -p yoctui-app ux_textarea", "cargo test -p yoctui-model --features proptest ux_textarea"]
+notes = "Add bounded undo/redo, word/line/page motion, search/replace, Normal/Insert/Visual modes, selection, line numbers, wrap metadata, validation spans, diff preview, conflicts, and atomic-save lifecycle."
+
+[[task]]
+id = "UX-TEXTAREA-UI-001"
+milestone = "M21"
+title = "Render safe multiline editors and decide ratatui-textarea adoption"
+status = "NOT_STARTED"
+priority = 715
+required = true
+depends_on = ["UX-TEXTAREA-MODEL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-ui ux_textarea", "cargo test -p yoctui -- ux_textarea", "cargo deny check"]
+notes = "Prove a ratatui-textarea adapter can round-trip complete model state without Ratatui types entering the model, or retain the custom renderer with feature-parity evidence. Test Unicode, paste, mouse, modes, validation, save failure, and narrow layout."
+
+[[task]]
+id = "UX-CHECKBOX-001"
+milestone = "M21"
+title = "Add accessible checkboxes and batch selection"
+status = "NOT_STARTED"
+priority = 716
+required = true
+depends_on = ["UX-KEYMAP-MODEL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-model ux_checkbox", "cargo test -p yoctui-app ux_checkbox", "cargo test -p yoctui-ui ux_checkbox"]
+notes = "Implement checked, unchecked, indeterminate, disabled, focused, Unicode, and ASCII states for filters/forms and safe batches; Space toggles but never executes or bypasses destructive preview."
+
+[[task]]
+id = "UX-LIST-TREE-001"
+milestone = "M21"
+title = "Evaluate and integrate tree scrollview and variable-list adapters"
+status = "NOT_STARTED"
+priority = 717
+required = true
+depends_on = ["UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-model ux_list_tree", "cargo test -p yoctui-ui ux_list_tree", "cargo test -p yoctui-app ux_list_tree"]
+notes = "Spike tui-tree-widget, tui-scrollview, and tui-widget-list against external model state for layer/rootfs trees, long documents, and variable-height cards, with text fallbacks and large-data bounds."
+
+[[task]]
+id = "UX-DEPENDENCY-GRAPH-001"
+milestone = "M21"
+title = "Add navigable dependency topology visualization"
+status = "NOT_STARTED"
+priority = 718
+required = true
+depends_on = ["UX-LIST-TREE-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-model ux_dependency_graph", "cargo test -p yoctui-ui ux_dependency_graph", "cargo test -p yoctui-app ux_dependency_graph"]
+notes = "Evaluate tui-nodes and Canvas using bounded typed dependency projections. Keyboard navigation, why-built paths, clipping, selection, no-color text, table/tree fallback, and performance determine adoption."
+
+[[task]]
+id = "UX-ROOTFS-MODEL-001"
+milestone = "M21"
+title = "Define typed root filesystem composition state"
+status = "NOT_STARTED"
+priority = 719
+required = true
+depends_on = ["UX-SPEC-001", "IMAGES-001", "PKG-001"]
+verify = ["cargo test -p yoctui-model ux_rootfs", "cargo test -p yoctui-protocol ux_rootfs", "cargo test -p yoctui-app ux_rootfs"]
+notes = "Model image-correlated installed-package and filesystem-tree authorities, exact bytes/counts/percentages, Other grouping, drilldown, loading/partial/unavailable/failed states, limitations, bounds, generations, and stable selection."
+
+[[task]]
+id = "UX-ROOTFS-ADAPTER-001"
+milestone = "M21"
+title = "Acquire bounded authoritative rootfs composition"
+status = "NOT_STARTED"
+priority = 720
+required = true
+depends_on = ["UX-ROOTFS-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake ux_rootfs", "python3 -m pytest bridge/tests -k rootfs", "cargo test -p yoctui -- ux_rootfs"]
+notes = "Correlate exact image manifest/pkgdata and optionally BitBake-reported IMAGE_ROOTFS. Enforce canonical build containment, no symlink following, hard-link deduplication, special-file accounting, count/depth/byte/time bounds, cancellation, and stale denial."
+
+[[task]]
+id = "UX-ROOTFS-UI-001"
+milestone = "M21"
+title = "Render rootfs pie bar table and tree exploration"
+status = "NOT_STARTED"
+priority = 721
+required = true
+depends_on = ["UX-ROOTFS-ADAPTER-001", "UX-LIST-TREE-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-ui ux_rootfs", "cargo test -p yoctui-app ux_rootfs", "cargo deny check"]
+notes = "Use tui-piechart when appropriate, bar/table/tree fallbacks by width/accessibility, exact bytes and percentages, inspectable Other membership, package/filesystem separation, drilldown, and explicit unavailable/partial limits."
+
+[[task]]
+id = "UX-IMAGE-PREVIEW-001"
+milestone = "M21"
+title = "Evaluate optional terminal image previews"
+status = "NOT_STARTED"
+priority = 722
+required = true
+depends_on = ["UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
+verify = ["cargo test -p yoctui-ui ux_image_preview", "cargo test -p yoctui -- ux_image_preview", "cargo deny check"]
+notes = "Evaluate ratatui-image with explicit terminal protocol probing, async bounded decode/resize, SSH/tmux behavior, memory and binary-size budgets, disabled default native features, and deterministic half-block/text fallback."
+
+[[task]]
+id = "UX-TERMINAL-EVAL-001"
+milestone = "M21"
+title = "Evaluate tui-term against typed terminal replicas"
+status = "NOT_STARTED"
+priority = 723
+required = true
+depends_on = ["UX-SPEC-001", "UX-LICENSE-001", "PTY-MULTI-001"]
+verify = ["cargo test -p yoctui-model ux_terminal_adapter", "cargo test -p yoctui-ui ux_terminal_adapter", "cargo deny check"]
+notes = "Prove tui-term can consume a projection of daemon-owned typed screen state without UI ANSI parsing, duplicate emulation, unbounded state, or replica drift; otherwise retain the current renderer with measured parity evidence."
+
+[[task]]
+id = "UX-TERMINAL-UX-001"
+milestone = "M21"
+title = "Complete the first-class built-in terminal workbench"
+status = "NOT_STARTED"
+priority = 724
+required = true
+depends_on = ["UX-TERMINAL-EVAL-001", "UX-FOCUS-001", "UX-SCROLL-001", "UX-KEYMAP-MODEL-001"]
+verify = ["cargo test -p yoctui-model ux_terminal", "cargo test -p yoctui-app ux_terminal", "cargo test -p yoctui-ui ux_terminal", "cargo test -p yoctui -- ux_terminal"]
+notes = "Add a Terminal Sessions destination, contextual creation, tabs/list, splits, zoom, rename, writer/take-control state, copy/search, paste, dropped history, detach/reattach, close/confirmed kill, prefix Help, literal prefix, and honest recovery outcomes."
+
+[[task]]
+id = "UX-DASHBOARD-001"
+milestone = "M21"
+title = "Compose a clearer operational dashboard"
+status = "NOT_STARTED"
+priority = 725
+required = true
+depends_on = ["UX-PROGRESS-001", "UX-THROBBER-001", "UX-TELEMETRY-001"]
+verify = ["cargo test -p yoctui-model ux_dashboard", "cargo test -p yoctui-ui ux_dashboard", "cargo test -p yoctui-app ux_dashboard"]
+notes = "Prioritize current build, next action, failures, recent artifacts/jobs, authoritative progress, telemetry, environment health, and context navigation with zoom and narrow summaries rather than decorative cards."
+
+[[task]]
+id = "UX-WORKBENCH-CENTER-001"
+milestone = "M21"
+title = "Create a one-stop workbench command center"
+status = "NOT_STARTED"
+priority = 726
+required = true
+depends_on = ["UX-MENU-001", "UX-DASHBOARD-001", "UX-LOGS-001", "UX-ROOTFS-UI-001", "UX-TERMINAL-UX-001"]
+verify = ["cargo test -p yoctui-model ux_command_center", "cargo test -p yoctui-app ux_command_center", "cargo test -p yoctui-ui ux_command_center"]
+notes = "Unify recent contexts, active work, failures, artifacts, favorite commands, terminals, and capability-aware next actions without duplicating underlying workspace state or bypassing typed workflows."
+
+[[task]]
+id = "UX-ONBOARDING-001"
+milestone = "M21"
+title = "Add guided first-run and workflow onboarding"
+status = "NOT_STARTED"
+priority = 727
+required = true
+depends_on = ["UX-WORKBENCH-CENTER-001", "UX-TEXTAREA-UI-001"]
+verify = ["cargo test -p yoctui-model ux_onboarding", "cargo test -p yoctui-app ux_onboarding", "cargo test -p yoctui-ui ux_onboarding", "cargo test -p yoctui -- ux_onboarding"]
+notes = "Guide environment verification, target selection, first build, logs/errors, artifacts/rootfs, and terminal use with resumable typed steps, exact prerequisites, no auto-execution, and optional low-density large text only where accessible."
+
+[[task]]
+id = "UX-PREFERENCES-001"
+milestone = "M21"
+title = "Unify usability and visual preferences"
+status = "NOT_STARTED"
+priority = 728
+required = true
+depends_on = ["UX-KEYMAP-UI-001", "UX-CHECKBOX-001", "UX-MENU-001"]
+verify = ["cargo test -p yoctui-model ux_preferences", "cargo test -p yoctui-ui ux_preferences", "cargo test -p yoctui -- ux_preferences"]
+notes = "Expose keybindings, theme, density, Unicode/ASCII, motion, mouse, footer, wrap/follow, pane sizes, chart/image choices, terminal prefix, reset/preview, atomic persistence, and legacy migration."
+
+[[task]]
+id = "UX-RESPONSIVE-001"
+milestone = "M21"
+title = "Verify every M21 workflow across responsive layouts"
+status = "NOT_STARTED"
+priority = 729
+required = true
+depends_on = ["UX-DEPENDENCY-GRAPH-001", "UX-IMAGE-PREVIEW-001", "UX-ONBOARDING-001", "UX-PREFERENCES-001"]
+verify = ["cargo test -p yoctui-ui ux_responsive", "cargo test -p yoctui-app ux_responsive", "./scripts/test-tui-snapshots.sh"]
+notes = "Cover 200x60, 160x50, 130x40, 100x30, 80x24, and below minimum for menus, editors, graphs, rootfs, terminals, dashboard, command center, dialogs, and exact state/selection retention."
+
+[[task]]
+id = "UX-A11Y-001"
+milestone = "M21"
+title = "Verify M21 accessibility and nonvisual meaning"
+status = "NOT_STARTED"
+priority = 730
+required = true
+depends_on = ["UX-RESPONSIVE-001", "UX-THROBBER-001", "UX-CHECKBOX-001"]
+verify = ["cargo test -p yoctui-ui ux_accessibility", "cargo test -p yoctui-model ux_accessibility", "./scripts/verify-ui-spec.sh"]
+notes = "Test every state in no-color, ASCII, high contrast, reduced motion, and terminal-reader text; ensure focus, charts, pie slices, checkboxes, progress, menus, and terminal ownership never rely only on color/glyph/motion."
+
+[[task]]
+id = "UX-PERF-001"
+milestone = "M21"
+title = "Profile and bound the expanded workbench"
+status = "NOT_STARTED"
+priority = 731
+required = true
+depends_on = ["UX-RESPONSIVE-001"]
+verify = ["./scripts/test-next-generation-ui-performance.sh", "./scripts/test-workbench-ux-performance.sh", "./scripts/test-flamegraph.sh"]
+notes = "Add menu-heavy, large-rootfs, large-graph, large-editor, and dense-terminal scenarios, retain the 10 ms/frame ceiling, bound allocations/state, and require profile evidence before adding caches."
+
+[[task]]
+id = "UX-KEYMAP-E2E-001"
+milestone = "M21"
+title = "Verify real-terminal menus keybindings focus and scrolling"
+status = "NOT_STARTED"
+priority = 732
+required = true
+depends_on = ["UX-PREFERENCES-001", "UX-FOCUS-001", "UX-SCROLL-001"]
+verify = ["./scripts/test-tui-keymap.sh", "./scripts/test-workbench-ux-keymap.sh", "./scripts/test-tui-pty.sh"]
+notes = "Dispatch every catalog binding, menu route, chord, collision/reset path, focus/zoom transition, row/page/search scroll, mouse parity, popup mode, and unreachable/disabled denial in a real PTY."
+
+[[task]]
+id = "UX-PTY-E2E-001"
+milestone = "M21"
+title = "Verify the built-in terminal session UX end to end"
+status = "NOT_STARTED"
+priority = 733
+required = true
+depends_on = ["UX-TERMINAL-UX-001", "UX-KEYMAP-E2E-001"]
+verify = ["cargo test -p yoctui -- ux_terminal_runtime", "./scripts/test-workbench-terminal.sh", "./scripts/test-tui-pty.sh"]
+notes = "Exercise shell, split/session focus, writer lease and takeover, prefix/literal prefix, Unicode/paste, mouse reporting, copy/search/scrollback, resize, detach/reattach, reconnect, exit/loss, and confirmed kill."
+
+[[task]]
+id = "UX-LIVE-001"
+milestone = "M21"
+title = "Validate the one-stop workbench against supported live Yocto"
+status = "NOT_STARTED"
+priority = 734
+required = true
+depends_on = ["UX-WORKBENCH-CENTER-001", "UX-ROOTFS-UI-001", "UX-TERMINAL-UX-001", "UX-KEYMAP-E2E-001"]
+verify = ["./scripts/test-live-workbench-ux.sh", "./scripts/verify-live-workbench-ux-evidence.sh", "./scripts/verify-compatibility.sh"]
+notes = "Current older/latest supported environments cover menus/availability, build/cancel, progress/log correlation, image manifest/pkgdata/rootfs composition, context terminal, interactive tasks where available, reconnect, bounds, and 90-day evidence."
+
+[[task]]
+id = "UX-DOC-001"
+milestone = "M21"
+title = "Document the polished one-stop workbench"
+status = "NOT_STARTED"
+priority = 735
+required = true
+depends_on = ["UX-LIVE-001", "UX-A11Y-001", "UX-PERF-001", "UX-PTY-E2E-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-live-workbench-ux-evidence.sh", "./scripts/verify-third-party-notices.sh"]
+notes = "Update the operator guide, UI spec, architecture, keymap reference, terminal guide, rootfs authority/limitations, settings, accessibility, dependency notices/SBOM, live evidence, screenshots, and troubleshooting."
+
+[[task]]
+id = "UX-001"
+milestone = "M21"
+title = "Complete the one-stop Yocto workbench UX milestone"
+status = "NOT_STARTED"
+priority = 736
+required = true
+depends_on = ["UX-SPEC-001", "UX-LICENSE-001", "UX-ACTION-CATALOG-001", "UX-KEYMAP-MODEL-001", "UX-KEYMAP-UI-001", "UX-MENU-001", "UX-FOCUS-001", "UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001", "UX-PROGRESS-001", "UX-THROBBER-001", "UX-TELEMETRY-001", "UX-LOGS-001", "UX-INTERNAL-LOG-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CHECKBOX-001", "UX-LIST-TREE-001", "UX-DEPENDENCY-GRAPH-001", "UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-IMAGE-PREVIEW-001", "UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-DASHBOARD-001", "UX-WORKBENCH-CENTER-001", "UX-ONBOARDING-001", "UX-PREFERENCES-001", "UX-RESPONSIVE-001", "UX-A11Y-001", "UX-PERF-001", "UX-KEYMAP-E2E-001", "UX-PTY-E2E-001", "UX-LIVE-001", "UX-DOC-001"]
+verify = ["./scripts/verify-workbench-ux.sh", "./scripts/verify-completion.sh"]
+notes = "Close only after every M21 task, license/notice/SBOM gate, typed interaction invariant, responsive/accessibility/performance matrix, real PTY coverage, supported live-Yocto evidence, documentation, and the unchanged full completion gate pass."

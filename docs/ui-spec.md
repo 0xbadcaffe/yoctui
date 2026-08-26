@@ -4289,3 +4289,132 @@ The full Raw footer is:
 The execution footer prioritizes `f Follow`, `/ Search`, `c Cancel`, `d
 Detach`, `r Reattach`, and `Esc Back` before optional hints. Narrow labels may
 abbreviate words but may not hide cancel/detach or misstate availability.
+
+## 33. One-stop workbench usability contract
+
+M21 refines the existing workbench without replacing its persistent shell,
+typed event boundary, focus traps, safety rules, responsive breakpoints, or
+function-key destinations. The complete researched delivery plan is
+[`workbench-ux-roadmap.md`](workbench-ux-roadmap.md); this section records the
+authoritative interaction rules that each implementation task must preserve.
+
+### Actions menus and bindings
+
+One model-owned action catalog is the sole authority for action IDs, labels,
+descriptions, scope, menu path, shortcuts, aliases, requirements, safety,
+palette search, footer priority, Help grouping, availability, and disabled
+reason. Application menus, context menus, command palette, Help, footer, mouse
+routes, keybinding settings, and keymap tests are projections of that catalog.
+They cannot define independent actions or bypass typed confirmation.
+
+`F10` opens a focus-trapped Workspace/Build/Navigate/View/Tools/Help menu.
+Arrow keys move, `Enter` opens/activates, `Esc` moves outward, and bounded typed
+prefix selection may select by label. The selected-item action route is `a` or
+right click. Disabled entries remain visible and explain the exact missing
+selection, authority, capability, or safety prerequisite.
+
+The shared F1–F10 destinations in section 24 remain unchanged. Collection
+navigation consistently supports arrows and `j`/`k`, `PageUp`/`PageDown`,
+`Home`/`End`, and `gg`/`G`; trees add `h`/`l` collapse/expand behavior. `/`
+searches, `Ctrl+U` clears, `n`/`N` moves through matches, `Enter` is the primary
+open action, `Space` toggles checkable state, `a` opens actions, and `?` opens
+contextual Help. A focused popup editor or terminal owns its documented input
+instead of these workspace routes.
+
+Custom bindings are keyed by stable action ID and scoped context. Loading or
+editing rejects active same-scope collisions, reserved terminal-prefix
+conflicts, invalid sequences, and removal of the last reachable route to a
+critical action. Reset and effective-keymap export are mandatory.
+
+### Focus zoom and scrolling
+
+Exactly one pane, subview, menu, dialog, palette, or terminal owns input. Focus
+has a textual marker as well as semantic styling. Typed subfocus may select a
+workspace section; `Esc` moves outward predictably, `Tab` never enters a hidden
+or disabled target, and modal or terminal ownership still traps input.
+
+Zoom temporarily assigns the body to the focused work area while retaining the
+header, a compact location breadcrumb, and footer. Closing zoom restores exact
+focus, subfocus, selection, vertical/horizontal offsets, follow state, and
+layout. Every bounded scroll view uses the same row/page/top/bottom actions,
+mouse equivalents, and textual retained-position indicator. Resize, filtering,
+search jumps, follow/pause, and retention eviction clamp without losing stable
+selected identity when it remains available.
+
+### Widgets progress logs and editors
+
+Shared render-only primitives own styling and responsive projection for gauges,
+meters, sparklines, charts, bar charts, tabs, scrollbars, legends, checkboxes,
+trees, and textual fallbacks. Widgets receive typed values and presentation
+state; they do not sample the host, scan files, parse process output, or become
+a second interaction authority.
+
+Determinate build, parse/runqueue, task, job, resource, and sstate progress
+always includes exact numeric or numerator/denominator text. Unknown progress
+uses an indeterminate text/activity state and never a zero-percent gauge.
+Reduced motion replaces animation with stable lifecycle text.
+
+The build Logs workspace retains its typed bounded store. A separate internal
+diagnostic view may display Yoctui tracing records, but it never captures or
+reclassifies BitBake domain logs. Both expose exact source, filtering, search,
+scroll/follow state, retention/loss accounting, and bounded copy/export.
+
+The reusable editor remains reducer-owned and bounded. It may add multiline
+Unicode input, selection, undo/redo, word/line/page motion, search/replace,
+Normal/Insert/Visual modes, line numbers, wrap, mouse selection, validation
+ranges, diff preview, conflict detection, and atomic saves. Its persistent mode
+line names save/preview/cancel/copy/paste/undo/redo controls. A third-party
+textarea renderer cannot place Ratatui state in `yoctui-model`.
+
+Checkboxes distinguish checked, unchecked, indeterminate, disabled, and focused
+states with text or ASCII equivalents. `Space` changes selection only; a batch
+operation requires its ordinary action and confirmation sequence.
+
+### Rootfs composition
+
+Images gains an image-correlated Rootfs composition subview. Installed-package
+composition comes from the exact image manifest plus authoritative bounded
+pkgdata. Filesystem composition is optional and comes only from the exact
+BitBake-reported `IMAGE_ROOTFS` for the selected image/build identity.
+
+The adapter requires canonical build containment, never follows symlinks,
+deduplicates hard links, identifies special files, and enforces entry, depth,
+byte, time, and cancellation bounds. Missing or cleaned work state is
+Unavailable; hitting a bound is Partial with the exact limitation.
+
+Wide layouts may show a pie chart, exact-byte/percentage table, legend, and
+drill-down tree. Medium layouts prefer bars plus table. Narrow, ASCII,
+no-color, and terminal-reader-oriented layouts use table/tree text. Small
+categories combine only into an explicit inspectable `Other` group. Package
+and filesystem authorities never share a total or silently substitute for one
+another.
+
+### First-class terminal sessions
+
+The daemon remains the sole owner of PTY processes, `vt100` emulation, bounded
+screen/scrollback, attachments, writer epochs, input, resize, and termination.
+The client UI consumes typed terminal replicas and never reparses ANSI. A
+`tui-term` renderer may be adopted only if an adapter preserves that boundary
+and proves replica equivalence; failure of that spike retains the existing
+renderer and does not remove the terminal milestone.
+
+Terminal Sessions is a normal discoverable destination with context-aware
+creation, session list/tabs, splits, zoom, rename, writer/read-only and
+take-control state, copy/search, paste, dropped-history accounting,
+detach/reattach, close, and separately confirmed process-group termination.
+All terminal input except the configured prefix goes to the writer-owned PTY.
+Prefix Help exposes session/pane navigation, copy/search, detach, and literal
+prefix. Disconnect, daemon restart, terminal exit, and process loss remain
+distinct outcomes.
+
+### Dependency and accessibility gate
+
+Every third-party widget requires a refreshed license/MSRV/source/checksum,
+feature, transitive-dependency, Ratatui compatibility, notice, SBOM, locked
+build, and `cargo deny` review. Showcase applications contribute interaction
+research only; their code, screenshots, themes, and assets are not copied.
+
+All new views pass wide, medium, narrow, and below-minimum rendering; keyboard
+and mouse parity; no-color, ASCII, high contrast, and reduced motion; real PTY
+input; bounded large-data behavior; the existing 10 ms/frame performance
+ceiling; and supported live-Yocto evidence before M21 completion.

@@ -11,6 +11,21 @@ Status values:
 
 ## Current phase
 
+M21 One-Stop Yocto Workbench Usability is active under the user's explicit
+request. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
+and third-party widget showcases were mapped to Yoctui's existing typed
+workbench; the UI and architecture contracts now define one action catalog,
+application/context menus, scoped keybindings, consistent focus/zoom/scroll,
+progress and telemetry, bounded logs and editing, checkboxes, dependency and
+rootfs visualization, the first-class terminal path, dependency/license policy,
+37 atomic tasks, required tests, and measurable completion. M21 progress is
+1/37 (2.7%); overall required registry progress is 541/577 (93.8%).
+`UX-LICENSE-001` is the next task and intentionally admits no dependency until
+the reusable license, notice, source, feature, MSRV, SBOM, and locked-build gate
+exists.
+
+### Completed baseline through M20
+
 M20 Raw BitBake Command Workbench supersedes the unrelated queue under the
 user's explicit request. `RAW-REF-001` imported the supplied Wrynose 6.0 /
 BitBake 2.18 cheatsheet verbatim at SHA-256

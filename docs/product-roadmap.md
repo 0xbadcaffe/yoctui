@@ -439,3 +439,44 @@ Exit criteria:
 - unavailable or stale capability state fails before process or PTY creation
 - closing or detaching a view does not implicitly terminate daemon-owned work
 - `./scripts/verify-raw-mode.sh` and the unchanged full completion gate pass
+
+## M21 — One-Stop Yocto Workbench Usability
+
+Goal: turn the complete typed workbench into the most discoverable, consistent,
+beautiful, and efficient terminal environment for daily Yocto work without
+trading away authoritative data, safety, accessibility, or bounded behavior.
+
+The detailed research, widget decisions, interaction contract, license policy,
+phase progress, test matrix, and completion criteria live in
+[`workbench-ux-roadmap.md`](workbench-ux-roadmap.md).
+
+Capabilities:
+
+- one typed action catalog shared by application/context menus, palette, Help,
+  footer, mouse routes, keybinding preferences, and tests
+- stable mnemonic defaults, scoped configurable bindings, collision detection,
+  contextual discovery, predictable focus/subfocus/zoom, and common scrolling
+- authoritative hierarchical progress, resource/cache meters, throbbers,
+  telemetry histories, charts, accessible checkboxes, and consistent state text
+- virtualized searchable logs, a safe reducer-owned multiline editor, trees,
+  scroll views, variable-height lists, and dependency topology
+- image-correlated package and filesystem rootfs composition with pie/bar/table/
+  tree views and exact accessible fallbacks
+- a first-class daemon-owned terminal/session workspace, with a measured
+  `tui-term` compatibility decision that cannot weaken the typed screen boundary
+- capability-aware command center, onboarding, preferences, responsive layouts,
+  accessibility, performance, real-PTY tests, and supported live-Yocto evidence
+- license/MSRV/source/feature review, notices, SBOM, locked dependencies, and
+  `cargo deny` for every adopted third-party widget
+
+Exit criteria:
+
+- all 37 required M21 tasks are `DONE`
+- menus, Help, palette, footer, and configured bindings cannot drift
+- all visual progress and composition values are typed and text-equivalent
+- terminal, editor, rootfs, log, focus, scroll, mouse, and keyboard flows pass
+  deterministic and real-PTY coverage at every supported breakpoint
+- every dependency has current compatible license and supply-chain evidence
+- the expanded performance matrix stays below the existing 10 ms/frame ceiling
+- supported live-Yocto evidence and user documentation are current
+- `./scripts/verify-workbench-ux.sh` and the unchanged completion gate pass
