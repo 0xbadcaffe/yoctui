@@ -455,6 +455,12 @@ pub fn compatibility_ui_command_action_definition(
         }
         CommandId::EditBbmask
         | CommandId::ChooseTheme
+        | CommandId::FocusNavigator
+        | CommandId::FocusWorkspace
+        | CommandId::FocusInspector
+        | CommandId::PreviousSubfocus
+        | CommandId::NextSubfocus
+        | CommandId::TogglePaneZoom
         | CommandId::OpenDashboard
         | CommandId::OpenLogs
         | CommandId::OpenErrors

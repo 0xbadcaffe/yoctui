@@ -4033,6 +4033,12 @@ pub fn mouse_action_for_app(
     if matches!(mouse.kind, MouseKind::ContextDown) {
         return Some(Action::OpenContextMenu);
     }
+    if let Some(zoomed) = app.zoomed_pane
+        && !(app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty())
+        && matches!(mouse.kind, MouseKind::Down)
+    {
+        return Some(Action::Focus(zoomed));
+    }
     if app.screen == Screen::RawMode
         && let Some(action) = raw_mouse_action(mouse, app, terminal_width, terminal_height)
     {
@@ -5007,6 +5013,28 @@ pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
         }
         _ => None,
     }
+}
+
+pub fn focus_action_for_app(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    if matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette) {
+        return focus_action(app.focus, key);
+    }
+    if key == Input::Esc {
+        if app.zoomed_pane.is_some() {
+            return Some(Action::TogglePaneZoom);
+        }
+        if app.focus == FocusTarget::Workspace
+            && app.workspace_subfocus != yoctui_model::WorkspaceSubfocus::Main
+        {
+            return Some(Action::ResetPaneSubfocus);
+        }
+        if app.focus == FocusTarget::Inspector
+            && app.inspector_subfocus != yoctui_model::InspectorSubfocus::Facts
+        {
+            return Some(Action::ResetPaneSubfocus);
+        }
+    }
+    focus_action(app.focus, key)
 }
 
 pub fn settings_action(key: Input) -> Option<Action> {
@@ -12814,6 +12842,50 @@ mod tests {
                 })
                 .all(|id| context_menu_activation_input(id).is_some()),
             "every contextual catalog entry must retain a typed legacy route"
+        );
+    }
+
+    #[test]
+    fn ux_focus_outward_escape_zoom_and_modal_input_are_typed_without_shortcut_theft() {
+        let mut app = yoctui_model::App::new(16, 4_096);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Workspace;
+        let _ = yoctui_model::update(&mut app, Action::CyclePaneSubfocus { backwards: false });
+        assert_eq!(
+            focus_action_for_app(&app, Input::Esc),
+            Some(Action::ResetPaneSubfocus)
+        );
+        let _ = yoctui_model::update(&mut app, Action::ResetPaneSubfocus);
+        assert_eq!(focus_action_for_app(&app, Input::Esc), None);
+        assert_eq!(focus_action_for_app(&app, Input::Char('z')), None);
+
+        let _ = yoctui_model::update(&mut app, Action::TogglePaneZoom);
+        assert_eq!(
+            focus_action_for_app(&app, Input::Esc),
+            Some(Action::TogglePaneZoom)
+        );
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 2,
+                    row: 8,
+                },
+                &app,
+                160,
+                48,
+            ),
+            Some(Action::Focus(FocusTarget::Workspace)),
+            "a zoomed pane owns its whole body instead of leaking clicks"
+        );
+
+        let _ = yoctui_model::update(&mut app, Action::OpenApplicationMenu);
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert_eq!(focus_action_for_app(&app, Input::Tab), None);
+        assert_eq!(focus_action_for_app(&app, Input::Esc), None);
+        assert_eq!(
+            menu_action(&app, Input::Esc),
+            Some(MenuInputResult::Reduce(Box::new(Action::CloseMenu)))
         );
     }
 }

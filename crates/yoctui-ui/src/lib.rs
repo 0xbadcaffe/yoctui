@@ -536,17 +536,26 @@ fn numbered_source_preview(content: &str, file_name: &str, app: &App) -> Text<'s
     source
 }
 
-fn pane_focus_shortcuts(focus: FocusTarget) -> Option<&'static str> {
-    match focus {
-        FocusTarget::Navigator => Some("Focus Navigator | Tab Workspace | Shift+Tab Inspector"),
-        FocusTarget::Workspace => Some("Focus Workspace | Tab Inspector | Shift+Tab Navigator"),
-        FocusTarget::Inspector => Some("Focus Inspector | Tab Navigator | Shift+Tab Workspace"),
+fn pane_focus_shortcuts(app: &App) -> Option<String> {
+    let route = match app.focus {
+        FocusTarget::Navigator => Some("Tab Workspace | Shift+Tab Inspector"),
+        FocusTarget::Workspace => Some("Tab Inspector | Shift+Tab Navigator"),
+        FocusTarget::Inspector => Some("Tab Navigator | Shift+Tab Workspace"),
         FocusTarget::Dialog | FocusTarget::CommandPalette => None,
-    }
+    }?;
+    Some(format!(
+        "Focus {}{} | {route}",
+        app.pane_focus_label(),
+        if app.zoomed_pane.is_some() {
+            " [ZOOM]"
+        } else {
+            ""
+        }
+    ))
 }
 
 fn with_focus_shortcuts(app: &App, shortcuts: &str) -> String {
-    pane_focus_shortcuts(app.focus).map_or_else(
+    pane_focus_shortcuts(app).map_or_else(
         || shortcuts.to_owned(),
         |focus| format!("{focus} | {shortcuts}"),
     )
@@ -830,7 +839,7 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
         "Tab:view ↑↓ s:scope /:find f:status r:run I/R:data Enter o/e/l:open c:cancel".into()
     } else {
         let shortcuts = footer_shortcuts(app);
-        if width < 100 && pane_focus_shortcuts(app.focus).is_some() {
+        if width < 100 && pane_focus_shortcuts(app).is_some() {
             shortcuts
                 .split(" | ")
                 .skip(3)
@@ -927,7 +936,7 @@ fn footer_context_items(app: &App, width: u16) -> Vec<String> {
     }
     if !responsive_override
         && width >= 100
-        && pane_focus_shortcuts(app.focus).is_some()
+        && pane_focus_shortcuts(app).is_some()
         && items.len() >= 3
     {
         items.drain(..3);
@@ -20580,6 +20589,41 @@ mod tests {
     }
 
     #[test]
+    fn ux_focus_zoom_breadcrumb_and_subfocus_survive_responsive_accessible_rendering() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Workspace;
+        app.workspace_subfocus = yoctui_model::WorkspaceSubfocus::Secondary;
+        app.task_progress_scroll = 4;
+        app.logs.scroll_offset = 3;
+        app.color_enabled = false;
+        app.reduced_motion = true;
+        let retained = (app.task_progress_scroll, app.logs.scroll_offset);
+        let _ = update(&mut app, Action::TogglePaneZoom);
+
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("ZOOM · Tasks · Workspace/Secondary"),
+                "{output}"
+            );
+            assert!(output.contains("Esc restore"), "{output}");
+            assert_eq!((app.task_progress_scroll, app.logs.scroll_offset), retained);
+        }
+
+        let _ = update(&mut app, Action::TogglePaneZoom);
+        let restored = rendered_text(&app, 160, 50);
+        assert!(!restored.contains("ZOOM · Tasks"), "{restored}");
+        assert!(restored.contains("Navigator"), "{restored}");
+        assert!(restored.contains("Inspector"), "{restored}");
+        assert_eq!(
+            app.workspace_subfocus,
+            yoctui_model::WorkspaceSubfocus::Secondary
+        );
+        assert_eq!((app.task_progress_scroll, app.logs.scroll_offset), retained);
+    }
+
+    #[test]
     fn breakpoint_matrix_preserves_pane_priority_content_and_dialog_controls() {
         const SUPPORTED: [(u16, u16); 5] = [(200, 60), (160, 50), (130, 40), (100, 30), (80, 24)];
         let mut app = literal_reference_app();
@@ -21517,9 +21561,16 @@ mod tests {
         let mut app = App::new(32, 8192);
         app.command_palette_open = true;
         app.focus = FocusTarget::CommandPalette;
-        app.command_palette_selection = 16;
+        let commands = app.command_palette_commands();
+        app.command_palette_selection = commands
+            .iter()
+            .position(|command| command.action_id.as_str() == "help.open")
+            .unwrap();
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Commands · 17/17 · rows 8–17"), "{output}");
+        assert!(
+            output.contains(&format!("Commands · {0}/{0}", commands.len())),
+            "{output}"
+        );
         assert!(output.contains("Open Help"), "{output}");
 
         app.command_palette_query = "nothing matches this".repeat(20);

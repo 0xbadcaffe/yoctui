@@ -101,7 +101,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 17] = [
+const GLOBAL_COMMANDS: [CommandId; 23] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -118,6 +118,12 @@ const GLOBAL_COMMANDS: [CommandId; 17] = [
     CommandId::OpenCompatibility,
     CommandId::OpenSettings,
     CommandId::ChooseTheme,
+    CommandId::FocusNavigator,
+    CommandId::FocusWorkspace,
+    CommandId::FocusInspector,
+    CommandId::PreviousSubfocus,
+    CommandId::NextSubfocus,
+    CommandId::TogglePaneZoom,
     CommandId::OpenHelp,
 ];
 
@@ -311,6 +317,36 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             footer_priority: 20,
             help_group: Group::General,
         },
+        CommandId::FocusNavigator => focus_metadata(
+            "view.focus-navigator",
+            "Focus Navigator",
+            "Move input focus directly to the Navigator pane",
+        ),
+        CommandId::FocusWorkspace => focus_metadata(
+            "view.focus-workspace",
+            "Focus Workspace",
+            "Move input focus directly to the active Workspace pane",
+        ),
+        CommandId::FocusInspector => focus_metadata(
+            "view.focus-inspector",
+            "Focus Inspector",
+            "Move input focus directly to the Inspector pane",
+        ),
+        CommandId::PreviousSubfocus => focus_metadata(
+            "view.previous-subfocus",
+            "Previous subfocus",
+            "Move to the previous logical section in the focused pane",
+        ),
+        CommandId::NextSubfocus => focus_metadata(
+            "view.next-subfocus",
+            "Next subfocus",
+            "Move to the next logical section in the focused pane",
+        ),
+        CommandId::TogglePaneZoom => focus_metadata(
+            "view.toggle-pane-zoom",
+            "Toggle pane zoom",
+            "Zoom or restore the focused pane without changing its state",
+        ),
         CommandId::OpenHelp => GlobalMetadata {
             id: "help.open",
             scope: Scope::Global,
@@ -325,6 +361,27 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             footer_priority: 100,
             help_group: Group::General,
         },
+    }
+}
+
+fn focus_metadata(
+    id: &'static str,
+    label: &'static str,
+    description: &'static str,
+) -> GlobalMetadata {
+    GlobalMetadata {
+        id,
+        scope: OperatorActionScope::Global,
+        menu_path: vec!["View", label],
+        label,
+        description,
+        aliases: &["pane focus", "zoom", "subfocus"],
+        keywords: &["view", "pane", "focus", "zoom", "subfocus"],
+        bindings: &[],
+        local_requirement: OperatorActionLocalRequirement::None,
+        safety: OperatorActionSafety::ReadOnly,
+        footer_priority: 25,
+        help_group: OperatorActionHelpGroup::General,
     }
 }
 
@@ -399,6 +456,12 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenCompatibility => "none",
         CommandId::OpenSettings => "none",
         CommandId::ChooseTheme => "Ctrl+P theme",
+        CommandId::FocusNavigator
+        | CommandId::FocusWorkspace
+        | CommandId::FocusInspector
+        | CommandId::PreviousSubfocus
+        | CommandId::NextSubfocus
+        | CommandId::TogglePaneZoom => "F10 View",
         CommandId::OpenHelp => "? / F1",
     }
 }
@@ -421,7 +484,13 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         | CommandId::SelectImage
         | CommandId::BuildSelectedRecipe
         | CommandId::EditBbmask
-        | CommandId::ChooseTheme => None,
+        | CommandId::ChooseTheme
+        | CommandId::FocusNavigator
+        | CommandId::FocusWorkspace
+        | CommandId::FocusInspector
+        | CommandId::PreviousSubfocus
+        | CommandId::NextSubfocus
+        | CommandId::TogglePaneZoom => None,
     }
 }
 
@@ -643,7 +712,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 116, "17 global plus 99 workspace actions");
+        assert_eq!(catalog.len(), 122, "23 global plus 99 workspace actions");
         assert!(
             catalog
                 .iter()

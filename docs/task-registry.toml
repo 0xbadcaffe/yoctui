@@ -6008,7 +6008,7 @@ priority = 703
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo test -p yoctui-model ux_action_catalog", "cargo test -p yoctui-app ux_action_catalog", "cargo test -p yoctui-ui ux_action_catalog"]
-notes = "The model-owned catalog contains 116 validated unique entries: 17 global commands and 99 contextual workspace operations. Every entry carries stable ID, typed scope/target, menu path, label, description, aliases, keywords, displayed/default bindings, local and compatibility requirements, safety, footer priority, and Help group. Palette metadata/search and workspace compatibility presentations derive from it; Help projects its prioritized global actions. Local and daemon availability compose one exact disabled reason, the false F5 image-build hint is corrected to B, and focused model/app/UI parity tests plus the full UI suite pass."
+notes = "The model-owned catalog contains 122 validated unique entries: 23 global commands and 99 contextual workspace operations. Every entry carries stable ID, typed scope/target, menu path, label, description, aliases, keywords, displayed/default bindings, local and compatibility requirements, safety, footer priority, and Help group. Palette metadata/search and workspace compatibility presentations derive from it; Help projects its prioritized global actions. Local and daemon availability compose one exact disabled reason, the false F5 image-build hint is corrected to B, and six later focus/subfocus/zoom commands extend the catalog without a second inventory. Focused model/app/UI parity tests plus the full UI suite pass."
 
 [[task]]
 id = "UX-KEYMAP-MODEL-001"
@@ -6047,12 +6047,12 @@ notes = "A reducer-owned menu model now projects the catalog into fixed Workspac
 id = "UX-FOCUS-001"
 milestone = "M21"
 title = "Polish pane subfocus zoom and focus restoration"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 707
 required = true
 depends_on = ["UX-MENU-001", "UX-KEYMAP-MODEL-001"]
 verify = ["cargo test -p yoctui-model ux_focus", "cargo test -p yoctui-app ux_focus", "cargo test -p yoctui-ui ux_focus", "cargo test -p yoctui -- ux_focus"]
-notes = "Add typed subfocus and reversible zoom, visible textual focus, exact outward Esc behavior, direct menu/palette focus actions, resize preservation, and modal/terminal ownership invariants."
+notes = "Model-owned Workspace Main/Secondary/Context and Inspector Facts/Output/Actions subfocus now produce textual pane identity, with screen-bounded cycling/reset and a pane-only zoom target. Zoom renders one body pane beneath a Screen/Pane/Subfocus breadcrumb at wide, medium, narrow, no-color, and reduced-motion states while retaining selections and offsets. Esc restores modal, zoom, subfocus, then pane layers in order; resize and zoom-aware mouse focus retain valid ownership. Six local read-only catalog commands provide direct View-menu/palette focus, subfocus, and zoom routes without stealing workspace keys. Focused model/app/UI/CLI tests cover palette/modal restoration, terminal trapping, responsive rendering, state retention, and exact typed activation."
 
 [[task]]
 id = "UX-SCROLL-001"

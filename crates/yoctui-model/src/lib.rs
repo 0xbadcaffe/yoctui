@@ -7,6 +7,7 @@ mod compatibility_catalog;
 mod compatibility_ui;
 mod daemon_state;
 mod embedded_shell;
+mod focus;
 mod image;
 mod keymap;
 mod maintenance;
@@ -38,6 +39,7 @@ pub use compatibility_catalog::*;
 pub use compatibility_ui::*;
 pub use daemon_state::*;
 pub use embedded_shell::*;
+pub use focus::*;
 pub use image::*;
 pub use keymap::*;
 pub use maintenance::*;
@@ -353,6 +355,12 @@ pub enum CommandId {
     OpenCompatibility,
     OpenSettings,
     ChooseTheme,
+    FocusNavigator,
+    FocusWorkspace,
+    FocusInspector,
+    PreviousSubfocus,
+    NextSubfocus,
+    TogglePaneZoom,
     OpenHelp,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3358,6 +3366,9 @@ pub struct App {
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
+    pub workspace_subfocus: WorkspaceSubfocus,
+    pub inspector_subfocus: InspectorSubfocus,
+    pub zoomed_pane: Option<FocusTarget>,
     pub navigator_selection: usize,
     pub navigator_groups_expanded: [bool; NAVIGATOR_GROUPS.len()],
     pub backend: String,
@@ -3514,6 +3525,9 @@ impl App {
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
+            workspace_subfocus: WorkspaceSubfocus::Main,
+            inspector_subfocus: InspectorSubfocus::Facts,
+            zoomed_pane: None,
             navigator_selection: 0,
             navigator_groups_expanded: [true; NAVIGATOR_GROUPS.len()],
             backend: "unknown".into(),
@@ -4591,6 +4605,13 @@ impl App {
             .get(self.menu.item_selection)
             .cloned()
     }
+    pub fn pane_focus_label(&self) -> &'static str {
+        pane_focus_label(self.focus, self.workspace_subfocus, self.inspector_subfocus)
+    }
+    pub fn zoom_label(&self) -> Option<&'static str> {
+        self.zoomed_pane
+            .map(|focus| pane_focus_label(focus, self.workspace_subfocus, self.inspector_subfocus))
+    }
 }
 
 fn context_action_local_disabled_reason(
@@ -4710,6 +4731,11 @@ pub enum Action {
     CycleFocus {
         backwards: bool,
     },
+    CyclePaneSubfocus {
+        backwards: bool,
+    },
+    ResetPaneSubfocus,
+    TogglePaneZoom,
     Focus(FocusTarget),
     OpenCommandPalette,
     SelectCommandPalette {
@@ -5938,6 +5964,12 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenCompatibility => Action::Open(Screen::Compatibility),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
         CommandId::ChooseTheme => Action::OpenThemePicker,
+        CommandId::FocusNavigator => Action::Focus(FocusTarget::Navigator),
+        CommandId::FocusWorkspace => Action::Focus(FocusTarget::Workspace),
+        CommandId::FocusInspector => Action::Focus(FocusTarget::Inspector),
+        CommandId::PreviousSubfocus => Action::CyclePaneSubfocus { backwards: true },
+        CommandId::NextSubfocus => Action::CyclePaneSubfocus { backwards: false },
+        CommandId::TogglePaneZoom => Action::TogglePaneZoom,
         CommandId::OpenHelp => Action::Open(Screen::Help),
     }
 }
@@ -7391,6 +7423,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 | Action::ExpandNavigatorGroup
                 | Action::ActivateNavigator
                 | Action::CycleFocus { .. }
+                | Action::CyclePaneSubfocus { .. }
+                | Action::ResetPaneSubfocus
+                | Action::TogglePaneZoom
                 | Action::Focus(
                     FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector
                 )
@@ -7504,6 +7539,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.screen = s;
             app.focus = FocusTarget::Workspace;
             app.focus_return = None;
+            app.workspace_subfocus = WorkspaceSubfocus::Main;
+            if app.zoomed_pane.is_some() {
+                app.zoomed_pane = Some(FocusTarget::Workspace);
+            }
             if let Some(index) = NAVIGATOR_SCREENS
                 .iter()
                 .position(|candidate| *candidate == s)
@@ -7773,7 +7812,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             synchronize_focus(app);
             return transition.effect.map(Effect::Maintenance);
         }
-        Action::Focus(target) => app.focus = target,
+        Action::Focus(target) => {
+            app.focus = target;
+            if app.zoomed_pane.is_some() && is_pane_focus(target) {
+                app.zoomed_pane = Some(target);
+            }
+        }
         Action::OpenCommandPalette => {
             app.command_palette_open = true;
             app.command_palette_selection = 0;
@@ -7814,6 +7858,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             app.command_palette_open = false;
+            synchronize_focus(app);
             return update(app, command_action(app, command.id));
         }
         Action::CloseCommandPalette => {
@@ -8699,7 +8744,62 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 (current + 1) % TARGETS.len()
             };
             app.focus = TARGETS[next];
+            if app.zoomed_pane.is_some() {
+                app.zoomed_pane = Some(app.focus);
+            }
         }
+        Action::CyclePaneSubfocus { backwards } => match app.focus {
+            FocusTarget::Workspace => {
+                let count = workspace_subfocus_count(app.screen);
+                let current = match app.workspace_subfocus {
+                    WorkspaceSubfocus::Main => 0,
+                    WorkspaceSubfocus::Secondary => 1,
+                    WorkspaceSubfocus::Context => 2,
+                }
+                .min(count.saturating_sub(1));
+                let next = if backwards {
+                    (current + count - 1) % count
+                } else {
+                    (current + 1) % count
+                };
+                app.workspace_subfocus = match next {
+                    0 => WorkspaceSubfocus::Main,
+                    1 => WorkspaceSubfocus::Secondary,
+                    _ => WorkspaceSubfocus::Context,
+                };
+            }
+            FocusTarget::Inspector => {
+                let current = match app.inspector_subfocus {
+                    InspectorSubfocus::Facts => 0,
+                    InspectorSubfocus::Output => 1,
+                    InspectorSubfocus::Actions => 2,
+                };
+                let next = if backwards {
+                    (current + 2) % 3
+                } else {
+                    (current + 1) % 3
+                };
+                app.inspector_subfocus = match next {
+                    0 => InspectorSubfocus::Facts,
+                    1 => InspectorSubfocus::Output,
+                    _ => InspectorSubfocus::Actions,
+                };
+            }
+            FocusTarget::Navigator | FocusTarget::Dialog | FocusTarget::CommandPalette => {}
+        },
+        Action::ResetPaneSubfocus => match app.focus {
+            FocusTarget::Workspace => app.workspace_subfocus = WorkspaceSubfocus::Main,
+            FocusTarget::Inspector => app.inspector_subfocus = InspectorSubfocus::Facts,
+            FocusTarget::Navigator | FocusTarget::Dialog | FocusTarget::CommandPalette => {}
+        },
+        Action::TogglePaneZoom if is_pane_focus(app.focus) => {
+            app.zoomed_pane = if app.zoomed_pane == Some(app.focus) {
+                None
+            } else {
+                Some(app.focus)
+            };
+        }
+        Action::TogglePaneZoom => {}
         Action::OpenBuildOptions => {
             if app.build_environment.connected() {
                 open_dialog(app, Dialog::BuildOptions);

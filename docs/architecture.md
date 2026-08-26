@@ -2967,7 +2967,7 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 116 validated definitions: 17
+`yoctui-model::action_catalog` now supplies 122 validated definitions: 23
 global command targets and 99 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
@@ -2998,6 +2998,18 @@ fsync-and-rename writer; loading migrates and validates before installation,
 and failed validation never replaces the previous file. Specialized contextual
 handlers remain typed and are moved onto catalog IDs by their dependent M21
 interaction tasks.
+
+`yoctui-model::focus` owns closed Workspace and Inspector subfocus enums,
+screen-specific logical Workspace section counts, textual focus identity, and
+the pane-only zoom target retained by `App`. Reducer actions cycle/reset
+subfocus, move pane focus, and toggle zoom without touching any workspace or
+daemon state. Modal synchronization retains the pre-modal pane while leaving
+zoom and subfocus intact. Six local read-only `CommandId` targets expose pane
+focus, subfocus, and zoom through the same catalog/menu/palette activation path.
+`yoctui-app::focus_action_for_app` implements outward Esc ordering and refuses
+to act while Dialog or CommandPalette owns input. `yoctui-ui::responsive_shell`
+projects zoom as a single body pane plus breadcrumb at every supported
+breakpoint; rendering and resize cannot mutate the retained authority.
 
 `KeymapPreferencesUiState` is also model-owned. It bounds the query and
 selection, holds only a typed pending capture plus an exact validation error,

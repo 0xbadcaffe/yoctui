@@ -9,6 +9,41 @@ pub(super) fn responsive_shell(
     terminal_width: u16,
     now: SystemTime,
 ) {
+    let task_rows = (app.screen == Screen::Tasks).then(|| app.visible_task_row_refs_at(now));
+    let task_rows = task_rows.as_deref();
+    if let Some(zoomed) = app.zoomed_pane {
+        let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "ZOOM · {:?} · {} · Esc restore",
+                app.screen,
+                app.zoom_label().unwrap_or("unknown pane")
+            ))
+            .style(
+                ThemePalette::for_app(app).role(ThemePalette::for_app(app).accent, Modifier::BOLD),
+            ),
+            rows[0],
+        );
+        match zoomed {
+            FocusTarget::Navigator => navigator(frame, app, rows[1], task_rows),
+            FocusTarget::Workspace
+                if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() =>
+            {
+                terminal_session_panes(frame, app, rows[1]);
+            }
+            FocusTarget::Workspace if app.screen == Screen::Signatures => {
+                signatures_workspace(frame, app, rows[1], terminal_width);
+            }
+            FocusTarget::Workspace => {
+                workspace(frame, app, rows[1], terminal_width, now, task_rows);
+            }
+            FocusTarget::Inspector => inspector(frame, app, rows[1], now, task_rows),
+            FocusTarget::Dialog | FocusTarget::CommandPalette => {
+                workspace(frame, app, rows[1], terminal_width, now, task_rows);
+            }
+        }
+        return;
+    }
     if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
         terminal_session_panes(frame, app, area);
         return;
@@ -17,8 +52,6 @@ pub(super) fn responsive_shell(
         signatures_workspace(frame, app, area, terminal_width);
         return;
     }
-    let task_rows = (app.screen == Screen::Tasks).then(|| app.visible_task_row_refs_at(now));
-    let task_rows = task_rows.as_deref();
     if terminal_width >= WIDE_WORKBENCH_MIN_WIDTH {
         let panes = if app.screen == Screen::Tasks && terminal_width == 160 {
             Layout::horizontal([

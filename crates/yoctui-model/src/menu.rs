@@ -48,7 +48,13 @@ impl ApplicationMenuGroup {
             | CommandId::OpenLogs
             | CommandId::OpenErrors
             | CommandId::OpenConfiguration => Self::Navigate,
-            CommandId::ChooseTheme => Self::View,
+            CommandId::ChooseTheme
+            | CommandId::FocusNavigator
+            | CommandId::FocusWorkspace
+            | CommandId::FocusInspector
+            | CommandId::PreviousSubfocus
+            | CommandId::NextSubfocus
+            | CommandId::TogglePaneZoom => Self::View,
             CommandId::OpenRawMode | CommandId::OpenCompatibility | CommandId::OpenSettings => {
                 Self::Tools
             }

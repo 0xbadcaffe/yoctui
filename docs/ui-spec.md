@@ -4334,7 +4334,7 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
-The implemented catalog currently contains 17 global commands and 99
+The implemented catalog currently contains 23 global commands and 99
 contextual workspace operations. Every entry has a validated lowercase stable
 ID, typed scope and target, complete presentation/search metadata, explicit
 local and environment requirements, safety class, footer priority, and Help
@@ -4420,6 +4420,26 @@ layout. Every bounded scroll view uses the same row/page/top/bottom actions,
 mouse equivalents, and textual retained-position indicator. Resize, filtering,
 search jumps, follow/pause, and retention eviction clamp without losing stable
 selected identity when it remains available.
+
+The implemented focus model retains `WorkspaceSubfocus` (`Main`, `Secondary`,
+`Context`), `InspectorSubfocus` (`Facts`, `Output`, `Actions`), and an optional
+pane-only zoom target. Logical Workspace subfocus is clamped to the sections
+supported by the active screen; Navigator has the single textual `Tree`
+subfocus. The footer names `Pane/Subfocus`, while zoom replaces the body with
+only that pane beneath a one-line `ZOOM · Screen · Pane/Subfocus · Esc restore`
+breadcrumb. Header and footer remain present. Toggling zoom never copies or
+resets workspace selection, vertical/horizontal offsets, log follow state, or
+terminal replicas. `Esc` first leaves a modal owner through that owner's route,
+then restores zoom, then resets non-primary subfocus, then follows the existing
+pane-outward behavior.
+
+Six read-only global catalog commands—focus Navigator, Workspace, or Inspector;
+previous/next subfocus; and toggle pane zoom—make this model directly reachable
+from both the F10 View group and command palette. They have no hidden single-key
+fallback and therefore do not steal workspace shortcuts. Direct pane focus
+while zoomed changes the zoom target, responsive resize retains the same typed
+target, a zoomed non-terminal pane owns its full mouse body, and menu, dialog,
+palette, and terminal input traps remain authoritative.
 
 ### Widgets progress logs and editors
 

@@ -35,13 +35,13 @@ use yoctui_app::{
     daemon_protocol_snapshot, dependency_workspace_action, devtool_deploy_confirmation_action,
     devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
-    devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
-    keymap_action_for_app, keymap_preferences_action, logs_action, maintenance_dialog_action,
-    maintenance_workspace_action, menu_action, model_action_from_backend_event,
-    mouse_action_for_app, package_workspace_action, popup_editor_action, qa_dialog_action,
-    qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
-    qa_report_response_action, qa_task_capability_action, qa_workspace_action,
-    qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
+    devtool_update_confirmation_action, errors_action, focus_action_for_app,
+    images_workspace_action, keymap_action_for_app, keymap_preferences_action, logs_action,
+    maintenance_dialog_action, maintenance_workspace_action, menu_action,
+    model_action_from_backend_event, mouse_action_for_app, package_workspace_action,
+    popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
+    qa_report_error_action, qa_report_response_action, qa_task_capability_action,
+    qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, raw_mode_input,
     recipe_editor_action, recover_daemon_model_metadata, sdk_actions_for_runner_event,
     sdk_build_confirmation_action, sdk_cancellation_confirmation_action,
@@ -11166,7 +11166,7 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             }
                         }
                     }
-                } else if let Some(action) = pane_focus_route(app.focus, input) {
+                } else if let Some(action) = pane_focus_route(&app, input) {
                     let effect = compatibility_workspace_action(&mut app, action);
                     if let Some(
                         effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
@@ -12816,8 +12816,8 @@ fn termination_requested(receiver: &mut tokio::sync::mpsc::Receiver<()>) -> bool
     receiver.try_recv().is_ok()
 }
 
-fn pane_focus_route(focus: yoctui_model::FocusTarget, input: Input) -> Option<Action> {
-    focus_action(focus, input)
+fn pane_focus_route(app: &App, input: Input) -> Option<Action> {
+    focus_action_for_app(app, input)
 }
 
 fn notification_input_action(
@@ -14644,23 +14644,69 @@ mod tests {
             FocusTarget::Workspace,
             FocusTarget::Inspector,
         ] {
+            let mut app = App::new(10, 1_000);
+            app.focus = focus;
             for input in [Input::CtrlP, Input::Char('?'), Input::F5, Input::Char('r')] {
-                assert!(pane_focus_route(focus, input).is_none());
+                assert!(pane_focus_route(&app, input).is_none());
             }
             assert!(matches!(
-                pane_focus_route(focus, Input::Tab),
+                pane_focus_route(&app, Input::Tab),
                 Some(Action::CycleFocus { backwards: false })
             ));
             assert!(matches!(
-                pane_focus_route(focus, Input::Char('q')),
+                pane_focus_route(&app, Input::Char('q')),
                 Some(Action::Quit)
             ));
         }
+        let mut navigator = App::new(10, 1_000);
+        navigator.focus = FocusTarget::Navigator;
         assert!(matches!(
-            pane_focus_route(FocusTarget::Navigator, Input::Down),
+            pane_focus_route(&navigator, Input::Down),
             Some(Action::SelectNavigator { delta: 1 })
         ));
-        assert!(pane_focus_route(FocusTarget::Workspace, Input::Down).is_none());
+        let workspace = App::new(10, 1_000);
+        assert!(pane_focus_route(&workspace, Input::Down).is_none());
+    }
+
+    #[test]
+    fn ux_focus_menu_activation_and_outward_escape_use_the_same_typed_reducer() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
+        let _ = update(&mut app, Action::CyclePaneSubfocus { backwards: false });
+        assert_eq!(
+            pane_focus_route(&app, Input::Esc),
+            Some(Action::ResetPaneSubfocus)
+        );
+        let _ = update(&mut app, Action::ResetPaneSubfocus);
+
+        let _ = update(&mut app, Action::OpenApplicationMenu);
+        let _ = update(&mut app, Action::SelectMenuGroup { delta: 3 });
+        let index = app
+            .active_menu_items()
+            .iter()
+            .position(|item| item.action_id.as_str() == "view.focus-inspector")
+            .unwrap();
+        let _ = update(
+            &mut app,
+            Action::SelectMenuItem {
+                delta: index as isize,
+            },
+        );
+        let Some(MenuInputResult::ActivateCommand(command)) = menu_action(&app, Input::Enter)
+        else {
+            panic!("focus command must activate from the typed View menu")
+        };
+        let _ = update(&mut app, Action::CloseMenu);
+        let action = yoctui_model::command_action(&app, command);
+        let _ = update(&mut app, action);
+        assert_eq!(app.focus, yoctui_model::FocusTarget::Inspector);
+
+        let _ = update(&mut app, Action::TogglePaneZoom);
+        assert_eq!(app.zoomed_pane, Some(yoctui_model::FocusTarget::Inspector));
+        assert_eq!(
+            pane_focus_route(&app, Input::Esc),
+            Some(Action::TogglePaneZoom)
+        );
     }
 
     #[test]
