@@ -28,6 +28,7 @@ mod qa_report;
 mod qa_task;
 mod qemu;
 mod raw_job;
+mod rootfs;
 mod sdk;
 mod sdk_shell;
 mod sdk_tool;
@@ -185,6 +186,10 @@ pub use qemu::{QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJ
 pub use raw_job::{
     RawJobCommandSpec, RawJobPlanner, RawJobPlannerError, RawJobRunner, RawJobRunnerError,
     RawJobRunnerEvent, RawPtyCommandSpec, RawPtyPlanner,
+};
+pub use rootfs::{
+    RootfsCompositionAdapter, RootfsCompositionAdapterError, RootfsCompositionCancellation,
+    RootfsCompositionResponse, RootfsCompositionSources,
 };
 pub use sdk::{
     SdkArtifactAdapter, SdkArtifactAdapterError, SdkArtifactCancellation, SdkArtifactResponse,
@@ -1362,6 +1367,16 @@ impl From<ImageArtifactResponse> for BackendEvent {
         Self::ImageArtifacts {
             request: response.request,
             inventory: response.inventory,
+            limitations: response.limitations,
+        }
+    }
+}
+
+impl From<RootfsCompositionResponse> for BackendEvent {
+    fn from(response: RootfsCompositionResponse) -> Self {
+        Self::RootfsComposition {
+            request: response.request,
+            composition: response.composition,
             limitations: response.limitations,
         }
     }

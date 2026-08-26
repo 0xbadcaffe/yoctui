@@ -19,11 +19,11 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-21/38 (55.3%); overall required registry progress is 561/578 (97.1%).
+22/38 (57.9%); overall required registry progress is 562/578 (97.2%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
-anchors and maps 5 honest implementation gaps to incomplete owner tasks;
+anchors and maps 4 honest implementation gaps to incomplete owner tasks;
 failure tests reject corrupt dimensions, missing captures or anchors, and gaps
 whose owner is already complete. `UX-LICENSE-001` is complete: thirteen widget
 candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
@@ -1036,6 +1036,7 @@ See `docs/current-task.md`.
 | Images workspace | DONE | Preserved recipe picker/build confirmation now coexists with bounded authoritative deploy scanning, typed artifacts/metadata, correlated cancellation, search/selection, responsive inspection, and exact build/editor actions. Live deployed-artifact compatibility is not claimed |
 | Image artifact model | DONE | Exact machine/image/path identities, typed available-versus-unavailable metadata, deterministic bounds, correlated lifecycle states, identity-stable selection/search, reducer effects, and app event normalization pass focused and baseline checks |
 | Rootfs composition model | DONE | Schema-v1 image/generation correlation keeps installed-package and logical-filesystem authorities separate; bounded normalization, exact overflow-safe totals/counts, basis-point grouping with inspectable Other membership, path drilldown, stable selection, stale denial, and every lifecycle state pass model/protocol/app tests |
+| Rootfs composition adapter | DONE | Exact image-scoped BitBake source queries feed a cancellable stale-denying adapter; canonical build containment, exact manifest/runtime-pkgdata parsing, no-follow traversal, hard-link byte deduplication, special-file accounting, cleaned-work authority, and count/depth/byte/time bounds pass bridge/adapter/CLI tests |
 | Image artifact adapter | DONE | Tinfoil/environment snapshots expose `DEPLOY_DIR_IMAGE`; the cancellable bounded adapter validates the machine/root, refuses symlinks and escapes, classifies deploy records, parses checksum associations, and reports partial data explicitly |
 | Images artifact UI | DONE | Retained recipe picker/build confirmation now coexists with correlated CLI-owned scans, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and direct tests |
 | QEMU launch/session model | DONE | Typed capability, exact artifact-bound launch validation, deterministic preview/confirmation, stable shared-job lifecycle, bounded stream output, failures, stale events, and confirmed cancellation are covered |

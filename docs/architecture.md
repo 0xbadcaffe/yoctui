@@ -3158,6 +3158,17 @@ exact members behind an explicit bounded `Other` identity. Reducers reject
 stale request generations and preserve category, package, and logical-path
 selection by stable identity across replacement.
 
+Acquisition never guesses work or deploy filenames. The bridge expands
+`IMAGE_MANIFEST`, `PKGDATA_DIR`, and `IMAGE_ROOTFS` in the exact selected image
+recipe scope; the CLI carries those sources with the artifact identity and
+request generation into an off-thread adapter. The adapter canonicalizes every
+authority beneath the active build, rejects symlink roots and escapes, reads
+only exact manifest/runtime-pkgdata records, and reports cleaned sources as
+unavailable. Filesystem traversal uses `symlink_metadata`, never descends
+through symlinks, retains special-file counts, deduplicates regular-file bytes
+by device/inode on Unix, and enforces entry, depth, input-byte, accounted-byte,
+elapsed-time, cancellation, limitation, and stale-generation bounds.
+
 The daemon remains the only terminal emulator and PTY owner. A `tui-term`
 integration is valid only as a renderer over the existing typed replica. It
 cannot introduce client-side ANSI parsing, a second `vt100::Parser`, a separate

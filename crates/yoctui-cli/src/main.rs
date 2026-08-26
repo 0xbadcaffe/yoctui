@@ -69,7 +69,8 @@ use yoctui_bitbake::{
     QaReportAdapter, QaReportAdapterError, QaReportCancellation, QaReportCandidate, QaReportOrigin,
     QaReportRootInput, QaReportScanInput, QaTaskCapabilityInput, QaTaskCapabilityInspector,
     QaTaskScopeInput, QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner,
-    QemuRunnerEvent, SdkArtifactAdapter, SdkArtifactCancellation, SdkArtifactScanOutcome,
+    QemuRunnerEvent, RootfsCompositionAdapter, RootfsCompositionCancellation,
+    RootfsCompositionSources, SdkArtifactAdapter, SdkArtifactCancellation, SdkArtifactScanOutcome,
     SdkToolAdapter, SdkToolAdapterError, SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent,
     SecurityCapabilityInput, SecurityCapabilityInspector, SecurityMapperCommandSpec,
     SecurityMapperJobRunner, SecurityMapperRunnerEvent, SecurityReportAdapter,
@@ -87,10 +88,10 @@ use yoctui_model::{
     PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect, QaFindingScope, QaLayerIdentity,
     QaLayerSessionId, QaReportFormat, QaReportIdentity, QaReportRequest, QaScope, QaSessionId,
     QaSessionStatus, QaSourceLocation, QemuCapability, QemuLaunchDraft, QemuLaunchPreview,
-    QemuLaunchRequest, QemuSessionId, RecipeIdentity, Screen, SdkArtifactInventoryRequest,
-    SdkNativePreview, SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability,
-    SecurityAction, SecurityEffect, SecurityOperation, SecurityReportRequest, SecurityScope,
-    SecuritySessionId, SecuritySessionStatus, Severity, SignatureComparisonRequest,
+    QemuLaunchRequest, QemuSessionId, RecipeIdentity, RootfsCompositionRequest, Screen,
+    SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation, SdkPublishPreview, SdkSessionId,
+    SdkToolCapability, SecurityAction, SecurityEffect, SecurityOperation, SecurityReportRequest,
+    SecurityScope, SecuritySessionId, SecuritySessionStatus, Severity, SignatureComparisonRequest,
     SignatureTarget, TestComparison, TestOperation, TestSessionId, TestWorkspaceView, Theme,
     VariableDetail, VariableIdentity, WicCapability, WicCreateDraft, WicCreatePreview,
     WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId, update,
@@ -8901,6 +8902,137 @@ async fn poll_image_artifact_operation(
     }
 }
 
+struct RootfsCompositionBackgroundOperation {
+    request: RootfsCompositionRequest,
+    _cancellation: RootfsCompositionCancellation,
+    handle: tokio::task::JoinHandle<BackendEvent>,
+}
+
+fn begin_rootfs_composition_operation_with_sources(
+    app: &mut App,
+    build_directory: &Path,
+    operation: &mut Option<RootfsCompositionBackgroundOperation>,
+    request: RootfsCompositionRequest,
+    sources: RootfsCompositionSources,
+) {
+    if operation.is_some() {
+        app.notification = Some("A rootfs composition operation is already running.".into());
+        return;
+    }
+    let adapter =
+        RootfsCompositionAdapter::new(build_directory.to_path_buf(), sources, request.generation);
+    let cancellation = RootfsCompositionCancellation::default();
+    let worker_cancellation = cancellation.clone();
+    let worker_request = request.clone();
+    let handle = tokio::spawn(async move {
+        match adapter
+            .scan_with_cancellation(worker_request.clone(), worker_cancellation)
+            .await
+        {
+            Ok(response) if response.composition.is_unavailable() => {
+                BackendEvent::RootfsCompositionUnavailable {
+                    request: response.request,
+                    reason: "the selected image manifest and IMAGE_ROOTFS are unavailable".into(),
+                }
+            }
+            Ok(response) => response.into(),
+            Err(error) => BackendEvent::RootfsCompositionFailed {
+                request: worker_request,
+                message: error.to_string(),
+            },
+        }
+    });
+    *operation = Some(RootfsCompositionBackgroundOperation {
+        request,
+        _cancellation: cancellation,
+        handle,
+    });
+}
+
+async fn begin_rootfs_composition_operation(
+    backend: &mut dyn BitBakeBackend,
+    app: &mut App,
+    build_directory: &Path,
+    operation: &mut Option<RootfsCompositionBackgroundOperation>,
+    effect: Effect,
+) {
+    let Effect::GetRootfsComposition(request) = effect else {
+        return;
+    };
+    if operation.is_some() {
+        app.notification = Some("A rootfs composition operation is already running.".into());
+        return;
+    }
+    let recipe = request.image.image.clone();
+    let manifest = backend
+        .get_variable("IMAGE_MANIFEST".into(), Some(recipe.clone()))
+        .await;
+    let pkgdata = backend
+        .get_variable("PKGDATA_DIR".into(), Some(recipe.clone()))
+        .await;
+    let rootfs = backend
+        .get_variable("IMAGE_ROOTFS".into(), Some(recipe))
+        .await;
+    let source = |name: &str, result: Result<VariableValue, yoctui_bitbake::BackendError>| {
+        result
+            .map(|value| value.value.map(PathBuf::from))
+            .map_err(|error| format!("could not query {name} for the selected image: {error}"))
+    };
+    let sources = match (
+        source("IMAGE_MANIFEST", manifest),
+        source("PKGDATA_DIR", pkgdata),
+        source("IMAGE_ROOTFS", rootfs),
+    ) {
+        (Ok(manifest), Ok(pkgdata_directory), Ok(image_rootfs)) => RootfsCompositionSources {
+            image: request.image.clone(),
+            manifest,
+            pkgdata_directory,
+            image_rootfs,
+        },
+        values => {
+            let message = [values.0.err(), values.1.err(), values.2.err()]
+                .into_iter()
+                .flatten()
+                .next()
+                .expect("one rootfs source query failed");
+            let _ = update(app, Action::RootfsCompositionFailed { request, message });
+            return;
+        }
+    };
+    begin_rootfs_composition_operation_with_sources(
+        app,
+        build_directory,
+        operation,
+        request,
+        sources,
+    );
+}
+
+async fn poll_rootfs_composition_operation(
+    app: &mut App,
+    operation: &mut Option<RootfsCompositionBackgroundOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let event = match operation.handle.await {
+        Ok(event) => event,
+        Err(error) => BackendEvent::RootfsCompositionFailed {
+            request: operation.request,
+            message: format!("rootfs composition background task was lost: {error}"),
+        },
+    };
+    if let Some(action) = model_action_from_backend_event(event) {
+        let _ = update(app, action);
+    }
+}
+
 fn editor_path_error(path: &Path) -> Option<String> {
     match path.try_exists() {
         Ok(true) => None,
@@ -9869,6 +10001,7 @@ async fn tui(
         .map(PathBuf::from)
         .map(ImageArtifactAdapter::new);
     let mut image_artifact_operation = None;
+    let mut rootfs_composition_operation = None;
     let sdk_artifact_adapter = app
         .workspace
         .variables
@@ -10001,6 +10134,7 @@ async fn tui(
             &mut wic_capability_operation,
         )
         .await;
+        poll_rootfs_composition_operation(&mut app, &mut rootfs_composition_operation).await;
         poll_sdk_artifact_operation(&mut app, &mut sdk_artifact_operation).await;
         poll_sdk_capability_operation(&mut app, &mut sdk_capability_operation).await;
         if let Some(completed) = poll_sdk_job(&mut app, &mut sdk_operation).await
@@ -10358,6 +10492,15 @@ async fn tui(
                             &mut image_artifact_operation,
                             effect,
                         );
+                    } else if let Some(effect @ Effect::GetRootfsComposition(_)) = effect {
+                        begin_rootfs_composition_operation(
+                            backend.as_mut(),
+                            &mut app,
+                            &session_build_dir,
+                            &mut rootfs_composition_operation,
+                            effect,
+                        )
+                        .await;
                     } else if let Some(
                         effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
                     ) = effect
@@ -11214,6 +11357,15 @@ async fn tui(
                             &mut image_artifact_operation,
                             effect,
                         );
+                    } else if let Some(effect @ Effect::GetRootfsComposition(_)) = effect {
+                        begin_rootfs_composition_operation(
+                            backend.as_mut(),
+                            &mut app,
+                            &session_build_dir,
+                            &mut rootfs_composition_operation,
+                            effect,
+                        )
+                        .await;
                     } else if let Some(effect @ Effect::InspectSdkTools) = effect {
                         begin_sdk_capability_operation(
                             &mut app,
@@ -11782,6 +11934,16 @@ async fn tui(
                                 &mut image_artifact_operation,
                                 effect,
                             )
+                        }
+                        Some(effect @ Effect::GetRootfsComposition(_)) => {
+                            begin_rootfs_composition_operation(
+                                backend.as_mut(),
+                                &mut app,
+                                &session_build_dir,
+                                &mut rootfs_composition_operation,
+                                effect,
+                            )
+                            .await
                         }
                         Some(effect @ Effect::GetWicDevices(_)) => begin_wic_device_operation(
                             &wic_device_inspector,
@@ -16056,6 +16218,114 @@ esac"#,
             operation.handle.abort();
         }
         fs::remove_dir_all(directory).unwrap();
+    }
+
+    #[tokio::test]
+    async fn ux_rootfs_workspace_resolves_exact_artifact_sources_and_updates_model() {
+        let build = std::env::temp_dir().join(format!(
+            "yoctui-rootfs-workspace-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let deploy = build.join("tmp/deploy/images/qemux86-64");
+        let pkgdata = build.join("tmp/pkgdata/qemux86-64/runtime");
+        let rootfs = build.join("tmp/work/qemux86-64/core-image-minimal/1.0/rootfs");
+        fs::create_dir_all(&deploy).unwrap();
+        fs::create_dir_all(&pkgdata).unwrap();
+        fs::create_dir_all(rootfs.join("bin")).unwrap();
+        let image_path = deploy.join("core-image-minimal.rootfs.ext4");
+        let manifest = deploy.join("core-image-minimal.rootfs.manifest");
+        fs::write(&image_path, b"image").unwrap();
+        fs::write(&manifest, "busybox qemux86-64 1.0\n").unwrap();
+        fs::write(
+            pkgdata.join("busybox"),
+            "PN: busybox\nSECTION: base\nPKGSIZE: 7\nFILES_INFO: {\"/bin/busybox\":{}}\n",
+        )
+        .unwrap();
+        fs::write(rootfs.join("bin/busybox"), b"busybox").unwrap();
+        let identity = yoctui_model::ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: image_path,
+        };
+        let artifact = yoctui_model::ImageArtifact {
+            identity: identity.clone(),
+            kind: yoctui_model::ImageArtifactKind::RootFilesystem,
+            size_bytes: yoctui_model::ImageArtifactField::Available(5),
+            modified_unix_seconds: yoctui_model::ImageArtifactField::Unavailable,
+            checksums: yoctui_model::ImageArtifactField::Unavailable,
+            manifests: yoctui_model::ImageArtifactField::Available(vec![manifest.clone()]),
+            licenses: yoctui_model::ImageArtifactField::Unavailable,
+            spdx: yoctui_model::ImageArtifactField::Unavailable,
+            wic_files: yoctui_model::ImageArtifactField::Unavailable,
+        };
+        let mut app = App::new(10, 1_000);
+        app.image_artifacts = yoctui_model::ImageArtifactInventoryState::Available {
+            request: ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: yoctui_model::ImageArtifactField::Available(deploy),
+                artifacts: vec![artifact],
+            },
+        };
+        app.image_artifact_selection = Some(identity);
+        app.workspace.variables.insert(
+            "PKGDATA_DIR".into(),
+            build
+                .join("tmp/pkgdata/qemux86-64")
+                .to_string_lossy()
+                .into_owned(),
+        );
+        app.workspace
+            .variables
+            .insert("IMAGE_ROOTFS".into(), rootfs.to_string_lossy().into_owned());
+        let effect = update(&mut app, Action::BeginSelectedRootfsComposition).unwrap();
+        let mut operation = None;
+        let Effect::GetRootfsComposition(request) = effect else {
+            unreachable!()
+        };
+        begin_rootfs_composition_operation_with_sources(
+            &mut app,
+            &build,
+            &mut operation,
+            request.clone(),
+            RootfsCompositionSources {
+                image: request.image,
+                manifest: Some(manifest),
+                pkgdata_directory: Some(build.join("tmp/pkgdata/qemux86-64")),
+                image_rootfs: Some(rootfs),
+            },
+        );
+        tokio::time::timeout(Duration::from_secs(2), async {
+            while operation.is_some() {
+                poll_rootfs_composition_operation(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        let composition = app.rootfs_composition.composition().unwrap();
+        assert_eq!(
+            composition.package_inventory().unwrap().packages[0]
+                .identity
+                .name,
+            "busybox"
+        );
+        assert!(
+            composition
+                .filesystem_tree()
+                .unwrap()
+                .entries
+                .iter()
+                .any(|entry| entry.identity.0 == Path::new("/bin/busybox"))
+        );
+        fs::remove_dir_all(build).unwrap();
     }
 
     #[cfg(unix)]

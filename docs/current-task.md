@@ -2,43 +2,46 @@
 
 ## Task
 
-**ID:** UX-ROOTFS-ADAPTER-001
-**Title:** Acquire bounded authoritative rootfs composition
+**ID:** UX-ROOTFS-UI-001
+**Title:** Render rootfs pie bar table and tree exploration
 **Status:** NOT_STARTED
 
 ## Objective
 
-Acquire installed-package composition from the exact image manifest/pkgdata and
-optional filesystem composition from the correlated BitBake-reported
-`IMAGE_ROOTFS`, without escaping the active build or following symlinks.
+Turn the typed, correlated rootfs authority into a responsive Images subview
+with exact package and filesystem evidence, stable drilldown, accessible chart
+fallbacks, and honest lifecycle/limitation presentation.
 
 ## Dependencies
 
-- `UX-ROOTFS-MODEL-001` — DONE
+- `UX-ROOTFS-ADAPTER-001` — DONE
+- `UX-LIST-TREE-001` — DONE
+- `UX-WIDGET-PRIMITIVES-001` — DONE
+- `UX-LICENSE-001` — DONE
 
 ## Relevant files
 
-- rootfs adapter and backend response/event wiring
-- exact image manifest and generated pkgdata correlation
-- optional `IMAGE_ROOTFS` acquisition and canonical containment
-- no-follow traversal, hard-link deduplication, special-file accounting
-- cancellation, stale denial, and count/depth/byte/time bounds
+- Images workspace routing, catalog actions, and key hints
+- rootfs tabs, package composition chart/bar/table, and filesystem tree
+- package/category/path selection, scrolling, mouse rows, and Inspector detail
+- narrow, ASCII, no-color, high-contrast, and screen-reader projections
+- production renderer and app input tests
 
 ## Definition of done
 
-- Manifest and pkgdata records match the selected image/machine identity; no
-  filename guessing or stale generation is accepted.
-- Filesystem scanning starts only from canonical `IMAGE_ROOTFS` contained by
-  the active build, never follows symlinks, and deduplicates hard links.
-- Regular files, directories, symlinks, and special files retain exact counts
-  under entry, depth, byte, elapsed-time, and cancellation bounds.
-- Missing/cleaned work state is unavailable; every bound or partial source is
-  reported as an exact limitation without stale data.
+- Installed-package and filesystem-tree authorities remain visually distinct;
+  available, empty, loading, partial, unavailable, and failed states are exact.
+- Wide layouts pair an admitted pie visualization with exact values; bar/table
+  and text projections retain complete meaning at narrow/accessibility modes.
+- `Other` remains inspectable, package/category/path drilldown is stable, and
+  tree rows expose exact position, kind, bytes, ownership, and limitations.
+- Keyboard/menu/mouse routes reuse typed actions and remain responsive and
+  deterministic under maximum bounded model input.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-bitbake ux_rootfs
-python3 -m pytest bridge/tests -k rootfs
-cargo test -p yoctui -- ux_rootfs
+cargo test -p yoctui-ui ux_rootfs
+cargo test -p yoctui-app ux_rootfs
+cargo deny check
 ```

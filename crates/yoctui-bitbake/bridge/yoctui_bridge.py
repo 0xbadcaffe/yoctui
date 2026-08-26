@@ -193,6 +193,9 @@ class TinfoilConnection:
             "SSTATE_DIR",
             "TMPDIR",
             "DEPLOY_DIR_IMAGE",
+            "PKGDATA_DIR",
+            "IMAGE_MANIFEST",
+            "IMAGE_ROOTFS",
             "WKS_FILE",
             "WKS_FILES",
             "WKS_SEARCH_PATH",
@@ -340,6 +343,17 @@ class TinfoilConnection:
             ),
             "operations": operations,
             "active_overrides": active_overrides,
+        }
+
+    def get_rootfs_sources(self, recipe):
+        """Return only BitBake-expanded paths for one exact image recipe."""
+        self._ensure_recipes()
+        datastore = self.tinfoil.parse_recipe(recipe)
+        return {
+            name.lower(): (
+                None if datastore.getVar(name) is None else str(datastore.getVar(name))
+            )
+            for name in ("IMAGE_MANIFEST", "PKGDATA_DIR", "IMAGE_ROOTFS")
         }
 
     def get_dependencies(self, recipe):
@@ -748,6 +762,28 @@ class BitBakeAdapter:
             f"BitBake server returned an unsupported variable response for {name}"
         )
 
+    def rootfs_sources(self, recipe):
+        operation = self.optional_server_operation("get_rootfs_sources")
+        if operation is None:
+            return {
+                "image_manifest": os.environ.get("IMAGE_MANIFEST"),
+                "pkgdata_dir": os.environ.get("PKGDATA_DIR"),
+                "image_rootfs": os.environ.get("IMAGE_ROOTFS"),
+            }
+        try:
+            response = operation(recipe)
+        except Exception as exc:
+            raise ServerUnavailable(
+                f"could not query rootfs sources for {recipe} from the BitBake server: {exc}"
+            )
+        keys = ("image_manifest", "pkgdata_dir", "image_rootfs")
+        if not isinstance(response, dict) or any(
+            response.get(key) is not None and not isinstance(response.get(key), str)
+            for key in keys
+        ):
+            raise ServerUnavailable("BitBake server returned malformed rootfs source data")
+        return {key: response.get(key) for key in keys}
+
     def recipes(self, filter_value):
         operation = self.optional_server_operation("list_recipes")
         if operation is None:
@@ -1067,6 +1103,9 @@ def workspace_data(version):
         "SSTATE_DIR",
         "TMPDIR",
         "DEPLOY_DIR_IMAGE",
+        "PKGDATA_DIR",
+        "IMAGE_MANIFEST",
+        "IMAGE_ROOTFS",
         "WKS_FILE",
         "WKS_FILES",
         "WKS_SEARCH_PATH",
@@ -1218,6 +1257,7 @@ def bitbake_recipes(filter_value):
         )
     except (OSError, subprocess.TimeoutExpired):
         return None
+
     if result.returncode != 0:
         return None
     recipes = []
@@ -1911,6 +1951,7 @@ def handle(command, correlation_id, adapter):
         "list_recipes": ("bitbake.recipe_inventory",),
         "list_layers": ("bitbake.layer_inventory",),
         "get_variable": ("bitbake.getvar",),
+        "get_rootfs_sources": ("bitbake.getvar",),
         "get_dependencies": ("bitbake.recipe_dependencies",),
         "get_dependency_graph": ("bitbake.dependency_graph",),
         "get_recipe_sources": ("bitbake.recipe_sources",),
@@ -2056,6 +2097,24 @@ def handle(command, correlation_id, adapter):
                 },
                 correlation_id,
             )
+    elif kind == "get_rootfs_sources":
+        recipe = command.get("recipe")
+        if not isinstance(recipe, str) or not re.fullmatch(r"[A-Za-z0-9_.+-]+", recipe):
+            error(
+                "invalid_request",
+                "get_rootfs_sources requires an exact image recipe name",
+                correlation_id,
+            )
+        else:
+            try:
+                sources = adapter.rootfs_sources(recipe)
+            except ServerUnavailable as exc:
+                error("bitbake_server_unavailable", str(exc), correlation_id)
+            else:
+                emit(
+                    {"type": "rootfs_sources", "recipe": recipe, **sources},
+                    correlation_id,
+                )
     elif kind == "get_dependency_graph":
         recipe = command.get("recipe")
         if not isinstance(recipe, str) or not recipe:

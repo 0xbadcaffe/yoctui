@@ -6201,12 +6201,12 @@ notes = "RootfsCompositionRequest correlates a non-zero generation to one exact 
 id = "UX-ROOTFS-ADAPTER-001"
 milestone = "M21"
 title = "Acquire bounded authoritative rootfs composition"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 721
 required = true
 depends_on = ["UX-ROOTFS-MODEL-001"]
 verify = ["cargo test -p yoctui-bitbake ux_rootfs", "python3 -m pytest bridge/tests -k rootfs", "cargo test -p yoctui -- ux_rootfs"]
-notes = "Correlate exact image manifest/pkgdata and optionally BitBake-reported IMAGE_ROOTFS. Enforce canonical build containment, no symlink following, hard-link deduplication, special-file accounting, count/depth/byte/time bounds, cancellation, and stale denial."
+notes = "The bridge queries IMAGE_MANIFEST, PKGDATA_DIR, and IMAGE_ROOTFS from the exact selected image recipe. RootfsCompositionAdapter binds those paths to the selected artifact and non-zero generation, requires canonical active-build containment, rejects symlink roots/escapes, reads the exact manifest and generated runtime pkgdata under byte/count/time bounds, and represents cleaned work honestly. Its deterministic no-follow traversal retains directories, regular files, symlinks, and special files; deduplicates hard-link bytes; caps entries/depth/accounted bytes/limitations; and supports cancellation and stale-generation denial. CLI background wiring mechanically maps available, partial, unavailable, failed, and lost outcomes back through typed events."
 
 [[task]]
 id = "UX-ROOTFS-UI-001"

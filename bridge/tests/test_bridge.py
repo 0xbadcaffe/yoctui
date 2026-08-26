@@ -32,6 +32,30 @@ def run_bridge(
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_rootfs_sources_are_exact_expanded_bitbake_paths(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"get_rootfs_sources","recipe":"core-image-minimal"}}',
+            environment={
+                "IMAGE_MANIFEST": "/build/tmp/deploy/images/qemux86-64/core-image-minimal.rootfs.manifest",
+                "PKGDATA_DIR": "/build/tmp/pkgdata/qemux86-64",
+                "IMAGE_ROOTFS": "/build/tmp/work/qemux86-64/core-image-minimal/1.0-r0/rootfs",
+            },
+        )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "rootfs_sources")
+        self.assertEqual(message["recipe"], "core-image-minimal")
+        self.assertTrue(message["image_manifest"].endswith(".rootfs.manifest"))
+        self.assertEqual(message["pkgdata_dir"], "/build/tmp/pkgdata/qemux86-64")
+        self.assertTrue(message["image_rootfs"].endswith("/rootfs"))
+
+    def test_rootfs_sources_reject_non_exact_recipe_identity(self) -> None:
+        result = run_bridge(
+            b'{"protocol_version":1,"sequence":1,"message":{"type":"get_rootfs_sources","recipe":"core-image-*"}}'
+        )
+        message = json.loads(result.stdout)["message"]
+        self.assertEqual(message["type"], "command_failed")
+        self.assertEqual(message["code"], "invalid_request")
+
     def test_tinfoil_cancellation_uses_bounded_cooker_shutdown(self) -> None:
         spec = importlib.util.spec_from_file_location("yoctui_bridge_test", BRIDGE)
         if spec is None or spec.loader is None:
