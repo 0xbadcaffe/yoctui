@@ -19,11 +19,11 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-11/38 (28.9%); overall required registry progress is 551/578 (95.3%).
+12/38 (31.6%); overall required registry progress is 552/578 (95.5%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
-anchors and maps 13 honest implementation gaps to incomplete owner tasks;
+anchors and maps 12 honest implementation gaps to incomplete owner tasks;
 failure tests reject corrupt dimensions, missing captures or anchors, and gaps
 whose owner is already complete. `UX-LICENSE-001` is complete: thirteen widget
 candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
@@ -65,7 +65,10 @@ Hierarchical progress is also complete: one typed projection keeps overall
 build, parse, runqueue, selected task/job, resources, and unavailable sstate
 authority distinct; exact fractions, honest unknown totals, partial ended
 phases, frozen terminal values, and labeled estimates have model/app/production
-renderer coverage. Accessible indeterminate activity is next.
+renderer coverage. Accessible indeterminate activity is also complete: the
+admitted Zlib throbber symbols use reducer-owned deterministic phase, no rand
+feature, stable reduced-motion words, ASCII/no-color equivalents, and static
+terminal outcomes. Telemetry polish is next.
 
 ### Completed baseline through M20
 

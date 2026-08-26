@@ -7217,6 +7217,45 @@
     {
       "authors": [
         {
+          "name": "arkbig"
+        }
+      ],
+      "bom-ref": "pkg:cargo/throbber-widgets-tui@0.11.1",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/arkbig/throbber-widgets-tui"
+        },
+        {
+          "type": "distribution",
+          "url": "https://crates.io/crates/throbber-widgets-tui/0.11.1"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "0b0452e418faaa263a742d94e5c2f9f50c777a0ae5b3ec53ce754d917d568e36"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "Zlib"
+        }
+      ],
+      "name": "throbber-widgets-tui",
+      "properties": [
+        {
+          "name": "cargo:source",
+          "value": "registry+https://github.com/rust-lang/crates.io-index"
+        }
+      ],
+      "purl": "pkg:cargo/throbber-widgets-tui@0.11.1",
+      "type": "library",
+      "version": "0.11.1"
+    },
+    {
+      "authors": [
+        {
           "name": "Jacob Pratt <open-source@jhpratt.dev>"
         },
         {
@@ -10387,6 +10426,12 @@
       "ref": "pkg:cargo/thread_local@1.1.10"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/ratatui@0.30.2"
+      ],
+      "ref": "pkg:cargo/throbber-widgets-tui@0.11.1"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/time-core@0.1.9"
     },
@@ -10733,7 +10778,7 @@
     "properties": [
       {
         "name": "yoctui:cargo-lock-sha256",
-        "value": "e1987f9abd8b142d6010c31aa579e6195f48ceab70f3c4a103798757be1c17aa"
+        "value": "9f8eee6af2d6e9e8d3f3a71da4a36f252458f6e6e87144c56bafd17b91aebaab"
       }
     ],
     "tools": {
@@ -10746,7 +10791,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:d6ffbb7c-19ab-5bcb-8f81-64eb6b244415",
+  "serialNumber": "urn:uuid:b7472b73-b10c-5a1a-9823-e7600d78f233",
   "specVersion": "1.5",
   "version": 1
 }

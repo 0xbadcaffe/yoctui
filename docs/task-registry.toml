@@ -6091,12 +6091,12 @@ notes = "One pure ProgressHierarchy now projects build, parse, runqueue, selecte
 id = "UX-THROBBER-001"
 milestone = "M21"
 title = "Adopt one accessible indeterminate activity language"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 711
 required = true
 depends_on = ["UX-PROGRESS-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-model ux_throbber", "cargo test -p yoctui-ui ux_throbber", "cargo deny check"]
-notes = "Evaluate and, if compliant, integrate throbber-widgets-tui symbols through reducer-owned ticks; reduced motion, ASCII, no-color, terminal outcomes, and no-fabricated-progress tests are mandatory."
+notes = "throbber-widgets-tui 0.11.1 is admitted with default features disabled and std only; rand remains absent. A pure ActivityProjection derives six bounded phases solely from reducer-owned ticks and speed, while the UI selects reviewed BRAILLE_SIX or ASCII symbols. Reduced motion is stable lifecycle text, terminal success/failure/cancellation never animate, no-color retains words/markers, and unknown work never becomes numeric progress. Focused model/UI, candidate graph, notices/SBOM, offline lock, and cargo-deny gates pass."
 
 [[task]]
 id = "UX-TELEMETRY-001"

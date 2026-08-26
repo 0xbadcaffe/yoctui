@@ -18542,6 +18542,58 @@ mod tests {
     }
 
     #[test]
+    fn ux_throbber_uses_reviewed_symbols_with_ascii_motion_and_terminal_fallbacks() {
+        let running = yoctui_model::ActivityProjection::new(
+            yoctui_model::ActivityLifecycle::Running,
+            5,
+            yoctui_model::AnimationSpeed::Fast,
+            false,
+        );
+        assert_eq!(
+            activity_symbol(running, true),
+            throbber_widgets_tui::BRAILLE_SIX.symbols[5]
+        );
+        assert_eq!(
+            activity_symbol(running, false),
+            throbber_widgets_tui::ASCII.symbols[1]
+        );
+
+        let reduced = yoctui_model::ActivityProjection::new(
+            yoctui_model::ActivityLifecycle::Waiting,
+            u64::MAX,
+            yoctui_model::AnimationSpeed::Fast,
+            true,
+        );
+        assert_eq!(activity_symbol(reduced, true), "");
+        assert_eq!(reduced.text(), "waiting");
+
+        for (lifecycle, marker) in [
+            (yoctui_model::ActivityLifecycle::Succeeded, "+"),
+            (yoctui_model::ActivityLifecycle::Failed, "x"),
+            (yoctui_model::ActivityLifecycle::Cancelled, "#"),
+        ] {
+            let terminal = yoctui_model::ActivityProjection::new(
+                lifecycle,
+                u64::MAX,
+                yoctui_model::AnimationSpeed::Fast,
+                false,
+            );
+            assert_eq!(terminal.phase, None);
+            assert_eq!(activity_symbol(terminal, false), marker);
+        }
+
+        let mut app = App::new(10, 1_000);
+        app.color_enabled = false;
+        app.reduced_motion = true;
+        app.build.status = BuildStatus::Running;
+        app.build.completed = 3;
+        app.screen = Screen::Tasks;
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("progress unknown active  3/?"), "{output}");
+        assert!(!output.contains("0%"), "{output}");
+    }
+
+    #[test]
     fn accessibility_invariants_survive_color_motion_and_responsive_modes() {
         let mut app = literal_reference_app();
         app.focus = FocusTarget::Workspace;

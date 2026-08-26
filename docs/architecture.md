@@ -2967,6 +2967,14 @@ and absent sstate authority is an unavailable projection. The app only maps
 typed backend events into the existing reducers, while production UI consumes
 the projection and never correlates progress by parsing output.
 
+`yoctui_model::ActivityProjection` derives activity lifecycle and a bounded
+phase only from `App::animation_frame`, animation speed, and reduced-motion
+preference. `yoctui-ui` maps that immutable phase to admitted
+`throbber-widgets-tui` symbol constants; it never stores or mutates the crate's
+widget state. The dependency uses `default-features = false, features = [std]`,
+so its random stepping path is absent. ASCII and terminal markers are selected
+at render time without changing the model authority.
+
 The action catalog is model-owned and projects mechanically through the app/UI
 layers into menus, palette, Help, footer, mouse routes, and preferences. Backend
 capability evaluation remains outside renderers. Menu selection cannot execute

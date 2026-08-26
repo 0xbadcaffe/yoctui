@@ -13,3 +13,4 @@ publish = ["crates-io"]
 yoctui-app = { version = "0.1.0", path = "../yoctui-app" }
 yoctui-model = { version = "0.1.0", path = "../yoctui-model" }
 ratatui.workspace = true
+throbber-widgets-tui.workspace = true

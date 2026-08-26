@@ -2,6 +2,80 @@
 
 use crate::*;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ActivityLifecycle {
+    Loading,
+    Running,
+    Waiting,
+    Succeeded,
+    Failed,
+    Cancelled,
+}
+
+impl ActivityLifecycle {
+    pub const fn word(self) -> &'static str {
+        match self {
+            Self::Loading => "loading",
+            Self::Running => "running",
+            Self::Waiting => "waiting",
+            Self::Succeeded => "succeeded",
+            Self::Failed => "failed",
+            Self::Cancelled => "cancelled",
+        }
+    }
+
+    pub const fn active(self) -> bool {
+        matches!(self, Self::Loading | Self::Running | Self::Waiting)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ActivityProjection {
+    pub lifecycle: ActivityLifecycle,
+    pub phase: Option<usize>,
+}
+
+impl ActivityProjection {
+    pub const SYMBOL_COUNT: usize = 6;
+
+    pub fn new(
+        lifecycle: ActivityLifecycle,
+        tick: u64,
+        speed: AnimationSpeed,
+        reduced_motion: bool,
+    ) -> Self {
+        let divisor = match speed {
+            AnimationSpeed::Fast => 1,
+            AnimationSpeed::Slow => 3,
+        };
+        let phase = (lifecycle.active() && !reduced_motion).then(|| {
+            usize::try_from(tick / divisor)
+                .unwrap_or(usize::MAX)
+                .wrapping_rem(Self::SYMBOL_COUNT)
+        });
+        Self { lifecycle, phase }
+    }
+
+    pub fn text(self) -> String {
+        if self.phase.is_some() {
+            format!("{} active", self.lifecycle.word())
+        } else {
+            self.lifecycle.word().into()
+        }
+    }
+}
+
+impl App {
+    pub fn activity_projection(&self, lifecycle: ActivityLifecycle) -> ActivityProjection {
+        ActivityProjection::new(
+            lifecycle,
+            self.animation_frame,
+            self.animation_speed,
+            self.reduced_motion,
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ProgressEstimate {
     pub average_tasks_per_minute_tenths: u64,
@@ -369,6 +443,34 @@ impl BackgroundJob {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ux_throbber_phase_is_reducer_owned_and_terminal_states_never_animate() {
+        let fast =
+            ActivityProjection::new(ActivityLifecycle::Running, 7, AnimationSpeed::Fast, false);
+        assert_eq!(fast.phase, Some(1));
+        let slow =
+            ActivityProjection::new(ActivityLifecycle::Loading, 7, AnimationSpeed::Slow, false);
+        assert_eq!(slow.phase, Some(2));
+        let reduced = ActivityProjection::new(
+            ActivityLifecycle::Waiting,
+            u64::MAX,
+            AnimationSpeed::Fast,
+            true,
+        );
+        assert_eq!(reduced.phase, None);
+        assert_eq!(reduced.text(), "waiting");
+        for lifecycle in [
+            ActivityLifecycle::Succeeded,
+            ActivityLifecycle::Failed,
+            ActivityLifecycle::Cancelled,
+        ] {
+            let terminal =
+                ActivityProjection::new(lifecycle, u64::MAX, AnimationSpeed::Fast, false);
+            assert_eq!(terminal.phase, None);
+            assert_eq!(terminal.text(), lifecycle.word());
+        }
+    }
 
     #[test]
     fn ux_progress_separates_build_parse_runqueue_resources_and_sstate() {

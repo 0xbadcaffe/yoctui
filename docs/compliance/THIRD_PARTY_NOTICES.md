@@ -2,9 +2,9 @@
 
 This file is generated from the exact `Cargo.lock` graph. It inventories every non-workspace package, records the byte-authoritative SHA-256 of every packaged root-level license, notice, copying, and copyright file, and displays a Markdown-safe normalization of its content (UTF-8 text directly; non-UTF-8 data as hexadecimal). Packages with no packaged notice file remain listed with their manifest SPDX expression and authorship metadata in the SBOM.
 
-- Cargo.lock SHA-256: `e1987f9abd8b142d6010c31aa579e6195f48ceab70f3c4a103798757be1c17aa`
-- Third-party packages: 236
-- Unique packaged notice materials: 156
+- Cargo.lock SHA-256: `9f8eee6af2d6e9e8d3f3a71da4a36f252458f6e6e87144c56bafd17b91aebaab`
+- Third-party packages: 237
+- Unique packaged notice materials: 157
 
 ## Package inventory
 
@@ -195,6 +195,7 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `thiserror-impl 1.0.69` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `4fee6c4efc90059e10f81e6d42c60a18f76588c3d74cb83a0b242a2b6c7504c1` | [`23f18e03dc49`](#notice-23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3), [`62c7a1e35f56`](#notice-62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a) |
 | `thiserror-impl 2.0.19` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `43cbfe0cf76104d42a574802844187e84a305e531ed54455f11fbde0f10541cd` | [`23f18e03dc49`](#notice-23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3), [`62c7a1e35f56`](#notice-62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a) |
 | `thread_local 1.1.10` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `1ad99c4c6d32803332c548b1af0540b357b3f5fc0be8f6c6bfe8b2e6ae784070` | [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2), [`c9a75f18b9ab`](#notice-c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5) |
+| `throbber-widgets-tui 0.11.1` | `Zlib` | `registry+https://github.com/rust-lang/crates.io-index` | `0b0452e418faaa263a742d94e5c2f9f50c777a0ae5b3ec53ce754d917d568e36` | [`70a97a37face`](#notice-70a97a37face60b4b22286335bbf16bea390657632b14f73ad149704f4c1f53c) |
 | `time 0.3.53` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `18dfaaeddcb932337b5e7866ee7d0ce9b76d2fd092997146f187ec09b4558a50` | [`0d542e0c8804`](#notice-0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594), [`2537228d9a1b`](#notice-2537228d9a1b44a5dc595241349cae7090b326c8de165aaf89bfddef4a00d0fc) |
 | `time-core 0.1.9` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `9e1c906769ad99c88eaa54e728060edef082f8e358ff32030cb7c7d315e81109` | [`0d542e0c8804`](#notice-0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594), [`2537228d9a1b`](#notice-2537228d9a1b44a5dc595241349cae7090b326c8de165aaf89bfddef4a00d0fc) |
 | `tokio 1.53.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `d988bcd52dbe076d3d46903332f58c912b87a2c49b1428419a5845154762ffee` | [`253cd04c6714`](#notice-253cd04c6714889df2d32f3f64d669179a1c95c76ac43c40882c52eb06bc3552) |
@@ -5715,6 +5716,35 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
+
+<a id="notice-70a97a37face60b4b22286335bbf16bea390657632b14f73ad149704f4c1f53c"></a>
+### SHA-256 `70a97a37face60b4b22286335bbf16bea390657632b14f73ad149704f4c1f53c`
+
+Packaged filenames: `LICENSE.txt`
+
+Used by: `throbber-widgets-tui 0.11.1`
+
+```text
+zlib License
+
+Copyright (c) 2022 arkbig
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not
+   claim that you wrote the original software. If you use this software
+   in a product, an acknowledgment in the product documentation would be
+   appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be
+   misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
 ```
 
 <a id="notice-7365cc8878a1d7ce155a58c4ca09c3d7a6be413efa5334a80ea842912b669349"></a>

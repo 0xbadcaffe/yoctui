@@ -2,30 +2,35 @@
 
 use super::*;
 
-pub(super) fn task_activity(app: &App, task_progress: Option<u8>) -> &'static str {
+pub(super) fn activity_symbol(
+    projection: yoctui_model::ActivityProjection,
+    unicode: bool,
+) -> &'static str {
+    let Some(phase) = projection.phase else {
+        return match projection.lifecycle {
+            yoctui_model::ActivityLifecycle::Succeeded => "+",
+            yoctui_model::ActivityLifecycle::Failed => "x",
+            yoctui_model::ActivityLifecycle::Cancelled => "#",
+            _ => "",
+        };
+    };
+    let symbols = if unicode {
+        throbber_widgets_tui::BRAILLE_SIX.symbols
+    } else {
+        throbber_widgets_tui::ASCII.symbols
+    };
+    symbols[phase % symbols.len()]
+}
+
+pub(super) fn task_activity(app: &App, task_progress: Option<u8>) -> String {
     if task_progress.is_some() {
-        return "";
+        return String::new();
     }
-    if app.reduced_motion {
-        return " active";
-    }
-    const FAST: [&str; 8] = [
-        "▸▸▸▸▸▸▸▸",
-        "▹▸▸▸▸▸▸▸",
-        "▹▹▸▸▸▸▸▸",
-        "▹▹▹▸▸▸▸▸",
-        "▹▹▹▹▸▸▸▸",
-        "▹▹▹▹▹▸▸▸",
-        "▹▹▹▹▹▹▸▸",
-        "▹▹▹▹▹▹▹▸",
-    ];
-    FAST[(app.animation_frame as usize
-        / if app.animation_speed == yoctui_model::AnimationSpeed::Slow {
-            3
-        } else {
-            1
-        })
-        % FAST.len()]
+    let projection = app.activity_projection(yoctui_model::ActivityLifecycle::Running);
+    projection.phase.map_or_else(
+        || " active".into(),
+        |_| activity_symbol(projection, true).into(),
+    )
 }
 
 pub(super) fn task_progress_bar(progress: u8) -> String {

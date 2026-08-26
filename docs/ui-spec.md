@@ -4490,6 +4490,15 @@ always includes exact numeric or numerator/denominator text. Unknown progress
 uses an indeterminate text/activity state and never a zero-percent gauge.
 Reduced motion replaces animation with stable lifecycle text.
 
+Indeterminate activity uses the reviewed six-phase `BRAILLE_SIX` symbol set in
+Unicode terminals and the four-phase `|/-\\` set in ASCII presentation. The
+phase is a pure projection of the reducer-owned animation tick and configured
+fast/slow divisor; the widget never advances itself and random stepping is not
+compiled. Every indicator remains adjacent to `loading`, `running`, `waiting`,
+or `progress unknown`. Reduced motion emits only that stable lifecycle text.
+Success, failure, and cancellation have static markers and never retain an
+active throbber.
+
 These scopes are independent members of one typed progress hierarchy: overall
 build, parse, runqueue, selected task, selected background job, CPU, RAM, build
 filesystem, and sstate reuse. A scope without authority stays unavailable even

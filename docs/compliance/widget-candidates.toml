@@ -57,7 +57,7 @@ enabled_features = ["std"]
 transitive_closure = 47
 transitive_sha256 = "70a7827168b28f6a8a9bd185ac40518d9d019f9074dc231a24aae6f7ef0e47f8"
 decision = "adopt"
-admitted = false
+admitted = true
 owner_task = "UX-THROBBER-001"
 reason = "Approved for a shared renderer spike with deterministic model-owned phase and reduced-motion fallbacks; the optional rand feature stays disabled."
 
