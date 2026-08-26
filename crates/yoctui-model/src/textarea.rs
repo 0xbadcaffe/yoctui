@@ -323,9 +323,29 @@ impl TextAreaState {
         self.advanced.preferred_column = None;
     }
 
+    pub fn select_position(&mut self, line: usize, column: usize, extend: bool) {
+        let target = offset_for_position(&self.text, line.min(self.line_count() - 1), column);
+        if extend {
+            let anchor = self
+                .advanced
+                .visual_anchor
+                .or_else(|| self.selection.map(|(start, _)| start))
+                .unwrap_or(self.cursor);
+            self.advanced.mode = TextAreaMode::Visual;
+            self.editing = false;
+            self.advanced.visual_anchor = Some(anchor);
+            self.cursor = target;
+            self.selection = Some((anchor.min(target), anchor.max(target)));
+        } else {
+            self.cursor = target;
+            self.selection = None;
+            self.advanced.visual_anchor = Some(target);
+            self.advanced.preferred_column = None;
+        }
+    }
+
     pub fn selected_text(&self) -> Option<&str> {
-        self.selection
-            .map(|(start, end)| &self.text[start..end])
+        self.selection.map(|(start, end)| &self.text[start..end])
     }
 
     pub fn insert(&mut self, value: &str) {

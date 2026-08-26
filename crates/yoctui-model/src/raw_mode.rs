@@ -557,6 +557,18 @@ impl RawArgvEditor {
             }
             PopupEditorCommand::Undo => self.editor.undo(),
             PopupEditorCommand::Redo => self.editor.redo(),
+            PopupEditorCommand::SelectPosition {
+                line,
+                column,
+                extend,
+            } => {
+                self.editor.select_position(line, column, extend);
+                false
+            }
+            PopupEditorCommand::PasteText { text, source } if self.editor.editing => {
+                self.editor.paste_text(&text, source).is_ok()
+            }
+            PopupEditorCommand::PasteText { .. } => false,
             PopupEditorCommand::SelectValue => {
                 self.editor.select_range(0, self.editor.text.len());
                 false
@@ -3915,6 +3927,15 @@ fn edit_raw_parameter_input(
         PopupEditorCommand::Redo => {
             field.editor.redo();
         }
+        PopupEditorCommand::SelectPosition {
+            line,
+            column,
+            extend,
+        } => field.editor.select_position(line, column, extend),
+        PopupEditorCommand::PasteText { text, source } if field.editor.editing => {
+            let _ = field.editor.paste_text(&text, source);
+        }
+        PopupEditorCommand::PasteText { .. } => {}
         PopupEditorCommand::SelectValue => {
             field.editor.select_range(0, field.editor.text.len());
             field.editor.set_mode(crate::TextAreaMode::Insert);

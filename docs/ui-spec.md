@@ -4616,6 +4616,9 @@ a same-directory temporary path; recoverable failures retain retry state.
 Rendering and filesystem execution remain separate adapters. The persistent
 mode line names save/preview/cancel/copy/paste/undo/redo controls. A third-party
 textarea renderer cannot place Ratatui state in `yoctui-model`.
+The evaluated `ratatui-textarea` adapter is rejected: Yoctui's stateless custom
+renderer projects the complete model without duplicating widget-owned editing
+state or adding the candidate dependency closure.
 
 Checkboxes distinguish checked, unchecked, indeterminate, disabled, and focused
 states with text or ASCII equivalents. `Space` changes selection only; a batch

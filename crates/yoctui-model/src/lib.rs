@@ -1691,7 +1691,7 @@ fn popup_toml_value_range(line: &str, line_start: usize) -> Result<(usize, usize
     Ok((value_start, value_start + value.len()))
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PopupEditorCommand {
     ToggleInsert,
     ToggleVisual,
@@ -1711,6 +1711,15 @@ pub enum PopupEditorCommand {
     PageDown,
     Undo,
     Redo,
+    SelectPosition {
+        line: usize,
+        column: usize,
+        extend: bool,
+    },
+    PasteText {
+        text: String,
+        source: TextAreaPasteSource,
+    },
     SelectValue,
     Copy,
     Paste,
@@ -8601,6 +8610,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 | Some(Dialog::TestComparisonTomlEditor {
                     editor,
                     validation_error,
+                })
+                | Some(Dialog::TestJunitTomlEditor {
+                    editor,
+                    validation_error,
+                    ..
                 }) => (editor, Some(validation_error)),
                 Some(Dialog::Security(SecurityDialog::Import {
                     editor,
@@ -8687,6 +8701,19 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 PopupEditorCommand::Redo => {
                     editor.redo();
                 }
+                PopupEditorCommand::SelectPosition {
+                    line,
+                    column,
+                    extend,
+                } => editor.select_position(line, column, extend),
+                PopupEditorCommand::PasteText { text, source } if editor.editing => {
+                    if let Err(error) = editor.paste_text(&text, source) {
+                        app.notification = Some(format!("Editor paste rejected: {error:?}"));
+                    } else if let Some(error) = validation_error {
+                        *error = None;
+                    }
+                }
+                PopupEditorCommand::PasteText { .. } => {}
                 PopupEditorCommand::SelectValue => match editor.select_toml_value_at_cursor() {
                     Ok(()) => editor.set_mode(TextAreaMode::Insert),
                     Err(message) => app.notification = Some(message),

@@ -10047,6 +10047,16 @@ async fn tui(
         if event::poll(refresh)? {
             let terminal_event = event::read()?;
             if let Event::Paste(text) = terminal_event {
+                if active_popup_accepts_paste(&app) {
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::EditActivePopup(yoctui_model::PopupEditorCommand::PasteText {
+                            text,
+                            source: yoctui_model::TextAreaPasteSource::BracketedPaste,
+                        }),
+                    );
+                    continue;
+                }
                 if matches!(
                     app.active_dialog(),
                     Some(Dialog::Security(yoctui_model::SecurityDialog::Import { editor, .. }))
@@ -12854,6 +12864,40 @@ fn notification_input_action(
     }
 }
 
+fn active_popup_accepts_paste(app: &yoctui_model::App) -> bool {
+    match app.active_dialog() {
+        Some(
+            Dialog::BuildEnvironmentEditor(editor)
+            | Dialog::BuildEnvironmentCloneEditor(editor)
+            | Dialog::BbmaskEdit(editor)
+            | Dialog::SdkPublishTomlEditor(editor)
+            | Dialog::SdkNativeTomlEditor(editor),
+        ) => editor.editing,
+        Some(Dialog::ConfigEdit { editor, .. } | Dialog::BuildTarget { editor, .. }) => {
+            editor.editing
+        }
+        Some(
+            Dialog::WicCreateTomlEditor { editor, .. }
+            | Dialog::TestLaunchTomlEditor { editor, .. }
+            | Dialog::TestResultImportTomlEditor { editor, .. }
+            | Dialog::TestComparisonTomlEditor { editor, .. }
+            | Dialog::TestJunitTomlEditor { editor, .. },
+        ) => editor.editing,
+        Some(Dialog::Security(yoctui_model::SecurityDialog::Import { editor, .. }))
+        | Some(Dialog::Qa(yoctui_model::QaDialog::Import { editor, .. })) => editor.editing,
+        Some(Dialog::Maintenance(dialog)) => match dialog.as_ref() {
+            yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::PrServiceToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::LockedCacheToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::BuildHistoryToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::GitArchiveToml { editor, .. } => editor.editing,
+            _ => false,
+        },
+        _ => false,
+    }
+}
+
 fn mouse_kind_from_event(kind: crossterm::event::MouseEventKind) -> Option<MouseKind> {
     match kind {
         crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Right) => {
@@ -14560,6 +14604,28 @@ mod tests {
             input_from_key(KeyEvent::new(KeyCode::Char('v'), KeyModifiers::CONTROL)),
             Some(Input::CtrlV)
         );
+    }
+
+    #[test]
+    fn ux_textarea_bracketed_paste_is_one_typed_bounded_model_action() {
+        let mut app = yoctui_model::App::new(10, 1_000);
+        let mut editor = yoctui_model::PopupEditor::new("root = \"\"\n".into());
+        editor.set_mode(yoctui_model::TextAreaMode::Insert);
+        app.dialogs
+            .push_front(Dialog::BuildEnvironmentEditor(editor));
+        assert!(active_popup_accepts_paste(&app));
+        let _ = update(
+            &mut app,
+            Action::EditActivePopup(yoctui_model::PopupEditorCommand::PasteText {
+                text: "猫\nvalue = café".into(),
+                source: yoctui_model::TextAreaPasteSource::BracketedPaste,
+            }),
+        );
+        let Some(Dialog::BuildEnvironmentEditor(editor)) = app.active_dialog() else {
+            panic!("editor dialog missing")
+        };
+        assert!(editor.text.ends_with("猫\nvalue = café"));
+        assert_eq!(editor.history_lengths(), (1, 0));
     }
 
     #[test]

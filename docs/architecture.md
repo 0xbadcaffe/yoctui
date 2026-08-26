@@ -329,9 +329,10 @@ are distinct. A save request carries the exact content revision and a
 same-directory temporary path; the CLI remains responsible for permission
 preservation, flush/sync, and atomic rename. A recoverable failure retains the
 exact request for retry, while an observed revision mismatch enters conflict
-without producing a write request. `ratatui-textarea` remains only a reviewed
-renderer-adapter candidate because widget-owned mutable state would violate
-this reducer boundary.
+without producing a write request. The `ratatui-textarea` renderer spike was
+rejected because round-tripping its widget-owned text, cursor, selection,
+scrolling, history, and input state would duplicate this reducer authority.
+The retained custom renderer is stateless and projects only `TextAreaState`.
 
 Recipe discovery is split into a bounded summary query and a selected-recipe
 detail query. Summary records carry the resolved version, provider path/layer,

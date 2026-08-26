@@ -38,10 +38,10 @@ default_features = false
 enabled_features = []
 transitive_closure = 46
 transitive_sha256 = "2dda160079220e6df877d0bc327bb57e1d3eb42b16cce0c382ab68b53c2ffce9"
-decision = "adopt"
+decision = "reject"
 admitted = false
-owner_task = "UX-TEXTAREA-001"
-reason = "Approved for a renderer-only adapter spike with no terminal backend feature; Yoctui's reducer remains the editing and safety authority."
+owner_task = "UX-TEXTAREA-UI-001"
+reason = "Rejected after the renderer spike: its widget-owned text, cursor, selection, scrolling, history, and input state cannot round-trip Yoctui's validation, search, diff, conflict, and atomic-save lifecycle without a second authority. The existing stateless custom renderer reaches feature parity from TextAreaState with no 46-package candidate closure."
 
 [[candidate]]
 name = "throbber-widgets-tui"

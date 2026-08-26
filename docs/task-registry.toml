@@ -6146,12 +6146,12 @@ notes = "TextAreaState now owns a UTF-8-boundary-safe 1 MiB multiline document, 
 id = "UX-TEXTAREA-UI-001"
 milestone = "M21"
 title = "Render safe multiline editors and decide ratatui-textarea adoption"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 716
 required = true
 depends_on = ["UX-TEXTAREA-MODEL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-ui ux_textarea", "cargo test -p yoctui -- ux_textarea", "cargo deny check"]
-notes = "Prove a ratatui-textarea adapter can round-trip complete model state without Ratatui types entering the model, or retain the custom renderer with feature-parity evidence. Test Unicode, paste, mouse, modes, validation, save failure, and narrow layout."
+notes = "The stateless custom renderer now projects TextAreaState line numbers, Unicode cursor/selection, Normal/Insert/Visual mode, character location, UTF-8, wrap/search, validation ranges, diff/conflict and atomic-save recovery meaning across wide/medium/narrow/no-color layouts; below-minimum retains the established resize fallback. Whole bracketed paste is one bounded typed source action and mouse down/drag maps to typed cursor/Visual selection without widget state. The ratatui-textarea 0.9.2 spike is rejected because its widget-owned editing/history/scroll authority cannot round-trip the complete model lifecycle; it remains absent from the dependency graph."
 
 [[task]]
 id = "UX-CHECKBOX-001"

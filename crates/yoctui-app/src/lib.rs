@@ -4048,7 +4048,7 @@ pub fn mouse_action_for_app(
         return None;
     }
     if app.active_dialog().is_some() {
-        return dialog_mouse_action(mouse, app);
+        return dialog_mouse_action(mouse, app, terminal_width, terminal_height);
     }
     if matches!(mouse.kind, MouseKind::ContextDown) {
         return Some(Action::OpenContextMenu);
@@ -4375,7 +4375,39 @@ fn narrow_switcher_target(focus: FocusTarget, column: u16) -> Option<FocusTarget
     None
 }
 
-fn dialog_mouse_action(mouse: MouseInput, app: &yoctui_model::App) -> Option<Action> {
+fn dialog_mouse_action(
+    mouse: MouseInput,
+    app: &yoctui_model::App,
+    terminal_width: u16,
+    terminal_height: u16,
+) -> Option<Action> {
+    if matches!(mouse.kind, MouseKind::Down | MouseKind::Drag)
+        && let Some(editor) = active_dialog_textarea(app)
+    {
+        let width = 110u16.min(terminal_width.saturating_sub(2)).max(1);
+        let preferred_height = terminal_height.saturating_sub(4).min(34);
+        let height = preferred_height
+            .min(terminal_height.saturating_sub(2))
+            .max(1);
+        let x = terminal_width.saturating_sub(width) / 2;
+        let y = terminal_height.saturating_sub(height) / 2;
+        let content_y = y.saturating_add(2);
+        let gutter = editor.line_count().to_string().len() as u16 + 3;
+        let content_x = x.saturating_add(1).saturating_add(gutter);
+        if mouse.row >= content_y
+            && mouse.row < y.saturating_add(height).saturating_sub(3)
+            && mouse.column >= content_x
+            && mouse.column < x.saturating_add(width).saturating_sub(1)
+        {
+            return Some(Action::EditActivePopup(
+                PopupEditorCommand::SelectPosition {
+                    line: usize::from(mouse.row - content_y),
+                    column: usize::from(mouse.column - content_x),
+                    extend: mouse.kind == MouseKind::Drag,
+                },
+            ));
+        }
+    }
     if matches!(mouse.kind, MouseKind::Down | MouseKind::ContextDown) {
         return Some(Action::Focus(FocusTarget::Dialog));
     }
@@ -4397,6 +4429,35 @@ fn dialog_mouse_action(mouse: MouseInput, app: &yoctui_model::App) -> Option<Act
             Some(Action::SelectDevtoolFinishLayer { delta })
         }
         yoctui_model::Dialog::WicDevicePicker(_) => Some(Action::SelectWicDevice { delta }),
+        _ => None,
+    }
+}
+
+fn active_dialog_textarea(app: &yoctui_model::App) -> Option<&yoctui_model::TextAreaState> {
+    match app.active_dialog()? {
+        yoctui_model::Dialog::BuildEnvironmentEditor(editor)
+        | yoctui_model::Dialog::BuildEnvironmentCloneEditor(editor)
+        | yoctui_model::Dialog::BbmaskEdit(editor)
+        | yoctui_model::Dialog::SdkPublishTomlEditor(editor)
+        | yoctui_model::Dialog::SdkNativeTomlEditor(editor) => Some(editor),
+        yoctui_model::Dialog::ConfigEdit { editor, .. }
+        | yoctui_model::Dialog::BuildTarget { editor, .. } => Some(editor),
+        yoctui_model::Dialog::WicCreateTomlEditor { editor, .. }
+        | yoctui_model::Dialog::TestLaunchTomlEditor { editor, .. }
+        | yoctui_model::Dialog::TestResultImportTomlEditor { editor, .. }
+        | yoctui_model::Dialog::TestComparisonTomlEditor { editor, .. }
+        | yoctui_model::Dialog::TestJunitTomlEditor { editor, .. } => Some(editor),
+        yoctui_model::Dialog::Security(yoctui_model::SecurityDialog::Import { editor, .. })
+        | yoctui_model::Dialog::Qa(yoctui_model::QaDialog::Import { editor, .. }) => Some(editor),
+        yoctui_model::Dialog::Maintenance(dialog) => match dialog.as_ref() {
+            yoctui_model::MaintenanceDialog::ReadinessToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::CleanupToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::PrServiceToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::LockedCacheToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::BuildHistoryToml { editor, .. }
+            | yoctui_model::MaintenanceDialog::GitArchiveToml { editor, .. } => Some(editor),
+            _ => None,
+        },
         _ => None,
     }
 }
@@ -4744,7 +4805,7 @@ pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
     Some(Action::EditActivePopup(command))
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RawArgvEditorAction {
     Edit(PopupEditorCommand),
     Validate,
@@ -4916,13 +4977,13 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
             }
             let action = raw_argv_editor_action(editing, key)?;
             Some(match action {
-                RawArgvEditorAction::Edit(command) => parameter.map_or(
-                    RawModeAction::EditAdditionalArguments(command),
-                    |parameter| RawModeAction::EditParameterInput {
+                RawArgvEditorAction::Edit(command) => match parameter {
+                    Some(parameter) => RawModeAction::EditParameterInput {
                         parameter: parameter.clone(),
                         command,
                     },
-                ),
+                    None => RawModeAction::EditAdditionalArguments(command),
+                },
                 RawArgvEditorAction::Validate => RawModeAction::RequestPreview,
             })
         }
@@ -9282,6 +9343,53 @@ mod tests {
         assert_eq!(
             popup_editor_action(true, Input::Enter),
             Some(Action::EditActivePopup(PopupEditorCommand::Newline))
+        );
+    }
+
+    #[test]
+    fn ux_textarea_mouse_down_and_drag_map_to_typed_cursor_selection() {
+        let mut app = yoctui_model::App::new(10, 1_000);
+        app.dialogs
+            .push_front(yoctui_model::Dialog::BuildEnvironmentEditor(
+                yoctui_model::PopupEditor::new("alpha\nbeta\n".into()),
+            ));
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: 8,
+                    row: 4,
+                },
+                &app,
+                100,
+                30,
+            ),
+            Some(Action::EditActivePopup(
+                PopupEditorCommand::SelectPosition {
+                    line: 0,
+                    column: 2,
+                    extend: false,
+                }
+            ))
+        );
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Drag,
+                    column: 9,
+                    row: 5,
+                },
+                &app,
+                100,
+                30,
+            ),
+            Some(Action::EditActivePopup(
+                PopupEditorCommand::SelectPosition {
+                    line: 1,
+                    column: 3,
+                    extend: true,
+                }
+            ))
         );
     }
     #[test]

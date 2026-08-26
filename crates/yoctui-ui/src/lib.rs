@@ -8697,38 +8697,46 @@ fn toml_popup_editor(
     editor: &yoctui_model::PopupEditor,
     validation_error: Option<&str>,
 ) {
-    let popup = Rect::new(
-        area.width / 8,
-        area.height / 6,
-        area.width * 3 / 4,
-        area.height * 2 / 3,
-    );
+    let popup = dialog_popup_rect(area, 110, area.height.saturating_sub(4).min(34));
     clear_popup(frame, app, popup);
-    let mode = if editor.editing { "INSERT" } else { "NORMAL" };
+    let mode = textarea_mode_label(editor.mode());
     let content = popup_editor_text(editor);
     let block = dialog_block(app, format!("{title} — {mode}"), DialogTone::Standard);
     let inner = block.inner(popup);
     frame.render_widget(block, popup);
-    let rows = Layout::vertical(if validation_error.is_some() {
+    let diagnostic = textarea_diagnostic(editor, validation_error);
+    let rows = Layout::vertical(if diagnostic.is_some() {
         vec![
+            Constraint::Length(1),
             Constraint::Min(0),
             Constraint::Length(2),
             Constraint::Length(3),
         ]
     } else {
-        vec![Constraint::Min(0), Constraint::Length(3)]
+        vec![
+            Constraint::Length(1),
+            Constraint::Min(0),
+            Constraint::Length(3),
+        ]
     })
     .split(inner);
-    frame.render_widget(Paragraph::new(content).wrap(Wrap { trim: false }), rows[0]);
-    let shortcuts = if let Some(error) = validation_error {
+    frame.render_widget(
+        Paragraph::new(textarea_status(editor)).style(dialog_styles(app).hint),
+        rows[0],
+    );
+    frame.render_widget(Paragraph::new(content).wrap(Wrap { trim: false }), rows[1]);
+    let shortcuts = if let Some(diagnostic) = diagnostic {
         frame.render_widget(
-            Paragraph::new(dialog_shell(app, title, DialogTone::Standard).validation(Some(error)))
-                .wrap(Wrap { trim: false }),
-            rows[1],
+            Paragraph::new(
+                dialog_shell(app, title, DialogTone::Standard)
+                    .validation(Some(diagnostic.as_str())),
+            )
+            .wrap(Wrap { trim: false }),
+            rows[2],
         );
-        rows[2]
+        rows[3]
     } else {
-        rows[1]
+        rows[2]
     };
     let shell = dialog_shell(app, title, DialogTone::Standard);
     frame.render_widget(
@@ -8737,9 +8745,12 @@ fn toml_popup_editor(
                 Some(("Enter", "Save/preview")),
                 &[("Esc", "Normal"), ("q", "Close")],
             ),
-            Line::styled("i insert  e change value", dialog_styles(app).hint),
             Line::styled(
-                "Home/End line  Ctrl+C copy  Ctrl+V paste",
+                "i insert  v visual  e change value  u undo  r redo  h/j/k/l move",
+                dialog_styles(app).hint,
+            ),
+            Line::styled(
+                "Ctrl+C copy  Ctrl+V paste  Home/End line  b/w word  PgUp/PgDn page",
                 dialog_styles(app).hint,
             ),
         ]))
@@ -8749,39 +8760,127 @@ fn toml_popup_editor(
 }
 
 fn popup_editor_text(editor: &yoctui_model::PopupEditor) -> String {
-    let mut output = String::with_capacity(editor.text.len() + 7);
+    let mut raw = String::with_capacity(editor.text.len() + 7);
     let selection = editor.selection;
     for (index, character) in editor.text.char_indices() {
         let empty_selection = selection.is_some_and(|(start, end)| start == index && end == index);
         if selection.is_some_and(|(start, _)| start == index) {
-            output.push('⟦');
+            raw.push('⟦');
         }
         if editor.cursor == index {
-            output.push('▏');
+            raw.push('▏');
         }
         if empty_selection {
-            output.push('⟧');
+            raw.push('⟧');
         }
-        output.push(character);
+        raw.push(character);
         let next = index + character.len_utf8();
         if selection.is_some_and(|(start, end)| start < end && end == next) {
-            output.push('⟧');
+            raw.push('⟧');
         }
     }
     let empty_selection_at_end = selection
         .is_some_and(|(start, end)| start == editor.text.len() && end == editor.text.len());
     if selection.is_some_and(|(start, _)| start == editor.text.len()) {
-        output.push('⟦');
+        raw.push('⟦');
     }
     if editor.cursor == editor.text.len() {
-        output.push('▏');
+        raw.push('▏');
     }
     if empty_selection_at_end
         || selection.is_some_and(|(start, end)| start < end && end == editor.text.len())
     {
-        output.push('⟧');
+        raw.push('⟧');
     }
-    output
+    let line_count = editor.line_count();
+    let number_width = line_count.to_string().len();
+    raw.split('\n')
+        .enumerate()
+        .map(|(line, text)| {
+            let diagnostic = editor.validation().iter().any(|span| {
+                editor.text[..span.start]
+                    .bytes()
+                    .filter(|byte| *byte == b'\n')
+                    .count()
+                    == line
+            });
+            format!(
+                "{:>number_width$} │ {}{}",
+                line + 1,
+                text,
+                if diagnostic { "  [validation]" } else { "" }
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn textarea_mode_label(mode: yoctui_model::TextAreaMode) -> &'static str {
+    match mode {
+        yoctui_model::TextAreaMode::Normal => "NORMAL",
+        yoctui_model::TextAreaMode::Insert => "INSERT",
+        yoctui_model::TextAreaMode::Visual => "VISUAL",
+    }
+}
+
+fn textarea_status(editor: &yoctui_model::PopupEditor) -> String {
+    let position = editor.position();
+    let save = match editor.save_state() {
+        yoctui_model::TextAreaSaveState::Clean { .. } => "clean",
+        yoctui_model::TextAreaSaveState::Modified { .. } => "modified",
+        yoctui_model::TextAreaSaveState::Preview { .. } => "diff preview",
+        yoctui_model::TextAreaSaveState::Conflict { .. } => "external conflict",
+        yoctui_model::TextAreaSaveState::Saving { .. } => "saving atomically",
+        yoctui_model::TextAreaSaveState::Saved { .. } => "saved",
+        yoctui_model::TextAreaSaveState::Failed {
+            recoverable: true, ..
+        } => "save failed · retry available",
+        yoctui_model::TextAreaSaveState::Failed { .. } => "save failed",
+    };
+    let wrap = editor
+        .layout()
+        .wrap_width
+        .map_or_else(|| "wrap off".to_owned(), |width| format!("wrap {width}"));
+    let search = if editor.search_state().query.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " · find {}/{}",
+            editor.search_state().selected.map_or(0, |index| index + 1),
+            editor.search_state().matches.len()
+        )
+    };
+    format!(
+        "{} · Ln {}, Col {} · UTF-8 · {} · {} lines · {}{}",
+        textarea_mode_label(editor.mode()),
+        position.line + 1,
+        position.column + 1,
+        save,
+        editor.line_count(),
+        wrap,
+        search
+    )
+}
+
+fn textarea_diagnostic(editor: &yoctui_model::PopupEditor, legacy: Option<&str>) -> Option<String> {
+    if let Some(message) = legacy {
+        return Some(format!("ERROR: {message}"));
+    }
+    if let Some(span) = editor.validation().first() {
+        return Some(format!(
+            "{:?} bytes {}..{}: {}",
+            span.severity, span.start, span.end, span.message
+        ));
+    }
+    match editor.save_state() {
+        yoctui_model::TextAreaSaveState::Conflict { .. } => {
+            Some("CONFLICT: file changed externally; review before saving".into())
+        }
+        yoctui_model::TextAreaSaveState::Failed { message, .. } => {
+            Some(format!("SAVE FAILED: {message}"))
+        }
+        _ => None,
+    }
 }
 
 fn test_comparison_dialog(
@@ -19980,6 +20079,78 @@ mod tests {
             assert!(output.contains("Ctrl+C copy"), "{output}");
             assert!(output.contains("Ctrl+V paste"), "{output}");
         }
+    }
+
+    #[test]
+    fn ux_textarea_renders_model_modes_lines_search_validation_and_diff_responsively() {
+        let mut app = App::new(10, 1_000);
+        let mut editor = yoctui_model::PopupEditor::new("name = \"猫\"\nvalue = \"café\"\n".into());
+        editor.move_cursor(yoctui_model::TextAreaMotion::DocumentStart);
+        editor.set_mode(yoctui_model::TextAreaMode::Insert);
+        editor.insert("# edited\n");
+        editor.search("café", true).unwrap();
+        editor.set_mode(yoctui_model::TextAreaMode::Visual);
+        editor.move_cursor(yoctui_model::TextAreaMotion::WordRight);
+        editor.layout_mut().wrap_width = Some(24);
+        editor.set_validation([yoctui_model::TextAreaValidationSpan {
+            start: 0,
+            end: 8,
+            severity: yoctui_model::TextAreaValidationSeverity::Warning,
+            message: "review the edited header".into(),
+        }]);
+        editor.preview_diff();
+        app.dialogs
+            .push_front(Dialog::BuildEnvironmentEditor(editor));
+
+        for (width, height) in [(160, 50), (100, 30), (80, 24), (40, 10)] {
+            let output = rendered_text(&app, width, height);
+            if height >= 24 {
+                assert!(output.contains("VISUAL"), "{width}x{height}: {output}");
+                assert!(output.contains("UTF-8"), "{output}");
+                assert!(output.contains("diff preview"), "{output}");
+                assert!(output.contains("find 1/1"), "{output}");
+                assert!(output.contains("Warning bytes 0..8"), "{output}");
+                assert!(output.contains("1 │"), "{output}");
+                assert!(output.contains("v visual"), "{output}");
+                assert!(output.contains("u undo"), "{output}");
+            } else {
+                assert!(output.contains("needs at least 80x24"), "{output}");
+            }
+            assert!(!output.contains('�'), "{output}");
+        }
+
+        app.color_enabled = false;
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("VISUAL"), "{output}");
+        assert!(output.contains("Warning bytes 0..8"), "{output}");
+    }
+
+    #[test]
+    fn ux_textarea_save_failure_and_conflict_keep_textual_recovery_meaning() {
+        let mut app = App::new(10, 1_000);
+        let mut editor = yoctui_model::PopupEditor::new("value = 1\n".into());
+        editor.set_mode(yoctui_model::TextAreaMode::Insert);
+        editor.insert("# local\n");
+        let base = yoctui_model::TextAreaRevision::of("value = 1\n");
+        let request = editor.begin_atomic_save("/tmp/value.conf", base).unwrap();
+        assert!(editor.mark_save_failed("disk full", true));
+        app.dialogs
+            .push_front(Dialog::BuildEnvironmentEditor(editor));
+        let failed = rendered_text(&app, 100, 30);
+        assert!(failed.contains("save failed · retry available"), "{failed}");
+        assert!(failed.contains("SAVE FAILED: disk full"), "{failed}");
+
+        let Dialog::BuildEnvironmentEditor(editor) = app.dialogs.front_mut().unwrap() else {
+            unreachable!()
+        };
+        let retry = editor.retry_save().unwrap();
+        assert_eq!(retry, request);
+        assert!(editor.mark_saved(&retry));
+        editor.insert("changed");
+        assert!(editor.begin_atomic_save("/tmp/value.conf", base).is_none());
+        let conflict = rendered_text(&app, 100, 30);
+        assert!(conflict.contains("external conflict"), "{conflict}");
+        assert!(conflict.contains("CONFLICT:"), "{conflict}");
     }
 
     fn qemu_workspace_app() -> App {

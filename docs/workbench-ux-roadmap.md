@@ -188,11 +188,13 @@ The current reducer-owned popup editor grows into a reusable safe editor model:
 - validation diagnostics tied to exact ranges
 - diff preview, conflict detection, atomic save, and recovery after save failure
 
-`ratatui-textarea` is an implementation reference and adapter candidate. Its
-widget-owned mutable state must not move Ratatui types into `yoctui-model` or
-become a second authority. Adoption is allowed only if a render/input adapter
-can round-trip the complete reducer state and pass deterministic replica tests;
-otherwise Yoctui implements feature parity on its existing model.
+`ratatui-textarea` was evaluated as an implementation reference and renderer
+adapter candidate. The spike rejected adoption: its widget-owned mutable text,
+cursor, selection, scrolling, history, and input state cannot round-trip the
+complete reducer validation/search/diff/conflict/save lifecycle without a
+second authority. Yoctui therefore retains the stateless custom renderer over
+`TextAreaState`, with deterministic feature-parity tests and no candidate
+dependency closure.
 
 ### Checkboxes and batch selection
 
@@ -276,7 +278,7 @@ refresh its candidate before changing `Cargo.lock`.
 | Crate | Audited version | SPDX license | MSRV reported | Decision |
 |---|---:|---|---:|---|
 | [`ratatui-image`](https://crates.io/crates/ratatui-image) | 11.0.6 | MIT | 1.86.0 | Defer until portability, bounds, and fallback evidence. |
-| [`ratatui-textarea`](https://crates.io/crates/ratatui-textarea) | 0.9.2 | MIT | 1.86.0 | Adopt for a renderer-only adapter spike. |
+| [`ratatui-textarea`](https://crates.io/crates/ratatui-textarea) | 0.9.2 | MIT | 1.86.0 | Rejected after adapter spike; retain stateless custom renderer. |
 | [`throbber-widgets-tui`](https://crates.io/crates/throbber-widgets-tui) | 0.11.1 | Zlib | 1.88.0 | Adopt without `rand`; model phase remains authoritative. |
 | [`tui-big-text`](https://crates.io/crates/tui-big-text) | 0.8.9 | MIT OR Apache-2.0 | 1.88.0 | Defer until onboarding value is demonstrated. |
 | [`tui-checkbox`](https://crates.io/crates/tui-checkbox) | 0.4.6 | MIT | 1.74.0 | Reject; native primitive is smaller than the dependency. |
@@ -317,15 +319,15 @@ Progress counts required registry tasks, including the parent completion gate.
 |---|---|---|---:|
 | 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 3/3 |
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 6/6 |
-| 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 7/10 |
+| 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 8/10 |
 | 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 0/5 |
 | 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **16/38 (42.1%)** |
+| **M21 total** | | | **17/38 (44.7%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **556/578 (96.2%)**. The research/spec,
+tasks makes overall required progress **557/578 (96.4%)**. The research/spec,
 six-scene production-renderer acceptance baseline, exact cell goldens, semantic
 captures, executable implementation-gap ledger, and reusable dependency
 admission/notices/SBOM/offline-build gate are complete. The validated

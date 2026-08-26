@@ -19,11 +19,11 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-16/38 (42.1%); overall required registry progress is 556/578 (96.2%).
+17/38 (44.7%); overall required registry progress is 557/578 (96.4%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
-anchors and maps 8 honest implementation gaps to incomplete owner tasks;
+anchors and maps 7 honest implementation gaps to incomplete owner tasks;
 failure tests reject corrupt dimensions, missing captures or anchors, and gaps
 whose owner is already complete. `UX-LICENSE-001` is complete: thirteen widget
 candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
