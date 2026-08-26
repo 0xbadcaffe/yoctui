@@ -59,6 +59,46 @@ pub enum ImageArtifactKind {
     Other,
 }
 
+/// Transport context used by the evaluated terminal-image policy. Native image
+/// protocols are deliberately not part of the closed result while the deploy
+/// inventory has no raster MIME authority.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum ImagePreviewTransport {
+    DirectTerminal,
+    Ssh,
+    Tmux,
+    SshThroughTmux,
+    TestBackend,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ImagePreviewFallback {
+    ExactArtifactMetadata,
+    RootfsComposition,
+}
+
+impl ImagePreviewFallback {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::ExactArtifactMetadata => "exact artifact metadata and existing workflows",
+            Self::RootfsComposition => "Rootfs packages/filesystem composition",
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ImagePreviewDecision {
+    pub transport: ImagePreviewTransport,
+    pub fallback: ImagePreviewFallback,
+    pub reason: &'static str,
+}
+
+impl ImagePreviewDecision {
+    pub const fn native_terminal_graphics_enabled(self) -> bool {
+        false
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ImageArtifactAssociation {
     Manifest,
@@ -79,6 +119,39 @@ impl ImageArtifactKind {
             Self::Spdx => "spdx/sbom",
             Self::Checksum => "checksum",
             Self::Other => "other",
+        }
+    }
+
+    pub const fn image_preview_decision(
+        self,
+        transport: ImagePreviewTransport,
+    ) -> ImagePreviewDecision {
+        let (fallback, reason) = match self {
+            Self::RootFilesystem => (
+                ImagePreviewFallback::RootfsComposition,
+                "root filesystem artifacts are storage images, not raster images",
+            ),
+            Self::Wic => (
+                ImagePreviewFallback::ExactArtifactMetadata,
+                "Wic artifacts are disk images, not raster images",
+            ),
+            Self::Kernel | Self::Bootloader => (
+                ImagePreviewFallback::ExactArtifactMetadata,
+                "boot artifacts are executable or binary payloads, not raster images",
+            ),
+            Self::Manifest | Self::LicenseManifest | Self::Spdx | Self::Checksum => (
+                ImagePreviewFallback::ExactArtifactMetadata,
+                "metadata artifacts already have exact text and open-file workflows",
+            ),
+            Self::Other => (
+                ImagePreviewFallback::ExactArtifactMetadata,
+                "the deploy scanner has no authoritative raster MIME classification",
+            ),
+        };
+        ImagePreviewDecision {
+            transport,
+            fallback,
+            reason,
         }
     }
 }
@@ -484,5 +557,41 @@ mod tests {
         let (inventory, report) = normalize_image_artifact_inventory(&request, inventory, 10);
         assert!(inventory.is_none());
         assert_eq!(report.invalid_records, 1);
+    }
+
+    #[test]
+    fn ux_image_preview_policy_is_transport_invariant_and_never_fabricates_raster_authority() {
+        let transports = [
+            ImagePreviewTransport::DirectTerminal,
+            ImagePreviewTransport::Ssh,
+            ImagePreviewTransport::Tmux,
+            ImagePreviewTransport::SshThroughTmux,
+            ImagePreviewTransport::TestBackend,
+        ];
+        let kinds = [
+            ImageArtifactKind::RootFilesystem,
+            ImageArtifactKind::Kernel,
+            ImageArtifactKind::Bootloader,
+            ImageArtifactKind::Wic,
+            ImageArtifactKind::Manifest,
+            ImageArtifactKind::LicenseManifest,
+            ImageArtifactKind::Spdx,
+            ImageArtifactKind::Checksum,
+            ImageArtifactKind::Other,
+        ];
+        for transport in transports {
+            for kind in kinds {
+                let decision = kind.image_preview_decision(transport);
+                assert_eq!(decision.transport, transport);
+                assert!(!decision.native_terminal_graphics_enabled());
+                assert!(!decision.reason.is_empty());
+            }
+        }
+        assert_eq!(
+            ImageArtifactKind::RootFilesystem
+                .image_preview_decision(ImagePreviewTransport::DirectTerminal)
+                .fallback,
+            ImagePreviewFallback::RootfsComposition
+        );
     }
 }

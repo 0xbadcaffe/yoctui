@@ -4660,6 +4660,15 @@ categories combine only into an explicit inspectable `Other` group. Package
 and filesystem authorities never share a total or silently substitute for one
 another.
 
+Terminal-native artifact previews are not part of this contract. The evaluated
+deploy inventory has no raster MIME authority: rootfs and Wic records are
+storage images, kernel/bootloader records are binaries, and the remaining
+records are metadata or unknown. The Images Inspector therefore skips graphics
+probing and exposes exact metadata or Rootfs composition as a textual fallback
+on direct terminals, SSH, tmux, no-color, reader-oriented modes, and
+TestBackend. A future preview requires a new typed raster authority and a fresh
+bounded transport/decode/dependency review.
+
 ### First-class terminal sessions
 
 The daemon remains the sole owner of PTY processes, `vt100` emulation, bounded

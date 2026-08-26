@@ -20,10 +20,10 @@ default_features = false
 enabled_features = []
 transitive_closure = 118
 transitive_sha256 = "a2a4233ced7d613397b082f3257db2aedd6add70a8f897c20ec1d3b1951007f1"
-decision = "defer"
+decision = "reject"
 admitted = false
 owner_task = "UX-IMAGE-PREVIEW-001"
-reason = "The no-default-feature graph avoids Chafa/pkg-config, but protocol probing, async decode/resize, memory bounds, SSH/tmux behavior, and a text fallback must be proved first."
+reason = "Rejected after the bounded transport and size spike: the deploy inventory has no raster MIME authority; probing mutates stdio and may change tmux pane state; threaded resize has an unbounded channel without byte/pixel/time/cancellation limits; the 118-package closure adds 71 packages and increased a stripped size-optimized reference binary by 319,048 bytes (111.4%). Exact metadata and rootfs composition are the deterministic fallback."
 
 [[candidate]]
 name = "ratatui-textarea"

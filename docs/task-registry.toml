@@ -6223,12 +6223,12 @@ notes = "Images now has typed wraparound Artifacts, Rootfs packages, and Rootfs 
 id = "UX-IMAGE-PREVIEW-001"
 milestone = "M21"
 title = "Evaluate optional terminal image previews"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 723
 required = true
 depends_on = ["UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-ui ux_image_preview", "cargo test -p yoctui -- ux_image_preview", "cargo deny check"]
-notes = "Evaluate ratatui-image with explicit terminal protocol probing, async bounded decode/resize, SSH/tmux behavior, memory and binary-size budgets, disabled default native features, and deterministic half-block/text fallback."
+notes = "Rejected audited ratatui-image 11.0.6 with default features disabled. Current deploy kinds have no raster MIME authority; picker probing mutates stdin and may run a state-changing tmux command; threaded resize uses an unbounded channel without Yoctui byte/pixel/time/cancellation bounds. The 118-package closure adds 71 packages over the shipped graph, while a stripped size-optimized four-protocol reference link grew from 286,472 to 605,520 bytes (+319,048, 111.4%). A closed ImagePreviewDecision keeps direct, SSH, tmux, SSH-through-tmux, and TestBackend behavior identical: no protocol query or native graphics claim, exact metadata for ordinary artifacts, and Rootfs composition for filesystem images. Model/UI/CLI tests cover the deterministic production fallback; the candidate remains outside the shipped graph."
 
 [[task]]
 id = "UX-TERMINAL-EVAL-001"

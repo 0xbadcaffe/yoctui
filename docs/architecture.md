@@ -3191,3 +3191,14 @@ MSRV, enabled-feature, transitive-dependency, Ratatui compatibility, locked
 offline build, SBOM, and `cargo deny` evidence. Optional image/render features
 must retain deterministic text/TestBackend fallbacks and cannot add blocking
 work to the draw loop.
+
+The `ratatui-image` 11.0.6 spike is rejected for the current Images boundary.
+No classified deploy artifact establishes raster MIME authority. The candidate
+picker owns stdin termios/query traffic and can mutate tmux pane passthrough;
+its threaded helper has an unbounded channel and no Yoctui byte, pixel, time, or
+cancellation contract. Its 118-package closure would add 71 shipped packages,
+and the reviewed stripped size-optimized link benchmark grew by 319,048 bytes
+(111.4%). `ImagePreviewDecision` is therefore a closed transport-invariant
+fallback projection: root filesystems point to typed composition and every
+other kind retains exact metadata/workflows. The production renderer issues no
+graphics escape sequences or terminal probes.

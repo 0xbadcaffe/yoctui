@@ -10884,12 +10884,17 @@ fn image_artifact_inspector_text(app: &App) -> String {
                     .join("\n"),
                 _ => "none".into(),
             };
+            let preview = artifact.kind.image_preview_decision(
+                yoctui_model::ImagePreviewTransport::DirectTerminal,
+            );
             format!(
-                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\nDeploy directory: {}\nSize: {}\nTimestamp: {}\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
+                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\n\nTerminal image preview\nNative graphics: not offered · protocol probe skipped\nFallback: {}\nReason: {}\n\nDeploy directory: {}\nSize: {}\nTimestamp: {}\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
                 artifact.identity.machine,
                 artifact.identity.image,
                 artifact.kind.label(),
                 artifact.identity.path.display(),
+                preview.fallback.label(),
+                preview.reason,
                 deploy,
                 artifact
                     .size_bytes
@@ -10908,14 +10913,23 @@ fn image_artifact_inspector_text(app: &App) -> String {
             )
         },
     );
-    format!(
-        "runqemu capability\n{}\nLaunch: {}\n\n{}\n{}\nSelected artifact\n{artifact_text}",
+    let operational_details = format!(
+        "runqemu capability\n{}\nLaunch: {}\n\n{}\n{}",
         qemu_capability_text(app),
         app.qemu_launch_unavailable_reason()
             .unwrap_or_else(|| "ready for selected artifact (Q)".into()),
         qemu_session_text(app),
         wic_inspector_text(app),
-    )
+    );
+    let operation_has_priority = !matches!(app.qemu_capability, QemuCapability::NotInspected)
+        || app.latest_qemu_session().is_some()
+        || !matches!(app.wic_capability, WicCapability::NotInspected)
+        || app.latest_wic_session().is_some();
+    if operation_has_priority {
+        format!("{operational_details}\nSelected artifact\n{artifact_text}")
+    } else {
+        format!("Selected artifact\n{artifact_text}\n\n{operational_details}")
+    }
 }
 
 fn rootfs_inspector_text(app: &App) -> String {
@@ -20038,6 +20052,60 @@ mod tests {
         assert!(wide.contains("sha256"), "{wide}");
         assert!(wide.contains("SPDX/SBOM"), "{wide}");
         assert!(wide.contains("one symlink was not followed"), "{wide}");
+    }
+
+    #[test]
+    fn ux_image_preview_renders_deterministic_metadata_fallback_without_protocol_claims() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Images;
+        app.focus = FocusTarget::Inspector;
+        let identity = yoctui_model::ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: "/deploy/qemux86-64/core-image-minimal.ext4".into(),
+        };
+        let artifact = yoctui_model::ImageArtifact {
+            identity: identity.clone(),
+            kind: yoctui_model::ImageArtifactKind::RootFilesystem,
+            size_bytes: ImageArtifactField::Available(4096),
+            modified_unix_seconds: ImageArtifactField::Available(1_700_000_000),
+            checksums: ImageArtifactField::Available(Vec::new()),
+            manifests: ImageArtifactField::Available(Vec::new()),
+            licenses: ImageArtifactField::Available(Vec::new()),
+            spdx: ImageArtifactField::Available(Vec::new()),
+            wic_files: ImageArtifactField::Available(Vec::new()),
+        };
+        app.image_artifact_selection = Some(identity);
+        app.image_artifacts = ImageArtifactInventoryState::Available {
+            request: yoctui_model::ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: ImageArtifactField::Available("/deploy/qemux86-64".into()),
+                artifacts: vec![artifact],
+            },
+        };
+
+        for (width, height, theme, color) in [
+            (180, 50, Theme::DarkPro, true),
+            (100, 30, Theme::HighContrast, true),
+            (80, 24, Theme::Monochrome, false),
+        ] {
+            app.theme = theme;
+            app.color_enabled = color;
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Terminal image preview"), "{output}");
+            assert!(output.contains("protocol probe skipped"), "{output}");
+            assert!(output.contains("Native graphics: not offered"), "{output}");
+            assert!(
+                output.contains("Rootfs packages/filesystem composition"),
+                "{output}"
+            );
+            assert!(!output.contains("Kitty graphics"), "{output}");
+            assert!(!output.contains("Sixel graphics"), "{output}");
+        }
     }
 
     #[test]

@@ -265,11 +265,15 @@ selection, expansion, offset, or height authority.
 
 ### Optional image and large-text widgets
 
-`ratatui-image` may provide opt-in previews for image artifacts or documentation
-only after terminal protocol probing, async decode/resize, memory bounds,
-TestBackend fallback, SSH/tmux behavior, and feature-size review. It is not used
-for rootfs composition. `tui-big-text` is limited to optional onboarding or an
-idle/empty canvas where it does not reduce density or accessibility.
+The completed [`ratatui-image` evaluation](design/m21/image-preview-evaluation.md)
+rejects the candidate for the current deploy inventory: no artifact kind owns
+raster MIME authority, probing mutates terminal input and may change tmux pane
+state, threaded resize lacks Yoctui's bounds/cancellation, the closure adds 71
+packages, and a stripped size-optimized reference binary grew 319,048 bytes.
+Exact metadata and rootfs composition remain the deterministic fallback on
+direct terminals, SSH, tmux, and TestBackend. `tui-big-text` is limited to
+optional onboarding or an idle/empty canvas where it does not reduce density or
+accessibility.
 
 ## Third-party dependency and license gate
 
@@ -282,7 +286,7 @@ refresh its candidate before changing `Cargo.lock`.
 
 | Crate | Audited version | SPDX license | MSRV reported | Decision |
 |---|---:|---|---:|---|
-| [`ratatui-image`](https://crates.io/crates/ratatui-image) | 11.0.6 | MIT | 1.86.0 | Defer until portability, bounds, and fallback evidence. |
+| [`ratatui-image`](https://crates.io/crates/ratatui-image) | 11.0.6 | MIT | 1.86.0 | Rejected after transport/bounds/size spike; retain exact typed fallbacks. |
 | [`ratatui-textarea`](https://crates.io/crates/ratatui-textarea) | 0.9.2 | MIT | 1.86.0 | Rejected after adapter spike; retain stateless custom renderer. |
 | [`throbber-widgets-tui`](https://crates.io/crates/throbber-widgets-tui) | 0.11.1 | Zlib | 1.88.0 | Adopt without `rand`; model phase remains authoritative. |
 | [`tui-big-text`](https://crates.io/crates/tui-big-text) | 0.8.9 | MIT OR Apache-2.0 | 1.88.0 | Defer until onboarding value is demonstrated. |
@@ -325,14 +329,14 @@ Progress counts required registry tasks, including the parent completion gate.
 | 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 3/3 |
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 6/6 |
 | 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 10/10 |
-| 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 4/5 |
+| 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 5/5 |
 | 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **23/38 (60.5%)** |
+| **M21 total** | | | **24/38 (63.2%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **563/578 (97.4%)**. The research/spec,
+tasks makes overall required progress **564/578 (97.6%)**. The research/spec,
 six-scene production-renderer acceptance baseline, exact cell goldens, semantic
 captures, executable implementation-gap ledger, and reusable dependency
 admission/notices/SBOM/offline-build gate are complete. The validated
