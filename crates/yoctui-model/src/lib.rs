@@ -30,6 +30,7 @@ mod security;
 mod telemetry_projection;
 mod terminal_emulation;
 mod testing;
+mod textarea;
 mod utility_compatibility;
 mod utility_menu;
 mod wic;
@@ -77,6 +78,7 @@ use std::{
 pub use telemetry_projection::*;
 pub use terminal_emulation::*;
 pub use testing::*;
+pub use textarea::*;
 use thiserror::Error;
 pub use utility_compatibility::*;
 pub use utility_menu::*;
@@ -1630,142 +1632,9 @@ pub struct ConfigEditRequest {
     pub assignment: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PopupEditor {
-    pub text: String,
-    pub cursor: usize,
-    pub selection: Option<(usize, usize)>,
-    pub editing: bool,
-    clipboard: String,
-    history: Vec<String>,
-}
+pub type PopupEditor = TextAreaState;
 
-impl PopupEditor {
-    pub fn new(text: String) -> Self {
-        let cursor = text.len();
-        Self {
-            text,
-            cursor,
-            selection: None,
-            editing: false,
-            clipboard: String::new(),
-            history: Vec::new(),
-        }
-    }
-    pub fn select_range(&mut self, start: usize, end: usize) {
-        let start = self.clamp_boundary(start);
-        let end = self.clamp_boundary(end);
-        self.selection = Some((start.min(end), start.max(end)));
-        self.cursor = end.min(self.text.len());
-    }
-    pub fn insert(&mut self, value: &str) {
-        self.remember();
-        if let Some((start, end)) = self.selection.take() {
-            self.text.replace_range(start..end, value);
-            self.cursor = start + value.len();
-        } else {
-            self.text.insert_str(self.cursor, value);
-            self.cursor += value.len();
-        }
-    }
-    pub fn backspace(&mut self) {
-        if let Some((start, end)) = self.selection.take() {
-            self.remember();
-            self.text.replace_range(start..end, "");
-            self.cursor = start;
-        } else if self.cursor > 0 {
-            self.remember();
-            let previous = self.text[..self.cursor]
-                .char_indices()
-                .next_back()
-                .map_or(0, |(index, _)| index);
-            self.text.replace_range(previous..self.cursor, "");
-            self.cursor = previous;
-        }
-    }
-    pub fn left(&mut self) {
-        self.cursor = self.text[..self.cursor]
-            .char_indices()
-            .next_back()
-            .map_or(0, |(index, _)| index);
-        self.selection = None;
-    }
-    pub fn right(&mut self) {
-        self.cursor = self.text[self.cursor..]
-            .chars()
-            .next()
-            .map_or(self.text.len(), |character| {
-                self.cursor + character.len_utf8()
-            });
-        self.selection = None;
-    }
-    pub fn up(&mut self) {
-        let line_start = self.text[..self.cursor]
-            .rfind('\n')
-            .map_or(0, |index| index + 1);
-        if line_start == 0 {
-            self.home();
-            return;
-        }
-        let previous_end = line_start - 1;
-        let previous_start = self.text[..previous_end]
-            .rfind('\n')
-            .map_or(0, |index| index + 1);
-        self.cursor = self.clamp_boundary(
-            previous_start + (self.cursor - line_start).min(previous_end - previous_start),
-        );
-        self.selection = None;
-    }
-    pub fn down(&mut self) {
-        let line_start = self.text[..self.cursor]
-            .rfind('\n')
-            .map_or(0, |index| index + 1);
-        let Some(relative_end) = self.text[self.cursor..].find('\n') else {
-            self.end();
-            return;
-        };
-        let next_start = self.cursor + relative_end + 1;
-        let next_end = self.text[next_start..]
-            .find('\n')
-            .map_or(self.text.len(), |index| next_start + index);
-        self.cursor =
-            self.clamp_boundary(next_start + (self.cursor - line_start).min(next_end - next_start));
-        self.selection = None;
-    }
-    pub fn home(&mut self) {
-        self.cursor = self.text[..self.cursor]
-            .rfind('\n')
-            .map_or(0, |index| index + 1);
-        self.selection = None;
-    }
-    pub fn end(&mut self) {
-        self.cursor = self.text[self.cursor..]
-            .find('\n')
-            .map_or(self.text.len(), |index| self.cursor + index);
-        self.selection = None;
-    }
-    pub fn selected_text(&self) -> Option<&str> {
-        self.selection.map(|(start, end)| &self.text[start..end])
-    }
-    pub fn copy_selection_or_line(&mut self) -> String {
-        let value = self.selected_text().map(str::to_owned).unwrap_or_else(|| {
-            let start = self.text[..self.cursor]
-                .rfind('\n')
-                .map_or(0, |index| index + 1);
-            let end = self.text[self.cursor..]
-                .find('\n')
-                .map_or(self.text.len(), |index| self.cursor + index);
-            self.text[start..end].to_owned()
-        });
-        self.clipboard.clone_from(&value);
-        value
-    }
-    pub fn paste(&mut self) {
-        if !self.clipboard.is_empty() {
-            let value = self.clipboard.clone();
-            self.insert(&value);
-        }
-    }
+impl TextAreaState {
     pub fn select_toml_value(&mut self, key: &str) -> Result<(), String> {
         let prefix = format!("{key} = ");
         let line_start = self
@@ -1798,31 +1667,6 @@ impl PopupEditor {
         self.select_range(value_start, value_end);
         Ok(())
     }
-    pub fn undo(&mut self) -> bool {
-        let Some(text) = self.history.pop() else {
-            return false;
-        };
-        self.text = text;
-        self.cursor = self.cursor.min(self.text.len());
-        self.selection = None;
-        true
-    }
-    fn remember(&mut self) {
-        const MAX_HISTORY: usize = 32;
-        if self.history.last() != Some(&self.text) {
-            self.history.push(self.text.clone());
-            if self.history.len() > MAX_HISTORY {
-                self.history.remove(0);
-            }
-        }
-    }
-    fn clamp_boundary(&self, mut index: usize) -> usize {
-        index = index.min(self.text.len());
-        while !self.text.is_char_boundary(index) {
-            index -= 1;
-        }
-        index
-    }
 }
 
 fn popup_toml_value_range(line: &str, line_start: usize) -> Result<(usize, usize), String> {
@@ -1850,14 +1694,23 @@ fn popup_toml_value_range(line: &str, line_start: usize) -> Result<(usize, usize
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PopupEditorCommand {
     ToggleInsert,
+    ToggleVisual,
     Insert(char),
+    Newline,
     Backspace,
+    Delete,
     Left,
     Right,
+    WordLeft,
+    WordRight,
     Up,
     Down,
     Home,
     End,
+    PageUp,
+    PageDown,
+    Undo,
+    Redo,
     SelectValue,
     Copy,
     Paste,
@@ -8788,7 +8641,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 _ => return None,
             };
             match command {
-                PopupEditorCommand::ToggleInsert => editor.editing = !editor.editing,
+                PopupEditorCommand::ToggleInsert => editor.toggle_insert(),
+                PopupEditorCommand::ToggleVisual => {
+                    let mode = if editor.mode() == TextAreaMode::Visual {
+                        TextAreaMode::Normal
+                    } else {
+                        TextAreaMode::Visual
+                    };
+                    editor.set_mode(mode);
+                }
                 PopupEditorCommand::Insert(character)
                     if editor.editing
                         && !character.is_control()
@@ -8800,6 +8661,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     }
                 }
                 PopupEditorCommand::Insert(_) => {}
+                PopupEditorCommand::Newline if editor.editing => editor.insert("\n"),
+                PopupEditorCommand::Newline => {}
                 PopupEditorCommand::Backspace if editor.editing => {
                     editor.backspace();
                     if let Some(error) = validation_error {
@@ -8807,14 +8670,25 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     }
                 }
                 PopupEditorCommand::Backspace => {}
+                PopupEditorCommand::Delete => editor.delete_forward(),
                 PopupEditorCommand::Left => editor.left(),
                 PopupEditorCommand::Right => editor.right(),
+                PopupEditorCommand::WordLeft => editor.move_cursor(TextAreaMotion::WordLeft),
+                PopupEditorCommand::WordRight => editor.move_cursor(TextAreaMotion::WordRight),
                 PopupEditorCommand::Up => editor.up(),
                 PopupEditorCommand::Down => editor.down(),
                 PopupEditorCommand::Home => editor.home(),
                 PopupEditorCommand::End => editor.end(),
+                PopupEditorCommand::PageUp => editor.move_cursor(TextAreaMotion::PageUp),
+                PopupEditorCommand::PageDown => editor.move_cursor(TextAreaMotion::PageDown),
+                PopupEditorCommand::Undo => {
+                    editor.undo();
+                }
+                PopupEditorCommand::Redo => {
+                    editor.redo();
+                }
                 PopupEditorCommand::SelectValue => match editor.select_toml_value_at_cursor() {
-                    Ok(()) => editor.editing = true,
+                    Ok(()) => editor.set_mode(TextAreaMode::Insert),
                     Err(message) => app.notification = Some(message),
                 },
                 PopupEditorCommand::Copy => {

@@ -3642,14 +3642,17 @@ characters are accepted as document input.
 
 Every editable workflow uses a bounded, focus-trapped popup rather than an
 inline text field. Structured settings are presented as TOML documents with
-their typed field names. Popup editors use vi-like Normal and Insert modes:
-`i` enters Insert, Esc returns to Normal, Enter validates/applies, and `q`
-closes without applying. Existing destructive confirmation dialogs remain a
-separate explicit step after validation; a popup editor never bypasses them.
+their typed field names. Popup editors use explicit Normal, Insert, and Visual
+modes. `i` enters Insert, `v` enters or leaves Visual, Esc returns from Insert
+to Normal, and workflow save/preview actions validate before applying. Existing
+destructive confirmation dialogs remain a separate explicit step after
+validation; a popup editor never bypasses them.
 
 Every bounded popup editor has a real cursor and value selection. `Home` and
 `End` move to the beginning and end of the current line; `h`/`l` and arrow
-keys move by character, while `j`/`k` and arrows move by line. Opening a
+keys move by character, while `j`/`k` and arrows move by line. `b`/`w` move by
+Unicode word class, PageUp/PageDown move by the model-owned viewport height,
+`u` undoes, `r` redoes, and `x` deletes at the cursor or selected range. Opening a
 single-field edit selects the field value so the first Insert-mode type or
 paste replaces it rather than appending after the TOML document. Bracketed
 paste inserts at the cursor, and copy copies the selected value or line through
@@ -4600,11 +4603,18 @@ diagnostic view may display Yoctui tracing records, but it never captures or
 reclassifies BitBake domain logs. Both expose exact source, filtering, search,
 scroll/follow state, retention/loss accounting, and bounded copy/export.
 
-The reusable editor remains reducer-owned and bounded. It may add multiline
-Unicode input, selection, undo/redo, word/line/page motion, search/replace,
-Normal/Insert/Visual modes, line numbers, wrap, mouse selection, validation
-ranges, diff preview, conflict detection, and atomic saves. Its persistent mode
-line names save/preview/cancel/copy/paste/undo/redo controls. A third-party
+The reusable editor is reducer-owned and bounded. It owns multiline Unicode
+input, byte-boundary-safe cursor/selection, 64-entry undo and redo histories,
+word/line/page motion, bounded search/replace, explicit Normal/Insert/Visual
+modes, line-number and wrap metadata, and exact validation ranges. Clipboard
+and bracketed paste are distinguished typed sources and are rejected above the
+payload bound without partial mutation.
+
+Clean, modified, diff-preview, external-conflict, saving, saved, and failed
+save states are distinct. Atomic-save requests include the content revision and
+a same-directory temporary path; recoverable failures retain retry state.
+Rendering and filesystem execution remain separate adapters. The persistent
+mode line names save/preview/cancel/copy/paste/undo/redo controls. A third-party
 textarea renderer cannot place Ratatui state in `yoctui-model`.
 
 Checkboxes distinguish checked, unchecked, indeterminate, disabled, and focused

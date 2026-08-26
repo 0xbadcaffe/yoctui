@@ -307,10 +307,31 @@ cursor, selection, and common shortcut row; the CLI maps keys, paste, and copy
 to typed editor actions; workflow reducers only serialize and validate their
 typed drafts.
 
-The popup editor remains a small model-owned adapter rather than storing a
-`tui-textarea` widget in UI state. `tui-textarea` informed the supported
-editing contract (cursor movement, selection, copy/paste, and line bounds),
-but its widget-owned mutable state would violate Yoctui's reducer boundary.
+The popup editor is an alias of the reusable model-owned `TextAreaState`, not a
+widget state stored in the UI. Its compact public compatibility projection is
+text, cursor, selection, and Insert ownership; a boxed model-private state owns
+Normal/Insert/Visual mode, preferred character column, layout metadata,
+search, validation, bounded undo/redo, and save lifecycle. Every byte offset is
+clamped to a UTF-8 boundary after edits, replacement, history restoration, and
+external reload. A renderer may inspect the typed projections but cannot
+advance or mutate a second editor authority.
+
+The editor caps documents at 1 MiB, individual clipboard or bracketed-paste
+payloads at 256 KiB, undo and redo at 64 snapshots each, search results at
+2,048, diagnostics at 512, and diff projections at 4,096 lines. Search,
+replacement, line/word/page movement, visual selection, wrap ranges, and line
+numbers are pure reducer operations. Clipboard reads and writes remain typed
+effects at the application boundary.
+
+Safe persistence is also a model lifecycle rather than an implicit write:
+clean, modified, preview, external conflict, saving, saved, and failed states
+are distinct. A save request carries the exact content revision and a
+same-directory temporary path; the CLI remains responsible for permission
+preservation, flush/sync, and atomic rename. A recoverable failure retains the
+exact request for retry, while an observed revision mismatch enters conflict
+without producing a write request. `ratatui-textarea` remains only a reviewed
+renderer-adapter candidate because widget-owned mutable state would violate
+this reducer boundary.
 
 Recipe discovery is split into a bounded summary query and a selected-recipe
 detail query. Summary records carry the resolved version, provider path/layer,

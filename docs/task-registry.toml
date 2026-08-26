@@ -6135,12 +6135,12 @@ notes = "The audited tui-logger candidate remains rejected and absent from the g
 id = "UX-TEXTAREA-MODEL-001"
 milestone = "M21"
 title = "Extend the reducer-owned multiline editor model"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 715
 required = true
 depends_on = ["UX-KEYMAP-MODEL-001", "UX-SCROLL-001"]
 verify = ["cargo test -p yoctui-model ux_textarea", "cargo test -p yoctui-app ux_textarea", "cargo test -p yoctui-model --features proptest ux_textarea"]
-notes = "Add bounded undo/redo, word/line/page motion, search/replace, Normal/Insert/Visual modes, selection, line numbers, wrap metadata, validation spans, diff preview, conflicts, and atomic-save lifecycle."
+notes = "TextAreaState now owns a UTF-8-boundary-safe 1 MiB multiline document, Normal/Insert/Visual modes, selection, character/word/line/page motion, line-number/wrap projections, 64-entry undo and redo, bounded Unicode search/replace, typed clipboard/bracketed paste, 512 validation spans, and a 4,096-line diff projection. Clean/modified/preview/conflict/saving/saved/failed states and revision-correlated same-directory atomic-save requests remain pure model state; recoverable failures retain exact retry data. Existing PopupEditor workflows alias the compact reusable model, and focused app plus 512-case property tests cover mappings and adversarial sequences."
 
 [[task]]
 id = "UX-TEXTAREA-UI-001"

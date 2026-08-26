@@ -4704,6 +4704,7 @@ pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
     let command = if editing {
         match key {
             Input::Esc => PopupEditorCommand::ToggleInsert,
+            Input::Enter => PopupEditorCommand::Newline,
             Input::Backspace => PopupEditorCommand::Backspace,
             Input::Left => PopupEditorCommand::Left,
             Input::Right => PopupEditorCommand::Right,
@@ -4711,6 +4712,8 @@ pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
             Input::Down => PopupEditorCommand::Down,
             Input::Home => PopupEditorCommand::Home,
             Input::End => PopupEditorCommand::End,
+            Input::PageUp => PopupEditorCommand::PageUp,
+            Input::PageDown => PopupEditorCommand::PageDown,
             Input::CtrlC => PopupEditorCommand::Copy,
             Input::CtrlV => PopupEditorCommand::Paste,
             Input::Char(character) => PopupEditorCommand::Insert(character),
@@ -4719,13 +4722,21 @@ pub fn popup_editor_action(editing: bool, key: Input) -> Option<Action> {
     } else {
         match key {
             Input::Char('i') => PopupEditorCommand::ToggleInsert,
+            Input::Char('v') => PopupEditorCommand::ToggleVisual,
             Input::Char('e') => PopupEditorCommand::SelectValue,
+            Input::Char('x') => PopupEditorCommand::Delete,
+            Input::Char('b') => PopupEditorCommand::WordLeft,
+            Input::Char('w') => PopupEditorCommand::WordRight,
+            Input::Char('u') => PopupEditorCommand::Undo,
+            Input::Char('r') => PopupEditorCommand::Redo,
             Input::Left | Input::Char('h') => PopupEditorCommand::Left,
             Input::Right | Input::Char('l') => PopupEditorCommand::Right,
             Input::Up | Input::Char('k') => PopupEditorCommand::Up,
             Input::Down | Input::Char('j') => PopupEditorCommand::Down,
             Input::Home => PopupEditorCommand::Home,
             Input::End => PopupEditorCommand::End,
+            Input::PageUp => PopupEditorCommand::PageUp,
+            Input::PageDown => PopupEditorCommand::PageDown,
             Input::CtrlC => PopupEditorCommand::Copy,
             _ => return None,
         }
@@ -9231,7 +9242,7 @@ mod tests {
         );
     }
     #[test]
-    fn popup_editor_input_maps_normal_and_insert_modes_without_leakage() {
+    fn ux_textarea_popup_input_maps_normal_insert_and_visual_commands() {
         assert_eq!(
             popup_editor_action(false, Input::Char('e')),
             Some(Action::EditActivePopup(PopupEditorCommand::SelectValue))
@@ -9240,7 +9251,22 @@ mod tests {
             popup_editor_action(false, Input::Char('j')),
             Some(Action::EditActivePopup(PopupEditorCommand::Down))
         );
-        assert_eq!(popup_editor_action(false, Input::Char('x')), None);
+        assert_eq!(
+            popup_editor_action(false, Input::Char('x')),
+            Some(Action::EditActivePopup(PopupEditorCommand::Delete))
+        );
+        assert_eq!(
+            popup_editor_action(false, Input::Char('v')),
+            Some(Action::EditActivePopup(PopupEditorCommand::ToggleVisual))
+        );
+        assert_eq!(
+            popup_editor_action(false, Input::Char('u')),
+            Some(Action::EditActivePopup(PopupEditorCommand::Undo))
+        );
+        assert_eq!(
+            popup_editor_action(false, Input::PageDown),
+            Some(Action::EditActivePopup(PopupEditorCommand::PageDown))
+        );
         assert_eq!(
             popup_editor_action(true, Input::Char('k')),
             Some(Action::EditActivePopup(PopupEditorCommand::Insert('k')))
@@ -9253,7 +9279,10 @@ mod tests {
             popup_editor_action(true, Input::CtrlV),
             Some(Action::EditActivePopup(PopupEditorCommand::Paste))
         );
-        assert_eq!(popup_editor_action(true, Input::Enter), None);
+        assert_eq!(
+            popup_editor_action(true, Input::Enter),
+            Some(Action::EditActivePopup(PopupEditorCommand::Newline))
+        );
     }
     #[test]
     fn live_tasks_input_maps_selection_and_filter_controls() {
@@ -12398,7 +12427,12 @@ mod tests {
             raw_argv_editor_action(false, Input::Enter),
             Some(RawArgvEditorAction::Validate)
         );
-        assert_eq!(raw_argv_editor_action(false, Input::Char('x')), None);
+        assert_eq!(
+            raw_argv_editor_action(false, Input::Char('x')),
+            Some(RawArgvEditorAction::Edit(
+                yoctui_model::PopupEditorCommand::Delete
+            ))
+        );
     }
 
     #[test]

@@ -484,7 +484,16 @@ impl RawArgvEditor {
         let previous = self.editor.clone();
         let invalidates = match command {
             PopupEditorCommand::ToggleInsert => {
-                self.editor.editing = !self.editor.editing;
+                self.editor.toggle_insert();
+                false
+            }
+            PopupEditorCommand::ToggleVisual => {
+                let mode = if self.editor.mode() == crate::TextAreaMode::Visual {
+                    crate::TextAreaMode::Normal
+                } else {
+                    crate::TextAreaMode::Visual
+                };
+                self.editor.set_mode(mode);
                 false
             }
             PopupEditorCommand::Insert(character) if self.editor.editing => {
@@ -492,17 +501,34 @@ impl RawArgvEditor {
                 true
             }
             PopupEditorCommand::Insert(_) => false,
+            PopupEditorCommand::Newline if self.editor.editing => {
+                self.editor.insert("\n");
+                true
+            }
+            PopupEditorCommand::Newline => false,
             PopupEditorCommand::Backspace if self.editor.editing => {
                 self.editor.backspace();
                 true
             }
             PopupEditorCommand::Backspace => false,
+            PopupEditorCommand::Delete => {
+                self.editor.delete_forward();
+                true
+            }
             PopupEditorCommand::Left => {
                 self.editor.left();
                 false
             }
             PopupEditorCommand::Right => {
                 self.editor.right();
+                false
+            }
+            PopupEditorCommand::WordLeft => {
+                self.editor.move_cursor(crate::TextAreaMotion::WordLeft);
+                false
+            }
+            PopupEditorCommand::WordRight => {
+                self.editor.move_cursor(crate::TextAreaMotion::WordRight);
                 false
             }
             PopupEditorCommand::Up => {
@@ -521,6 +547,16 @@ impl RawArgvEditor {
                 self.editor.end();
                 false
             }
+            PopupEditorCommand::PageUp => {
+                self.editor.move_cursor(crate::TextAreaMotion::PageUp);
+                false
+            }
+            PopupEditorCommand::PageDown => {
+                self.editor.move_cursor(crate::TextAreaMotion::PageDown);
+                false
+            }
+            PopupEditorCommand::Undo => self.editor.undo(),
+            PopupEditorCommand::Redo => self.editor.redo(),
             PopupEditorCommand::SelectValue => {
                 self.editor.select_range(0, self.editor.text.len());
                 false
@@ -3843,24 +3879,45 @@ fn edit_raw_parameter_input(
     };
     let previous = field.editor.clone();
     match command {
-        PopupEditorCommand::ToggleInsert => field.editor.editing = !field.editor.editing,
+        PopupEditorCommand::ToggleInsert => field.editor.toggle_insert(),
+        PopupEditorCommand::ToggleVisual => {
+            let mode = if field.editor.mode() == crate::TextAreaMode::Visual {
+                crate::TextAreaMode::Normal
+            } else {
+                crate::TextAreaMode::Visual
+            };
+            field.editor.set_mode(mode);
+        }
         PopupEditorCommand::Insert(character)
             if field.editor.editing && !character.is_control() =>
         {
             field.editor.insert(&character.to_string());
         }
         PopupEditorCommand::Insert(_) => {}
+        PopupEditorCommand::Newline if field.editor.editing => field.editor.insert("\n"),
+        PopupEditorCommand::Newline => {}
         PopupEditorCommand::Backspace if field.editor.editing => field.editor.backspace(),
         PopupEditorCommand::Backspace => {}
+        PopupEditorCommand::Delete => field.editor.delete_forward(),
         PopupEditorCommand::Left => field.editor.left(),
         PopupEditorCommand::Right => field.editor.right(),
+        PopupEditorCommand::WordLeft => field.editor.move_cursor(crate::TextAreaMotion::WordLeft),
+        PopupEditorCommand::WordRight => field.editor.move_cursor(crate::TextAreaMotion::WordRight),
         PopupEditorCommand::Up => field.editor.up(),
         PopupEditorCommand::Down => field.editor.down(),
         PopupEditorCommand::Home => field.editor.home(),
         PopupEditorCommand::End => field.editor.end(),
+        PopupEditorCommand::PageUp => field.editor.move_cursor(crate::TextAreaMotion::PageUp),
+        PopupEditorCommand::PageDown => field.editor.move_cursor(crate::TextAreaMotion::PageDown),
+        PopupEditorCommand::Undo => {
+            field.editor.undo();
+        }
+        PopupEditorCommand::Redo => {
+            field.editor.redo();
+        }
         PopupEditorCommand::SelectValue => {
             field.editor.select_range(0, field.editor.text.len());
-            field.editor.editing = true;
+            field.editor.set_mode(crate::TextAreaMode::Insert);
         }
         PopupEditorCommand::Copy => {
             field.editor.copy_selection_or_line();

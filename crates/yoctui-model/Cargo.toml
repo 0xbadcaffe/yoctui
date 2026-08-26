@@ -10,6 +10,10 @@ readme.workspace = true
 description = "Domain state and reducers for the Yoctui Yocto and BitBake workbench"
 publish = ["crates-io"]
 
+[features]
+default = []
+proptest = []
+
 [dependencies]
 serde.workspace = true
 sha2.workspace = true

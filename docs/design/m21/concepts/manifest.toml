@@ -129,7 +129,6 @@ real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-editor-application-
 real_yoctui_anchors = ["Recipe editor: bash", "Workspace file tree: bash", "bash_5.2.bb (editing modified)", "Ctrl+B build recipe"]
 implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001"]
 open_gaps = [
-  { task = "UX-TEXTAREA-MODEL-001", description = "add explicit modes, selection, history, validation spans, and diff/save lifecycle" },
   { task = "UX-TEXTAREA-UI-001", description = "render line numbers, mode/cursor status, validation, and diff preview without a second state authority" },
 ]
 anchors = [
