@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-9/38 (23.7%); overall required registry progress is 549/578 (95.0%).
+10/38 (26.3%); overall required registry progress is 550/578 (95.2%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -57,7 +57,11 @@ one keyboard/mouse workspace dispatcher, real PageUp/PageDown/Home/End and
 catalog `gg`/`G` routes, constant-time edge jumps, stable log identity across
 filtering and eviction, retained Raw output bounds, textual responsive ranges,
 and property tests now agree across model, app, production UI, and CLI. Shared
-widget primitives are next.
+visual primitives are also complete: bounded typed projections drive exact-text
+gauges/meters, histories, charts, bars, tabs, legends, and scrollbars through
+semantic theme roles with explicit exceptional states and Unicode, ASCII,
+no-color, high-contrast, reduced-motion, large-input, and narrow coverage.
+Hierarchical progress is next.
 
 ### Completed baseline through M20
 

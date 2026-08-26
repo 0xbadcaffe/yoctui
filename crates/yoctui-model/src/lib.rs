@@ -30,6 +30,7 @@ mod testing;
 mod utility_compatibility;
 mod utility_menu;
 mod wic;
+mod widget_projection;
 mod workspace_compatibility;
 
 pub use action_catalog::*;
@@ -74,6 +75,7 @@ use thiserror::Error;
 pub use utility_compatibility::*;
 pub use utility_menu::*;
 pub use wic::*;
+pub use widget_projection::*;
 pub use workspace_compatibility::*;
 
 #[derive(Debug, Error, Clone, PartialEq, Eq)]

@@ -19,7 +19,8 @@ use workspaces::*;
 use primitives::{
     ActionListItem, ActionListStyles, BoundedScrollIndicator, DialogShell, DialogStyles,
     DialogTone, PaneShell, PaneStyles, ResponsiveColumn, StateKind, StateView, StatusTone,
-    action_list, action_list_plain, bounded_dialog_rect, responsive_columns, status_label,
+    WidgetStyles, action_list, action_list_plain, bounded_dialog_rect, responsive_columns,
+    status_label,
 };
 use ratatui::{
     prelude::*,
@@ -314,6 +315,29 @@ impl SemanticTheme {
                 (255, 100, 235),
             ]),
             Theme::Monochrome => Self::monochrome(),
+        }
+    }
+
+    pub fn widget_styles(self) -> WidgetStyles {
+        WidgetStyles {
+            primary: self.base(),
+            success: self.role(self.success, Modifier::BOLD),
+            warning: self.role(self.warning, Modifier::BOLD),
+            error: self.role(self.error, Modifier::BOLD | Modifier::UNDERLINED),
+            running: self.role(self.running, Modifier::BOLD),
+            pending: self.role(self.pending, Modifier::DIM),
+            disabled: self.role(self.disabled, Modifier::DIM),
+            accent: self.role(self.accent, Modifier::BOLD),
+            muted: self.role(self.muted, Modifier::DIM),
+            informational: self.role(self.informational, Modifier::ITALIC),
+            progress: self.role(self.progress, Modifier::BOLD),
+            graph_cpu: self.role(self.graph_cpu, Modifier::BOLD),
+            graph_memory: self.role(self.graph_memory, Modifier::BOLD),
+            graph_disk_read: self.role(self.graph_disk_read, Modifier::BOLD),
+            graph_disk_write: self.role(self.graph_disk_write, Modifier::BOLD),
+            graph_network_rx: self.role(self.graph_network_rx, Modifier::BOLD),
+            graph_network_tx: self.role(self.graph_network_tx, Modifier::BOLD),
+            selected: self.selected(),
         }
     }
 

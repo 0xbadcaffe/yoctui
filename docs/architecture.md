@@ -2948,6 +2948,16 @@ Crossterm events directly; `yoctui-app` maps input and mouse geometry to typed
 actions. A candidate that cannot meet this rule remains a design reference or
 is replaced by a small render-only adapter.
 
+`yoctui_model::widget_projection` is the renderer-independent visual-value
+boundary. It owns overflow-safe fractions, bounded newest-first histories,
+bounded bar/tab/legend collections, model-reconciled scrollbar geometry, and
+explicit available/active/empty/unknown/unavailable/partial/terminal states.
+It contains no Ratatui types or terminal geometry. `yoctui_ui::primitives`
+maps those projections into built-in gauges, line meters, sparklines/bar
+charts, tabs, legends, and a transient `ScrollbarState` reconstructed on each
+frame. Callers supply `WidgetStyles` resolved from `SemanticTheme`; the
+primitive never chooses a literal color or retains interaction state.
+
 The action catalog is model-owned and projects mechanically through the app/UI
 layers into menus, palette, Help, footer, mouse routes, and preferences. Backend
 capability evaluation remains outside renderers. Menu selection cannot execute

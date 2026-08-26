@@ -4466,6 +4466,25 @@ trees, and textual fallbacks. Widgets receive typed values and presentation
 state; they do not sample the host, scan files, parse process output, or become
 a second interaction authority.
 
+The shared visual projection vocabulary is now concrete. Fractions retain the
+exact numerator and denominator and derive an overflow-safe bounded whole
+percent; a zero total is `unknown`, and a reported numerator beyond its total
+is `partial` while retaining both reported numbers. Histories retain only their
+configured newest points; bars, tabs, and legends retain configured bounded
+prefixes; scrollbar geometry is reconciled by the model-owned bounded scroll
+contract. Available, active, empty, unknown, unavailable, partial, successful,
+failed, and cancelled terminal states carry stable marker-plus-word text.
+
+Ratatui gauges, line meters, history charts, bar charts, tabs, legends, and
+scrollbars are render-only adapters over those projections. Every determinate
+gauge or meter includes `current/total (percent%)`; histories include a current
+text value or exact state, bars include numeric values, selected tabs retain
+brackets, legends pair label and value, and scrollbars include a numeric range.
+ASCII uses `=`, `-`, textual chart levels, `#`, `|`, and ASCII state markers.
+Reduced motion replaces changing activity punctuation with stable `active`;
+no-color uses attributes supplied by the complete semantic theme catalog.
+When space cannot retain both state and detail, the complete state word wins.
+
 Determinate build, parse/runqueue, task, job, resource, and sstate progress
 always includes exact numeric or numerator/denominator text. Unknown progress
 uses an indeterminate text/activity state and never a zero-percent gauge.

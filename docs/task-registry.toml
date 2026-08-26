@@ -6069,12 +6069,12 @@ notes = "A pure model-owned BoundedScroll contract now normalizes row/page/first
 id = "UX-WIDGET-PRIMITIVES-001"
 milestone = "M21"
 title = "Build shared gauges meters charts tabs and scrollbar primitives"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 709
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo test -p yoctui-ui ux_widget_primitives", "cargo test -p yoctui-model ux_widget_projection"]
-notes = "Create render-only semantic wrappers for determinate gauges/meters, histories, tabs, charts, bars, scrollbars, legends, fallbacks, and responsive layout without adding a second state authority."
+notes = "Pure model projections now bound fractions, histories, bars, tabs, legends, and scrolling while preserving explicit available, active, empty, unknown, unavailable, partial, and terminal meaning. Render-only Ratatui adapters provide exact-text gauges/meters, history charts, bar charts, bracketed tabs, textual legends, and transient projected scrollbars. Semantic theme roles cover every primitive; Unicode, ASCII, no-color, high-contrast, reduced-motion, large/empty/Unicode inputs, and narrow bounds have focused model and TestBackend coverage."
 
 [[task]]
 id = "UX-PROGRESS-001"
