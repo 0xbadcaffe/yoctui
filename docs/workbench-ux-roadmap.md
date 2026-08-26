@@ -305,17 +305,17 @@ Progress counts required registry tasks, including the parent completion gate.
 
 | Phase | Scope | Task IDs | Progress |
 |---|---|---|---:|
-| 0 | Research, specification, dependency/license policy | `UX-SPEC-001`, `UX-LICENSE-001` | 1/2 |
+| 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 1/3 |
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 0/6 |
 | 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 0/10 |
 | 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 0/5 |
 | 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **1/37 (2.7%)** |
+| **M21 total** | | | **1/38 (2.6%)** |
 
-The historical product registry was 540/540 before M21. Registering these 37
-tasks makes overall required progress **541/577 (93.8%)** while honestly showing
+The historical product registry was 540/540 before M21. Registering these 38
+tasks makes overall required progress **541/578 (93.6%)** while honestly showing
 that the new milestone has only its research/specification task complete.
 
 ## Test strategy
@@ -346,7 +346,7 @@ dimensions, hashes, anchors, and lossless format.
 
 M21 is complete only when:
 
-- all 37 required M21 tasks are `DONE` and `./scripts/verify-roadmap.sh` passes;
+- all 38 required M21 tasks are `DONE` and `./scripts/verify-roadmap.sh` passes;
 - the action catalog is the sole authority for menus, palette, Help, footer,
   configurable bindings, and action availability;
 - keyboard-only, mouse, no-color, ASCII, reduced-motion, narrow, and terminal

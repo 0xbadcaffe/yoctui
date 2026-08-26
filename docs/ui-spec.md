@@ -584,6 +584,33 @@ items are adapted until authoritative support exists:
 These omissions are honest unavailable behavior, not missing permission to
 invent equivalent values.
 
+#### M21 concept-screen acceptance
+
+The six PNGs under `docs/design/m21/concepts` define reviewed visual direction,
+not terminal pixels. A production-renderer acceptance catalog covers the same
+six scenario identities at the canonical `160x50` size: idle Dashboard, active
+Tasks, failed Errors, Images/rootfs composition, editor/application menu, and
+terminal sessions. Each catalog fixture is assembled only from typed
+`yoctui-model` state, uses the fixed `19:28:27` clock, calls the public
+`yoctui_ui::render_at` path, checks scenario-specific semantic anchors, and
+serializes every resulting Ratatui cell symbol and style into a reviewed
+golden.
+
+The catalog is also an executable gap ledger. A scene may initially retain the
+closest truthful existing Yoctui projection, but its manifest must name every
+missing concept capability and the exact incomplete registry task that owns
+it. Verification fails when a gap references an unknown task, when a completed
+task still owns a declared gap, or when a scene lacks its real-renderer golden.
+Implementing tasks update the fixture, anchors, gap ledger, and reviewed golden
+in the same commit. This lets the baseline pass without misrepresenting a
+placeholder as completed concept parity.
+
+Generated PNGs are never decoded or pixel-compared by the Rust UI tests. Their
+hashes protect design provenance only. Exact regression authority remains the
+production Ratatui cell buffer; a later pinned-font rasterizer may produce
+deterministic PNGs from that buffer. Live PTY capture remains separate evidence
+for terminal lifecycle and escape delivery.
+
 #### Reusable rendering primitives
 
 All workspaces use the shared render-only primitive vocabulary. A pane shell

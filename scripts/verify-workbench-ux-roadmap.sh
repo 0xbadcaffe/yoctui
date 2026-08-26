@@ -67,15 +67,33 @@ for crate, license_expression in third_party.items():
         raise SystemExit(f"workbench UX roadmap has unexpected license for {crate}: {row}")
 
 m21 = [task for task in registry.get("task", []) if task.get("milestone") == "M21"]
-if len(m21) != 37:
-    raise SystemExit(f"M21 must contain exactly 37 required tasks, found {len(m21)}")
+if len(m21) != 38:
+    raise SystemExit(f"M21 must contain exactly 38 required tasks, found {len(m21)}")
 if any(task.get("required") is not True for task in m21):
     raise SystemExit("every M21 task must be required")
 done = [task for task in m21 if task.get("status") == "DONE"]
-if [task["id"] for task in done] != ["UX-SPEC-001"]:
-    raise SystemExit(f"initial M21 progress must be UX-SPEC-001 only, found {done}")
-if "**ID:** UX-LICENSE-001" not in current or "**Status:** NOT_STARTED" not in current:
-    raise SystemExit("current task must be the not-started M21 license gate")
+if not any(task["id"] == "UX-SPEC-001" and task["status"] == "DONE" for task in m21):
+    raise SystemExit("UX-SPEC-001 must remain complete")
+
+all_tasks = registry.get("task", [])
+by_id = {task["id"]: task for task in all_tasks}
+eligible = sorted(
+    (
+        task
+        for task in m21
+        if task["status"] != "DONE"
+        and all(by_id[dependency]["status"] == "DONE" for dependency in task.get("depends_on", []))
+    ),
+    key=lambda task: task["priority"],
+)
+current_match = re.search(r"\*\*ID:\*\*\s*([A-Z0-9-]+)", current)
+if not current_match:
+    raise SystemExit("current task has no task ID")
+current_id = current_match.group(1)
+if eligible and current_id != eligible[0]["id"]:
+    raise SystemExit(
+        f"current M21 task must be highest-priority eligible {eligible[0]['id']}, found {current_id}"
+    )
 
 required_contracts = {
     "docs/ui-spec.md": (ui_spec, "## 33. One-stop workbench usability contract"),
@@ -87,10 +105,17 @@ for path, (text, marker) in required_contracts.items():
     if marker not in text:
         raise SystemExit(f"{path} missing M21 contract marker: {marker}")
 
-if "**M21 total** | | | **1/37 (2.7%)**" not in roadmap:
+done_count = len(done)
+m21_percent = 100 * done_count / len(m21)
+overall_done = sum(task.get("status") == "DONE" for task in all_tasks)
+overall_percent = 100 * overall_done / len(all_tasks)
+if f"**M21 total** | | | **{done_count}/{len(m21)} ({m21_percent:.1f}%)**" not in roadmap:
     raise SystemExit("roadmap M21 progress does not match registry")
-if "**541/577 (93.8%)**" not in roadmap:
+if f"**{overall_done}/{len(all_tasks)} ({overall_percent:.1f}%)**" not in roadmap:
     raise SystemExit("roadmap overall progress does not match registry")
 
-print("workbench UX roadmap valid: 37 M21 tasks; 1 done; current UX-LICENSE-001")
+print(
+    f"workbench UX roadmap valid: {len(m21)} M21 tasks; "
+    f"{done_count} done; current {current_id}"
+)
 PY

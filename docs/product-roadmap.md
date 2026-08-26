@@ -471,7 +471,7 @@ Capabilities:
 
 Exit criteria:
 
-- all 37 required M21 tasks are `DONE`
+- all 38 required M21 tasks are `DONE`
 - menus, Help, palette, footer, and configured bindings cannot drift
 - all visual progress and composition values are typed and text-equivalent
 - terminal, editor, rootfs, log, focus, scroll, mouse, and keyboard flows pass

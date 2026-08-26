@@ -2112,6 +2112,16 @@ same rendering path and cannot branch on fixture identity. The existing PTY
 checks remain integration evidence for terminal ownership and escape delivery;
 they do not replace the deterministic visual gate.
 
+M21 concept-screen validation extends that same boundary rather than adding a
+mock renderer. Six typed fixtures call the public production `render_at` entry
+point at `160x50`, assert reviewed semantic anchors, and serialize the complete
+Ratatui buffer. The concept manifest owns only scenario identity, provenance,
+implementation-task mapping, and open-gap declarations. It cannot supply
+runtime values or styles. Verification cross-checks open gaps against the task
+registry and rejects a gap after its owning task is complete. AI-generated PNGs
+remain human design references and are not inputs to UI rendering or exact
+regression comparison.
+
 Release profiling uses a deterministic CPU-bound workbench workload that
 drives the production model reducer and Ratatui renderer at the canonical
 terminal size. The workload is a benchmark target rather than a backend
