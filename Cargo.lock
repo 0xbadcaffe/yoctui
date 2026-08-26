@@ -1864,6 +1864,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "tui-piechart"
+version = "1.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "80333ebf441bf1bf04055494abdd345ef90c6e74b3ada1349c6239cd5525bf9a"
+dependencies = [
+ "ratatui",
+]
+
+[[package]]
 name = "typenum"
 version = "1.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2264,6 +2273,7 @@ version = "0.1.0"
 dependencies = [
  "ratatui",
  "throbber-widgets-tui",
+ "tui-piechart",
  "yoctui-app",
  "yoctui-model",
 ]

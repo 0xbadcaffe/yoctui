@@ -98,11 +98,9 @@ workspace = "Images / Rootfs composition"
 state = "current installed-package manifest; BitBake idle"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt"
-real_yoctui_anchors = ["Images", "root filesystem", "Selected artifact", "core-image-minimal", "SPDX/SBOM", "19:28:27"]
+real_yoctui_anchors = ["Images · Rootfs composition", "Installed-package authority", "412 packages", "126400000 exact bytes", "Other", "Filesystem tree: partial", "19:28:27"]
 implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001"]
-open_gaps = [
-  { task = "UX-ROOTFS-UI-001", description = "add composition tabs, pie or bar view, exact table, checkboxes, and drill-down tree" },
-]
+open_gaps = []
 anchors = [
   "installed-packages and filesystem-tree authorities are separate",
   "composition chart is paired with an exact sortable table",

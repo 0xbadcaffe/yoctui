@@ -164,10 +164,10 @@ default_features = false
 enabled_features = []
 transitive_closure = 47
 transitive_sha256 = "d04127c93dff6db900080ca76b050bd317ce1d0fc0d1e584817a42b331f3c732"
-decision = "defer"
-admitted = false
+decision = "adopt"
+admitted = true
 owner_task = "UX-ROOTFS-UI-001"
-reason = "A pie is secondary to exact package/byte tables and requires small-slice grouping, labels, no-color equivalence, and responsive evidence."
+reason = "Admitted only for the wide rootfs package-composition view after exact table pairing, bounded Other grouping, labeled slices, narrow bar/table fallback, and monochrome text parity were implemented. The pinned MIT crate matches Ratatui 0.30 with default features disabled."
 
 [[candidate]]
 name = "tui-scrollview"

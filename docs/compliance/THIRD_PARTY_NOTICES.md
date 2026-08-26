@@ -2,9 +2,9 @@
 
 This file is generated from the exact `Cargo.lock` graph. It inventories every non-workspace package, records the byte-authoritative SHA-256 of every packaged root-level license, notice, copying, and copyright file, and displays a Markdown-safe normalization of its content (UTF-8 text directly; non-UTF-8 data as hexadecimal). Packages with no packaged notice file remain listed with their manifest SPDX expression and authorship metadata in the SBOM.
 
-- Cargo.lock SHA-256: `9f8eee6af2d6e9e8d3f3a71da4a36f252458f6e6e87144c56bafd17b91aebaab`
-- Third-party packages: 237
-- Unique packaged notice materials: 157
+- Cargo.lock SHA-256: `6baa85a52fa82b60c1e6247d0f560613c5af5a2328894c8828d13265c1b91f89`
+- Third-party packages: 238
+- Unique packaged notice materials: 158
 
 ## Package inventory
 
@@ -209,6 +209,7 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `tracing-core 0.1.36` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a` | [`898b1ae9821e`](#notice-898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1) |
 | `tracing-log 0.2.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3` | [`898b1ae9821e`](#notice-898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1) |
 | `tracing-subscriber 0.3.23` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `cb7f578e5945fb242538965c2d0b04418d38ec25c79d160cd279bf0731c8d319` | [`898b1ae9821e`](#notice-898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1) |
+| `tui-piechart 1.0.2` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `80333ebf441bf1bf04055494abdd345ef90c6e74b3ada1349c6239cd5525bf9a` | [`68f20ab30fee`](#notice-68f20ab30fee99acb186f501c5e7bee63dc7ad6fd5232192cf2389e219c1522f) |
 | `typenum 1.20.1` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `b6f5e870be6c3b371b77fe0ee0bafb859fa4964b4404c27de1d380043c4dda20` | [`516b24e051bf`](#notice-516b24e051bf5630880ebbd55c40a25ce9552ebaf8970a53e8976eb70e522406), [`a825bd853ab7`](#notice-a825bd853ab71619a4923d7b4311221427848070ff44d990da39b0b274c1683f), [`db11fec99467`](#notice-db11fec9946737df39ca3898d9cd8c10ec6f6c3a884a6802b0ad0b81b4e8f23a) |
 | `ucd-trie 0.1.7` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `2896d95c02a80c6d6a5d6e953d479f5ddf2dfdb6a244441010e373ac0fb88971` | [`0f96a83840e1`](#notice-0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2) |
 | `unarray 0.1.4` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `eaea85b334db583fe3274d12b4cd1880032beab409c0d774be044d4480ab9a94` | [`002c2696d92b`](#notice-002c2696d92b5c8cf956c11072baa58eaf9f6ade995c031ea635c6a1ee342ad1), [`c71d239df917`](#notice-c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4) |
@@ -5490,6 +5491,37 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
+```
+
+<a id="notice-68f20ab30fee99acb186f501c5e7bee63dc7ad6fd5232192cf2389e219c1522f"></a>
+### SHA-256 `68f20ab30fee99acb186f501c5e7bee63dc7ad6fd5232192cf2389e219c1522f`
+
+Packaged filenames: `LICENSE`
+
+Used by: `tui-piechart 1.0.2`
+
+```text
+MIT License
+
+Copyright (c) 2025 Sorin Albu-Irimies
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 ```
 
 <a id="notice-6df43f6f4b5d4587f3d8d71e45532c688fd168afa5fe89d571cb32fa09c4ef51"></a>

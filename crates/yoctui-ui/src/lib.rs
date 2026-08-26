@@ -30,6 +30,7 @@ use std::{
     collections::HashMap,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+use tui_piechart::{LegendPosition, PieChart, PieSlice};
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
     BuildStatus, CompatibilityUiAuthorityStatus, CompatibilityUiCapabilityRow,
@@ -37,18 +38,19 @@ use yoctui_model::{
     DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
     DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
     Dialog, FUNCTION_SHORTCUTS, FocusTarget, FunctionKey, FunctionShortcutRoute, GitFileState,
-    ImageArtifactField, ImageArtifactInventoryState, InternalLogLevel, JobHistoryRowRef,
-    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView, MaintenanceCapability,
-    MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
-    MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
-    MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
-    MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, NAVIGATOR_GROUPS,
-    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
-    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
-    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
+    ImageArtifactField, ImageArtifactInventoryState, ImagesView, InternalLogLevel,
+    JobHistoryRowRef, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView,
+    MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
+    MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
+    MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
+    MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
+    NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity, PackageInventoryState,
+    PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog,
+    QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
     QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
     QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
-    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity, Screen,
+    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity,
+    RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
     SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
     SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
@@ -780,9 +782,17 @@ fn footer_shortcuts(app: &App) -> String {
         Screen::Packages => {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }
-        Screen::Images => {
-            "↑/↓ select | Q QEMU | W create Wic | D write device | x cancel | [/] output | O open output | / search | R refresh | c scan | b build | i image | o artifact | m manifest | l license | s SPDX | w Wic"
-        }
+        Screen::Images => match app.images_view {
+            ImagesView::Artifacts => {
+                "↑/↓ select | Enter/p rootfs | Tab view | Q QEMU | W create Wic | D write device | x cancel | [/] output | O open output | / search | R refresh | b build | o artifact | m manifest | l license | s SPDX | w Wic"
+            }
+            ImagesView::RootfsPackages => {
+                "h/l group | j/k package | PgUp/PgDn page | r refresh | Tab filesystem | Shift+Tab artifacts"
+            }
+            ImagesView::RootfsFilesystem => {
+                "j/k select path | PgUp/PgDn page | r refresh | Tab artifacts | Shift+Tab packages"
+            }
+        },
         Screen::Sdk => {
             "↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel"
         }
@@ -862,7 +872,16 @@ fn footer_shortcuts(app: &App) -> String {
 
 fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
     if app.screen == Screen::Images && width <= 129 {
-        "R refresh | ↑↓ select | Q QEMU | W Wic | D write | x cancel | O open".into()
+        match app.images_view {
+            ImagesView::Artifacts => {
+                "↑↓ select | R refresh | Enter/p rootfs | Tab view | Q QEMU | W Wic | D write"
+                    .into()
+            }
+            ImagesView::RootfsPackages => {
+                "h/l group | j/k package | PgUp/PgDn | r refresh | Tab view".into()
+            }
+            ImagesView::RootfsFilesystem => "j/k path | PgUp/PgDn | r refresh | Tab view".into(),
+        }
     } else if app.screen == Screen::Sdk && width <= 90 {
         "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel".into()
     } else if app.screen == Screen::Testing && width <= 90 {
@@ -10331,6 +10350,36 @@ fn wic_cancellation_confirmation(
 }
 
 fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    match app.images_view {
+        ImagesView::Artifacts => image_artifacts_workspace(frame, app, area),
+        ImagesView::RootfsPackages => rootfs_packages_workspace(frame, app, area),
+        ImagesView::RootfsFilesystem => rootfs_filesystem_workspace(frame, app, area),
+    }
+}
+
+fn images_tabs_line(app: &App) -> Line<'static> {
+    let tabs = ImagesView::ALL
+        .into_iter()
+        .enumerate()
+        .flat_map(|(index, view)| {
+            let style = if app.images_view == view {
+                selected_style(app, true)
+            } else {
+                Style::default()
+            };
+            [
+                Span::styled(format!(" {} {} ", index + 1, view.label()), style),
+                Span::raw(if index + 1 == ImagesView::ALL.len() {
+                    "  Tab/Shift-Tab switches"
+                } else {
+                    " │ "
+                }),
+            ]
+        });
+    Line::from(tabs.collect::<Vec<_>>())
+}
+
+fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let recipe_count = app
         .workspace
         .recipes
@@ -10346,10 +10395,13 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let filtered_selection = filtered
         .iter()
         .position(|artifact| app.image_artifact_selection.as_ref() == Some(&artifact.identity));
-    let mut lines = vec![Line::from(format!(
-        "MACHINE {machine} | build target {} | {recipe_count} image recipe target(s)",
-        app.build.target.as_deref().unwrap_or("not selected")
-    ))];
+    let mut lines = vec![
+        images_tabs_line(app),
+        Line::from(format!(
+            "MACHINE {machine} | build target {} | {recipe_count} image recipe target(s)",
+            app.build.target.as_deref().unwrap_or("not selected")
+        )),
+    ];
     let recipe_targets = app
         .workspace
         .recipes
@@ -10447,7 +10499,336 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+fn rootfs_state_lines(app: &App) -> Option<Vec<Line<'static>>> {
+    let lines = match &app.rootfs_composition {
+        RootfsCompositionState::NotLoaded => vec![
+            Line::from("Rootfs composition is not loaded."),
+            Line::from("Select an artifact, then press p or Enter."),
+        ],
+        RootfsCompositionState::Loading { request } => vec![Line::from(format!(
+            "Loading rootfs composition for {}…",
+            request.image.image
+        ))],
+        RootfsCompositionState::Unavailable { reason, .. } => vec![
+            Line::from("Rootfs composition unavailable."),
+            Line::from(reason.clone()),
+        ],
+        RootfsCompositionState::Failed { message, .. } => vec![
+            Line::from("Rootfs composition failed."),
+            Line::from(message.clone()),
+        ],
+        RootfsCompositionState::AvailableEmpty { request, .. } => vec![
+            Line::from(format!(
+                "Rootfs composition for {} is empty.",
+                request.image.image
+            )),
+            Line::from("No installed packages or filesystem entries were reported."),
+        ],
+        RootfsCompositionState::Available { .. } | RootfsCompositionState::Partial { .. } => {
+            return None;
+        }
+    };
+    Some(lines)
+}
+
+fn rootfs_workspace_shell(frame: &mut Frame, app: &App, area: Rect) -> Rect {
+    let block = pane_block(
+        app,
+        "Images · Rootfs composition",
+        app.focus == FocusTarget::Workspace,
+    );
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.height == 0 {
+        return inner;
+    }
+    let tabs = Rect::new(inner.x, inner.y, inner.width, 1);
+    frame.render_widget(Paragraph::new(images_tabs_line(app)), tabs);
+    Rect::new(
+        inner.x,
+        inner.y.saturating_add(1),
+        inner.width,
+        inner.height.saturating_sub(1),
+    )
+}
+
+fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let body = rootfs_workspace_shell(frame, app, area);
+    if body.height == 0 {
+        return;
+    }
+    if let Some(lines) = rootfs_state_lines(app) {
+        frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
+        return;
+    }
+    let Some(composition) = app.rootfs_composition.composition() else {
+        return;
+    };
+    let Some(inventory) = composition.package_inventory() else {
+        let reason = match &composition.installed_packages {
+            yoctui_model::RootfsAuthority::Unavailable { reason } => reason.as_str(),
+            _ => "installed-package authority is unavailable",
+        };
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Installed packages unavailable\n{reason}\n\nFilesystem evidence remains separate; press Tab."
+            ))
+            .wrap(Wrap { trim: false }),
+            body,
+        );
+        return;
+    };
+    let groups = inventory.grouped(8);
+    let total = composition.totals().0.installed_package_bytes;
+    let can_render_pie = app.color_enabled
+        && body.width >= 70
+        && body.height >= 18
+        && app.theme != Theme::Monochrome
+        && total > 0
+        && !groups.is_empty();
+    if can_render_pie {
+        let columns = Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)])
+            .split(body);
+        let labels = groups
+            .iter()
+            .map(|group| rootfs_group_label(&group.identity))
+            .collect::<Vec<_>>();
+        let colors = [
+            Color::Cyan,
+            Color::Green,
+            Color::Yellow,
+            Color::Magenta,
+            Color::Blue,
+            Color::Red,
+            Color::LightCyan,
+            Color::Gray,
+        ];
+        let slices = groups
+            .iter()
+            .zip(labels.iter())
+            .enumerate()
+            .map(|(index, (group, label))| {
+                PieSlice::new(
+                    label,
+                    group.installed_size_bytes as f64,
+                    colors[index % colors.len()],
+                )
+            })
+            .collect();
+        frame.render_widget(
+            PieChart::new(slices)
+                .block(Block::bordered().title("Installed bytes · visual summary"))
+                .show_percentages(true)
+                .show_legend(true)
+                .legend_position(LegendPosition::Bottom),
+            columns[0],
+        );
+        render_rootfs_package_table(frame, app, inventory, &groups, total, columns[1]);
+    } else {
+        render_rootfs_package_table(frame, app, inventory, &groups, total, body);
+    }
+}
+
+fn rootfs_group_label(identity: &RootfsGroupIdentity) -> String {
+    match identity {
+        RootfsGroupIdentity::Category(category) => category.clone(),
+        RootfsGroupIdentity::Other => "Other".into(),
+    }
+}
+
+fn render_rootfs_package_table(
+    frame: &mut Frame,
+    app: &App,
+    inventory: &yoctui_model::RootfsPackageInventory,
+    groups: &[yoctui_model::RootfsGroupRow],
+    total: u64,
+    area: Rect,
+) {
+    let mut lines = vec![
+        Line::from(format!(
+            "Installed-package authority · {} packages · {} exact bytes",
+            inventory.packages.len(),
+            total
+        )),
+        Line::from("h/l group · j/k package · r refresh · Tab filesystem"),
+        Line::from("Category                     Packages   Exact bytes        Percent"),
+    ];
+    for group in groups {
+        let selected = app.rootfs_group_selection.as_ref() == Some(&group.identity);
+        let bar_width = usize::from(area.width.saturating_sub(66).min(20));
+        let filled = usize::from(group.percent_basis_points) * bar_width / 10_000;
+        let bar = if bar_width == 0 {
+            String::new()
+        } else {
+            format!(" {}{}", "#".repeat(filled), ".".repeat(bar_width - filled))
+        };
+        lines.push(
+            Line::from(format!(
+                "{:<28} {:>8} {:>13} {:>6}.{:02}%{}",
+                rootfs_group_label(&group.identity),
+                group.package_count,
+                group.installed_size_bytes,
+                group.percent_basis_points / 100,
+                group.percent_basis_points % 100,
+                bar
+            ))
+            .style(selected_style(app, selected)),
+        );
+    }
+    let selected_group = app
+        .rootfs_group_selection
+        .as_ref()
+        .and_then(|identity| groups.iter().find(|group| &group.identity == identity));
+    lines.push(Line::from(""));
+    if let Some(group) = selected_group {
+        let selected_position = app
+            .rootfs_package_selection
+            .as_ref()
+            .and_then(|selected| group.members.iter().position(|member| member == selected))
+            .unwrap_or(0);
+        lines.push(Line::from(format!(
+            "Packages in {} · {} of {} · Other membership remains inspectable",
+            rootfs_group_label(&group.identity),
+            selected_position.saturating_add(1).min(group.members.len()),
+            group.members.len()
+        )));
+        lines.push(Line::from(
+            "Package                       Recipe                 Exact bytes   Files",
+        ));
+        let remaining = usize::from(area.height).saturating_sub(lines.len()).max(1);
+        let start = selected_position
+            .saturating_sub(remaining / 2)
+            .min(group.members.len().saturating_sub(remaining));
+        for identity in group.members.iter().skip(start).take(remaining) {
+            if let Some(package) = inventory
+                .packages
+                .iter()
+                .find(|package| &package.identity == identity)
+            {
+                let selected = app.rootfs_package_selection.as_ref() == Some(identity);
+                lines.push(
+                    Line::from(format!(
+                        "{:<29} {:<22} {:>11} {:>7}",
+                        package.identity.name,
+                        package.recipe.as_deref().unwrap_or("unavailable"),
+                        package.installed_size_bytes,
+                        package.file_count
+                    ))
+                    .style(selected_style(app, selected)),
+                );
+            }
+        }
+    } else {
+        lines.push(Line::from("No installed-package groups were reported."));
+    }
+    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), area);
+}
+
+fn rootfs_filesystem_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let body = rootfs_workspace_shell(frame, app, area);
+    if body.height == 0 {
+        return;
+    }
+    if let Some(lines) = rootfs_state_lines(app) {
+        frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
+        return;
+    }
+    let Some(composition) = app.rootfs_composition.composition() else {
+        return;
+    };
+    let Some(tree) = composition.filesystem_tree() else {
+        let reason = match &composition.filesystem_tree {
+            yoctui_model::RootfsAuthority::Unavailable { reason } => reason.as_str(),
+            _ => "filesystem authority is unavailable",
+        };
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Filesystem tree unavailable\n{reason}\n\nInstalled-package evidence remains separate; press Shift-Tab."
+            ))
+            .wrap(Wrap { trim: false }),
+            body,
+        );
+        return;
+    };
+    let totals = composition.totals().0;
+    let selected = app
+        .rootfs_entry_selection
+        .as_ref()
+        .and_then(|identity| {
+            tree.entries
+                .iter()
+                .position(|entry| &entry.identity == identity)
+        })
+        .unwrap_or(0);
+    let header_rows = 4_usize;
+    let visible = usize::from(body.height).saturating_sub(header_rows).max(1);
+    let start = selected
+        .saturating_sub(visible / 2)
+        .min(tree.entries.len().saturating_sub(visible));
+    let mut lines = vec![
+        Line::from(format!(
+            "Filesystem authority · {} entries · {} exact bytes",
+            tree.entries.len(),
+            totals.filesystem_bytes
+        )),
+        Line::from(format!(
+            "files {} · dirs {} · symlinks {} · special {} · j/k navigate · r refresh",
+            totals.files, totals.directories, totals.symlinks, totals.other
+        )),
+        Line::from(format!(
+            "Showing {}–{} of {} · package ownership is independent authority",
+            start.saturating_add(1).min(tree.entries.len()),
+            start.saturating_add(visible).min(tree.entries.len()),
+            tree.entries.len()
+        )),
+        Line::from(
+            "Logical path                                      Kind          Exact bytes   Package",
+        ),
+    ];
+    for entry in tree.entries.iter().skip(start).take(visible) {
+        let is_selected = app.rootfs_entry_selection.as_ref() == Some(&entry.identity);
+        let indent = "  ".repeat(entry.identity.depth().saturating_sub(1).min(12));
+        let branch = if app.theme == Theme::Monochrome {
+            "|-"
+        } else {
+            "├─"
+        };
+        let name = if entry.identity.0 == std::path::Path::new("/") {
+            "/".into()
+        } else {
+            entry
+                .identity
+                .0
+                .file_name()
+                .map_or_else(|| "?".into(), |name| name.to_string_lossy().into_owned())
+        };
+        let kind = match entry.kind {
+            RootfsEntryKind::Directory => "directory",
+            RootfsEntryKind::RegularFile => "file",
+            RootfsEntryKind::Symlink => "symlink",
+            RootfsEntryKind::Other => "special",
+        };
+        lines.push(
+            Line::from(format!(
+                "{:<49} {:<12} {:>11}   {}",
+                format!("{indent}{branch} {name}"),
+                kind,
+                entry.size_bytes,
+                entry
+                    .package
+                    .as_ref()
+                    .map_or("unavailable", |value| value.name.as_str())
+            ))
+            .style(selected_style(app, is_selected)),
+        );
+    }
+    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
+}
+
 fn image_artifact_inspector_text(app: &App) -> String {
+    if app.images_view != ImagesView::Artifacts {
+        return rootfs_inspector_text(app);
+    }
     let paths = |field: &ImageArtifactField<Vec<std::path::PathBuf>>| {
         field.available().map_or_else(
             || "unavailable".into(),
@@ -10535,6 +10916,124 @@ fn image_artifact_inspector_text(app: &App) -> String {
         qemu_session_text(app),
         wic_inspector_text(app),
     )
+}
+
+fn rootfs_inspector_text(app: &App) -> String {
+    let state = match &app.rootfs_composition {
+        RootfsCompositionState::NotLoaded => "not loaded".into(),
+        RootfsCompositionState::Loading { request } => {
+            format!("loading generation {}", request.generation)
+        }
+        RootfsCompositionState::AvailableEmpty { .. } => "available empty".into(),
+        RootfsCompositionState::Available { .. } => "available".into(),
+        RootfsCompositionState::Partial { limitations, .. } => {
+            format!("partial · {} limitation(s)", limitations.len())
+        }
+        RootfsCompositionState::Unavailable { reason, .. } => format!("unavailable · {reason}"),
+        RootfsCompositionState::Failed { message, .. } => format!("failed · {message}"),
+    };
+    let Some(composition) = app.rootfs_composition.composition() else {
+        return format!(
+            "Rootfs composition\nView: {}\nState: {state}\n\nPackage and filesystem authority are reported separately.",
+            app.images_view.label()
+        );
+    };
+    let (totals, overflowed) = composition.totals();
+    let authority = format!(
+        "Installed packages: {}\nFilesystem tree: {}",
+        rootfs_authority_label(&composition.installed_packages),
+        rootfs_authority_label(&composition.filesystem_tree)
+    );
+    let selected = match app.images_view {
+        ImagesView::Artifacts => String::new(),
+        ImagesView::RootfsPackages => {
+            let inventory = composition.package_inventory();
+            let package = app.rootfs_package_selection.as_ref().and_then(|identity| {
+                inventory.and_then(|inventory| {
+                    inventory
+                        .packages
+                        .iter()
+                        .find(|package| &package.identity == identity)
+                })
+            });
+            let group = app
+                .rootfs_group_selection
+                .as_ref()
+                .map_or_else(|| "none".into(), rootfs_group_label);
+            package.map_or_else(
+                || format!("Selected group: {group}\nSelected package: none"),
+                |package| {
+                    format!(
+                        "Selected group: {group}\nSelected package: {}\nRecipe: {}\nCategory: {}\nInstalled bytes: {}\nReported files: {}",
+                        package.identity.name,
+                        package.recipe.as_deref().unwrap_or("unavailable"),
+                        package.category,
+                        package.installed_size_bytes,
+                        package.file_count
+                    )
+                },
+            )
+        }
+        ImagesView::RootfsFilesystem => {
+            let entry = app.rootfs_entry_selection.as_ref().and_then(|identity| {
+                composition.filesystem_tree().and_then(|tree| {
+                    tree.entries
+                        .iter()
+                        .find(|entry| &entry.identity == identity)
+                })
+            });
+            entry.map_or_else(
+                || "Selected path: none".into(),
+                |entry| {
+                    format!(
+                        "Selected path: {}\nKind: {:?}\nExact bytes: {}\nPackage: {}",
+                        entry.identity.0.display(),
+                        entry.kind,
+                        entry.size_bytes,
+                        entry
+                            .package
+                            .as_ref()
+                            .map_or("unavailable", |package| package.name.as_str())
+                    )
+                },
+            )
+        }
+    };
+    let limitations = match &app.rootfs_composition {
+        RootfsCompositionState::Partial { limitations, .. } => limitations
+            .iter()
+            .map(|value| format!("! {value}"))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        _ => "none".into(),
+    };
+    format!(
+        "Rootfs composition\nView: {}\nState: {state}\nImage: {}\nPath: {}\n{authority}\n\nExact totals\nPackage bytes: {}\nPackage files: {}\nFilesystem bytes: {}\nEntries: {} (files {} · dirs {} · symlinks {} · special {})\nOverflow: {}\n\n{selected}\n\nLimitations\n{limitations}",
+        app.images_view.label(),
+        composition.image.image,
+        composition.image.path.display(),
+        totals.installed_package_bytes,
+        totals.package_reported_files,
+        totals.filesystem_bytes,
+        totals.entries,
+        totals.files,
+        totals.directories,
+        totals.symlinks,
+        totals.other,
+        overflowed
+    )
+}
+
+fn rootfs_authority_label<T>(authority: &yoctui_model::RootfsAuthority<T>) -> String {
+    match authority {
+        yoctui_model::RootfsAuthority::Available(_) => "available".into(),
+        yoctui_model::RootfsAuthority::Partial { limitations, .. } => {
+            format!("partial · {} limitation(s)", limitations.len())
+        }
+        yoctui_model::RootfsAuthority::Unavailable { reason } => {
+            format!("unavailable · {reason}")
+        }
+    }
 }
 
 fn qemu_capability_text(app: &App) -> String {
@@ -16321,6 +16820,7 @@ mod tests {
             )]),
             wic_files: ImageArtifactField::Available(Vec::new()),
         };
+        let rootfs_image = artifact.identity.clone();
         app.image_artifact_selection = Some(artifact.identity.clone());
         app.image_artifacts = ImageArtifactInventoryState::Available {
             request: yoctui_model::ImageArtifactRequest {
@@ -16335,6 +16835,108 @@ mod tests {
                 artifacts: vec![artifact],
             },
         };
+        let category_specs = [
+            ("base system", 90_u64, 46_800_000_u64),
+            ("libraries", 110, 34_100_000),
+            ("kernel and modules", 50, 18_900_000),
+            ("locales", 70, 11_400_000),
+            ("utilities", 70, 8_800_000),
+            ("Other", 22, 6_400_000),
+        ];
+        let mut packages = Vec::new();
+        for (category, count, bytes) in category_specs {
+            for index in 0..count {
+                packages.push(yoctui_model::RootfsInstalledPackage {
+                    identity: PackageIdentity::new(format!(
+                        "{}-{index:03}",
+                        category.replace(' ', "-")
+                    )),
+                    recipe: Some(category.replace(' ', "-")),
+                    category: category.into(),
+                    installed_size_bytes: bytes / count + u64::from(index < bytes % count),
+                    file_count: 3 + index % 19,
+                });
+            }
+        }
+        let selected_package = packages[0].identity.clone();
+        let entries = vec![
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/bin".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/bin/busybox".into()),
+                kind: RootfsEntryKind::RegularFile,
+                size_bytes: 1_198_080,
+                package: Some(selected_package.clone()),
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/bin/sh".into()),
+                kind: RootfsEntryKind::Symlink,
+                size_bytes: 7,
+                package: Some(selected_package.clone()),
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/etc".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/etc/os-release".into()),
+                kind: RootfsEntryKind::RegularFile,
+                size_bytes: 218,
+                package: Some(selected_package.clone()),
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/usr".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/usr/lib".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/dev/console".into()),
+                kind: RootfsEntryKind::Other,
+                size_bytes: 0,
+                package: None,
+            },
+        ];
+        let request = yoctui_model::RootfsCompositionRequest {
+            generation: 1,
+            image: rootfs_image.clone(),
+        };
+        app.rootfs_composition = RootfsCompositionState::Partial {
+            request,
+            composition: yoctui_model::RootfsComposition {
+                image: rootfs_image,
+                installed_packages: yoctui_model::RootfsAuthority::Available(
+                    yoctui_model::RootfsPackageInventory { packages },
+                ),
+                filesystem_tree: yoctui_model::RootfsAuthority::Partial {
+                    value: yoctui_model::RootfsFilesystemTree { entries },
+                    limitations: vec!["package ownership is partial".into()],
+                },
+            },
+            limitations: vec!["package ownership is partial".into()],
+        };
+        app.images_view = ImagesView::RootfsPackages;
+        app.rootfs_group_selection = Some(RootfsGroupIdentity::Category("base system".into()));
+        app.rootfs_package_selection = Some(selected_package);
+        app.rootfs_entry_selection = Some(yoctui_model::RootfsPathIdentity("/bin/busybox".into()));
         app
     }
 
@@ -19467,6 +20069,159 @@ mod tests {
             message: "DEPLOY_DIR_IMAGE is unavailable".into(),
         };
         assert!(rendered_text(&app, 100, 25).contains("Artifact scan failed"));
+    }
+
+    fn ux_rootfs_ui_app() -> App {
+        let mut app = App::new(20, 20_000);
+        app.screen = Screen::Images;
+        app.focus = FocusTarget::Workspace;
+        let image = yoctui_model::ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: "/build/tmp/deploy/images/qemux86-64/core-image-minimal.ext4".into(),
+        };
+        let request = yoctui_model::RootfsCompositionRequest {
+            generation: 7,
+            image: image.clone(),
+        };
+        let packages = (0_u64..10)
+            .map(|index| yoctui_model::RootfsInstalledPackage {
+                identity: PackageIdentity::new(format!("pkg{index}")),
+                recipe: Some(format!("recipe{index}")),
+                category: format!("category{index}"),
+                installed_size_bytes: (index + 1) * 1_024,
+                file_count: index + 1,
+            })
+            .collect();
+        let entries = vec![
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/usr".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/usr/bin".into()),
+                kind: RootfsEntryKind::Directory,
+                size_bytes: 0,
+                package: None,
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/usr/bin/tool".into()),
+                kind: RootfsEntryKind::RegularFile,
+                size_bytes: 4_096,
+                package: Some(PackageIdentity::new("pkg9")),
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/bin/sh".into()),
+                kind: RootfsEntryKind::Symlink,
+                size_bytes: 4,
+                package: Some(PackageIdentity::new("pkg0")),
+            },
+            yoctui_model::RootfsEntry {
+                identity: yoctui_model::RootfsPathIdentity("/dev/console".into()),
+                kind: RootfsEntryKind::Other,
+                size_bytes: 0,
+                package: None,
+            },
+        ];
+        app.rootfs_composition = RootfsCompositionState::Partial {
+            request,
+            composition: yoctui_model::RootfsComposition {
+                image,
+                installed_packages: yoctui_model::RootfsAuthority::Available(
+                    yoctui_model::RootfsPackageInventory { packages },
+                ),
+                filesystem_tree: yoctui_model::RootfsAuthority::Partial {
+                    value: yoctui_model::RootfsFilesystemTree { entries },
+                    limitations: vec!["package ownership is partial".into()],
+                },
+            },
+            limitations: vec!["package ownership is partial".into()],
+        };
+        app.rootfs_group_selection = Some(RootfsGroupIdentity::Other);
+        app.rootfs_package_selection = Some(PackageIdentity::new("pkg2"));
+        app.rootfs_entry_selection = Some(yoctui_model::RootfsPathIdentity("/usr/bin/tool".into()));
+        app
+    }
+
+    #[test]
+    fn ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks() {
+        let mut app = ux_rootfs_ui_app();
+        app.images_view = ImagesView::RootfsPackages;
+        let wide = rendered_text(&app, 200, 60);
+        assert!(wide.contains("Installed bytes · visual summary"), "{wide}");
+        assert!(wide.contains("Exact bytes"), "{wide}");
+        assert!(wide.contains("Other"), "{wide}");
+        assert!(wide.contains("Other membership"), "{wide}");
+        assert!(wide.contains("remains inspectable"), "{wide}");
+        assert!(wide.contains("56320"), "{wide}");
+        assert!(wide.contains("exact bytes"), "{wide}");
+
+        app.theme = Theme::Monochrome;
+        app.color_enabled = false;
+        for (width, height) in [(100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Installed-package authority"), "{output}");
+            assert!(output.contains("Exact bytes"), "{output}");
+            assert!(output.contains("Other"), "{output}");
+            assert!(!output.contains("visual summary"), "{output}");
+        }
+    }
+
+    #[test]
+    fn ux_rootfs_filesystem_tree_and_inspector_preserve_exact_separate_authority() {
+        let mut app = ux_rootfs_ui_app();
+        app.images_view = ImagesView::RootfsFilesystem;
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Filesystem authority"), "{output}");
+            assert!(output.contains("exact bytes"), "{output}");
+            assert!(output.contains("symlinks 1"), "{output}");
+            assert!(output.contains("special 1"), "{output}");
+            assert!(output.contains("tool"), "{output}");
+        }
+        app.focus = FocusTarget::Inspector;
+        let inspector = rendered_text(&app, 200, 60);
+        assert!(
+            inspector.contains("Selected path: /usr/bin/tool"),
+            "{inspector}"
+        );
+        assert!(inspector.contains("Package bytes: 56320"), "{inspector}");
+        assert!(inspector.contains("Filesystem bytes: 4100"), "{inspector}");
+        assert!(
+            inspector.contains("package ownership is partial"),
+            "{inspector}"
+        );
+    }
+
+    #[test]
+    fn ux_rootfs_lifecycle_states_are_explicit_without_empty_data_fabrication() {
+        let mut app = ux_rootfs_ui_app();
+        app.images_view = ImagesView::RootfsPackages;
+        let request = app.rootfs_composition.request().unwrap().clone();
+        app.rootfs_composition = RootfsCompositionState::Loading {
+            request: request.clone(),
+        };
+        assert!(rendered_text(&app, 100, 30).contains("Loading rootfs composition"));
+        app.rootfs_composition = RootfsCompositionState::Unavailable {
+            request: request.clone(),
+            reason: "IMAGE_ROOTFS was cleaned".into(),
+        };
+        let unavailable = rendered_text(&app, 100, 30);
+        assert!(unavailable.contains("Rootfs composition unavailable"));
+        assert!(unavailable.contains("IMAGE_ROOTFS was cleaned"));
+        app.rootfs_composition = RootfsCompositionState::Failed {
+            request,
+            message: "source correlation failed".into(),
+        };
+        assert!(rendered_text(&app, 100, 30).contains("source correlation failed"));
     }
 
     fn sdk_workflow_ui_app() -> App {

@@ -855,6 +855,11 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::capability("images.wic", "Create Wic image", "W", Id::WicCreate),
             Action::local("images.device_write", "Write selected local device", "D"),
             Action::local("images.artifacts", "Scan/open deployed artifacts", "R/o/O"),
+            Action::local(
+                "images.rootfs",
+                "Inspect selected rootfs composition",
+                "Enter/p/Tab",
+            ),
             Action::local("images.cancel", "Cancel owned image operation", "x/c"),
         ],
         Destination::Sdk => vec![

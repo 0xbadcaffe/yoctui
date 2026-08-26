@@ -5986,7 +5986,7 @@ priority = 701
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo test -p yoctui-ui concept_screen_contracts", "python3 scripts/test-m21-concept-screen-verifier.py", "./scripts/verify-m21-concept-screens.sh", "./scripts/verify-m21-concept-pack.py", "./scripts/check-docs.sh"]
-notes = "All six concept identities now render from typed fixtures through production render_at at 160x50. Reviewed text captures and complete symbol/style goldens cover idle Dashboard, active Tasks, failed Errors, current Images/rootfs evidence, the current recipe editor, and split terminal sessions. After completion of the typed application/context menu, the manifest verifies semantic anchors and 13 explicit gaps against incomplete owner tasks; failure tests reject corrupt dimensions, missing captures/anchors, and completed gap owners. Generated PNGs remain non-authoritative visual direction."
+notes = "All six concept identities now render from typed fixtures through production render_at at 160x50. Reviewed text captures and complete symbol/style goldens cover idle Dashboard, active Tasks, failed Errors, current Images/rootfs evidence, the current recipe editor, and split terminal sessions. The manifest verifies semantic anchors and the three remaining explicit gaps against incomplete owner tasks; failure tests reject corrupt dimensions, missing captures/anchors, and completed gap owners. Generated PNGs remain non-authoritative visual direction."
 
 [[task]]
 id = "UX-LICENSE-001"
@@ -5997,7 +5997,7 @@ priority = 702
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo deny check", "./scripts/verify-third-party-notices.sh", "./scripts/verify-widget-dependencies.sh"]
-notes = "All 13 candidates now have exact audited versions, SPDX expressions, crates.io checksums/source, repositories, declared or explicit unknown MSRVs, selected no-default feature sets, Ratatui 0.30 requirements, owner tasks, decisions, and verified transitive closure hashes in a CycloneDX graph. Five failure tests reject malformed checksums, default features, missing/dangling graph evidence, and non-admitted workspace entries. The generated 236-package shipped notices/SBOM, cargo deny, and locked offline workspace build pass; no widget dependency was added."
+notes = "All 13 candidates have exact audited versions, SPDX expressions, crates.io checksums/source, repositories, declared or explicit unknown MSRVs, selected no-default feature sets, Ratatui 0.30 requirements, owner tasks, decisions, and verified transitive closure hashes in a CycloneDX graph. Five failure tests reject malformed checksums, default features, missing/dangling graph evidence, and non-admitted workspace entries. The generated 238-package shipped notices/SBOM, cargo deny, and locked offline workspace build pass; later owner tasks admitted only throbber-widgets-tui and tui-piechart under this gate."
 
 [[task]]
 id = "UX-ACTION-CATALOG-001"
@@ -6008,7 +6008,7 @@ priority = 703
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo test -p yoctui-model ux_action_catalog", "cargo test -p yoctui-app ux_action_catalog", "cargo test -p yoctui-ui ux_action_catalog"]
-notes = "The model-owned catalog contains 124 validated unique entries: 25 global commands and 99 contextual workspace operations. Every entry carries stable ID, typed scope/target, menu path, label, description, aliases, keywords, displayed/default bindings, local and compatibility requirements, safety, footer priority, and Help group. Palette metadata/search and workspace compatibility presentations derive from it; Help projects its prioritized global actions. Local and daemon availability compose one exact disabled reason, the false F5 image-build hint is corrected to B, six focus/subfocus/zoom commands and two collection-edge commands extend the catalog without a second inventory. Focused model/app/UI parity tests plus the full UI suite pass."
+notes = "The model-owned catalog contains 125 validated unique entries: 25 global commands and 100 contextual workspace operations. Every entry carries stable ID, typed scope/target, menu path, label, description, aliases, keywords, displayed/default bindings, local and compatibility requirements, safety, footer priority, and Help group. Palette metadata/search and workspace compatibility presentations derive from it; Help projects its prioritized global actions. Local and daemon availability compose one exact disabled reason, the false F5 image-build hint is corrected to B, six focus/subfocus/zoom commands and two collection-edge commands extend the catalog without a second inventory. The rootfs composition entry reuses the typed Images route. Focused model/app/UI parity tests plus the full UI suite pass."
 
 [[task]]
 id = "UX-KEYMAP-MODEL-001"
@@ -6041,7 +6041,7 @@ priority = 706
 required = true
 depends_on = ["UX-ACTION-CATALOG-001", "UX-KEYMAP-MODEL-001"]
 verify = ["cargo test -p yoctui-model ux_menu", "cargo test -p yoctui-app ux_menu", "cargo test -p yoctui-ui ux_menu", "cargo test -p yoctui -- ux_menu"]
-notes = "A reducer-owned menu model now projects the catalog into fixed Workspace/Build/Navigate/View/Tools/Help groups and current-workspace context rows. F10, a, and distinct right-click routing open focus-trapped bounded overlays; arrows, 32-character type-ahead, Backspace, Enter, Esc, and outward F10 are typed and trapped. Rows retain stable IDs, shortcuts, safety class, and exact local/capability denial. Enabled activation closes first and reuses the existing CommandId or workspace input route, preserving compatibility revalidation and confirmation. Focused model/app/UI/CLI tests cover bounds, disabled activation, all 99 contextual route identities, wide/medium/narrow, no-color, reduced motion, and mouse decoding."
+notes = "A reducer-owned menu model now projects the catalog into fixed Workspace/Build/Navigate/View/Tools/Help groups and current-workspace context rows. F10, a, and distinct right-click routing open focus-trapped bounded overlays; arrows, 32-character type-ahead, Backspace, Enter, Esc, and outward F10 are typed and trapped. Rows retain stable IDs, shortcuts, safety class, and exact local/capability denial. Enabled activation closes first and reuses the existing CommandId or workspace input route, preserving compatibility revalidation and confirmation. Focused model/app/UI/CLI tests cover bounds, disabled activation, all 100 contextual route identities, wide/medium/narrow, no-color, reduced motion, and mouse decoding."
 
 [[task]]
 id = "UX-FOCUS-001"
@@ -6212,12 +6212,12 @@ notes = "The bridge queries IMAGE_MANIFEST, PKGDATA_DIR, and IMAGE_ROOTFS from t
 id = "UX-ROOTFS-UI-001"
 milestone = "M21"
 title = "Render rootfs pie bar table and tree exploration"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 722
 required = true
 depends_on = ["UX-ROOTFS-ADAPTER-001", "UX-LIST-TREE-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-ui ux_rootfs", "cargo test -p yoctui-app ux_rootfs", "cargo deny check"]
-notes = "Use tui-piechart when appropriate, bar/table/tree fallbacks by width/accessibility, exact bytes and percentages, inspectable Other membership, package/filesystem separation, drilldown, and explicit unavailable/partial limits."
+notes = "Images now has typed wraparound Artifacts, Rootfs packages, and Rootfs filesystem views. The admitted pinned tui-piechart renderer appears only in sufficiently wide color layouts and is always paired with exact bytes, basis-point percentages, package counts, labeled slices, and inspectable bounded Other membership; narrower, monochrome, and no-color layouts retain exact bar/table text. Keyboard/menu/mouse-scroll routes reuse typed actions, stable category/package/path identities drive drilldown, and the filesystem tree exposes position, kind, exact bytes, ownership, and separate authority. Loading, empty, available, partial, unavailable, and failed states plus exact limitations render honestly. The production rootfs concept fixture now contains 412 correlated packages and filesystem evidence, with reviewed semantic/cell goldens."
 
 [[task]]
 id = "UX-IMAGE-PREVIEW-001"

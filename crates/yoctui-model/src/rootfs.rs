@@ -12,6 +12,36 @@ pub const MAX_ROOTFS_LIMITATIONS: usize = 64;
 pub const MAX_ROOTFS_TEXT_BYTES: usize = 512;
 pub const MAX_ROOTFS_PATH_BYTES: usize = 4_096;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ImagesView {
+    #[default]
+    Artifacts,
+    RootfsPackages,
+    RootfsFilesystem,
+}
+
+impl ImagesView {
+    pub const ALL: [Self; 3] = [
+        Self::Artifacts,
+        Self::RootfsPackages,
+        Self::RootfsFilesystem,
+    ];
+
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Artifacts => "Artifacts",
+            Self::RootfsPackages => "Rootfs packages",
+            Self::RootfsFilesystem => "Rootfs filesystem",
+        }
+    }
+
+    pub fn shifted(self, delta: isize) -> Self {
+        let current = Self::ALL.iter().position(|view| *view == self).unwrap_or(0);
+        let next = (current as isize + delta).rem_euclid(Self::ALL.len() as isize) as usize;
+        Self::ALL[next]
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct RootfsCompositionRequest {
     pub generation: u64,

@@ -19,18 +19,19 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-22/38 (57.9%); overall required registry progress is 562/578 (97.2%).
+23/38 (60.5%); overall required registry progress is 563/578 (97.4%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
-anchors and maps 4 honest implementation gaps to incomplete owner tasks;
+anchors and maps 3 honest implementation gaps to incomplete owner tasks;
 failure tests reject corrupt dimensions, missing captures or anchors, and gaps
 whose owner is already complete. `UX-LICENSE-001` is complete: thirteen widget
 candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
-compatibility, decisions, and a resolved CycloneDX graph; the real 236-package
-workspace graph has generated notices/SBOM and passes `cargo deny` plus a locked
-offline build. No candidate entered the workspace dependency graph.
-`UX-ACTION-CATALOG-001` is complete: 25 global commands and 99 contextual
+compatibility, decisions, and a resolved CycloneDX graph; the real 238-package
+third-party graph has generated notices/SBOM and passes `cargo deny` plus a
+locked offline build. Later owner tasks admitted only the audited throbber and
+pie-chart candidates.
+`UX-ACTION-CATALOG-001` is complete: 25 global commands and 100 contextual
 workspace actions now carry validated stable IDs, scope, menu/search/Help/footer
 metadata, local and compatibility requirements, safety, and typed targets. The
 palette and workspace presentations project the catalog, exact disabled reasons
@@ -1037,6 +1038,7 @@ See `docs/current-task.md`.
 | Image artifact model | DONE | Exact machine/image/path identities, typed available-versus-unavailable metadata, deterministic bounds, correlated lifecycle states, identity-stable selection/search, reducer effects, and app event normalization pass focused and baseline checks |
 | Rootfs composition model | DONE | Schema-v1 image/generation correlation keeps installed-package and logical-filesystem authorities separate; bounded normalization, exact overflow-safe totals/counts, basis-point grouping with inspectable Other membership, path drilldown, stable selection, stale denial, and every lifecycle state pass model/protocol/app tests |
 | Rootfs composition adapter | DONE | Exact image-scoped BitBake source queries feed a cancellable stale-denying adapter; canonical build containment, exact manifest/runtime-pkgdata parsing, no-follow traversal, hard-link byte deduplication, special-file accounting, cleaned-work authority, and count/depth/byte/time bounds pass bridge/adapter/CLI tests |
+| Rootfs composition UI | DONE | Typed Images tabs expose exact installed-package and filesystem authorities; the admitted wide color pie is paired with exact values while bar/table/tree text covers narrow, monochrome, and no-color modes. Stable category/package/path drilldown, inspectable Other membership, explicit lifecycle/limitations, production concept goldens, and keyboard/menu/mouse-scroll routes pass focused tests |
 | Image artifact adapter | DONE | Tinfoil/environment snapshots expose `DEPLOY_DIR_IMAGE`; the cancellable bounded adapter validates the machine/root, refuses symlinks and escapes, classifies deploy records, parses checksum associations, and reports partial data explicitly |
 | Images artifact UI | DONE | Retained recipe picker/build confirmation now coexists with correlated CLI-owned scans, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and direct tests |
 | QEMU launch/session model | DONE | Typed capability, exact artifact-bound launch validation, deterministic preview/confirmation, stable shared-job lifecycle, bounded stream output, failures, stale events, and confirmed cancellation are covered |

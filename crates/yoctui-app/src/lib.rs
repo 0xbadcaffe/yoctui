@@ -4072,6 +4072,7 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "images.wic" | "qemu_wic.wic" => Input::Char('W'),
         "images.device_write" | "qemu_wic.write" => Input::Char('D'),
         "images.artifacts" | "sdk.artifacts" => Input::Char('R'),
+        "images.rootfs" => Input::Char('p'),
         "images.cancel" | "qemu_wic.cancel" => Input::Char('x'),
         "sdk.standard" => Input::Char('s'),
         "sdk.extensible" => Input::Char('E'),
@@ -4621,7 +4622,9 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Signatures => signature_workspace_action(key),
         Screen::Recipes => recipes_workspace_action(app.metadata_searching, key),
         Screen::Packages => package_workspace_action(app.package_searching, key),
-        Screen::Images => images_workspace_action(app.image_artifact_searching, key),
+        Screen::Images => {
+            images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)
+        }
         Screen::Sdk => sdk_workspace_action(app.sdk_artifact_searching, key),
         Screen::Testing => match app.test_view {
             TestWorkspaceView::Launches => testing_workspace_action(key),
@@ -5624,6 +5627,55 @@ pub fn package_workspace_action(searching: bool, key: Input) -> Option<Action> {
 }
 
 pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    images_workspace_action_for_view(searching, yoctui_model::ImagesView::Artifacts, key)
+}
+
+pub fn images_workspace_action_for_view(
+    searching: bool,
+    view: yoctui_model::ImagesView,
+    key: Input,
+) -> Option<Action> {
+    if matches!(key, Input::Tab | Input::BackTab) {
+        return Some(Action::ShiftImagesView {
+            delta: if key == Input::Tab { 1 } else { -1 },
+        });
+    }
+    if !(view == yoctui_model::ImagesView::Artifacts && searching)
+        && let Input::Char(key @ ('1' | '2' | '3')) = key
+    {
+        let current = yoctui_model::ImagesView::ALL
+            .iter()
+            .position(|candidate| *candidate == view)
+            .unwrap_or(0) as isize;
+        let destination = key.to_digit(10).unwrap_or(1) as isize - 1;
+        return Some(Action::ShiftImagesView {
+            delta: destination - current,
+        });
+    }
+    if view == yoctui_model::ImagesView::RootfsPackages {
+        if let Some(delta) = collection_scroll_delta(key) {
+            return Some(Action::SelectRootfsPackage { delta });
+        }
+        return match key {
+            Input::Up | Input::Char('k') => Some(Action::SelectRootfsPackage { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::SelectRootfsPackage { delta: 1 }),
+            Input::Left | Input::Char('h') => Some(Action::SelectRootfsGroup { delta: -1 }),
+            Input::Right | Input::Char('l') => Some(Action::SelectRootfsGroup { delta: 1 }),
+            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            _ => None,
+        };
+    }
+    if view == yoctui_model::ImagesView::RootfsFilesystem {
+        if let Some(delta) = collection_scroll_delta(key) {
+            return Some(Action::SelectRootfsEntry { delta });
+        }
+        return match key {
+            Input::Up | Input::Char('k') => Some(Action::SelectRootfsEntry { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::SelectRootfsEntry { delta: 1 }),
+            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            _ => None,
+        };
+    }
     if searching {
         return match key {
             Input::Char(character) => Some(Action::AppendImageArtifactQuery(character)),
@@ -5664,6 +5716,7 @@ pub fn images_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('w') => Some(Action::OpenSelectedImageArtifactAssociation(
             yoctui_model::ImageArtifactAssociation::Wic,
         )),
+        Input::Char('p') | Input::Enter => Some(Action::BeginSelectedRootfsComposition),
         _ => None,
     }
 }
@@ -11086,6 +11139,56 @@ mod tests {
         assert_eq!(
             images_workspace_action(true, Input::Esc),
             Some(Action::FinishImageArtifactSearch)
+        );
+    }
+
+    #[test]
+    fn ux_rootfs_images_tabs_keyboard_and_scroll_map_to_typed_drilldown_actions() {
+        use yoctui_model::ImagesView;
+
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Enter),
+            Some(Action::BeginSelectedRootfsComposition)
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Tab),
+            Some(Action::ShiftImagesView { delta: 1 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::RootfsPackages, Input::Left),
+            Some(Action::SelectRootfsGroup { delta: -1 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::RootfsPackages, Input::PageDown),
+            Some(Action::SelectRootfsPackage { delta: 10 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::Down),
+            Some(Action::SelectRootfsEntry { delta: 1 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::BackTab),
+            Some(Action::ShiftImagesView { delta: -1 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Char('3')),
+            Some(Action::ShiftImagesView { delta: 2 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::Char('1')),
+            Some(Action::ShiftImagesView { delta: -2 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(true, ImagesView::Artifacts, Input::Char('2')),
+            Some(Action::AppendImageArtifactQuery('2'))
+        );
+
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Images;
+        app.images_view = ImagesView::RootfsFilesystem;
+        assert_eq!(
+            workspace_collection_action(&app, Input::PageUp),
+            Some(Action::SelectRootfsEntry { delta: -10 })
         );
     }
     #[test]

@@ -37,7 +37,7 @@ use yoctui_app::{
     devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action_for_app,
-    images_workspace_action, keymap_action_for_app, keymap_preferences_action,
+    images_workspace_action_for_view, keymap_action_for_app, keymap_preferences_action,
     log_workspace_action, maintenance_dialog_action, maintenance_workspace_action, menu_action,
     model_action_from_backend_event, mouse_action_for_app, package_workspace_action,
     popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
@@ -11922,10 +11922,19 @@ async fn tui(
                         _ => {}
                     }
                 } else if app.screen == Screen::Images
-                    && images_workspace_action(app.image_artifact_searching, input).is_some()
+                    && images_workspace_action_for_view(
+                        app.image_artifact_searching,
+                        app.images_view,
+                        input,
+                    )
+                    .is_some()
                 {
-                    let action = images_workspace_action(app.image_artifact_searching, input)
-                        .expect("Images action was checked");
+                    let action = images_workspace_action_for_view(
+                        app.image_artifact_searching,
+                        app.images_view,
+                        input,
+                    )
+                    .expect("Images action was checked");
                     match compatibility_workspace_action(&mut app, action) {
                         Some(effect @ Effect::GetImageArtifacts(_)) => {
                             begin_image_artifact_operation(

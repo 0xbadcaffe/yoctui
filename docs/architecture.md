@@ -3073,8 +3073,8 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 124 validated definitions: 25
-global command targets and 99 contextual workspace targets. `OperatorActionId`
+`yoctui-model::action_catalog` now supplies 125 validated definitions: 25
+global command targets and 100 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
 requirement, safety, footer priority, Help group, and typed target travel
@@ -3168,6 +3168,16 @@ unavailable. Filesystem traversal uses `symlink_metadata`, never descends
 through symlinks, retains special-file counts, deduplicates regular-file bytes
 by device/inode on Unix, and enforces entry, depth, input-byte, accounted-byte,
 elapsed-time, cancellation, limitation, and stale-generation bounds.
+
+Images owns a typed three-view selector for artifacts, installed packages, and
+the logical filesystem. Tab and Shift-Tab wrap without replacing the selected
+image; category, package, and path movement remains reducer-owned and the CLI
+starts acquisition only through the existing correlated effect. The UI admits
+the pinned MIT `tui-piechart` 1.0.2 crate with default features disabled only
+for sufficiently wide color layouts. Every pie is paired with exact byte,
+percentage, count, and membership text; narrow, monochrome, no-color, and
+reader-oriented projections use deterministic bars, tables, and trees. No
+widget reads the filesystem or owns selection, scrolling, grouping, or totals.
 
 The daemon remains the only terminal emulator and PTY owner. A `tui-term`
 integration is valid only as a renderer over the existing typed replica. It

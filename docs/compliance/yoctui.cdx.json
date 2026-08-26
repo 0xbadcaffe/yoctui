@@ -7762,6 +7762,45 @@
       "version": "0.3.23"
     },
     {
+      "authors": [
+        {
+          "name": "Sorin Albu-Irimies <sorinirimies@gmail.com>"
+        }
+      ],
+      "bom-ref": "pkg:cargo/tui-piechart@1.0.2",
+      "externalReferences": [
+        {
+          "type": "vcs",
+          "url": "https://github.com/sorinirimies/tui-piechart"
+        },
+        {
+          "type": "distribution",
+          "url": "https://crates.io/crates/tui-piechart/1.0.2"
+        }
+      ],
+      "hashes": [
+        {
+          "alg": "SHA-256",
+          "content": "80333ebf441bf1bf04055494abdd345ef90c6e74b3ada1349c6239cd5525bf9a"
+        }
+      ],
+      "licenses": [
+        {
+          "expression": "MIT"
+        }
+      ],
+      "name": "tui-piechart",
+      "properties": [
+        {
+          "name": "cargo:source",
+          "value": "registry+https://github.com/rust-lang/crates.io-index"
+        }
+      ],
+      "purl": "pkg:cargo/tui-piechart@1.0.2",
+      "type": "library",
+      "version": "1.0.2"
+    },
+    {
       "bom-ref": "pkg:cargo/typenum@1.20.1",
       "externalReferences": [
         {
@@ -10542,6 +10581,12 @@
       "ref": "pkg:cargo/tracing@0.1.44"
     },
     {
+      "dependsOn": [
+        "pkg:cargo/ratatui@0.30.2"
+      ],
+      "ref": "pkg:cargo/tui-piechart@1.0.2"
+    },
+    {
       "dependsOn": [],
       "ref": "pkg:cargo/typenum@1.20.1"
     },
@@ -10778,7 +10823,7 @@
     "properties": [
       {
         "name": "yoctui:cargo-lock-sha256",
-        "value": "9f8eee6af2d6e9e8d3f3a71da4a36f252458f6e6e87144c56bafd17b91aebaab"
+        "value": "6baa85a52fa82b60c1e6247d0f560613c5af5a2328894c8828d13265c1b91f89"
       }
     ],
     "tools": {
@@ -10791,7 +10836,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:b7472b73-b10c-5a1a-9823-e7600d78f233",
+  "serialNumber": "urn:uuid:71ecb1be-3a4a-587b-81d2-1844f5ab8244",
   "specVersion": "1.5",
   "version": 1
 }

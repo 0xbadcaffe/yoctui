@@ -3627,6 +3627,7 @@ pub struct App {
     pub image_artifact_query: String,
     pub image_artifact_searching: bool,
     pub image_artifact_request_generation: u64,
+    pub images_view: ImagesView,
     pub rootfs_composition: RootfsCompositionState,
     pub rootfs_request_generation: u64,
     pub rootfs_group_selection: Option<RootfsGroupIdentity>,
@@ -3802,6 +3803,7 @@ impl App {
             image_artifact_query: String::new(),
             image_artifact_searching: false,
             image_artifact_request_generation: 0,
+            images_view: ImagesView::Artifacts,
             rootfs_composition: RootfsCompositionState::NotLoaded,
             rootfs_request_generation: 0,
             rootfs_group_selection: None,
@@ -5104,6 +5106,9 @@ pub enum Action {
     OpenSelectedImageArtifact,
     OpenSelectedImageArtifactAssociation(ImageArtifactAssociation),
     BeginSelectedRootfsComposition,
+    ShiftImagesView {
+        delta: isize,
+    },
     RefreshRootfsComposition,
     RootfsCompositionLoaded {
         request: RootfsCompositionRequest,
@@ -9772,7 +9777,32 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     Some("Select an authoritative deployed image artifact first.".into());
                 return None;
             };
+            app.images_view = ImagesView::RootfsPackages;
             return begin_rootfs_composition(app, image);
+        }
+        Action::ShiftImagesView { delta } => {
+            app.images_view = app.images_view.shifted(delta);
+            app.image_artifact_searching = false;
+            if app.images_view != ImagesView::Artifacts {
+                let Some(image) = app
+                    .selected_image_artifact()
+                    .map(|artifact| artifact.identity.clone())
+                else {
+                    app.notification = Some(
+                        "Select an authoritative deployed image artifact before opening rootfs composition."
+                            .into(),
+                    );
+                    app.images_view = ImagesView::Artifacts;
+                    return None;
+                };
+                let is_current = app
+                    .rootfs_composition
+                    .request()
+                    .is_some_and(|request| request.image == image);
+                if !is_current {
+                    return begin_rootfs_composition(app, image);
+                }
+            }
         }
         Action::RefreshRootfsComposition => {
             let image = app
@@ -22828,6 +22858,7 @@ mod tests {
             update(&mut app, Action::BeginSelectedRootfsComposition),
             Some(Effect::GetRootfsComposition(request.clone()))
         );
+        assert_eq!(app.images_view, ImagesView::RootfsPackages);
         let package = |name: &str, category: &str| RootfsInstalledPackage {
             identity: PackageIdentity::new(name),
             recipe: Some(name.into()),
