@@ -6080,12 +6080,12 @@ notes = "Pure model projections now bound fractions, histories, bars, tabs, lege
 id = "UX-PROGRESS-001"
 milestone = "M21"
 title = "Implement hierarchical build task and job progress"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 710
 required = true
 depends_on = ["UX-WIDGET-PRIMITIVES-001"]
 verify = ["cargo test -p yoctui-model ux_progress", "cargo test -p yoctui-ui ux_progress", "cargo test -p yoctui-app ux_progress"]
-notes = "Separate build, parse/runqueue, selected task, background job, resource, and sstate progress; label estimates and preserve unknown values and exact numeric text."
+notes = "One pure ProgressHierarchy now projects build, parse, runqueue, selected-task, selected-job, CPU/RAM/build-filesystem, and honest unavailable sstate authority independently. Fractions retain exact current/total/percent text; missing totals remain active unknown with current/?; terminal builds/tasks/jobs freeze their last authoritative progress; incomplete ended phases are partial; and average rate/ETA is explicitly labeled estimate. Backend mapping, model transitions, and production renderer tests cover determinate, unknown, resource, partial, and terminal states."
 
 [[task]]
 id = "UX-THROBBER-001"

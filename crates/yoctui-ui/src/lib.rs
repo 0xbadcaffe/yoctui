@@ -6040,19 +6040,22 @@ fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
         return;
     }
     let summary = app.build_summary_at(now);
+    let progress = app.progress_hierarchy_at(now);
     let rows = if area.height >= 2 {
         Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).split(area)
     } else {
         Layout::vertical([Constraint::Length(1)]).split(area)
     };
     let palette = ThemePalette::for_app(app);
-    if let (Some(total), Some(percent)) = (summary.total, summary.progress_percent()) {
+    if let Some(fraction) = progress.build.fraction {
+        let percent = fraction.percent();
+        let total = fraction.total;
         frame.render_widget(
             Gauge::default()
                 .ratio(f64::from(percent) / 100.0)
                 .label(format!(
                     "Overall  {percent}%  {}/{}",
-                    summary.completed.min(total),
+                    fraction.current.min(total),
                     total
                 ))
                 .gauge_style(
@@ -27245,5 +27248,43 @@ mod tests {
         assert!(output.contains("/32"), "{output}");
         assert!(output.contains('↑'), "{output}");
         assert!(!output.contains('�'), "{output}");
+    }
+
+    #[test]
+    fn ux_progress_production_renderer_keeps_exact_and_unknown_progress_honest() {
+        let mut app = App::new(16, 4_096);
+        app.build.status = BuildStatus::Running;
+        app.build.target = Some("core-image-minimal".into());
+        app.build.completed = 3;
+        app.build.total = Some(10);
+        app.build.parse_current = Some(20);
+        app.build.parse_total = Some(20);
+        app.host_telemetry.cpu_utilization_percent = Some(72);
+        let _ = update(&mut app, Action::Open(Screen::Tasks));
+
+        let determinate = rendered_text(&app, 160, 50);
+        assert!(determinate.contains("Overall  30%  3/10"), "{determinate}");
+        assert!(determinate.contains("CPU  72%"), "{determinate}");
+        assert!(!determinate.contains("Sstate 0%"), "{determinate}");
+
+        app.build.total = None;
+        app.reduced_motion = true;
+        let unknown = rendered_text(&app, 100, 30);
+        assert!(
+            unknown.contains("Overall  progress unknown active  3/?"),
+            "{unknown}"
+        );
+        assert!(!unknown.contains("Overall  0%"), "{unknown}");
+
+        let hierarchy = app.progress_hierarchy_at(SystemTime::now());
+        assert_eq!(
+            hierarchy.parse.state,
+            yoctui_model::WidgetState::TerminalSuccess
+        );
+        assert_eq!(hierarchy.runqueue.state, yoctui_model::WidgetState::Active);
+        assert_eq!(
+            hierarchy.sstate.state,
+            yoctui_model::WidgetState::Unavailable
+        );
     }
 }

@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-10/38 (26.3%); overall required registry progress is 550/578 (95.2%).
+11/38 (28.9%); overall required registry progress is 551/578 (95.3%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -61,7 +61,11 @@ visual primitives are also complete: bounded typed projections drive exact-text
 gauges/meters, histories, charts, bars, tabs, legends, and scrollbars through
 semantic theme roles with explicit exceptional states and Unicode, ASCII,
 no-color, high-contrast, reduced-motion, large-input, and narrow coverage.
-Hierarchical progress is next.
+Hierarchical progress is also complete: one typed projection keeps overall
+build, parse, runqueue, selected task/job, resources, and unavailable sstate
+authority distinct; exact fractions, honest unknown totals, partial ended
+phases, frozen terminal values, and labeled estimates have model/app/production
+renderer coverage. Accessible indeterminate activity is next.
 
 ### Completed baseline through M20
 

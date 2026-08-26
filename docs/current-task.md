@@ -2,45 +2,42 @@
 
 ## Task
 
-**ID:** UX-PROGRESS-001
-**Title:** Implement hierarchical build task and job progress
+**ID:** UX-THROBBER-001
+**Title:** Adopt one accessible indeterminate activity language
 **Status:** NOT_STARTED
 
 ## Objective
 
-Separate and present authoritative progress for builds, parse/runqueue phases,
-selected tasks, background jobs, resources, and sstate without fabricating a
-percentage when the model has no valid total.
+Evaluate the admitted throbber candidate and provide one reducer-tick-owned,
+accessible activity language without fabricating progress.
 
 ## Dependencies
 
-- `UX-WIDGET-PRIMITIVES-001` — DONE
+- `UX-PROGRESS-001` — DONE
+- `UX-LICENSE-001` — DONE
 
 ## Relevant files
 
-- typed build, task, and background-job model projections
-- `crates/yoctui-model/src/lib.rs`
-- `crates/yoctui-app/src/lib.rs`
-- `crates/yoctui-ui/src/lib.rs`
+- reducer-owned animation ticks and preferences
+- shared activity rendering
+- admitted dependency evidence and manifests if adopted
 - `docs/ui-spec.md`
 - `docs/architecture.md`
 
 ## Definition of done
 
-- Build, parse/runqueue, selected-task, background-job, resource, and sstate
-  progress remain distinct typed projections.
-- Determinate values retain exact numeric or numerator/denominator text.
-- Unknown totals remain explicit and never render as zero percent.
-- Estimated values are labeled as estimates.
-- Terminal states freeze their last authoritative progress.
-- Responsive UI, model, and app tests cover normal, unknown, partial, and
-  terminal transitions.
+- Activity symbols are derived only from reducer-owned ticks.
+- Reduced motion uses stable text.
+- ASCII and no-color retain lifecycle meaning.
+- Terminal states never retain an active throbber.
+- Unknown activity never becomes fabricated numeric progress.
+- Any adopted dependency passes the existing admission and deny gates.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_progress
-cargo test -p yoctui-ui ux_progress
-cargo test -p yoctui-app ux_progress
+cargo test -p yoctui-model ux_throbber
+cargo test -p yoctui-ui ux_throbber
+cargo deny check
 ./scripts/verify-roadmap.sh
 ```

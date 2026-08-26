@@ -4490,6 +4490,17 @@ always includes exact numeric or numerator/denominator text. Unknown progress
 uses an indeterminate text/activity state and never a zero-percent gauge.
 Reduced motion replaces animation with stable lifecycle text.
 
+These scopes are independent members of one typed progress hierarchy: overall
+build, parse, runqueue, selected task, selected background job, CPU, RAM, build
+filesystem, and sstate reuse. A scope without authority stays unavailable even
+when a neighboring scope is determinate. Current-without-total is `current/?`
+and active, an ended phase below its reported total is partial, and terminal
+build/task/job projections retain their last authoritative fraction. Average
+task rate and ETA are projections from completed work plus injected elapsed
+time and always begin with `estimate`; no selected entity or invalid resource
+sample remains explicit. Because no typed backend field currently reports
+sstate reuse progress, that scope says unavailable rather than inferring logs.
+
 The build Logs workspace retains its typed bounded store. A separate internal
 diagnostic view may display Yoctui tracing records, but it never captures or
 reclassifies BitBake domain logs. Both expose exact source, filtering, search,

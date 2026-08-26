@@ -2958,6 +2958,15 @@ charts, tabs, legends, and a transient `ScrollbarState` reconstructed on each
 frame. Callers supply `WidgetStyles` resolved from `SemanticTheme`; the
 primitive never chooses a literal color or retains interaction state.
 
+`yoctui_model::ProgressHierarchy` is the single cross-scope progress
+projection. It borrows reducer-owned build phase counters, selected task and
+job state, validated host samples, and an injected clock; it returns separate
+widget projections for build, parse, runqueue, task, job, resources, and
+sstate. Terminal records retain their stored fraction, estimates are labeled,
+and absent sstate authority is an unavailable projection. The app only maps
+typed backend events into the existing reducers, while production UI consumes
+the projection and never correlates progress by parsing output.
+
 The action catalog is model-owned and projects mechanically through the app/UI
 layers into menus, palette, Help, footer, mouse routes, and preferences. Backend
 capability evaluation remains outside renderers. Menu selection cannot execute
