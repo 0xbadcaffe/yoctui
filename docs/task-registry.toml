@@ -6025,12 +6025,12 @@ notes = "Added keymap schema v1 with closed typed strokes, bounded one-to-three-
 id = "UX-KEYMAP-UI-001"
 milestone = "M21"
 title = "Add discoverable keybinding preferences and report"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 705
 required = true
 depends_on = ["UX-KEYMAP-MODEL-001"]
 verify = ["cargo test -p yoctui-ui ux_keymap_preferences", "cargo test -p yoctui-app ux_keymap_preferences", "cargo test -p yoctui -- ux_keymap_persistence"]
-notes = "Render searchable bindings grouped by scope, conflicts and disabled reasons, capture/edit/reset controls, and an exportable effective keymap while keeping critical actions reachable."
+notes = "Settings now opens a focus-trapped effective-keymap overlay derived from the catalog and keymap model. Search covers stable ID, label, menu, exact scope, and binding; rows textually identify default/custom/disabled and critical state. Enter/c captures one-to-three typed strokes, Ctrl+S validates/saves, Backspace edits, x removes, r/R reset one/all, e exports the bounded deterministic report, and p retries failed persistence. Invalid candidates retain the old authority and display the model's exact collision/reserved-prefix/scope/reachability reason. App, UI at wide/narrow/no-color, and CLI atomic persistence tests pass."
 
 [[task]]
 id = "UX-MENU-001"

@@ -2986,6 +2986,18 @@ and failed validation never replaces the previous file. Specialized contextual
 handlers remain typed and are moved onto catalog IDs by their dependent M21
 interaction tasks.
 
+`KeymapPreferencesUiState` is also model-owned. It bounds the query and
+selection, holds only a typed pending capture plus an exact validation error,
+and derives rows from the current preferences, effective keymap, and action
+catalog on demand. Reducer actions open/close the modal owner, search/select,
+capture/edit, validate, remove, reset, export, and retry persistence. A
+candidate is constructed and fully validated before atomically replacing both
+the preferences and effective map; failure mutates neither authority. The UI
+only renders the resulting scope/binding/state rows and text error. The CLI
+routes this owner before all general/workspace input, persists through the
+existing Settings effect, and uses the bounded clipboard effect for report
+export.
+
 Rootfs composition follows the normal boundary. Protocol owns versioned typed
 package/tree/size/limitation records; `yoctui-bitbake` alone correlates image
 manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;

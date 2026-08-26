@@ -3717,14 +3717,15 @@ impl KeymapInputResult {
 }
 
 pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapInputResult {
-    if app.active_dialog().is_some()
+    if app.keymap_preferences_ui.open
+        || app.active_dialog().is_some()
         || app.command_palette_open
         || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
     {
         app.keymap_chord.clear();
         return KeymapInputResult::Unmatched;
     }
-    let stroke = key_stroke(key);
+    let stroke = input_key_stroke(key);
     let workspace = yoctui_model::workspace_screen_destination(app.screen);
     match app
         .effective_keymap
@@ -3748,7 +3749,7 @@ pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapI
     }
 }
 
-fn key_stroke(key: Input) -> yoctui_model::KeyStroke {
+pub fn input_key_stroke(key: Input) -> yoctui_model::KeyStroke {
     use yoctui_model::KeyStroke as Stroke;
     match key {
         Input::Char(character) => Stroke::Char(character),
@@ -3779,6 +3780,42 @@ fn key_stroke(key: Input) -> yoctui_model::KeyStroke {
         Input::Right => Stroke::Right,
         Input::Home => Stroke::Home,
         Input::End => Stroke::End,
+    }
+}
+
+pub fn keymap_preferences_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    if !app.keymap_preferences_ui.open {
+        return None;
+    }
+    if app.keymap_preferences_ui.capture.is_some() {
+        return Some(match key {
+            Input::CtrlS => Action::ConfirmKeymapCapture,
+            Input::Esc => Action::CancelKeymapCapture,
+            Input::Backspace => Action::BackspaceKeymapCapture,
+            key => Action::AppendKeymapCapture(input_key_stroke(key)),
+        });
+    }
+    if app.keymap_preferences_ui.searching {
+        return match key {
+            Input::Esc | Input::Enter => Some(Action::FinishKeymapPreferenceSearch),
+            Input::CtrlU => Some(Action::ClearKeymapPreferenceQuery),
+            Input::Backspace => Some(Action::BackspaceKeymapPreferenceQuery),
+            Input::Char(character) => Some(Action::AppendKeymapPreferenceQuery(character)),
+            _ => None,
+        };
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectKeymapPreference { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectKeymapPreference { delta: 1 }),
+        Input::Char('/') => Some(Action::BeginKeymapPreferenceSearch),
+        Input::Enter | Input::Char('c') => Some(Action::BeginKeymapCapture),
+        Input::Char('x') | Input::Char('d') => Some(Action::RemoveKeymapBinding),
+        Input::Char('r') => Some(Action::ResetKeymapBinding),
+        Input::Char('R') => Some(Action::ResetAllKeymapBindings),
+        Input::Char('e') => Some(Action::ExportEffectiveKeymap),
+        Input::Char('p') if app.settings_dirty => Some(Action::RetrySettingsPersistence),
+        Input::Esc => Some(Action::CloseKeymapPreferences),
+        _ => None,
     }
 }
 
@@ -6700,6 +6737,116 @@ mod tests {
             KeymapInputResult::Unmatched
         );
         assert!(!app.keymap_chord.is_pending());
+    }
+
+    #[test]
+    fn ux_keymap_preferences_capture_validate_reset_export_and_trap_focus() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = yoctui_model::Screen::Settings;
+        app.settings_selection = yoctui_model::SETTINGS.len() - 1;
+        let action = settings_action(Input::Enter).unwrap();
+        assert_eq!(compatibility_workspace_action(&mut app, action), None);
+        assert!(app.keymap_preferences_ui.open);
+        assert_eq!(app.focus, yoctui_model::FocusTarget::Dialog);
+        assert_eq!(
+            keymap_action_for_app(&mut app, Input::Char('l')),
+            KeymapInputResult::Unmatched
+        );
+
+        let action = keymap_preferences_action(&app, Input::Char('/')).unwrap();
+        let _ = compatibility_workspace_action(&mut app, action);
+        for character in "navigate.logs".chars() {
+            let action = keymap_preferences_action(&app, Input::Char(character)).unwrap();
+            let _ = compatibility_workspace_action(&mut app, action);
+        }
+        let action = keymap_preferences_action(&app, Input::Enter).unwrap();
+        let _ = compatibility_workspace_action(&mut app, action);
+        assert_eq!(
+            yoctui_model::keymap_preference_rows(
+                &app.keymap_preferences,
+                &app.effective_keymap,
+                &app.keymap_preferences_ui.query,
+            )
+            .len(),
+            1
+        );
+
+        let action = keymap_preferences_action(&app, Input::Enter).unwrap();
+        let _ = compatibility_workspace_action(&mut app, action);
+        let action = keymap_preferences_action(&app, Input::Char('e')).unwrap();
+        let _ = compatibility_workspace_action(&mut app, action);
+        let action = keymap_preferences_action(&app, Input::CtrlS).unwrap();
+        assert_eq!(compatibility_workspace_action(&mut app, action), None);
+        assert!(
+            app.keymap_preferences_ui
+                .validation_error
+                .as_deref()
+                .is_some_and(|error| error.contains("collision"))
+        );
+
+        let action = keymap_preferences_action(&app, Input::Backspace).unwrap();
+        let _ = compatibility_workspace_action(&mut app, action);
+        let action = keymap_preferences_action(&app, Input::Char('z')).unwrap();
+        let _ = compatibility_workspace_action(&mut app, action);
+        let action = keymap_preferences_action(&app, Input::CtrlS).unwrap();
+        assert_eq!(
+            compatibility_workspace_action(&mut app, action),
+            Some(yoctui_model::Effect::PersistSettings)
+        );
+        assert!(app.settings_dirty);
+        assert!(app.keymap_preferences_ui.capture.is_none());
+        assert!(app.effective_keymap.bindings().iter().any(|binding| {
+            binding.action_id.as_str() == "navigate.logs"
+                && binding.sequence.to_string() == "z"
+                && !binding.is_default
+        }));
+
+        let action = keymap_preferences_action(&app, Input::Char('e')).unwrap();
+        let Some(yoctui_model::Effect::CopyToClipboard(report)) =
+            compatibility_workspace_action(&mut app, action)
+        else {
+            panic!("export should use the bounded clipboard effect")
+        };
+        assert!(report.contains("navigate.logs\tz\tcustom"));
+
+        let _ = compatibility_workspace_action(
+            &mut app,
+            Action::SettingsPersistenceFailed("read-only filesystem".into()),
+        );
+        let action = keymap_preferences_action(&app, Input::Char('p')).unwrap();
+        assert_eq!(
+            compatibility_workspace_action(&mut app, action),
+            Some(yoctui_model::Effect::PersistSettings)
+        );
+
+        let _ = compatibility_workspace_action(&mut app, Action::ClearKeymapPreferenceQuery);
+        let _ = compatibility_workspace_action(&mut app, Action::BeginKeymapPreferenceSearch);
+        for character in "help.open".chars() {
+            let _ = compatibility_workspace_action(
+                &mut app,
+                Action::AppendKeymapPreferenceQuery(character),
+            );
+        }
+        let _ = compatibility_workspace_action(&mut app, Action::FinishKeymapPreferenceSearch);
+        assert_eq!(
+            compatibility_workspace_action(&mut app, Action::RemoveKeymapBinding),
+            None
+        );
+        assert!(
+            app.keymap_preferences_ui
+                .validation_error
+                .as_deref()
+                .is_some_and(|error| error.contains("critical action help.open"))
+        );
+
+        assert_eq!(
+            compatibility_workspace_action(&mut app, Action::ResetAllKeymapBindings),
+            Some(yoctui_model::Effect::PersistSettings)
+        );
+        assert!(app.keymap_preferences.overrides.is_empty());
+        let _ = compatibility_workspace_action(&mut app, Action::CloseKeymapPreferences);
+        assert!(!app.keymap_preferences_ui.open);
+        assert_eq!(app.focus, yoctui_model::FocusTarget::Workspace);
     }
 
     #[test]

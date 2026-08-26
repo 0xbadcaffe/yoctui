@@ -36,18 +36,18 @@ use yoctui_app::{
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action, images_workspace_action,
-    keymap_action_for_app, logs_action, maintenance_dialog_action, maintenance_workspace_action,
-    model_action_from_backend_event, mouse_action_for_app, package_workspace_action,
-    popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
-    qa_report_error_action, qa_report_response_action, qa_task_capability_action,
-    qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
-    qemu_launch_confirmation_action, qemu_launch_dialog_action, raw_mode_input,
-    recipe_editor_action, recover_daemon_model_metadata, sdk_actions_for_runner_event,
-    sdk_build_confirmation_action, sdk_cancellation_confirmation_action,
-    sdk_native_confirmation_action, sdk_native_dialog_action, sdk_publish_confirmation_action,
-    sdk_publish_dialog_action, sdk_workspace_action, security_actions_for_mapper_event,
-    security_dialog_action, security_workspace_action, settings_action,
-    signature_task_picker_action, signature_workspace_action, tasks_action,
+    keymap_action_for_app, keymap_preferences_action, logs_action, maintenance_dialog_action,
+    maintenance_workspace_action, model_action_from_backend_event, mouse_action_for_app,
+    package_workspace_action, popup_editor_action, qa_dialog_action, qa_layer_capability_action,
+    qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
+    qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
+    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
+    qemu_launch_dialog_action, raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
+    sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
+    sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
+    security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
+    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
     test_actions_for_runner_event, test_cancellation_confirmation_action,
     test_comparison_confirmation_action, test_comparison_dialog_action,
     test_comparison_workspace_action, test_junit_confirmation_action, test_junit_dialog_action,
@@ -10356,6 +10356,28 @@ async fn tui(config: Config, targets: Vec<String>, mut session: Session) -> Resu
                             editor.as_deref(),
                         )
                         .await;
+                    }
+                } else if app.keymap_preferences_ui.open {
+                    let effect = keymap_preferences_action(&app, input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
+                    match effect {
+                        Some(Effect::PersistSettings) => {
+                            let result = persist_settings(
+                                session_path.as_deref(),
+                                &mut session,
+                                &app,
+                                !color_forced_off,
+                            );
+                            let action = match result {
+                                Ok(()) => Action::SettingsPersisted,
+                                Err(error) => Action::SettingsPersistenceFailed(error.to_string()),
+                            };
+                            let _ = compatibility_workspace_action(&mut app, action);
+                        }
+                        Some(Effect::CopyToClipboard(report)) => {
+                            copy_to_clipboard(&mut app, report).await;
+                        }
+                        _ => {}
                     }
                 } else if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) =
                     app.active_dialog().cloned()

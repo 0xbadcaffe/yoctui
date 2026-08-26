@@ -12,6 +12,7 @@ pub const KEYMAP_SCHEMA_VERSION: u16 = 1;
 pub const MAX_KEYMAP_OVERRIDES: usize = 256;
 pub const MAX_BINDINGS_PER_ACTION: usize = 8;
 pub const MAX_KEY_SEQUENCE_STROKES: usize = 3;
+pub const MAX_EFFECTIVE_KEYMAP_REPORT_BYTES: usize = 64 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum KeyStroke {
@@ -265,6 +266,30 @@ impl KeymapPreferences {
         EffectiveKeymap::from_preferences(&self)?;
         Ok(self)
     }
+
+    pub fn with_action_sequences(
+        &self,
+        action_id: OperatorActionId,
+        scope: KeymapScope,
+        sequences: Vec<KeySequence>,
+    ) -> Self {
+        let mut next = self.clone();
+        next.overrides
+            .retain(|binding| binding.action_id != action_id.as_str() || binding.scope != scope);
+        next.overrides.push(KeymapOverride {
+            action_id: action_id.as_str().into(),
+            scope,
+            sequences,
+        });
+        next
+    }
+
+    pub fn reset_action(&self, action_id: OperatorActionId, scope: KeymapScope) -> Self {
+        let mut next = self.clone();
+        next.overrides
+            .retain(|binding| binding.action_id != action_id.as_str() || binding.scope != scope);
+        next
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -306,7 +331,7 @@ impl EffectiveKeymap {
             let Some(definition) = by_id.get(binding.action_id.as_str()) else {
                 return Err(KeymapError::UnknownAction(binding.action_id.clone()));
             };
-            let expected_scope = default_keymap_scope(definition);
+            let expected_scope = keymap_scope_for_action(definition);
             if binding.scope != expected_scope {
                 return Err(KeymapError::ScopeMismatch {
                     action: binding.action_id.clone(),
@@ -333,7 +358,7 @@ impl EffectiveKeymap {
 
         let mut bindings = Vec::new();
         for definition in &definitions {
-            let scope = default_keymap_scope(definition);
+            let scope = keymap_scope_for_action(definition);
             if let Some(custom) = overrides.get(&(definition.id.as_str(), scope)) {
                 for sequence in &custom.sequences {
                     bindings.push(EffectiveKeyBinding {
@@ -405,6 +430,7 @@ impl EffectiveKeymap {
                 }
             ));
         }
+        debug_assert!(report.len() <= MAX_EFFECTIVE_KEYMAP_REPORT_BYTES);
         report
     }
 
@@ -511,7 +537,7 @@ pub enum KeymapResolution {
     Unmatched,
 }
 
-fn default_keymap_scope(definition: &OperatorActionDefinition) -> KeymapScope {
+pub fn keymap_scope_for_action(definition: &OperatorActionDefinition) -> KeymapScope {
     match definition.target {
         OperatorActionTarget::Command(crate::CommandId::SelectImage) => {
             KeymapScope::Workspace(WorkspaceDestination::Images)
@@ -524,6 +550,148 @@ fn default_keymap_scope(definition: &OperatorActionDefinition) -> KeymapScope {
         }
         OperatorActionTarget::Command(_) => KeymapScope::Global,
         OperatorActionTarget::Workspace { destination, .. } => KeymapScope::Workspace(destination),
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct KeymapPreferenceRow {
+    pub action_id: OperatorActionId,
+    pub scope: KeymapScope,
+    pub label: &'static str,
+    pub menu_path: Vec<&'static str>,
+    pub sequences: Vec<KeySequence>,
+    pub custom: bool,
+    pub critical: bool,
+}
+
+impl KeymapPreferenceRow {
+    pub fn binding_label(&self) -> String {
+        if self.sequences.is_empty() {
+            "unbound".into()
+        } else {
+            self.sequences
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(" / ")
+        }
+    }
+
+    pub fn state_label(&self) -> &'static str {
+        if self.sequences.is_empty() {
+            "disabled"
+        } else if self.custom {
+            "custom"
+        } else {
+            "default"
+        }
+    }
+}
+
+pub fn keymap_preference_rows(
+    preferences: &KeymapPreferences,
+    effective: &EffectiveKeymap,
+    query: &str,
+) -> Vec<KeymapPreferenceRow> {
+    let query = query.trim().to_lowercase();
+    let mut rows = global_operator_action_definitions()
+        .into_iter()
+        .map(|definition| {
+            let scope = keymap_scope_for_action(&definition);
+            let sequences = effective
+                .bindings_for_action(definition.id)
+                .filter(|binding| binding.scope == scope)
+                .map(|binding| binding.sequence.clone())
+                .collect::<Vec<_>>();
+            let custom = preferences.overrides.iter().any(|binding| {
+                binding.action_id == definition.id.as_str() && binding.scope == scope
+            });
+            KeymapPreferenceRow {
+                action_id: definition.id,
+                scope,
+                label: definition.label,
+                menu_path: definition.menu_path,
+                sequences,
+                custom,
+                critical: critical_keymap_action(definition.id.as_str()),
+            }
+        })
+        .filter(|row| {
+            query.is_empty()
+                || row.action_id.as_str().contains(&query)
+                || row.label.to_lowercase().contains(&query)
+                || row.scope.to_string().to_lowercase().contains(&query)
+                || row
+                    .menu_path
+                    .iter()
+                    .any(|part| part.to_lowercase().contains(&query))
+                || row.binding_label().to_lowercase().contains(&query)
+        })
+        .collect::<Vec<_>>();
+    rows.sort_by(|left, right| {
+        (left.scope, left.label, left.action_id.as_str()).cmp(&(
+            right.scope,
+            right.label,
+            right.action_id.as_str(),
+        ))
+    });
+    rows
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct KeymapCaptureState {
+    pub strokes: Vec<KeyStroke>,
+}
+
+impl KeymapCaptureState {
+    pub fn sequence(&self) -> Option<KeySequence> {
+        KeySequence::new(self.strokes.clone()).ok()
+    }
+
+    pub fn label(&self) -> String {
+        if self.strokes.is_empty() {
+            "<press 1-3 keys>".into()
+        } else {
+            self.strokes
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(" ")
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct KeymapPreferencesUiState {
+    pub open: bool,
+    pub query: String,
+    pub searching: bool,
+    pub selection: usize,
+    pub capture: Option<KeymapCaptureState>,
+    pub validation_error: Option<String>,
+}
+
+impl KeymapPreferencesUiState {
+    pub fn selected_row(
+        &self,
+        preferences: &KeymapPreferences,
+        effective: &EffectiveKeymap,
+    ) -> Option<KeymapPreferenceRow> {
+        keymap_preference_rows(preferences, effective, &self.query)
+            .get(self.selection)
+            .cloned()
+    }
+
+    pub fn clamp_selection(
+        &mut self,
+        preferences: &KeymapPreferences,
+        effective: &EffectiveKeymap,
+    ) {
+        self.selection = self.selection.min(
+            keymap_preference_rows(preferences, effective, &self.query)
+                .len()
+                .saturating_sub(1),
+        );
     }
 }
 
@@ -571,6 +739,10 @@ fn validate_critical_reachability(bindings: &[EffectiveKeyBinding]) -> Result<()
         }
     }
     Ok(())
+}
+
+pub fn critical_keymap_action(action_id: &str) -> bool {
+    matches!(action_id, "help.open" | "navigate.dashboard")
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Error)]

@@ -1385,7 +1385,9 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     responsive_shell(frame, app, chunks[1], area.width, now);
     workbench_footer(frame, app, chunks[2], now);
     let screen_area = area;
-    if app.command_palette_open {
+    if app.keymap_preferences_ui.open {
+        keymap_preferences_overlay(frame, app, area);
+    } else if app.command_palette_open {
         command_palette(frame, app, area);
     } else if app.screen == Screen::RawMode
         && let Some(form) = app
@@ -11029,6 +11031,7 @@ fn compatibility_capability_detail(
 }
 
 fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let custom_bindings = app.keymap_preferences.overrides.len();
     let rows = vec![
         ("Theme", format!("{:?}", app.theme)),
         ("Animation speed", format!("{:?}", app.animation_speed)),
@@ -11043,6 +11046,13 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ),
         ("Log wrap", app.logs.wrap.to_string()),
         ("Log follow", app.logs.follow.to_string()),
+        (
+            "Keybindings",
+            format!(
+                "{} actions · {custom_bindings} custom",
+                yoctui_model::global_operator_action_definitions().len()
+            ),
+        ),
     ];
     let chunks = Layout::vertical([Constraint::Min(8), Constraint::Length(4)]).split(area);
     frame.render_widget(
@@ -11070,7 +11080,7 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(
-            "↑/↓ or j/k select  ←/→ or Enter change  r retry unsaved changes\nBuild environment: configure a Poky source/build profile, then press V to verify BitBake.\nBuild actions stay disabled until the connection is verified.",
+            "↑/↓ or j/k select  ←/→ or Enter change/open  r retry unsaved changes\nKeybindings opens searchable scoped capture/reset/export preferences.\nBuild actions stay disabled until the environment connection is verified.",
         )
         .block(
             Block::default()
@@ -11080,6 +11090,138 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         )
         .wrap(Wrap { trim: true }),
         chunks[1],
+    );
+}
+
+fn keymap_preferences_overlay(frame: &mut Frame, app: &App, area: Rect) {
+    let state = &app.keymap_preferences_ui;
+    let rows = yoctui_model::keymap_preference_rows(
+        &app.keymap_preferences,
+        &app.effective_keymap,
+        &state.query,
+    );
+    let width = area.width.saturating_sub(4).clamp(76, 116);
+    let height = area.height.saturating_sub(2).clamp(22, 38);
+    let popup = Rect::new(
+        (area.width.saturating_sub(width)) / 2,
+        (area.height.saturating_sub(height)) / 2,
+        width,
+        height,
+    );
+    clear_popup(frame, app, popup);
+    let chunks = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(8),
+        Constraint::Length(5),
+    ])
+    .split(popup);
+    let palette = ThemePalette::for_app(app);
+    let query = if state.searching {
+        format!("Search: {}_", state.query)
+    } else if state.query.is_empty() {
+        "Search: <all> · / edit · Ctrl+U clear".into()
+    } else {
+        format!("Search: {} · / edit · Ctrl+U clear", state.query)
+    };
+    frame.render_widget(
+        Paragraph::new(query)
+            .style(palette.base())
+            .block(dialog_block(
+                app,
+                format!(
+                    "Keybinding preferences · {} result{}",
+                    rows.len(),
+                    if rows.len() == 1 { "" } else { "s" }
+                ),
+                DialogTone::Standard,
+            )),
+        chunks[0],
+    );
+
+    let visible = usize::from(chunks[1].height.saturating_sub(3)).max(1);
+    let selected = state.selection.min(rows.len().saturating_sub(1));
+    let start = selected
+        .saturating_sub(visible / 2)
+        .min(rows.len().saturating_sub(visible));
+    let rendered = rows
+        .iter()
+        .enumerate()
+        .skip(start)
+        .take(visible)
+        .map(|(index, row)| {
+            let marker = if index == selected { "▶" } else { " " };
+            Row::new([
+                format!("{marker} {}", row.label),
+                row.scope.to_string(),
+                row.binding_label(),
+                format!(
+                    "{}{}",
+                    row.state_label(),
+                    if row.critical { " · critical" } else { "" }
+                ),
+            ])
+            .style(selected_style(app, index == selected))
+        });
+    frame.render_widget(
+        Table::new(
+            rendered,
+            [
+                Constraint::Percentage(30),
+                Constraint::Percentage(23),
+                Constraint::Percentage(27),
+                Constraint::Percentage(20),
+            ],
+        )
+        .header(
+            Row::new(["Action", "Scope", "Effective binding", "State"])
+                .style(palette.role(palette.accent, Modifier::BOLD)),
+        )
+        .block(
+            Block::default()
+                .title("Effective keymap")
+                .borders(Borders::ALL),
+        ),
+        chunks[1],
+    );
+
+    let selected_row = rows.get(selected);
+    let identity = selected_row.map_or_else(
+        || "No binding matches the current search.".into(),
+        |row| format!("{} · {}", row.action_id.as_str(), row.menu_path.join(" > ")),
+    );
+    let (status, status_style) = if let Some(error) = state.validation_error.as_ref() {
+        (
+            format!("Conflict/disabled: {error}"),
+            palette.role(palette.error, Modifier::BOLD),
+        )
+    } else if let Some(capture) = state.capture.as_ref() {
+        (
+            format!(
+                "Pending capture: {} · Ctrl+S validate/save · Backspace · Esc cancel",
+                capture.label()
+            ),
+            palette.role(palette.warning, Modifier::BOLD),
+        )
+    } else {
+        (
+            "Enter/c capture · x remove · r reset · R reset all · e export · p retry save · Esc close"
+                .into(),
+            palette.role(palette.secondary_foreground, Modifier::DIM),
+        )
+    };
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::raw(identity),
+            Line::styled(status, status_style),
+        ])
+        .style(palette.base())
+        .block(
+            Block::default()
+                .title("Selected binding")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true }),
+        chunks[2],
     );
 }
 
@@ -18002,8 +18144,56 @@ mod tests {
         assert!(output.contains("Reduced motion"));
         assert!(output.contains("Log wrap"));
         assert!(output.contains("Log follow"));
+        assert!(output.contains("Keybindings"));
         assert!(output.contains("select"));
         assert!(output.contains("change"));
+    }
+
+    #[test]
+    fn ux_keymap_preferences_render_search_custom_capture_errors_and_narrow_state() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Settings;
+        app.install_keymap(yoctui_model::KeymapPreferences {
+            schema_version: yoctui_model::KEYMAP_SCHEMA_VERSION,
+            overrides: vec![yoctui_model::KeymapOverride {
+                action_id: "navigate.logs".into(),
+                scope: yoctui_model::KeymapScope::Global,
+                sequences: vec!["z".parse().unwrap()],
+            }],
+        })
+        .unwrap();
+        app.keymap_preferences_ui.open = true;
+        app.keymap_preferences_ui.query = "navigate.logs".into();
+        app.focus = FocusTarget::Dialog;
+
+        let output = rendered_text(&app, 120, 35);
+        assert!(output.contains("Keybinding preferences"), "{output}");
+        assert!(output.contains("Effective keymap"), "{output}");
+        assert!(output.contains("Open Logs"), "{output}");
+        assert!(output.contains("Global"), "{output}");
+        assert!(output.contains("custom"), "{output}");
+        assert!(output.contains("navigate.logs"), "{output}");
+        assert!(output.contains("z"), "{output}");
+        assert!(output.contains("capture"), "{output}");
+        assert!(output.contains("export"), "{output}");
+
+        app.keymap_preferences_ui.capture = Some(yoctui_model::KeymapCaptureState {
+            strokes: vec![
+                yoctui_model::KeyStroke::Char('g'),
+                yoctui_model::KeyStroke::Char('l'),
+            ],
+        });
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Pending capture: g l"), "{output}");
+        assert!(output.contains("Ctrl+S"), "{output}");
+
+        app.keymap_preferences_ui.capture = None;
+        app.keymap_preferences_ui.validation_error =
+            Some("keymap collision in Global: exact test reason".into());
+        app.color_enabled = false;
+        let output = rendered_text(&app, 80, 24);
+        assert!(output.contains("Conflict/disabled"), "{output}");
+        assert!(output.contains("exact test reason"), "{output}");
     }
 
     #[test]

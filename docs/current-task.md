@@ -2,23 +2,24 @@
 
 ## Task
 
-**ID:** UX-KEYMAP-UI-001
-**Title:** Add discoverable keybinding preferences and report
+**ID:** UX-MENU-001
+**Title:** Implement typed application and context menus
 **Status:** NOT_STARTED
 
 ## Objective
 
-Make the effective keymap searchable, understandable, safely editable,
-resettable, and exportable from the real Settings workspace.
+Project the operator action catalog into focus-trapped F10 application menus and
+selected-item context menus that use the existing typed action routes.
 
 ## Dependencies
 
+- `UX-ACTION-CATALOG-001` — DONE
 - `UX-KEYMAP-MODEL-001` — DONE
 
 ## Relevant files
 
-- `crates/yoctui-model/src/keymap.rs`
-- Settings reducer state in `crates/yoctui-model/src/lib.rs`
+- `crates/yoctui-model/src/action_catalog.rs`
+- new typed menu model and reducer state
 - `crates/yoctui-app/src/lib.rs`
 - `crates/yoctui-ui/src/lib.rs`
 - `crates/yoctui-cli/src/main.rs`
@@ -27,21 +28,22 @@ resettable, and exportable from the real Settings workspace.
 
 ## Definition of done
 
-- Render searchable effective bindings grouped by exact scope and action metadata.
-- Distinguish default, custom, pending capture, conflict, and disabled states in text.
-- Add focus-trapped capture/edit, remove, per-action reset, and reset-all controls.
-- Refuse invalid/conflicting/unreachable edits with the model's exact reason.
-- Export the deterministic effective-keymap report through a bounded typed effect.
-- Persist successful edits atomically and retain retryable dirty state on failure.
+- F10 opens stable Workspace/Build/Navigate/View/Tools/Help groups.
+- Arrow keys, bounded typed-prefix selection, Enter, and outward Esc are trapped.
+- `a` and right click open the selected item's contextual catalog actions.
+- Disabled actions remain visible with exact local/capability/safety reasons.
+- Activation emits the same typed route and confirmation as palette/keybindings.
+- Menus render safely at wide, medium, narrow, no-color, and reduced-motion states.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui ux_keymap_preferences
-cargo test -p yoctui-app ux_keymap_preferences
-cargo test -p yoctui -- ux_keymap_persistence
+cargo test -p yoctui-model ux_menu
+cargo test -p yoctui-app ux_menu
+cargo test -p yoctui-ui ux_menu
+cargo test -p yoctui -- ux_menu
 ./scripts/verify-roadmap.sh
 ```
 
-This task presents and edits the existing model. It does not introduce the F10
-application/context menus owned by `UX-MENU-001`.
+Menus are catalog projections; they cannot introduce new backend behavior or
+bypass the existing compatibility and confirmation boundaries.

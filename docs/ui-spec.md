@@ -4381,6 +4381,18 @@ focus, and scrolling tasks project them into the same model. A rejected or
 overridden catalog default cannot leak back through the legacy global router.
 Keymap preference rendering and capture controls belong to the next task.
 
+Settings now includes a Keybindings row that opens a focus-trapped effective
+keymap overlay. The table is searchable by action ID, label, menu path, scope,
+or binding and always names exact Global/workspace scope, effective sequence,
+and `default`, `custom`, or `disabled` state; critical routes are labeled in
+text. `Enter`/`c` captures up to three strokes, `Ctrl+S` validates and saves,
+`Backspace` edits, and `Esc` cancels capture. `x` removes the selected binding,
+`r` resets it, `R` resets all, `e` exports the bounded deterministic report,
+and `p` retries a failed session save. Invalid capture remains pending with the
+model's exact collision, reserved-prefix, scope, or reachability reason. Only a
+validated candidate replaces the live keymap, and persistence failure leaves
+the changed in-memory preference visibly dirty and retryable.
+
 ### Focus zoom and scrolling
 
 Exactly one pane, subview, menu, dialog, palette, or terminal owns input. Focus

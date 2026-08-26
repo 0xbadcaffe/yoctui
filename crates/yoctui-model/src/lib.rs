@@ -320,14 +320,16 @@ pub enum Setting {
     Color,
     LogWrap,
     LogFollow,
+    Keybindings,
 }
-pub const SETTINGS: [Setting; 6] = [
+pub const SETTINGS: [Setting; 7] = [
     Setting::Theme,
     Setting::AnimationSpeed,
     Setting::ReducedMotion,
     Setting::Color,
     Setting::LogWrap,
     Setting::LogFollow,
+    Setting::Keybindings,
 ];
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommandId {
@@ -3347,6 +3349,7 @@ pub struct App {
     pub keymap_preferences: KeymapPreferences,
     pub effective_keymap: EffectiveKeymap,
     pub keymap_chord: KeymapChordState,
+    pub keymap_preferences_ui: KeymapPreferencesUiState,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -3501,6 +3504,7 @@ impl App {
             keymap_preferences: KeymapPreferences::default(),
             effective_keymap: EffectiveKeymap::default(),
             keymap_chord: KeymapChordState::default(),
+            keymap_preferences_ui: KeymapPreferencesUiState::default(),
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
@@ -4596,6 +4600,25 @@ pub enum Action {
         backwards: bool,
     },
     RetrySettingsPersistence,
+    OpenKeymapPreferences,
+    CloseKeymapPreferences,
+    SelectKeymapPreference {
+        delta: isize,
+    },
+    BeginKeymapPreferenceSearch,
+    AppendKeymapPreferenceQuery(char),
+    BackspaceKeymapPreferenceQuery,
+    ClearKeymapPreferenceQuery,
+    FinishKeymapPreferenceSearch,
+    BeginKeymapCapture,
+    AppendKeymapCapture(KeyStroke),
+    BackspaceKeymapCapture,
+    ConfirmKeymapCapture,
+    CancelKeymapCapture,
+    RemoveKeymapBinding,
+    ResetKeymapBinding,
+    ResetAllKeymapBindings,
+    ExportEffectiveKeymap,
     SettingsPersisted,
     SettingsPersistenceFailed(String),
     SetCompatibilityFilter(CompatibilityUiFilter),
@@ -5692,7 +5715,8 @@ fn enqueue_build_completion(app: &mut App) {
 fn modal_focus(app: &App) -> Option<FocusTarget> {
     if app.command_palette_open {
         Some(FocusTarget::CommandPalette)
-    } else if dialog_is_open(app)
+    } else if app.keymap_preferences_ui.open
+        || dialog_is_open(app)
         || (app.screen == Screen::RawMode
             && matches!(app.raw_mode.view, RawModeView::Form | RawModeView::Preview))
     {
@@ -7698,6 +7722,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         app.logs.scroll_offset = 0;
                     }
                 }
+                Setting::Keybindings => {
+                    app.keymap_preferences_ui.open = true;
+                    app.keymap_preferences_ui.searching = false;
+                    app.keymap_preferences_ui.capture = None;
+                    app.keymap_preferences_ui.validation_error = None;
+                    synchronize_focus(app);
+                    return None;
+                }
             }
             app.settings_dirty = true;
             return Some(Effect::PersistSettings);
@@ -7706,6 +7738,179 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             return Some(Effect::PersistSettings);
         }
         Action::RetrySettingsPersistence => {}
+        Action::OpenKeymapPreferences => {
+            app.keymap_preferences_ui.open = true;
+            app.keymap_preferences_ui.searching = false;
+            app.keymap_preferences_ui.capture = None;
+            app.keymap_preferences_ui.validation_error = None;
+        }
+        Action::CloseKeymapPreferences => {
+            app.keymap_preferences_ui.open = false;
+            app.keymap_preferences_ui.searching = false;
+            app.keymap_preferences_ui.capture = None;
+            app.keymap_preferences_ui.validation_error = None;
+        }
+        Action::SelectKeymapPreference { delta } if app.keymap_preferences_ui.open => {
+            let count = keymap_preference_rows(
+                &app.keymap_preferences,
+                &app.effective_keymap,
+                &app.keymap_preferences_ui.query,
+            )
+            .len();
+            app.keymap_preferences_ui.selection = if delta.is_negative() {
+                app.keymap_preferences_ui
+                    .selection
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.keymap_preferences_ui
+                    .selection
+                    .saturating_add(delta as usize)
+                    .min(count.saturating_sub(1))
+            };
+            app.keymap_preferences_ui.validation_error = None;
+        }
+        Action::SelectKeymapPreference { .. } => {}
+        Action::BeginKeymapPreferenceSearch if app.keymap_preferences_ui.open => {
+            app.keymap_preferences_ui.searching = true;
+            app.keymap_preferences_ui.validation_error = None;
+        }
+        Action::BeginKeymapPreferenceSearch => {}
+        Action::AppendKeymapPreferenceQuery(character)
+            if app.keymap_preferences_ui.open
+                && app.keymap_preferences_ui.searching
+                && app.keymap_preferences_ui.query.len() < 128 =>
+        {
+            app.keymap_preferences_ui.query.push(character);
+            app.keymap_preferences_ui.selection = 0;
+        }
+        Action::AppendKeymapPreferenceQuery(_) => {}
+        Action::BackspaceKeymapPreferenceQuery
+            if app.keymap_preferences_ui.open && app.keymap_preferences_ui.searching =>
+        {
+            app.keymap_preferences_ui.query.pop();
+            app.keymap_preferences_ui.selection = 0;
+        }
+        Action::BackspaceKeymapPreferenceQuery => {}
+        Action::ClearKeymapPreferenceQuery if app.keymap_preferences_ui.open => {
+            app.keymap_preferences_ui.query.clear();
+            app.keymap_preferences_ui.selection = 0;
+        }
+        Action::ClearKeymapPreferenceQuery => {}
+        Action::FinishKeymapPreferenceSearch if app.keymap_preferences_ui.open => {
+            app.keymap_preferences_ui.searching = false;
+        }
+        Action::FinishKeymapPreferenceSearch => {}
+        Action::BeginKeymapCapture if app.keymap_preferences_ui.open => {
+            if app
+                .keymap_preferences_ui
+                .selected_row(&app.keymap_preferences, &app.effective_keymap)
+                .is_some()
+            {
+                app.keymap_preferences_ui.capture = Some(KeymapCaptureState::default());
+                app.keymap_preferences_ui.validation_error = None;
+            }
+        }
+        Action::BeginKeymapCapture => {}
+        Action::AppendKeymapCapture(stroke) => {
+            if let Some(capture) = app.keymap_preferences_ui.capture.as_mut() {
+                if capture.strokes.len() < MAX_KEY_SEQUENCE_STROKES {
+                    capture.strokes.push(stroke);
+                    app.keymap_preferences_ui.validation_error = None;
+                } else {
+                    app.keymap_preferences_ui.validation_error = Some(format!(
+                        "A key sequence may contain at most {MAX_KEY_SEQUENCE_STROKES} strokes."
+                    ));
+                }
+            }
+        }
+        Action::BackspaceKeymapCapture => {
+            if let Some(capture) = app.keymap_preferences_ui.capture.as_mut() {
+                capture.strokes.pop();
+                app.keymap_preferences_ui.validation_error = None;
+            }
+        }
+        Action::ConfirmKeymapCapture => {
+            let row = app
+                .keymap_preferences_ui
+                .selected_row(&app.keymap_preferences, &app.effective_keymap)?;
+            let Some(sequence) = app
+                .keymap_preferences_ui
+                .capture
+                .as_ref()
+                .and_then(KeymapCaptureState::sequence)
+            else {
+                app.keymap_preferences_ui.validation_error =
+                    Some("Capture at least one key before saving.".into());
+                return None;
+            };
+            let candidate = app.keymap_preferences.with_action_sequences(
+                row.action_id,
+                row.scope,
+                vec![sequence],
+            );
+            match EffectiveKeymap::from_preferences(&candidate) {
+                Ok(effective) => {
+                    app.keymap_preferences = candidate;
+                    app.effective_keymap = effective;
+                    app.keymap_preferences_ui.capture = None;
+                    app.keymap_preferences_ui.validation_error = None;
+                    app.settings_dirty = true;
+                    return Some(Effect::PersistSettings);
+                }
+                Err(error) => {
+                    app.keymap_preferences_ui.validation_error = Some(error.to_string());
+                }
+            }
+        }
+        Action::CancelKeymapCapture => {
+            app.keymap_preferences_ui.capture = None;
+            app.keymap_preferences_ui.validation_error = None;
+        }
+        Action::RemoveKeymapBinding => {
+            let row = app
+                .keymap_preferences_ui
+                .selected_row(&app.keymap_preferences, &app.effective_keymap)?;
+            let candidate =
+                app.keymap_preferences
+                    .with_action_sequences(row.action_id, row.scope, Vec::new());
+            match EffectiveKeymap::from_preferences(&candidate) {
+                Ok(effective) => {
+                    app.keymap_preferences = candidate;
+                    app.effective_keymap = effective;
+                    app.keymap_preferences_ui.validation_error = None;
+                    app.settings_dirty = true;
+                    return Some(Effect::PersistSettings);
+                }
+                Err(error) => {
+                    app.keymap_preferences_ui.validation_error = Some(error.to_string());
+                }
+            }
+        }
+        Action::ResetKeymapBinding => {
+            let row = app
+                .keymap_preferences_ui
+                .selected_row(&app.keymap_preferences, &app.effective_keymap)?;
+            let candidate = app
+                .keymap_preferences
+                .reset_action(row.action_id, row.scope);
+            if let Ok(effective) = EffectiveKeymap::from_preferences(&candidate) {
+                app.keymap_preferences = candidate;
+                app.effective_keymap = effective;
+                app.keymap_preferences_ui.validation_error = None;
+                app.settings_dirty = true;
+                return Some(Effect::PersistSettings);
+            }
+        }
+        Action::ResetAllKeymapBindings => {
+            app.reset_keymap();
+            app.keymap_preferences_ui.open = true;
+            app.settings_dirty = true;
+            return Some(Effect::PersistSettings);
+        }
+        Action::ExportEffectiveKeymap if app.keymap_preferences_ui.open => {
+            return Some(Effect::CopyToClipboard(app.effective_keymap_report()));
+        }
+        Action::ExportEffectiveKeymap => {}
         Action::SettingsPersisted => {
             app.settings_dirty = false;
             app.notification = None;
@@ -18570,7 +18775,16 @@ mod tests {
         assert_eq!(app.theme, Theme::WhiteClassic);
         assert!(app.settings_dirty);
 
-        let _ = update(&mut app, Action::SelectSetting { delta: 99 });
+        let log_follow_index = SETTINGS
+            .iter()
+            .position(|setting| *setting == Setting::LogFollow)
+            .unwrap();
+        let _ = update(
+            &mut app,
+            Action::SelectSetting {
+                delta: log_follow_index as isize,
+            },
+        );
         assert_eq!(SETTINGS[app.settings_selection], Setting::LogFollow);
         assert_eq!(
             update(&mut app, Action::ChangeSelectedSetting { backwards: true }),

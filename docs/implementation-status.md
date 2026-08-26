@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-5/38 (13.2%); overall required registry progress is 545/578 (94.3%).
+6/38 (15.8%); overall required registry progress is 546/578 (94.5%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -39,7 +39,11 @@ compose local and daemon authority, and model/app/UI parity tests pass.
 produce one deterministic effective command keymap with bounded typed chords,
 workspace-before-global resolution, collision/prefix/reserved-key/reachability
 validation, reset/report support, modal-safe app routing, and atomic migrated
-session persistence. Discoverable keybinding preferences are next.
+session persistence. `UX-KEYMAP-UI-001` is complete: Settings now provides a
+searchable scoped binding table, text default/custom/disabled/critical state,
+focus-trapped bounded capture, exact conflict/reachability errors, remove and
+reset controls, bounded report export, atomic save, and retryable failure. Typed
+application and context menus are next.
 
 ### Completed baseline through M20
 
