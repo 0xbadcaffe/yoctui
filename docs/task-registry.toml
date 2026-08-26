@@ -5992,12 +5992,12 @@ notes = "All six concept identities now render from typed fixtures through produ
 id = "UX-LICENSE-001"
 milestone = "M21"
 title = "Establish third-party widget license and supply-chain gate"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 702
 required = true
 depends_on = ["UX-SPEC-001"]
 verify = ["cargo deny check", "./scripts/verify-third-party-notices.sh", "./scripts/verify-widget-dependencies.sh"]
-notes = "Refresh candidate versions, SPDX expressions, notices, source/checksums, MSRV, Ratatui 0.30 compatibility, enabled features, transitive graph, SBOM output, and locked offline builds before any showcased crate is adopted."
+notes = "All 13 candidates now have exact audited versions, SPDX expressions, crates.io checksums/source, repositories, declared or explicit unknown MSRVs, selected no-default feature sets, Ratatui 0.30 requirements, owner tasks, decisions, and verified transitive closure hashes in a CycloneDX graph. Five failure tests reject malformed checksums, default features, missing/dangling graph evidence, and non-admitted workspace entries. The generated 236-package shipped notices/SBOM, cargo deny, and locked offline workspace build pass; no widget dependency was added."
 
 [[task]]
 id = "UX-ACTION-CATALOG-001"

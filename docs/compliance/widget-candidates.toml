@@ -1,0 +1,242 @@
+schema_version = 1
+observed_at = "2026-08-26"
+registry = "https://github.com/rust-lang/crates.io-index"
+ratatui_version = "0.30.2"
+ratatui_core_version = "0.1.2"
+ratatui_widgets_version = "0.3.2"
+resolver_rust_version = "1.97.0"
+policy = "Candidates are audited but are not Yoctui dependencies until admitted=true in the implementing task. Every admission refreshes this record, its candidate SBOM, cargo-deny, notices, and the locked offline build."
+
+[[candidate]]
+name = "ratatui-image"
+version = "11.0.6"
+license = "MIT"
+checksum = "e000b7a22eae639460bc6ec8bb1cc689ecae5b0ed21935cd7d7dd52d38270c86"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/ratatui/ratatui-image"
+msrv = "1.86.0"
+ratatui_requirement = "ratatui ^0.30.1"
+default_features = false
+enabled_features = []
+transitive_closure = 118
+transitive_sha256 = "a2a4233ced7d613397b082f3257db2aedd6add70a8f897c20ec1d3b1951007f1"
+decision = "defer"
+admitted = false
+owner_task = "UX-IMAGE-PREVIEW-001"
+reason = "The no-default-feature graph avoids Chafa/pkg-config, but protocol probing, async decode/resize, memory bounds, SSH/tmux behavior, and a text fallback must be proved first."
+
+[[candidate]]
+name = "ratatui-textarea"
+version = "0.9.2"
+license = "MIT"
+checksum = "3c78d5ba0f26f97baed69a4c479f268a31c7b5b89d68ab939842152e383d6e73"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/ratatui/ratatui-textarea"
+msrv = "1.86.0"
+ratatui_requirement = "ratatui-core ^0.1.1; ratatui-widgets ^0.3.1"
+default_features = false
+enabled_features = []
+transitive_closure = 46
+transitive_sha256 = "2dda160079220e6df877d0bc327bb57e1d3eb42b16cce0c382ab68b53c2ffce9"
+decision = "adopt"
+admitted = false
+owner_task = "UX-TEXTAREA-001"
+reason = "Approved for a renderer-only adapter spike with no terminal backend feature; Yoctui's reducer remains the editing and safety authority."
+
+[[candidate]]
+name = "throbber-widgets-tui"
+version = "0.11.1"
+license = "Zlib"
+checksum = "0b0452e418faaa263a742d94e5c2f9f50c777a0ae5b3ec53ce754d917d568e36"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/arkbig/throbber-widgets-tui"
+msrv = "1.88.0"
+ratatui_requirement = "ratatui ^0.30"
+default_features = false
+enabled_features = ["std"]
+transitive_closure = 47
+transitive_sha256 = "70a7827168b28f6a8a9bd185ac40518d9d019f9074dc231a24aae6f7ef0e47f8"
+decision = "adopt"
+admitted = false
+owner_task = "UX-THROBBER-001"
+reason = "Approved for a shared renderer spike with deterministic model-owned phase and reduced-motion fallbacks; the optional rand feature stays disabled."
+
+[[candidate]]
+name = "tui-big-text"
+version = "0.8.9"
+license = "MIT OR Apache-2.0"
+checksum = "49f9a24d33ae99834c8b6b4dad4c815c17952d55747d0e467212e5a184e72d0f"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/ratatui/tui-widgets"
+msrv = "1.88.0"
+ratatui_requirement = "ratatui-core ^0.1; ratatui-widgets ^0.3"
+default_features = false
+enabled_features = []
+transitive_closure = 55
+transitive_sha256 = "bed0afe459aad68909eb09e45a2f6e1e56a4644c0ca1952783d2f178f910fa43"
+decision = "defer"
+admitted = false
+owner_task = "UX-ONBOARDING-001"
+reason = "Large text is optional and must first demonstrate value without reducing information density or accessibility."
+
+[[candidate]]
+name = "tui-checkbox"
+version = "0.4.6"
+license = "MIT"
+checksum = "9c58a691322aaf315585a8c6e4d61aff48900071fc00a5c1e5f84f5494fc59be"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/sorinirimies/tui-checkbox"
+msrv = "1.74.0"
+ratatui_requirement = "ratatui ^0.30"
+default_features = false
+enabled_features = []
+transitive_closure = 47
+transitive_sha256 = "7b9e3cf4a7709fd93f9a13b41b8c8cbaa1f6210b56f41bfd5ba8008c99a33155"
+decision = "reject"
+admitted = false
+owner_task = "UX-CHECKBOX-001"
+reason = "The rendering primitive is too small to justify another dependency; implement the typed accessible checkbox directly without copying showcase code."
+
+[[candidate]]
+name = "tui-logger"
+version = "0.18.3"
+license = "MIT"
+checksum = "a6f73b6b6152df40e19f2ffc818c7259211955dd9b35072d361ddbc51c20bb61"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/gin66/tui-logger"
+msrv = "unknown"
+ratatui_requirement = "ratatui ^0.30"
+default_features = false
+enabled_features = []
+transitive_closure = 76
+transitive_sha256 = "8a6acefbe8b6bf6152eceebcb9eb45aed313aeaa188b90005e162e7a413c81a9"
+decision = "reject"
+admitted = false
+owner_task = "UX-INTERNAL-LOG-001"
+reason = "Yoctui already owns bounded tracing data and must not introduce a second log authority or confuse self-diagnostics with BitBake domain logs."
+
+[[candidate]]
+name = "tui-menu"
+version = "0.3.1"
+license = "MIT OR Apache-2.0"
+checksum = "d6d7f10ff29b3543148afcaba50642850082840adc4e8169c7f2c9d2bcdba3b6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/shuoli84/tui-menu"
+msrv = "unknown"
+ratatui_requirement = "ratatui-core ^0.1.0; ratatui-widgets ^0.3.0"
+default_features = false
+enabled_features = []
+transitive_closure = 46
+transitive_sha256 = "9d8fb8ebbcf6fd7f0e83fc33bca86d4d2ff1668df087c6e286023ad091f3f3b0"
+decision = "reject"
+admitted = false
+owner_task = "UX-MENU-001"
+reason = "Menus must project Yoctui's typed action catalog, focus model, availability reasons, and keymap; a bespoke renderer is the smaller trustworthy boundary."
+
+[[candidate]]
+name = "tui-nodes"
+version = "0.10.0"
+license = "MIT"
+checksum = "32406150d98eeb5655d92ad4af8aee816541d05e16b151b24c6be66190a50899"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://git.sr.ht/~jaxter184/tui-nodes"
+msrv = "unknown"
+ratatui_requirement = "ratatui ^0.30.0"
+default_features = false
+enabled_features = []
+transitive_closure = 48
+transitive_sha256 = "d6e10c93ca38b7a17a07dff646fd3509843d13de3f3cf8b57917cf18047b9ccc"
+decision = "defer"
+admitted = false
+owner_task = "UX-DEPENDENCY-GRAPH-001"
+reason = "Topology rendering needs bounded typed graph and text-fallback evidence before a renderer is selected."
+
+[[candidate]]
+name = "tui-piechart"
+version = "1.0.2"
+license = "MIT"
+checksum = "80333ebf441bf1bf04055494abdd345ef90c6e74b3ada1349c6239cd5525bf9a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/sorinirimies/tui-piechart"
+msrv = "1.74.0"
+ratatui_requirement = "ratatui ^0.30"
+default_features = false
+enabled_features = []
+transitive_closure = 47
+transitive_sha256 = "d04127c93dff6db900080ca76b050bd317ce1d0fc0d1e584817a42b331f3c732"
+decision = "defer"
+admitted = false
+owner_task = "UX-ROOTFS-UI-001"
+reason = "A pie is secondary to exact package/byte tables and requires small-slice grouping, labels, no-color equivalence, and responsive evidence."
+
+[[candidate]]
+name = "tui-scrollview"
+version = "0.6.7"
+license = "MIT OR Apache-2.0"
+checksum = "04907b1a2a41660933df8e64205abc7de4a4b320e808abcb00b9377069ac9d31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/ratatui/tui-widgets"
+msrv = "1.88.0"
+ratatui_requirement = "ratatui-core ^0.1; ratatui-widgets ^0.3"
+default_features = false
+enabled_features = []
+transitive_closure = 46
+transitive_sha256 = "b8f2601b0538eb18c4161ef277efd5eda05378dd94d553e70f1439067e0d017d"
+decision = "adopt"
+admitted = false
+owner_task = "UX-SCROLL-001"
+reason = "Approved for a renderer spike while reducer-owned offsets, focus routing, viewport bounds, and deterministic TestBackend behavior remain authoritative."
+
+[[candidate]]
+name = "tui-term"
+version = "0.3.4"
+license = "MIT"
+checksum = "a338ded85dbe7f9ea2298321d126244f54e531e2b2006b97abdab8e47d6f3c88"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/a-kenji/tui-term"
+msrv = "1.86.0"
+ratatui_requirement = "ratatui-core ^0.1.0; ratatui-widgets ^0.3.0"
+default_features = false
+enabled_features = ["vt100"]
+transitive_closure = 50
+transitive_sha256 = "00ac1c6174c3cb3675b12da9e16e6808caf716c08b467fe701de7893ddb49fc9"
+decision = "defer"
+admitted = false
+owner_task = "UX-TERMINAL-EVAL-001"
+reason = "Compatibility must be proved over daemon-owned typed screen replicas without introducing client-side parsing, PTY ownership, or a second terminal state."
+
+[[candidate]]
+name = "tui-tree-widget"
+version = "0.24.1"
+license = "MIT"
+checksum = "246c1142baa1e7a42b94f0fb2b60d838fc884c16281e330bf8624da65ed8f89a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/EdJoPaTo/tui-rs-tree-widget"
+msrv = "1.86.0"
+ratatui_requirement = "ratatui-core ^0.1.0; ratatui-widgets ^0.3.0"
+default_features = false
+enabled_features = []
+transitive_closure = 46
+transitive_sha256 = "22b8c10eaedd78259b3aac4d8d132da6154eb76db9eff0e73c9494e40353af3b"
+decision = "adopt"
+admitted = false
+owner_task = "UX-LIST-TREE-001"
+reason = "Approved for a bounded external-state adapter spike with stable IDs, reducer-owned expansion/selection, and an exact text fallback."
+
+[[candidate]]
+name = "tui-widget-list"
+version = "0.15.3"
+license = "MIT"
+checksum = "39fc4e2d4f0673ad55213e1db3203b2f5962d8e99acbc54faa59318c435b010a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+repository = "https://github.com/preiter93/tui-widget-list"
+msrv = "unknown"
+ratatui_requirement = "ratatui-core ^0.1; ratatui-widgets ^0.3.0"
+default_features = false
+enabled_features = []
+transitive_closure = 46
+transitive_sha256 = "ca9281dfa1e0628c415a40d29c07c375b96baf8f82de4caa2b7eaab715927df7"
+decision = "adopt"
+admitted = false
+owner_task = "UX-LIST-TREE-001"
+reason = "Approved for a variable-height list spike with bounded model projections and reducer-owned position/selection."

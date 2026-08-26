@@ -266,25 +266,28 @@ idle/empty canvas where it does not reduce density or accessibility.
 
 ## Third-party dependency and license gate
 
-This snapshot records the newest crate metadata observed during planning. It is
-not a version pin. Every implementation task refreshes the exact version and
-transitive graph before changing `Cargo.lock`.
+The reusable admission gate now records an exact audited candidate snapshot in
+[`compliance/widget-candidates.toml`](compliance/widget-candidates.toml) and its
+resolved CycloneDX graph in
+[`compliance/widget-candidates.cdx.json`](compliance/widget-candidates.cdx.json).
+These are audit pins, not workspace dependencies. Every implementing task must
+refresh its candidate before changing `Cargo.lock`.
 
-| Crate | Snapshot version | SPDX license | MSRV reported | Planned disposition |
+| Crate | Audited version | SPDX license | MSRV reported | Decision |
 |---|---:|---|---:|---|
-| [`ratatui-image`](https://crates.io/crates/ratatui-image) | 11.0.6 | MIT | 1.86.0 | Optional preview spike; no default adoption without portable fallback. |
-| [`ratatui-textarea`](https://crates.io/crates/ratatui-textarea) | 0.9.2 | MIT | 1.86.0 | Adapter/feature-parity spike; reducer remains authority. |
-| [`throbber-widgets-tui`](https://crates.io/crates/throbber-widgets-tui) | 0.11.1 | Zlib | 1.88.0 | Candidate for the shared indeterminate indicator. |
-| [`tui-big-text`](https://crates.io/crates/tui-big-text) | 0.8.9 | MIT OR Apache-2.0 | 1.88.0 | Optional onboarding only. |
-| [`tui-checkbox`](https://crates.io/crates/tui-checkbox) | 0.4.6 | MIT | 1.74.0 | Candidate render primitive with typed external state. |
-| [`tui-logger`](https://crates.io/crates/tui-logger) | 0.18.3 | MIT | not declared | Self-diagnostic logs only; never BitBake domain logs. |
-| [`tui-menu`](https://crates.io/crates/tui-menu) | 0.3.1 | MIT OR Apache-2.0 | not declared | Menu behavior/render spike; action catalog stays authoritative. |
-| [`tui-nodes`](https://crates.io/crates/tui-nodes) | 0.10.0 | MIT | not declared | Dependency-topology spike with text fallback. |
-| [`tui-piechart`](https://crates.io/crates/tui-piechart) | 1.0.2 | MIT | 1.74.0 | Rootfs composition candidate with table fallback. |
-| [`tui-scrollview`](https://crates.io/crates/tui-scrollview) | 0.6.7 | MIT OR Apache-2.0 | 1.88.0 | Long-document spike; offsets remain reducer-owned. |
-| [`tui-term`](https://crates.io/crates/tui-term) | 0.3.4 | MIT | 1.86.0 | Compatibility spike against typed terminal replicas. |
-| [`tui-tree-widget`](https://crates.io/crates/tui-tree-widget) | 0.24.1 | MIT | 1.86.0 | Layer/rootfs/dependency tree candidate. |
-| [`tui-widget-list`](https://crates.io/crates/tui-widget-list) | 0.15.3 | MIT | not declared | Variable-height list spike. |
+| [`ratatui-image`](https://crates.io/crates/ratatui-image) | 11.0.6 | MIT | 1.86.0 | Defer until portability, bounds, and fallback evidence. |
+| [`ratatui-textarea`](https://crates.io/crates/ratatui-textarea) | 0.9.2 | MIT | 1.86.0 | Adopt for a renderer-only adapter spike. |
+| [`throbber-widgets-tui`](https://crates.io/crates/throbber-widgets-tui) | 0.11.1 | Zlib | 1.88.0 | Adopt without `rand`; model phase remains authoritative. |
+| [`tui-big-text`](https://crates.io/crates/tui-big-text) | 0.8.9 | MIT OR Apache-2.0 | 1.88.0 | Defer until onboarding value is demonstrated. |
+| [`tui-checkbox`](https://crates.io/crates/tui-checkbox) | 0.4.6 | MIT | 1.74.0 | Reject; native primitive is smaller than the dependency. |
+| [`tui-logger`](https://crates.io/crates/tui-logger) | 0.18.3 | MIT | not declared | Reject; existing bounded tracing remains authoritative. |
+| [`tui-menu`](https://crates.io/crates/tui-menu) | 0.3.1 | MIT OR Apache-2.0 | not declared | Reject; menus must project the typed action catalog directly. |
+| [`tui-nodes`](https://crates.io/crates/tui-nodes) | 0.10.0 | MIT | not declared | Defer until bounded topology and fallback evidence. |
+| [`tui-piechart`](https://crates.io/crates/tui-piechart) | 1.0.2 | MIT | 1.74.0 | Defer until exact table/no-color equivalence. |
+| [`tui-scrollview`](https://crates.io/crates/tui-scrollview) | 0.6.7 | MIT OR Apache-2.0 | 1.88.0 | Adopt for a reducer-owned offset adapter spike. |
+| [`tui-term`](https://crates.io/crates/tui-term) | 0.3.4 | MIT | 1.86.0 | Defer pending typed-replica equivalence. |
+| [`tui-tree-widget`](https://crates.io/crates/tui-tree-widget) | 0.24.1 | MIT | 1.86.0 | Adopt for an external-state bounded adapter spike. |
+| [`tui-widget-list`](https://crates.io/crates/tui-widget-list) | 0.15.3 | MIT | not declared | Adopt for a bounded variable-height list spike. |
 
 MIT, Apache-2.0, and Zlib are already allowed by `deny.toml`, but allowlisting is
 not sufficient compliance. Before adoption:
@@ -299,25 +302,33 @@ not sufficient compliance. Before adoption:
 8. if code is adapted rather than linked, retain all notices and provenance and
    require an explicit review in the implementing commit.
 
+The workspace's generated shipped-dependency evidence is
+[`compliance/THIRD_PARTY_NOTICES.md`](compliance/THIRD_PARTY_NOTICES.md) plus
+[`compliance/yoctui.cdx.json`](compliance/yoctui.cdx.json). The verifier rejects
+stale output, incomplete or dangling candidate graphs, invalid checksums,
+implicit default features, and non-admitted candidates in the real manifests
+or lockfile. The workspace graph also builds with `--locked --offline`.
+
 ## Delivery phases and progress
 
 Progress counts required registry tasks, including the parent completion gate.
 
 | Phase | Scope | Task IDs | Progress |
 |---|---|---|---:|
-| 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 2/3 |
+| 0 | Research, visual acceptance, dependency/license policy | `UX-SPEC-001`, `UX-CONCEPT-VALIDATION-001`, `UX-LICENSE-001` | 3/3 |
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 0/6 |
 | 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 0/10 |
 | 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 0/5 |
 | 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **2/38 (5.3%)** |
+| **M21 total** | | | **3/38 (7.9%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **542/578 (93.8%)**. The research/spec,
+tasks makes overall required progress **543/578 (93.9%)**. The research/spec,
 six-scene production-renderer acceptance baseline, exact cell goldens, semantic
-captures, and executable implementation-gap ledger are complete.
+captures, executable implementation-gap ledger, and reusable dependency
+admission/notices/SBOM/offline-build gate are complete.
 
 ## Test strategy
 

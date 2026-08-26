@@ -19,15 +19,18 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-2/38 (5.3%); overall required registry progress is 542/578 (93.8%).
+3/38 (7.9%); overall required registry progress is 543/578 (93.9%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
 anchors and maps 14 honest implementation gaps to incomplete owner tasks;
 failure tests reject corrupt dimensions, missing captures or anchors, and gaps
-whose owner is already complete. `UX-LICENSE-001` is next and intentionally
-admits no dependency until the reusable license, notice, source, feature, MSRV,
-SBOM, and locked-build gate exists.
+whose owner is already complete. `UX-LICENSE-001` is complete: thirteen widget
+candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
+compatibility, decisions, and a resolved CycloneDX graph; the real 236-package
+workspace graph has generated notices/SBOM and passes `cargo deny` plus a locked
+offline build. No candidate entered the workspace dependency graph. The typed
+action catalog is next.
 
 ### Completed baseline through M20
 
