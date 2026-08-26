@@ -77,7 +77,6 @@ real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-failed-build-errors
 real_yoctui_anchors = ["Inspector: Error", "ERROR: bash:do_compile failed with exit code 1", "do_compile", "Daemon: ✓ Connected", "19:28:27"]
 implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001"]
 open_gaps = [
-  { task = "UX-CHECKBOX-001", description = "replace ad hoc filter markers with accessible checked, unchecked, indeterminate, and disabled states" },
 ]
 anchors = [
   "failed lifecycle is explicit in header and result summary",

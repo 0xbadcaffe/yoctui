@@ -6157,12 +6157,12 @@ notes = "The stateless custom renderer now projects TextAreaState line numbers, 
 id = "UX-CHECKBOX-001"
 milestone = "M21"
 title = "Add accessible checkboxes and batch selection"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 717
 required = true
 depends_on = ["UX-KEYMAP-MODEL-001", "UX-WIDGET-PRIMITIVES-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-model ux_checkbox", "cargo test -p yoctui-app ux_checkbox", "cargo test -p yoctui-ui ux_checkbox"]
-notes = "Implement checked, unchecked, indeterminate, disabled, focused, Unicode, and ASCII states for filters/forms and safe batches; Space toggles but never executes or bypasses destructive preview."
+notes = "CheckboxState owns checked, unchecked, indeterminate, disabled-reason, and focused states with Unicode and ASCII markers plus stable semantic words. CheckboxBatch bounds 4,096 exact IDs, focus and selection, and produces a typed preview without execution authority. App mapping keeps Space as toggle, arrows/j/k as movement, and Enter as the separate primary action; render tests preserve focus, disabled reason, and no-color/ASCII meaning."
 
 [[task]]
 id = "UX-LIST-TREE-001"

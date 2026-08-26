@@ -2,6 +2,7 @@
 mod action_catalog;
 mod bitbake_layers;
 mod bitbake_restart;
+mod checkbox;
 mod compatibility;
 mod compatibility_catalog;
 mod compatibility_ui;
@@ -40,6 +41,7 @@ mod workspace_compatibility;
 pub use action_catalog::*;
 pub use bitbake_layers::*;
 pub use bitbake_restart::*;
+pub use checkbox::*;
 pub use compatibility::*;
 pub use compatibility_catalog::*;
 pub use compatibility_ui::*;

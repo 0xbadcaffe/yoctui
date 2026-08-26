@@ -8823,6 +8823,20 @@ fn textarea_mode_label(mode: yoctui_model::TextAreaMode) -> &'static str {
     }
 }
 
+pub fn checkbox_text(row: &yoctui_model::CheckboxState, unicode: bool) -> String {
+    let focus = if row.focused { ">" } else { " " };
+    let reason = row
+        .disabled_reason
+        .as_deref()
+        .map_or(String::new(), |reason| format!(" — {reason}"));
+    format!(
+        "{focus} {} {} ({}){reason}",
+        row.marker(unicode),
+        row.label,
+        row.semantic_state()
+    )
+}
+
 fn textarea_status(editor: &yoctui_model::PopupEditor) -> String {
     let position = editor.position();
     let save = match editor.save_state() {
@@ -20151,6 +20165,19 @@ mod tests {
         let conflict = rendered_text(&app, 100, 30);
         assert!(conflict.contains("external conflict"), "{conflict}");
         assert!(conflict.contains("CONFLICT:"), "{conflict}");
+    }
+
+    #[test]
+    fn ux_checkbox_renderer_preserves_unicode_ascii_focus_and_disabled_meaning() {
+        let mut row = yoctui_model::CheckboxState::new("pkg:busybox", "busybox");
+        row.focused = true;
+        row.toggle();
+        assert_eq!(checkbox_text(&row, true), "> ☑ busybox (checked)");
+        assert_eq!(checkbox_text(&row, false), "> [x] busybox (checked)");
+        row.set_disabled("dependency is required");
+        let disabled = checkbox_text(&row, false);
+        assert!(disabled.contains("(disabled)"), "{disabled}");
+        assert!(disabled.contains("dependency is required"), "{disabled}");
     }
 
     fn qemu_workspace_app() -> App {

@@ -2,15 +2,14 @@
 
 ## Task
 
-**ID:** UX-CHECKBOX-001
-**Title:** Add accessible checkboxes and batch selection
+**ID:** UX-LIST-TREE-001
+**Title:** Evaluate and integrate tree scrollview and variable-list adapters
 **Status:** NOT_STARTED
 
 ## Objective
 
-Add reducer-owned accessible checkbox states and safe batch selection to
-filters, forms, and package/rootfs workflows without coupling selection to
-execution.
+Evaluate tree, scrollview, and variable-list adapters against Yoctui's external
+model authority and integrate bounded render-only list/tree projections.
 
 ## Dependencies
 

@@ -3702,6 +3702,23 @@ pub enum Input {
     PageDown,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CheckboxInputAction {
+    Toggle,
+    Move(isize),
+    Primary,
+}
+
+pub fn checkbox_input_action(input: Input) -> Option<CheckboxInputAction> {
+    match input {
+        Input::Char(' ') => Some(CheckboxInputAction::Toggle),
+        Input::Up | Input::Char('k') => Some(CheckboxInputAction::Move(-1)),
+        Input::Down | Input::Char('j') => Some(CheckboxInputAction::Move(1)),
+        Input::Enter => Some(CheckboxInputAction::Primary),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum KeymapInputResult {
     Action(Box<Action>),
@@ -9390,6 +9407,22 @@ mod tests {
                     extend: true,
                 }
             ))
+        );
+    }
+
+    #[test]
+    fn ux_checkbox_space_toggles_but_enter_remains_primary() {
+        assert_eq!(
+            checkbox_input_action(Input::Char(' ')),
+            Some(CheckboxInputAction::Toggle)
+        );
+        assert_eq!(
+            checkbox_input_action(Input::Enter),
+            Some(CheckboxInputAction::Primary)
+        );
+        assert_eq!(
+            checkbox_input_action(Input::Down),
+            Some(CheckboxInputAction::Move(1))
         );
     }
     #[test]
