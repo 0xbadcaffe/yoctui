@@ -609,7 +609,11 @@ mod tests {
         fs::remove_dir_all(root).unwrap();
 
         let (root, spec) = fixture("trap 'exit 0' TERM; echo ready; while :; do sleep 1; done");
-        let mut runner = PtyRunner::default().with_termination_grace(Duration::from_secs(1));
+        // Keep the fixture above the one-second process/scheduler boundary used
+        // by heavily parallel workspace runs; a responsive TERM trap still
+        // completes immediately, while the separate forced-kill test owns the
+        // escalation deadline assertion.
+        let mut runner = PtyRunner::default().with_termination_grace(Duration::from_secs(3));
         runner
             .start(
                 spec,

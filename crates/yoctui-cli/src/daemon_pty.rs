@@ -476,18 +476,23 @@ fn terminal_to_wire(
     session_id: PtySessionId,
     terminal: &yoctui_model::TerminalSnapshot,
 ) -> yoctui_protocol::daemon::PtyScreenSnapshot {
-    let columns = usize::from(terminal.dimensions.columns);
-    let rows = terminal
+    let cells = terminal
         .cells
-        .chunks(columns)
-        .map(|cells| {
-            cells
-                .iter()
-                .filter(|cell| !cell.wide_continuation)
-                .map(|cell| cell.contents.as_str())
-                .collect::<String>()
-                .trim_end()
-                .to_owned()
+        .iter()
+        .enumerate()
+        .filter(|(_, cell)| terminal_cell_is_non_default(cell))
+        .map(|(index, cell)| yoctui_protocol::daemon::PtyScreenCell {
+            index: index as u32,
+            contents: cell.contents.clone(),
+            foreground: terminal_color_to_wire(cell.foreground),
+            background: terminal_color_to_wire(cell.background),
+            bold: cell.bold,
+            dim: cell.dim,
+            italic: cell.italic,
+            underline: cell.underline,
+            inverse: cell.inverse,
+            wide: cell.wide,
+            wide_continuation: cell.wide_continuation,
         })
         .collect();
     yoctui_protocol::daemon::PtyScreenSnapshot {
@@ -498,8 +503,37 @@ fn terminal_to_wire(
         },
         cursor_column: terminal.cursor.1,
         cursor_row: terminal.cursor.0,
-        rows,
+        cursor_hidden: terminal.modes.cursor_hidden,
+        scrollback_offset: terminal.scrollback_offset.min(u32::MAX as usize) as u32,
+        cells,
         scrollback_lines: terminal.max_scrollback_offset.min(u32::MAX as usize) as u32,
+    }
+}
+
+fn terminal_cell_is_non_default(cell: &yoctui_model::TerminalCell) -> bool {
+    !cell.contents.is_empty()
+        || cell.foreground != yoctui_model::TerminalColor::Default
+        || cell.background != yoctui_model::TerminalColor::Default
+        || cell.bold
+        || cell.dim
+        || cell.italic
+        || cell.underline
+        || cell.inverse
+        || cell.wide
+        || cell.wide_continuation
+}
+
+fn terminal_color_to_wire(
+    color: yoctui_model::TerminalColor,
+) -> yoctui_protocol::daemon::PtyTerminalColor {
+    match color {
+        yoctui_model::TerminalColor::Default => yoctui_protocol::daemon::PtyTerminalColor::Default,
+        yoctui_model::TerminalColor::Indexed(index) => {
+            yoctui_protocol::daemon::PtyTerminalColor::Indexed(index)
+        }
+        yoctui_model::TerminalColor::Rgb(red, green, blue) => {
+            yoctui_protocol::daemon::PtyTerminalColor::Rgb(red, green, blue)
+        }
     }
 }
 
@@ -547,9 +581,53 @@ mod tests {
         let terminal = emulator.snapshot(0).unwrap();
         let screen = terminal_to_wire(PtySessionId(3), &terminal);
         assert_eq!(screen.session_id.0, 3);
-        assert_eq!(screen.rows[0], "ready");
-        assert_eq!(screen.rows[1], "prompt");
-        assert!(screen.rows.iter().all(|row| !row.contains('\x1b')));
+        assert!(screen.cells.iter().any(|cell| cell.contents == "r"));
+        assert!(
+            screen
+                .cells
+                .iter()
+                .all(|cell| !cell.contents.contains('\x1b'))
+        );
+    }
+
+    #[test]
+    fn ux_terminal_adapter_wire_is_sparse_exact_and_never_reparses_ansi() {
+        let mut emulator = yoctui_model::TerminalEmulator::new(
+            PtyDimensions {
+                columns: 16,
+                rows: 3,
+            },
+            8,
+        )
+        .unwrap();
+        emulator
+            .process(b"\x1b[1;3;4;38;2;7;8;9mstyled\x1b[0m\r\nwide:\xe7\x95\x8c\x1b[?25l")
+            .unwrap();
+        let terminal = emulator.snapshot(0).unwrap();
+        let screen = terminal_to_wire(PtySessionId(4), &terminal);
+        assert!(screen.cursor_hidden);
+        assert!(screen.cells.len() < terminal.cells.len());
+        assert!(
+            screen
+                .cells
+                .windows(2)
+                .all(|pair| pair[0].index < pair[1].index)
+        );
+        assert!(screen.cells.iter().any(|cell| {
+            cell.contents == "s"
+                && cell.bold
+                && cell.italic
+                && cell.underline
+                && cell.foreground == yoctui_protocol::daemon::PtyTerminalColor::Rgb(7, 8, 9)
+        }));
+        assert!(screen.cells.iter().any(|cell| cell.wide));
+        assert!(screen.cells.iter().any(|cell| cell.wide_continuation));
+        assert!(
+            screen
+                .cells
+                .iter()
+                .all(|cell| !cell.contents.contains('\x1b'))
+        );
     }
 
     #[tokio::test]

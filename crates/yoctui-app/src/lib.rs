@@ -2191,7 +2191,8 @@ fn daemon_client_view(
     telemetry: Option<yoctui_protocol::daemon::DaemonTelemetry>,
 ) -> yoctui_model::ClientDaemonView {
     use yoctui_model::{
-        ClientDaemonJobSummary, ClientDaemonPtyScreen, ClientDaemonPtySummary, ClientDaemonView,
+        ClientDaemonJobSummary, ClientDaemonPtyScreen, ClientDaemonPtySummary,
+        ClientDaemonTerminalCell, ClientDaemonView,
     };
     let Some(snapshot) = snapshot else {
         return ClientDaemonView {
@@ -2235,14 +2236,50 @@ fn daemon_client_view(
         pty_screens: snapshot
             .pty_screens
             .iter()
-            .map(|screen| ClientDaemonPtyScreen {
-                session_id: screen.session_id.0,
-                columns: screen.dimensions.columns,
-                rows_count: screen.dimensions.rows,
-                cursor_column: screen.cursor_column,
-                cursor_row: screen.cursor_row,
-                rows: screen.rows.clone(),
-                scrollback_lines: screen.scrollback_lines,
+            .map(|screen| {
+                let capacity =
+                    usize::from(screen.dimensions.columns) * usize::from(screen.dimensions.rows);
+                let mut cells = vec![ClientDaemonTerminalCell::default(); capacity];
+                for cell in &screen.cells {
+                    if let Some(destination) = cells.get_mut(cell.index as usize) {
+                        *destination = ClientDaemonTerminalCell {
+                            contents: cell.contents.clone(),
+                            foreground: client_daemon_terminal_color(cell.foreground),
+                            background: client_daemon_terminal_color(cell.background),
+                            bold: cell.bold,
+                            dim: cell.dim,
+                            italic: cell.italic,
+                            underline: cell.underline,
+                            inverse: cell.inverse,
+                            wide: cell.wide,
+                            wide_continuation: cell.wide_continuation,
+                        };
+                    }
+                }
+                let rows = cells
+                    .chunks(usize::from(screen.dimensions.columns))
+                    .map(|cells| {
+                        cells
+                            .iter()
+                            .filter(|cell| !cell.wide_continuation)
+                            .map(|cell| cell.contents.as_str())
+                            .collect::<String>()
+                            .trim_end()
+                            .to_owned()
+                    })
+                    .collect();
+                ClientDaemonPtyScreen {
+                    session_id: screen.session_id.0,
+                    columns: screen.dimensions.columns,
+                    rows_count: screen.dimensions.rows,
+                    cursor_column: screen.cursor_column,
+                    cursor_row: screen.cursor_row,
+                    cursor_hidden: screen.cursor_hidden,
+                    scrollback_offset: screen.scrollback_offset,
+                    rows,
+                    cells,
+                    scrollback_lines: screen.scrollback_lines,
+                }
             })
             .collect(),
         connected_clients: snapshot.clients.len(),
@@ -2273,6 +2310,22 @@ fn daemon_client_view(
                 }
             },
         }),
+    }
+}
+
+fn client_daemon_terminal_color(
+    color: yoctui_protocol::daemon::PtyTerminalColor,
+) -> yoctui_model::ClientDaemonTerminalColor {
+    match color {
+        yoctui_protocol::daemon::PtyTerminalColor::Default => {
+            yoctui_model::ClientDaemonTerminalColor::Default
+        }
+        yoctui_protocol::daemon::PtyTerminalColor::Indexed(index) => {
+            yoctui_model::ClientDaemonTerminalColor::Indexed(index)
+        }
+        yoctui_protocol::daemon::PtyTerminalColor::Rgb(red, green, blue) => {
+            yoctui_model::ClientDaemonTerminalColor::Rgb(red, green, blue)
+        }
     }
 }
 
@@ -7950,7 +8003,21 @@ mod tests {
                             },
                             cursor_column: 2,
                             cursor_row: 1,
-                            rows: vec!["ready".into(), "prompt".into()],
+                            cursor_hidden: false,
+                            scrollback_offset: 0,
+                            cells: vec![yoctui_protocol::daemon::PtyScreenCell {
+                                index: 0,
+                                contents: "r".into(),
+                                foreground: yoctui_protocol::daemon::PtyTerminalColor::Rgb(1, 2, 3),
+                                background: yoctui_protocol::daemon::PtyTerminalColor::Default,
+                                bold: true,
+                                dim: false,
+                                italic: false,
+                                underline: false,
+                                inverse: false,
+                                wide: false,
+                                wide_continuation: false,
+                            }],
                             scrollback_lines: 8,
                         },
                     ),
@@ -7959,8 +8026,15 @@ mod tests {
             .unwrap();
         let screen = &app.daemon.pty_screens[0];
         assert_eq!(screen.session_id, 4);
-        assert_eq!(screen.rows, ["ready", "prompt"]);
+        assert_eq!(screen.rows[0], "r");
         assert_eq!(screen.scrollback_lines, 8);
+        assert_eq!(screen.cells.len(), 60);
+        assert_eq!(screen.cells[0].contents, "r");
+        assert!(screen.cells[0].bold);
+        assert_eq!(
+            screen.cells[0].foreground,
+            yoctui_model::ClientDaemonTerminalColor::Rgb(1, 2, 3)
+        );
     }
 
     #[test]

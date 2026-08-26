@@ -9,7 +9,7 @@ use thiserror::Error;
 use crate::{TaskStatsData, WorkspaceData};
 
 pub const PROTOCOL_MAJOR: u16 = 1;
-pub const PROTOCOL_MINOR: u16 = 0;
+pub const PROTOCOL_MINOR: u16 = 1;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_CAPABILITIES: usize = 128;
 pub const MAX_RETAINED_EVENTS: usize = 65_536;
@@ -19,6 +19,8 @@ pub const MAX_DAEMON_PTY_SESSIONS: usize = 64;
 pub const MAX_TERMINAL_SCROLLBACK_LINES: usize = 100_000;
 pub const MAX_TERMINAL_ROWS: u16 = 512;
 pub const MAX_TERMINAL_COLUMNS: u16 = 512;
+pub const MAX_TERMINAL_CELLS: usize = 250_000;
+pub const MAX_TERMINAL_CELL_BYTES: usize = 1_024;
 pub const MAX_UTILITY_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_PTY_OUTPUT_EVENT_BYTES: usize = 64 * 1024;
 pub const MAX_DAEMON_BUILD_EVENTS: usize = 2_048;
@@ -2243,8 +2245,32 @@ pub struct PtyScreenSnapshot {
     pub dimensions: TerminalDimensions,
     pub cursor_column: u16,
     pub cursor_row: u16,
-    pub rows: Vec<String>,
+    pub cursor_hidden: bool,
+    pub scrollback_offset: u32,
+    pub cells: Vec<PtyScreenCell>,
     pub scrollback_lines: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PtyTerminalColor {
+    Default,
+    Indexed(u8),
+    Rgb(u8, u8, u8),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PtyScreenCell {
+    pub index: u32,
+    pub contents: String,
+    pub foreground: PtyTerminalColor,
+    pub background: PtyTerminalColor,
+    pub bold: bool,
+    pub dim: bool,
+    pub italic: bool,
+    pub underline: bool,
+    pub inverse: bool,
+    pub wide: bool,
+    pub wide_continuation: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -2629,16 +2655,28 @@ fn replace_by<T, K: PartialEq>(items: &mut Vec<T>, replacement: T, key: impl Fn(
 
 fn validate_pty_screen(screen: &PtyScreenSnapshot) -> Result<(), DaemonSnapshotError> {
     let dimensions = screen.dimensions;
+    let capacity = usize::from(dimensions.columns) * usize::from(dimensions.rows);
     let valid_dimensions = dimensions.columns > 0
         && dimensions.columns <= MAX_TERMINAL_COLUMNS
         && dimensions.rows > 0
-        && dimensions.rows <= MAX_TERMINAL_ROWS;
+        && dimensions.rows <= MAX_TERMINAL_ROWS
+        && capacity <= MAX_TERMINAL_CELLS;
     let valid_cursor =
         screen.cursor_column < dimensions.columns && screen.cursor_row < dimensions.rows;
-    let valid_rows = screen.rows.len() <= usize::from(dimensions.rows);
+    let valid_cells = screen.cells.len() <= capacity
+        && screen.cells.iter().all(|cell| {
+            (cell.index as usize) < capacity
+                && cell.contents.len() <= MAX_TERMINAL_CELL_BYTES
+                && !cell.contents.chars().any(char::is_control)
+        })
+        && screen
+            .cells
+            .windows(2)
+            .all(|pair| pair[0].index < pair[1].index);
     if !valid_dimensions
         || !valid_cursor
-        || !valid_rows
+        || !valid_cells
+        || screen.scrollback_offset > screen.scrollback_lines
         || screen.scrollback_lines as usize > MAX_TERMINAL_SCROLLBACK_LINES
     {
         return Err(DaemonSnapshotError::InvalidPtyScreen(screen.session_id));
@@ -3322,7 +3360,9 @@ mod tests {
             },
             cursor_column: 3,
             cursor_row: 1,
-            rows: vec!["ready".into(), "prompt".into()],
+            cursor_hidden: false,
+            scrollback_offset: 0,
+            cells: Vec::new(),
             scrollback_lines: 7,
         };
         journal
@@ -3330,7 +3370,19 @@ mod tests {
             .unwrap();
         assert_eq!(journal.snapshot().pty_screens, vec![screen.clone()]);
         let mut replacement = screen;
-        replacement.rows = vec!["updated".into()];
+        replacement.cells = vec![PtyScreenCell {
+            index: 0,
+            contents: "updated".into(),
+            foreground: PtyTerminalColor::Default,
+            background: PtyTerminalColor::Default,
+            bold: false,
+            dim: false,
+            italic: false,
+            underline: false,
+            inverse: false,
+            wide: false,
+            wide_continuation: false,
+        }];
         journal
             .publish(DaemonEvent::PtyScreen(replacement.clone()))
             .unwrap();
@@ -3344,7 +3396,21 @@ mod tests {
             },
             cursor_column: 0,
             cursor_row: 0,
-            rows: vec!["first".into(), "extra".into()],
+            cursor_hidden: false,
+            scrollback_offset: 0,
+            cells: vec![PtyScreenCell {
+                index: 2,
+                contents: "outside".into(),
+                foreground: PtyTerminalColor::Default,
+                background: PtyTerminalColor::Default,
+                bold: false,
+                dim: false,
+                italic: false,
+                underline: false,
+                inverse: false,
+                wide: false,
+                wide_continuation: false,
+            }],
             scrollback_lines: 0,
         };
         assert!(matches!(

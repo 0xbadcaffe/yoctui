@@ -6234,12 +6234,12 @@ notes = "Rejected audited ratatui-image 11.0.6 with default features disabled. C
 id = "UX-TERMINAL-EVAL-001"
 milestone = "M21"
 title = "Evaluate tui-term against typed terminal replicas"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 724
 required = true
 depends_on = ["UX-SPEC-001", "UX-LICENSE-001", "PTY-MULTI-001"]
 verify = ["cargo test -p yoctui-model ux_terminal_adapter", "cargo test -p yoctui-ui ux_terminal_adapter", "cargo deny check"]
-notes = "Prove tui-term can consume a projection of daemon-owned typed screen state without UI ANSI parsing, duplicate emulation, unbounded state, or replica drift; otherwise retain the current renderer with measured parity evidence."
+notes = "Admitted pinned MIT tui-term 0.3.4 strictly through generic Screen/Cell with defaults off and no features, so its optional vt100/parser and PTY controller never enter the edge. The daemon remains the sole parser/emulator; its bounded dense snapshot becomes ordered sparse wire cells and one deterministic client grid whose plain rows are derived, preventing dual-authority drift. A transient UI projection preserves Unicode width/continuations, RGB/indexed colors, modifiers, cursor visibility/position, scrollback/view offsets, resize, splits, multi-client journal parity, and no-color meaning. Model, CLI, app, TestBackend, and styled real-PTY tests pass. The 46-package audited closure adds only tui-term over the shipped graph; a stripped size-optimized renderer link grew 160 bytes (0.1%), and notices/SBOM/deny/offline evidence are refreshed."
 
 [[task]]
 id = "UX-TERMINAL-UX-001"

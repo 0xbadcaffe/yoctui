@@ -3179,12 +3179,18 @@ percentage, count, and membership text; narrow, monochrome, no-color, and
 reader-oriented projections use deterministic bars, tables, and trees. No
 widget reads the filesystem or owns selection, scrolling, grouping, or totals.
 
-The daemon remains the only terminal emulator and PTY owner. A `tui-term`
-integration is valid only as a renderer over the existing typed replica. It
-cannot introduce client-side ANSI parsing, a second `vt100::Parser`, a separate
-screen state, or behavior that differs between attached clients. The existing
-typed-cell renderer remains authoritative unless equivalence and bounds are
-proved.
+The daemon remains the only terminal emulator and PTY owner. Yoctui admits
+`tui-term` 0.3.4 only as a generic typed-cell renderer with every feature
+disabled; its optional `vt100` and PTY-controller paths are absent. The daemon
+emulator produces a bounded dense snapshot, the wire carries ordered sparse
+non-default cells plus cursor/scrollback state, and the client deterministically
+expands one dense replica. Plain rows are derived from those cells, so a second
+text authority cannot drift. `yoctui-ui` creates a transient `Screen`/`Cell`
+projection for each draw; it accepts no bytes, parses no ANSI, retains no
+terminal state, and behaves identically for every client holding the same
+journal snapshot. The exact boundary, parity matrix, and size/dependency
+measurements are recorded in
+[`terminal-renderer-evaluation.md`](design/m21/terminal-renderer-evaluation.md).
 
 Third-party adoption requires current source/checksum, SPDX license, notices,
 MSRV, enabled-feature, transitive-dependency, Ratatui compatibility, locked

@@ -31,6 +31,7 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tui_piechart::{LegendPosition, PieChart, PieSlice};
+use tui_term::widget::PseudoTerminal;
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
     BuildStatus, CompatibilityUiAuthorityStatus, CompatibilityUiCapabilityRow,
@@ -82,6 +83,181 @@ enum SearchNavigation {
 enum SearchExit {
     Done,
     Close,
+}
+
+struct TerminalReplicaCell {
+    source: yoctui_model::ClientDaemonTerminalCell,
+    color_enabled: bool,
+}
+
+impl tui_term::widget::Cell for TerminalReplicaCell {
+    fn has_contents(&self) -> bool {
+        !self.source.contents.is_empty() && !self.source.wide_continuation
+    }
+
+    fn apply(&self, cell: &mut ratatui::buffer::Cell) {
+        if self.has_contents() {
+            cell.set_symbol(&self.source.contents);
+        }
+        let mut modifiers = Modifier::empty();
+        if self.source.bold {
+            modifiers |= Modifier::BOLD;
+        }
+        if self.source.dim {
+            modifiers |= Modifier::DIM;
+        }
+        if self.source.italic {
+            modifiers |= Modifier::ITALIC;
+        }
+        if self.source.underline {
+            modifiers |= Modifier::UNDERLINED;
+        }
+        if self.source.inverse {
+            modifiers |= Modifier::REVERSED;
+        }
+        let color = |value| {
+            if !self.color_enabled {
+                return Color::Reset;
+            }
+            match value {
+                yoctui_model::ClientDaemonTerminalColor::Default => Color::Reset,
+                yoctui_model::ClientDaemonTerminalColor::Indexed(index) => Color::Indexed(index),
+                yoctui_model::ClientDaemonTerminalColor::Rgb(red, green, blue) => {
+                    Color::Rgb(red, green, blue)
+                }
+            }
+        };
+        cell.set_style(
+            Style::reset()
+                .fg(color(self.source.foreground))
+                .bg(color(self.source.background))
+                .add_modifier(modifiers),
+        );
+    }
+}
+
+struct TerminalReplicaAdapter {
+    columns: u16,
+    rows: u16,
+    cursor_column: u16,
+    cursor_row: u16,
+    cursor_hidden: bool,
+    scrollback_offset: u32,
+    cells: Vec<TerminalReplicaCell>,
+    row_offset: u16,
+    column_offset: u16,
+}
+
+impl TerminalReplicaAdapter {
+    fn new(
+        screen: &yoctui_model::ClientDaemonPtyScreen,
+        row_offset: usize,
+        column_offset: usize,
+        color_enabled: bool,
+        viewport_rows: u16,
+        viewport_columns: u16,
+    ) -> Option<Self> {
+        let capacity = usize::from(screen.rows_count) * usize::from(screen.columns);
+        if screen.cells.len() != capacity {
+            return None;
+        }
+        let row_offset = u16::try_from(row_offset)
+            .unwrap_or(u16::MAX)
+            .min(screen.rows_count);
+        let column_offset = u16::try_from(column_offset)
+            .unwrap_or(u16::MAX)
+            .min(screen.columns);
+        let rows = screen
+            .rows_count
+            .saturating_sub(row_offset)
+            .min(viewport_rows);
+        let columns = screen
+            .columns
+            .saturating_sub(column_offset)
+            .min(viewport_columns);
+        let mut cells = Vec::with_capacity(usize::from(rows) * usize::from(columns));
+        for row in row_offset..row_offset.saturating_add(rows) {
+            let start = usize::from(row) * usize::from(screen.columns) + usize::from(column_offset);
+            cells.extend(
+                screen.cells[start..start + usize::from(columns)]
+                    .iter()
+                    .cloned()
+                    .map(|source| TerminalReplicaCell {
+                        source,
+                        color_enabled,
+                    }),
+            );
+        }
+        Some(Self {
+            columns,
+            rows,
+            cursor_column: screen.cursor_column,
+            cursor_row: screen.cursor_row,
+            cursor_hidden: screen.cursor_hidden,
+            scrollback_offset: screen.scrollback_offset,
+            cells,
+            row_offset,
+            column_offset,
+        })
+    }
+}
+
+impl tui_term::widget::Screen for TerminalReplicaAdapter {
+    type C = TerminalReplicaCell;
+
+    fn cell(&self, row: u16, column: u16) -> Option<&Self::C> {
+        if row >= self.rows || column >= self.columns {
+            return None;
+        }
+        let index = usize::from(row) * usize::from(self.columns) + usize::from(column);
+        self.cells.get(index)
+    }
+
+    fn hide_cursor(&self) -> bool {
+        self.cursor_hidden
+    }
+
+    fn cursor_position(&self) -> (u16, u16) {
+        let row = u32::from(self.cursor_row)
+            .saturating_add(self.scrollback_offset)
+            .checked_sub(u32::from(self.row_offset));
+        let column = self.cursor_column.checked_sub(self.column_offset);
+        (
+            row.and_then(|value| u16::try_from(value).ok())
+                .unwrap_or(u16::MAX),
+            column.unwrap_or(u16::MAX),
+        )
+    }
+}
+
+fn render_terminal_replica_content(
+    frame: &mut Frame,
+    app: &App,
+    screen: &yoctui_model::ClientDaemonPtyScreen,
+    area: Rect,
+    row_offset: usize,
+    column_offset: usize,
+) -> bool {
+    let Some(adapter) = TerminalReplicaAdapter::new(
+        screen,
+        row_offset,
+        column_offset,
+        app.color_enabled,
+        area.height,
+        area.width,
+    ) else {
+        return false;
+    };
+    let blank_cursor = if app.color_enabled {
+        Style::default().fg(ThemePalette::for_app(app).focused_border)
+    } else {
+        Style::default().add_modifier(Modifier::REVERSED)
+    };
+    let cursor = tui_term::widget::Cursor::default()
+        .style(blank_cursor)
+        .overlay_style(Style::default().add_modifier(Modifier::REVERSED));
+    frame.render_widget(PseudoTerminal::new(&adapter).cursor(cursor), area);
+    true
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -2783,28 +2959,37 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 .iter()
                 .find(|screen| screen.session_id == session.id)
         });
-        let content = session.map_or_else(
-            || vec![Line::raw("No PTY session")],
+        let block = pane_block(app, &title, index == app.pty_selection);
+        let inner = block.inner(rect);
+        frame.render_widget(block, rect);
+        let regions = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(inner);
+        let status = session.map_or_else(
+            || "No PTY session".into(),
             |session| {
-                let mut lines =
-                    Vec::with_capacity(1 + screen.map_or(1, |screen| screen.rows.len()));
-                lines.push(Line::raw(format!(
+                format!(
                     "{} viewer(s) | selection {}",
                     session.viewers,
                     app.pty_selection + 1
-                )));
-                if let Some(screen) = screen {
-                    lines.extend(screen.rows.iter().map(|row| Line::raw(row.as_str())));
-                } else {
-                    lines.push(Line::raw("Screen unavailable · awaiting daemon snapshot"));
-                }
-                lines
+                )
             },
         );
-        frame.render_widget(
-            Paragraph::new(content).block(pane_block(app, &title, index == app.pty_selection)),
-            rect,
-        );
+        frame.render_widget(Paragraph::new(status), regions[0]);
+        let rendered = screen.is_some_and(|screen| {
+            render_terminal_replica_content(frame, app, screen, regions[1], 0, 0)
+        });
+        if !rendered {
+            let lines = screen.map_or_else(
+                || vec![Line::raw("Screen unavailable · awaiting daemon snapshot")],
+                |screen| {
+                    screen
+                        .rows
+                        .iter()
+                        .map(|row| Line::raw(row.as_str()))
+                        .collect()
+                },
+            );
+            frame.render_widget(Paragraph::new(lines), regions[1]);
+        }
     }
 }
 
@@ -3876,6 +4061,53 @@ fn raw_pty_output(
             )
         },
     );
+    if let Some(screen) = screen {
+        let block = pane_block(app, &title, true);
+        let inner = block.inner(area);
+        let viewport = usize::from(inner.height).max(1);
+        let row_offset = if app.raw_mode.output.follow {
+            usize::from(screen.rows_count).saturating_sub(viewport)
+        } else {
+            usize::from(screen.rows_count)
+                .saturating_sub(viewport)
+                .saturating_sub(app.raw_mode.output.vertical_scroll)
+        };
+        frame.render_widget(block, area);
+        if render_terminal_replica_content(
+            frame,
+            app,
+            screen,
+            inner,
+            row_offset,
+            app.raw_mode.output.horizontal_scroll,
+        ) {
+            return;
+        }
+        let plain_row_offset = if app.raw_mode.output.follow {
+            screen.rows.len().saturating_sub(viewport)
+        } else {
+            screen
+                .rows
+                .len()
+                .saturating_sub(viewport)
+                .saturating_sub(app.raw_mode.output.vertical_scroll)
+        };
+        let lines = screen
+            .rows
+            .iter()
+            .skip(plain_row_offset)
+            .take(viewport)
+            .map(|line| {
+                Line::raw(
+                    line.chars()
+                        .skip(app.raw_mode.output.horizontal_scroll)
+                        .collect::<String>(),
+                )
+            })
+            .collect::<Vec<_>>();
+        frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
+        return;
+    }
     let lines = screen.map_or_else(
         || vec![Line::raw("Screen unavailable · awaiting daemon snapshot")],
         |screen| {
@@ -17013,6 +17245,8 @@ mod tests {
                 rows_count: 18,
                 cursor_column: 35,
                 cursor_row: 6,
+                cursor_hidden: false,
+                scrollback_offset: 0,
                 rows: vec![
                     "bspguy@builder:~/yocto/build$ bitbake-layers show-layers".into(),
                     "layer                 path".into(),
@@ -17021,6 +17255,7 @@ mod tests {
                     "meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp".into(),
                     "bspguy@builder:~/yocto/build$".into(),
                 ],
+                cells: Vec::new(),
                 scrollback_lines: 0,
             },
             yoctui_model::ClientDaemonPtyScreen {
@@ -17029,6 +17264,8 @@ mod tests {
                 rows_count: 18,
                 cursor_column: 18,
                 cursor_row: 5,
+                cursor_hidden: false,
+                scrollback_offset: 0,
                 rows: vec![
                     "busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs".into(),
                     "CC      coreutils/ls.o".into(),
@@ -17036,6 +17273,7 @@ mod tests {
                     "LD      busybox_unstripped".into(),
                     "busybox-devshell$".into(),
                 ],
+                cells: Vec::new(),
                 scrollback_lines: 312,
             },
         ];
@@ -21995,6 +22233,71 @@ mod tests {
         let rendered = rendered_text(&app, 80, 24);
         assert!(rendered.contains("build shell"), "{rendered}");
         assert!(rendered.contains("selection 1"), "{rendered}");
+    }
+
+    #[test]
+    fn ux_terminal_adapter_renders_typed_cells_cursor_styles_and_accessible_color() {
+        let mut cells = vec![yoctui_model::ClientDaemonTerminalCell::default(); 8];
+        cells[0] = yoctui_model::ClientDaemonTerminalCell {
+            contents: "A".into(),
+            foreground: yoctui_model::ClientDaemonTerminalColor::Rgb(7, 8, 9),
+            background: yoctui_model::ClientDaemonTerminalColor::Indexed(17),
+            bold: true,
+            italic: true,
+            underline: true,
+            ..yoctui_model::ClientDaemonTerminalCell::default()
+        };
+        cells[1] = yoctui_model::ClientDaemonTerminalCell {
+            contents: "界".into(),
+            wide: true,
+            ..yoctui_model::ClientDaemonTerminalCell::default()
+        };
+        cells[2].wide_continuation = true;
+        let screen = yoctui_model::ClientDaemonPtyScreen {
+            session_id: 9,
+            columns: 4,
+            rows_count: 2,
+            cursor_column: 3,
+            cursor_row: 0,
+            cursor_hidden: false,
+            scrollback_offset: 1,
+            rows: vec!["A界".into(), String::new()],
+            cells,
+            scrollback_lines: 3,
+        };
+        let mut app = App::new(8, 128);
+        let mut terminal = Terminal::new(TestBackend::new(4, 2)).unwrap();
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                assert!(render_terminal_replica_content(
+                    frame, &app, &screen, area, 0, 0,
+                ));
+            })
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        assert_eq!(buffer[(0, 0)].symbol(), "A");
+        assert_eq!(buffer[(0, 0)].fg, Color::Rgb(7, 8, 9));
+        assert_eq!(buffer[(0, 0)].bg, Color::Indexed(17));
+        assert!(buffer[(0, 0)].modifier.contains(Modifier::BOLD));
+        assert!(buffer[(0, 0)].modifier.contains(Modifier::ITALIC));
+        assert!(buffer[(0, 0)].modifier.contains(Modifier::UNDERLINED));
+        assert_eq!(buffer[(1, 0)].symbol(), "界");
+        assert_eq!(buffer[(3, 1)].symbol(), "█");
+
+        app.color_enabled = false;
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                assert!(render_terminal_replica_content(
+                    frame, &app, &screen, area, 0, 0,
+                ));
+            })
+            .unwrap();
+        let accessible = terminal.backend().buffer();
+        assert_eq!(accessible[(0, 0)].fg, Color::Reset);
+        assert_eq!(accessible[(0, 0)].bg, Color::Reset);
+        assert!(accessible[(0, 0)].modifier.contains(Modifier::BOLD));
     }
 
     #[test]
@@ -28299,7 +28602,10 @@ mod tests {
                     rows_count: 24,
                     cursor_column: 6,
                     cursor_row: 1,
+                    cursor_hidden: false,
+                    scrollback_offset: 0,
                     rows: vec!["interactive prompt".into(), "typed terminal row".into()],
+                    cells: Vec::new(),
                     scrollback_lines: 2,
                 });
         }

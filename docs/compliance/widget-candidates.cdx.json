@@ -7594,8 +7594,7 @@
     {
       "dependsOn": [
         "pkg:cargo/ratatui-core@0.1.2",
-        "pkg:cargo/ratatui-widgets@0.3.2",
-        "pkg:cargo/vt100@0.16.2"
+        "pkg:cargo/ratatui-widgets@0.3.2"
       ],
       "ref": "pkg:cargo/tui-term@0.3.4"
     },

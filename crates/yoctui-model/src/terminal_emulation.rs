@@ -4,6 +4,7 @@ use thiserror::Error;
 pub const MAX_TERMINAL_SCROLLBACK_LINES: usize = 100_000;
 pub const MAX_TERMINAL_FEED_BYTES: usize = 64 * 1024;
 pub const MAX_TERMINAL_SNAPSHOT_CELLS: usize = 250_000;
+pub const MAX_TERMINAL_CELL_BYTES: usize = 1_024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TerminalColor {
@@ -135,6 +136,14 @@ fn snapshot_screen(
             let cell = screen
                 .cell(row, column)
                 .ok_or(TerminalEmulationError::MissingCell { row, column })?;
+            if cell.contents().len() > MAX_TERMINAL_CELL_BYTES {
+                return Err(TerminalEmulationError::CellTooLarge {
+                    row,
+                    column,
+                    bytes: cell.contents().len(),
+                    maximum: MAX_TERMINAL_CELL_BYTES,
+                });
+            }
             cells.push(TerminalCell {
                 contents: cell.contents().to_owned(),
                 foreground: color(cell.fgcolor()),
@@ -214,6 +223,13 @@ pub enum TerminalEmulationError {
     ScreenTooLarge { cells: usize, maximum: usize },
     #[error("maintained terminal emulator omitted cell ({row}, {column})")]
     MissingCell { row: u16, column: u16 },
+    #[error("terminal cell ({row}, {column}) has {bytes} bytes, exceeding {maximum}")]
+    CellTooLarge {
+        row: u16,
+        column: u16,
+        bytes: usize,
+        maximum: usize,
+    },
 }
 
 #[cfg(test)]
@@ -252,6 +268,41 @@ mod tests {
         assert!(styled.bold && styled.italic && styled.underline);
         assert_eq!(styled.foreground, TerminalColor::Rgb(1, 2, 3));
         assert_eq!(styled.background, TerminalColor::Indexed(17));
+    }
+
+    #[test]
+    fn ux_terminal_adapter_snapshot_is_complete_bounded_and_parser_owned() {
+        let mut terminal = emulator(3, 12, 4);
+        terminal
+            .process(
+                b"\x1b[1;1Hplain \x1b[1;3;4;38;2;4;5;6;48;5;17mstyled\x1b[0m\r\n\
+                  wide:\xe7\x95\x8c\r\nthird\r\nfourth\x1b[?25l",
+            )
+            .unwrap();
+        let snapshot = terminal.snapshot(1).unwrap();
+        assert_eq!(
+            snapshot.cells.len(),
+            usize::from(snapshot.dimensions.rows) * usize::from(snapshot.dimensions.columns)
+        );
+        assert!(snapshot.cells.iter().any(|cell| {
+            cell.contents == "s"
+                && cell.bold
+                && cell.italic
+                && cell.underline
+                && cell.foreground == TerminalColor::Rgb(4, 5, 6)
+                && cell.background == TerminalColor::Indexed(17)
+        }));
+        assert!(snapshot.cells.iter().any(|cell| cell.wide));
+        assert!(snapshot.cells.iter().any(|cell| cell.wide_continuation));
+        assert!(snapshot.modes.cursor_hidden);
+        assert_eq!(snapshot.scrollback_offset, 1);
+        assert!(snapshot.max_scrollback_offset >= snapshot.scrollback_offset);
+        assert!(
+            snapshot
+                .cells
+                .iter()
+                .all(|cell| cell.contents.len() <= MAX_TERMINAL_CELL_BYTES)
+        );
     }
 
     #[test]

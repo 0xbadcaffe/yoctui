@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-24/38 (63.2%); overall required registry progress is 564/578 (97.6%).
+25/38 (65.8%); overall required registry progress is 565/578 (97.8%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -1040,6 +1040,7 @@ See `docs/current-task.md`.
 | Rootfs composition adapter | DONE | Exact image-scoped BitBake source queries feed a cancellable stale-denying adapter; canonical build containment, exact manifest/runtime-pkgdata parsing, no-follow traversal, hard-link byte deduplication, special-file accounting, cleaned-work authority, and count/depth/byte/time bounds pass bridge/adapter/CLI tests |
 | Rootfs composition UI | DONE | Typed Images tabs expose exact installed-package and filesystem authorities; the admitted wide color pie is paired with exact values while bar/table/tree text covers narrow, monochrome, and no-color modes. Stable category/package/path drilldown, inspectable Other membership, explicit lifecycle/limitations, production concept goldens, and keyboard/menu/mouse-scroll routes pass focused tests |
 | Terminal image preview evaluation | DONE | Rejected ratatui-image: deploy kinds lack raster MIME authority; probing owns stdin and may mutate tmux; resize lacks required bounds/cancellation; 71 extra packages and a measured 319,048-byte (111.4%) reference-binary increase fail the optional-feature budget. A typed transport-invariant Inspector fallback uses exact metadata or Rootfs composition without probes or graphics claims |
+| Terminal renderer evaluation | DONE | Admitted tui-term 0.3.4 only as a generic feature-free renderer. Sparse validated wire cells expand into one client grid; a transient projection preserves Unicode width, styles, cursor/scrollback coordinates, resize, splits, multi-client parity, and no-color behavior without UI parsing or retained widget authority. Model/CLI/app/TestBackend/styled real-PTY tests pass; the graph adds one package and the stripped reference link grew 160 bytes (0.1%) |
 | Image artifact adapter | DONE | Tinfoil/environment snapshots expose `DEPLOY_DIR_IMAGE`; the cancellable bounded adapter validates the machine/root, refuses symlinks and escapes, classifies deploy records, parses checksum associations, and reports partial data explicitly |
 | Images artifact UI | DONE | Retained recipe picker/build confirmation now coexists with correlated CLI-owned scans, search and exact selection, typed build/editor actions, explicit lifecycle/limitations, responsive Workspace/Inspector rendering, footer hints, and direct tests |
 | QEMU launch/session model | DONE | Typed capability, exact artifact-bound launch validation, deterministic preview/confirmation, stable shared-job lifecycle, bounded stream output, failures, stale events, and confirmed cancellation are covered |

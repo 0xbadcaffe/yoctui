@@ -187,7 +187,7 @@ mod tests {
             "/bin/sh",
             &[
                 "-c",
-                "printf '\\033[2J\\033[1;1Hreal-pty-ready\\r\\nline-two\\r\\nline-three\\r\\n'",
+                "printf '\\033[2J\\033[1;1H\\033[1;3;4;38;2;7;8;9mreal-pty-ready\\033[0m\\r\\nline-two\\r\\nline-three\\r\\n'",
             ],
             b"",
         )
@@ -281,7 +281,10 @@ mod tests {
                 rows_count: 6,
                 cursor_column: 0,
                 cursor_row: 0,
+                cursor_hidden: false,
+                scrollback_offset: 0,
                 rows: vec!["left-session-only".into()],
+                cells: Vec::new(),
                 scrollback_lines: 0,
             },
             ClientDaemonPtyScreen {
@@ -290,7 +293,45 @@ mod tests {
                 rows_count: resized.dimensions.rows,
                 cursor_column: resized.cursor.1,
                 cursor_row: resized.cursor.0,
+                cursor_hidden: resized.modes.cursor_hidden,
+                scrollback_offset: resized.scrollback_offset as u32,
                 rows: resized.plain_text.lines().map(str::to_owned).collect(),
+                cells: resized
+                    .cells
+                    .iter()
+                    .map(|cell| yoctui_model::ClientDaemonTerminalCell {
+                        contents: cell.contents.clone(),
+                        foreground: match cell.foreground {
+                            yoctui_model::TerminalColor::Default => {
+                                yoctui_model::ClientDaemonTerminalColor::Default
+                            }
+                            yoctui_model::TerminalColor::Indexed(index) => {
+                                yoctui_model::ClientDaemonTerminalColor::Indexed(index)
+                            }
+                            yoctui_model::TerminalColor::Rgb(red, green, blue) => {
+                                yoctui_model::ClientDaemonTerminalColor::Rgb(red, green, blue)
+                            }
+                        },
+                        background: match cell.background {
+                            yoctui_model::TerminalColor::Default => {
+                                yoctui_model::ClientDaemonTerminalColor::Default
+                            }
+                            yoctui_model::TerminalColor::Indexed(index) => {
+                                yoctui_model::ClientDaemonTerminalColor::Indexed(index)
+                            }
+                            yoctui_model::TerminalColor::Rgb(red, green, blue) => {
+                                yoctui_model::ClientDaemonTerminalColor::Rgb(red, green, blue)
+                            }
+                        },
+                        bold: cell.bold,
+                        dim: cell.dim,
+                        italic: cell.italic,
+                        underline: cell.underline,
+                        inverse: cell.inverse,
+                        wide: cell.wide,
+                        wide_continuation: cell.wide_continuation,
+                    })
+                    .collect(),
                 scrollback_lines: resized.max_scrollback_offset as u32,
             },
         ];
@@ -318,6 +359,15 @@ mod tests {
             .find(|row| row_text(*row).contains("real-pty-ready"))
             .expect("real PTY output appears inside a workbench pane");
         let output_column = row_text(output_row).find("real-pty-ready").unwrap();
+        let styled = &buffer[(output_column as u16, output_row)];
+        assert_eq!(styled.fg, ratatui::style::Color::Rgb(7, 8, 9));
+        assert!(styled.modifier.contains(ratatui::style::Modifier::BOLD));
+        assert!(styled.modifier.contains(ratatui::style::Modifier::ITALIC));
+        assert!(
+            styled
+                .modifier
+                .contains(ratatui::style::Modifier::UNDERLINED)
+        );
         assert!(
             output_column >= 60,
             "output must be in the selected right pane"

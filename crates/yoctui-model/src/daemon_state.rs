@@ -462,8 +462,33 @@ pub struct ClientDaemonPtyScreen {
     pub rows_count: u16,
     pub cursor_column: u16,
     pub cursor_row: u16,
+    pub cursor_hidden: bool,
+    pub scrollback_offset: u32,
     pub rows: Vec<String>,
+    pub cells: Vec<ClientDaemonTerminalCell>,
     pub scrollback_lines: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ClientDaemonTerminalColor {
+    #[default]
+    Default,
+    Indexed(u8),
+    Rgb(u8, u8, u8),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct ClientDaemonTerminalCell {
+    pub contents: String,
+    pub foreground: ClientDaemonTerminalColor,
+    pub background: ClientDaemonTerminalColor,
+    pub bold: bool,
+    pub dim: bool,
+    pub italic: bool,
+    pub underline: bool,
+    pub inverse: bool,
+    pub wide: bool,
+    pub wide_continuation: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

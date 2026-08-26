@@ -233,11 +233,16 @@ detach/reattach, split panes, copy/search state, and explicit termination.
 `tui-term` currently renders a `vt100::Screen`; directly giving it raw terminal
 bytes in `yoctui-ui` would duplicate parsing and violate the typed boundary.
 
-The `tui-term` task is therefore an evidence-producing compatibility spike. It
-must prove that its renderer can consume a projection of the existing typed
-screen without creating a second emulator/authority. If it cannot, Yoctui keeps
-its renderer and closes the task with measured feature-parity evidence rather
-than weakening the architecture.
+The compatibility spike admitted `tui-term` 0.3.4 only through its generic
+`Screen`/`Cell` renderer with every crate feature disabled. The daemon still
+owns the only `vt100` parser. A validated sparse wire grid expands into one
+bounded client replica, and the short-lived UI adapter projects it without raw
+bytes or retained screen state. TestBackend and real-PTY evidence covers text,
+Unicode width, styles, cursor visibility/position, scrollback coordinates,
+resize, splits, and no-color behavior. The stripped reference link grew by only
+160 bytes (0.1%); the shipped graph adds only `tui-term` over packages already
+used by Ratatui. Full evidence is in
+[`terminal-renderer-evaluation.md`](design/m21/terminal-renderer-evaluation.md).
 
 The user-facing terminal work continues regardless of that dependency choice:
 
@@ -294,9 +299,9 @@ refresh its candidate before changing `Cargo.lock`.
 | [`tui-logger`](https://crates.io/crates/tui-logger) | 0.18.3 | MIT | not declared | Reject; existing bounded tracing remains authoritative. |
 | [`tui-menu`](https://crates.io/crates/tui-menu) | 0.3.1 | MIT OR Apache-2.0 | not declared | Reject; menus must project the typed action catalog directly. |
 | [`tui-nodes`](https://crates.io/crates/tui-nodes) | 0.10.0 | MIT | not declared | Reject; bounded reducer-owned topology/tree/table projections have complete text parity. |
-| [`tui-piechart`](https://crates.io/crates/tui-piechart) | 1.0.2 | MIT | 1.74.0 | Defer until exact table/no-color equivalence. |
+| [`tui-piechart`](https://crates.io/crates/tui-piechart) | 1.0.2 | MIT | 1.74.0 | Adopt for wide rootfs composition with exact text parity. |
 | [`tui-scrollview`](https://crates.io/crates/tui-scrollview) | 0.6.7 | MIT OR Apache-2.0 | 1.88.0 | Rejected; retain reducer-owned scroll projection. |
-| [`tui-term`](https://crates.io/crates/tui-term) | 0.3.4 | MIT | 1.86.0 | Defer pending typed-replica equivalence. |
+| [`tui-term`](https://crates.io/crates/tui-term) | 0.3.4 | MIT | 1.86.0 | Adopt generic renderer only; all features disabled. |
 | [`tui-tree-widget`](https://crates.io/crates/tui-tree-widget) | 0.24.1 | MIT | 1.86.0 | Rejected; retain stable-ID stateless tree renderer. |
 | [`tui-widget-list`](https://crates.io/crates/tui-widget-list) | 0.15.3 | MIT | not declared | Rejected; retain bounded variable-height projection. |
 
@@ -330,13 +335,13 @@ Progress counts required registry tasks, including the parent completion gate.
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 6/6 |
 | 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 10/10 |
 | 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 5/5 |
-| 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 0/6 |
+| 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 1/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **24/38 (63.2%)** |
+| **M21 total** | | | **25/38 (65.8%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **564/578 (97.6%)**. The research/spec,
+tasks makes overall required progress **565/578 (97.8%)**. The research/spec,
 six-scene production-renderer acceptance baseline, exact cell goldens, semantic
 captures, executable implementation-gap ledger, and reusable dependency
 admission/notices/SBOM/offline-build gate are complete. The validated

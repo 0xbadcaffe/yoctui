@@ -28,6 +28,7 @@ sha2 = "0.10"
 thiserror = "2.0"
 throbber-widgets-tui = { version = "0.11.1", default-features = false, features = ["std"] }
 tui-piechart = { version = "=1.0.2", default-features = false }
+tui-term = { version = "=0.3.4", default-features = false }
 tokio = { version = "1.49", features = ["macros", "rt-multi-thread", "process", "io-util", "sync", "time", "signal", "fs"] }
 toml = "0.9"
 tracing = "0.1"

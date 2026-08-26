@@ -4673,10 +4673,14 @@ bounded transport/decode/dependency review.
 
 The daemon remains the sole owner of PTY processes, `vt100` emulation, bounded
 screen/scrollback, attachments, writer epochs, input, resize, and termination.
-The client UI consumes typed terminal replicas and never reparses ANSI. A
-`tui-term` renderer may be adopted only if an adapter preserves that boundary
-and proves replica equivalence; failure of that spike retains the existing
-renderer and does not remove the terminal milestone.
+The client UI consumes typed terminal replicas and never reparses ANSI.
+`tui-term` 0.3.4 is admitted only through its generic `Screen`/`Cell` traits
+with all features disabled. Ordered sparse protocol cells are bounded and
+validated, expand into one client grid, and drive both styled rendering and
+derived plain-text fallback. The transient adapter preserves Unicode width,
+colors/modifiers, cursor visibility/position, scrollback coordinates, viewport
+offsets, and no-color meaning; it owns no parser, PTY, process, input, resize,
+or retained screen state.
 
 Terminal Sessions is a normal discoverable destination with context-aware
 creation, session list/tabs, splits, zoom, rename, writer/read-only and

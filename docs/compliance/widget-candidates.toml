@@ -197,13 +197,13 @@ repository = "https://github.com/a-kenji/tui-term"
 msrv = "1.86.0"
 ratatui_requirement = "ratatui-core ^0.1.0; ratatui-widgets ^0.3.0"
 default_features = false
-enabled_features = ["vt100"]
-transitive_closure = 50
-transitive_sha256 = "00ac1c6174c3cb3675b12da9e16e6808caf716c08b467fe701de7893ddb49fc9"
-decision = "defer"
-admitted = false
+enabled_features = []
+transitive_closure = 46
+transitive_sha256 = "b4ed9b1250b63806d7c1266c46c9550ab4e89d56ae3847727ee8118029b08de6"
+decision = "adopt"
+admitted = true
 owner_task = "UX-TERMINAL-EVAL-001"
-reason = "Compatibility must be proved over daemon-owned typed screen replicas without introducing client-side parsing, PTY ownership, or a second terminal state."
+reason = "Admitted only as a generic Screen/Cell renderer with every feature disabled. A sparse bounded wire replica expands once into client-owned typed cells, and a transient adapter projects those cells without raw bytes, ANSI parsing, PTY ownership, or retained widget state. TestBackend and real-PTY fixtures preserve text, Unicode width, colors, modifiers, cursor visibility/position, scrollback coordinates, resize, split placement, and no-color behavior. The shipped graph adds only tui-term over existing Ratatui packages; a stripped size-optimized renderer link grew by 160 bytes (0.1%)."
 
 [[candidate]]
 name = "tui-tree-widget"
