@@ -50,6 +50,16 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
             if ready:
                 try: raw.extend(os.read(master, 65536))
                 except OSError: break
+        # A private first-run session opens onboarding by design. Dismiss it
+        # before routing snapshot navigation; Esc is inert if onboarding was
+        # already completed by a future fixture.
+        os.write(master, b'\x1b')
+        dismiss_deadline = time.monotonic() + .5
+        while time.monotonic() < dismiss_deadline:
+            ready, _, _ = select.select([master], [], [], .1)
+            if ready:
+                try: raw.extend(os.read(master, 65536))
+                except OSError: break
         if name == 'wide':
             # xterm-compatible F2: enter the canonical Tasks workbench before
             # capturing the literal-reference integration anchors.

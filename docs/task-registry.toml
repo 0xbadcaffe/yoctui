@@ -6300,12 +6300,12 @@ notes = "Settings now projects one 15-row typed schema-v1 preference authority f
 id = "UX-RESPONSIVE-001"
 milestone = "M21"
 title = "Verify every M21 workflow across responsive layouts"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 730
 required = true
 depends_on = ["UX-DEPENDENCY-GRAPH-001", "UX-IMAGE-PREVIEW-001", "UX-ONBOARDING-001", "UX-PREFERENCES-001"]
 verify = ["cargo test -p yoctui-ui ux_responsive", "cargo test -p yoctui-app ux_responsive", "./scripts/test-tui-snapshots.sh"]
-notes = "Cover 200x60, 160x50, 130x40, 100x30, 80x24, and below minimum for menus, editors, graphs, rootfs, terminals, dashboard, command center, dialogs, and exact state/selection retention."
+notes = "Production TestBackend coverage now exercises all screens plus Dashboard/Workbench Center, menus, editor dialogs, dependency topology, rootfs composition, terminal sessions, onboarding, Settings, and modal controls at 200x60, 160x50, 130x40, 100x30, and 80x24. Tests preserve screen, focus, typed selection, scroll/session identity, pane priority, and exact semantic anchors while rejecting replacement glyphs; 79x23 renders only the bounded resize/quit recovery. App tests cover focus cycling, responsive mouse ownership, scrolling, and below-minimum inertness. The real PTY snapshot harness now dismisses first-run onboarding before F2 routing, and wide/medium/narrow snapshots plus concept-screen failure paths pass."
 
 [[task]]
 id = "UX-A11Y-001"

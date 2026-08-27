@@ -23480,7 +23480,7 @@ mod tests {
     }
 
     #[test]
-    fn breakpoint_matrix_preserves_pane_priority_content_and_dialog_controls() {
+    fn ux_responsive_breakpoint_matrix_preserves_pane_priority_content_and_dialog_controls() {
         const SUPPORTED: [(u16, u16); 5] = [(200, 60), (160, 50), (130, 40), (100, 30), (80, 24)];
         let mut app = literal_reference_app();
         app.daemon.pty_sessions.clear();
@@ -23606,6 +23606,97 @@ mod tests {
                 !too_small.contains(forbidden),
                 "below minimum rendered shell content {forbidden}: {too_small}"
             );
+        }
+    }
+
+    #[test]
+    fn ux_responsive_m21_surfaces_keep_identity_focus_and_recovery_at_every_required_size() {
+        const SIZES: [(u16, u16); 5] = [(200, 60), (160, 50), (130, 40), (100, 30), (80, 24)];
+
+        let dashboard = concept_idle_dashboard_app();
+        let mut dependencies = App::new(10, 1_000);
+        dependencies.screen = Screen::Dependencies;
+        let mut rootfs = ux_rootfs_ui_app();
+        rootfs.images_view = ImagesView::RootfsPackages;
+        let terminal = concept_terminal_sessions_app();
+        let editor = concept_editor_menu_app();
+        let mut menu = App::new(10, 1_000);
+        let _ = update(&mut menu, Action::OpenApplicationMenu);
+        let mut onboarding = App::new_unconfigured(10, 1_000);
+        let _ = update(&mut onboarding, Action::OpenOnboarding);
+        let mut settings = App::new(10, 1_000);
+        settings.screen = Screen::Settings;
+        settings.settings_selection = 12;
+
+        let cases = [
+            (
+                "dashboard/command center",
+                dashboard,
+                &["Current Build", "Workbench Center"][..],
+            ),
+            (
+                "dependency graph",
+                dependencies,
+                &["Dependency", "not loaded"][..],
+            ),
+            (
+                "rootfs",
+                rootfs,
+                &["Installed-package authority", "Exact bytes"][..],
+            ),
+            ("terminal", terminal, &["Terminal Sessions", "shell"][..]),
+            (
+                "editor",
+                editor,
+                &["Recipe editor: bash", "bash_5.2.bb"][..],
+            ),
+            ("menu", menu, &["Application menu", "[Workspace]"][..]),
+            (
+                "onboarding",
+                onboarding,
+                &["Guided workflow", "Verify environment"][..],
+            ),
+            ("settings", settings, &["Settings", "MetadataOnly"][..]),
+        ];
+
+        for (name, app, anchors) in cases {
+            let retained = (
+                app.screen,
+                app.focus,
+                app.settings_selection,
+                app.recipe_selection,
+                app.layer_selection,
+                app.pty_selection,
+            );
+            for (width, height) in SIZES {
+                let output = rendered_text_at(&app, width, height, literal_now());
+                assert!(
+                    !output.contains('\u{fffd}'),
+                    "{name} {width}x{height}: {output}"
+                );
+                assert!(
+                    anchors.iter().any(|anchor| output.contains(anchor)),
+                    "{name} {width}x{height} lost all semantic anchors: {output}"
+                );
+            }
+            assert_eq!(
+                (
+                    app.screen,
+                    app.focus,
+                    app.settings_selection,
+                    app.recipe_selection,
+                    app.layer_selection,
+                    app.pty_selection,
+                ),
+                retained,
+                "rendering resized {name} state"
+            );
+            let too_small = rendered_text_at(&app, 79, 23, literal_now());
+            assert!(
+                too_small.contains("Yoctui needs at least 80x24"),
+                "{name}: {too_small}"
+            );
+            assert!(!too_small.contains('\u{fffd}'), "{name}: {too_small}");
         }
     }
 
@@ -23985,7 +24076,7 @@ mod tests {
     }
 
     #[test]
-    fn responsive_all_screens_and_dialogs_render_at_boundary_sizes() {
+    fn ux_responsive_all_screens_and_dialogs_render_at_boundary_sizes() {
         let screens = [
             Screen::Dashboard,
             Screen::Tasks,
@@ -24009,10 +24100,21 @@ mod tests {
             Screen::Settings,
         ];
         for screen in screens {
-            for (width, height) in [(130, 24), (129, 24), (100, 24), (99, 24), (80, 24)] {
+            for (width, height) in [
+                (200, 60),
+                (160, 50),
+                (130, 40),
+                (100, 30),
+                (80, 24),
+                (79, 23),
+            ] {
                 let mut app = App::new(10, 1_000);
                 app.screen = screen;
-                let _ = rendered_text(&app, width, height);
+                let output = rendered_text(&app, width, height);
+                assert!(
+                    !output.contains('\u{fffd}'),
+                    "{screen:?} at {width}x{height}"
+                );
             }
         }
 

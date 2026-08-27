@@ -9817,7 +9817,7 @@ mod tests {
         );
     }
     #[test]
-    fn responsive_pane_shortcuts_map_to_focus_cycle() {
+    fn ux_responsive_pane_shortcuts_map_to_focus_cycle() {
         assert_eq!(
             key_action(Input::Tab),
             Some(Action::CycleFocus { backwards: false })
@@ -10137,7 +10137,7 @@ mod tests {
     }
 
     #[test]
-    fn raw_mouse_uses_responsive_regions_and_keyboard_scroll_routes() {
+    fn ux_responsive_mouse_regions_keyboard_scroll_and_minimum_are_exact() {
         let mut app = yoctui_model::App::new(16, 4096);
         app.screen = Screen::Recipes;
 

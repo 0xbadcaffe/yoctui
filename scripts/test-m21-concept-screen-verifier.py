@@ -73,7 +73,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
     def test_rejects_missing_semantic_anchor(self) -> None:
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8").replace(
-            '"Status: Idle"', '"anchor that cannot exist"', 1
+            '"Current Build · Idle"', '"anchor that cannot exist"', 1
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected("semantic capture is missing anchor")
@@ -100,14 +100,13 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.assert_rejected("missing crates/yoctui-ui/tests/golden")
 
     def test_rejects_completed_task_with_open_gap(self) -> None:
-        path = self.verifier.REGISTRY
+        path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8")
         text, replacements = re.subn(
-            r'(id = "UX-DASHBOARD-001".*?status = ")NOT_STARTED',
-            r"\1DONE",
+            r'(implementation_tasks = \["UX-DASHBOARD-001"\]\n)open_gaps = \[\]',
+            r'\1open_gaps = [{ task = "UX-DASHBOARD-001", description = "test gap" }]',
             text,
             count=1,
-            flags=re.DOTALL,
         )
         self.assertEqual(replacements, 1)
         path.write_text(text, encoding="utf-8")

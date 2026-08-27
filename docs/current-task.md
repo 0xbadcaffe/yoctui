@@ -2,38 +2,36 @@
 
 ## Task
 
-**ID:** UX-RESPONSIVE-001
-**Title:** Verify every M21 workflow across responsive layouts
+**ID:** UX-A11Y-001
+**Title:** Verify M21 accessibility and nonvisual meaning
 **Status:** NOT_STARTED
 
 ## Objective
 
-Verify every M21 workflow at all supported terminal breakpoints without hidden
-controls, lost selection, focus ambiguity, overflow, or replacement glyphs.
+Verify that every M21 state and interaction remains understandable without
+depending on color, Unicode glyphs, animation, pointer input, or visual layout.
 
 ## Dependencies
 
-- `UX-DEPENDENCY-GRAPH-001` — DONE
-- `UX-IMAGE-PREVIEW-001` — DONE
-- `UX-ONBOARDING-001` — DONE
-- `UX-PREFERENCES-001` — DONE
+- `UX-RESPONSIVE-001` — DONE
+- `UX-THROBBER-001` — DONE
+- `UX-CHECKBOX-001` — DONE
 
 ## Definition of done
 
-- Menus, editors, dependency graphs, rootfs, terminal sessions, Dashboard,
-  Workbench Center, onboarding, Settings, and dialogs remain usable at 200x60,
-  160x50, 130x40, 100x30, and 80x24.
-- Below-minimum terminals show a bounded recovery message rather than partial
-  controls or a panic.
-- Resize preserves typed selection, scroll identity, focus, modal ownership,
-  and terminal ownership across wide, medium, and narrow topology changes.
-- Snapshot and semantic tests reject clipping, overflow, replacement glyphs,
-  inaccessible active controls, and lost state at every required breakpoint.
+- No-color, ASCII, high-contrast, and reduced-motion modes preserve every state,
+  focus owner, selection, progress value, error, and disabled reason in text.
+- Charts, pie slices, trees, checkboxes, gauges, meters, and throbbers expose
+  exact labels/values/states without relying on hue, glyph shape, or motion.
+- Menus, dialogs, terminal writer/read-only ownership, onboarding, Settings,
+  logs, and compatibility states retain nonvisual meaning at all breakpoints.
+- Terminal-reader projections are bounded, ordered, free of replacement glyphs,
+  and distinguish empty, loading, partial, stale, failure, and terminal states.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui ux_responsive
-cargo test -p yoctui-app ux_responsive
-./scripts/test-tui-snapshots.sh
+cargo test -p yoctui-ui ux_accessibility
+cargo test -p yoctui-model ux_accessibility
+./scripts/verify-ui-spec.sh
 ```
