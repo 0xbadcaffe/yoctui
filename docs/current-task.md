@@ -2,36 +2,37 @@
 
 ## Task
 
-**ID:** UX-KEYMAP-E2E-001
-**Title:** Verify real-terminal menus keybindings focus and scrolling
+**ID:** UX-PTY-E2E-001
+**Title:** Verify the built-in terminal session UX end to end
 **Status:** NOT_STARTED
 
 ## Objective
 
-Verify the complete typed action catalog, effective keymap, menus, focus, and
-scrolling through real terminal input rather than model-only dispatch.
+Verify the complete daemon-owned terminal-session workflow through the client,
+protocol, renderer, and real PTY boundaries.
 
 ## Dependencies
 
-- `UX-PREFERENCES-001` — DONE
-- `UX-FOCUS-001` — DONE
-- `UX-SCROLL-001` — DONE
+- `UX-TERMINAL-UX-001` — DONE
+- `UX-KEYMAP-E2E-001` — DONE
 
 ## Definition of done
 
-- Every catalog default and custom chord dispatches to its typed route; invalid,
-  colliding, reserved-prefix, unreachable, and disabled bindings fail closed.
-- F10 application menus, context menus, palette routes, and popup modes retain
-  focus ownership and exact disabled/safety explanations in a real PTY.
-- Tab/Shift+Tab, pane subfocus, zoom/restore, row/page/edge/search scrolling,
-  and mouse parity preserve the same selection and viewport authority.
-- Keymap reset, persistence/restart, literal prefix handling, and narrow/wide
-  transitions are covered without leaking input into dialogs or PTY writers.
+- Shell creation, session and split focus, writer lease/takeover, detach,
+  reattach, reconnect, clean exit, process loss, and confirmed kill retain one
+  daemon-owned process authority.
+- Prefix commands and literal prefix forwarding cannot leak into application
+  shortcuts; Unicode, bounded paste, terminal mouse reporting, copy mode,
+  search, and scrollback preserve exact bytes and selection ownership.
+- Terminal replica rendering, resize, zoom, cursor, dropped-history, writer and
+  read-only states remain responsive, accessible, and bounded.
+- Runtime, model, protocol, UI, and controlling-PTY evidence agree on terminal
+  identity and lifecycle outcomes without a client-side parser or PTY process.
 
 ## Verification
 
 ```bash
-./scripts/test-tui-keymap.sh
-./scripts/test-workbench-ux-keymap.sh
+cargo test -p yoctui -- ux_terminal_runtime
+./scripts/test-workbench-terminal.sh
 ./scripts/test-tui-pty.sh
 ```

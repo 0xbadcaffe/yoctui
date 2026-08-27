@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-33/38 (86.8%); overall required registry progress is 573/578 (99.1%).
+34/38 (89.5%); overall required registry progress is 574/578 (99.3%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -1041,6 +1041,7 @@ See `docs/current-task.md`.
 | M21 accessibility | DONE | Named model/UI gates cover every shared widget exception, activity lifecycle, checkbox state, focus/selection attribute, exact progress value, rootfs chart fallback, menu denial, and terminal writer/read-only ownership across no-color, ASCII, Unicode, high-contrast, monochrome, animated, and reduced-motion modes |
 | Expanded-workbench performance | DONE | Ten release scenarios cover existing work plus menu-heavy, 8,192-package rootfs, 4,096-node graph, 4,096-line/1,024-file editor, and 4,096-line terminal bounds. All remain below 5.01 ms/frame against the unchanged 10 ms ceiling; checksummed evidence and the zero-unresolved-frame validator pass without adding caches |
 | Responsive layouts | DONE | M21 production fixtures cover every screen plus menus, editors, dependency topology, rootfs, terminal sessions, Workbench Center, onboarding, Settings, and dialogs at 200x60, 160x50, 130x40, 100x30, 80x24, and bounded below-minimum recovery. Typed focus/selection/session state survives resize; real PTY snapshots dismiss first-run onboarding before exact navigation |
+| Real-terminal keymap UX | DONE | Exhaustive catalog/default/custom binding, validation, reset, focus/zoom, and scrolling tests are paired with a controlling-PTY semantic workflow for F10, Ctrl+P, F2, keyboard/right-click context menus, search/page/edge input, and 160x40↔80x24 resize retention. Baseline PTY harnesses now isolate state, establish a controlling terminal, and exercise the live unconfigured workbench rather than accepting an early backend failure |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
 | Command palette | DONE | Typed catalog, case-insensitive search, contextual availability, disabled explanations, inert invalid activation, focus restore, themes, and narrow rendering are covered |

@@ -6333,12 +6333,12 @@ notes = "The release benchmark now has ten deterministic bounded scenarios. The 
 id = "UX-KEYMAP-E2E-001"
 milestone = "M21"
 title = "Verify real-terminal menus keybindings focus and scrolling"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 733
 required = true
 depends_on = ["UX-PREFERENCES-001", "UX-FOCUS-001", "UX-SCROLL-001"]
 verify = ["./scripts/test-tui-keymap.sh", "./scripts/test-workbench-ux-keymap.sh", "./scripts/test-tui-pty.sh"]
-notes = "Dispatch every catalog binding, menu route, chord, collision/reset path, focus/zoom transition, row/page/search scroll, mouse parity, popup mode, and unreachable/disabled denial in a real PTY."
+notes = "The keymap acceptance gate combines exhaustive catalog/default/custom-chord dispatch, collision/reserved-prefix/unreachable rejection, capture/reset/export, focus/zoom, and bounded scrolling tests with a semantic controlling-PTY workflow. The real unconfigured workbench dismisses no authority, opens F10 application and Ctrl+P palette layers, routes F2 Tasks, opens the same context menu from keyboard and SGR right-click, accepts row/page/edge/search input, and retains Tasks identity across 160x40 to 80x24 to 160x40 transitions. Both baseline PTY harnesses now isolate XDG state, use correct row/column order, acquire a controlling terminal, wait for output after input, exercise first-run dismissal, and launch the supported unconfigured UI instead of treating an expected daemon-snapshot startup failure as success. All three required scripts pass."
 
 [[task]]
 id = "UX-PTY-E2E-001"
