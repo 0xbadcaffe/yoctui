@@ -1,6 +1,7 @@
 use std::{
     collections::BTreeMap,
     ffi::{OsStr, OsString},
+    io,
     path::{Path, PathBuf},
     process::{ExitStatus, Stdio},
     time::Duration,
@@ -20,6 +21,31 @@ const DEFAULT_OUTPUT_LIMIT: usize = 64 * 1024;
 const MAX_OUTPUT_LIMIT: usize = 1024 * 1024;
 const DEFAULT_TIMEOUT: Duration = Duration::from_secs(15);
 const DEFAULT_CANCEL_GRACE: Duration = Duration::from_secs(2);
+const SPAWN_ATTEMPTS: usize = 4;
+const SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
+
+#[cfg(unix)]
+fn is_transient_spawn_error(error: &io::Error) -> bool {
+    error.raw_os_error() == Some(libc::ETXTBSY)
+}
+
+#[cfg(not(unix))]
+fn is_transient_spawn_error(_error: &io::Error) -> bool {
+    false
+}
+
+async fn spawn_process(process: &mut Command) -> io::Result<Child> {
+    for attempt in 1..=SPAWN_ATTEMPTS {
+        match process.spawn() {
+            Ok(child) => return Ok(child),
+            Err(error) if attempt < SPAWN_ATTEMPTS && is_transient_spawn_error(&error) => {
+                tokio::time::sleep(SPAWN_RETRY_DELAY).await;
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    unreachable!("the bounded BitBake CLI spawn loop always returns")
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BitBakeCliOperation {
@@ -236,8 +262,8 @@ impl BitBakeCliRunner {
             .kill_on_drop(true);
         #[cfg(unix)]
         process.process_group(0);
-        let mut child = process
-            .spawn()
+        let mut child = spawn_process(&mut process)
+            .await
             .map_err(|error| BitBakeCliControlError::Spawn(error.to_string()))?;
         #[cfg(unix)]
         {
@@ -563,6 +589,17 @@ mod tests {
     }
 
     static FIXTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+    #[cfg(unix)]
+    #[test]
+    fn cli_control_retries_only_text_file_busy_spawn_failures() {
+        assert!(is_transient_spawn_error(&io::Error::from_raw_os_error(
+            libc::ETXTBSY,
+        )));
+        assert!(!is_transient_spawn_error(&io::Error::from_raw_os_error(
+            libc::ENOENT,
+        )));
+    }
 
     fn fixture(body: &str) -> (PathBuf, PathBuf) {
         let nonce = std::time::SystemTime::UNIX_EPOCH
