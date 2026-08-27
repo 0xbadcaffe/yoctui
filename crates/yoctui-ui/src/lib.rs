@@ -21011,7 +21011,7 @@ mod tests {
     }
 
     #[test]
-    fn accessibility_invariants_survive_color_motion_and_responsive_modes() {
+    fn ux_accessibility_invariants_survive_color_motion_and_responsive_modes() {
         let mut app = literal_reference_app();
         app.focus = FocusTarget::Workspace;
         app.reduced_motion = true;
@@ -21132,6 +21132,98 @@ mod tests {
         assert_ne!(palette.focused_border, palette.inactive_border);
         assert_ne!(palette.success, palette.error);
         assert_ne!(palette.selection_background, palette.background);
+    }
+
+    #[test]
+    fn ux_accessibility_m21_surfaces_never_require_color_glyph_shape_or_motion() {
+        let modes = [
+            (false, Theme::HighContrast, SymbolPreference::Ascii, true),
+            (true, Theme::HighContrast, SymbolPreference::Unicode, true),
+            (true, Theme::Monochrome, SymbolPreference::Ascii, false),
+        ];
+        for (color, theme, symbols, reduced_motion) in modes {
+            let configure = |app: &mut App| {
+                app.color_enabled = color;
+                app.theme = theme;
+                app.preferences.symbols = symbols;
+                app.preferences.charts = if symbols == SymbolPreference::Ascii {
+                    yoctui_model::ChartPreference::AccessibleText
+                } else {
+                    yoctui_model::ChartPreference::Automatic
+                };
+                app.reduced_motion = reduced_motion;
+            };
+
+            let mut tasks = literal_reference_app();
+            tasks.screen = Screen::Tasks;
+            tasks.focus = FocusTarget::Workspace;
+            configure(&mut tasks);
+            let task_text = rendered_text_at(&tasks, 100, 30, literal_now());
+            for expected in ["Tasks", "Running", "72%", "do_compile"] {
+                assert!(
+                    task_text.contains(expected),
+                    "missing {expected}: {task_text}"
+                );
+            }
+
+            let mut rootfs = ux_rootfs_ui_app();
+            rootfs.images_view = ImagesView::RootfsPackages;
+            configure(&mut rootfs);
+            let rootfs_text = rendered_text_at(&rootfs, 200, 60, literal_now());
+            for expected in ["Installed-package authority", "Exact bytes", "Other"] {
+                assert!(
+                    rootfs_text.contains(expected),
+                    "missing {expected}: {rootfs_text}"
+                );
+            }
+            if symbols == SymbolPreference::Ascii {
+                assert!(!rootfs_text.contains("visual summary"), "{rootfs_text}");
+            }
+
+            let mut menu = App::new(10, 1_000);
+            configure(&mut menu);
+            let _ = update(&mut menu, Action::OpenApplicationMenu);
+            let menu_text = rendered_text_at(&menu, 80, 24, literal_now());
+            for expected in [
+                "Application menu",
+                "Load a Yocto workspace first",
+                "Esc/F10 close",
+            ] {
+                assert!(
+                    menu_text.contains(expected),
+                    "missing {expected}: {menu_text}"
+                );
+            }
+
+            let mut terminal = concept_terminal_sessions_app();
+            configure(&mut terminal);
+            let terminal_text = rendered_text_at(&terminal, 160, 50, literal_now());
+            for expected in ["BuildShell", "writer", "Devshell", "read-only", "viewer(s)"] {
+                assert!(
+                    terminal_text.contains(expected),
+                    "missing terminal ownership {expected}: {terminal_text}"
+                );
+            }
+
+            for output in [task_text, rootfs_text, menu_text, terminal_text] {
+                assert!(!output.contains('\u{fffd}'), "{output}");
+            }
+        }
+
+        let mut checkbox = yoctui_model::CheckboxState::new("pkg", "busybox");
+        checkbox.focused = true;
+        checkbox.value = yoctui_model::CheckboxValue::Indeterminate;
+        assert_eq!(
+            checkbox_text(&checkbox, false),
+            "> [-] busybox (indeterminate)"
+        );
+        checkbox.set_disabled("required by the selected image");
+        let disabled = checkbox_text(&checkbox, false);
+        assert!(disabled.contains("disabled"), "{disabled}");
+        assert!(
+            disabled.contains("required by the selected image"),
+            "{disabled}"
+        );
     }
 
     #[test]

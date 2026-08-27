@@ -473,6 +473,24 @@ mod tests {
     }
 
     #[test]
+    fn ux_accessibility_reduced_motion_keeps_every_activity_lifecycle_textual_and_stable() {
+        for lifecycle in [
+            ActivityLifecycle::Loading,
+            ActivityLifecycle::Running,
+            ActivityLifecycle::Waiting,
+            ActivityLifecycle::Succeeded,
+            ActivityLifecycle::Failed,
+            ActivityLifecycle::Cancelled,
+        ] {
+            let first = ActivityProjection::new(lifecycle, 0, AnimationSpeed::Fast, true);
+            let later = ActivityProjection::new(lifecycle, u64::MAX, AnimationSpeed::Slow, true);
+            assert_eq!(first, later);
+            assert_eq!(first.phase, None);
+            assert_eq!(first.text(), lifecycle.word());
+        }
+    }
+
+    #[test]
     fn ux_progress_separates_build_parse_runqueue_resources_and_sstate() {
         let now = SystemTime::UNIX_EPOCH + Duration::from_secs(600);
         let mut app = App::new(16, 4_096);

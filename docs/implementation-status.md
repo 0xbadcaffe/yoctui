@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-31/38 (81.6%); overall required registry progress is 571/578 (98.8%).
+32/38 (84.2%); overall required registry progress is 572/578 (99.0%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -1038,6 +1038,7 @@ See `docs/current-task.md`.
 | Workbench command center | DONE | Dashboard composes one bounded typed projection of current build/action, recent contexts, active jobs, failure, artifact, Raw favorites, daemon terminals, and recent work. Direct `f`/`t` and contextual-menu routes reuse the authoritative Raw Favorites and Terminal Sessions workflows; responsive production goldens plus model/app/UI tests cover bounds and empty/current states |
 | Guided workflow onboarding | DONE | A schema-versioned six-step overlay borrows exact Build environment, target, build, diagnostics, image/rootfs, and daemon evidence; textual completed/current/blocked/skipped/stale/unavailable states remain responsive and accessible. Opening/resuming emits no execution effect, every destination reuses its typed route and confirmation boundary, and atomic private-session persistence covers first run, resume, dismissal, restart, and invalid-state rejection |
 | Unified preferences | DONE | One schema-v1 15-row Settings authority drives density, symbols, motion, color, mouse, footer, logs, pane restoration, charts, image/terminal constraints, and keybindings. Immediate preview/reset, locked reasons, legacy migration, atomic normalization, no-color preservation, invalid rejection, and restart restoration have model/app/UI/CLI coverage |
+| M21 accessibility | DONE | Named model/UI gates cover every shared widget exception, activity lifecycle, checkbox state, focus/selection attribute, exact progress value, rootfs chart fallback, menu denial, and terminal writer/read-only ownership across no-color, ASCII, Unicode, high-contrast, monochrome, animated, and reduced-motion modes |
 | Responsive layouts | DONE | M21 production fixtures cover every screen plus menus, editors, dependency topology, rootfs, terminal sessions, Workbench Center, onboarding, Settings, and dialogs at 200x60, 160x50, 130x40, 100x30, 80x24, and bounded below-minimum recovery. Typed focus/selection/session state survives resize; real PTY snapshots dismiss first-run onboarding before exact navigation |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |

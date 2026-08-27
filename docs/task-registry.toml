@@ -6311,12 +6311,12 @@ notes = "Production TestBackend coverage now exercises all screens plus Dashboar
 id = "UX-A11Y-001"
 milestone = "M21"
 title = "Verify M21 accessibility and nonvisual meaning"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 731
 required = true
 depends_on = ["UX-RESPONSIVE-001", "UX-THROBBER-001", "UX-CHECKBOX-001"]
 verify = ["cargo test -p yoctui-ui ux_accessibility", "cargo test -p yoctui-model ux_accessibility", "./scripts/verify-ui-spec.sh"]
-notes = "Test every state in no-color, ASCII, high contrast, reduced motion, and terminal-reader text; ensure focus, charts, pie slices, checkboxes, progress, menus, and terminal ownership never rely only on color/glyph/motion."
+notes = "Named model and production-renderer gates now cover no-color, ASCII, Unicode, high-contrast, monochrome, animated, and reduced-motion modes. Every shared widget exception and activity lifecycle has a stable ASCII marker plus textual state/detail; checkboxes expose unchecked/checked/indeterminate/disabled semantics and exact denial reasons. Real Tasks progress retains running identity and percentages; rootfs pie/chart choices fall back to exact tables; menu availability includes exact reasons; terminal sessions spell out BuildShell/Devshell, writer/read-only, and viewer ownership. No-color buffers reset foreground/background while selection/focus remains visible through attributes, reduced-motion output is frame-stable, all tested terminal-reader text is bounded and replacement-glyph free, and the UI contract gate passes."
 
 [[task]]
 id = "UX-PERF-001"
