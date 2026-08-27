@@ -1055,6 +1055,17 @@ Required sections:
 
 The dashboard must be useful both when idle and during a build.
 
+The implemented operational hierarchy renders Current Build first from the
+shared progress projection, followed by the capability-aware next action,
+active tasks, retained attention, recent jobs/artifacts, environment health,
+and telemetry. `F2`, `l`, `e`, `F3`, `F8`, `E`, and `M` open the existing typed
+Tasks, Logs, Errors, History, Images, Build Environment, and Maintenance
+workflows; the dashboard does not duplicate their reducers or bypass their
+availability and confirmation boundaries. Missing build-filesystem or sstate
+authority remains explicitly unavailable. Compact layouts retain the same
+state and routes in an Operational Summary, and a short Dashboard Inspector
+prioritizes system health over repeating the complete contextual-action list.
+
 On terminals with enough vertical space, Dashboard includes a dedicated
 terminal-native telemetry cockpit. It renders determinate CPU, memory, and
 build-filesystem gauges; bounded CPU and memory sample-history sparklines;
@@ -4439,9 +4450,10 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
-The implemented catalog currently contains 26 global commands and 101
-contextual workspace operations. Every entry has a validated lowercase stable
-ID, typed scope and target, complete presentation/search metadata, explicit
+The implemented catalog currently contains 26 global commands and 108
+contextual workspace operations, 134 definitions in total. Every entry has a
+validated lowercase stable ID, typed scope and target, complete
+presentation/search metadata, explicit
 local and environment requirements, safety class, footer priority, and Help
 group. The command palette, contextual compatibility action presentations, and
 the catalog section of Help consume those definitions directly. The catalog
