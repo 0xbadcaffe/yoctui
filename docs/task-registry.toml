@@ -6344,12 +6344,12 @@ notes = "The keymap acceptance gate combines exhaustive catalog/default/custom-c
 id = "UX-PTY-E2E-001"
 milestone = "M21"
 title = "Verify the built-in terminal session UX end to end"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 734
 required = true
 depends_on = ["UX-TERMINAL-UX-001", "UX-KEYMAP-E2E-001"]
 verify = ["cargo test -p yoctui -- ux_terminal_runtime", "./scripts/test-workbench-terminal.sh", "./scripts/test-tui-pty.sh"]
-notes = "Exercise shell, split/session focus, writer lease and takeover, prefix/literal prefix, Unicode/paste, mouse reporting, copy/search/scrollback, resize, detach/reattach, reconnect, exit/loss, and confirmed kill."
+notes = "The new required terminal gate runs exact named tests across the real Unix PTY runner, daemon supervisor, attach/detach and reconnect transport, protocol bounds, emulator, model, app input, mouse, production renderer, and end-to-end composition. It covers raw/Unicode bytes, bracketed modes, bounded paste/input/scrollback, cursor/styles, resize, split/session focus, writer epochs/takeover/release, literal prefix, copy/search/rename, detach/reattach, reconnect, clean exit, loss, and confirmed terminate/close. A live isolated daemon plus controlling-PTY client proves Ctrl+B t navigation, horizontal split, prefix help, 80x24 resize retention, clean status-0 exit, alternate-screen restoration, daemon stop, and temporary-state cleanup. The gate exposed and fixed empty-session prefix help being hidden by the renderer's empty-state return, and the mandated ux_terminal_runtime filter now executes the intended runtime test instead of matching zero tests."
 
 [[task]]
 id = "UX-LIVE-001"

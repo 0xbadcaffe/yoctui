@@ -2963,9 +2963,20 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+const TERMINAL_KEYBOARD_HELP: &str = "Ctrl+B t  open Terminal Sessions\nCtrl+B c  create build shell\nCtrl+B n/p  next/previous session\nCtrl+B % / \"  horizontal/vertical split\nCtrl+B z  zoom focused pane\nCtrl+B x  close pane (process keeps running)\nCtrl+B d  detach client (process keeps running)\nCtrl+B o/O  take/release writer control\nCtrl+B [  copy mode · Ctrl+B / search\nCtrl+B r  rename · Ctrl+B K confirmed kill\nCtrl+B Ctrl+B  send literal Ctrl+B\n\nWriter mode forwards ordinary characters and terminal keys verbatim. Paste always pauses for bounded review. Viewers can use the visible direct shortcuts because they cannot send PTY input.\n\nOnly the current daemon writer lease can send keyboard, paste, mouse, or resize input. Retained and remote-writer replicas remain read-only.";
+
 fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     if app.daemon.pty_sessions.is_empty() {
+        if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Help {
+            frame.render_widget(
+                Paragraph::new(TERMINAL_KEYBOARD_HELP)
+                    .block(pane_block(app, "Terminal keyboard help", true))
+                    .wrap(Wrap { trim: false }),
+                area,
+            );
+            return;
+        }
         let state = match app.daemon.status {
             yoctui_model::ClientReplicaStatus::Current => {
                 "No daemon terminal sessions are active.\n\nCtrl+B c creates a build shell. Context actions can open devshell, menuconfig, SDK, Devtool, and Raw sessions."
@@ -3124,11 +3135,9 @@ fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Rect) {
 
     if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Help {
         frame.render_widget(
-            Paragraph::new(
-                "Ctrl+B t  open Terminal Sessions\nCtrl+B c  create build shell\nCtrl+B n/p  next/previous session\nCtrl+B % / \"  horizontal/vertical split\nCtrl+B z  zoom focused pane\nCtrl+B x  close pane (process keeps running)\nCtrl+B d  detach client (process keeps running)\nCtrl+B o/O  take/release writer control\nCtrl+B [  copy mode · Ctrl+B / search\nCtrl+B r  rename · Ctrl+B K confirmed kill\nCtrl+B Ctrl+B  send literal Ctrl+B\n\nWriter mode forwards ordinary characters and terminal keys verbatim. Paste always pauses for bounded review. Viewers can use the visible direct shortcuts because they cannot send PTY input.\n\nOnly the current daemon writer lease can send keyboard, paste, mouse, or resize input. Retained and remote-writer replicas remain read-only.",
-            )
-            .block(pane_block(app, "Terminal keyboard help", true))
-            .wrap(Wrap { trim: false }),
+            Paragraph::new(TERMINAL_KEYBOARD_HELP)
+                .block(pane_block(app, "Terminal keyboard help", true))
+                .wrap(Wrap { trim: false }),
             regions[2],
         );
     } else {
@@ -30854,7 +30863,17 @@ mod tests {
             "{help}"
         );
 
-        app.terminal.mode = yoctui_model::TerminalWorkbenchMode::Live;
+        app.daemon.pty_sessions.clear();
+        app.daemon.pty_details.clear();
+        app.daemon.pty_screens.clear();
+        let empty_help = rendered_text(&app, 80, 24);
+        assert!(
+            empty_help.contains("Terminal keyboard help"),
+            "{empty_help}"
+        );
+        assert!(empty_help.contains("literal Ctrl+B"), "{empty_help}");
+
+        app = ux_terminal_render_fixture();
         app.daemon.pty_sessions[0].lifecycle = yoctui_model::ClientDaemonLifecycle::Exited;
         app.daemon.pty_sessions[1].lifecycle = yoctui_model::ClientDaemonLifecycle::Lost;
         let terminal_outcomes = rendered_text(&app, 120, 35);

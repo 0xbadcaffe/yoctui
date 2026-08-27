@@ -1190,7 +1190,7 @@ mod tests {
     }
 
     #[test]
-    fn ux_terminal_prefix_runtime_maps_create_and_writer_commands() {
+    fn ux_terminal_runtime_prefix_maps_create_and_writer_commands() {
         let mut app = App::new(16, 4096);
         app.workspace.build_dir = Some("/build".into());
         let Some(DaemonCommand::CreatePty { cwd, .. }) =
