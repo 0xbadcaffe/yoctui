@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import contextlib
+import hashlib
 import importlib.util
 import io
 import re
@@ -112,6 +113,45 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.assertEqual(replacements, 1)
         path.write_text(text, encoding="utf-8")
         self.assert_rejected("completed task UX-DASHBOARD-001 still owns an open gap")
+
+    def test_rejects_missing_required_feature_anchor(self) -> None:
+        path = self.verifier.MANIFEST
+        text = path.read_text(encoding="utf-8").replace(
+            'fixture_anchors = ["Next Action", "Build image [B] — unknown"]',
+            'fixture_anchors = ["Next Action", "feature anchor that cannot exist"]',
+            1,
+        )
+        path.write_text(text, encoding="utf-8")
+        self.assert_rejected("feature next-action is missing fixture anchor")
+
+    def test_rejects_feature_gap_missing_from_open_gaps(self) -> None:
+        path = self.verifier.MANIFEST
+        text = path.read_text(encoding="utf-8").replace(
+            '  { task = "UX-CONCEPT-ERRORS-001", description = "The production scene does not yet compose the failed summary, structured list, paused correlated log, filters, and recovery actions together." },\n',
+            "",
+            1,
+        )
+        path.write_text(text, encoding="utf-8")
+        self.assert_rejected(
+            "feature paused-correlated-log gap task UX-CONCEPT-ERRORS-001 "
+            "is not declared in open_gaps"
+        )
+
+    def test_rejects_verified_live_evidence_without_interactions(self) -> None:
+        artifact = Path(
+            "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt"
+        )
+        digest = hashlib.sha256((self.root / artifact).read_bytes()).hexdigest()
+        path = self.verifier.MANIFEST
+        text = path.read_text(encoding="utf-8").replace(
+            'live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }',
+            f'live_evidence = {{ status = "verified", artifact = "{artifact}", '
+            f'sha256 = "{digest}", assertions = ["Current Build · Idle", '
+            '"Daemon: ✓ Connected"] }',
+            1,
+        )
+        path.write_text(text, encoding="utf-8")
+        self.assert_rejected("verified live evidence needs explicit interactions")
 
 
 if __name__ == "__main__":

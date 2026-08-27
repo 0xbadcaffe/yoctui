@@ -6402,18 +6402,18 @@ notes = "The post-M21 audit separates fixture, raster, and live proof and assign
 id = "UX-CONCEPT-ACCEPTANCE-001"
 milestone = "M22"
 title = "Make concept-screen acceptance scenario-complete and truthful"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 739
 required = true
 depends_on = ["UX-CONCEPT-GOV-001"]
 verify = ["python3 scripts/test-m21-concept-screen-verifier.py", "./scripts/verify-m21-concept-screens.sh", "./scripts/verify-roadmap.sh"]
-notes = "Add machine-checked required features and separate fixture/raster/live evidence so broad labels or incidental anchors cannot satisfy a scenario."
+notes = "Every scene now declares at least four machine-checked features, each proven by production fixture anchors or assigned to an incomplete owner. Raster and live evidence have independent gap/verified schemas; verified live proof requires a checksummed artifact, explicit interactions, and observed assertions. Eight verifier failure paths and the complete concept gate pass."
 
 [[task]]
 id = "UX-CONCEPT-ERRORS-001"
 milestone = "M22"
 title = "Compose the complete failed-build concept workflow"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 740
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]

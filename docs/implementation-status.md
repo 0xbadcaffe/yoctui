@@ -19,8 +19,15 @@ rootfs composition at the canonical width, the editor-plus-F10-menu composition,
 terminal live navigation, deterministic app-derived raster proof, and exact
 live scenario attribution still need work. `UX-CONCEPT-GOV-001` records those
 gaps without rewriting completed M21 history. M21 remains 38/38 complete under
-its original contract; overall required registry progress is 579/587 (98.6%).
-`UX-CONCEPT-ACCEPTANCE-001` is active first.
+its original contract; overall required registry progress is 580/587 (98.8%).
+`UX-CONCEPT-ACCEPTANCE-001` is complete: every scene now has at least four
+machine-checked features, with each feature proven by production fixture
+anchors or assigned to an incomplete gap owner. Deterministic raster and live
+evidence have separate gap/verified schemas; verified live evidence requires a
+checksummed artifact, explicit interactions, and observed assertions. Eight
+failure tests reject missing feature anchors, unowned gaps, completed owners,
+bad cells, missing captures, and unattributed live claims.
+`UX-CONCEPT-ERRORS-001` is active next.
 
 M21 One-Stop Yocto Workbench Usability is complete. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
 and third-party widget showcases were mapped to Yoctui's existing typed
