@@ -4,12 +4,12 @@
 
 **ID:** UX-001
 **Title:** Complete the one-stop Yocto workbench UX milestone
-**Status:** NOT_STARTED
+**Status:** DONE
 
 ## Objective
 
-Run the dedicated one-stop workbench gate and unchanged full completion gate,
-then close M21 only if every required child and release-quality invariant passes.
+M21 is complete. All required child, aggregate, and unchanged repository
+completion gates pass without waivers.
 
 ## Dependencies
 
@@ -18,9 +18,8 @@ then close M21 only if every required child and release-quality invariant passes
 ## Definition of done
 
 - All 38 M21 tasks are `DONE` with no waived child or evidence requirement.
-- The dedicated workbench gate passes interaction, dependency, accessibility,
-  performance, PTY, live-Yocto, and documentation checks.
-- The unchanged strict clean-checkout completion gate passes.
+- The dedicated workbench and strict clean-checkout completion gates pass.
+- The repository roadmap is 578/578 required tasks complete.
 
 ## Verification
 

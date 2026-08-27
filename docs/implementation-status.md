@@ -12,14 +12,14 @@ Status values:
 ## Current phase
 
 M21 One-Stop Yocto Workbench Usability is active under the user's explicit
-request. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
+request and is now complete. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
 and third-party widget showcases were mapped to Yoctui's existing typed
 workbench; the UI and architecture contracts now define one action catalog,
 application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-37/38 (97.4%); overall required registry progress is 577/578 (99.8%).
+38/38 (100.0%); overall required registry progress is 578/578 (100.0%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -1028,7 +1028,7 @@ See `docs/current-task.md`.
 | M5 Testing/QA/Security | DONE | Unified Testing, Security, and QA cross-layer parent gates pass; fake evidence remains separate from live compatibility |
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
 | M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, honest Python coverage, transient-spawn handling, deterministic cancellation, CI, documentation, and completion integration pass |
-| M21 One-stop workbench usability | IN_PROGRESS | All 37 child tasks are complete; only the dedicated parent and unchanged full completion gates remain |
+| M21 One-stop workbench usability | DONE | All 38 tasks pass the dedicated aggregate gate and unchanged strict repository completion gate |
 | M12 crates.io distribution | IN_PROGRESS | Bundle the bridge, prepare the public package graph, then publish and clean-install `yoctui` 0.1.0 |
 
 ## Reconciliation evidence
