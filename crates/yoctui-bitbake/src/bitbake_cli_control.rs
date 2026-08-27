@@ -481,7 +481,11 @@ fn has_nul(value: &OsStr) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::{fs, os::unix::fs::PermissionsExt};
+    use std::{
+        fs,
+        os::unix::fs::PermissionsExt,
+        sync::atomic::{AtomicU64, Ordering},
+    };
     use yoctui_model::{
         AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,
         CapabilityId, CapabilityImplementation, CapabilityImplementationKind, CapabilityRecord,
@@ -558,13 +562,16 @@ mod tests {
         .unwrap()
     }
 
+    static FIXTURE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
     fn fixture(body: &str) -> (PathBuf, PathBuf) {
         let nonce = std::time::SystemTime::UNIX_EPOCH
             .elapsed()
             .unwrap()
             .as_nanos();
+        let sequence = FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
         let root = std::env::temp_dir().join(format!(
-            "yoctui-cli-control-{}-{nonce};no-shell",
+            "yoctui-cli-control-{}-{nonce}-{sequence};no-shell",
             std::process::id()
         ));
         fs::create_dir_all(&root).unwrap();
