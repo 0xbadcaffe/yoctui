@@ -4194,6 +4194,13 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
     let input = match action_id {
         "dashboard.build" => Input::Char('B'),
         "dashboard.cancel" => Input::Char('c'),
+        "dashboard.tasks" => Input::F2,
+        "dashboard.logs" => Input::Char('l'),
+        "dashboard.errors" => Input::Char('e'),
+        "dashboard.history" => Input::F3,
+        "dashboard.artifacts" => Input::F8,
+        "dashboard.environment" => Input::Char('E'),
+        "dashboard.maintenance" => Input::Char('M'),
         "recipes.metadata" => Input::Enter,
         "recipes.dependencies" => Input::Char('A'),
         "recipes.build" => Input::Char('b'),
@@ -4368,7 +4375,7 @@ pub fn mouse_action_for_app(
         return Some(Action::OpenContextMenu);
     }
     if let Some(zoomed) = app.zoomed_pane
-        && !(app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty())
+        && !(app.screen == Screen::TerminalSessions && !app.daemon.pty_sessions.is_empty())
         && matches!(mouse.kind, MouseKind::Down)
     {
         return Some(Action::Focus(zoomed));
@@ -4387,7 +4394,7 @@ pub fn mouse_action_for_app(
         return matches!(mouse.kind, MouseKind::Down).then_some(Action::Focus(FocusTarget::Dialog));
     }
     let shell = workbench_shell(terminal_width, terminal_height)?;
-    if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
+    if app.screen == Screen::TerminalSessions && !app.daemon.pty_sessions.is_empty() {
         return terminal_session_mouse_action(mouse, app, shell);
     }
     let region = workbench_mouse_region(mouse, app, shell)?;
@@ -5435,6 +5442,8 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::Char('l') => Some(Action::Open(Screen::Logs)),
         Input::Char('h') => Some(Action::Open(Screen::BuildHistory)),
         Input::Char('e') => Some(Action::Open(Screen::Errors)),
+        Input::Char('E') => Some(Action::Open(Screen::BuildEnvironment)),
+        Input::Char('M') => Some(Action::Open(Screen::Maintenance)),
         Input::Char('r') => Some(Action::Open(Screen::Recipes)),
         Input::Char('y') => Some(Action::Open(Screen::Layers)),
         Input::Char('v') => Some(Action::Open(Screen::Configuration)),
@@ -7934,8 +7943,9 @@ mod tests {
     }
 
     #[test]
-    fn mouse_runtime_routes_dialog_and_dashboard_session_clicks() {
+    fn mouse_runtime_routes_dialog_and_terminal_session_clicks() {
         let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = Screen::TerminalSessions;
         app.daemon
             .pty_sessions
             .push(yoctui_model::ClientDaemonPtySummary {
@@ -10230,6 +10240,7 @@ mod tests {
     #[test]
     fn next_generation_mouse_traps_dialogs_and_resizes_exact_terminal_axis() {
         let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = Screen::TerminalSessions;
         let second = app
             .pane_layout
             .split(yoctui_model::PaneId(1), SplitAxis::Horizontal)
@@ -10397,6 +10408,51 @@ mod tests {
             key_action(Input::Char('h')),
             Some(Action::Open(Screen::BuildHistory))
         );
+    }
+
+    #[test]
+    fn ux_dashboard_operational_shortcuts_match_the_typed_action_catalog() {
+        let definitions = yoctui_model::compatibility_ui_workspace_action_definitions(
+            yoctui_model::WorkspaceDestination::Dashboard,
+        );
+        let shortcut = |id: &str| {
+            definitions
+                .iter()
+                .find(|action| action.id == id)
+                .map(|action| action.shortcut)
+        };
+        for (id, expected, input, action) in [
+            (
+                "dashboard.errors",
+                "e",
+                Input::Char('e'),
+                Action::Open(Screen::Errors),
+            ),
+            (
+                "dashboard.environment",
+                "E",
+                Input::Char('E'),
+                Action::Open(Screen::BuildEnvironment),
+            ),
+            (
+                "dashboard.maintenance",
+                "M",
+                Input::Char('M'),
+                Action::Open(Screen::Maintenance),
+            ),
+        ] {
+            assert_eq!(shortcut(id), Some(expected));
+            assert_eq!(key_action(input), Some(action));
+        }
+        assert_eq!(shortcut("dashboard.tasks"), Some("F2"));
+        assert_eq!(key_action(Input::F2), Some(Action::Open(Screen::Tasks)));
+        assert_eq!(shortcut("dashboard.history"), Some("F3"));
+        assert_eq!(
+            key_action(Input::F3),
+            Some(Action::Open(Screen::BuildHistory))
+        );
+        assert_eq!(shortcut("dashboard.artifacts"), Some("F8"));
+        assert_eq!(key_action(Input::F8), Some(Action::Open(Screen::Images)));
     }
 
     #[test]

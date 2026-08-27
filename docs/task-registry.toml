@@ -6256,12 +6256,12 @@ notes = "Terminal Sessions is a navigator/menu/palette/prefix destination with t
 id = "UX-DASHBOARD-001"
 milestone = "M21"
 title = "Compose a clearer operational dashboard"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 726
 required = true
 depends_on = ["UX-PROGRESS-001", "UX-THROBBER-001", "UX-TELEMETRY-001"]
 verify = ["cargo test -p yoctui-model ux_dashboard", "cargo test -p yoctui-ui ux_dashboard", "cargo test -p yoctui-app ux_dashboard"]
-notes = "Prioritize current build, next action, failures, recent artifacts/jobs, authoritative progress, telemetry, environment health, and context navigation with zoom and narrow summaries rather than decorative cards."
+notes = "The dashboard now projects one model-owned bounded operational summary from authoritative build, task, failure, job, artifact, environment, replica, BitBake, filesystem, progress, and telemetry state. Current Build dominates the hierarchy; capability-aware next actions, active tasks, attention, recent work/artifacts, and honest unavailable sstate/health evidence remain explicit. Typed F2/l/e/F3/F8/E/M routes reuse existing workspaces, while wide and compact production layouts, empty/running/failed/completed states, ASCII/no-color/reduced-motion behavior, semantic snapshots, and reviewed exact cell goldens are covered across model/app/UI tests."
 
 [[task]]
 id = "UX-WORKBENCH-CENTER-001"

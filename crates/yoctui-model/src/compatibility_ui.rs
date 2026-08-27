@@ -648,6 +648,13 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "c",
                 Id::BitBakeCancellation,
             ),
+            Action::local("dashboard.tasks", "Monitor active tasks", "F2"),
+            Action::local("dashboard.logs", "Open retained logs", "l"),
+            Action::local("dashboard.errors", "Review failures", "e"),
+            Action::local("dashboard.history", "Inspect recent work", "F3"),
+            Action::local("dashboard.artifacts", "Inspect artifacts", "F8"),
+            Action::local("dashboard.environment", "Configure build environment", "E"),
+            Action::local("dashboard.maintenance", "Sstate readiness", "M"),
         ],
         Destination::Recipes => vec![
             Action::capability(

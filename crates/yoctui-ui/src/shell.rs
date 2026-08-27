@@ -58,10 +58,6 @@ pub(super) fn utilization_percent(total: Option<u64>, available: Option<u64>) ->
     u8::try_from((u128::from(used) * 100 / u128::from(total)).min(100)).ok()
 }
 
-pub(super) fn build_pace(app: &App) -> String {
-    build_pace_at(app, SystemTime::now())
-}
-
 pub(super) fn build_pace_at(app: &App, now: SystemTime) -> String {
     let Some(elapsed) = app
         .build

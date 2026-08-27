@@ -35,23 +35,23 @@ use tui_term::widget::PseudoTerminal;
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
     BuildStatus, CompatibilityUiAuthorityStatus, CompatibilityUiCapabilityRow,
-    CompatibilityUiCapabilityState, CompatibilityUiFilter, ConfigCopyValue, DependencyEdgeKind,
-    DependencyGraph, DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction,
-    DevtoolCapability, DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace,
-    Dialog, FUNCTION_SHORTCUTS, FocusTarget, FunctionKey, FunctionShortcutRoute, GitFileState,
-    ImageArtifactField, ImageArtifactInventoryState, ImagesView, InternalLogLevel,
-    JobHistoryRowRef, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView,
-    MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
-    MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
-    MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
-    MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
-    NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity, PackageInventoryState,
-    PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog,
-    QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
-    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
-    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
-    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity,
-    RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
+    CompatibilityUiCapabilityState, CompatibilityUiFilter, ConfigCopyValue, DashboardProjection,
+    DependencyEdgeKind, DependencyGraph, DependencyGraphState, DependencyNodeId,
+    DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState, DevtoolStatus,
+    DevtoolStatusError, DevtoolWorkspace, Dialog, FUNCTION_SHORTCUTS, FocusTarget, FunctionKey,
+    FunctionShortcutRoute, GitFileState, ImageArtifactField, ImageArtifactInventoryState,
+    ImagesView, InternalLogLevel, JobHistoryRowRef, LayerBrowser, LayerBrowserEntry,
+    LayerInspectorMode, LogWorkspaceView, MaintenanceCapability, MaintenanceCapabilitySnapshot,
+    MaintenanceDialog, MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot,
+    MaintenanceOperation, MaintenanceOperationPreview, MaintenanceServiceDiagnostics,
+    MaintenanceSessionStatus, MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface,
+    MaintenanceView, NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity,
+    PackageInventoryState, PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily,
+    QaDialog, QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream,
+    QaReportFailureKind, QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView,
+    QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
+    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
+    RecipeIdentity, RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
     SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
     SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
@@ -939,7 +939,7 @@ fn footer_shortcuts(app: &App) -> String {
     }
     let shortcuts = match app.screen {
         Screen::Dashboard => {
-            "B options | Ctrl+P commands | Ctrl+B prefix | Tab focus | ↑/↓ package progress | i image | ! shell | c cancel | r recipes | y layers | ? help | q quit"
+            "B build | F2 tasks | l logs | e errors | F8 artifacts | Ctrl+B prefix | F3 work | E environment | M sstate | Ctrl+P commands | Tab focus | c cancel | ? help | q quit"
         }
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
@@ -5595,6 +5595,7 @@ fn inspector(
     };
     let status = (app.screen == Screen::Dashboard)
         .then(|| system_status_text(app, area.width.saturating_sub(2)));
+    let show_actions = !(app.screen == Screen::Dashboard && area.height < 30);
     let document = inspector_document(
         app,
         InspectorDocumentSections {
@@ -5602,7 +5603,7 @@ fn inspector(
             secondary: secondary.as_deref(),
             related_paths: &related_paths,
             recent_output,
-            actions: (!actions.is_empty()).then_some(actions.as_slice()),
+            actions: (show_actions && !actions.is_empty()).then_some(actions.as_slice()),
             status: status.as_deref(),
         },
         area.width.saturating_sub(2),
@@ -6241,40 +6242,7 @@ fn render_tasks_context_zoom(frame: &mut Frame, app: &App, area: Rect, now: Syst
     render_expanded_telemetry(frame, app, rows[1]);
 }
 
-fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
-    let mut active = app.tasks.values().collect::<Vec<_>>();
-    active.sort_by(|left, right| {
-        (left.recipe.as_str(), left.task.as_str())
-            .cmp(&(right.recipe.as_str(), right.task.as_str()))
-    });
-    let mut package_tasks = active.iter().map(|task| (*task, None)).collect::<Vec<_>>();
-    package_tasks.extend(
-        app.completed_tasks
-            .iter()
-            .rev()
-            .map(|completed| (&completed.task, Some(completed.success))),
-    );
-    let recent = app
-        .logs
-        .entries
-        .iter()
-        .rev()
-        .take(8)
-        .rev()
-        .map(|l| l.message.as_str())
-        .collect::<Vec<_>>()
-        .join("\n");
-    let show_telemetry = area.height >= 46
-        && telemetry_available(app)
-        && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
-            != TelemetryStripMode::Hidden;
-    let dashboard_sections = if show_telemetry {
-        Layout::vertical([Constraint::Min(1), Constraint::Length(8)]).split(area)
-    } else {
-        Layout::vertical([Constraint::Min(1)]).split(area)
-    };
-    let chunks = Layout::horizontal([Constraint::Percentage(45), Constraint::Percentage(55)])
-        .split(dashboard_sections[0]);
+fn dashboard_build_details(app: &App, projection: &DashboardProjection<'_>, width: u16) -> String {
     let parse_progress = app.build.parse_current.map_or_else(
         || "not parsing".into(),
         |current| {
@@ -6283,11 +6251,11 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
                 .map_or_else(|| current.to_string(), |total| format!("{current}/{total}"))
         },
     );
-    let cpu_utilization = app
+    let cpu = app
         .host_telemetry
         .cpu_utilization_percent
         .map_or_else(|| "unavailable".into(), |percent| format!("{percent}%"));
-    let disk_available = if app.workspace.build_dir.is_some()
+    let disk = if projection.health.build_filesystem_sample
         && utilization_percent(
             app.host_telemetry.disk_total_bytes,
             app.host_telemetry.disk_available_bytes,
@@ -6300,126 +6268,444 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         "unavailable".into()
     };
-    let build_panels =
-        Layout::vertical([Constraint::Length(13), Constraint::Min(3)]).split(chunks[0]);
-    frame.render_widget(
-        Paragraph::new(format!(
-            "Target: {}\nBackend: {}\nStatus: {}\nExit code: {}\nParse progress: {}\nMachine: {}  Distro: {}\nRelease: {}\nTasks: {}/{} (active: {})\nWarnings: {}  Errors: {}\n{}\nHost CPU: {}  Build disk free: {}",
+    let total = app
+        .build
+        .total
+        .map_or_else(|| "?".into(), |total| total.to_string());
+    let exit = app
+        .build
+        .exit_code
+        .map_or_else(|| "none".into(), |code| code.to_string());
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("unknown", String::as_str);
+    let distro = app
+        .workspace
+        .variables
+        .get("DISTRO")
+        .map_or("unknown", String::as_str);
+    let sstate = &projection.progress.sstate;
+    if width >= 70 {
+        format!(
+            "Target: {}  Backend: {}  Status: {}  Exit code: {exit}\nParse progress: {parse_progress}  Tasks: {}/{total} (active: {})  Warnings: {}  Errors: {}\nMachine: {machine}  Distro: {distro}  Release: {}\nHost CPU: {cpu}  Build disk free: {disk}  Environment: {}\nSstate reuse: {} — {}",
             app.build.target.as_deref().unwrap_or("none"),
             app.backend,
             app.build.status,
-            app.build.exit_code.map_or_else(|| "none".into(), |code| code.to_string()),
-            parse_progress,
-            app.workspace
-                .variables
-                .get("MACHINE")
-                .map_or("unknown", String::as_str),
-            app.workspace
-                .variables
-                .get("DISTRO")
-                .map_or("unknown", String::as_str),
-            app.workspace.release.as_deref().unwrap_or("unknown"),
             app.build.completed,
-            app.build
-                .total
-                .map_or_else(|| "?".into(), |total| total.to_string()),
-            app.tasks.len(),
+            projection.summary.active,
             app.build.warnings,
             app.build.errors,
-            build_pace(app),
-            cpu_utilization,
-            disk_available,
-        ))
-        .block(Block::default().title("Build").borders(Borders::ALL)),
-        build_panels[0],
+            app.workspace.release.as_deref().unwrap_or("unknown"),
+            projection.health.environment.label(),
+            sstate.state.label(),
+            sstate.detail.as_deref().unwrap_or("no additional detail"),
+        )
+    } else {
+        format!(
+            "Target: {}  Status: {}  Exit code: {exit}\nBackend: {}  Parse progress: {parse_progress}\nTasks: {}/{total}  Active: {}  Warnings: {}  Errors: {}\nMachine: {machine}  Distro: {distro}  Release: {}\nCPU: {cpu}  Disk free: {disk}\nEnvironment: {}  Sstate reuse: {}",
+            app.build.target.as_deref().unwrap_or("none"),
+            app.build.status,
+            app.backend,
+            app.build.completed,
+            projection.summary.active,
+            app.build.warnings,
+            app.build.errors,
+            app.workspace.release.as_deref().unwrap_or("unknown"),
+            projection.health.environment.label(),
+            sstate.state.label(),
+        )
+    }
+}
+
+fn render_dashboard_build(
+    frame: &mut Frame,
+    app: &App,
+    projection: &DashboardProjection<'_>,
+    area: Rect,
+    now: SystemTime,
+) {
+    let title = format!("Current Build · {}", app.build.status);
+    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let summary_height = inner.height.min(2);
+    let rows =
+        Layout::vertical([Constraint::Length(summary_height), Constraint::Min(1)]).split(inner);
+    render_build_summary(frame, app, rows[0], now);
+    frame.render_widget(
+        Paragraph::new(dashboard_build_details(app, projection, inner.width))
+            .wrap(Wrap { trim: false }),
+        rows[1],
     );
-    let task_count = package_tasks.len();
-    let start = app.task_progress_scroll.min(task_count.saturating_sub(1));
-    let task_block = Block::default()
+}
+
+fn dashboard_task_rows(app: &App) -> Vec<(&yoctui_model::TaskInfo, Option<bool>)> {
+    let mut active = app.tasks.values().collect::<Vec<_>>();
+    active.sort_by(|left, right| {
+        (left.recipe.as_str(), left.task.as_str())
+            .cmp(&(right.recipe.as_str(), right.task.as_str()))
+    });
+    let mut rows = active
+        .into_iter()
+        .map(|task| (task, None))
+        .collect::<Vec<_>>();
+    rows.extend(
+        app.completed_tasks
+            .iter()
+            .rev()
+            .map(|completed| (&completed.task, Some(completed.success))),
+    );
+    rows
+}
+
+fn render_dashboard_tasks(frame: &mut Frame, app: &App, area: Rect) {
+    let tasks = dashboard_task_rows(app);
+    let block = Block::default()
         .title(format!(
-            "Package task progress (? = progress unknown; {} active, {} complete; use Up/Down to scroll)",
-            active.len(),
+            "Active Tasks · {} active · {} retained complete · F2 details",
+            app.tasks.len(),
             app.completed_tasks.len()
         ))
         .borders(Borders::ALL);
-    let task_area = task_block.inner(build_panels[1]);
-    frame.render_widget(task_block, build_panels[1]);
-    if package_tasks.is_empty() {
-        frame.render_widget(
-            Paragraph::new("Waiting for BitBake task events."),
-            task_area,
-        );
-    } else {
-        let rows = Layout::vertical(
-            package_tasks[start..]
-                .iter()
-                .take(task_area.height as usize)
-                .map(|_| Constraint::Length(1))
-                .collect::<Vec<_>>(),
-        )
-        .split(task_area);
-        for ((task, completed), row) in package_tasks[start..]
-            .iter()
-            .take(rows.len())
-            .zip(rows.iter().copied())
-        {
-            let progress = if completed.is_some() {
-                100
-            } else {
-                task.progress.unwrap_or(0).min(100)
-            };
-            let palette = ThemePalette::for_app(app);
-            let progress_style = if *completed == Some(false) {
-                palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
-            } else if progress >= 100 {
-                palette.role(palette.success, Modifier::BOLD)
-            } else if progress >= 75 {
-                palette.role(palette.warning, Modifier::BOLD)
-            } else {
-                palette.role(palette.progress, Modifier::BOLD)
-            };
-            let label = if completed.is_some() {
-                format!(
-                    "{}:{} {progress}%{}",
-                    task.recipe,
-                    task.task,
-                    match completed {
-                        Some(true) => " complete",
-                        Some(false) => " failed",
-                        None => "",
-                    }
-                )
-            } else if task.progress.is_some() {
-                format!("{}:{} {progress}%", task.recipe, task.task)
-            } else {
-                format!(
-                    "? {}:{}{}",
-                    task.recipe,
-                    task.task,
-                    task_activity(app, None)
-                )
-            };
-            frame.render_widget(
-                Gauge::default()
-                    .ratio(f64::from(progress) / 100.0)
-                    .label(label)
-                    .gauge_style(progress_style),
-                row,
-            );
-        }
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
     }
+    if tasks.is_empty() {
+        frame.render_widget(
+            Paragraph::new(
+                "No active task events. Start a build with B or inspect recent work with F3.",
+            ),
+            inner,
+        );
+        return;
+    }
+    let start = app.task_progress_scroll.min(tasks.len().saturating_sub(1));
+    let rows = Layout::vertical(
+        tasks[start..]
+            .iter()
+            .take(usize::from(inner.height))
+            .map(|_| Constraint::Length(1))
+            .collect::<Vec<_>>(),
+    )
+    .split(inner);
+    let palette = ThemePalette::for_app(app);
+    for ((task, completed), row) in tasks[start..]
+        .iter()
+        .take(rows.len())
+        .zip(rows.iter().copied())
+    {
+        let progress = if completed.is_some() {
+            100
+        } else {
+            task.progress.unwrap_or(0).min(100)
+        };
+        let style = if *completed == Some(false) {
+            palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED)
+        } else if progress >= 100 {
+            palette.role(palette.success, Modifier::BOLD)
+        } else if progress >= 75 {
+            palette.role(palette.warning, Modifier::BOLD)
+        } else {
+            palette.role(palette.progress, Modifier::BOLD)
+        };
+        let label = match completed {
+            Some(success) => format!(
+                "{}:{} 100% {}",
+                task.recipe,
+                task.task,
+                if *success { "complete" } else { "failed" }
+            ),
+            None if task.progress.is_some() => {
+                format!("{}:{} {progress}%", task.recipe, task.task)
+            }
+            None => format!(
+                "? {}:{}{}",
+                task.recipe,
+                task.task,
+                task_activity(app, None)
+            ),
+        };
+        frame.render_widget(
+            Gauge::default()
+                .ratio(f64::from(progress) / 100.0)
+                .label(label)
+                .gauge_style(style),
+            row,
+        );
+    }
+}
+
+fn availability_state_word(state: WorkspaceAvailabilityState) -> &'static str {
+    match state {
+        WorkspaceAvailabilityState::Available => "available",
+        WorkspaceAvailabilityState::AvailableWithLimitations => "limited",
+        WorkspaceAvailabilityState::Unavailable => "unavailable",
+        WorkspaceAvailabilityState::Unsupported => "unsupported",
+        WorkspaceAvailabilityState::Unknown => "unknown",
+    }
+}
+
+fn render_dashboard_actions(
+    frame: &mut Frame,
+    app: &App,
+    projection: &DashboardProjection<'_>,
+    area: Rect,
+) {
+    let action = &projection.next_action;
+    let palette = ThemePalette::for_app(app);
+    let tone = if action.enabled {
+        palette.role(palette.running, Modifier::BOLD)
+    } else {
+        palette.role(palette.warning, Modifier::BOLD)
+    };
+    let mut lines = vec![
+        Line::styled("Recommended", palette.role(palette.heading, Modifier::BOLD)),
+        Line::styled(
+            format!(
+                "{} [{}] — {}",
+                action.label,
+                action.shortcut,
+                availability_state_word(action.state)
+            ),
+            tone,
+        ),
+    ];
+    if let Some(reason) = action.reason.as_deref() {
+        lines.push(Line::styled(
+            format!("Reason: {reason}"),
+            palette.role(palette.warning, Modifier::DIM),
+        ));
+    }
+    lines.extend([
+        Line::default(),
+        Line::styled(
+            "Common actions",
+            palette.role(palette.heading, Modifier::BOLD),
+        ),
+        Line::from("[F2] Tasks  [l] Logs  [e] Errors  [F3] Recent work"),
+        Line::from("[F8] Artifacts  [E] Environment  [M] Sstate readiness"),
+    ]);
     frame.render_widget(
-        Paragraph::new(recent)
+        Paragraph::new(lines)
+            .block(Block::default().title("Next Action").borders(Borders::ALL))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
+fn render_dashboard_attention(
+    frame: &mut Frame,
+    app: &App,
+    projection: &DashboardProjection<'_>,
+    area: Rect,
+) {
+    let palette = ThemePalette::for_app(app);
+    let lines = if projection.failures.is_empty()
+        && (app.build.warnings > 0 || app.build.errors > 0)
+    {
+        vec![Line::styled(
+            format!(
+                "! Build reports {} warning(s), {} error(s); no retained diagnostic rows. [e] opens diagnostics.",
+                app.build.warnings, app.build.errors
+            ),
+            palette.role(palette.warning, Modifier::BOLD),
+        )]
+    } else if projection.failures.is_empty() {
+        vec![Line::styled(
+            "✓ No retained warnings or errors. [e] opens diagnostics.",
+            palette.role(palette.success, Modifier::BOLD),
+        )]
+    } else {
+        projection
+            .failures
+            .iter()
+            .map(|entry| {
+                let marker = if entry.severity == Severity::Error {
+                    "✕"
+                } else {
+                    "!"
+                };
+                Line::styled(
+                    format!(
+                        "{marker} {}",
+                        entry.message.lines().next().unwrap_or("diagnostic")
+                    ),
+                    severity_style(app, entry.severity),
+                )
+            })
+            .collect()
+    };
+    frame.render_widget(
+        Paragraph::new(lines)
             .block(
                 Block::default()
-                    .title("Recent output")
+                    .title(format!(
+                        "Attention · {} retained · e review",
+                        projection.failures.len()
+                    ))
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false }),
-        chunks[1],
+        area,
     );
+}
+
+fn dashboard_recent_work_line(row: JobHistoryRowRef<'_>, now: SystemTime) -> String {
+    match row {
+        JobHistoryRowRef::Background(job) => format!(
+            "{} {} · {}",
+            job_status_label(job.status),
+            job.title,
+            job_elapsed(row, now).map_or_else(|| "--".into(), format_duration),
+        ),
+        JobHistoryRowRef::Build(record) => format!(
+            "{} Build {} · {} tasks · {}",
+            if record.success { "✓" } else { "✕" },
+            record.target.as_deref().unwrap_or("unknown target"),
+            record.completed_tasks,
+            record.elapsed.map_or_else(|| "--".into(), format_duration),
+        ),
+    }
+}
+
+fn render_dashboard_recent(
+    frame: &mut Frame,
+    projection: &DashboardProjection<'_>,
+    area: Rect,
+    now: SystemTime,
+) {
+    let block = Block::default()
+        .title("Recent Work / Artifacts")
+        .borders(Borders::ALL);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    let width = inner.width.max(1);
+    let mut lines = vec![Line::styled("Last artifacts", Style::default().bold())];
+    if projection.artifacts.is_empty() {
+        lines.push(Line::from(
+            "No authoritative artifact paths retained. [F8] Images.",
+        ));
+    } else {
+        lines.extend(projection.artifacts.iter().take(2).map(|artifact| {
+            let name = artifact.path.file_name().map_or_else(
+                || artifact.path.display().to_string(),
+                |name| name.to_string_lossy().into_owned(),
+            );
+            Line::from(bounded_cell_text(
+                &format!("{} · {name}", artifact.source.label()),
+                width,
+            ))
+        }));
+    }
+    lines.push(Line::default());
+    lines.push(Line::styled("Recent work", Style::default().bold()));
+    if projection.recent_work.is_empty() {
+        lines.push(Line::from(
+            "No retained jobs or builds. [F3] opens history.",
+        ));
+    } else {
+        lines.extend(projection.recent_work.iter().copied().take(3).map(|row| {
+            Line::from(bounded_cell_text(
+                &dashboard_recent_work_line(row, now),
+                width,
+            ))
+        }));
+    }
+    frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
+}
+
+fn render_dashboard_compact(
+    frame: &mut Frame,
+    app: &App,
+    projection: &DashboardProjection<'_>,
+    area: Rect,
+    now: SystemTime,
+) {
+    let top_height = area.height.saturating_sub(7).clamp(9, 11);
+    let rows = Layout::vertical([Constraint::Length(top_height), Constraint::Min(1)]).split(area);
+    render_dashboard_build(frame, app, projection, rows[0], now);
+    let action = &projection.next_action;
+    let attention = projection.failures.first().map_or_else(
+        || {
+            if app.build.warnings > 0 || app.build.errors > 0 {
+                format!(
+                    "Attention: build reports {} warning(s), {} error(s); no diagnostic rows retained",
+                    app.build.warnings, app.build.errors
+                )
+            } else {
+                "Attention: none retained".into()
+            }
+        },
+        |entry| {
+            format!(
+                "Attention: {}",
+                entry.message.lines().next().unwrap_or("diagnostic")
+            )
+        },
+    );
+    let recent = projection.recent_work.first().copied().map_or_else(
+        || "Recent work: none retained".into(),
+        |row| format!("Recent: {}", dashboard_recent_work_line(row, now)),
+    );
+    let artifact = projection.artifacts.first().map_or_else(
+        || "Artifact: none retained".into(),
+        |artifact| format!("Artifact: {}", artifact.path.display()),
+    );
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Next: {} [{}] — {}\n{attention}\n{recent}\n{artifact}\n[F2] Tasks  [l] Logs  [e] Errors  [F3] Work  [F8] Artifacts  [E] Environment  [M] Sstate",
+            action.label,
+            action.shortcut,
+            availability_state_word(action.state),
+        ))
+        .block(Block::default().title("Operational Summary").borders(Borders::ALL))
+        .wrap(Wrap { trim: false }),
+        rows[1],
+    );
+}
+
+fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+    let projection = app.dashboard_projection_at(now);
+    let show_telemetry = area.height >= 38
+        && telemetry_available(app)
+        && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
+            != TelemetryStripMode::Hidden;
+    let sections = if show_telemetry {
+        Layout::vertical([Constraint::Min(1), Constraint::Length(8)]).split(area)
+    } else {
+        Layout::vertical([Constraint::Min(1)]).split(area)
+    };
+    let content = sections[0];
+    if content.height < 24 || content.width < 60 {
+        render_dashboard_compact(frame, app, &projection, content, now);
+    } else {
+        let remaining = content.height.saturating_sub(10);
+        let middle_height = remaining.div_ceil(2).max(7);
+        let rows = Layout::vertical([
+            Constraint::Length(10),
+            Constraint::Length(middle_height),
+            Constraint::Min(7),
+        ])
+        .split(content);
+        render_dashboard_build(frame, app, &projection, rows[0], now);
+        let middle = Layout::horizontal([Constraint::Percentage(58), Constraint::Percentage(42)])
+            .split(rows[1]);
+        render_dashboard_tasks(frame, app, middle[0]);
+        render_dashboard_actions(frame, app, &projection, middle[1]);
+        let bottom = Layout::horizontal([Constraint::Percentage(47), Constraint::Percentage(53)])
+            .split(rows[2]);
+        render_dashboard_attention(frame, app, &projection, bottom[0]);
+        render_dashboard_recent(frame, &projection, bottom[1], now);
+    }
     if show_telemetry {
-        render_telemetry_strip(frame, app, dashboard_sections[1]);
+        render_telemetry_strip(frame, app, sections[1]);
     }
 }
 
@@ -19110,7 +19396,7 @@ mod tests {
         dashboard.focus = FocusTarget::Workspace;
         for width in [130_u16, 160, 180, 200] {
             let rail = footer_rail_shortcuts(&dashboard, width.saturating_sub(10));
-            assert!(rail.contains("B options"), "{width}: {rail}");
+            assert!(rail.contains("B build"), "{width}: {rail}");
             assert!(rail.contains("Ctrl+B prefix"), "{width}: {rail}");
             assert!(rail.contains("F1 Help"), "{width}: {rail}");
             assert!(rail.contains("F10 Menu"), "{width}: {rail}");
@@ -19141,7 +19427,7 @@ mod tests {
         }
 
         let compact = footer_rail_shortcuts(&dashboard, 80);
-        assert!(compact.contains("B options"), "{compact}");
+        assert!(compact.contains("B build"), "{compact}");
         assert!(compact.contains("? Help"), "{compact}");
         assert!(compact.contains("Ctrl+P Menu"), "{compact}");
         assert!(compact.contains("q Quit"), "{compact}");
@@ -23022,10 +23308,11 @@ mod tests {
                 name: "dashboard",
                 screen: Screen::Dashboard,
                 anchors: &[
-                    "Build",
+                    "Current Build",
                     "Target: core-image-minimal",
-                    "Recent output",
-                    "Package task progress",
+                    "Next Action",
+                    "Recent Work / Artifacts",
+                    "Sstate reuse: unavailable",
                 ],
                 selected: None,
             },
@@ -24013,6 +24300,138 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Host CPU: 42%"));
         assert!(output.contains("Build disk free: 8.0 GiB"));
+    }
+
+    #[test]
+    fn ux_dashboard_composes_priority_actions_attention_work_artifacts_and_health() {
+        let mut app = literal_reference_app();
+        app.screen = Screen::Dashboard;
+        app.focus = FocusTarget::Workspace;
+        app.build.errors = 1;
+        let _ = update(
+            &mut app,
+            Action::Log(yoctui_model::LogEntry {
+                id: 0,
+                severity: Severity::Error,
+                message: "ERROR: bash:do_compile failed with exit code 1".into(),
+                recipe: Some("bash_5.2.21-2".into()),
+                task: Some("do_compile".into()),
+                path: Some("/work/build/tmp/log.do_compile".into()),
+                timestamp: literal_now(),
+                build: Some("core-image-minimal".into()),
+                protected: true,
+                diagnostic: None,
+            }),
+        );
+        let completed = app
+            .background_jobs
+            .jobs
+            .iter_mut()
+            .rev()
+            .find(|job| job.status == BackgroundJobStatus::Succeeded)
+            .expect("literal fixture retains a successful job");
+        completed
+            .result
+            .as_mut()
+            .expect("successful literal job has a result")
+            .artifacts
+            .push("/deploy/core-image-minimal.wic".into());
+
+        let wide = rendered_text_at(&app, 160, 50, literal_now());
+        for anchor in [
+            "Current Build · Running",
+            "Overall  40%  4/10",
+            "Active Tasks",
+            "Next Action",
+            "Review failures [e]",
+            "Attention",
+            "ERROR: bash:do_compile",
+            "failed with exit code 1",
+            "Recent Work / Artifacts",
+            "core-image-minimal.wic",
+            "Sstate reuse: unavailable",
+            "Environment: ready",
+        ] {
+            assert!(wide.contains(anchor), "missing {anchor}: {wide}");
+        }
+    }
+
+    #[test]
+    fn ux_dashboard_is_responsive_accessible_and_explicit_across_lifecycle_states() {
+        let mut app = literal_reference_app();
+        app.screen = Screen::Dashboard;
+        app.focus = FocusTarget::Workspace;
+        for (width, height) in [(160, 50), (130, 40), (100, 30), (80, 24)] {
+            let output = rendered_text_at(&app, width, height, literal_now());
+            assert!(
+                output.contains("Current Build"),
+                "{width}x{height}: {output}"
+            );
+            assert!(
+                output.contains("Next Action") || output.contains("Operational Summary"),
+                "{width}x{height}: {output}"
+            );
+            assert!(output.contains("Sstate"), "{width}x{height}: {output}");
+            assert!(!output.contains('�'), "{width}x{height}: {output}");
+        }
+
+        app.color_enabled = false;
+        app.reduced_motion = true;
+        app.build.status = BuildStatus::Failed;
+        app.build.errors = 1;
+        let failed = rendered_text_at(&app, 100, 30, literal_now());
+        assert!(failed.contains("Review failures"), "{failed}");
+        assert!(failed.contains("Errors: 1"), "{failed}");
+
+        app.build.status = BuildStatus::Completed;
+        app.build.errors = 0;
+        app.logs.entries.clear();
+        let job = app
+            .background_jobs
+            .jobs
+            .iter_mut()
+            .find(|job| job.status == BackgroundJobStatus::Succeeded)
+            .expect("literal fixture retains a successful job");
+        job.result
+            .as_mut()
+            .expect("successful job has result")
+            .artifacts
+            .push("/deploy/completed.wic".into());
+        let completed = rendered_text_at(&app, 130, 40, literal_now());
+        assert!(completed.contains("Inspect artifacts"), "{completed}");
+        assert!(completed.contains("completed.wic"), "{completed}");
+
+        let mut empty = App::new(16, 4_096);
+        empty.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        empty.build_environment = BuildEnvironmentState::Unconfigured;
+        empty.workspace.source_dir = None;
+        empty.workspace.build_dir = None;
+        let empty_output = rendered_text_at(&empty, 160, 50, literal_now());
+        assert!(
+            empty_output.contains("Configure build environment"),
+            "{empty_output}"
+        );
+        assert!(
+            empty_output.contains("No active task events"),
+            "{empty_output}"
+        );
+        assert!(
+            empty_output.contains("No retained jobs or builds"),
+            "{empty_output}"
+        );
+        assert!(
+            empty_output.contains("No authoritative artifact paths")
+                && empty_output.contains("retained. [F8] Images."),
+            "{empty_output}"
+        );
+        empty.build.status = BuildStatus::Failed;
+        empty.build.errors = 1;
+        let failed_without_rows = rendered_text_at(&empty, 160, 50, literal_now());
+        assert!(
+            failed_without_rows.contains("Build reports 0 warning(s)")
+                && failed_without_rows.contains("diagnostic rows. [e] opens"),
+            "{failed_without_rows}"
+        );
     }
     #[test]
     fn next_generation_cpu_gauge_is_numeric_responsive_and_accessible() {

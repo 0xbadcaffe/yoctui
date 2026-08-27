@@ -1,43 +1,43 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                          Daemon: ✓ Connected  •  BitBake: – Exited│
-┌Navigator───────────┐┌Build────────────────────────┐┌Recent output───────────────────────┐┌Inspector: Daemon / session────────────────────────────────────────┐
-│▾ OVERVIEW          ││Target: core-image-minimal   ││NOTE: Executing Tasks               ││▾ PRIMARY FACTS                                                    │
-│  ▱ Dashboard       ││Backend: bridge              ││NOTE: Started: do_compile           ││Target: core-image-minimal                                         │
-│▾ CONTENT           ││Status: Idle                 ││|  CC     builtins/histfile.o       ││Status: Idle                                                       │
-│  ? Layers          ││Exit code: none              ││|  CC     builtins/jobs.o           ││                                                                   │
-│  ? Recipes         ││Parse progress: not parsing  ││|  CC     execute_cmd.o             ││Select an item in the workspace to inspect its details.            │
-│  ? Packages        ││Machine: qemux86-64  Distro: ││[ 72%] Linking bash                 ││                                                                   │
-│  ? Images          ││Release: scarthgap           ││                                    ││▾ SECONDARY FACTS                                                  │
-│  ? SDK             ││Tasks: 0/? (active: 0)       ││                                    ││A0 Q0 F1 Done4 D0                                                  │
-│▾ BUILD             ││Warnings: 0  Errors: 0       ││                                    ││                                                                   │
-│  ? Tasks           ││avg --/m · ETA --            ││                                    ││▾ CONTEXTUAL ACTIONS                                               │
-│  ▱ Logs        LIVE││Host CPU: 24%  Build disk fre││                                    ││? Build image          [B] — Unknown                               │
-│  ▱ Errors          │└─────────────────────────────┘│                                    ││  Reason: No current environment capability snapshot:              │
-│  ? Configuration   │┌Package task progress (? = pr┐│                                    ││bitbake.build.                                                     │
-│  ? Dependencies    ││Waiting for BitBake task even││                                    ││? Cancel active build  [c] — Unknown                               │
-│▾ VALIDATE          ││                             ││                                    ││  Reason: No current environment capability snapshot:              │
-│  ? Testing         ││                             ││                                    ││bitbake.cancellation.                                              │
-│  ? Security        ││                             ││                                    ││                                                                   │
-│  ? QA              ││                             ││                                    ││▾ SYSTEM / COMPATIBILITY                                           │
-│▾ TOOLS             ││                             ││                                    ││✓ Daemon Connected · version unavailable · up 02:15:00             │
-│  ? Raw Mode        ││                             ││                                    ││– BitBake Exited · v2.8.0 · Jobs 0                                 │
-│  ? Terminal Session││                             ││                                    ││! Compat Unavailable · PTY 0 · Clients 1                           │
-│  ? Devtool         ││                             ││                                    ││! Build FS unavailable · Workspace /home/user/yocto/build          │
-│  ? QEMU / Wic      ││                             ││                                    ││                                                                   │
-│  ? Maintenance     ││                             ││                                    ││                                                                   │
-│  ▱ Build environmen││                             ││                                    ││                                                                   │
-│  ▱ Compatibility   ││                             ││                                    ││                                                                   │
-│  ▱ Settings        ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
-│                    │└─────────────────────────────┘└────────────────────────────────────┘│                                                                   │
+┌Navigator───────────┐┌Current Build · Idle───────────────────────────────────────────────┐┌Inspector: Daemon / session────────────────────────────────────────┐
+│▾ OVERVIEW          ││Overall  progress unknown⠷  0/?                                    ││▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       ││A0 W0 !0 ✕0 --                                                     ││Target: core-image-minimal                                         │
+│▾ CONTENT           ││Target: core-image-minimal  Status: Idle  Exit code: none          ││Status: Idle                                                       │
+│  ? Layers          ││Backend: bridge  Parse progress: not parsing                       ││                                                                   │
+│  ? Recipes         ││Tasks: 0/?  Active: 0  Warnings: 0  Errors: 0                      ││Select an item in the workspace to inspect its details.            │
+│  ? Packages        ││Machine: qemux86-64  Distro: poky  Release: scarthgap              ││                                                                   │
+│  ? Images          ││CPU: 24%  Disk free: unavailable                                   ││▾ SECONDARY FACTS                                                  │
+│  ? SDK             ││Environment: ready  Sstate reuse: unavailable                      ││A0 Q0 F1 Done4 D0                                                  │
+│▾ BUILD             │└───────────────────────────────────────────────────────────────────┘│                                                                   │
+│  ? Tasks           │┌Active Tasks · 0 active · 0 retained c┐┌Next Action────────────────┐│▾ CONTEXTUAL ACTIONS                                               │
+│  ▱ Logs        LIVE││No active task events. Start a build w││Recommended                ││? Build image                  [B] — Unknown                       │
+│  ▱ Errors          ││                                      ││Build image [B] — unknown  ││  Reason: No current environment capability snapshot:              │
+│  ? Configuration   ││                                      ││Reason: No current         ││bitbake.build.                                                     │
+│  ? Dependencies    ││                                      ││environment capability     ││? Cancel active build          [c] — Unknown                       │
+│▾ VALIDATE          ││                                      ││snapshot: bitbake.build.   ││  Reason: No current environment capability snapshot:              │
+│  ? Testing         ││                                      ││                           ││bitbake.cancellation.                                              │
+│  ? Security        ││                                      ││Common actions             ││✓ Monitor active tasks         [F2] — Local                        │
+│  ? QA              ││                                      ││[F2] Tasks  [l] Logs  [e]  ││✓ Open retained logs           [l] — Local                         │
+│▾ TOOLS             ││                                      ││Errors  [F3] Recent work   ││✓ Review failures              [e] — Local                         │
+│  ? Raw Mode        ││                                      ││[F8] Artifacts  [E]        ││✓ Inspect recent work          [F3] — Local                        │
+│  ? Terminal Session││                                      ││Environment  [M] Sstate    ││✓ Inspect artifacts            [F8] — Local                        │
+│  ? Devtool         ││                                      ││readiness                  ││✓ Configure build environment  [E] — Local                         │
+│  ? QEMU / Wic      │└──────────────────────────────────────┘└───────────────────────────┘│✓ Sstate readiness             [M] — Local                         │
+│  ? Maintenance     │┌Attention · 0 retained · e rev┐┌Recent Work / Artifacts────────────┐│                                                                   │
+│  ▱ Build environmen││✓ No retained warnings or     ││Last artifacts                     ││▾ SYSTEM / COMPATIBILITY                                           │
+│  ▱ Compatibility   ││errors. [e] opens diagnostics.││No authoritative artifact paths    ││✓ Daemon Connected · version unavailable · up 02:15:00             │
+│  ▱ Settings        ││                              ││retained. [F8] Images.             ││– BitBake Exited · v2.8.0 · Jobs 0                                 │
+│                    ││                              ││                                   ││! Compat Unavailable · PTY 0 · Clients 1                           │
+│                    ││                              ││Recent work                        ││! Build FS unavailable · Workspace /home/user/yocto/build          │
+│                    ││                              ││✓ Succeeded core-image-minimal · 0…││                                                                   │
+│                    ││                              ││✓ Succeeded busybox · 00:00:17     ││                                                                   │
+│                    ││                              ││✕ Failed core-image-minimal · 00:0…││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    │└──────────────────────────────┘└───────────────────────────────────┘│                                                                   │
 │                    │┌Telemetry · bounded 60-sample histories────────────────────────────┐│                                                                   │
 │                    ││█████                │RAM ! unavailable     │BUILD FS ! unavailable││                                                                   │
 │                    ││█████                │                      │                      ││                                                                   │
@@ -46,5 +46,5 @@
 │                    ││█████                │                      │                      ││                                                                   │
 │                    ││█████                │                      │                      ││                                                                   │
 └────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
-B options   Ctrl+B prefix   Tab focus   ↑/↓ package progress   i image   ! shell   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit  19:28:27
+B build   F2 tasks   l logs   e errors   F8 artifacts   Ctrl+B prefix   Tab Inspector   F2 Tasks   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit   19:28:27
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

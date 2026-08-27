@@ -1,12 +1,13 @@
 use yoctui_app::{MouseInput, MouseKind, mouse_action_for_app};
 use yoctui_model::{
     Action, App, ClientDaemonLifecycle, ClientDaemonPtySummary, Dialog, FocusTarget, PaneId,
-    SplitAxis,
+    Screen, SplitAxis,
 };
 
 #[test]
 fn next_generation_mouse_runtime_routes_exact_terminal_and_dialog_focus() {
     let mut app = App::new(16, 4096);
+    app.screen = Screen::TerminalSessions;
     let second = app
         .pane_layout
         .split(PaneId(1), SplitAxis::Horizontal)

@@ -26,11 +26,9 @@ workspace = "Dashboard"
 state = "daemon current; BitBake idle"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt"
-real_yoctui_anchors = ["Status: Idle", "Tasks: 0/?", "Daemon: ✓ Connected", "19:28:27"]
+real_yoctui_anchors = ["Current Build · Idle", "Next Action", "Recent Work / Artifacts", "Sstate reuse: unavailable", "Daemon: ✓ Connected", "19:28:27"]
 implementation_tasks = ["UX-DASHBOARD-001"]
-open_gaps = [
-  { task = "UX-DASHBOARD-001", description = "compose the concept's build overview, recent builds, quick actions, and complete resource-meter hierarchy" },
-]
+open_gaps = []
 anchors = [
   "persistent header, Navigator, Workspace, Inspector, and footer",
   "Dashboard selected with one focused Workspace border",
@@ -145,12 +143,9 @@ workspace = "Terminal Sessions"
 state = "two PTY panes; local writer and remote read-only client"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt"
-real_yoctui_anchors = ["shell · writer local-1", "devshell:busybox · read-only", "2 viewer(s) | selection 1", "bitbake-layers show-layers", "Ctrl+B prefix", "19:28:27"]
+real_yoctui_anchors = ["Terminal Sessions", "BuildShell · writer · 2 viewer(s)", "Devshell · read-only · 2 viewer(s)", "bitbake-layers show-layers", "Ctrl+B prefix", "19:28:27"]
 implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001"]
-open_gaps = [
-  { task = "UX-TERMINAL-EVAL-001", description = "complete the evidence-based tui-term compatibility decision against typed terminal replicas" },
-  { task = "UX-TERMINAL-UX-001", description = "add the first-class destination, tabs, writer lease/take-control, search/copy, dropped-history, session actions, and prefix-help states" },
-]
+open_gaps = []
 anchors = [
   "session tabs and two bounded split PTY panes",
   "writer and read-only ownership are textual",

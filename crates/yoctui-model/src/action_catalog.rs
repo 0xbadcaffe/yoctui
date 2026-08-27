@@ -748,7 +748,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 127, "26 global plus 101 workspace actions");
+        assert_eq!(catalog.len(), 134, "26 global plus 108 workspace actions");
         assert!(
             catalog
                 .iter()

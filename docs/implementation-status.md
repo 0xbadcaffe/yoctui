@@ -19,11 +19,11 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-26/38 (68.4%); overall required registry progress is 566/578 (97.9%).
+27/38 (71.1%); overall required registry progress is 567/578 (98.1%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
-anchors and maps 3 honest implementation gaps to incomplete owner tasks;
+anchors and now has no remaining implementation gaps for its six owner sets;
 failure tests reject corrupt dimensions, missing captures or anchors, and gaps
 whose owner is already complete. `UX-LICENSE-001` is complete: thirteen widget
 candidates have exact versions, checksums, sources, features, MSRVs, Ratatui
@@ -31,7 +31,7 @@ compatibility, decisions, and a resolved CycloneDX graph; the real 238-package
 third-party graph has generated notices/SBOM and passes `cargo deny` plus a
 locked offline build. Later owner tasks admitted only the audited throbber and
 pie-chart candidates.
-`UX-ACTION-CATALOG-001` is complete: 26 global commands and 101 contextual
+`UX-ACTION-CATALOG-001` is complete: 26 global commands and 108 contextual
 workspace actions now carry validated stable IDs, scope, menu/search/Help/footer
 metadata, local and compatibility requirements, safety, and typed targets. The
 palette and workspace presentations project the catalog, exact disabled reasons
@@ -86,7 +86,14 @@ the existing tracing stack feeds a nonblocking bounded local-client capture,
 while an independent typed store owns level/target/query filters, follow,
 selection, viewport rows, ingress/retention loss, clear, and capped export.
 Textual authority labels and tests prove it never enters BitBake logs, Errors,
-or task/job correlation. The reducer-owned multiline editor extension is next.
+or task/job correlation. The operational dashboard is also complete: one
+bounded model projection prioritizes authoritative current-build progress,
+capability-aware next action, active tasks, failures, recent jobs/artifacts,
+environment and replica health, telemetry, and explicit unavailable sstate
+evidence. Its typed context routes reuse existing workspaces, and reviewed
+wide/compact production-renderer fixtures cover empty, running, failed,
+completed, ASCII, no-color, and reduced-motion states. The unified command
+center is next.
 
 ### Completed baseline through M20
 
