@@ -246,16 +246,23 @@ inspect retained output and the exact external state before retrying.
 
 ## Settings, configuration, and sessions
 
-Settings supports theme, animation speed, reduced motion, color, log wrapping,
-and log following. `Up`/`Down` selects and `Left`/`Right` or `Enter` changes a
-value. Changes apply immediately and are atomically saved to `session.toml`;
-`r` retries a failed save.
+Settings supports theme, comfortable/compact density, Unicode/ASCII symbols,
+animation speed, reduced motion, color, mouse input, footer shortcuts, log
+wrapping/following, pane-size restoration, automatic/accessible-text charts,
+image-preview policy, the fixed terminal prefix, and keybindings. `Up`/`Down`
+selects and `Left`/`Right` or `Enter` changes or opens a value. Locked rows show
+why the choice is unavailable. Changes apply immediately and are atomically
+saved to `session.toml`; `r` retries a failed save and `R` resets the complete
+preference set and pane layout.
 
 Startup precedence is CLI flags, `YOCTUI_*` environment variables,
 `$XDG_CONFIG_HOME/yoctui/config.toml`, the recent session, then built-in
 defaults. Interactive settings in `session.toml` override configuration
 defaults, while hard CLI choices such as `--no-color` stay authoritative.
 Deleting `session.toml` resets remembered UI state but never resets BitBake.
+Older top-level theme/log/keymap session fields migrate automatically into the
+versioned preferences schema on the next successful save. `--no-color` remains
+launch-only and does not erase the stored color preference.
 For CI, set a temporary `XDG_CONFIG_HOME` so developer targets and build paths
 cannot enter an automation run; `scripts/headless-workload.sh` demonstrates
 that pattern.

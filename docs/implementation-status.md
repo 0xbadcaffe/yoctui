@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-29/38 (76.3%); overall required registry progress is 569/578 (98.4%).
+30/38 (78.9%); overall required registry progress is 570/578 (98.6%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -998,6 +998,13 @@ installation now uses the captured environment after typed workspace
 verification. A follow-up UX sequence is active to move Build environment out
 of general Settings, restore Navigator startup focus, unlock typed images only
 after verification, and correct theme rendering.
+`UX-PREFERENCES-001` is complete: one schema-v1 Settings authority exposes 15
+typed rows for visual, accessibility, input, log, pane, chart/image, terminal,
+and keymap choices. Immediate preview, whole-surface reset, exact locked-choice
+reasons, legacy migration, atomic normalization, no-color preservation, and
+restart restoration pass focused model/app/UI/CLI tests. Density, symbols,
+mouse, footer, charts, motion, color, logs, and pane restoration now affect the
+real workbench rather than remaining documentation-only choices.
 Yoctui now uses Packrat's eight built-in palettes—Dark Pro, White
 Classic, Matrix Green, VSCode Dark/Light, Accessible Dark, Soft Light, and
 High Contrast—while retaining `--no-color` as a separate accessibility override.
@@ -1030,6 +1037,7 @@ See `docs/current-task.md`.
 | Persistent application shell | DONE | Header, Navigator, Workspace, Inspector, and Footer remain visible during builds (`8769017`, `b3e7452`); breakpoint TestBackend coverage is in `733a593` |
 | Workbench command center | DONE | Dashboard composes one bounded typed projection of current build/action, recent contexts, active jobs, failure, artifact, Raw favorites, daemon terminals, and recent work. Direct `f`/`t` and contextual-menu routes reuse the authoritative Raw Favorites and Terminal Sessions workflows; responsive production goldens plus model/app/UI tests cover bounds and empty/current states |
 | Guided workflow onboarding | DONE | A schema-versioned six-step overlay borrows exact Build environment, target, build, diagnostics, image/rootfs, and daemon evidence; textual completed/current/blocked/skipped/stale/unavailable states remain responsive and accessible. Opening/resuming emits no execution effect, every destination reuses its typed route and confirmation boundary, and atomic private-session persistence covers first run, resume, dismissal, restart, and invalid-state rejection |
+| Unified preferences | DONE | One schema-v1 15-row Settings authority drives density, symbols, motion, color, mouse, footer, logs, pane restoration, charts, image/terminal constraints, and keybindings. Immediate preview/reset, locked reasons, legacy migration, atomic normalization, no-color preservation, invalid rejection, and restart restoration have model/app/UI/CLI coverage |
 | Responsive layouts | DONE | Wide three-pane mode, medium Inspector overlay, narrow visible pane switcher, too-small messaging, resize preservation, and all-screen boundary tests are complete |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |

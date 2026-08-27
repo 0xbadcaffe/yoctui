@@ -53,6 +53,11 @@ pub(super) fn responsive_shell(
         return;
     }
     if terminal_width >= WIDE_WORKBENCH_MIN_WIDTH {
+        let navigator_width = if app.preferences.density == yoctui_model::UiDensity::Compact {
+            18
+        } else {
+            22
+        };
         let panes = if app.screen == Screen::Tasks && terminal_width == 160 {
             Layout::horizontal([
                 Constraint::Length(26),
@@ -62,14 +67,14 @@ pub(super) fn responsive_shell(
             .split(area)
         } else if app.screen == Screen::Tasks {
             Layout::horizontal([
-                Constraint::Length(22),
+                Constraint::Length(navigator_width),
                 Constraint::Percentage(56),
                 Constraint::Min(32),
             ])
             .split(area)
         } else {
             Layout::horizontal([
-                Constraint::Length(22),
+                Constraint::Length(navigator_width),
                 Constraint::Percentage(43),
                 Constraint::Min(28),
             ])
@@ -79,7 +84,13 @@ pub(super) fn responsive_shell(
         workspace(frame, app, panes[1], terminal_width, now, task_rows);
         inspector(frame, app, panes[2], now, task_rows);
     } else if terminal_width >= 100 {
-        let panes = Layout::horizontal([Constraint::Length(22), Constraint::Min(40)]).split(area);
+        let navigator_width = if app.preferences.density == yoctui_model::UiDensity::Compact {
+            18
+        } else {
+            22
+        };
+        let panes = Layout::horizontal([Constraint::Length(navigator_width), Constraint::Min(40)])
+            .split(area);
         navigator(frame, app, panes[0], task_rows);
         workspace(frame, app, panes[1], terminal_width, now, task_rows);
         if app.focus == FocusTarget::Inspector {

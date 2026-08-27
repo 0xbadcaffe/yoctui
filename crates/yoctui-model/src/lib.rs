@@ -19,6 +19,7 @@ mod menu;
 mod onboarding;
 mod package;
 mod pane_layout;
+mod preferences;
 mod progress;
 mod project_profile;
 mod pty_multi;
@@ -63,6 +64,7 @@ pub use menu::*;
 pub use onboarding::*;
 pub use package::*;
 pub use pane_layout::*;
+pub use preferences::*;
 pub use progress::*;
 pub use project_profile::*;
 pub use pty_multi::*;
@@ -343,25 +345,6 @@ pub enum AnimationSpeed {
     #[default]
     Fast,
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Setting {
-    Theme,
-    AnimationSpeed,
-    ReducedMotion,
-    Color,
-    LogWrap,
-    LogFollow,
-    Keybindings,
-}
-pub const SETTINGS: [Setting; 7] = [
-    Setting::Theme,
-    Setting::AnimationSpeed,
-    Setting::ReducedMotion,
-    Setting::Color,
-    Setting::LogWrap,
-    Setting::LogFollow,
-    Setting::Keybindings,
-];
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CommandId {
     BuildImage,
@@ -3583,6 +3566,7 @@ pub struct App {
     pub keymap_preferences_ui: KeymapPreferencesUiState,
     pub menu: MenuState,
     pub onboarding: OnboardingState,
+    pub preferences: WorkbenchPreferences,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -3757,6 +3741,7 @@ impl App {
             keymap_preferences_ui: KeymapPreferencesUiState::default(),
             menu: MenuState::default(),
             onboarding: OnboardingState::default(),
+            preferences: WorkbenchPreferences::default(),
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
@@ -5082,6 +5067,7 @@ pub enum Action {
     ChangeSelectedSetting {
         backwards: bool,
     },
+    ResetPreferences,
     RetrySettingsPersistence,
     OpenKeymapPreferences,
     CloseKeymapPreferences,
@@ -9100,8 +9086,25 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if app.settings_selection >= SETTINGS.len() {
                 return None;
             }
-            match SETTINGS[app.settings_selection.min(SETTINGS.len() - 1)] {
+            let row = app.preference_rows()[app.settings_selection].clone();
+            if let Some(reason) = row.disabled_reason {
+                app.notification = Some(reason.into());
+                return None;
+            }
+            match row.setting {
                 Setting::Theme => app.theme = cycle_theme(app.theme, backwards),
+                Setting::Density => {
+                    app.preferences.density = match app.preferences.density {
+                        UiDensity::Comfortable => UiDensity::Compact,
+                        UiDensity::Compact => UiDensity::Comfortable,
+                    }
+                }
+                Setting::Symbols => {
+                    app.preferences.symbols = match app.preferences.symbols {
+                        SymbolPreference::Unicode => SymbolPreference::Ascii,
+                        SymbolPreference::Ascii => SymbolPreference::Unicode,
+                    }
+                }
                 Setting::AnimationSpeed => {
                     app.animation_speed = match app.animation_speed {
                         AnimationSpeed::Slow => AnimationSpeed::Fast,
@@ -9109,12 +9112,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     }
                 }
                 Setting::ReducedMotion => app.reduced_motion = !app.reduced_motion,
-                Setting::Color if app.color_forced_off => {
-                    app.notification =
-                        Some("Color is disabled by --no-color for this launch".into());
-                    return None;
-                }
                 Setting::Color => app.color_enabled = !app.color_enabled,
+                Setting::Mouse => {
+                    app.preferences.mouse_enabled = !app.preferences.mouse_enabled;
+                }
+                Setting::FooterShortcuts => {
+                    app.preferences.footer_shortcuts = !app.preferences.footer_shortcuts;
+                }
                 Setting::LogWrap => {
                     app.logs.wrap = !app.logs.wrap;
                     if app.logs.wrap {
@@ -9129,6 +9133,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         app.logs.scroll_offset = 0;
                     }
                 }
+                Setting::RememberPaneSizes => {
+                    app.preferences.remember_pane_sizes = !app.preferences.remember_pane_sizes;
+                }
+                Setting::Charts => {
+                    app.preferences.charts = match app.preferences.charts {
+                        ChartPreference::Automatic => ChartPreference::AccessibleText,
+                        ChartPreference::AccessibleText => ChartPreference::Automatic,
+                    }
+                }
+                Setting::ImagePreviews | Setting::TerminalPrefix => {
+                    unreachable!("disabled preference rows return before their transition")
+                }
                 Setting::Keybindings => {
                     app.keymap_preferences_ui.open = true;
                     app.keymap_preferences_ui.searching = false;
@@ -9138,6 +9154,16 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     return None;
                 }
             }
+            app.preferences = app.effective_preferences();
+            app.settings_dirty = true;
+            return Some(Effect::PersistSettings);
+        }
+        Action::ResetPreferences => {
+            let preferences = WorkbenchPreferences::default();
+            app.install_preferences(preferences)
+                .expect("built-in workbench preferences are valid");
+            app.pane_layout = PaneLayout::new(PaneId(1)).expect("valid default pane layout");
+            app.settings_selection = 0;
             app.settings_dirty = true;
             return Some(Effect::PersistSettings);
         }
@@ -9319,6 +9345,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ExportEffectiveKeymap => {}
         Action::SettingsPersisted => {
+            app.preferences = app.effective_preferences();
             app.settings_dirty = false;
             app.notification = None;
         }
@@ -20541,14 +20568,17 @@ mod tests {
         assert_eq!(app.theme, Theme::WhiteClassic);
         assert!(!app.color_enabled);
 
-        app.settings_selection = 3;
+        app.settings_selection = SETTINGS
+            .iter()
+            .position(|setting| *setting == Setting::Color)
+            .unwrap();
         assert_eq!(
             update(&mut app, Action::ChangeSelectedSetting { backwards: false }),
             None
         );
         assert_eq!(
             app.notification.as_deref(),
-            Some("Color is disabled by --no-color for this launch")
+            Some("Disabled by --no-color for this launch; the stored choice is preserved.")
         );
     }
 

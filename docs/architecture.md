@@ -1375,12 +1375,19 @@ interactive visual/log preferences:
 CLI hard overrides > session.toml > config.toml defaults > built-in defaults
 ```
 
-The model owns typed Settings selection, immediate preview state, and a dirty
-bit. A settings change returns a persistence effect. The CLI merges only the
-supported preference fields into a cloned session value and atomically
-replaces `session.toml`; it never rewrites `config.toml`. Successful writes
-clear the dirty bit. Failed writes leave the previewed value and dirty state
-intact and dispatch a visible failure notice.
+The model owns `WorkbenchPreferences`, a closed schema-v1 value, typed Settings
+selection, immediate preview state, and a dirty bit. Its embedded keymap is
+validated before installation, and unsupported schema versions or invalid
+bindings cannot partially replace current state. A settings change returns a
+persistence effect. The CLI clones the session, installs one validated
+`preferences` object, conditionally retains pane topology, normalizes legacy
+top-level visual/log/keymap fields away, and atomically replaces
+`session.toml`; it never rewrites `config.toml`. If the schema is absent,
+legacy fields migrate before configuration defaults are applied. Successful
+writes synchronize the effective model value and clear the dirty bit. Failed
+writes leave both the prior file and previewed dirty state intact and dispatch
+a visible failure notice. Launch-only `--no-color` suppresses runtime color
+without changing the stored choice.
 
 Persist only user preferences and recent valid workspace references. Do not
 persist transient secrets or unbounded logs.

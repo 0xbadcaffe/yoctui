@@ -58,14 +58,14 @@ use yoctui_model::{
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
     SecurityInventoryState, SecurityOperation, SecurityOutputStream, SecurityReport, SecurityScope,
     SecuritySessionStatus, SecurityView, Severity, SignatureComparisonState,
-    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, TaskInspectorRef,
-    TaskRowRef, TaskState, TelemetryMetric, TelemetrySeriesProjection, TestComparisonCategory,
-    TestComparisonState, TestExecutableCapability, TestJunitExportState, TestLaunchDialog,
-    TestLaunchField, TestLaunchPreview, TestResultInventoryState, TestWorkspaceView, Theme,
-    TransientStatusKind, VariableIdentity, WicCapability, WicCompression, WicCreateDialog,
-    WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState, WicDevicePickerDialog,
-    WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId, WicWritePhraseDialog,
-    WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
+    SignatureDifferenceCategory, SignatureDumpState, SpdxArtifactKind, SplitAxis, SymbolPreference,
+    TaskInspectorRef, TaskRowRef, TaskState, TelemetryMetric, TelemetrySeriesProjection,
+    TestComparisonCategory, TestComparisonState, TestExecutableCapability, TestJunitExportState,
+    TestLaunchDialog, TestLaunchField, TestLaunchPreview, TestResultInventoryState,
+    TestWorkspaceView, Theme, TransientStatusKind, VariableIdentity, WicCapability, WicCompression,
+    WicCreateDialog, WicCreateField, WicCreatePreview, WicDevice, WicDeviceInventoryState,
+    WicDevicePickerDialog, WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId,
+    WicWritePhraseDialog, WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
     selected_config_copy_value,
@@ -1568,7 +1568,11 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         Constraint::Length(clock_width),
     ])
     .split(inner);
-    let shortcuts = footer_rail_shortcuts(app, columns[0].width);
+    let shortcuts = if app.preferences.footer_shortcuts {
+        footer_rail_shortcuts(app, columns[0].width)
+    } else {
+        "F1 Help | shortcuts hidden".into()
+    };
     frame.render_widget(
         Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
         columns[0],
@@ -6220,7 +6224,8 @@ fn render_expanded_telemetry(frame: &mut Frame, app: &App, area: Rect) {
         row_index += 1;
     }
     let options = WidgetRenderOptions {
-        unicode: true,
+        unicode: app.preferences.symbols == SymbolPreference::Unicode
+            && app.preferences.charts == yoctui_model::ChartPreference::Automatic,
         reduced_motion: app.reduced_motion,
     };
     for (series, row) in projection
@@ -11544,6 +11549,8 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
         && body.width >= 70
         && body.height >= 18
         && app.theme != Theme::Monochrome
+        && app.preferences.symbols == SymbolPreference::Unicode
+        && app.preferences.charts == yoctui_model::ChartPreference::Automatic
         && total > 0
         && !groups.is_empty();
     if can_render_pie {
@@ -11748,7 +11755,9 @@ fn rootfs_filesystem_workspace(frame: &mut Frame, app: &App, area: Rect) {
     for entry in tree.entries.iter().skip(start).take(visible) {
         let is_selected = app.rootfs_entry_selection.as_ref() == Some(&entry.identity);
         let indent = "  ".repeat(entry.identity.depth().saturating_sub(1).min(12));
-        let branch = if app.theme == Theme::Monochrome {
+        let branch = if app.theme == Theme::Monochrome
+            || app.preferences.symbols == SymbolPreference::Ascii
+        {
             "|-"
         } else {
             "├─"
@@ -12743,40 +12752,39 @@ fn compatibility_capability_detail(
 }
 
 fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
-    let custom_bindings = app.keymap_preferences.overrides.len();
-    let rows = vec![
-        ("Theme", format!("{:?}", app.theme)),
-        ("Animation speed", format!("{:?}", app.animation_speed)),
-        ("Reduced motion", app.reduced_motion.to_string()),
-        (
-            "Color",
-            if app.color_forced_off {
-                "false (--no-color)".into()
-            } else {
-                app.color_enabled.to_string()
-            },
-        ),
-        ("Log wrap", app.logs.wrap.to_string()),
-        ("Log follow", app.logs.follow.to_string()),
-        (
-            "Keybindings",
-            format!(
-                "{} actions · {custom_bindings} custom",
-                yoctui_model::global_operator_action_definitions().len()
-            ),
-        ),
-    ];
-    let chunks = Layout::vertical([Constraint::Min(8), Constraint::Length(4)]).split(area);
+    let rows = app.preference_rows();
+    let control_height = if app.preferences.density == yoctui_model::UiDensity::Compact {
+        4
+    } else {
+        5
+    };
+    let chunks =
+        Layout::vertical([Constraint::Min(8), Constraint::Length(control_height)]).split(area);
+    let visible = usize::from(chunks[0].height.saturating_sub(3)).max(1);
+    let range =
+        yoctui_model::centered_viewport_range(Some(app.settings_selection), rows.len(), visible);
     frame.render_widget(
         Table::new(
-            rows.into_iter().enumerate().map(|(index, (name, value))| {
-                Row::new([name.to_owned(), value])
+            rows.iter()
+                .enumerate()
+                .skip(range.start)
+                .take(visible)
+                .map(|(index, row)| {
+                    Row::new([
+                        row.label.to_owned(),
+                        row.value.clone(),
+                        if row.enabled() { "editable" } else { "locked" }.into(),
+                    ])
                     .style(selected_style(app, index == app.settings_selection))
-            }),
-            [Constraint::Percentage(55), Constraint::Percentage(45)],
+                }),
+            [
+                Constraint::Percentage(42),
+                Constraint::Percentage(40),
+                Constraint::Percentage(18),
+            ],
         )
         .header(
-            Row::new(["Setting", "Active value"])
+            Row::new(["Setting", "Active value", "State"])
                 .style(Style::default().add_modifier(Modifier::BOLD)),
         )
         .block(
@@ -12790,10 +12798,14 @@ fn settings_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ),
         chunks[0],
     );
+    let selected_detail = rows
+        .get(app.settings_selection)
+        .and_then(|row| row.disabled_reason)
+        .unwrap_or("Changes preview immediately and are saved atomically for the next launch.");
     frame.render_widget(
-        Paragraph::new(
-            "↑/↓ or j/k select  ←/→ or Enter change/open  r retry unsaved changes\nKeybindings opens searchable scoped capture/reset/export preferences.\nBuild actions stay disabled until the environment connection is verified.",
-        )
+        Paragraph::new(format!(
+            "↑/↓ or j/k select  ←/→ or Enter change/open  R reset all  r retry\n{selected_detail}\nBuild actions stay disabled until the environment connection is verified."
+        ))
         .block(
             Block::default()
                 .title("Settings controls")
@@ -30654,5 +30666,45 @@ mod tests {
         let terminal_outcomes = rendered_text(&app, 120, 35);
         assert!(terminal_outcomes.contains("Exited"), "{terminal_outcomes}");
         assert!(terminal_outcomes.contains("Lost"), "{terminal_outcomes}");
+    }
+
+    #[test]
+    fn ux_preferences_render_real_settings_across_sizes_and_accessibility_modes() {
+        let mut app = App::new(32, 4_096);
+        app.screen = Screen::Settings;
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(output.contains("Settings"), "{width}x{height}: {output}");
+            assert!(
+                output.contains("Active value"),
+                "{width}x{height}: {output}"
+            );
+            assert!(!output.contains('�'), "{width}x{height}: {output}");
+        }
+
+        app.settings_selection = 12;
+        let locked = rendered_text(&app, 80, 24);
+        assert!(locked.contains("MetadataOnly"), "{locked}");
+        assert!(locked.contains("Raster preview is unavailable"), "{locked}");
+
+        app.settings_selection = 5;
+        app.color_forced_off = true;
+        app.color_enabled = false;
+        let no_color = rendered_text(&app, 100, 30);
+        assert!(no_color.contains("Disabled by --no-color"), "{no_color}");
+        assert!(
+            no_color.contains("stored choice is preserved"),
+            "{no_color}"
+        );
+
+        app.color_forced_off = false;
+        app.preferences.density = yoctui_model::UiDensity::Compact;
+        app.preferences.symbols = SymbolPreference::Ascii;
+        app.preferences.charts = yoctui_model::ChartPreference::AccessibleText;
+        app.preferences.footer_shortcuts = false;
+        app.reduced_motion = true;
+        let accessible = rendered_text(&app, 100, 30);
+        assert!(accessible.contains("shortcuts hidden"), "{accessible}");
+        assert!(!accessible.contains('�'), "{accessible}");
     }
 }

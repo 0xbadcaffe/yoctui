@@ -335,13 +335,13 @@ Progress counts required registry tasks, including the parent completion gate.
 | 1 | Action catalog, menus, keybindings, focus, scrolling | `UX-ACTION-CATALOG-001` through `UX-SCROLL-001` | 6/6 |
 | 2 | Shared widgets, progress, telemetry, logs, editors, checkboxes, trees | `UX-WIDGET-PRIMITIVES-001` through `UX-LIST-TREE-001` | 10/10 |
 | 3 | Dependency topology, rootfs composition, optional image preview | `UX-DEPENDENCY-GRAPH-001` through `UX-IMAGE-PREVIEW-001` | 5/5 |
-| 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 5/6 |
+| 4 | Terminal, dashboard, command center, onboarding, preferences | `UX-TERMINAL-EVAL-001` through `UX-PREFERENCES-001` | 6/6 |
 | 5 | Responsive, accessibility, performance, PTY/live evidence, docs | `UX-RESPONSIVE-001` through `UX-DOC-001` | 0/7 |
 | 6 | Parent completion gate | `UX-001` | 0/1 |
-| **M21 total** | | | **29/38 (76.3%)** |
+| **M21 total** | | | **30/38 (78.9%)** |
 
 The historical product registry was 540/540 before M21. Registering these 38
-tasks makes overall required progress **569/578 (98.4%)**. The research/spec,
+tasks makes overall required progress **570/578 (98.6%)**. The research/spec,
 six-scene production-renderer acceptance baseline, exact cell goldens, semantic
 captures, executable implementation-gap ledger, and reusable dependency
 admission/notices/SBOM/offline-build gate are complete. The validated
@@ -354,6 +354,11 @@ deterministic report, and migrates/persists atomically in the private session.
 The Settings workspace now presents and edits that authority with scoped
 search, textual states, trapped bounded capture, exact validation failures,
 per-action/all reset, bounded export, atomic save, and retry.
+The broader Settings surface now uses one schema-v1 15-row preference authority
+for density, symbols, motion, color, mouse, footer, log behavior, pane
+restoration, charts, image/terminal constraints, and keybindings. It previews
+immediately, resets as one bounded operation, migrates legacy session fields,
+and restores through atomic normalized session persistence.
 
 ## Test strategy
 

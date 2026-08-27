@@ -4384,6 +4384,9 @@ pub fn mouse_action_for_app(
     terminal_width: u16,
     terminal_height: u16,
 ) -> Option<Action> {
+    if !app.preferences.mouse_enabled {
+        return None;
+    }
     if app.menu.is_open() {
         return None;
     }
@@ -4620,7 +4623,14 @@ fn workbench_mouse_region(
                 (26, 89)
             } else {
                 let percentage = if app.screen == Screen::Tasks { 56 } else { 43 };
-                (22, shell.width.saturating_mul(percentage) / 100)
+                (
+                    if app.preferences.density == yoctui_model::UiDensity::Compact {
+                        18
+                    } else {
+                        22
+                    },
+                    shell.width.saturating_mul(percentage) / 100,
+                )
             };
         let workspace_width = workspace_width.min(
             shell
@@ -4660,7 +4670,14 @@ fn workbench_mouse_region(
         .find(|region| region.area.contains(mouse));
     }
     if shell.width >= 100 {
-        let navigator = MouseRect { width: 22, ..shell };
+        let navigator = MouseRect {
+            width: if app.preferences.density == yoctui_model::UiDensity::Compact {
+                18
+            } else {
+                22
+            },
+            ..shell
+        };
         if navigator.contains(mouse) {
             return Some(WorkbenchMouseRegion {
                 target: FocusTarget::Navigator,
@@ -5565,6 +5582,7 @@ pub fn settings_action(key: Input) -> Option<Action> {
         Input::Left => Some(Action::ChangeSelectedSetting { backwards: true }),
         Input::Right | Input::Enter => Some(Action::ChangeSelectedSetting { backwards: false }),
         Input::Char('r') => Some(Action::RetrySettingsPersistence),
+        Input::Char('R') => Some(Action::ResetPreferences),
         _ => None,
     }
 }
@@ -14203,5 +14221,32 @@ mod tests {
             keymap_action_for_app(&mut app, Input::Char('B')),
             KeymapInputResult::Unmatched
         ));
+    }
+
+    #[test]
+    fn ux_preferences_disable_mouse_and_route_preview_reset_keys_exactly() {
+        let mut app = yoctui_model::App::new(8, 1_000);
+        app.preferences.mouse_enabled = false;
+        assert_eq!(
+            mouse_action_for_app(
+                MouseInput {
+                    column: 30,
+                    row: 10,
+                    kind: MouseKind::Down,
+                },
+                &app,
+                100,
+                30,
+            ),
+            None
+        );
+        assert_eq!(
+            settings_action(Input::Right),
+            Some(Action::ChangeSelectedSetting { backwards: false })
+        );
+        assert_eq!(
+            settings_action(Input::Char('R')),
+            Some(Action::ResetPreferences)
+        );
     }
 }

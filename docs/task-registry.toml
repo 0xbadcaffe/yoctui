@@ -6289,12 +6289,12 @@ notes = "Added a schema-v1 focus-trapped six-step guide over the existing Build 
 id = "UX-PREFERENCES-001"
 milestone = "M21"
 title = "Unify usability and visual preferences"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 729
 required = true
 depends_on = ["UX-KEYMAP-UI-001", "UX-CHECKBOX-001", "UX-MENU-001"]
 verify = ["cargo test -p yoctui-model ux_preferences", "cargo test -p yoctui-ui ux_preferences", "cargo test -p yoctui -- ux_preferences"]
-notes = "Expose keybindings, theme, density, Unicode/ASCII, motion, mouse, footer, wrap/follow, pane sizes, chart/image choices, terminal prefix, reset/preview, atomic persistence, and legacy migration."
+notes = "Settings now projects one 15-row typed schema-v1 preference authority for keybindings, theme, density, Unicode/ASCII symbols, animation/reduced motion, color, mouse, footer, log wrap/follow, pane-size restoration, charts, image previews, and terminal prefix. Values preview immediately; R resets all preferences and pane topology; locked transport choices show exact reasons. Runtime rendering/input honors density, ASCII charts/trees, footer, mouse, motion, color, and pane restoration. Legacy session fields migrate into the validated schema; subsequent private session writes are atomic and normalize those fields away while --no-color preserves the stored choice. Focused model/app/UI/CLI tests cover wide/compact/narrow, no-color, ASCII, reduced-motion, mouse-disabled, invalid/future schema, reset, failure retention, persistence, and restart."
 
 [[task]]
 id = "UX-RESPONSIVE-001"

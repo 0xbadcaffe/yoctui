@@ -96,7 +96,8 @@ use yoctui_model::{
     SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget, TestComparison,
     TestOperation, TestSessionId, TestWorkspaceView, Theme, VariableDetail, VariableIdentity,
     WicCapability, WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest,
-    WicOperation, WicSessionId, update, validate_config_edit_request, validate_raw_favorites,
+    WicOperation, WicSessionId, WorkbenchPreferences, update, validate_config_edit_request,
+    validate_raw_favorites,
 };
 use yoctui_ui::render;
 
@@ -208,10 +209,13 @@ struct Config {
     theme: Theme,
     animation_speed: AnimationSpeed,
     reduced_motion: bool,
+    preferences: WorkbenchPreferences,
     session_path: Option<PathBuf>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq, Eq)]
 struct Session {
+    #[serde(default)]
+    preferences: Option<WorkbenchPreferences>,
     #[serde(default)]
     last_target: Option<String>,
     #[serde(default)]
@@ -839,6 +843,16 @@ fn read_session(path: Option<&Path>) -> Result<Session> {
         .migrate()
         .map_err(anyhow::Error::msg)
         .with_context(|| format!("invalid keymap in session file {}", path.display()))?;
+    if let Some(preferences) = session.preferences.as_mut() {
+        preferences.keymap = std::mem::take(&mut preferences.keymap)
+            .migrate()
+            .map_err(anyhow::Error::msg)
+            .with_context(|| format!("invalid preference keymap in {}", path.display()))?;
+        preferences
+            .validate()
+            .map_err(anyhow::Error::msg)
+            .with_context(|| format!("invalid preferences in {}", path.display()))?;
+    }
     validate_raw_favorites(&session.raw_favorites)
         .map_err(anyhow::Error::msg)
         .with_context(|| format!("invalid Raw favorites in session file {}", path.display()))?;
@@ -866,6 +880,12 @@ fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
     yoctui_model::EffectiveKeymap::from_preferences(&session.keymap)
         .map_err(anyhow::Error::msg)
         .context("invalid keymap cannot be persisted")?;
+    if let Some(preferences) = session.preferences.as_ref() {
+        preferences
+            .validate()
+            .map_err(anyhow::Error::msg)
+            .context("invalid workbench preferences cannot be persisted")?;
+    }
     if let Some(onboarding) = session.onboarding.as_ref() {
         onboarding
             .validate()
@@ -927,10 +947,23 @@ fn install_session_raw_favorites(session: &Session, app: &mut App) -> Result<()>
     Ok(())
 }
 
-fn install_session_keymap(session: &Session, app: &mut App) -> Result<()> {
-    app.install_keymap(session.keymap.clone())
-        .map_err(anyhow::Error::msg)
-        .context("could not install the persisted keymap")
+fn session_preferences(session: &Session) -> Result<WorkbenchPreferences> {
+    if let Some(preferences) = session.preferences.as_ref() {
+        preferences.validate().map_err(anyhow::Error::msg)?;
+        return Ok(preferences.clone());
+    }
+    let preferences = WorkbenchPreferences {
+        theme: session.theme.unwrap_or_default(),
+        animation_speed: session.animation_speed.unwrap_or_default(),
+        reduced_motion: session.reduced_motion.unwrap_or(false),
+        color_enabled: session.color_enabled.unwrap_or(true),
+        log_wrap: session.log_wrap.unwrap_or(false),
+        log_follow: session.log_follow.unwrap_or(true),
+        keymap: session.keymap.clone(),
+        ..WorkbenchPreferences::default()
+    };
+    preferences.validate().map_err(anyhow::Error::msg)?;
+    Ok(preferences)
 }
 
 fn install_session_onboarding(session: &Session, app: &mut App) -> Result<()> {
@@ -963,16 +996,21 @@ fn persist_settings(
     persist_color: bool,
 ) -> Result<()> {
     let mut updated = session.clone();
-    updated.theme = Some(app.theme);
-    updated.animation_speed = Some(app.animation_speed);
-    updated.reduced_motion = Some(app.reduced_motion);
-    if persist_color {
-        updated.color_enabled = Some(app.color_enabled);
+    let mut preferences = app.effective_preferences();
+    if !persist_color {
+        preferences.color_enabled = app.preferences.color_enabled;
     }
-    updated.log_wrap = Some(app.logs.wrap);
-    updated.log_follow = Some(app.logs.follow);
-    updated.pane_layout = Some(app.pane_layout.clone());
-    updated.keymap = app.keymap_preferences.clone();
+    updated.preferences = Some(preferences.clone());
+    updated.pane_layout = preferences
+        .remember_pane_sizes
+        .then(|| app.pane_layout.clone());
+    updated.theme = None;
+    updated.animation_speed = None;
+    updated.reduced_motion = None;
+    updated.color_enabled = None;
+    updated.log_wrap = None;
+    updated.log_follow = None;
+    updated.keymap = yoctui_model::KeymapPreferences::default();
     write_session(path, &updated)?;
     *session = updated;
     Ok(())
@@ -1030,6 +1068,22 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
     if cancellation_timeout_ms == 0 {
         anyhow::bail!("cancellation timeout must be greater than zero");
     }
+    let mut preferences = session_preferences(session)?;
+    if session.preferences.is_none() {
+        if session.theme.is_none() {
+            preferences.theme = file.theme.unwrap_or_default();
+        }
+        if session.animation_speed.is_none() {
+            preferences.animation_speed = file.animation_speed.unwrap_or_default();
+        }
+        if session.reduced_motion.is_none() {
+            preferences.reduced_motion = file.reduced_motion.unwrap_or(false);
+        }
+        if session.color_enabled.is_none() {
+            preferences.color_enabled = file.color.unwrap_or(true);
+        }
+    }
+    preferences.validate().map_err(anyhow::Error::msg)?;
     Ok(Config {
         backend,
         build_dir,
@@ -1047,17 +1101,12 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
             .clone()
             .or_else(|| env::var("YOCTUI_LOG_LEVEL").ok())
             .unwrap_or_else(|| "info".into()),
-        color: !cli.no_color && session.color_enabled.or(file.color).unwrap_or(true),
+        color: !cli.no_color && preferences.color_enabled,
         color_forced_off: cli.no_color,
-        theme: session.theme.or(file.theme).unwrap_or_default(),
-        animation_speed: session
-            .animation_speed
-            .or(file.animation_speed)
-            .unwrap_or_default(),
-        reduced_motion: session
-            .reduced_motion
-            .or(file.reduced_motion)
-            .unwrap_or(false),
+        theme: preferences.theme,
+        animation_speed: preferences.animation_speed,
+        reduced_motion: preferences.reduced_motion,
+        preferences,
         session_path: session_path(configured_path.as_deref()),
     })
 }
@@ -10029,6 +10078,7 @@ async fn tui(
         theme,
         animation_speed,
         reduced_motion,
+        preferences,
         editor,
         session_path,
         ..
@@ -10045,14 +10095,17 @@ async fn tui(
         App::new_unconfigured(log_entries, log_bytes)
     };
     app.backend = backend_kind.to_string();
-    app.color_enabled = color;
     app.color_forced_off = color_forced_off;
-    app.theme = theme;
-    app.animation_speed = animation_speed;
-    app.reduced_motion = reduced_motion;
+    app.install_preferences(preferences)
+        .map_err(anyhow::Error::msg)
+        .context("could not install workbench preferences")?;
+    app.color_enabled = color;
+    debug_assert_eq!(app.theme, theme);
+    debug_assert_eq!(app.animation_speed, animation_speed);
+    debug_assert_eq!(app.reduced_motion, reduced_motion);
     install_session_raw_favorites(&session, &mut app)?;
-    install_session_keymap(&session, &mut app)?;
     if let Some(layout) = session.pane_layout.clone()
+        && app.preferences.remember_pane_sizes
         && layout.validate().is_ok()
     {
         app.pane_layout = layout;
@@ -10092,8 +10145,6 @@ async fn tui(
     app.logs.recipe_filter = session.log_recipe_filter.clone();
     app.logs.task_filter = session.log_task_filter.clone();
     app.logs.build_filter = session.log_build_filter.clone();
-    app.logs.wrap = session.log_wrap.unwrap_or(false);
-    app.logs.follow = session.log_follow.unwrap_or(true);
     let session_build_dir = build_dir.clone();
     let mut backend: Box<dyn BitBakeBackend> = if daemon_attached {
         Box::new(ProcessBackend::new(build_dir.clone()))
@@ -13242,22 +13293,27 @@ async fn tui(
     maintenance_coordinator.shutdown().await;
     backend.shutdown().await?;
     let raw_favorites = app.raw_mode.favorites.clone();
+    let mut preferences = app.effective_preferences();
+    if color_forced_off {
+        preferences.color_enabled = app.preferences.color_enabled;
+    }
     session.last_target = app.build.target;
     session.last_screen = Some(app.screen);
     session.log_filter = app.logs.filter;
     session.log_recipe_filter = app.logs.recipe_filter;
     session.log_task_filter = app.logs.task_filter;
     session.log_build_filter = app.logs.build_filter;
-    session.log_wrap = Some(app.logs.wrap);
-    session.log_follow = Some(app.logs.follow);
-    session.theme = Some(app.theme);
-    session.animation_speed = Some(app.animation_speed);
-    session.reduced_motion = Some(app.reduced_motion);
-    if !color_forced_off {
-        session.color_enabled = Some(app.color_enabled);
-    }
-    session.pane_layout = Some(app.pane_layout.clone());
-    session.keymap = app.keymap_preferences.clone();
+    session.pane_layout = preferences
+        .remember_pane_sizes
+        .then(|| app.pane_layout.clone());
+    session.preferences = Some(preferences);
+    session.log_wrap = None;
+    session.log_follow = None;
+    session.theme = None;
+    session.animation_speed = None;
+    session.reduced_motion = None;
+    session.color_enabled = None;
+    session.keymap = yoctui_model::KeymapPreferences::default();
     session.onboarding = Some(app.onboarding.progress.clone());
     session.recent_build_dirs = std::iter::once(session_build_dir)
         .chain(session.recent_build_dirs)
@@ -14272,7 +14328,9 @@ mod tests {
 
         persist_settings(Some(&path), &mut session, &app, false).unwrap();
 
-        assert_eq!(read_session(Some(&path)).unwrap().color_enabled, Some(true));
+        let saved = read_session(Some(&path)).unwrap();
+        assert!(saved.preferences.unwrap().color_enabled);
+        assert_eq!(saved.color_enabled, None, "legacy field is normalized away");
         fs::remove_file(path).unwrap();
         fs::remove_dir(directory).unwrap();
     }
@@ -14284,6 +14342,7 @@ mod tests {
         write_session(
             Some(&path),
             &Session {
+                preferences: None,
                 last_target: Some("core-image-minimal".into()),
                 last_screen: Some(Screen::Logs),
                 log_filter: Some(Severity::Warning),
@@ -14308,6 +14367,7 @@ mod tests {
         assert_eq!(
             read_session(Some(&path)).unwrap(),
             Session {
+                preferences: None,
                 last_target: Some("core-image-minimal".into()),
                 last_screen: Some(Screen::Logs),
                 log_filter: Some(Severity::Warning),
@@ -14408,7 +14468,8 @@ mod tests {
             yoctui_model::KEYMAP_SCHEMA_VERSION
         );
         let mut app = App::new(8, 1024);
-        install_session_keymap(&session, &mut app).unwrap();
+        app.install_preferences(session_preferences(&session).unwrap())
+            .unwrap();
         assert!(matches!(
             keymap_action_for_app(&mut app, Input::Char('z')),
             yoctui_app::KeymapInputResult::Action(action)
@@ -14653,12 +14714,72 @@ mod tests {
         let saved = read_session(Some(&path)).unwrap();
         assert_eq!(saved.last_target.as_deref(), Some("core-image-minimal"));
         assert_eq!(saved.recent_build_dirs, [PathBuf::from("/build")]);
-        assert_eq!(saved.theme, Some(Theme::HighContrast));
-        assert_eq!(saved.animation_speed, Some(AnimationSpeed::Slow));
-        assert_eq!(saved.reduced_motion, Some(true));
-        assert_eq!(saved.color_enabled, Some(false));
-        assert_eq!(saved.log_wrap, Some(true));
-        assert_eq!(saved.log_follow, Some(false));
+        let preferences = saved.preferences.unwrap();
+        assert_eq!(preferences.theme, Theme::HighContrast);
+        assert_eq!(preferences.animation_speed, AnimationSpeed::Slow);
+        assert!(preferences.reduced_motion);
+        assert!(!preferences.color_enabled);
+        assert!(preferences.log_wrap);
+        assert!(!preferences.log_follow);
+        assert_eq!(saved.theme, None, "legacy fields are normalized away");
+
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
+    }
+
+    #[test]
+    fn ux_preferences_migrate_persist_restart_and_reject_future_schema_atomically() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-ux-preferences-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&directory);
+        fs::create_dir_all(&directory).unwrap();
+        let path = directory.join("session.toml");
+        fs::write(
+            &path,
+            "theme = 'matrix-green'\nanimation_speed = 'slow'\nreduced_motion = true\ncolor_enabled = false\nlog_wrap = true\nlog_follow = false\n",
+        )
+        .unwrap();
+
+        let mut legacy = read_session(Some(&path)).unwrap();
+        let migrated = session_preferences(&legacy).unwrap();
+        assert_eq!(migrated.theme, Theme::MatrixGreen);
+        assert_eq!(migrated.animation_speed, AnimationSpeed::Slow);
+        assert!(migrated.reduced_motion);
+        assert!(!migrated.color_enabled);
+        assert!(migrated.log_wrap);
+        assert!(!migrated.log_follow);
+
+        let mut app = App::new(10, 1_000);
+        app.install_preferences(migrated).unwrap();
+        app.preferences.density = yoctui_model::UiDensity::Compact;
+        app.preferences.symbols = yoctui_model::SymbolPreference::Ascii;
+        app.preferences.mouse_enabled = false;
+        app.preferences.footer_shortcuts = false;
+        app.preferences.charts = yoctui_model::ChartPreference::AccessibleText;
+        app.preferences.remember_pane_sizes = false;
+        persist_settings(Some(&path), &mut legacy, &app, true).unwrap();
+
+        let bytes = fs::read(&path).unwrap();
+        let restored = read_session(Some(&path)).unwrap();
+        let preferences = restored.preferences.clone().unwrap();
+        assert_eq!(preferences.density, yoctui_model::UiDensity::Compact);
+        assert_eq!(preferences.symbols, yoctui_model::SymbolPreference::Ascii);
+        assert!(!preferences.mouse_enabled);
+        assert!(!preferences.footer_shortcuts);
+        assert_eq!(
+            preferences.charts,
+            yoctui_model::ChartPreference::AccessibleText
+        );
+        assert_eq!(restored.pane_layout, None);
+        assert_eq!(restored.theme, None);
+        let mut restarted = App::new(10, 1_000);
+        restarted.install_preferences(preferences).unwrap();
+        assert_eq!(restarted.preferences, app.preferences);
+
+        let mut invalid = restored;
+        invalid.preferences.as_mut().unwrap().schema_version += 1;
+        assert!(write_session(Some(&path), &invalid).is_err());
+        assert_eq!(fs::read(&path).unwrap(), bytes);
 
         fs::remove_file(path).unwrap();
         fs::remove_dir(directory).unwrap();

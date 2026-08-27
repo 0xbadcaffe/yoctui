@@ -3652,15 +3652,25 @@ must prove that no pre-frame diagnostics leak into the terminal and that
 
 ### Preferences
 
-The Settings workspace is a typed row editor. `Up`/`Down` (or `j`/`k`) selects
-a row; `Left`/`Right` or `Enter` changes its value. The supported rows are:
+The Settings workspace is a centered, bounded typed row editor. `Up`/`Down`
+(or `j`/`k`) selects a row; `Left`/`Right` or `Enter` changes or opens it. The
+schema-v1 rows are:
 
 - theme
+- comfortable/compact visual density
+- Unicode/ASCII symbols
 - animation speed
 - reduced motion
 - color enablement
+- mouse input
+- footer shortcuts
 - log wrapping
 - log following
+- pane-size restoration
+- automatic/accessible-text charts
+- image previews (metadata-only, with the exact transport limitation)
+- terminal prefix (fixed `Ctrl+B`, with its reserved-prefix reason)
+- keybindings
 
 Changes preview immediately and are atomically saved to `session.toml`.
 `config.toml` is a user-authored default and is never rewritten by the TUI.
@@ -3668,6 +3678,17 @@ Session values override configuration defaults for these interactive rows;
 hard CLI overrides such as `--no-color` remain authoritative. A failed save
 keeps the previewed value, marks Settings as unsaved, and shows a notice.
 Pressing `r` retries the atomic save without changing the previewed value.
+Pressing `R` restores the validated built-in preference set and a one-pane
+layout, then persists it through the same effect. Rows that cannot safely vary
+are visibly `locked`; activation is inert except for their exact explanation.
+
+`WorkbenchPreferences` is the sole interactive preference authority in new
+session writes. It has an explicit schema version, closed values, unknown-field
+rejection, and embedded validated keymap preferences. Legacy top-level session
+fields are read once when the schema is absent. The next successful save writes
+the schema and normalizes those legacy fields away. Pane topology is restored
+only when `remember_pane_sizes` is true. `--no-color` changes only the current
+rendering and preserves the schema's stored color choice.
 
 CLI flags are launch-scoped. `--no-color` must not overwrite the stored color
 preference on exit, and `--backend` must not become an implicit backend for a

@@ -2,38 +2,38 @@
 
 ## Task
 
-**ID:** UX-PREFERENCES-001
-**Title:** Unify usability and visual preferences
+**ID:** UX-RESPONSIVE-001
+**Title:** Verify every M21 workflow across responsive layouts
 **Status:** NOT_STARTED
 
 ## Objective
 
-Expose one coherent, discoverable preference surface for keybindings, visual
-density, accessibility, input, panes, charts, logs, image choices, and the
-terminal prefix without creating competing configuration authorities.
+Verify every M21 workflow at all supported terminal breakpoints without hidden
+controls, lost selection, focus ambiguity, overflow, or replacement glyphs.
 
 ## Dependencies
 
-- `UX-KEYMAP-UI-001` — DONE
-- `UX-CHECKBOX-001` — DONE
-- `UX-MENU-001` — DONE
+- `UX-DEPENDENCY-GRAPH-001` — DONE
+- `UX-IMAGE-PREVIEW-001` — DONE
+- `UX-ONBOARDING-001` — DONE
+- `UX-PREFERENCES-001` — DONE
 
 ## Definition of done
 
-- Settings exposes keybindings, theme, density, Unicode/ASCII, motion, mouse,
-  footer, wrap/follow, pane sizing, chart/image choices, and terminal prefix
-  through typed rows with exact current values and disabled reasons.
-- Preview and reset are explicit, bounded, reversible, and cannot bypass
-  existing keymap, focus, terminal-prefix, accessibility, or capability rules.
-- One versioned preference schema migrates legacy session fields and persists
-  atomically without rewriting project or system configuration.
-- Wide, compact, no-color, ASCII, reduced-motion, mouse-disabled, invalid,
-  reset, persistence-failure, and restart restoration states are tested.
+- Menus, editors, dependency graphs, rootfs, terminal sessions, Dashboard,
+  Workbench Center, onboarding, Settings, and dialogs remain usable at 200x60,
+  160x50, 130x40, 100x30, and 80x24.
+- Below-minimum terminals show a bounded recovery message rather than partial
+  controls or a panic.
+- Resize preserves typed selection, scroll identity, focus, modal ownership,
+  and terminal ownership across wide, medium, and narrow topology changes.
+- Snapshot and semantic tests reject clipping, overflow, replacement glyphs,
+  inaccessible active controls, and lost state at every required breakpoint.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_preferences
-cargo test -p yoctui-ui ux_preferences
-cargo test -p yoctui -- ux_preferences
+cargo test -p yoctui-ui ux_responsive
+cargo test -p yoctui-app ux_responsive
+./scripts/test-tui-snapshots.sh
 ```
