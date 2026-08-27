@@ -11555,7 +11555,7 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let groups = inventory.grouped(8);
     let total = composition.totals().0.installed_package_bytes;
     let can_render_pie = app.color_enabled
-        && body.width >= 70
+        && body.width >= 64
         && body.height >= 18
         && app.theme != Theme::Monochrome
         && app.preferences.symbols == SymbolPreference::Unicode
@@ -11563,8 +11563,14 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
         && total > 0
         && !groups.is_empty();
     if can_render_pie {
-        let columns = Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)])
-            .split(body);
+        let sections = Layout::vertical([
+            Constraint::Length(16),
+            Constraint::Length(13),
+            Constraint::Min(10),
+        ])
+        .split(body);
+        let columns = Layout::horizontal([Constraint::Percentage(43), Constraint::Percentage(57)])
+            .split(sections[0]);
         let labels = groups
             .iter()
             .map(|group| rootfs_group_label(&group.identity))
@@ -11593,16 +11599,205 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
             .collect();
         frame.render_widget(
             PieChart::new(slices)
-                .block(Block::bordered().title("Installed bytes · visual summary"))
+                .block(Block::bordered().title("Installed bytes · chart"))
                 .show_percentages(true)
                 .show_legend(true)
                 .legend_position(LegendPosition::Bottom),
             columns[0],
         );
-        render_rootfs_package_table(frame, app, inventory, &groups, total, columns[1]);
+        render_rootfs_exact_group_table(frame, app, &groups, total, columns[1]);
+        render_rootfs_accessible_selection(frame, app, inventory, &groups, sections[1]);
+        render_rootfs_filesystem_preview(frame, app, composition, sections[2]);
     } else {
         render_rootfs_package_table(frame, app, inventory, &groups, total, body);
     }
+}
+
+fn render_rootfs_exact_group_table(
+    frame: &mut Frame,
+    app: &App,
+    groups: &[yoctui_model::RootfsGroupRow],
+    total: u64,
+    area: Rect,
+) {
+    let rows = groups.iter().map(|group| {
+        let selected = app.rootfs_group_selection.as_ref() == Some(&group.identity);
+        Row::new([
+            Cell::from(rootfs_group_label(&group.identity)),
+            Cell::from(group.package_count.to_string()),
+            Cell::from(group.installed_size_bytes.to_string()),
+            Cell::from(format!(
+                "{}.{:02}%",
+                group.percent_basis_points / 100,
+                group.percent_basis_points % 100
+            )),
+        ])
+        .style(selected_style(app, selected))
+    });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Min(10),
+                Constraint::Length(5),
+                Constraint::Length(11),
+                Constraint::Length(7),
+            ],
+        )
+        .header(
+            Row::new(["Category", "Pkgs", "Exact bytes", "%"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(Block::bordered().title(format!("Exact composition table · {total} B"))),
+        area,
+    );
+}
+
+fn render_rootfs_accessible_selection(
+    frame: &mut Frame,
+    app: &App,
+    inventory: &yoctui_model::RootfsPackageInventory,
+    groups: &[yoctui_model::RootfsGroupRow],
+    area: Rect,
+) {
+    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+    let selected_group = app
+        .rootfs_group_selection
+        .as_ref()
+        .and_then(|identity| groups.iter().find(|group| &group.identity == identity));
+    let mut lines = Vec::new();
+    if let Some(group) = selected_group {
+        let mut group_state = yoctui_model::CheckboxState::new(
+            "rootfs-group",
+            format!(
+                "{} group · {} packages",
+                rootfs_group_label(&group.identity),
+                group.package_count
+            ),
+        );
+        group_state.value = yoctui_model::CheckboxValue::Indeterminate;
+        lines.push(Line::from(checkbox_text(&group_state, unicode)));
+        let selected_position = app
+            .rootfs_package_selection
+            .as_ref()
+            .and_then(|selected| group.members.iter().position(|member| member == selected))
+            .unwrap_or(0);
+        let visible = usize::from(area.height.saturating_sub(6)).max(2);
+        let start = selected_position
+            .saturating_sub(visible / 2)
+            .min(group.members.len().saturating_sub(visible));
+        for identity in group.members.iter().skip(start).take(visible) {
+            let Some(package) = inventory
+                .packages
+                .iter()
+                .find(|package| &package.identity == identity)
+            else {
+                continue;
+            };
+            let selected = app.rootfs_package_selection.as_ref() == Some(identity);
+            let mut row = yoctui_model::CheckboxState::new(
+                format!("rootfs-package:{}", package.identity.name),
+                format!(
+                    "{} · {} B · {} files",
+                    package.identity.name, package.installed_size_bytes, package.file_count
+                ),
+            );
+            row.value = if selected {
+                yoctui_model::CheckboxValue::Checked
+            } else {
+                yoctui_model::CheckboxValue::Unchecked
+            };
+            row.focused = selected;
+            lines.push(Line::from(checkbox_text(&row, unicode)));
+        }
+    }
+    let mut ownership =
+        yoctui_model::CheckboxState::new("rootfs-ownership", "Filesystem ownership");
+    ownership.set_disabled("partial; Tab for evidence");
+    lines.push(Line::from(checkbox_text(&ownership, unicode)));
+    lines.push(Line::from(
+        "Other membership remains inspectable · exact bytes stay authoritative",
+    ));
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(Block::bordered().title("Accessible package selection · j/k moves checked row")),
+        area,
+    );
+}
+
+fn render_rootfs_filesystem_preview(
+    frame: &mut Frame,
+    app: &App,
+    composition: &yoctui_model::RootfsComposition,
+    area: Rect,
+) {
+    let Some(tree) = composition.filesystem_tree() else {
+        frame.render_widget(
+            Paragraph::new("Filesystem tree unavailable · use Tab for authority details")
+                .block(Block::bordered().title("Filesystem drill-down")),
+            area,
+        );
+        return;
+    };
+    let selected = app
+        .rootfs_entry_selection
+        .as_ref()
+        .and_then(|identity| {
+            tree.entries
+                .iter()
+                .position(|entry| &entry.identity == identity)
+        })
+        .unwrap_or(0);
+    let visible = usize::from(area.height.saturating_sub(4)).max(1);
+    let start = selected
+        .saturating_sub(visible / 2)
+        .min(tree.entries.len().saturating_sub(visible));
+    let position = BoundedScrollIndicator::new(start, visible, tree.entries.len()).label();
+    let rows = tree.entries.iter().skip(start).take(visible).map(|entry| {
+        let selected = app.rootfs_entry_selection.as_ref() == Some(&entry.identity);
+        let kind = match entry.kind {
+            RootfsEntryKind::Directory => "dir",
+            RootfsEntryKind::RegularFile => "file",
+            RootfsEntryKind::Symlink => "link",
+            RootfsEntryKind::Other => "special",
+        };
+        Row::new([
+            Cell::from(entry.identity.0.display().to_string()),
+            Cell::from(kind),
+            Cell::from(entry.size_bytes.to_string()),
+            Cell::from(
+                entry
+                    .package
+                    .as_ref()
+                    .map_or("unavailable", |package| package.name.as_str()),
+            ),
+        ])
+        .style(selected_style(app, selected))
+    });
+    let state = match &composition.filesystem_tree {
+        yoctui_model::RootfsAuthority::Available(_) => "available",
+        yoctui_model::RootfsAuthority::Partial { .. } => "partial",
+        yoctui_model::RootfsAuthority::Unavailable { .. } => "unavailable",
+    };
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Min(18),
+                Constraint::Length(7),
+                Constraint::Length(9),
+                Constraint::Length(14),
+            ],
+        )
+        .header(
+            Row::new(["Logical path", "Kind", "Exact B", "Package"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(Block::bordered().title(format!(
+            "Filesystem tree: {state} · {position} · Tab drill-down"
+        ))),
+        area,
+    );
 }
 
 fn rootfs_group_label(identity: &RootfsGroupIdentity) -> String {
@@ -21716,7 +21911,7 @@ mod tests {
         let mut app = ux_rootfs_ui_app();
         app.images_view = ImagesView::RootfsPackages;
         let wide = rendered_text(&app, 200, 60);
-        assert!(wide.contains("Installed bytes · visual summary"), "{wide}");
+        assert!(wide.contains("Installed bytes · chart"), "{wide}");
         assert!(wide.contains("Exact bytes"), "{wide}");
         assert!(wide.contains("Other"), "{wide}");
         assert!(wide.contains("Other membership"), "{wide}");
@@ -21731,7 +21926,32 @@ mod tests {
             assert!(output.contains("Installed-package authority"), "{output}");
             assert!(output.contains("Exact bytes"), "{output}");
             assert!(output.contains("Other"), "{output}");
-            assert!(!output.contains("visual summary"), "{output}");
+            assert!(!output.contains("Installed bytes · chart"), "{output}");
+        }
+    }
+
+    #[test]
+    fn concept_rootfs_composition_keeps_chart_table_selection_and_tree_visible() {
+        let app = concept_rootfs_app();
+        let output = rendered_text_at(&app, 160, 50, literal_now());
+
+        for anchor in [
+            "Installed bytes · chart",
+            "Exact composition table",
+            "46800000",
+            "Other",
+            "Accessible package selection",
+            "base system group · 90 packages (indeterminate)",
+            "base-system-000 · 520000 B · 3 files (checked)",
+            "base-system-001 · 520000 B · 4 files (unchecked)",
+            "Filesystem ownership (disabled)",
+            "partial; Tab for evidence",
+            "Filesystem tree: partial",
+            "/bin/busybox",
+            "Tab drill-down",
+            "package ownership is partial",
+        ] {
+            assert!(output.contains(anchor), "missing {anchor:?}: {output}");
         }
     }
 

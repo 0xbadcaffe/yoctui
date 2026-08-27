@@ -131,19 +131,18 @@ workspace = "Images / Rootfs composition"
 state = "current installed-package manifest; BitBake idle"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt"
-real_yoctui_anchors = ["Images · Rootfs composition", "Installed-package authority", "412 packages", "126400000 exact bytes", "Other", "Filesystem tree: partial", "19:28:27"]
+real_yoctui_anchors = ["Images · Rootfs composition", "Installed bytes · chart", "Exact composition table", "46800000", "Other", "base system group · 90 packages (indeterminate)", "base-system-000 · 520000 B · 3 files (checked)", "base-system-001 · 520000 B · 4 files (unchecked)", "Filesystem ownership (disabled)", "Filesystem tree: partial", "/bin/busybox", "19:28:27"]
 required_features = [
-  { id = "separate-authorities", description = "Package and filesystem authority remain distinct", fixture_anchors = ["Installed-package authority", "Filesystem tree: partial"] },
-  { id = "chart-and-table", description = "Chart and exact sortable table coexist", gap_task = "UX-CONCEPT-ROOTFS-001" },
+  { id = "separate-authorities", description = "Package and filesystem authority remain distinct", fixture_anchors = ["Installed packages: available", "Filesystem tree: partial"] },
+  { id = "chart-and-table", description = "Chart and exact table coexist", fixture_anchors = ["Installed bytes · chart", "Exact composition table", "46800000", "37.02%"] },
   { id = "other-membership", description = "Other remains exact and inspectable", fixture_anchors = ["Other", "Other membership remains"] },
-  { id = "accessible-selection", description = "Package rows expose checked, unchecked, indeterminate, and disabled meaning", gap_task = "UX-CONCEPT-ROOTFS-001" },
-  { id = "filesystem-drilldown", description = "Filesystem tree and textual position remain visible", gap_task = "UX-CONCEPT-ROOTFS-001" },
+  { id = "accessible-selection", description = "Package selection and authority rows expose checked, unchecked, indeterminate, and disabled meaning", fixture_anchors = ["base system group · 90 packages (indeterminate)", "base-system-000 · 520000 B · 3 files (checked)", "base-system-001 · 520000 B · 4 files (unchecked)", "Filesystem ownership (disabled)"] },
+  { id = "filesystem-drilldown", description = "Filesystem tree and textual position remain visible", fixture_anchors = ["Filesystem tree: partial", "1-9/9", "/bin/busybox", "Tab drill-down"] },
 ]
 raster_evidence = { status = "gap", task = "UX-CONCEPT-RASTER-001" }
 live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
 implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = [
-  { task = "UX-CONCEPT-ROOTFS-001", description = "At 160 columns the production scene does not yet show chart, exact table, accessible selection, and filesystem drill-down together." },
   { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
   { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert the Rootfs composition workspace." },
 ]

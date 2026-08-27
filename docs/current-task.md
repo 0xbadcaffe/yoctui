@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** UX-CONCEPT-ROOTFS-001
-**Title:** Compose the canonical Rootfs exploration concept
+**ID:** UX-CONCEPT-EDITOR-MENU-001
+**Title:** Compose the recipe editor with the application menu
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Compose the Rootfs exploration concept through the production renderer: chart,
-exact package table, accessible batch selection, limitations, and filesystem
-drill-down must remain simultaneously visible at the canonical width.
+Compose the production recipe editor with the focus-trapped F10 application
+menu visible over it, preserving menu ownership, exact disabled reasons,
+validation, diff state, and editor actions.
 
 ## Dependencies
 
@@ -18,15 +18,15 @@ drill-down must remain simultaneously visible at the canonical width.
 
 ## Definition of done
 
-- The Rootfs chart and exact package table coexist at 160×50.
-- Selection exposes accessible checkbox semantics and exact package identity.
-- Limitations and unavailable states remain explicit.
-- Filesystem drill-down is separately labelled and visible in the same scene.
+- The real recipe editor and F10 menu coexist at 160×50.
+- The menu owns focus and traps input while open.
+- Disabled actions expose exact reasons.
+- Validation, diff state, and save/build/return actions remain visible.
 - Focused production-renderer and input-routing tests pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui concept_rootfs_composition
-cargo test -p yoctui-app ux_rootfs
+cargo test -p yoctui-ui concept_editor_application_menu
+cargo test -p yoctui-app ux_menu
 ```

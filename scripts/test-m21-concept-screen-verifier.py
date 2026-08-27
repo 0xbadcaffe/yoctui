@@ -127,13 +127,13 @@ class ConceptScreenVerifierTests(unittest.TestCase):
     def test_rejects_feature_gap_missing_from_open_gaps(self) -> None:
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8").replace(
-            '  { task = "UX-CONCEPT-ROOTFS-001", description = "At 160 columns the production scene does not yet show chart, exact table, accessible selection, and filesystem drill-down together." },\n',
+            '  { task = "UX-CONCEPT-EDITOR-MENU-001", description = "The production fixture currently renders the recipe editor without the focus-trapped F10 menu composition." },\n',
             "",
             1,
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected(
-            "feature chart-and-table gap task UX-CONCEPT-ROOTFS-001 "
+            "feature application-menu gap task UX-CONCEPT-EDITOR-MENU-001 "
             "is not declared in open_gaps"
         )
 

@@ -6424,18 +6424,18 @@ notes = "The canonical production scene now composes a typed failed summary, str
 id = "UX-CONCEPT-ROOTFS-001"
 milestone = "M22"
 title = "Compose the canonical Rootfs exploration concept"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 741
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
 verify = ["cargo test -p yoctui-ui concept_rootfs_composition", "cargo test -p yoctui-app ux_rootfs"]
-notes = "Keep chart, exact table, accessible selection, limitations, and filesystem drill-down simultaneously visible at the canonical width."
+notes = "At 160x50 the production Rootfs scene now keeps the pie chart, exact group table, checked/unchecked/indeterminate/disabled accessible state projections, explicit partial-authority limitation, and bounded filesystem tree drill-down visible together. Responsive fallbacks and typed Images input routing remain covered."
 
 [[task]]
 id = "UX-CONCEPT-EDITOR-MENU-001"
 milestone = "M22"
 title = "Compose the recipe editor with the application menu"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 742
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
