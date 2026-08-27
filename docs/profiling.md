@@ -64,3 +64,27 @@ so query/inventory changes cannot leave a retained cache stale. On the same
 (85.2%); idle, active build, log-heavy, and telemetry remained below 0.84
 ms/frame. No retained label, query, index, layout, or sparkline cache was
 justified after that measured fix.
+
+## M21 expanded-workbench matrix
+
+`scripts/test-workbench-ux-performance.sh` adds five deterministic 160x48
+release scenarios at 300 frames each and retains the same 10,000,000 ns/frame
+ceiling. It writes checksummed reproducible output to the ignored
+`artifacts/profile/workbench-ux.txt`. The inputs exercise the complete menu,
+8,192 rootfs packages plus 8,192 filesystem entries, a normalized 4,096-node
+dependency graph, a 4,096-line editor with 1,024 files, and 4,096 retained PTY
+rows. The 2026-08-27 measurements were:
+
+| Scenario | ns/frame |
+| --- | ---: |
+| Menu-heavy | 789,382 |
+| Large rootfs | 1,392,321 |
+| Large dependency graph | 5,009,888 |
+| Large editor | 2,334,390 |
+| Dense terminal | 1,044,688 |
+
+The same run left the original five 500-frame scenarios below 929,596
+ns/frame. No cache was added: viewport projection and existing model bounds
+were sufficient. `scripts/test-flamegraph.sh` reuses the isolated release
+target and its validator fixture confirms 1,000 resolved samples and zero
+unresolved frames.

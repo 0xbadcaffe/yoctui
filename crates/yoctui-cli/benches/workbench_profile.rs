@@ -5,19 +5,30 @@ use std::{
 
 use ratatui::{Terminal, backend::TestBackend};
 use yoctui_model::{
-    Action, App, BuildStatus, CompletedTask, FocusTarget, HostTelemetry, Layer, LogEntry, Recipe,
+    Action, App, BuildStatus, ClientDaemonLifecycle, ClientDaemonPtyDetails, ClientDaemonPtyKind,
+    ClientDaemonPtyScreen, ClientDaemonPtySummary, ClientReplicaStatus, CompletedTask,
+    DependencyEdge, DependencyEdgeKind, DependencyGraph, DependencyGraphState, DependencyNode,
+    DependencyNodeId, Dialog, FocusTarget, HostTelemetry, ImageArtifactIdentity, ImagesView, Layer,
+    LogEntry, PackageIdentity, Recipe, RecipeEditor, RootfsAuthority, RootfsComposition,
+    RootfsCompositionRequest, RootfsCompositionState, RootfsEntry, RootfsEntryKind,
+    RootfsFilesystemTree, RootfsInstalledPackage, RootfsPackageInventory, RootfsPathIdentity,
     Screen, Severity, TaskId, TaskInfo, TaskState, update,
 };
 
 const WIDTH: u16 = 160;
 const HEIGHT: u16 = 48;
 const DEFAULT_FRAMES: usize = 6_000;
-const SCENARIOS: [&str; 5] = [
+const SCENARIOS: [&str; 10] = [
     "idle",
     "active-build",
     "large-metadata",
     "log-heavy",
     "telemetry",
+    "menu-heavy",
+    "large-rootfs",
+    "large-graph",
+    "large-editor",
+    "dense-terminal",
 ];
 
 fn fixed_now() -> SystemTime {
@@ -210,6 +221,147 @@ fn scenario_workload(scenario: &str) -> App {
             }
             app
         }
+        "menu-heavy" => {
+            let mut app = workload();
+            app.screen = Screen::Recipes;
+            let _ = update(&mut app, Action::OpenApplicationMenu);
+            app
+        }
+        "large-rootfs" => {
+            let mut app = workload();
+            app.screen = Screen::Images;
+            app.images_view = ImagesView::RootfsPackages;
+            let image = ImageArtifactIdentity {
+                machine: "qemux86-64".into(),
+                image: "core-image-profile".into(),
+                path: "/profile/deploy/core-image-profile.ext4".into(),
+            };
+            let request = RootfsCompositionRequest {
+                generation: 1,
+                image: image.clone(),
+            };
+            let packages = (0..yoctui_model::MAX_ROOTFS_PACKAGES)
+                .map(|index| RootfsInstalledPackage {
+                    identity: PackageIdentity::new(format!("profile-pkg-{index:05}")),
+                    recipe: Some(format!("profile-recipe-{:05}", index % 4_096)),
+                    category: format!("category-{:02}", index % 32),
+                    installed_size_bytes: 1_024 + index as u64 * 17,
+                    file_count: 1 + index as u64 % 64,
+                })
+                .collect::<Vec<_>>();
+            let entries = (0..8_192)
+                .map(|index| RootfsEntry {
+                    identity: RootfsPathIdentity(
+                        format!("/usr/lib/profile/file-{index:05}").into(),
+                    ),
+                    kind: RootfsEntryKind::RegularFile,
+                    size_bytes: 128 + index as u64,
+                    package: Some(PackageIdentity::new(format!(
+                        "profile-pkg-{:05}",
+                        index % yoctui_model::MAX_ROOTFS_PACKAGES
+                    ))),
+                })
+                .collect();
+            app.rootfs_composition = RootfsCompositionState::Available {
+                request,
+                composition: RootfsComposition {
+                    image,
+                    installed_packages: RootfsAuthority::Available(RootfsPackageInventory {
+                        packages,
+                    }),
+                    filesystem_tree: RootfsAuthority::Available(RootfsFilesystemTree { entries }),
+                },
+            };
+            app
+        }
+        "large-graph" => {
+            let mut app = workload();
+            app.screen = Screen::Dependencies;
+            let root = DependencyNodeId::recipe("profile-root");
+            let nodes = (0..4_096)
+                .map(|index| {
+                    DependencyNode::identity(DependencyNodeId::recipe(format!(
+                        "profile-node-{index:05}"
+                    )))
+                })
+                .collect::<Vec<_>>();
+            let edges = (1..4_096)
+                .map(|index| DependencyEdge {
+                    from: if index == 1 {
+                        root.clone()
+                    } else {
+                        DependencyNodeId::recipe(format!("profile-node-{:05}", index - 1))
+                    },
+                    to: DependencyNodeId::recipe(format!("profile-node-{index:05}")),
+                    kind: DependencyEdgeKind::Build,
+                })
+                .collect::<Vec<_>>();
+            let (graph, _) = DependencyGraph::normalize(root, nodes, edges, 4_096, 4_096);
+            app.dependency_graph_selection = graph.nodes.last().map(|node| node.id.clone());
+            app.dependency_graph = DependencyGraphState::Available(graph);
+            app
+        }
+        "large-editor" => {
+            let mut app = workload();
+            app.screen = Screen::Recipes;
+            app.focus = FocusTarget::Dialog;
+            let content = (0..4_096)
+                .map(|index| format!("PROFILE_VALUE_{index:05} = \"deterministic-{index:05}\"\n"))
+                .collect();
+            app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
+                recipe: "profile-recipe".into(),
+                root: "/profile/meta/recipes-profile/profile".into(),
+                files: (0..1_024)
+                    .map(|index| format!("files/profile-{index:04}.patch").into())
+                    .collect(),
+                selection: 1_023,
+                content,
+                editing: true,
+                dirty: true,
+            }));
+            app
+        }
+        "dense-terminal" => {
+            let mut app = workload();
+            app.screen = Screen::TerminalSessions;
+            app.terminal.client_id = Some([7; 16]);
+            app.daemon.status = ClientReplicaStatus::Current;
+            app.daemon.pty_sessions.push(ClientDaemonPtySummary {
+                id: 1,
+                name: "profile-shell".into(),
+                lifecycle: ClientDaemonLifecycle::Running,
+                viewers: 8,
+            });
+            app.daemon.pty_details.push(ClientDaemonPtyDetails {
+                id: 1,
+                kind: ClientDaemonPtyKind::BuildShell,
+                cwd: "/profile/yocto/build".into(),
+                columns: 240,
+                rows: 80,
+                writer: Some([7; 16]),
+                writer_epoch: 9,
+                exit_code: None,
+                restartable: true,
+            });
+            app.daemon.pty_screens.push(ClientDaemonPtyScreen {
+                session_id: 1,
+                columns: 240,
+                rows_count: 80,
+                cursor_column: 2,
+                cursor_row: 79,
+                cursor_hidden: false,
+                scrollback_offset: 0,
+                rows: (0..4_096)
+                    .map(|index| {
+                        format!("dense terminal line {index:04}: deterministic bounded output")
+                    })
+                    .collect(),
+                cells: Vec::new(),
+                scrollback_lines: 4_096,
+                dropped_line_feeds_lower_bound: 16_384,
+            });
+            app
+        }
         _ => panic!("unknown profile scenario {scenario:?}; expected one of {SCENARIOS:?}"),
     }
 }
@@ -244,6 +396,16 @@ fn main() {
                 Screen::Recipes
             } else {
                 Screen::Layers
+            };
+        }
+        if scenario == "menu-heavy" {
+            let _ = update(&mut app, Action::SelectMenuItem { delta: 1 });
+        }
+        if scenario == "large-rootfs" {
+            app.images_view = if frame_index.is_multiple_of(2) {
+                ImagesView::RootfsPackages
+            } else {
+                ImagesView::RootfsFilesystem
             };
         }
         let _ = update(&mut app, Action::Tick);

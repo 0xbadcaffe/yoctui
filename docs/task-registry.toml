@@ -6322,12 +6322,12 @@ notes = "Named model and production-renderer gates now cover no-color, ASCII, Un
 id = "UX-PERF-001"
 milestone = "M21"
 title = "Profile and bound the expanded workbench"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 732
 required = true
 depends_on = ["UX-RESPONSIVE-001"]
 verify = ["./scripts/test-next-generation-ui-performance.sh", "./scripts/test-workbench-ux-performance.sh", "./scripts/test-flamegraph.sh"]
-notes = "Add menu-heavy, large-rootfs, large-graph, large-editor, and dense-terminal scenarios, retain the 10 ms/frame ceiling, bound allocations/state, and require profile evidence before adding caches."
+notes = "The release benchmark now has ten deterministic bounded scenarios. The new 300-frame matrix covers the complete application menu, 8,192 rootfs packages plus 8,192 entries, a normalized 4,096-node/edge graph, a 4,096-line/1,024-file editor, and 4,096 retained terminal lines. Measured ns/frame were 789,382; 1,392,321; 5,009,888; 2,334,390; and 1,044,688 respectively, all below the unchanged 10,000,000 ceiling without adding caches. The existing 500-frame idle/build/metadata/log/telemetry matrix remained below 929,596 ns/frame. Both harnesses emit checksummed reproducible evidence, the missing workbench script is now present, and the flamegraph workload reuses the same release target and validates 1,000 samples with zero unresolved frames."
 
 [[task]]
 id = "UX-KEYMAP-E2E-001"

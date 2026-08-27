@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-32/38 (84.2%); overall required registry progress is 572/578 (99.0%).
+33/38 (86.8%); overall required registry progress is 573/578 (99.1%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -1039,6 +1039,7 @@ See `docs/current-task.md`.
 | Guided workflow onboarding | DONE | A schema-versioned six-step overlay borrows exact Build environment, target, build, diagnostics, image/rootfs, and daemon evidence; textual completed/current/blocked/skipped/stale/unavailable states remain responsive and accessible. Opening/resuming emits no execution effect, every destination reuses its typed route and confirmation boundary, and atomic private-session persistence covers first run, resume, dismissal, restart, and invalid-state rejection |
 | Unified preferences | DONE | One schema-v1 15-row Settings authority drives density, symbols, motion, color, mouse, footer, logs, pane restoration, charts, image/terminal constraints, and keybindings. Immediate preview/reset, locked reasons, legacy migration, atomic normalization, no-color preservation, invalid rejection, and restart restoration have model/app/UI/CLI coverage |
 | M21 accessibility | DONE | Named model/UI gates cover every shared widget exception, activity lifecycle, checkbox state, focus/selection attribute, exact progress value, rootfs chart fallback, menu denial, and terminal writer/read-only ownership across no-color, ASCII, Unicode, high-contrast, monochrome, animated, and reduced-motion modes |
+| Expanded-workbench performance | DONE | Ten release scenarios cover existing work plus menu-heavy, 8,192-package rootfs, 4,096-node graph, 4,096-line/1,024-file editor, and 4,096-line terminal bounds. All remain below 5.01 ms/frame against the unchanged 10 ms ceiling; checksummed evidence and the zero-unresolved-frame validator pass without adding caches |
 | Responsive layouts | DONE | M21 production fixtures cover every screen plus menus, editors, dependency topology, rootfs, terminal sessions, Workbench Center, onboarding, Settings, and dialogs at 200x60, 160x50, 130x40, 100x30, 80x24, and bounded below-minimum recovery. Typed focus/selection/session state survives resize; real PTY snapshots dismiss first-run onboarding before exact navigation |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
