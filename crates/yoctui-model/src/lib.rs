@@ -4977,6 +4977,7 @@ pub enum Action {
     },
     ActivateProjectProfileItem,
     Open(Screen),
+    OpenRawFavorites,
     SelectNavigator {
         delta: isize,
     },
@@ -8254,6 +8255,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         && matches!(
             &action,
             Action::Open(_)
+                | Action::OpenRawFavorites
                 | Action::SelectNavigator { .. }
                 | Action::SelectNavigatorAt { .. }
                 | Action::ToggleNavigatorGroup { .. }
@@ -8377,6 +8379,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     );
                 }
             }
+        }
+        Action::OpenRawFavorites => {
+            let _ = update(app, Action::Open(Screen::RawMode));
+            return update(app, Action::RawMode(RawModeAction::OpenFavorites));
         }
         Action::Open(s) => {
             let correlated_log_id = (s == Screen::Logs)

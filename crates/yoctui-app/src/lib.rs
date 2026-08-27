@@ -4201,6 +4201,8 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "dashboard.artifacts" => Input::F8,
         "dashboard.environment" => Input::Char('E'),
         "dashboard.maintenance" => Input::Char('M'),
+        "dashboard.favorites" => Input::Char('f'),
+        "dashboard.terminals" => Input::Char('t'),
         "recipes.metadata" => Input::Enter,
         "recipes.dependencies" => Input::Char('A'),
         "recipes.build" => Input::Char('b'),
@@ -4844,6 +4846,14 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         }
         Screen::Settings => settings_action(key),
         Screen::LayerRelationships | Screen::Bbmask | Screen::Help => None,
+    }
+}
+
+pub fn dashboard_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char('f') => Some(Action::OpenRawFavorites),
+        Input::Char('t') => Some(Action::Open(Screen::TerminalSessions)),
+        _ => None,
     }
 }
 
@@ -10453,6 +10463,45 @@ mod tests {
         );
         assert_eq!(shortcut("dashboard.artifacts"), Some("F8"));
         assert_eq!(key_action(Input::F8), Some(Action::Open(Screen::Images)));
+    }
+
+    #[test]
+    fn ux_command_center_routes_to_existing_typed_workspaces_and_terminal_command() {
+        let mut app = yoctui_model::App::new(16, 4_096);
+        for (input, screen) in [
+            (Input::F2, Screen::Tasks),
+            (Input::F3, Screen::BuildHistory),
+            (Input::F8, Screen::Images),
+        ] {
+            assert_eq!(key_action(input), Some(Action::Open(screen)));
+        }
+        assert_eq!(
+            dashboard_workspace_action(Input::Char('f')),
+            Some(Action::OpenRawFavorites)
+        );
+        let _ = yoctui_model::update(&mut app, Action::OpenRawFavorites);
+        assert_eq!(app.screen, Screen::RawMode);
+        assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Favorites);
+        assert_eq!(
+            dashboard_workspace_action(Input::Char('t')),
+            Some(Action::Open(Screen::TerminalSessions))
+        );
+        assert_eq!(
+            context_menu_activation_input("dashboard.errors"),
+            Some(Input::Char('e'))
+        );
+        assert_eq!(
+            context_menu_activation_input("dashboard.artifacts"),
+            Some(Input::F8)
+        );
+        assert_eq!(
+            context_menu_activation_input("dashboard.favorites"),
+            Some(Input::Char('f'))
+        );
+        assert_eq!(
+            context_menu_activation_input("dashboard.terminals"),
+            Some(Input::Char('t'))
+        );
     }
 
     #[test]

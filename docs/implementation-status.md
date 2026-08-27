@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-27/38 (71.1%); overall required registry progress is 567/578 (98.1%).
+28/38 (73.7%); overall required registry progress is 568/578 (98.3%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -31,7 +31,7 @@ compatibility, decisions, and a resolved CycloneDX graph; the real 238-package
 third-party graph has generated notices/SBOM and passes `cargo deny` plus a
 locked offline build. Later owner tasks admitted only the audited throbber and
 pie-chart candidates.
-`UX-ACTION-CATALOG-001` is complete: 26 global commands and 108 contextual
+`UX-ACTION-CATALOG-001` is complete: 26 global commands and 110 contextual
 workspace actions now carry validated stable IDs, scope, menu/search/Help/footer
 metadata, local and compatibility requirements, safety, and typed targets. The
 palette and workspace presentations project the catalog, exact disabled reasons
@@ -93,7 +93,14 @@ environment and replica health, telemetry, and explicit unavailable sstate
 evidence. Its typed context routes reuse existing workspaces, and reviewed
 wide/compact production-renderer fixtures cover empty, running, failed,
 completed, ASCII, no-color, and reduced-motion states. The unified command
-center is next.
+center is also complete: one bounded projection composes recent typed contexts,
+active jobs, current Raw favorite availability, and selected-first daemon
+terminal summaries with the Dashboard's existing next action, failures,
+artifacts, and work history. Dashboard-scoped `f` and `t` reuse the Raw
+Favorites and Terminal Sessions typed workflows, context menus share those
+routes, compact rows cannot wrap later controls away, and reviewed exact
+goldens plus model/app/UI tests cover bounds and empty/current states. Guided
+onboarding is next.
 
 ### Completed baseline through M20
 
@@ -1014,6 +1021,7 @@ See `docs/current-task.md`.
 | Capability | Status | Evidence and remaining work |
 |---|---|---|
 | Persistent application shell | DONE | Header, Navigator, Workspace, Inspector, and Footer remain visible during builds (`8769017`, `b3e7452`); breakpoint TestBackend coverage is in `733a593` |
+| Workbench command center | DONE | Dashboard composes one bounded typed projection of current build/action, recent contexts, active jobs, failure, artifact, Raw favorites, daemon terminals, and recent work. Direct `f`/`t` and contextual-menu routes reuse the authoritative Raw Favorites and Terminal Sessions workflows; responsive production goldens plus model/app/UI tests cover bounds and empty/current states |
 | Responsive layouts | DONE | Wide three-pane mode, medium Inspector overlay, narrow visible pane switcher, too-small messaging, resize preservation, and all-screen boundary tests are complete |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |

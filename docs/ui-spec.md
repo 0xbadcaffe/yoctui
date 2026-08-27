@@ -1066,6 +1066,21 @@ authority remains explicitly unavailable. Compact layouts retain the same
 state and routes in an Operational Summary, and a short Dashboard Inspector
 prioritizes system health over repeating the complete contextual-action list.
 
+The Dashboard's Workbench Center is the one-stop cross-workspace summary. It
+shows at most three recent typed contexts, active background jobs, Raw favorite
+commands, and daemon terminal sessions alongside the Dashboard's bounded next
+action, failures, recent work, and artifacts. The selected terminal projects
+first; Raw favorites preserve their persisted order and current
+available/limited/unavailable/unknown/unsupported or stale state. Every row
+names its owning route: `F2` Tasks, `F3` History, `e` Errors, `F8` Images,
+Dashboard-scoped `f` Raw Favorites, and Dashboard-scoped `t` Terminal Sessions.
+These rows are
+summaries, not activation cards: keyboard, menus, and mouse continue through
+the owning typed workspace and its ordinary availability or confirmation
+boundary. Empty, disconnected, stale, and unavailable sources remain explicit.
+Compact layouts preserve one line for context, active work/attention, artifact,
+favorite, and terminal state under an Operational Command Center title.
+
 On terminals with enough vertical space, Dashboard includes a dedicated
 terminal-native telemetry cockpit. It renders determinate CPU, memory, and
 build-filesystem gauges; bounded CPU and memory sample-history sparklines;
@@ -4450,8 +4465,8 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
-The implemented catalog currently contains 26 global commands and 108
-contextual workspace operations, 134 definitions in total. Every entry has a
+The implemented catalog currently contains 26 global commands and 110
+contextual workspace operations, 136 definitions in total. Every entry has a
 validated lowercase stable ID, typed scope and target, complete
 presentation/search metadata, explicit
 local and environment requirements, safety class, footer priority, and Help

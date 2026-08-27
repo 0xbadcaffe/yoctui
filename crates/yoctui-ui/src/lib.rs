@@ -34,24 +34,25 @@ use tui_piechart::{LegendPosition, PieChart, PieSlice};
 use tui_term::widget::PseudoTerminal;
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
-    BuildStatus, CompatibilityUiAuthorityStatus, CompatibilityUiCapabilityRow,
-    CompatibilityUiCapabilityState, CompatibilityUiFilter, ConfigCopyValue, DashboardProjection,
-    DependencyEdgeKind, DependencyGraph, DependencyGraphState, DependencyNodeId,
-    DependencyPathResult, DevtoolAction, DevtoolCapability, DevtoolGitState, DevtoolStatus,
-    DevtoolStatusError, DevtoolWorkspace, Dialog, FUNCTION_SHORTCUTS, FocusTarget, FunctionKey,
-    FunctionShortcutRoute, GitFileState, ImageArtifactField, ImageArtifactInventoryState,
-    ImagesView, InternalLogLevel, JobHistoryRowRef, LayerBrowser, LayerBrowserEntry,
-    LayerInspectorMode, LogWorkspaceView, MaintenanceCapability, MaintenanceCapabilitySnapshot,
-    MaintenanceDialog, MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot,
-    MaintenanceOperation, MaintenanceOperationPreview, MaintenanceServiceDiagnostics,
-    MaintenanceSessionStatus, MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface,
-    MaintenanceView, NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity,
-    PackageInventoryState, PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily,
-    QaDialog, QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream,
-    QaReportFailureKind, QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView,
-    QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
-    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
-    RecipeIdentity, RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
+    BuildStatus, CommandCenterProjection, CompatibilityUiAuthorityStatus,
+    CompatibilityUiCapabilityRow, CompatibilityUiCapabilityState, CompatibilityUiFilter,
+    ConfigCopyValue, DashboardProjection, DependencyEdgeKind, DependencyGraph,
+    DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
+    DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog,
+    FUNCTION_SHORTCUTS, FocusTarget, FunctionKey, FunctionShortcutRoute, GitFileState,
+    ImageArtifactField, ImageArtifactInventoryState, ImagesView, InternalLogLevel,
+    JobHistoryRowRef, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView,
+    MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
+    MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
+    MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
+    MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
+    NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity, PackageInventoryState,
+    PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog,
+    QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
+    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
+    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
+    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity,
+    RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
     SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
     SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
@@ -939,7 +940,7 @@ fn footer_shortcuts(app: &App) -> String {
     }
     let shortcuts = match app.screen {
         Screen::Dashboard => {
-            "B build | F2 tasks | l logs | e errors | F8 artifacts | Ctrl+B prefix | F3 work | E environment | M sstate | Ctrl+P commands | Tab focus | c cancel | ? help | q quit"
+            "B build | f favorites | t terminals | F2 Tasks | e errors | Ctrl+B prefix | F8 artifacts | l logs | F3 work | E environment | M sstate | Ctrl+P commands | Tab focus | c cancel | ? help | q quit"
         }
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
@@ -1277,6 +1278,11 @@ fn footer_rail_shortcuts(app: &App, width: u16) -> String {
             .filter(|shortcut| {
                 !matches!(shortcut.key, FunctionKey::F1 | FunctionKey::F9 | FunctionKey::F10)
                     && !matches!(shortcut.route, FunctionShortcutRoute::Open(screen) if screen == app.screen)
+                    && !prefix.iter().any(|item| {
+                        item.split_once(' ')
+                            .map_or(item.as_str(), |(key, _)| key)
+                            == shortcut.key_label
+                    })
             })
             .map(|shortcut| format!("{} {}", shortcut.key_label, shortcut.action_label))
             .collect::<Vec<_>>();
@@ -6490,7 +6496,8 @@ fn render_dashboard_actions(
             palette.role(palette.heading, Modifier::BOLD),
         ),
         Line::from("[F2] Tasks  [l] Logs  [e] Errors  [F3] Recent work"),
-        Line::from("[F8] Artifacts  [E] Environment  [M] Sstate readiness"),
+        Line::from("[F8] Artifacts  [f] Favorites  [t] Terminals"),
+        Line::from("[E] Environment  [M] Sstate readiness"),
     ]);
     frame.render_widget(
         Paragraph::new(lines)
@@ -6575,59 +6582,153 @@ fn dashboard_recent_work_line(row: JobHistoryRowRef<'_>, now: SystemTime) -> Str
     }
 }
 
-fn render_dashboard_recent(
+fn command_center_context_line(row: JobHistoryRowRef<'_>) -> String {
+    match row {
+        JobHistoryRowRef::Build(record) => format!(
+            "Build · {}",
+            record.target.as_deref().unwrap_or("unknown target")
+        ),
+        JobHistoryRowRef::Background(job) => {
+            let context = &job.context;
+            let workspace = context.workspace.map_or("Work", |screen| {
+                yoctui_model::workspace_screen_destination(screen).label()
+            });
+            let identity = context
+                .recipe
+                .as_deref()
+                .map(|recipe| {
+                    context
+                        .task
+                        .as_deref()
+                        .map_or_else(|| recipe.to_owned(), |task| format!("{recipe}:{task}"))
+                })
+                .or_else(|| context.image.clone())
+                .or_else(|| context.target.clone())
+                .or_else(|| {
+                    context.path.as_ref().map(|path| {
+                        path.file_name().map_or_else(
+                            || path.display().to_string(),
+                            |name| name.to_string_lossy().into_owned(),
+                        )
+                    })
+                })
+                .unwrap_or_else(|| job.title.clone());
+            format!("{workspace} · {identity}")
+        }
+    }
+}
+
+fn render_workbench_center(
     frame: &mut Frame,
-    projection: &DashboardProjection<'_>,
+    center: &CommandCenterProjection<'_>,
     area: Rect,
     now: SystemTime,
 ) {
     let block = Block::default()
-        .title("Recent Work / Artifacts")
+        .title("Workbench Center · live source projections")
         .borders(Borders::ALL);
     let inner = block.inner(area);
     frame.render_widget(block, area);
     let width = inner.width.max(1);
-    let mut lines = vec![Line::styled("Last artifacts", Style::default().bold())];
-    if projection.artifacts.is_empty() {
-        lines.push(Line::from(
-            "No authoritative artifact paths retained. [F8] Images.",
-        ));
-    } else {
-        lines.extend(projection.artifacts.iter().take(2).map(|artifact| {
+    let dashboard = &center.dashboard;
+    let action = &dashboard.next_action;
+    let context = center.recent_contexts.first().copied().map_or_else(
+        || "[F3] Context: none retained".into(),
+        |row| format!("[F3] Context: {}", command_center_context_line(row)),
+    );
+    let active = center.active_jobs.first().map_or_else(
+        || {
+            format!(
+                "[F2/F3] Active: tasks {} · jobs 0",
+                dashboard.summary.active
+            )
+        },
+        |_| {
+            format!(
+                "[F2/F3] Active: tasks {} · jobs {}",
+                dashboard.summary.active,
+                center.active_jobs.len(),
+            )
+        },
+    );
+    let failure = dashboard.failures.first().map_or_else(
+        || "[e] Failure: none retained".into(),
+        |entry| {
+            format!(
+                "[e] Failure: {}",
+                entry.message.lines().next().unwrap_or("diagnostic")
+            )
+        },
+    );
+    let artifact = dashboard.artifacts.first().map_or_else(
+        || "[F8] Artifact: none retained".into(),
+        |artifact| {
             let name = artifact.path.file_name().map_or_else(
                 || artifact.path.display().to_string(),
                 |name| name.to_string_lossy().into_owned(),
             );
-            Line::from(bounded_cell_text(
-                &format!("{} · {name}", artifact.source.label()),
-                width,
-            ))
-        }));
-    }
-    lines.push(Line::default());
-    lines.push(Line::styled("Recent work", Style::default().bold()));
-    if projection.recent_work.is_empty() {
-        lines.push(Line::from(
-            "No retained jobs or builds. [F3] opens history.",
-        ));
-    } else {
-        lines.extend(projection.recent_work.iter().copied().take(3).map(|row| {
-            Line::from(bounded_cell_text(
-                &dashboard_recent_work_line(row, now),
-                width,
-            ))
-        }));
-    }
+            format!("[F8] Artifact: {} · {name}", artifact.source.label())
+        },
+    );
+    let favorite = center.favorite_commands.first().map_or_else(
+        || "[f] Favorite: none".into(),
+        |favorite| {
+            format!(
+                "[f] Favorite: {} · {}{}",
+                favorite.favorite.name,
+                raw_availability_label(favorite.projection.availability.state),
+                if favorite.projection.stale {
+                    " · STALE"
+                } else {
+                    ""
+                }
+            )
+        },
+    );
+    let terminal = center.terminals.first().map_or_else(
+        || "[t] Terminal: none".into(),
+        |terminal| {
+            format!(
+                "[t] Terminal: {} · {} · {} viewer(s)",
+                terminal.name,
+                daemon_lifecycle_label(terminal.lifecycle),
+                terminal.viewers
+            )
+        },
+    );
+    let recent = dashboard.recent_work.first().copied().map_or_else(
+        || "[F3] Recent: none retained".into(),
+        |row| format!("[F3] Recent: {}", dashboard_recent_work_line(row, now)),
+    );
+    let lines = [
+        format!(
+            "Next: {} [{}] · {}",
+            action.label,
+            action.shortcut,
+            availability_state_word(action.state)
+        ),
+        context,
+        active,
+        failure,
+        artifact,
+        favorite,
+        terminal,
+        recent,
+    ]
+    .into_iter()
+    .map(|line| Line::from(bounded_cell_text(&line, width)))
+    .collect::<Vec<_>>();
     frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
 }
 
 fn render_dashboard_compact(
     frame: &mut Frame,
     app: &App,
-    projection: &DashboardProjection<'_>,
+    center: &CommandCenterProjection<'_>,
     area: Rect,
     now: SystemTime,
 ) {
+    let projection = &center.dashboard;
     let top_height = area.height.saturating_sub(7).clamp(9, 11);
     let rows = Layout::vertical([Constraint::Length(top_height), Constraint::Min(1)]).split(area);
     render_dashboard_build(frame, app, projection, rows[0], now);
@@ -6650,29 +6751,54 @@ fn render_dashboard_compact(
             )
         },
     );
-    let recent = projection.recent_work.first().copied().map_or_else(
-        || "Recent work: none retained".into(),
-        |row| format!("Recent: {}", dashboard_recent_work_line(row, now)),
-    );
     let artifact = projection.artifacts.first().map_or_else(
         || "Artifact: none retained".into(),
         |artifact| format!("Artifact: {}", artifact.path.display()),
     );
-    frame.render_widget(
-        Paragraph::new(format!(
-            "Next: {} [{}] — {}\n{attention}\n{recent}\n{artifact}\n[F2] Tasks  [l] Logs  [e] Errors  [F3] Work  [F8] Artifacts  [E] Environment  [M] Sstate",
+    let context = center
+        .recent_contexts
+        .first()
+        .copied()
+        .map_or_else(|| "none retained".into(), command_center_context_line);
+    let favorite = center
+        .favorite_commands
+        .first()
+        .map_or("none", |favorite| favorite.favorite.name.as_str());
+    let terminal = center
+        .terminals
+        .first()
+        .map_or("none", |terminal| terminal.name.as_str());
+    let block = Block::default()
+        .title("Operational Command Center")
+        .borders(Borders::ALL);
+    let inner = block.inner(rows[1]);
+    frame.render_widget(block, rows[1]);
+    let lines = [
+        format!(
+            "Next: {} [{}] — {}",
             action.label,
             action.shortcut,
             availability_state_word(action.state),
-        ))
-        .block(Block::default().title("Operational Summary").borders(Borders::ALL))
-        .wrap(Wrap { trim: false }),
-        rows[1],
-    );
+        ),
+        format!(
+            "Active: {} task(s) · {} job(s) | {attention}",
+            projection.summary.active,
+            center.active_jobs.len(),
+        ),
+        format!("Context: {context}"),
+        artifact,
+        format!("Favorite: {favorite} [f]"),
+        format!("Terminal: {terminal} [t]"),
+    ]
+    .into_iter()
+    .map(|line| Line::from(bounded_cell_text(&line, inner.width.max(1))))
+    .collect::<Vec<_>>();
+    frame.render_widget(Paragraph::new(lines), inner);
 }
 
 fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
-    let projection = app.dashboard_projection_at(now);
+    let center = app.command_center_projection_at(now);
+    let projection = &center.dashboard;
     let show_telemetry = area.height >= 38
         && telemetry_available(app)
         && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
@@ -6684,7 +6810,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     };
     let content = sections[0];
     if content.height < 24 || content.width < 60 {
-        render_dashboard_compact(frame, app, &projection, content, now);
+        render_dashboard_compact(frame, app, &center, content, now);
     } else {
         let remaining = content.height.saturating_sub(10);
         let middle_height = remaining.div_ceil(2).max(7);
@@ -6694,15 +6820,15 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
             Constraint::Min(7),
         ])
         .split(content);
-        render_dashboard_build(frame, app, &projection, rows[0], now);
+        render_dashboard_build(frame, app, projection, rows[0], now);
         let middle = Layout::horizontal([Constraint::Percentage(58), Constraint::Percentage(42)])
             .split(rows[1]);
         render_dashboard_tasks(frame, app, middle[0]);
-        render_dashboard_actions(frame, app, &projection, middle[1]);
+        render_dashboard_actions(frame, app, projection, middle[1]);
         let bottom = Layout::horizontal([Constraint::Percentage(47), Constraint::Percentage(53)])
             .split(rows[2]);
-        render_dashboard_attention(frame, app, &projection, bottom[0]);
-        render_dashboard_recent(frame, &projection, bottom[1], now);
+        render_dashboard_attention(frame, app, projection, bottom[0]);
+        render_workbench_center(frame, &center, bottom[1], now);
     }
     if show_telemetry {
         render_telemetry_strip(frame, app, sections[1]);
@@ -17575,6 +17701,7 @@ mod tests {
         let mut app = literal_reference_app();
         app.screen = Screen::Dashboard;
         app.focus = FocusTarget::Workspace;
+        app.focus = FocusTarget::Workspace;
         app.build.status = BuildStatus::Idle;
         app.build.started = None;
         app.build.completed = 0;
@@ -23311,7 +23438,7 @@ mod tests {
                     "Current Build",
                     "Target: core-image-minimal",
                     "Next Action",
-                    "Recent Work / Artifacts",
+                    "Workbench Center",
                     "Sstate reuse: unavailable",
                 ],
                 selected: None,
@@ -24347,8 +24474,8 @@ mod tests {
             "Attention",
             "ERROR: bash:do_compile",
             "failed with exit code 1",
-            "Recent Work / Artifacts",
-            "core-image-minimal.wic",
+            "Workbench Center",
+            "Artifact: job · core-image-mi",
             "Sstate reuse: unavailable",
             "Environment: ready",
         ] {
@@ -24368,7 +24495,7 @@ mod tests {
                 "{width}x{height}: {output}"
             );
             assert!(
-                output.contains("Next Action") || output.contains("Operational Summary"),
+                output.contains("Next Action") || output.contains("Operational Command Center"),
                 "{width}x{height}: {output}"
             );
             assert!(output.contains("Sstate"), "{width}x{height}: {output}");
@@ -24416,12 +24543,11 @@ mod tests {
             "{empty_output}"
         );
         assert!(
-            empty_output.contains("No retained jobs or builds"),
+            empty_output.contains("Recent: none retained"),
             "{empty_output}"
         );
         assert!(
-            empty_output.contains("No authoritative artifact paths")
-                && empty_output.contains("retained. [F8] Images."),
+            empty_output.contains("Artifact: none retained"),
             "{empty_output}"
         );
         empty.build.status = BuildStatus::Failed;
@@ -24432,6 +24558,85 @@ mod tests {
                 && failed_without_rows.contains("diagnostic rows. [e] opens"),
             "{failed_without_rows}"
         );
+    }
+
+    #[test]
+    fn ux_command_center_unifies_bounded_source_contexts_without_bypassing_workspaces() {
+        let mut app = literal_reference_app();
+        app.screen = Screen::Dashboard;
+        app.focus = FocusTarget::Workspace;
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+                id: yoctui_model::BackgroundJobId(99),
+                kind: BackgroundJobKind::Build,
+                title: "command-center-build".into(),
+                context: yoctui_model::BackgroundJobContext {
+                    workspace: Some(Screen::Recipes),
+                    target: Some("core-image-minimal".into()),
+                    recipe: Some("busybox".into()),
+                    task: Some("do_compile".into()),
+                    image: None,
+                    path: None,
+                },
+                cancellation_supported: true,
+                queued_at: literal_now(),
+            }),
+        );
+        let command = yoctui_model::builtin_raw_catalog()
+            .commands
+            .iter()
+            .find(|command| {
+                command.parameters.is_empty()
+                    && matches!(
+                        command.execution,
+                        yoctui_model::RawExecutionPolicy::Executable { .. }
+                    )
+            })
+            .expect("the built-in catalog retains a parameterless executable command");
+        app.raw_mode.favorites.push(
+            yoctui_model::RawFavorite::new(
+                command,
+                "Env check",
+                Default::default(),
+                yoctui_model::RawAdditionalArguments::from_vec(Vec::new()).unwrap(),
+                0,
+            )
+            .unwrap(),
+        );
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 99,
+                name: "sh".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 2,
+            });
+        app.pty_selection = app.daemon.pty_sessions.len() - 1;
+
+        let wide = rendered_text_at(&app, 160, 50, literal_now());
+        for anchor in [
+            "Workbench Center",
+            "Context: Recipes",
+            "busybox:do",
+            "Active:",
+            "jobs 1",
+            "Favorite: Env check",
+            "Terminal: sh · Running",
+            "[t] Terminal",
+        ] {
+            assert!(wide.contains(anchor), "missing {anchor}: {wide}");
+        }
+
+        let compact = rendered_text_at(&app, 80, 24, literal_now());
+        for anchor in [
+            "Operational Command Center",
+            "Context: Recipes",
+            "Favorite: Env check",
+            "Terminal: sh",
+        ] {
+            assert!(compact.contains(anchor), "missing {anchor}: {compact}");
+        }
     }
     #[test]
     fn next_generation_cpu_gauge_is_numeric_responsive_and_accessible() {

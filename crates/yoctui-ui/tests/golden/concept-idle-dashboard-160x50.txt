@@ -20,19 +20,19 @@
 │  ? Security        ││                                      ││Common actions             ││✓ Monitor active tasks         [F2] — Local                        │
 │  ? QA              ││                                      ││[F2] Tasks  [l] Logs  [e]  ││✓ Open retained logs           [l] — Local                         │
 │▾ TOOLS             ││                                      ││Errors  [F3] Recent work   ││✓ Review failures              [e] — Local                         │
-│  ? Raw Mode        ││                                      ││[F8] Artifacts  [E]        ││✓ Inspect recent work          [F3] — Local                        │
-│  ? Terminal Session││                                      ││Environment  [M] Sstate    ││✓ Inspect artifacts            [F8] — Local                        │
-│  ? Devtool         ││                                      ││readiness                  ││✓ Configure build environment  [E] — Local                         │
+│  ? Raw Mode        ││                                      ││[F8] Artifacts  [f]        ││✓ Inspect recent work          [F3] — Local                        │
+│  ? Terminal Session││                                      ││Favorites  [t] Terminals   ││✓ Inspect artifacts            [F8] — Local                        │
+│  ? Devtool         ││                                      ││[E] Environment  [M] Sstate││✓ Configure build environment  [E] — Local                         │
 │  ? QEMU / Wic      │└──────────────────────────────────────┘└───────────────────────────┘│✓ Sstate readiness             [M] — Local                         │
-│  ? Maintenance     │┌Attention · 0 retained · e rev┐┌Recent Work / Artifacts────────────┐│                                                                   │
-│  ▱ Build environmen││✓ No retained warnings or     ││Last artifacts                     ││▾ SYSTEM / COMPATIBILITY                                           │
-│  ▱ Compatibility   ││errors. [e] opens diagnostics.││No authoritative artifact paths    ││✓ Daemon Connected · version unavailable · up 02:15:00             │
-│  ▱ Settings        ││                              ││retained. [F8] Images.             ││– BitBake Exited · v2.8.0 · Jobs 0                                 │
-│                    ││                              ││                                   ││! Compat Unavailable · PTY 0 · Clients 1                           │
-│                    ││                              ││Recent work                        ││! Build FS unavailable · Workspace /home/user/yocto/build          │
-│                    ││                              ││✓ Succeeded core-image-minimal · 0…││                                                                   │
-│                    ││                              ││✓ Succeeded busybox · 00:00:17     ││                                                                   │
-│                    ││                              ││✕ Failed core-image-minimal · 00:0…││                                                                   │
+│  ? Maintenance     │┌Attention · 0 retained · e rev┐┌Workbench Center · live source proj┐│✓ Browse favorite commands     [f] — Local                         │
+│  ▱ Build environmen││✓ No retained warnings or     ││Next: Build image [B] · unknown    ││✓ Open terminal sessions       [t] — Local                         │
+│  ▱ Compatibility   ││errors. [e] opens diagnostics.││[F3] Context: Work · core-image-mi…││                                                                   │
+│  ▱ Settings        ││                              ││[F2/F3] Active: tasks 0 · jobs 0   ││▾ SYSTEM / COMPATIBILITY                                           │
+│                    ││                              ││[e] Failure: none retained         ││✓ Daemon Connected · version unavailable · up 02:15:00             │
+│                    ││                              ││[F8] Artifact: none retained       ││– BitBake Exited · v2.8.0 · Jobs 0                                 │
+│                    ││                              ││[f] Favorite: none                 ││! Compat Unavailable · PTY 0 · Clients 1                           │
+│                    ││                              ││[t] Terminal: none                 ││! Build FS unavailable · Workspace /home/user/yocto/build          │
+│                    ││                              ││[F3] Recent: ✓ Succeeded core-imag…││                                                                   │
 │                    ││                              ││                                   ││                                                                   │
 │                    ││                              ││                                   ││                                                                   │
 │                    ││                              ││                                   ││                                                                   │
@@ -46,5 +46,5 @@
 │                    ││█████                │                      │                      ││                                                                   │
 │                    ││█████                │                      │                      ││                                                                   │
 └────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
-B build   F2 tasks   l logs   e errors   F8 artifacts   Ctrl+B prefix   Tab Inspector   F2 Tasks   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit   19:28:27
+B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   Tab Inspector   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit          19:28:27
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

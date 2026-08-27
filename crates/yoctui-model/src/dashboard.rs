@@ -4,6 +4,7 @@ use crate::*;
 use std::{path::Path, time::SystemTime};
 
 pub const DASHBOARD_COLLECTION_LIMIT: usize = 4;
+pub const COMMAND_CENTER_COLLECTION_LIMIT: usize = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DashboardNextActionKind {
@@ -97,6 +98,21 @@ pub struct DashboardProjection<'a> {
     pub health: DashboardHealthProjection,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommandCenterFavoriteRef<'a> {
+    pub favorite: &'a RawFavorite,
+    pub projection: RawFavoriteProjection,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CommandCenterProjection<'a> {
+    pub dashboard: DashboardProjection<'a>,
+    pub recent_contexts: Vec<JobHistoryRowRef<'a>>,
+    pub active_jobs: Vec<&'a BackgroundJob>,
+    pub favorite_commands: Vec<CommandCenterFavoriteRef<'a>>,
+    pub terminals: Vec<&'a ClientDaemonPtySummary>,
+}
+
 fn push_dashboard_artifact<'a>(
     artifacts: &mut Vec<DashboardArtifactRef<'a>>,
     path: &'a Path,
@@ -110,6 +126,54 @@ fn push_dashboard_artifact<'a>(
 }
 
 impl App {
+    pub fn command_center_projection_at(&self, now: SystemTime) -> CommandCenterProjection<'_> {
+        let recent_contexts = self
+            .job_history_rows()
+            .into_iter()
+            .filter(|row| match row {
+                JobHistoryRowRef::Background(job) => job.context != BackgroundJobContext::default(),
+                JobHistoryRowRef::Build(record) => record.target.is_some(),
+            })
+            .take(COMMAND_CENTER_COLLECTION_LIMIT)
+            .collect();
+        let active_jobs = self
+            .background_jobs
+            .jobs
+            .iter()
+            .rev()
+            .filter(|job| !job.status.is_terminal())
+            .take(COMMAND_CENTER_COLLECTION_LIMIT)
+            .collect();
+        let catalog = builtin_raw_catalog();
+        let authority = self.workspace_compatibility.authority();
+        let favorite_commands = self
+            .raw_mode
+            .favorites
+            .iter()
+            .take(COMMAND_CENTER_COLLECTION_LIMIT)
+            .map(|favorite| CommandCenterFavoriteRef {
+                favorite,
+                projection: favorite.project(catalog, authority),
+            })
+            .collect();
+        let selected_terminal = self.daemon.pty_sessions.get(self.pty_selection);
+        let terminals =
+            selected_terminal
+                .into_iter()
+                .chain(self.daemon.pty_sessions.iter().enumerate().filter_map(
+                    |(index, terminal)| (index != self.pty_selection).then_some(terminal),
+                ))
+                .take(COMMAND_CENTER_COLLECTION_LIMIT)
+                .collect();
+        CommandCenterProjection {
+            dashboard: self.dashboard_projection_at(now),
+            recent_contexts,
+            active_jobs,
+            favorite_commands,
+            terminals,
+        }
+    }
+
     pub fn dashboard_projection_at(&self, now: SystemTime) -> DashboardProjection<'_> {
         let failures = self
             .logs
@@ -363,5 +427,76 @@ mod tests {
             Path::new("/deploy/core-image-minimal.wic")
         );
         assert_eq!(completed.recent_work.len(), 1);
+    }
+
+    #[test]
+    fn ux_command_center_borrows_bounded_contexts_work_favorites_and_terminals() {
+        let mut app = App::new(16, 4_096);
+        for id in 1..=5 {
+            let _ = update(
+                &mut app,
+                Action::QueueBackgroundJob(BackgroundJobSpec {
+                    id: BackgroundJobId(id),
+                    kind: BackgroundJobKind::Build,
+                    title: format!("build-{id}"),
+                    context: BackgroundJobContext {
+                        workspace: Some(Screen::Recipes),
+                        target: Some(format!("image-{id}")),
+                        recipe: Some(format!("recipe-{id}")),
+                        ..BackgroundJobContext::default()
+                    },
+                    cancellation_supported: true,
+                    queued_at: SystemTime::UNIX_EPOCH + Duration::from_secs(id),
+                }),
+            );
+            app.daemon.pty_sessions.push(ClientDaemonPtySummary {
+                id,
+                name: format!("shell-{id}"),
+                lifecycle: ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        }
+        let command = builtin_raw_catalog()
+            .commands
+            .iter()
+            .find(|command| {
+                command.parameters.is_empty()
+                    && matches!(command.execution, RawExecutionPolicy::Executable { .. })
+            })
+            .expect("the built-in catalog retains a parameterless executable command");
+        app.raw_mode.favorites.push(
+            RawFavorite::new(
+                command,
+                "Inspect environment",
+                Default::default(),
+                RawAdditionalArguments::from_vec(Vec::new()).unwrap(),
+                0,
+            )
+            .unwrap(),
+        );
+        app.pty_selection = 4;
+
+        let center = app.command_center_projection_at(SystemTime::UNIX_EPOCH);
+        assert_eq!(
+            center.recent_contexts.len(),
+            COMMAND_CENTER_COLLECTION_LIMIT
+        );
+        assert_eq!(center.active_jobs.len(), COMMAND_CENTER_COLLECTION_LIMIT);
+        assert_eq!(center.active_jobs[0].id, BackgroundJobId(5));
+        assert_eq!(center.favorite_commands.len(), 1);
+        assert_eq!(
+            center.favorite_commands[0].favorite.name,
+            "Inspect environment"
+        );
+        assert_eq!(center.terminals.len(), COMMAND_CENTER_COLLECTION_LIMIT);
+        assert_eq!(
+            center.terminals[0].id, 5,
+            "selected terminal projects first"
+        );
+        assert_eq!(center.terminals[1].id, 1);
+
+        let _ = update(&mut app, Action::OpenRawFavorites);
+        assert_eq!(app.screen, Screen::RawMode);
+        assert_eq!(app.raw_mode.view, RawModeView::Favorites);
     }
 }

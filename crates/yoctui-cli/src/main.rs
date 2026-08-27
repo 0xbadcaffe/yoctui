@@ -33,8 +33,9 @@ use yoctui_app::{
     compatibility_ui_inspector_action, compatibility_workspace_action,
     config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
     config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
-    daemon_protocol_snapshot, dependency_workspace_action, devtool_deploy_confirmation_action,
-    devtool_deploy_dialog_action, devtool_finish_confirmation_action, devtool_finish_picker_action,
+    daemon_protocol_snapshot, dashboard_workspace_action, dependency_workspace_action,
+    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
+    devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action_for_app,
     images_workspace_action_for_view, keymap_action_for_app, keymap_preferences_action,
@@ -12580,6 +12581,10 @@ async fn tui(
                     ) {
                         open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
                     }
+                } else if app.screen == yoctui_model::Screen::Dashboard
+                    && let Some(action) = dashboard_workspace_action(input)
+                {
+                    let _ = compatibility_workspace_action(&mut app, action);
                 } else if app.screen == yoctui_model::Screen::Dashboard
                     && collection_scroll_delta(input).is_some()
                 {

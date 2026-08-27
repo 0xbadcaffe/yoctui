@@ -3012,6 +3012,20 @@ scroll offsets, editor state, checkbox selection, rootfs composition, terminal
 presentation state, and all bounded lifecycle values. It cannot depend on
 Ratatui or a widget crate merely because that crate normally owns `WidgetState`.
 
+`yoctui_model::dashboard::CommandCenterProjection` composes the existing
+`DashboardProjection` with borrowed background-job contexts, nonterminal jobs,
+daemon PTY summaries, and ordered Raw favorites projected against the current
+built-in catalog and compatibility authority. Every added collection is capped
+at three; the selected PTY projects first. The projection does not retain a
+second history, artifact, favorite, terminal, capability, or execution state.
+`yoctui-ui` renders this projection in Dashboard and labels routes back to the
+owning workspaces. Dashboard-scoped `f` emits one `OpenRawFavorites` action,
+which opens Raw Mode before applying its existing `OpenFavorites` reducer
+transition; scoped `t` emits the ordinary Terminal Sessions navigation action.
+The renderer cannot activate a Raw favorite, control a PTY, or infer a
+capability from the summary; those operations continue through their existing
+typed reducers and daemon boundaries.
+
 `yoctui-ui` may construct a widget state transiently from model values only
 when rendering cannot mutate the model authority and the complete state can be
 projected back deterministically. Widget event helpers never receive raw
@@ -3073,8 +3087,8 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 134 validated definitions: 26
-global command targets and 108 contextual workspace targets. `OperatorActionId`
+`yoctui-model::action_catalog` now supplies 136 validated definitions: 26
+global command targets and 110 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
 requirement, safety, footer priority, Help group, and typed target travel

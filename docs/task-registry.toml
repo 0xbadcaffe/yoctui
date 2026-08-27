@@ -6267,12 +6267,12 @@ notes = "The dashboard now projects one model-owned bounded operational summary 
 id = "UX-WORKBENCH-CENTER-001"
 milestone = "M21"
 title = "Create a one-stop workbench command center"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 727
 required = true
 depends_on = ["UX-MENU-001", "UX-DASHBOARD-001", "UX-LOGS-001", "UX-ROOTFS-UI-001", "UX-TERMINAL-UX-001"]
 verify = ["cargo test -p yoctui-model ux_command_center", "cargo test -p yoctui-app ux_command_center", "cargo test -p yoctui-ui ux_command_center"]
-notes = "Unify recent contexts, active work, failures, artifacts, favorite commands, terminals, and capability-aware next actions without duplicating underlying workspace state or bypassing typed workflows."
+notes = "Dashboard now includes a bounded Workbench Center projection that composes existing current-build/next-action/failure/artifact/recent-work authority with at most three borrowed background-job contexts, active jobs, ordered current Raw favorite projections, and daemon terminal summaries; the selected terminal appears first. Wide and 80x24 layouts retain explicit empty/stale/unknown states and one-line bounds. Dashboard-scoped f opens Raw Favorites through its existing reducer, t opens Terminal Sessions, both project through the contextual catalog/menu, and the footer avoids duplicate function keys. Model/app/UI tests cover bounds, current capability state, direct typed routing, context-menu parity, responsive rendering, and reviewed exact concept/target goldens."
 
 [[task]]
 id = "UX-ONBOARDING-001"

@@ -655,6 +655,8 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::local("dashboard.artifacts", "Inspect artifacts", "F8"),
             Action::local("dashboard.environment", "Configure build environment", "E"),
             Action::local("dashboard.maintenance", "Sstate readiness", "M"),
+            Action::local("dashboard.favorites", "Browse favorite commands", "f"),
+            Action::local("dashboard.terminals", "Open terminal sessions", "t"),
         ],
         Destination::Recipes => vec![
             Action::capability(
