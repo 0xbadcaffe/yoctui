@@ -127,13 +127,13 @@ class ConceptScreenVerifierTests(unittest.TestCase):
     def test_rejects_feature_gap_missing_from_open_gaps(self) -> None:
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8").replace(
-            '  { task = "UX-CONCEPT-ERRORS-001", description = "The production scene does not yet compose the failed summary, structured list, paused correlated log, filters, and recovery actions together." },\n',
+            '  { task = "UX-CONCEPT-ROOTFS-001", description = "At 160 columns the production scene does not yet show chart, exact table, accessible selection, and filesystem drill-down together." },\n',
             "",
             1,
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected(
-            "feature paused-correlated-log gap task UX-CONCEPT-ERRORS-001 "
+            "feature chart-and-table gap task UX-CONCEPT-ROOTFS-001 "
             "is not declared in open_gaps"
         )
 

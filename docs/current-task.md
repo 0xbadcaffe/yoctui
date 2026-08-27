@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** UX-CONCEPT-ERRORS-001
-**Title:** Compose the complete failed-build concept workflow
+**ID:** UX-CONCEPT-ROOTFS-001
+**Title:** Compose the canonical Rootfs exploration concept
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Compose the failed-build concept through the production renderer: failed
-summary, structured diagnostics, correlated paused log with match/loss state,
-textual warning/error filters, and recovery actions must be visible together.
+Compose the Rootfs exploration concept through the production renderer: chart,
+exact package table, accessible batch selection, limitations, and filesystem
+drill-down must remain simultaneously visible at the canonical width.
 
 ## Dependencies
 
@@ -18,15 +18,15 @@ textual warning/error filters, and recovery actions must be visible together.
 
 ## Definition of done
 
-- The failed lifecycle and selected diagnostic agree.
-- The correlated log is paused and exposes match and retention-loss state.
-- Warning/error filter checkboxes have accessible textual meaning.
-- Recovery actions expose exact availability and confirmation requirements.
-- Focused model and production-renderer tests pass.
+- The Rootfs chart and exact package table coexist at 160×50.
+- Selection exposes accessible checkbox semantics and exact package identity.
+- Limitations and unavailable states remain explicit.
+- Filesystem drill-down is separately labelled and visible in the same scene.
+- Focused production-renderer and input-routing tests pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui concept_failed_build
-cargo test -p yoctui-model concept_failed_build
+cargo test -p yoctui-ui concept_rootfs_composition
+cargo test -p yoctui-app ux_rootfs
 ```

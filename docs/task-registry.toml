@@ -6413,18 +6413,18 @@ notes = "Every scene now declares at least four machine-checked features, each p
 id = "UX-CONCEPT-ERRORS-001"
 milestone = "M22"
 title = "Compose the complete failed-build concept workflow"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 740
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
 verify = ["cargo test -p yoctui-ui concept_failed_build", "cargo test -p yoctui-model concept_failed_build"]
-notes = "Compose failed summary, structured diagnostics, correlated paused log, textual filters, loss/match state, and recovery actions in one production scene."
+notes = "The canonical production scene now composes a typed failed summary, structured warning/error inventory, accessible checkbox projections, a severity-filtered paused correlated log with match/loss/bounded-position state, and truthful jump/source/rebuild recovery actions. Focused model and 160x50 production-renderer tests plus refreshed cell/style goldens pass."
 
 [[task]]
 id = "UX-CONCEPT-ROOTFS-001"
 milestone = "M22"
 title = "Compose the canonical Rootfs exploration concept"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 741
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]

@@ -1033,7 +1033,7 @@ fn footer_shortcuts(app: &App) -> String {
             }
         },
         Screen::Errors => {
-            "↑/↓ select | Enter logs | o open source | Esc dashboard | ? help | q quit"
+            "↑/↓ select | Enter matching log | o source | s severity filter | f pause/follow | B rebuild options"
         }
         Screen::Help => "Esc dashboard | q quit",
         Screen::Settings => {
@@ -14498,8 +14498,115 @@ fn internal_logs(frame: &mut Frame, app: &App, area: Rect) {
 fn errors(frame: &mut Frame, app: &App, area: Rect) {
     let errors = app.logs.diagnostics().collect::<Vec<_>>();
     let selected = errors.get(app.error_selection).copied();
+
+    if area.height >= 32 {
+        let chunks = Layout::vertical([
+            Constraint::Length(5),
+            Constraint::Length(5),
+            Constraint::Length(10),
+            Constraint::Min(10),
+        ])
+        .split(area);
+        let target = app.build.target.as_deref().unwrap_or("not selected");
+        let exit = app
+            .build
+            .exit_code
+            .map_or_else(|| "unavailable".into(), |code| code.to_string());
+        let selected_context = selected.map_or_else(
+            || "no diagnostic selected".into(),
+            |entry| {
+                format!(
+                    "{}:{}",
+                    entry.recipe.as_deref().unwrap_or("unknown recipe"),
+                    entry.task.as_deref().unwrap_or("unknown task")
+                )
+            },
+        );
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Target: {target}  ·  Result: {:?} (exit {exit})\nDiagnostics: {} error / {} warning  ·  Selected: {selected_context}",
+                app.build.status, app.build.errors, app.build.warnings,
+            ))
+            .block(
+                Block::default()
+                    .title("Failed build summary")
+                    .borders(Borders::ALL),
+            ),
+            chunks[0],
+        );
+
+        let checked_for = |severity| {
+            if app.logs.filter.is_none_or(|active| active == severity) {
+                yoctui_model::CheckboxValue::Checked
+            } else {
+                yoctui_model::CheckboxValue::Unchecked
+            }
+        };
+        let mut warning_filter = yoctui_model::CheckboxState::new("warnings", "Warnings");
+        warning_filter.value = checked_for(Severity::Warning);
+        let mut error_filter = yoctui_model::CheckboxState::new("errors", "Errors");
+        error_filter.value = checked_for(Severity::Error);
+        error_filter.focused = true;
+        let mut related_filter =
+            yoctui_model::CheckboxState::new("related", "Related task context");
+        related_filter.value = if selected.is_some() {
+            yoctui_model::CheckboxValue::Indeterminate
+        } else {
+            yoctui_model::CheckboxValue::Unchecked
+        };
+        let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+        frame.render_widget(
+            Paragraph::new(vec![
+                Line::from(format!(
+                    "{}   {}",
+                    checkbox_text(&error_filter, unicode),
+                    checkbox_text(&warning_filter, unicode),
+                )),
+                Line::from(format!(
+                    "{}  ·  s cycles severity",
+                    checkbox_text(&related_filter, unicode),
+                )),
+            ])
+            .block(
+                Block::default()
+                    .title("Correlated-log filters")
+                    .borders(Borders::ALL),
+            ),
+            chunks[1],
+        );
+
+        render_error_table(frame, app, chunks[2], &errors);
+        render_correlated_error_log(frame, app, chunks[3], selected);
+        return;
+    }
+
     let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(12)]).split(area);
-    let height = chunks[0].height.saturating_sub(3) as usize;
+    render_error_table(frame, app, chunks[0], &errors);
+    let detail = selected.map_or_else(
+        || "No retained warnings or errors.".into(),
+        |log| diagnostic_detail(app, log),
+    );
+    frame.render_widget(
+        Paragraph::new(format!(
+            "{detail}\n\nEnter jumps to matching logs.  o opens the selected source log."
+        ))
+        .block(
+            Block::default()
+                .title("Selected diagnostic")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: false }),
+        chunks[1],
+    );
+}
+
+fn render_error_table(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    errors: &[&yoctui_model::LogEntry],
+) {
+    let height = area.height.saturating_sub(3) as usize;
     let selection = app.error_selection.min(errors.len().saturating_sub(1));
     let end = selection.saturating_add(1).max(height).min(errors.len());
     let start = end.saturating_sub(height);
@@ -14546,23 +14653,104 @@ fn errors(frame: &mut Frame, app: &App, area: Rect) {
                 ))
                 .borders(Borders::ALL),
         ),
-        chunks[0],
+        area,
     );
-    let detail = selected.map_or_else(
-        || "No retained warnings or errors.".into(),
-        |log| diagnostic_detail(app, log),
+}
+
+fn render_correlated_error_log(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    selected: Option<&yoctui_model::LogEntry>,
+) {
+    let panes = Layout::vertical([Constraint::Min(5), Constraint::Length(4)]).split(area);
+    let visible_len = app.logs.paused_len.unwrap_or(app.logs.entries.len());
+    let correlated = app
+        .logs
+        .entries
+        .iter()
+        .take(visible_len)
+        .filter(|entry| {
+            selected.is_some_and(|diagnostic| {
+                diagnostic
+                    .build
+                    .as_ref()
+                    .is_none_or(|build| entry.build.as_ref() == Some(build))
+                    && diagnostic
+                        .recipe
+                        .as_ref()
+                        .is_none_or(|recipe| entry.recipe.as_ref() == Some(recipe))
+                    && diagnostic
+                        .task
+                        .as_ref()
+                        .is_none_or(|task| entry.task.as_ref() == Some(task))
+            })
+        })
+        .collect::<Vec<_>>();
+    let query = app.logs.query.to_ascii_lowercase();
+    let matches = correlated
+        .iter()
+        .filter(|entry| {
+            app.logs
+                .filter
+                .is_none_or(|severity| entry.severity == severity)
+                && (query.is_empty() || entry.message.to_ascii_lowercase().contains(&query))
+        })
+        .collect::<Vec<_>>();
+    let match_position = (!matches.is_empty()).then_some(matches.len());
+    let pause = if app.logs.follow {
+        "Following"
+    } else {
+        "Paused"
+    };
+    let match_label = match_position.map_or_else(
+        || "match 0/0".into(),
+        |position| format!("match {position}/{}", matches.len()),
+    );
+    let viewport = panes[0].height.saturating_sub(3) as usize;
+    let start = matches.len().saturating_sub(viewport);
+    let scroll = BoundedScrollIndicator::new(start, viewport, matches.len()).label();
+    let title = format!(
+        "Correlated · {pause} · {match_label} · loss {} W{} E{} · {scroll}",
+        app.logs.dropped, app.logs.dropped_warnings, app.logs.dropped_errors,
+    );
+    let rows = matches[start..].iter().map(|entry| {
+        Row::new([
+            Cell::from(timestamp_text(entry.timestamp)),
+            Cell::from(log_severity_label(entry.severity)),
+            Cell::from(entry.task.as_deref().unwrap_or("")),
+            Cell::from(entry.message.as_str()),
+        ])
+        .style(severity_style(app, entry.severity))
+    });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(10),
+                Constraint::Length(9),
+                Constraint::Length(13),
+                Constraint::Min(12),
+            ],
+        )
+        .header(
+            Row::new(["Time", "Severity", "Task", "Message"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(Block::default().title(title).borders(Borders::ALL)),
+        panes[0],
     );
     frame.render_widget(
-        Paragraph::new(format!(
-            "{detail}\n\nEnter jumps to matching logs.  o opens the selected source log."
-        ))
+        Paragraph::new(vec![
+            Line::from("Enter matching log · o source · B rebuild options"),
+            Line::from("Rebuild: review + confirmation required."),
+        ])
         .block(
             Block::default()
-                .title("Selected diagnostic")
+                .title("Recovery actions")
                 .borders(Borders::ALL),
-        )
-        .wrap(Wrap { trim: false }),
-        chunks[1],
+        ),
+        panes[1],
     );
 }
 
@@ -17875,9 +18063,9 @@ mod tests {
         app.screen = Screen::Errors;
         app.focus = FocusTarget::Workspace;
         app.build.status = BuildStatus::Failed;
-        app.build.errors = 1;
         app.build.exit_code = Some(1);
         app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Failed;
+        app.logs = yoctui_model::LogState::new(512, 1024 * 1024);
         let failed_task = app
             .tasks
             .get_mut(&yoctui_model::TaskId("bash:do_compile".into()))
@@ -17885,21 +18073,46 @@ mod tests {
         failed_task.state = yoctui_model::TaskState::Failed;
         failed_task.progress = None;
         failed_task.finished = Some(literal_now());
-        let _ = update(
-            &mut app,
-            Action::Log(yoctui_model::LogEntry {
-                id: 0,
-                severity: Severity::Error,
-                message: "ERROR: bash:do_compile failed with exit code 1".into(),
-                recipe: Some("bash_5.2.21-2".into()),
-                task: Some("do_compile".into()),
-                path: Some("/home/user/yocto/build/tmp/log.do_compile.85873".into()),
-                timestamp: literal_now(),
-                build: Some("core-image-minimal".into()),
-                protected: true,
-                diagnostic: None,
-            }),
-        );
+        for (severity, message) in [
+            (
+                Severity::Info,
+                "NOTE: running task bash:do_compile with oe_runmake",
+            ),
+            (
+                Severity::Warning,
+                "WARNING: bash:do_compile found a recoverable configure mismatch",
+            ),
+            (
+                Severity::Error,
+                "ERROR: bash:do_compile failed with exit code 1",
+            ),
+        ] {
+            let _ = update(
+                &mut app,
+                Action::Log(yoctui_model::LogEntry {
+                    id: 0,
+                    severity,
+                    message: message.into(),
+                    recipe: Some("bash_5.2.21-2".into()),
+                    task: Some("do_compile".into()),
+                    path: Some("/home/user/yocto/build/tmp/log.do_compile.85873".into()),
+                    timestamp: literal_now(),
+                    build: Some("core-image-minimal".into()),
+                    protected: true,
+                    diagnostic: None,
+                }),
+            );
+        }
+        app.build.errors = 1;
+        app.build.warnings = 1;
+        app.error_selection = 1;
+        app.logs.follow = false;
+        app.logs.paused_len = Some(app.logs.entries.len());
+        app.logs.query = "do_compile".into();
+        app.logs.selection = app.logs.visible_count().saturating_sub(1);
+        app.logs.dropped = 2;
+        app.logs.dropped_warnings = 1;
+        app.logs.dropped_errors = 1;
         app
     }
 
@@ -28616,6 +28829,32 @@ mod tests {
         assert!(output.contains("Suggested actions"), "{output}");
         assert!(output.contains("busybox follow-up warning"), "{output}");
         assert!(output.contains("/tmp/log.do_compile"), "{output}");
+    }
+
+    #[test]
+    fn concept_failed_build_composes_summary_filters_correlated_log_and_recovery() {
+        let app = concept_failed_errors_app();
+        let output = rendered_text_at(&app, 160, 50, literal_now());
+
+        for anchor in [
+            "Failed build summary",
+            "Result: Failed (exit 1)",
+            "Diagnostics: 1 error / 1 warning",
+            "Correlated-log filters",
+            "Errors (checked)",
+            "Warnings (checked)",
+            "Related task context (indeterminate)",
+            "Errors and warnings",
+            "Correlated · Paused",
+            "match 3/3",
+            "loss 2 W1 E1",
+            "1-3/3",
+            "bash:do_compile failed with exit code 1",
+            "Recovery actions",
+            "confirmation required",
+        ] {
+            assert!(output.contains(anchor), "missing {anchor:?}: {output}");
+        }
     }
 
     #[test]

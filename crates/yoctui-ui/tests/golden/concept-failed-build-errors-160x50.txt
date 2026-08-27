@@ -1,30 +1,30 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64                        Daemon: ✓ Connected  •  BitBake: ✕ Failed│
-┌Navigator───────────┐┌Errors and warnings (1 retained; 0 warning / 0 error records evicte┐┌Inspector: Error───────────────────────────────────────────────────┐
-│▾ OVERVIEW          ││Time    Severi Recipe  Task   Summary            Build             ││▾ PRIMARY FACTS                                                    │
-│  ▱ Dashboard       ││70107s  Error  bash_5. do_com ERROR: bash:do_com core-image-minimal││Category: BitBake error                                            │
+┌Navigator───────────┐┌Failed build summary───────────────────────────────────────────────┐┌Inspector: Error───────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││Target: core-image-minimal  ·  Result: Failed (exit 1)             ││▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       ││Diagnostics: 1 error / 1 warning  ·  Selected: bash_5.2.21-2:do_com││Category: BitBake error                                            │
 │▾ CONTENT           ││                                                                   ││Summary: ERROR: bash:do_compile failed with exit code 1            │
-│  ? Layers          ││                                                                   ││Time: 70107s since Unix epoch                                      │
-│  ? Recipes         ││                                                                   ││Build: core-image-minimal                                          │
-│  ? Packages        ││                                                                   ││Recipe: bash_5.2.21-2  Task: do_compile                            │
-│  ? Images          ││                                                                   ││Source log: /home/user/yocto/build/tmp/log.do_compile.85873        │
+│  ? Layers          │└───────────────────────────────────────────────────────────────────┘│Time: 70107s since Unix epoch                                      │
+│  ? Recipes         │┌Correlated-log filters─────────────────────────────────────────────┐│Build: core-image-minimal                                          │
+│  ? Packages        ││> ☑ Errors (checked)     ☑ Warnings (checked)                      ││Recipe: bash_5.2.21-2  Task: do_compile                            │
+│  ? Images          ││  ⊟ Related task context (indeterminate)  ·  s cycles severity     ││Source log: /home/user/yocto/build/tmp/log.do_compile.85873        │
 │  ? SDK             ││                                                                   ││Event metadata: severity=Error, protected=true,                    │
-│▾ BUILD             ││                                                                   ││build=core-image-minimal,                                          │
-│  ? Tasks           ││                                                                   ││source=/home/user/yocto/build/tmp/log.do_compile.85873             │
-│  ▱ Logs        LIVE││                                                                   ││                                                                   │
-│  ▱ Errors         2││                                                                   ││Full message:                                                      │
-│  ? Configuration   ││                                                                   ││ERROR: bash:do_compile failed with exit code 1                     │
+│▾ BUILD             │└───────────────────────────────────────────────────────────────────┘│build=core-image-minimal,                                          │
+│  ? Tasks           │┌Errors and warnings (2 retained; 1 warning / 1 error records evicte┐│source=/home/user/yocto/build/tmp/log.do_compile.85873             │
+│  ▱ Logs       PAUSE││Time    Severi Recipe  Task   Summary            Build             ││                                                                   │
+│  ▱ Errors         1││70107s  Warnin bash_5. do_com WARNING: bash:do_c core-image-minimal││Full message:                                                      │
+│  ? Configuration   ││70107s  Error  bash_5. do_com ERROR: bash:do_com core-image-minimal││ERROR: bash:do_compile failed with exit code 1                     │
 │  ? Dependencies    ││                                                                   ││                                                                   │
 │▾ VALIDATE          ││                                                                   ││Suggested actions:                                                 │
 │  ? Testing         ││                                                                   ││- Inspect the matching retained log context.                       │
 │  ? Security        ││                                                                   ││- Open the source log and inspect surrounding output.              │
 │  ? QA              ││                                                                   ││- Inspect the recipe task and its metadata.                        │
-│▾ TOOLS             ││                                                                   ││                                                                   │
-│  ? Raw Mode        ││                                                                   ││Related diagnostics:                                               │
-│  ? Terminal Session││                                                                   ││none                                                               │
-│  ? Devtool         ││                                                                   ││                                                                   │
-│  ? QEMU / Wic      ││                                                                   ││▾ RELATED PATHS                                                    │
-│  ? Maintenance     ││                                                                   ││/home/user/yocto/build/tmp/log.do_compile.85873                    │
+│▾ TOOLS             │└───────────────────────────────────────────────────────────────────┘│                                                                   │
+│  ? Raw Mode        │┌Correlated · Paused · match 3/3 · loss 2 W1 E1 ·    1-3/3──────────┐│Related diagnostics:                                               │
+│  ? Terminal Session││Time       Severity  Task          Message                         ││WARNING: bash:do_compile found a recoverable configure mismatch    │
+│  ? Devtool         ││70107s sin i Info    do_compile    NOTE: running task bash:do_compi││                                                                   │
+│  ? QEMU / Wic      ││70107s sin ! Warning do_compile    WARNING: bash:do_compile found a││▾ RELATED PATHS                                                    │
+│  ? Maintenance     ││70107s sin ✕ Error   do_compile    ERROR: bash:do_compile failed wi││/home/user/yocto/build/tmp/log.do_compile.85873                    │
 │  ▱ Build environmen││                                                                   ││                                                                   │
 │  ▱ Compatibility   ││                                                                   ││▾ CONTEXTUAL ACTIONS                                               │
 │  ▱ Settings        ││                                                                   ││✓ Inspect retained diagnostic source  [Enter/o] — Local            │
@@ -33,18 +33,18 @@
 │                    ││                                                                   ││                                                                   │
 │                    ││                                                                   ││                                                                   │
 │                    ││                                                                   ││                                                                   │
-│                    │└───────────────────────────────────────────────────────────────────┘│                                                                   │
-│                    │┌Selected diagnostic────────────────────────────────────────────────┐│                                                                   │
-│                    ││Category: BitBake error                                            ││                                                                   │
-│                    ││Summary: ERROR: bash:do_compile failed with exit code 1            ││                                                                   │
-│                    ││Time: 70107s since Unix epoch                                      ││                                                                   │
-│                    ││Build: core-image-minimal                                          ││                                                                   │
-│                    ││Recipe: bash_5.2.21-2  Task: do_compile                            ││                                                                   │
-│                    ││Source log: /home/user/yocto/build/tmp/log.do_compile.85873        ││                                                                   │
-│                    ││Event metadata: severity=Error, protected=true,                    ││                                                                   │
-│                    ││build=core-image-minimal,                                          ││                                                                   │
-│                    ││source=/home/user/yocto/build/tmp/log.do_compile.85873             ││                                                                   │
 │                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    │└───────────────────────────────────────────────────────────────────┘│                                                                   │
+│                    │┌Recovery actions───────────────────────────────────────────────────┐│                                                                   │
+│                    ││Enter matching log · o source · B rebuild options                  ││                                                                   │
+│                    ││Rebuild: review + confirmation required.                           ││                                                                   │
 └────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
-↑/↓ select   Enter logs   o open source   Esc dashboard   Tab Inspector   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F1 Help   F10 Menu   q Quit  19:28:27
+↑/↓ select   Enter matching log   o source   s severity filter   f pause/follow   B rebuild options   Tab Inspector   F1 Help   F10 Menu   q Quit       19:28:27
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

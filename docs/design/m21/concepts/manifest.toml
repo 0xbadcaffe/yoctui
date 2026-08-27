@@ -96,19 +96,18 @@ workspace = "Errors"
 state = "daemon current; BitBake failed; bash:do_compile error selected"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt"
-real_yoctui_anchors = ["Inspector: Error", "ERROR: bash:do_compile failed with exit code 1", "do_compile", "Daemon: ✓ Connected", "19:28:27"]
+real_yoctui_anchors = ["Failed build summary", "Correlated-log filters", "Errors (checked)", "Warnings (checked)", "Correlated · Paused", "match 3/3", "loss 2 W1 E1", "Recovery actions", "confirmation required", "Inspector: Error", "ERROR: bash:do_compile failed with exit code 1", "Daemon: ✓ Connected", "19:28:27"]
 required_features = [
   { id = "failed-lifecycle", description = "Header and BitBake state report failure", fixture_anchors = ["✕ Failed", "BitBake: ✕ Failed"] },
   { id = "structured-diagnostics", description = "Error list and Inspector retain exact context", fixture_anchors = ["Errors and warnings", "Inspector: Error", "Summary: ERROR: bash:do_compile failed with exit code 1"] },
-  { id = "paused-correlated-log", description = "Paused correlated log exposes match and loss state", gap_task = "UX-CONCEPT-ERRORS-001" },
-  { id = "textual-filters", description = "Warning and error filters expose checkbox state", gap_task = "UX-CONCEPT-ERRORS-001" },
-  { id = "recovery-actions", description = "Recovery actions and confirmation requirements are visible", gap_task = "UX-CONCEPT-ERRORS-001" },
+  { id = "paused-correlated-log", description = "Paused correlated log exposes match, loss, and bounded position state", fixture_anchors = ["Correlated · Paused", "match 3/3", "loss 2 W1 E1", "1-3/3"] },
+  { id = "textual-filters", description = "Warning, error, and related-context filters expose accessible checkbox state", fixture_anchors = ["Errors (checked)", "Warnings (checked)", "Related task context (indeterminate)"] },
+  { id = "recovery-actions", description = "Recovery actions and confirmation requirements are visible", fixture_anchors = ["Recovery actions", "Enter matching log", "B rebuild options", "confirmation required"] },
 ]
 raster_evidence = { status = "gap", task = "UX-CONCEPT-RASTER-001" }
 live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
 implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = [
-  { task = "UX-CONCEPT-ERRORS-001", description = "The production scene does not yet compose the failed summary, structured list, paused correlated log, filters, and recovery actions together." },
   { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
   { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert the complete failed-build Errors workflow." },
 ]
