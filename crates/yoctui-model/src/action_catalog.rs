@@ -101,7 +101,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 26] = [
+const GLOBAL_COMMANDS: [CommandId; 27] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -127,6 +127,7 @@ const GLOBAL_COMMANDS: [CommandId; 26] = [
     CommandId::TogglePaneZoom,
     CommandId::ScrollFirst,
     CommandId::ScrollLast,
+    CommandId::OpenOnboarding,
     CommandId::OpenHelp,
 ];
 
@@ -377,6 +378,20 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &["G", "End"],
             55,
         ),
+        CommandId::OpenOnboarding => GlobalMetadata {
+            id: "help.onboarding",
+            scope: Scope::Global,
+            menu_path: vec!["Help", "Workflow guide"],
+            label: "Open workflow guide",
+            description: "Resume the safe guided path through the Yocto workbench",
+            aliases: &["onboarding", "getting started", "first run"],
+            keywords: &["guide", "onboarding", "tutorial", "workflow", "first run"],
+            bindings: &[],
+            local_requirement: Local::None,
+            safety: Safety::ReadOnly,
+            footer_priority: 95,
+            help_group: Group::General,
+        },
         CommandId::OpenHelp => GlobalMetadata {
             id: "help.open",
             scope: Scope::Global,
@@ -495,6 +510,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         | CommandId::TogglePaneZoom => "F10 View",
         CommandId::ScrollFirst => "gg / Home",
         CommandId::ScrollLast => "G / End",
+        CommandId::OpenOnboarding => "F10 Help",
         CommandId::OpenHelp => "? / F1",
     }
 }
@@ -526,7 +542,8 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         | CommandId::NextSubfocus
         | CommandId::TogglePaneZoom
         | CommandId::ScrollFirst
-        | CommandId::ScrollLast => None,
+        | CommandId::ScrollLast
+        | CommandId::OpenOnboarding => None,
     }
 }
 
@@ -748,7 +765,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 136, "26 global plus 110 workspace actions");
+        assert_eq!(catalog.len(), 137, "27 global plus 110 workspace actions");
         assert!(
             catalog
                 .iter()

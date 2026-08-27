@@ -1646,6 +1646,8 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     let screen_area = area;
     if app.menu.is_open() {
         menu_overlay(frame, app, area);
+    } else if app.onboarding.open {
+        onboarding_overlay(frame, app, area);
     } else if app.keymap_preferences_ui.open {
         keymap_preferences_overlay(frame, app, area);
     } else if app.command_palette_open {
@@ -12935,6 +12937,134 @@ fn keymap_preferences_overlay(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+fn onboarding_overlay(frame: &mut Frame, app: &App, area: Rect) {
+    let projection = app.onboarding_projection();
+    let popup = dialog_popup_rect(
+        area,
+        if area.width >= 120 { 112 } else { 76 },
+        if area.height >= 34 { 32 } else { 22 },
+    );
+    clear_popup(frame, app, popup);
+    let palette = ThemePalette::for_app(app);
+    let regions = Layout::vertical([
+        Constraint::Length(3),
+        Constraint::Min(8),
+        Constraint::Length(if popup.height >= 28 { 8 } else { 6 }),
+        Constraint::Length(1),
+    ])
+    .split(popup);
+
+    let completed = projection
+        .rows
+        .iter()
+        .filter(|row| row.status == yoctui_model::OnboardingStepStatus::Completed)
+        .count();
+    frame.render_widget(
+        Paragraph::new(format!(
+            "{completed}/{} completed · opening/resuming starts no build or process",
+            projection.rows.len()
+        ))
+        .style(palette.base())
+        .block(dialog_block(
+            app,
+            "Yoctui workflow guide · focus trapped",
+            DialogTone::Standard,
+        ))
+        .wrap(Wrap { trim: true }),
+        regions[0],
+    );
+
+    let rows = projection.rows.iter().map(|row| {
+        let marker = match row.status {
+            yoctui_model::OnboardingStepStatus::Completed => "[x]",
+            yoctui_model::OnboardingStepStatus::Current => "[>]",
+            yoctui_model::OnboardingStepStatus::Blocked => "[-]",
+            yoctui_model::OnboardingStepStatus::Skipped => "[~]",
+            yoctui_model::OnboardingStepStatus::Stale => "[!]",
+            yoctui_model::OnboardingStepStatus::Unavailable => "[?]",
+        };
+        let selected = row.step == projection.selected;
+        Row::new([
+            format!("{marker} {}", row.title),
+            row.status.label().to_owned(),
+            row.destination.to_owned(),
+        ])
+        .style(if selected {
+            selected_style(app, true)
+        } else {
+            match row.status {
+                yoctui_model::OnboardingStepStatus::Completed => {
+                    palette.role(palette.success, Modifier::BOLD)
+                }
+                yoctui_model::OnboardingStepStatus::Current => {
+                    palette.role(palette.accent, Modifier::BOLD)
+                }
+                yoctui_model::OnboardingStepStatus::Stale
+                | yoctui_model::OnboardingStepStatus::Unavailable => {
+                    palette.role(palette.warning, Modifier::BOLD)
+                }
+                yoctui_model::OnboardingStepStatus::Blocked
+                | yoctui_model::OnboardingStepStatus::Skipped => {
+                    palette.role(palette.disabled, Modifier::DIM)
+                }
+            }
+        })
+    });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Percentage(43),
+                Constraint::Length(12),
+                Constraint::Percentage(40),
+            ],
+        )
+        .header(
+            Row::new(["Workflow step", "State", "Authoritative destination"])
+                .style(palette.role(palette.heading, Modifier::BOLD)),
+        )
+        .block(
+            Block::default()
+                .title("Six-step workbench path")
+                .borders(Borders::ALL),
+        ),
+        regions[1],
+    );
+
+    let selected = projection
+        .rows
+        .iter()
+        .find(|row| row.step == projection.selected);
+    let detail = selected.map_or_else(
+        || "No workflow step is selected.".into(),
+        |row| {
+            format!(
+                "{}\nPrerequisite: {}\nEnter opens {}. It does not bypass confirmation or create a process.",
+                row.instruction, row.prerequisite, row.destination
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(detail)
+            .style(palette.base())
+            .block(
+                Block::default()
+                    .title("Selected step")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: true }),
+        regions[2],
+    );
+    frame.render_widget(
+        Paragraph::new(bounded_cell_text(
+            "Esc dismiss · Enter open · n next · s skip · r restart · j/k select",
+            regions[3].width,
+        ))
+        .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+        regions[3],
+    );
+}
+
 fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
     let items = app.active_menu_items();
     let width = area.width.saturating_sub(4).min(94);
@@ -20620,6 +20750,50 @@ mod tests {
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("Conflict/disabled"), "{output}");
         assert!(output.contains("exact test reason"), "{output}");
+    }
+
+    #[test]
+    fn ux_onboarding_renders_real_typed_workflow_states_responsively_and_accessibly() {
+        let mut app = App::new_unconfigured(10, 1_000);
+        let _ = update(&mut app, Action::OpenOnboarding);
+        for (width, height) in [(160, 40), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("Yoctui workflow guide"),
+                "{width}x{height}: {output}"
+            );
+            assert!(
+                output.contains("opening/resuming starts no build or process"),
+                "{output}"
+            );
+            assert!(output.contains("Verify environment"), "{output}");
+            assert!(output.contains("CURRENT"), "{output}");
+            assert!(output.contains("BLOCKED"), "{output}");
+            assert!(output.contains("Enter open"), "{output}");
+            assert!(output.contains("Esc dismiss"), "{output}");
+        }
+
+        app.onboarding
+            .progress
+            .completed
+            .insert(yoctui_model::OnboardingStep::Environment);
+        app.color_enabled = false;
+        app.reduced_motion = true;
+        let stale = rendered_text(&app, 100, 30);
+        assert!(stale.contains("[!] Verify environment"), "{stale}");
+        assert!(stale.contains("STALE"), "{stale}");
+
+        app.onboarding.progress.completed.clear();
+        app.onboarding
+            .progress
+            .skipped
+            .insert(yoctui_model::OnboardingStep::Environment);
+        app.onboarding.progress.current = yoctui_model::OnboardingStep::Target;
+        app.onboarding.selected = yoctui_model::OnboardingStep::Target;
+        let unavailable = rendered_text(&app, 80, 24);
+        assert!(unavailable.contains("SKIPPED"), "{unavailable}");
+        assert!(unavailable.contains("UNAVAILABLE"), "{unavailable}");
+        assert!(unavailable.contains("[?] Select a target"), "{unavailable}");
     }
 
     #[test]

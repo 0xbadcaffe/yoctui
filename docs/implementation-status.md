@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-28/38 (73.7%); overall required registry progress is 568/578 (98.3%).
+29/38 (76.3%); overall required registry progress is 569/578 (98.4%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -31,7 +31,7 @@ compatibility, decisions, and a resolved CycloneDX graph; the real 238-package
 third-party graph has generated notices/SBOM and passes `cargo deny` plus a
 locked offline build. Later owner tasks admitted only the audited throbber and
 pie-chart candidates.
-`UX-ACTION-CATALOG-001` is complete: 26 global commands and 110 contextual
+`UX-ACTION-CATALOG-001` is complete: 27 global commands and 110 contextual
 workspace actions now carry validated stable IDs, scope, menu/search/Help/footer
 metadata, local and compatibility requirements, safety, and typed targets. The
 palette and workspace presentations project the catalog, exact disabled reasons
@@ -100,7 +100,14 @@ artifacts, and work history. Dashboard-scoped `f` and `t` reuse the Raw
 Favorites and Terminal Sessions typed workflows, context menus share those
 routes, compact rows cannot wrap later controls away, and reviewed exact
 goldens plus model/app/UI tests cover bounds and empty/current states. Guided
-onboarding is next.
+onboarding is also complete: a schema-versioned, resumable six-step guide
+projects exact current prerequisites across Build environment, target picker,
+Build options, Logs/Errors, Images/Rootfs, and Terminal Sessions without owning
+or auto-executing those workflows. First run opens once; dismissal, cursor,
+completed, skipped, stale, unavailable, and restart state persist atomically in
+the private session. Focus-trapped model/app/CLI tests and wide, compact,
+no-color, and reduced-motion production rendering prove that opening/resuming
+starts no build or process. Unified preferences are next.
 
 ### Completed baseline through M20
 
@@ -1022,6 +1029,7 @@ See `docs/current-task.md`.
 |---|---|---|
 | Persistent application shell | DONE | Header, Navigator, Workspace, Inspector, and Footer remain visible during builds (`8769017`, `b3e7452`); breakpoint TestBackend coverage is in `733a593` |
 | Workbench command center | DONE | Dashboard composes one bounded typed projection of current build/action, recent contexts, active jobs, failure, artifact, Raw favorites, daemon terminals, and recent work. Direct `f`/`t` and contextual-menu routes reuse the authoritative Raw Favorites and Terminal Sessions workflows; responsive production goldens plus model/app/UI tests cover bounds and empty/current states |
+| Guided workflow onboarding | DONE | A schema-versioned six-step overlay borrows exact Build environment, target, build, diagnostics, image/rootfs, and daemon evidence; textual completed/current/blocked/skipped/stale/unavailable states remain responsive and accessible. Opening/resuming emits no execution effect, every destination reuses its typed route and confirmation boundary, and atomic private-session persistence covers first run, resume, dismissal, restart, and invalid-state rejection |
 | Responsive layouts | DONE | Wide three-pane mode, medium Inspector overlay, narrow visible pane switcher, too-small messaging, resize preservation, and all-screen boundary tests are complete |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |

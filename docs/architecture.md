@@ -3026,6 +3026,24 @@ The renderer cannot activate a Raw favorite, control a PTY, or infer a
 capability from the summary; those operations continue through their existing
 typed reducers and daemon boundaries.
 
+`yoctui_model::onboarding` owns the closed six-step guide identity, schema-v1
+progress, selection, completion/skip/dismissal state, exact evidence checks,
+and transient projection. The projection borrows current Build environment,
+target, build-history, image/rootfs, log/error, and daemon-replica authority;
+it retains none of those sources. Persisted completion without current evidence
+projects as stale, and prerequisite loss cascades that stale boundary forward.
+
+The guide is a client-local focus-trapped overlay, not a workspace or execution
+coordinator. `yoctui-app` maps only guide-local input to typed actions.
+Activation closes the overlay and dispatches the existing Build environment,
+image picker, Build options, Logs/Errors, Images, or Terminal Sessions action.
+Opening/resuming emits no effect; Build options still requires explicit
+confirmation and Terminal Sessions still requires a separate typed create
+command. The CLI persists schema-validated `OnboardingProgress` through the
+existing 1 MiB-bounded, mode-0600, sync-and-atomic-rename `session.toml` writer.
+Missing state means first run and opens once; present dismissed state is loaded
+closed. A failed or invalid update cannot replace the prior session.
+
 `yoctui-ui` may construct a widget state transiently from model values only
 when rendering cannot mutate the model authority and the complete state can be
 projected back deterministically. Widget event helpers never receive raw
@@ -3087,7 +3105,7 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 136 validated definitions: 26
+`yoctui-model::action_catalog` now supplies 137 validated definitions: 27
 global command targets and 110 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility

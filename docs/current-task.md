@@ -2,37 +2,38 @@
 
 ## Task
 
-**ID:** UX-ONBOARDING-001
-**Title:** Add guided first-run and workflow onboarding
+**ID:** UX-PREFERENCES-001
+**Title:** Unify usability and visual preferences
 **Status:** NOT_STARTED
 
 ## Objective
 
-Guide a new operator through environment verification, target selection, first
-build, logs/errors, artifacts/rootfs, and terminal use with resumable typed
-steps that never execute work automatically.
+Expose one coherent, discoverable preference surface for keybindings, visual
+density, accessibility, input, panes, charts, logs, image choices, and the
+terminal prefix without creating competing configuration authorities.
 
 ## Dependencies
 
-- `UX-WORKBENCH-CENTER-001` — DONE
-- `UX-TEXTAREA-UI-001` — DONE
+- `UX-KEYMAP-UI-001` — DONE
+- `UX-CHECKBOX-001` — DONE
+- `UX-MENU-001` — DONE
 
 ## Definition of done
 
-- Onboarding steps are typed, resumable, optional, and gated by exact current
-  prerequisites; viewing or resuming a guide never starts a build or process.
-- Environment, target, build, diagnostic, artifact/rootfs, and terminal steps
-  route into their existing authoritative workspaces and confirmation paths.
-- Completed, current, blocked, skipped, stale, and unavailable steps are
-  distinct in text across wide, narrow, ASCII, no-color, and reduced motion.
-- Model, app, production-renderer, persistence, and CLI tests cover first run,
-  resume, dismissal, capability changes, and safe completion.
+- Settings exposes keybindings, theme, density, Unicode/ASCII, motion, mouse,
+  footer, wrap/follow, pane sizing, chart/image choices, and terminal prefix
+  through typed rows with exact current values and disabled reasons.
+- Preview and reset are explicit, bounded, reversible, and cannot bypass
+  existing keymap, focus, terminal-prefix, accessibility, or capability rules.
+- One versioned preference schema migrates legacy session fields and persists
+  atomically without rewriting project or system configuration.
+- Wide, compact, no-color, ASCII, reduced-motion, mouse-disabled, invalid,
+  reset, persistence-failure, and restart restoration states are tested.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model ux_onboarding
-cargo test -p yoctui-app ux_onboarding
-cargo test -p yoctui-ui ux_onboarding
-cargo test -p yoctui -- ux_onboarding
+cargo test -p yoctui-model ux_preferences
+cargo test -p yoctui-ui ux_preferences
+cargo test -p yoctui -- ux_preferences
 ```

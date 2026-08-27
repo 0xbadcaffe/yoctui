@@ -16,6 +16,7 @@ mod keymap;
 mod list_tree;
 mod maintenance;
 mod menu;
+mod onboarding;
 mod package;
 mod pane_layout;
 mod progress;
@@ -59,6 +60,7 @@ pub use keymap::*;
 pub use list_tree::*;
 pub use maintenance::*;
 pub use menu::*;
+pub use onboarding::*;
 pub use package::*;
 pub use pane_layout::*;
 pub use progress::*;
@@ -387,6 +389,7 @@ pub enum CommandId {
     TogglePaneZoom,
     ScrollFirst,
     ScrollLast,
+    OpenOnboarding,
     OpenHelp,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -3579,6 +3582,7 @@ pub struct App {
     pub keymap_chord: KeymapChordState,
     pub keymap_preferences_ui: KeymapPreferencesUiState,
     pub menu: MenuState,
+    pub onboarding: OnboardingState,
     pub screen: Screen,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
@@ -3752,6 +3756,7 @@ impl App {
             keymap_chord: KeymapChordState::default(),
             keymap_preferences_ui: KeymapPreferencesUiState::default(),
             menu: MenuState::default(),
+            onboarding: OnboardingState::default(),
             screen: Screen::Dashboard,
             focus: FocusTarget::Workspace,
             focus_return: None,
@@ -4963,6 +4968,17 @@ fn task_state_order(state: TaskState) -> u8 {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
     Tick,
+    OpenOnboarding,
+    DismissOnboarding,
+    SelectOnboarding {
+        delta: isize,
+    },
+    ActivateOnboardingStep,
+    AdvanceOnboarding,
+    SkipOnboardingStep,
+    RestartOnboarding,
+    OnboardingPersisted,
+    OnboardingPersistenceFailed(String),
     ProjectProfileAbsent,
     ProjectProfileLoaded(ProjectProfile),
     ProjectProfileLoadFailed(String),
@@ -6399,6 +6415,7 @@ fn modal_focus(app: &App) -> Option<FocusTarget> {
     if app.command_palette_open {
         Some(FocusTarget::CommandPalette)
     } else if app.menu.is_open()
+        || app.onboarding.open
         || app.keymap_preferences_ui.open
         || dialog_is_open(app)
         || (app.screen == Screen::RawMode
@@ -6492,6 +6509,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::TogglePaneZoom => Action::TogglePaneZoom,
         CommandId::ScrollFirst => Action::ScrollCurrent { to_end: false },
         CommandId::ScrollLast => Action::ScrollCurrent { to_end: true },
+        CommandId::OpenOnboarding => Action::OpenOnboarding,
         CommandId::OpenHelp => Action::Open(Screen::Help),
     }
 }
@@ -8254,7 +8272,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
         && matches!(
             &action,
-            Action::Open(_)
+            Action::OpenOnboarding
+                | Action::Open(_)
                 | Action::OpenRawFavorites
                 | Action::SelectNavigator { .. }
                 | Action::SelectNavigatorAt { .. }
@@ -8278,6 +8297,69 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::OpenOnboarding => {
+            app.onboarding.open = true;
+            app.onboarding.selected = app.onboarding.progress.current;
+        }
+        Action::DismissOnboarding => {
+            app.onboarding.open = false;
+            app.onboarding.progress.dismissed = true;
+            synchronize_focus(app);
+            return Some(Effect::PersistOnboarding);
+        }
+        Action::SelectOnboarding { delta } if app.onboarding.open => {
+            app.onboarding.select(delta);
+        }
+        Action::SelectOnboarding { .. } => {}
+        Action::ActivateOnboardingStep if app.onboarding.open => {
+            let route = onboarding_route(app, app.onboarding.selected);
+            app.onboarding.open = false;
+            return update(app, route);
+        }
+        Action::ActivateOnboardingStep => {}
+        Action::AdvanceOnboarding if app.onboarding.open => {
+            let current = app.onboarding.progress.current;
+            if !onboarding_completion_evidence(app, current) {
+                app.notification = Some(format!(
+                    "{} is not complete: {}",
+                    current.title(),
+                    app.onboarding_projection()
+                        .rows
+                        .iter()
+                        .find(|row| row.step == current)
+                        .map_or("its current prerequisite is not satisfied", |row| {
+                            row.prerequisite.as_str()
+                        })
+                ));
+            } else {
+                app.onboarding.progress.completed.insert(current);
+                app.onboarding.progress.skipped.remove(&current);
+                app.onboarding.move_after_current();
+                synchronize_focus(app);
+                return Some(Effect::PersistOnboarding);
+            }
+        }
+        Action::AdvanceOnboarding => {}
+        Action::SkipOnboardingStep if app.onboarding.open => {
+            let current = app.onboarding.progress.current;
+            app.onboarding.progress.skipped.insert(current);
+            app.onboarding.progress.completed.remove(&current);
+            app.onboarding.move_after_current();
+            synchronize_focus(app);
+            return Some(Effect::PersistOnboarding);
+        }
+        Action::SkipOnboardingStep => {}
+        Action::RestartOnboarding if app.onboarding.open => {
+            app.onboarding.progress = OnboardingProgress::default();
+            app.onboarding.selected = OnboardingStep::Environment;
+            synchronize_focus(app);
+            return Some(Effect::PersistOnboarding);
+        }
+        Action::RestartOnboarding => {}
+        Action::OnboardingPersisted => {}
+        Action::OnboardingPersistenceFailed(message) => {
+            app.notification = Some(format!("Onboarding progress was not saved: {message}"));
+        }
         Action::ScrollCurrent { to_end } => {
             let action = current_collection_edge_action(app, to_end)?;
             return update(app, action);
@@ -16919,6 +17001,7 @@ fn next_filter<T: Clone + PartialEq>(values: &[T], current: Option<T>) -> Option
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
     PersistSettings,
+    PersistOnboarding,
     GenerateProjectProfile {
         profile: ProjectProfile,
         replace: bool,

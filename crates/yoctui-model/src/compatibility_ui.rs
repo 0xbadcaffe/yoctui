@@ -463,6 +463,7 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::TogglePaneZoom
         | CommandId::ScrollFirst
         | CommandId::ScrollLast
+        | CommandId::OpenOnboarding
         | CommandId::OpenDashboard
         | CommandId::OpenLogs
         | CommandId::OpenErrors

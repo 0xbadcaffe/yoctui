@@ -596,6 +596,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
 
     match effect {
         Effect::PersistSettings
+        | Effect::PersistOnboarding
         | Effect::GenerateProjectProfile { .. }
         | Effect::VerifyBuildEnvironment { .. }
         | Effect::CloneBuildEnvironment(_)

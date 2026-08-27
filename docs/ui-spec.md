@@ -1081,6 +1081,38 @@ boundary. Empty, disconnected, stale, and unavailable sources remain explicit.
 Compact layouts preserve one line for context, active work/attention, artifact,
 favorite, and terminal state under an Operational Command Center title.
 
+### Guided workflow onboarding
+
+The Help menu and command palette expose one focus-trapped **Workflow guide**
+overlay. A legacy or new session with no saved guide state opens it once on
+first interactive startup; dismissal prevents later automatic reopening, while
+the Help route always resumes the saved cursor. Opening, resuming, selecting,
+or dismissing the guide must not start a build, scan, shell, terminal session,
+or other process.
+
+The guide has exactly six typed steps in this order: verify Build environment,
+select an image target, review the first Build options confirmation, inspect
+Logs/Errors, explore Images/Rootfs evidence, and learn Terminal Sessions. Each
+row names its existing authoritative destination and displays one textual
+state: `COMPLETED`, `CURRENT`, `BLOCKED`, `SKIPPED`, `STALE`, or `UNAVAILABLE`.
+Markers `[x]`, `[>]`, `[-]`, `[~]`, `[!]`, and `[?]` preserve the same meaning
+without color, Unicode, or motion. A formerly completed step becomes `STALE`
+when its current typed evidence or an earlier prerequisite disappears; later
+steps cannot silently remain actionable through that stale prerequisite.
+
+`Enter` explicitly opens the selected destination through its existing typed
+route. Target selection remains a picker, the first build remains a review and
+confirmation dialog, Images retains its correlated acquisition boundary, and
+opening Terminal Sessions does not create a shell. `n` advances only when the
+current step's exact evidence is satisfied, `s` explicitly skips it, `r`
+restarts the guide, arrows or `j`/`k` change the inspected row, and `Esc`/`q`
+dismisses. Progress, skips, cursor, completion, and dismissal persist together
+in the existing bounded private `session.toml`; invalid or future state is
+rejected without replacing the prior file. Wide layouts may use additional
+spacing for a low-density reading mode, but narrow `80x24`, no-color, and
+reduced-motion layouts retain every state and control in ordinary terminal
+text.
+
 On terminals with enough vertical space, Dashboard includes a dedicated
 terminal-native telemetry cockpit. It renders determinate CPU, memory, and
 build-filesystem gauges; bounded CPU and memory sample-history sparklines;
@@ -4465,8 +4497,8 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
-The implemented catalog currently contains 26 global commands and 110
-contextual workspace operations, 136 definitions in total. Every entry has a
+The implemented catalog currently contains 27 global commands and 110
+contextual workspace operations, 137 definitions in total. Every entry has a
 validated lowercase stable ID, typed scope and target, complete
 presentation/search metadata, explicit
 local and environment requirements, safety class, footer priority, and Help

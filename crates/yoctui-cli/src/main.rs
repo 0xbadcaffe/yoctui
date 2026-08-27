@@ -40,17 +40,17 @@ use yoctui_app::{
     devtool_update_confirmation_action, errors_action, focus_action_for_app,
     images_workspace_action_for_view, keymap_action_for_app, keymap_preferences_action,
     log_workspace_action, maintenance_dialog_action, maintenance_workspace_action, menu_action,
-    model_action_from_backend_event, mouse_action_for_app, package_workspace_action,
-    popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
-    qa_report_error_action, qa_report_response_action, qa_task_capability_action,
-    qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
-    qemu_launch_confirmation_action, qemu_launch_dialog_action, raw_mode_input,
-    recipe_editor_action, recover_daemon_model_metadata, sdk_actions_for_runner_event,
-    sdk_build_confirmation_action, sdk_cancellation_confirmation_action,
-    sdk_native_confirmation_action, sdk_native_dialog_action, sdk_publish_confirmation_action,
-    sdk_publish_dialog_action, sdk_workspace_action, security_actions_for_mapper_event,
-    security_dialog_action, security_workspace_action, settings_action,
-    signature_task_picker_action, signature_workspace_action, tasks_action,
+    model_action_from_backend_event, mouse_action_for_app, onboarding_action,
+    package_workspace_action, popup_editor_action, qa_dialog_action, qa_layer_capability_action,
+    qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
+    qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
+    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
+    qemu_launch_dialog_action, raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
+    sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
+    sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
+    security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
+    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
     test_actions_for_runner_event, test_cancellation_confirmation_action,
     test_comparison_confirmation_action, test_comparison_dialog_action,
     test_comparison_workspace_action, test_junit_confirmation_action, test_junit_dialog_action,
@@ -85,18 +85,18 @@ use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
     ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
-    LayerRelationship, LayerRelationships, PackageDetailRequest, PackageInventoryRequest,
-    PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect, QaFindingScope, QaLayerIdentity,
-    QaLayerSessionId, QaReportFormat, QaReportIdentity, QaReportRequest, QaScope, QaSessionId,
-    QaSessionStatus, QaSourceLocation, QemuCapability, QemuLaunchDraft, QemuLaunchPreview,
-    QemuLaunchRequest, QemuSessionId, RecipeIdentity, RootfsCompositionRequest, Screen,
-    SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation, SdkPublishPreview, SdkSessionId,
-    SdkToolCapability, SecurityAction, SecurityEffect, SecurityOperation, SecurityReportRequest,
-    SecurityScope, SecuritySessionId, SecuritySessionStatus, Severity, SignatureComparisonRequest,
-    SignatureTarget, TestComparison, TestOperation, TestSessionId, TestWorkspaceView, Theme,
-    VariableDetail, VariableIdentity, WicCapability, WicCreateDraft, WicCreatePreview,
-    WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId, update,
-    validate_config_edit_request, validate_raw_favorites,
+    LayerRelationship, LayerRelationships, OnboardingProgress, PackageDetailRequest,
+    PackageInventoryRequest, PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect,
+    QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
+    QaReportRequest, QaScope, QaSessionId, QaSessionStatus, QaSourceLocation, QemuCapability,
+    QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity,
+    RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation,
+    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityAction, SecurityEffect,
+    SecurityOperation, SecurityReportRequest, SecurityScope, SecuritySessionId,
+    SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget, TestComparison,
+    TestOperation, TestSessionId, TestWorkspaceView, Theme, VariableDetail, VariableIdentity,
+    WicCapability, WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest,
+    WicOperation, WicSessionId, update, validate_config_edit_request, validate_raw_favorites,
 };
 use yoctui_ui::render;
 
@@ -246,6 +246,8 @@ struct Session {
     raw_favorites: Vec<yoctui_model::RawFavorite>,
     #[serde(default)]
     keymap: yoctui_model::KeymapPreferences,
+    #[serde(default)]
+    onboarding: Option<OnboardingProgress>,
 }
 #[derive(Subcommand, Debug)]
 enum Command {
@@ -840,6 +842,12 @@ fn read_session(path: Option<&Path>) -> Result<Session> {
     validate_raw_favorites(&session.raw_favorites)
         .map_err(anyhow::Error::msg)
         .with_context(|| format!("invalid Raw favorites in session file {}", path.display()))?;
+    if let Some(onboarding) = session.onboarding.as_ref() {
+        onboarding
+            .validate()
+            .map_err(anyhow::Error::msg)
+            .with_context(|| format!("invalid onboarding progress in {}", path.display()))?;
+    }
     Ok(session)
 }
 
@@ -858,6 +866,12 @@ fn write_session(path: Option<&Path>, session: &Session) -> Result<()> {
     yoctui_model::EffectiveKeymap::from_preferences(&session.keymap)
         .map_err(anyhow::Error::msg)
         .context("invalid keymap cannot be persisted")?;
+    if let Some(onboarding) = session.onboarding.as_ref() {
+        onboarding
+            .validate()
+            .map_err(anyhow::Error::msg)
+            .context("invalid onboarding progress cannot be persisted")?;
+    }
     let text = toml::to_string(session)?;
     if text.len() as u64 > MAX_SESSION_BYTES {
         anyhow::bail!("session file exceeds the 1 MiB limit");
@@ -917,6 +931,29 @@ fn install_session_keymap(session: &Session, app: &mut App) -> Result<()> {
     app.install_keymap(session.keymap.clone())
         .map_err(anyhow::Error::msg)
         .context("could not install the persisted keymap")
+}
+
+fn install_session_onboarding(session: &Session, app: &mut App) -> Result<()> {
+    let first_run = session.onboarding.is_none();
+    app.onboarding
+        .install(session.onboarding.clone().unwrap_or_default(), false)
+        .map_err(anyhow::Error::msg)?;
+    if first_run {
+        let _ = update(app, Action::OpenOnboarding);
+    }
+    Ok(())
+}
+
+fn persist_onboarding(path: Option<&Path>, session: &mut Session, app: &App) -> Result<()> {
+    app.onboarding
+        .progress
+        .validate()
+        .map_err(anyhow::Error::msg)?;
+    let mut updated = session.clone();
+    updated.onboarding = Some(app.onboarding.progress.clone());
+    write_session(path, &updated)?;
+    *session = updated;
+    Ok(())
 }
 
 fn persist_settings(
@@ -10050,6 +10087,7 @@ async fn tui(
         app.screen = Screen::BuildEnvironment;
         app.focus = yoctui_model::FocusTarget::Navigator;
     }
+    install_session_onboarding(&session, &mut app)?;
     app.logs.filter = session.log_filter;
     app.logs.recipe_filter = session.log_recipe_filter.clone();
     app.logs.task_filter = session.log_task_filter.clone();
@@ -10453,7 +10491,7 @@ async fn tui(
                 let Some(mut input) = input_from_key(k) else {
                     continue;
                 };
-                if app.active_dialog().is_none() && !app.menu.is_open() {
+                if app.active_dialog().is_none() && !app.menu.is_open() && !app.onboarding.open {
                     match prefix_state.feed(input, Instant::now()) {
                         PrefixEvent::Awaiting => {
                             app.notification = Some(
@@ -10611,6 +10649,33 @@ async fn tui(
                         }
                         None => continue,
                     }
+                }
+                if app.onboarding.open {
+                    let effect = onboarding_action(&app, input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
+                    match effect {
+                        Some(Effect::PersistOnboarding) => {
+                            let result =
+                                persist_onboarding(session_path.as_deref(), &mut session, &app);
+                            let action = match result {
+                                Ok(()) => Action::OnboardingPersisted,
+                                Err(error) => {
+                                    Action::OnboardingPersistenceFailed(error.to_string())
+                                }
+                            };
+                            let _ = compatibility_workspace_action(&mut app, action);
+                        }
+                        Some(effect @ Effect::GetImageArtifacts(_)) => {
+                            begin_image_artifact_operation(
+                                &mut app,
+                                image_artifact_adapter.as_ref(),
+                                &mut image_artifact_operation,
+                                effect,
+                            );
+                        }
+                        _ => {}
+                    }
+                    continue;
                 }
                 if !replayed_context_action && input == Input::F10 {
                     let _ = compatibility_workspace_action(&mut app, Action::OpenApplicationMenu);
@@ -13193,6 +13258,7 @@ async fn tui(
     }
     session.pane_layout = Some(app.pane_layout.clone());
     session.keymap = app.keymap_preferences.clone();
+    session.onboarding = Some(app.onboarding.progress.clone());
     session.recent_build_dirs = std::iter::once(session_build_dir)
         .chain(session.recent_build_dirs)
         .fold(Vec::new(), |mut directories, directory| {
@@ -14235,6 +14301,7 @@ mod tests {
                 pane_layout: None,
                 raw_favorites: Vec::new(),
                 keymap: yoctui_model::KeymapPreferences::default(),
+                onboarding: None,
             },
         )
         .unwrap();
@@ -14258,10 +14325,68 @@ mod tests {
                 pane_layout: None,
                 raw_favorites: Vec::new(),
                 keymap: yoctui_model::KeymapPreferences::default(),
+                onboarding: None,
             }
         );
         fs::remove_file(&path).unwrap();
         fs::remove_dir(&directory).unwrap();
+    }
+
+    #[test]
+    fn ux_onboarding_first_run_resume_dismissal_and_validation_are_persistent_and_safe() {
+        let directory =
+            std::env::temp_dir().join(format!("yoctui-onboarding-{}", std::process::id()));
+        if directory.exists() {
+            fs::remove_dir_all(&directory).unwrap();
+        }
+        fs::create_dir(&directory).unwrap();
+        let path = directory.join("session.toml");
+        let mut session = Session::default();
+        let mut app = App::new_unconfigured(8, 1024);
+
+        install_session_onboarding(&session, &mut app).unwrap();
+        assert!(
+            app.onboarding.open,
+            "missing state opens the first-run guide"
+        );
+        assert_eq!(app.build.status, BuildStatus::Idle);
+        assert!(app.daemon.pty_sessions.is_empty());
+
+        app.onboarding
+            .progress
+            .skipped
+            .insert(yoctui_model::OnboardingStep::Environment);
+        app.onboarding.progress.current = yoctui_model::OnboardingStep::Target;
+        assert_eq!(
+            update(&mut app, Action::DismissOnboarding),
+            Some(Effect::PersistOnboarding)
+        );
+        persist_onboarding(Some(&path), &mut session, &app).unwrap();
+
+        let loaded = read_session(Some(&path)).unwrap();
+        let mut restored = App::new_unconfigured(8, 1024);
+        install_session_onboarding(&loaded, &mut restored).unwrap();
+        assert!(
+            !restored.onboarding.open,
+            "persisted state does not auto-reopen"
+        );
+        assert_eq!(
+            restored.onboarding.progress.current,
+            yoctui_model::OnboardingStep::Target
+        );
+        assert!(restored.onboarding.progress.dismissed);
+
+        let before = fs::read(&path).unwrap();
+        restored.onboarding.progress.schema_version += 1;
+        assert!(persist_onboarding(Some(&path), &mut session, &restored).is_err());
+        assert_eq!(
+            fs::read(&path).unwrap(),
+            before,
+            "invalid state is fail-closed"
+        );
+
+        fs::remove_file(path).unwrap();
+        fs::remove_dir(directory).unwrap();
     }
 
     #[test]

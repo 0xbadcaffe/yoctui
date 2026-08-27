@@ -4031,7 +4031,8 @@ impl KeymapInputResult {
 }
 
 pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapInputResult {
-    if app.keymap_preferences_ui.open
+    if app.onboarding.open
+        || app.keymap_preferences_ui.open
         || app.menu.is_open()
         || app.active_dialog().is_some()
         || app.command_palette_open
@@ -4148,6 +4149,22 @@ pub fn keymap_preferences_action(app: &yoctui_model::App, key: Input) -> Option<
         Input::Char('e') => Some(Action::ExportEffectiveKeymap),
         Input::Char('p') if app.settings_dirty => Some(Action::RetrySettingsPersistence),
         Input::Esc => Some(Action::CloseKeymapPreferences),
+        _ => None,
+    }
+}
+
+pub fn onboarding_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    if !app.onboarding.open {
+        return None;
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectOnboarding { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectOnboarding { delta: 1 }),
+        Input::Enter => Some(Action::ActivateOnboardingStep),
+        Input::Right | Input::Char('n') => Some(Action::AdvanceOnboarding),
+        Input::Char('s') => Some(Action::SkipOnboardingStep),
+        Input::Char('r') => Some(Action::RestartOnboarding),
+        Input::Esc | Input::Char('q') => Some(Action::DismissOnboarding),
         _ => None,
     }
 }
@@ -14153,5 +14170,38 @@ mod tests {
             terminal_workspace_action(&app, Input::Esc),
             Some(Action::TerminalCancelMode)
         );
+    }
+
+    #[test]
+    fn ux_onboarding_traps_input_and_routes_only_typed_guide_actions() {
+        let mut app = yoctui_model::App::new_unconfigured(8, 1_000);
+        assert_eq!(onboarding_action(&app, Input::Enter), None);
+        let _ = yoctui_model::update(&mut app, Action::OpenOnboarding);
+
+        assert_eq!(
+            onboarding_action(&app, Input::Down),
+            Some(Action::SelectOnboarding { delta: 1 })
+        );
+        assert_eq!(
+            onboarding_action(&app, Input::Enter),
+            Some(Action::ActivateOnboardingStep)
+        );
+        assert_eq!(
+            onboarding_action(&app, Input::Char('n')),
+            Some(Action::AdvanceOnboarding)
+        );
+        assert_eq!(
+            onboarding_action(&app, Input::Char('s')),
+            Some(Action::SkipOnboardingStep)
+        );
+        assert_eq!(
+            onboarding_action(&app, Input::Esc),
+            Some(Action::DismissOnboarding)
+        );
+
+        assert!(matches!(
+            keymap_action_for_app(&mut app, Input::Char('B')),
+            KeymapInputResult::Unmatched
+        ));
     }
 }

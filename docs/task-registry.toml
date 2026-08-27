@@ -6278,12 +6278,12 @@ notes = "Dashboard now includes a bounded Workbench Center projection that compo
 id = "UX-ONBOARDING-001"
 milestone = "M21"
 title = "Add guided first-run and workflow onboarding"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 728
 required = true
 depends_on = ["UX-WORKBENCH-CENTER-001", "UX-TEXTAREA-UI-001"]
 verify = ["cargo test -p yoctui-model ux_onboarding", "cargo test -p yoctui-app ux_onboarding", "cargo test -p yoctui-ui ux_onboarding", "cargo test -p yoctui -- ux_onboarding"]
-notes = "Guide environment verification, target selection, first build, logs/errors, artifacts/rootfs, and terminal use with resumable typed steps, exact prerequisites, no auto-execution, and optional low-density large text only where accessible."
+notes = "Added a schema-v1 focus-trapped six-step guide over the existing Build environment, image picker, Build options confirmation, Logs/Errors, Images/Rootfs, and Terminal Sessions routes. One model projection derives exact completed/current/blocked/skipped/stale/unavailable text from current authority and cascades stale prerequisites; opening/resuming emits no effect and terminal/build creation remains separately explicit. Missing session state opens once, while cursor/completion/skip/dismiss/restart state validates and persists through the existing bounded private atomic session writer. Model/app/UI/CLI focused and complete affected-crate suites cover first run, safe resume, exact routing, capability loss, responsive no-color/reduced-motion rendering, invalid-state rejection, and persistence."
 
 [[task]]
 id = "UX-PREFERENCES-001"

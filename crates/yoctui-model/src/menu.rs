@@ -61,7 +61,7 @@ impl ApplicationMenuGroup {
             | CommandId::OpenTerminalSessions
             | CommandId::OpenCompatibility
             | CommandId::OpenSettings => Self::Tools,
-            CommandId::OpenHelp => Self::Help,
+            CommandId::OpenOnboarding | CommandId::OpenHelp => Self::Help,
         }
     }
 }
