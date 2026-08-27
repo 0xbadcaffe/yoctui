@@ -21,13 +21,13 @@
 │  ? QA              ││                             ││                                    ││▾ SYSTEM / COMPATIBILITY                                           │
 │▾ TOOLS             ││                             ││                                    ││✓ Daemon Connected · version unavailable · up 02:15:00             │
 │  ? Raw Mode        ││                             ││                                    ││– BitBake Exited · v2.8.0 · Jobs 0                                 │
-│  ? Devtool         ││                             ││                                    ││! Compat Unavailable · PTY 0 · Clients 1                           │
-│  ? QEMU / Wic      ││                             ││                                    ││! Build FS unavailable · Workspace /home/user/yocto/build          │
+│  ? Terminal Session││                             ││                                    ││! Compat Unavailable · PTY 0 · Clients 1                           │
+│  ? Devtool         ││                             ││                                    ││! Build FS unavailable · Workspace /home/user/yocto/build          │
+│  ? QEMU / Wic      ││                             ││                                    ││                                                                   │
 │  ? Maintenance     ││                             ││                                    ││                                                                   │
 │  ▱ Build environmen││                             ││                                    ││                                                                   │
 │  ▱ Compatibility   ││                             ││                                    ││                                                                   │
 │  ▱ Settings        ││                             ││                                    ││                                                                   │
-│                    ││                             ││                                    ││                                                                   │
 │                    ││                             ││                                    ││                                                                   │
 │                    ││                             ││                                    ││                                                                   │
 │                    ││                             ││                                    ││                                                                   │

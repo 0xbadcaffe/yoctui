@@ -477,6 +477,9 @@ pub fn compatibility_ui_command_action_definition(
             compatibility_ui_destination_action_definition(Screen::Configuration)
         }
         CommandId::OpenRawMode => compatibility_ui_destination_action_definition(Screen::RawMode),
+        CommandId::OpenTerminalSessions => {
+            compatibility_ui_destination_action_definition(Screen::TerminalSessions)
+        }
     }
 }
 
@@ -1062,6 +1065,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::local("maintenance.evidence", "Open retained evidence", "o"),
         ],
         Destination::TerminalSessions => vec![
+            Action::local("terminal.shell", "Open build shell", "n"),
             Action::capability("terminal.devshell", "Open devshell", "s", Id::DevShell),
             Action::capability(
                 "terminal.menuconfig",
@@ -1069,13 +1073,8 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "m",
                 Id::MenuConfig,
             ),
-            Action::capability(
-                "terminal.server",
-                "Attach BitBake server",
-                "Enter",
-                Id::BitBakeServerSocket,
-            ),
-            Action::local("terminal.cancel", "Detach/cancel owned terminal", "Esc/c"),
+            Action::local("terminal.control", "Take writer control", "o"),
+            Action::local("terminal.cancel", "Release writer control", "c"),
         ],
         Destination::ProjectProfiles
         | Destination::BuildEnvironment

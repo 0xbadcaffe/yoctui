@@ -36,7 +36,10 @@ offsets, and frames above 4 MiB. The client expands a validated event once;
 plain rows are derived from those same cells rather than transported as a
 second potentially drifting representation.
 
-This wire change advances the daemon protocol from 1.0 to 1.1. Negotiation
+This renderer wire change advanced the daemon protocol from 1.0 to 1.1. The
+Terminal Sessions workbench subsequently advances it to 1.2 for bounded
+viewport requests, dropped-history accounting, and explicit terminal removal.
+Negotiation
 therefore rejects a stale daemon or client instead of accepting a peer that can
 only exchange the former lossy plain-row screen.
 

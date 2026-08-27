@@ -477,6 +477,7 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Layers => WorkspaceDestination::Layers,
         Screen::Configuration | Screen::Bbmask => WorkspaceDestination::Configuration,
         Screen::RawMode => WorkspaceDestination::RawMode,
+        Screen::TerminalSessions => WorkspaceDestination::TerminalSessions,
         Screen::Maintenance => WorkspaceDestination::Maintenance,
         Screen::Logs => WorkspaceDestination::Logs,
         Screen::Errors => WorkspaceDestination::Errors,
@@ -600,6 +601,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::CloneBuildEnvironment(_)
         | Effect::OpenInEditor(_)
         | Effect::CopyToClipboard(_)
+        | Effect::Terminal(_)
         | Effect::OpenWorkspaceEditor { .. }
         | Effect::LoadLayerBrowserDirectory { .. }
         | Effect::LoadLayerBrowserPreview(_)

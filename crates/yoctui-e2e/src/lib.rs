@@ -254,7 +254,7 @@ mod tests {
         assert!(lifecycle.writer.is_none());
 
         let mut app = yoctui_model::App::new(32, 8192);
-        app.screen = AppScreen::Dashboard;
+        app.screen = AppScreen::TerminalSessions;
         app.focus = FocusTarget::Workspace;
         let second = app
             .pane_layout
@@ -286,6 +286,7 @@ mod tests {
                 rows: vec!["left-session-only".into()],
                 cells: Vec::new(),
                 scrollback_lines: 0,
+                dropped_line_feeds_lower_bound: 0,
             },
             ClientDaemonPtyScreen {
                 session_id: 7,
@@ -333,6 +334,7 @@ mod tests {
                     })
                     .collect(),
                 scrollback_lines: resized.max_scrollback_offset as u32,
+                dropped_line_feeds_lower_bound: resized.dropped_line_feeds_lower_bound,
             },
         ];
         let _ = yoctui_model::update(
@@ -769,7 +771,7 @@ mod tests {
         assert_eq!(modal.focus_return, None);
 
         let mut terminal_app = yoctui_model::App::new(32, 8192);
-        terminal_app.screen = AppScreen::Dashboard;
+        terminal_app.screen = AppScreen::TerminalSessions;
         terminal_app.focus = FocusTarget::Workspace;
         terminal_app
             .daemon

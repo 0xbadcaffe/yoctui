@@ -101,7 +101,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 25] = [
+const GLOBAL_COMMANDS: [CommandId; 26] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -115,6 +115,7 @@ const GLOBAL_COMMANDS: [CommandId; 25] = [
     CommandId::OpenErrors,
     CommandId::OpenConfiguration,
     CommandId::OpenRawMode,
+    CommandId::OpenTerminalSessions,
     CommandId::OpenCompatibility,
     CommandId::OpenSettings,
     CommandId::ChooseTheme,
@@ -286,6 +287,15 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &["raw", "commands", "bitbake", "advanced"],
             &[],
             35,
+        ),
+        CommandId::OpenTerminalSessions => navigation(
+            "navigate.terminal-sessions",
+            "Open Terminal Sessions",
+            "Open the daemon-owned terminal session workbench",
+            &["terminal", "shell", "pty", "devshell"],
+            &["terminal", "shell", "pty", "session", "devshell"],
+            &[],
+            65,
         ),
         CommandId::OpenCompatibility => navigation(
             "navigate.compatibility",
@@ -473,6 +483,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenErrors => "e",
         CommandId::OpenConfiguration => "v",
         CommandId::OpenRawMode => "Ctrl+P raw",
+        CommandId::OpenTerminalSessions => "Ctrl+B t",
         CommandId::OpenCompatibility => "none",
         CommandId::OpenSettings => "none",
         CommandId::ChooseTheme => "Ctrl+P theme",
@@ -499,6 +510,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenErrors => Some(WorkspaceDestination::Errors),
         CommandId::OpenConfiguration => Some(WorkspaceDestination::Configuration),
         CommandId::OpenRawMode => Some(WorkspaceDestination::RawMode),
+        CommandId::OpenTerminalSessions => Some(WorkspaceDestination::TerminalSessions),
         CommandId::OpenCompatibility => Some(WorkspaceDestination::Compatibility),
         CommandId::OpenSettings => Some(WorkspaceDestination::Settings),
         CommandId::OpenHelp => Some(WorkspaceDestination::Help),
@@ -736,7 +748,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 125, "25 global plus 100 workspace actions");
+        assert_eq!(catalog.len(), 127, "26 global plus 101 workspace actions");
         assert!(
             catalog
                 .iter()

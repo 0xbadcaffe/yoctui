@@ -32,6 +32,7 @@ mod sdk;
 mod security;
 mod telemetry_projection;
 mod terminal_emulation;
+mod terminal_workbench;
 mod testing;
 mod textarea;
 mod utility_compatibility;
@@ -83,6 +84,7 @@ use std::{
 };
 pub use telemetry_projection::*;
 pub use terminal_emulation::*;
+pub use terminal_workbench::*;
 pub use testing::*;
 pub use textarea::*;
 use thiserror::Error;
@@ -134,6 +136,7 @@ pub enum Screen {
     Configuration,
     Bbmask,
     RawMode,
+    TerminalSessions,
     Maintenance,
     Logs,
     Errors,
@@ -370,6 +373,7 @@ pub enum CommandId {
     OpenErrors,
     OpenConfiguration,
     OpenRawMode,
+    OpenTerminalSessions,
     OpenCompatibility,
     OpenSettings,
     ChooseTheme,
@@ -407,7 +411,7 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 21] = [
+const NAVIGATOR_SCREENS: [Screen; 22] = [
     Screen::Dashboard,
     Screen::Layers,
     Screen::Recipes,
@@ -423,6 +427,7 @@ const NAVIGATOR_SCREENS: [Screen; 21] = [
     Screen::Security,
     Screen::Qa,
     Screen::RawMode,
+    Screen::TerminalSessions,
     Screen::Recipes,
     Screen::Images,
     Screen::Maintenance,
@@ -430,7 +435,7 @@ const NAVIGATOR_SCREENS: [Screen; 21] = [
     Screen::Compatibility,
     Screen::Settings,
 ];
-const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 21] = [
+const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 22] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
@@ -446,6 +451,7 @@ const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 21] = [
     WorkspaceDestination::Security,
     WorkspaceDestination::Qa,
     WorkspaceDestination::RawMode,
+    WorkspaceDestination::TerminalSessions,
     WorkspaceDestination::Devtool,
     WorkspaceDestination::QemuWic,
     WorkspaceDestination::Maintenance,
@@ -485,7 +491,7 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "TOOLS",
         start: 14,
-        end: 21,
+        end: 22,
     },
 ];
 
@@ -3565,6 +3571,7 @@ pub struct App {
     pub raw_request_generation: u64,
     pub pty_selection: usize,
     pub pane_layout: PaneLayout,
+    pub terminal: TerminalWorkbenchState,
     pub keymap_preferences: KeymapPreferences,
     pub effective_keymap: EffectiveKeymap,
     pub keymap_chord: KeymapChordState,
@@ -3737,6 +3744,7 @@ impl App {
             raw_request_generation: 0,
             pty_selection: 0,
             pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
+            terminal: TerminalWorkbenchState::default(),
             keymap_preferences: KeymapPreferences::default(),
             effective_keymap: EffectiveKeymap::default(),
             keymap_chord: KeymapChordState::default(),
@@ -4224,6 +4232,7 @@ impl App {
             }
             Screen::Configuration | Screen::Bbmask => InspectorMode::Configuration,
             Screen::RawMode => InspectorMode::RawCommand,
+            Screen::TerminalSessions => InspectorMode::DaemonSession,
             Screen::Maintenance => InspectorMode::Utility,
             Screen::Logs => InspectorMode::Log,
             Screen::Errors => InspectorMode::Error,
@@ -4845,6 +4854,33 @@ impl App {
         self.zoomed_pane
             .map(|focus| pane_focus_label(focus, self.workspace_subfocus, self.inspector_subfocus))
     }
+
+    pub fn selected_terminal_session(&self) -> Option<&ClientDaemonPtySummary> {
+        self.daemon.pty_sessions.get(self.pty_selection)
+    }
+
+    pub fn selected_terminal_screen(&self) -> Option<&ClientDaemonPtyScreen> {
+        let id = self.selected_terminal_session()?.id;
+        self.daemon
+            .pty_screens
+            .iter()
+            .find(|screen| screen.session_id == id)
+    }
+
+    pub fn selected_terminal_details(&self) -> Option<&ClientDaemonPtyDetails> {
+        let id = self.selected_terminal_session()?.id;
+        self.daemon
+            .pty_details
+            .iter()
+            .find(|details| details.id == id)
+    }
+
+    pub fn selected_terminal_is_writer(&self) -> bool {
+        self.daemon.status == ClientReplicaStatus::Current
+            && self.selected_terminal_details().is_some_and(|details| {
+                self.terminal.client_id.is_some() && details.writer == self.terminal.client_id
+            })
+    }
 }
 
 fn context_action_local_disabled_reason(
@@ -4957,6 +4993,34 @@ pub enum Action {
         pane: PaneId,
         index: usize,
     },
+    TerminalTakeControl,
+    TerminalReleaseControl,
+    TerminalCreateBuildShell,
+    TerminalCreateSelectedDevshell,
+    TerminalCreateSelectedMenuconfig,
+    TerminalEnterCopyMode,
+    TerminalMoveCopyRow {
+        delta: isize,
+    },
+    TerminalCopyViewport,
+    TerminalBeginSearch,
+    TerminalAppendSearch(char),
+    TerminalBackspaceSearch,
+    TerminalFinishSearch,
+    TerminalClearSearch,
+    TerminalStagePaste(String),
+    TerminalConfirmPaste,
+    TerminalBeginRename,
+    TerminalAppendRename(char),
+    TerminalBackspaceRename,
+    TerminalConfirmRename,
+    TerminalScroll {
+        delta: isize,
+    },
+    TerminalBeginKill,
+    TerminalConfirmKill,
+    TerminalCancelMode,
+    TerminalToggleHelp,
     ResizeFocusedPane {
         delta_per_mille: i16,
     },
@@ -6413,6 +6477,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenErrors => Action::Open(Screen::Errors),
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenRawMode => Action::Open(Screen::RawMode),
+        CommandId::OpenTerminalSessions => Action::Open(Screen::TerminalSessions),
         CommandId::OpenCompatibility => Action::Open(Screen::Compatibility),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
         CommandId::ChooseTheme => Action::OpenThemePicker,
@@ -6545,6 +6610,84 @@ fn selected_recipe_identity(app: &App) -> Result<RecipeIdentity, &'static str> {
         name: recipe.name.clone(),
         file,
     })
+}
+
+fn terminal_creation_effect(app: &mut App, task: Option<&str>) -> Option<Effect> {
+    if app.daemon.status != ClientReplicaStatus::Current {
+        app.notification =
+            Some("Reconnect to a current daemon replica before creating a terminal.".into());
+        return None;
+    }
+    if !app.build_environment.connected() {
+        app.notification =
+            Some("Verify the build environment before creating a daemon-owned terminal.".into());
+        return None;
+    }
+    let Some(cwd) = app.workspace.build_dir.clone() else {
+        app.notification = Some("No authoritative build directory is available.".into());
+        return None;
+    };
+    if task.is_none() {
+        return Some(Effect::Terminal(TerminalEffect::Create {
+            name: "build shell".into(),
+            kind: TerminalCreationKind::BuildShell,
+            cwd,
+            program: PathBuf::from("/bin/sh"),
+            arguments: Vec::new(),
+        }));
+    }
+
+    let task = task.expect("the build-shell case returned above");
+    let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) else {
+        app.notification = Some(format!("Select a recipe before opening {task}."));
+        return None;
+    };
+    let Some(tasks) = app
+        .recipe_metadata
+        .get(&recipe.name)
+        .and_then(|metadata| metadata.tasks.as_ref())
+    else {
+        app.notification = Some(
+            "Load authoritative recipe tasks with Enter before opening an interactive task.".into(),
+        );
+        return None;
+    };
+    let canonical = format!("do_{task}");
+    if !tasks
+        .iter()
+        .any(|candidate| candidate == task || candidate == &canonical)
+    {
+        app.notification = Some(format!(
+            "Task {task} is not reported for recipe {}.",
+            recipe.name
+        ));
+        return None;
+    }
+    let request = BuildRequest {
+        targets: vec![recipe.name.clone()],
+        task: Some(task.into()),
+        force: false,
+    };
+    if let Err(error) = request.validate() {
+        app.notification = Some(error.to_string());
+        return None;
+    }
+    Some(Effect::Terminal(TerminalEffect::Create {
+        name: format!("{task}:{}", recipe.name),
+        kind: if task == "devshell" {
+            TerminalCreationKind::Devshell
+        } else {
+            TerminalCreationKind::Menuconfig
+        },
+        cwd,
+        program: PathBuf::from("/usr/bin/env"),
+        arguments: vec![
+            "bitbake".into(),
+            recipe.name.clone(),
+            "-c".into(),
+            task.into(),
+        ],
+    }))
 }
 
 fn filtered_config_identities(app: &App) -> Vec<VariableIdentity> {
@@ -8082,6 +8225,9 @@ fn current_collection_edge_action(app: &App, to_end: bool) -> Option<Action> {
             },
             RawModeView::Form | RawModeView::Preview => return None,
         }),
+        Screen::TerminalSessions => Action::TerminalScroll {
+            delta: if to_end { isize::MIN + 1 } else { isize::MAX },
+        },
         Screen::Maintenance => Action::Maintenance(MaintenanceAction::Select {
             delta,
             row_count: match app.maintenance.view {
@@ -8374,6 +8520,225 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if index < app.daemon.pty_sessions.len() && app.pane_layout.focus(pane).is_ok() {
                 app.pty_selection = index;
             }
+        }
+        Action::TerminalTakeControl => {
+            if app.daemon.status != ClientReplicaStatus::Current {
+                app.notification = Some(
+                    "Reconnect to a current daemon replica before taking terminal control.".into(),
+                );
+                return None;
+            }
+            if let Some(session) = app.selected_terminal_session() {
+                if session.lifecycle != ClientDaemonLifecycle::Running {
+                    app.notification =
+                        Some("Only a running terminal can grant writer control.".into());
+                } else if app.selected_terminal_is_writer() {
+                    app.notification =
+                        Some("This client already owns the terminal writer lease.".into());
+                } else if app
+                    .selected_terminal_details()
+                    .is_some_and(|details| details.writer.is_some())
+                {
+                    app.notification =
+                        Some("Terminal already has a writer; it remains read-only here.".into());
+                } else if let Some(details) = app.selected_terminal_details() {
+                    return Some(Effect::Terminal(TerminalEffect::TakeControl {
+                        session_id: session.id,
+                        expected_epoch: details.writer_epoch,
+                    }));
+                }
+            }
+        }
+        Action::TerminalReleaseControl => {
+            if let (Some(session), Some(details)) = (
+                app.selected_terminal_session(),
+                app.selected_terminal_details(),
+            ) && app.selected_terminal_is_writer()
+            {
+                return Some(Effect::Terminal(TerminalEffect::ReleaseControl {
+                    session_id: session.id,
+                    writer_epoch: details.writer_epoch,
+                }));
+            }
+            app.notification = Some("This client does not own the terminal writer lease.".into());
+        }
+        Action::TerminalCreateBuildShell => {
+            return terminal_creation_effect(app, None);
+        }
+        Action::TerminalCreateSelectedDevshell => {
+            return terminal_creation_effect(app, Some("devshell"));
+        }
+        Action::TerminalCreateSelectedMenuconfig => {
+            return terminal_creation_effect(app, Some("menuconfig"));
+        }
+        Action::TerminalEnterCopyMode => {
+            if let Some(row) = app
+                .selected_terminal_screen()
+                .map(|screen| screen.rows.len().saturating_sub(1))
+            {
+                app.terminal.mode = TerminalWorkbenchMode::Copy;
+                app.terminal.copy_row = row;
+            }
+        }
+        Action::TerminalMoveCopyRow { delta } => {
+            if app.terminal.mode == TerminalWorkbenchMode::Copy {
+                let count = app
+                    .selected_terminal_screen()
+                    .map_or(0, |screen| screen.rows.len());
+                app.terminal.copy_row = shifted_index(app.terminal.copy_row, delta, count);
+            }
+        }
+        Action::TerminalCopyViewport => {
+            if app.terminal.mode == TerminalWorkbenchMode::Copy
+                && let Some(screen) = app.selected_terminal_screen()
+                && let Some(row) = screen.rows.get(app.terminal.copy_row)
+            {
+                let content = row.clone();
+                app.terminal.reset_transient_mode();
+                return Some(Effect::CopyToClipboard(content));
+            }
+        }
+        Action::TerminalBeginSearch => app.terminal.mode = TerminalWorkbenchMode::Search,
+        Action::TerminalAppendSearch(character) => {
+            if app.terminal.mode == TerminalWorkbenchMode::Search
+                && !app.terminal.append_query(character)
+            {
+                app.notification = Some(format!(
+                    "Terminal search is limited to {MAX_TERMINAL_SEARCH_BYTES} bytes."
+                ));
+            }
+        }
+        Action::TerminalBackspaceSearch => app.terminal.backspace_query(),
+        Action::TerminalFinishSearch => app.terminal.mode = TerminalWorkbenchMode::Live,
+        Action::TerminalClearSearch => {
+            app.terminal.query.clear();
+            app.terminal.mode = TerminalWorkbenchMode::Live;
+        }
+        Action::TerminalStagePaste(text) => {
+            if !app.selected_terminal_is_writer() {
+                app.notification =
+                    Some("Paste is disabled until this client owns the writer lease.".into());
+            } else if !app.terminal.stage_paste(&text) {
+                app.notification = Some(format!(
+                    "Terminal paste must contain 1..={MAX_TERMINAL_PASTE_BYTES} bytes."
+                ));
+            }
+        }
+        Action::TerminalConfirmPaste => {
+            if app.terminal.mode == TerminalWorkbenchMode::PasteReview
+                && app.selected_terminal_is_writer()
+                && let (Some(session), Some(details)) = (
+                    app.selected_terminal_session(),
+                    app.selected_terminal_details(),
+                )
+            {
+                let effect = TerminalEffect::Input {
+                    session_id: session.id,
+                    writer_epoch: details.writer_epoch,
+                    bytes: app.terminal.pending_paste.clone(),
+                };
+                app.terminal.reset_transient_mode();
+                return Some(Effect::Terminal(effect));
+            }
+        }
+        Action::TerminalBeginRename => {
+            if app.daemon.status != ClientReplicaStatus::Current {
+                app.notification = Some(
+                    "Reconnect to a current daemon replica before renaming a terminal.".into(),
+                );
+                return None;
+            }
+            if let Some(name) = app
+                .selected_terminal_session()
+                .map(|session| session.name.clone())
+            {
+                app.terminal.rename = name;
+                app.terminal.mode = TerminalWorkbenchMode::Rename;
+            }
+        }
+        Action::TerminalAppendRename(character) => {
+            if app.terminal.mode == TerminalWorkbenchMode::Rename
+                && !app.terminal.append_rename(character)
+            {
+                app.notification = Some(format!(
+                    "Terminal names are limited to {MAX_TERMINAL_RENAME_BYTES} bytes."
+                ));
+            }
+        }
+        Action::TerminalBackspaceRename => app.terminal.backspace_rename(),
+        Action::TerminalConfirmRename => {
+            if app.terminal.mode == TerminalWorkbenchMode::Rename
+                && let Some(session) = app.selected_terminal_session()
+            {
+                let name = app.terminal.rename.trim().to_owned();
+                if name.is_empty() {
+                    app.notification = Some("Terminal name cannot be empty.".into());
+                } else {
+                    let effect = TerminalEffect::Rename {
+                        session_id: session.id,
+                        name,
+                    };
+                    app.terminal.reset_transient_mode();
+                    return Some(Effect::Terminal(effect));
+                }
+            }
+        }
+        Action::TerminalScroll { delta } => {
+            if let Some(screen) = app.selected_terminal_screen() {
+                let maximum = screen.scrollback_lines as usize;
+                let next = if delta.is_negative() {
+                    app.terminal
+                        .scrollback_offset
+                        .saturating_sub(delta.unsigned_abs())
+                } else {
+                    app.terminal
+                        .scrollback_offset
+                        .saturating_add(delta as usize)
+                }
+                .min(maximum);
+                app.terminal.set_scrollback_offset(next, maximum);
+                if let Some(session) = app.selected_terminal_session() {
+                    return Some(Effect::Terminal(TerminalEffect::Viewport {
+                        session_id: session.id,
+                        scrollback_offset: next,
+                    }));
+                }
+            }
+        }
+        Action::TerminalBeginKill => {
+            if app.daemon.status != ClientReplicaStatus::Current {
+                app.notification = Some(
+                    "Reconnect to a current daemon replica before closing or killing a terminal."
+                        .into(),
+                );
+                return None;
+            }
+            if let Some(session) = app.selected_terminal_session() {
+                if session.lifecycle == ClientDaemonLifecycle::Running {
+                    app.terminal.mode = TerminalWorkbenchMode::KillConfirmation;
+                } else {
+                    return Some(Effect::Terminal(TerminalEffect::Close {
+                        session_id: session.id,
+                    }));
+                }
+            }
+        }
+        Action::TerminalConfirmKill => {
+            if app.terminal.mode == TerminalWorkbenchMode::KillConfirmation
+                && let Some(session) = app.selected_terminal_session()
+            {
+                let session_id = session.id;
+                app.terminal.reset_transient_mode();
+                return Some(Effect::Terminal(TerminalEffect::Terminate { session_id }));
+            }
+        }
+        Action::TerminalCancelMode => app.terminal.reset_transient_mode(),
+        Action::TerminalToggleHelp => {
+            app.terminal.mode = if app.terminal.mode == TerminalWorkbenchMode::Help {
+                TerminalWorkbenchMode::Live
+            } else {
+                TerminalWorkbenchMode::Help
+            };
         }
         Action::ResizeFocusedPane { delta_per_mille } => {
             let focused = app.pane_layout.focused;
@@ -16563,6 +16928,7 @@ pub enum Effect {
         request: RawRequestId,
         attached: bool,
     },
+    Terminal(TerminalEffect),
     OpenInEditor(PathBuf),
     CopyToClipboard(String),
     OpenWorkspaceEditor {
@@ -17483,6 +17849,7 @@ mod tests {
                 Screen::Security,
                 Screen::Qa,
                 Screen::RawMode,
+                Screen::TerminalSessions,
                 Screen::Recipes,
                 Screen::Images,
                 Screen::Maintenance,
@@ -25104,5 +25471,157 @@ mod tests {
             None
         );
         assert_eq!(app.focus, FocusTarget::Inspector);
+    }
+
+    fn ux_terminal_fixture(lifecycle: ClientDaemonLifecycle, writer: Option<[u8; 16]>) -> App {
+        let mut app = App::new(16, 4096);
+        app.screen = Screen::TerminalSessions;
+        app.terminal.client_id = Some([7; 16]);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.daemon.pty_sessions.push(ClientDaemonPtySummary {
+            id: 41,
+            name: "devshell:busybox".into(),
+            lifecycle,
+            viewers: 2,
+        });
+        app.daemon.pty_details.push(ClientDaemonPtyDetails {
+            id: 41,
+            kind: ClientDaemonPtyKind::Devshell,
+            cwd: "/work/build".into(),
+            columns: 100,
+            rows: 28,
+            writer,
+            writer_epoch: 9,
+            exit_code: None,
+            restartable: true,
+        });
+        app.daemon.pty_screens.push(ClientDaemonPtyScreen {
+            session_id: 41,
+            columns: 100,
+            rows_count: 28,
+            cursor_column: 0,
+            cursor_row: 1,
+            cursor_hidden: false,
+            scrollback_offset: 0,
+            rows: vec!["$ bitbake busybox -c devshell".into(), "ready".into()],
+            cells: Vec::new(),
+            scrollback_lines: 120,
+            dropped_line_feeds_lower_bound: 17,
+        });
+        app
+    }
+
+    #[test]
+    fn ux_terminal_navigation_palette_and_writer_lease_are_typed() {
+        let mut app = ux_terminal_fixture(ClientDaemonLifecycle::Running, Some([8; 16]));
+        assert_eq!(
+            command_action(&app, CommandId::OpenTerminalSessions),
+            Action::Open(Screen::TerminalSessions)
+        );
+        assert!(
+            app.command_palette_commands().iter().any(|command| {
+                command.id == CommandId::OpenTerminalSessions && command.enabled()
+            })
+        );
+
+        assert_eq!(update(&mut app, Action::TerminalTakeControl), None);
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("read-only"))
+        );
+
+        app.daemon.pty_details[0].writer = None;
+        assert_eq!(
+            update(&mut app, Action::TerminalTakeControl),
+            Some(Effect::Terminal(TerminalEffect::TakeControl {
+                session_id: 41,
+                expected_epoch: 9,
+            }))
+        );
+        app.daemon.pty_details[0].writer = Some([7; 16]);
+        assert_eq!(
+            update(&mut app, Action::TerminalReleaseControl),
+            Some(Effect::Terminal(TerminalEffect::ReleaseControl {
+                session_id: 41,
+                writer_epoch: 9,
+            }))
+        );
+
+        app.workspace.build_dir = Some("/work/build".into());
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            version: None,
+            layer: None,
+            preferred_version: None,
+            file: Some("/layers/busybox.bb".into()),
+            append_count: None,
+        });
+        app.recipe_metadata.insert(
+            "busybox".into(),
+            RecipeMetadata {
+                recipe: "busybox".into(),
+                tasks: Some(vec!["do_devshell".into(), "do_menuconfig".into()]),
+                ..RecipeMetadata::default()
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::TerminalCreateSelectedDevshell),
+            Some(Effect::Terminal(TerminalEffect::Create {
+                name: "devshell:busybox".into(),
+                kind: TerminalCreationKind::Devshell,
+                cwd: "/work/build".into(),
+                program: "/usr/bin/env".into(),
+                arguments: vec![
+                    "bitbake".into(),
+                    "busybox".into(),
+                    "-c".into(),
+                    "devshell".into(),
+                ],
+            }))
+        );
+    }
+
+    #[test]
+    fn ux_terminal_paste_copy_scrollback_and_kill_are_explicit_and_bounded() {
+        let mut app = ux_terminal_fixture(ClientDaemonLifecycle::Running, Some([7; 16]));
+        assert_eq!(
+            update(
+                &mut app,
+                Action::TerminalStagePaste("echo reviewed\n".into())
+            ),
+            None
+        );
+        assert_eq!(app.terminal.mode, TerminalWorkbenchMode::PasteReview);
+        assert_eq!(
+            update(&mut app, Action::TerminalConfirmPaste),
+            Some(Effect::Terminal(TerminalEffect::Input {
+                session_id: 41,
+                writer_epoch: 9,
+                bytes: b"echo reviewed\n".to_vec(),
+            }))
+        );
+
+        assert_eq!(
+            update(&mut app, Action::TerminalScroll { delta: 500 }),
+            Some(Effect::Terminal(TerminalEffect::Viewport {
+                session_id: 41,
+                scrollback_offset: 120,
+            }))
+        );
+        assert_eq!(update(&mut app, Action::TerminalBeginKill), None);
+        assert_eq!(app.terminal.mode, TerminalWorkbenchMode::KillConfirmation);
+        assert_eq!(
+            update(&mut app, Action::TerminalConfirmKill),
+            Some(Effect::Terminal(TerminalEffect::Terminate {
+                session_id: 41
+            }))
+        );
+
+        app.daemon.pty_sessions[0].lifecycle = ClientDaemonLifecycle::Exited;
+        assert_eq!(
+            update(&mut app, Action::TerminalBeginKill),
+            Some(Effect::Terminal(TerminalEffect::Close { session_id: 41 }))
+        );
     }
 }

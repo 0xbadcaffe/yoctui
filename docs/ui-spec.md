@@ -4439,7 +4439,7 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
-The implemented catalog currently contains 25 global commands and 99
+The implemented catalog currently contains 26 global commands and 101
 contextual workspace operations. Every entry has a validated lowercase stable
 ID, typed scope and target, complete presentation/search metadata, explicit
 local and environment requirements, safety class, footer priority, and Help

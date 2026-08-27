@@ -6,12 +6,13 @@ use std::{
 
 use thiserror::Error;
 use yoctui_app::{DaemonClientSnapshot, PrefixCommand};
-use yoctui_model::{App, ClientDaemonLifecycle, Effect};
+use yoctui_model::{App, ClientDaemonLifecycle, Effect, TerminalEffect};
 use yoctui_protocol::daemon::{
-    ClientId, CommandRequest, DaemonCommand, DaemonDevtoolOperation, DaemonQaCapabilityInput,
-    DaemonQaCapabilityRequest, DaemonQemuRequest, DaemonSdkArtifactIdentity, DaemonSdkContext,
-    DaemonSdkNativeMode, DaemonSdkOperation, DaemonTestSelftestRequest, DaemonWicCreateRequest,
-    JobId, RequestId, Subscription, TerminalDimensions,
+    ClientId, ClientLayoutEvent, CommandRequest, DaemonCommand, DaemonDevtoolOperation,
+    DaemonQaCapabilityInput, DaemonQaCapabilityRequest, DaemonQemuRequest,
+    DaemonSdkArtifactIdentity, DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation,
+    DaemonTestSelftestRequest, DaemonWicCreateRequest, JobId, PaneId, PtyInput, PtySessionId,
+    PtyViewport, RequestId, Subscription, TerminalDimensions,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -33,8 +34,9 @@ pub enum RuntimeEffectRoute {
 
 impl InteractiveDaemonRuntime {
     pub fn connect(app: &mut App, timeout: Duration) -> Result<Self, ClientRuntimeError> {
+        let client_id = random_client_id()?;
         let mut transport =
-            DaemonClientTransport::connect(random_client_id()?, "yoctui-ratatui".into(), timeout)?;
+            DaemonClientTransport::connect(client_id, "yoctui-ratatui".into(), timeout)?;
         let attached = transport.attach(
             None,
             Subscription {
@@ -51,6 +53,7 @@ impl InteractiveDaemonRuntime {
         for event in attached.replayed_events {
             replica.apply_event_to_app(app, &event)?;
         }
+        app.terminal.client_id = Some(client_id.0);
         Ok(Self {
             transport,
             replica,
@@ -97,6 +100,9 @@ impl InteractiveDaemonRuntime {
         app: &App,
         effect: &Effect,
     ) -> Result<RuntimeEffectRoute, ClientRuntimeError> {
+        if let Effect::Terminal(effect) = effect {
+            return self.route_terminal_effect(app, effect);
+        }
         let Some(command) = daemon_command_for_effect(app, effect)? else {
             return Ok(RuntimeEffectRoute::ClientLocal);
         };
@@ -128,6 +134,15 @@ impl InteractiveDaemonRuntime {
         let Some(daemon_command) = prefix_daemon_command(app, command)? else {
             return Ok(RuntimeEffectRoute::ClientLocal);
         };
+        if command == PrefixCommand::TakeControl
+            && let Some(session) = app.selected_terminal_session()
+        {
+            self.transport
+                .pty_layout(ClientLayoutEvent::AttachSession {
+                    pane_id: PaneId(app.pane_layout.focused.0),
+                    session_id: PtySessionId(session.id),
+                })?;
+        }
         let request_id = RequestId(self.next_request);
         self.next_request = self
             .next_request
@@ -141,9 +156,148 @@ impl InteractiveDaemonRuntime {
         Ok(RuntimeEffectRoute::Daemon(request_id))
     }
 
+    fn route_terminal_effect(
+        &mut self,
+        app: &App,
+        effect: &TerminalEffect,
+    ) -> Result<RuntimeEffectRoute, ClientRuntimeError> {
+        let request_id = RequestId(self.next_request);
+        self.next_request = self
+            .next_request
+            .checked_add(1)
+            .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
+        match effect {
+            TerminalEffect::Create {
+                name,
+                kind,
+                cwd,
+                program,
+                arguments,
+            } => self.transport.command(CommandRequest {
+                request_id,
+                expected_generation: Some(app.daemon.generation),
+                command: DaemonCommand::CreatePty {
+                    name: name.clone(),
+                    kind: match kind {
+                        yoctui_model::TerminalCreationKind::BuildShell => {
+                            yoctui_protocol::daemon::PtyKind::BuildShell
+                        }
+                        yoctui_model::TerminalCreationKind::Devshell => {
+                            yoctui_protocol::daemon::PtyKind::Devshell
+                        }
+                        yoctui_model::TerminalCreationKind::Menuconfig => {
+                            yoctui_protocol::daemon::PtyKind::Menuconfig
+                        }
+                    },
+                    cwd: cwd.display().to_string(),
+                    command: yoctui_protocol::daemon::PtyCommand {
+                        program: program.display().to_string(),
+                        arguments: arguments.clone(),
+                        environment_profile_id: None,
+                    },
+                    dimensions: TerminalDimensions {
+                        columns: 120,
+                        rows: 40,
+                    },
+                },
+            })?,
+            TerminalEffect::TakeControl {
+                session_id,
+                expected_epoch,
+            } => {
+                self.transport
+                    .pty_layout(ClientLayoutEvent::AttachSession {
+                        pane_id: PaneId(app.pane_layout.focused.0),
+                        session_id: PtySessionId(*session_id),
+                    })?;
+                self.transport.command(CommandRequest {
+                    request_id,
+                    expected_generation: Some(app.daemon.generation),
+                    command: DaemonCommand::TakePtyControl {
+                        session_id: PtySessionId(*session_id),
+                        expected_epoch: *expected_epoch,
+                    },
+                })?;
+            }
+            TerminalEffect::ReleaseControl {
+                session_id,
+                writer_epoch,
+            } => self.transport.command(CommandRequest {
+                request_id,
+                expected_generation: Some(app.daemon.generation),
+                command: DaemonCommand::ReleasePtyControl {
+                    session_id: PtySessionId(*session_id),
+                    expected_epoch: *writer_epoch,
+                },
+            })?,
+            TerminalEffect::Input {
+                session_id,
+                writer_epoch,
+                bytes,
+            } => self.transport.pty_input(PtyInput {
+                request_id,
+                session_id: PtySessionId(*session_id),
+                writer_epoch: *writer_epoch,
+                bytes: bytes.clone(),
+            })?,
+            TerminalEffect::Viewport {
+                session_id,
+                scrollback_offset,
+            } => self.transport.pty_viewport(PtyViewport {
+                request_id,
+                session_id: PtySessionId(*session_id),
+                scrollback_offset: u32::try_from(*scrollback_offset)
+                    .map_err(|_| ClientRuntimeError::InvalidTerminalViewport)?,
+            })?,
+            TerminalEffect::Rename { session_id, name } => {
+                self.transport.command(CommandRequest {
+                    request_id,
+                    expected_generation: Some(app.daemon.generation),
+                    command: DaemonCommand::RenamePty {
+                        session_id: PtySessionId(*session_id),
+                        name: name.clone(),
+                    },
+                })?;
+            }
+            TerminalEffect::Terminate { session_id } => {
+                self.transport.command(CommandRequest {
+                    request_id,
+                    expected_generation: Some(app.daemon.generation),
+                    command: DaemonCommand::TerminatePty {
+                        session_id: PtySessionId(*session_id),
+                        force: true,
+                        confirmation: None,
+                    },
+                })?;
+            }
+            TerminalEffect::Close { session_id } => {
+                self.transport.command(CommandRequest {
+                    request_id,
+                    expected_generation: Some(app.daemon.generation),
+                    command: DaemonCommand::ClosePty {
+                        session_id: PtySessionId(*session_id),
+                    },
+                })?;
+            }
+        }
+        Ok(RuntimeEffectRoute::Daemon(request_id))
+    }
+
     pub fn detach(mut self, app: &mut App) -> Result<(), ClientRuntimeError> {
         self.transport.detach()?;
         self.replica.disconnect_app(app);
+        Ok(())
+    }
+
+    pub fn detach_terminal(&mut self, app: &App) -> Result<(), ClientRuntimeError> {
+        let session = app
+            .selected_terminal_session()
+            .ok_or(ClientRuntimeError::MissingPtySession)?;
+        self.transport
+            .pty_layout(ClientLayoutEvent::DetachSession {
+                pane_id: PaneId(app.pane_layout.focused.0),
+                session_id: PtySessionId(session.id),
+            })?;
         Ok(())
     }
 }
@@ -178,15 +332,26 @@ fn prefix_daemon_command(
             let session = app
                 .daemon
                 .pty_sessions
-                .iter()
-                .find(|session| matches!(session.lifecycle, ClientDaemonLifecycle::Running))
+                .get(app.pty_selection)
+                .filter(|session| matches!(session.lifecycle, ClientDaemonLifecycle::Running))
+                .ok_or(ClientRuntimeError::MissingPtySession)?;
+            let details = app
+                .selected_terminal_details()
                 .ok_or(ClientRuntimeError::MissingPtySession)?;
             DaemonCommand::TakePtyControl {
                 session_id: yoctui_protocol::daemon::PtySessionId(session.id),
-                expected_epoch: 0,
+                expected_epoch: details.writer_epoch,
             }
         }
-        PrefixCommand::CommandPalette | PrefixCommand::Help => return Ok(None),
+        PrefixCommand::CommandPalette
+        | PrefixCommand::Help
+        | PrefixCommand::OpenTerminalSessions
+        | PrefixCommand::CopyMode
+        | PrefixCommand::Search
+        | PrefixCommand::Rename
+        | PrefixCommand::ReleaseControl
+        | PrefixCommand::Kill
+        | PrefixCommand::Zoom => return Ok(None),
         PrefixCommand::NextSession
         | PrefixCommand::PreviousSession
         | PrefixCommand::SplitHorizontal
@@ -825,6 +990,8 @@ pub enum ClientRuntimeError {
     NoActiveDaemonJob,
     #[error("daemon request ID space exhausted")]
     RequestSpaceExhausted,
+    #[error("terminal viewport offset exceeds the wire range")]
+    InvalidTerminalViewport,
     #[error("Raw execution request could not be encoded: {0}")]
     RawExecution(String),
     #[error("no running PTY session is available")]
@@ -1023,7 +1190,7 @@ mod tests {
     }
 
     #[test]
-    fn keyboard_prefix_runtime_maps_create_and_writer_commands() {
+    fn ux_terminal_prefix_runtime_maps_create_and_writer_commands() {
         let mut app = App::new(16, 4096);
         app.workspace.build_dir = Some("/build".into());
         let Some(DaemonCommand::CreatePty { cwd, .. }) =
@@ -1040,9 +1207,22 @@ mod tests {
                 lifecycle: ClientDaemonLifecycle::Running,
                 viewers: 1,
             });
+        app.daemon
+            .pty_details
+            .push(yoctui_model::ClientDaemonPtyDetails {
+                id: 3,
+                kind: yoctui_model::ClientDaemonPtyKind::BuildShell,
+                cwd: "/build".into(),
+                columns: 120,
+                rows: 40,
+                writer: None,
+                writer_epoch: 7,
+                exit_code: None,
+                restartable: true,
+            });
         assert!(matches!(
             prefix_daemon_command(&app, PrefixCommand::TakeControl).unwrap(),
-            Some(DaemonCommand::TakePtyControl { session_id, expected_epoch: 0 })
+            Some(DaemonCommand::TakePtyControl { session_id, expected_epoch: 7 })
                 if session_id.0 == 3
         ));
         assert!(

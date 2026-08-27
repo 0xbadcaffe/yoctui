@@ -19,12 +19,14 @@ pub(crate) struct PtyAttachListing {
     pub id: yoctui_model::PtySessionId,
     pub name: String,
     pub kind: PtySessionKind,
+    pub cwd: std::path::PathBuf,
     pub lifecycle: PtyAttachLifecycle,
     pub dimensions: PtyDimensions,
     pub viewers: usize,
     pub writer: Option<PtyClientId>,
     pub writer_epoch: u64,
     pub exit_status: Option<PtyExitStatus>,
+    pub restartable: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -68,12 +70,14 @@ impl DaemonPtySession {
             id: session.id,
             name: session.name.clone(),
             kind: session.kind,
+            cwd: session.cwd.clone(),
             lifecycle: listing_lifecycle(session.lifecycle),
             dimensions: session.dimensions,
             viewers: session.attached_clients.len(),
             writer: session.writer.map(|writer| writer.client),
             writer_epoch: session.writer_epoch,
             exit_status: session.exit_status,
+            restartable: session.restartable,
         })
     }
 
@@ -127,6 +131,12 @@ impl DaemonPtySession {
                 client,
                 expected_epoch,
             })?;
+        Ok(())
+    }
+
+    pub fn rename(&mut self, name: String) -> Result<(), PtyAttachError> {
+        self.runner
+            .apply_session_action(PtySessionAction::Rename(name))?;
         Ok(())
     }
 

@@ -2191,8 +2191,8 @@ fn daemon_client_view(
     telemetry: Option<yoctui_protocol::daemon::DaemonTelemetry>,
 ) -> yoctui_model::ClientDaemonView {
     use yoctui_model::{
-        ClientDaemonJobSummary, ClientDaemonPtyScreen, ClientDaemonPtySummary,
-        ClientDaemonTerminalCell, ClientDaemonView,
+        ClientDaemonJobSummary, ClientDaemonPtyDetails, ClientDaemonPtyKind, ClientDaemonPtyScreen,
+        ClientDaemonPtySummary, ClientDaemonTerminalCell, ClientDaemonView,
     };
     let Some(snapshot) = snapshot else {
         return ClientDaemonView {
@@ -2231,6 +2231,40 @@ fn daemon_client_view(
                 name: pty.name.clone(),
                 lifecycle: client_daemon_lifecycle(pty.lifecycle),
                 viewers: pty.viewers,
+            })
+            .collect(),
+        pty_details: snapshot
+            .pty_sessions
+            .iter()
+            .map(|pty| ClientDaemonPtyDetails {
+                id: pty.id.0,
+                kind: match pty.kind {
+                    yoctui_protocol::daemon::PtyKind::BuildShell => ClientDaemonPtyKind::BuildShell,
+                    yoctui_protocol::daemon::PtyKind::SourceShell => {
+                        ClientDaemonPtyKind::SourceShell
+                    }
+                    yoctui_protocol::daemon::PtyKind::LayerShell => ClientDaemonPtyKind::LayerShell,
+                    yoctui_protocol::daemon::PtyKind::RecipeShell => {
+                        ClientDaemonPtyKind::RecipeShell
+                    }
+                    yoctui_protocol::daemon::PtyKind::DevtoolShell => {
+                        ClientDaemonPtyKind::DevtoolShell
+                    }
+                    yoctui_protocol::daemon::PtyKind::Devshell => ClientDaemonPtyKind::Devshell,
+                    yoctui_protocol::daemon::PtyKind::Menuconfig => ClientDaemonPtyKind::Menuconfig,
+                    yoctui_protocol::daemon::PtyKind::SdkShell => ClientDaemonPtyKind::SdkShell,
+                    yoctui_protocol::daemon::PtyKind::NativeShell => {
+                        ClientDaemonPtyKind::NativeShell
+                    }
+                    yoctui_protocol::daemon::PtyKind::Utility => ClientDaemonPtyKind::Utility,
+                },
+                cwd: pty.cwd.clone(),
+                columns: pty.dimensions.columns,
+                rows: pty.dimensions.rows,
+                writer: pty.writer.map(|writer| writer.0),
+                writer_epoch: pty.writer_epoch,
+                exit_code: pty.exit_code,
+                restartable: pty.restartable,
             })
             .collect(),
         pty_screens: snapshot
@@ -2279,6 +2313,7 @@ fn daemon_client_view(
                     rows,
                     cells,
                     scrollback_lines: screen.scrollback_lines,
+                    dropped_line_feeds_lower_bound: screen.dropped_line_feeds_lower_bound,
                 }
             })
             .collect(),
@@ -3883,6 +3918,85 @@ pub enum Input {
     PageDown,
 }
 
+/// Resolve terminal-workbench control keys. `None` deliberately means the
+/// input remains eligible for forwarding to the daemon PTY writer.
+pub fn terminal_workspace_action(app: &yoctui_model::App, input: Input) -> Option<Action> {
+    use yoctui_model::TerminalWorkbenchMode as Mode;
+    match app.terminal.mode {
+        Mode::Search => match input {
+            Input::Enter | Input::Esc => Some(Action::TerminalFinishSearch),
+            Input::Backspace => Some(Action::TerminalBackspaceSearch),
+            Input::CtrlU => Some(Action::TerminalClearSearch),
+            Input::Char(character) => Some(Action::TerminalAppendSearch(character)),
+            _ => None,
+        },
+        Mode::Rename => match input {
+            Input::Enter => Some(Action::TerminalConfirmRename),
+            Input::Esc => Some(Action::TerminalCancelMode),
+            Input::Backspace => Some(Action::TerminalBackspaceRename),
+            Input::Char(character) => Some(Action::TerminalAppendRename(character)),
+            _ => None,
+        },
+        Mode::PasteReview => match input {
+            Input::Enter => Some(Action::TerminalConfirmPaste),
+            Input::Esc => Some(Action::TerminalCancelMode),
+            _ => None,
+        },
+        Mode::KillConfirmation => match input {
+            Input::Enter => Some(Action::TerminalConfirmKill),
+            Input::Esc => Some(Action::TerminalCancelMode),
+            _ => None,
+        },
+        Mode::Help => match input {
+            Input::Esc | Input::Char('?') => Some(Action::TerminalToggleHelp),
+            _ => None,
+        },
+        Mode::Copy => match input {
+            Input::Up | Input::Char('k') => Some(Action::TerminalMoveCopyRow { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::TerminalMoveCopyRow { delta: 1 }),
+            Input::Enter | Input::Char('y') => Some(Action::TerminalCopyViewport),
+            Input::Char('/') => Some(Action::TerminalBeginSearch),
+            Input::Esc | Input::Char('v') => Some(Action::TerminalCancelMode),
+            _ => None,
+        },
+        Mode::Live if app.selected_terminal_is_writer() => None,
+        Mode::Live => match input {
+            Input::Char('n') => Some(Action::TerminalCreateBuildShell),
+            Input::Char('s') => Some(Action::TerminalCreateSelectedDevshell),
+            Input::Char('m') => Some(Action::TerminalCreateSelectedMenuconfig),
+            Input::Enter => Some(Action::TerminalTakeControl),
+            Input::Char('/') => Some(Action::TerminalBeginSearch),
+            Input::Char('v') => Some(Action::TerminalEnterCopyMode),
+            Input::Char('r') => Some(Action::TerminalBeginRename),
+            Input::Char('o') => Some(Action::TerminalTakeControl),
+            Input::Char('O') => Some(Action::TerminalReleaseControl),
+            Input::Char('c') => Some(Action::TerminalReleaseControl),
+            Input::Char('x') => Some(Action::TerminalBeginKill),
+            Input::Char('?') => Some(Action::TerminalToggleHelp),
+            Input::PageUp => Some(Action::TerminalScroll { delta: 10 }),
+            Input::PageDown => Some(Action::TerminalScroll { delta: -10 }),
+            Input::Home => Some(Action::TerminalScroll { delta: isize::MAX }),
+            Input::End => Some(Action::TerminalScroll {
+                delta: isize::MIN + 1,
+            }),
+            _ => None,
+        },
+    }
+}
+
+/// Resolve an explicitly activated Terminal Sessions context-menu item. This
+/// separate route prevents ordinary writer keystrokes from becoming controls.
+pub fn terminal_context_action(input: Input) -> Option<Action> {
+    match input {
+        Input::Char('n') => Some(Action::TerminalCreateBuildShell),
+        Input::Char('s') => Some(Action::TerminalCreateSelectedDevshell),
+        Input::Char('m') => Some(Action::TerminalCreateSelectedMenuconfig),
+        Input::Char('o') | Input::Enter => Some(Action::TerminalTakeControl),
+        Input::Char('c') => Some(Action::TerminalReleaseControl),
+        _ => None,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CheckboxInputAction {
     Toggle,
@@ -4111,8 +4225,7 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         | "errors.inspect"
         | "dependencies.open"
         | "packages.detail"
-        | "raw.inspect"
-        | "terminal.server" => Input::Enter,
+        | "raw.inspect" => Input::Enter,
         "logs.inspect" => Input::Char('/'),
         "dependencies.refresh" | "signatures.dump" | "devtool.status" => Input::Char('r'),
         "signatures.compare" => Input::Char('c'),
@@ -4165,6 +4278,8 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "maintenance.evidence" => Input::Char('o'),
         "terminal.devshell" => Input::Char('s'),
         "terminal.menuconfig" => Input::Char('m'),
+        "terminal.shell" => Input::Char('n'),
+        "terminal.control" => Input::Char('o'),
         "terminal.cancel" => Input::Char('c'),
         _ => return None,
     };
@@ -4704,6 +4819,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         }
         Screen::Configuration => config_workspace_action(app.metadata_searching, key),
         Screen::RawMode => raw_mode_input(app, key).map(Action::RawMode),
+        Screen::TerminalSessions => terminal_workspace_action(app, key),
         Screen::Maintenance => maintenance_workspace_action(
             app.maintenance.view,
             match app.maintenance.view {
@@ -8019,6 +8135,7 @@ mod tests {
                                 wide_continuation: false,
                             }],
                             scrollback_lines: 8,
+                            dropped_line_feeds_lower_bound: 2,
                         },
                     ),
                 },
@@ -13845,6 +13962,91 @@ mod tests {
         assert_eq!(
             progress.sstate.state,
             yoctui_model::WidgetState::Unavailable
+        );
+    }
+
+    #[test]
+    fn ux_terminal_keys_are_modal_and_never_forward_control_actions() {
+        let mut app = yoctui_model::App::new(8, 1_000);
+        app.screen = Screen::TerminalSessions;
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Char('o')),
+            Some(Action::TerminalTakeControl)
+        );
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Char('n')),
+            Some(Action::TerminalCreateBuildShell)
+        );
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Char('s')),
+            Some(Action::TerminalCreateSelectedDevshell)
+        );
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Char('m')),
+            Some(Action::TerminalCreateSelectedMenuconfig)
+        );
+        assert_eq!(terminal_workspace_action(&app, Input::Char('a')), None);
+
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.terminal.client_id = Some([3; 16]);
+        app.daemon
+            .pty_sessions
+            .push(yoctui_model::ClientDaemonPtySummary {
+                id: 1,
+                name: "shell".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 1,
+            });
+        app.daemon
+            .pty_details
+            .push(yoctui_model::ClientDaemonPtyDetails {
+                id: 1,
+                kind: yoctui_model::ClientDaemonPtyKind::BuildShell,
+                cwd: "/build".into(),
+                columns: 80,
+                rows: 24,
+                writer: Some([3; 16]),
+                writer_epoch: 1,
+                exit_code: None,
+                restartable: true,
+            });
+        for literal in ['n', 's', 'm', 'o', 'r', 'x', '?', '/', 'v'] {
+            assert_eq!(
+                terminal_workspace_action(&app, Input::Char(literal)),
+                None,
+                "writer character {literal:?} must remain PTY input"
+            );
+        }
+        assert_eq!(
+            terminal_context_action(Input::Char('s')),
+            Some(Action::TerminalCreateSelectedDevshell)
+        );
+
+        app.terminal.mode = yoctui_model::TerminalWorkbenchMode::Search;
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Char('a')),
+            Some(Action::TerminalAppendSearch('a'))
+        );
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Enter),
+            Some(Action::TerminalFinishSearch)
+        );
+
+        app.terminal.mode = yoctui_model::TerminalWorkbenchMode::PasteReview;
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Enter),
+            Some(Action::TerminalConfirmPaste)
+        );
+        assert_eq!(terminal_workspace_action(&app, Input::Char('y')), None);
+
+        app.terminal.mode = yoctui_model::TerminalWorkbenchMode::KillConfirmation;
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Enter),
+            Some(Action::TerminalConfirmKill)
+        );
+        assert_eq!(
+            terminal_workspace_action(&app, Input::Esc),
+            Some(Action::TerminalCancelMode)
         );
     }
 }

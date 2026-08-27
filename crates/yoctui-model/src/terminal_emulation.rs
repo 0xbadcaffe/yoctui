@@ -59,6 +59,8 @@ pub struct TerminalSnapshot {
     pub dimensions: PtyDimensions,
     pub scrollback_offset: usize,
     pub max_scrollback_offset: usize,
+    /// A conservative lower bound derived only from observed line-feed bytes.
+    pub dropped_line_feeds_lower_bound: u64,
     pub cursor: (u16, u16),
     pub modes: TerminalModes,
     pub cells: Vec<TerminalCell>,
@@ -67,6 +69,7 @@ pub struct TerminalSnapshot {
 
 pub struct TerminalEmulator {
     parser: vt100::Parser,
+    observed_line_feeds: u64,
 }
 
 impl TerminalEmulator {
@@ -83,6 +86,7 @@ impl TerminalEmulator {
         }
         Ok(Self {
             parser: vt100::Parser::new(dimensions.rows, dimensions.columns, scrollback_lines),
+            observed_line_feeds: 0,
         })
     }
 
@@ -91,6 +95,9 @@ impl TerminalEmulator {
             return Err(TerminalEmulationError::FeedTooLarge(bytes.len()));
         }
         self.parser.process(bytes);
+        self.observed_line_feeds = self
+            .observed_line_feeds
+            .saturating_add(bytes.iter().filter(|byte| **byte == b'\n').count() as u64);
         Ok(())
     }
 
@@ -116,7 +123,7 @@ impl TerminalEmulator {
         self.parser
             .screen_mut()
             .set_scrollback(scrollback_offset.min(maximum));
-        let snapshot = snapshot_screen(self.parser.screen(), maximum)?;
+        let snapshot = snapshot_screen(self.parser.screen(), maximum, self.observed_line_feeds)?;
         self.parser.screen_mut().set_scrollback(prior.min(maximum));
         Ok(snapshot)
     }
@@ -125,6 +132,7 @@ impl TerminalEmulator {
 fn snapshot_screen(
     screen: &vt100::Screen,
     max_scrollback_offset: usize,
+    observed_line_feeds: u64,
 ) -> Result<TerminalSnapshot, TerminalEmulationError> {
     let (rows, columns) = screen.size();
     let dimensions = PtyDimensions { columns, rows };
@@ -162,6 +170,8 @@ fn snapshot_screen(
         dimensions,
         scrollback_offset: screen.scrollback(),
         max_scrollback_offset,
+        dropped_line_feeds_lower_bound: observed_line_feeds
+            .saturating_sub(max_scrollback_offset as u64 + u64::from(rows)),
         cursor: screen.cursor_position(),
         modes: modes(screen),
         cells,

@@ -456,6 +456,33 @@ pub struct ClientDaemonPtySummary {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ClientDaemonPtyDetails {
+    pub id: u64,
+    pub kind: ClientDaemonPtyKind,
+    pub cwd: String,
+    pub columns: u16,
+    pub rows: u16,
+    pub writer: Option<[u8; 16]>,
+    pub writer_epoch: u64,
+    pub exit_code: Option<i32>,
+    pub restartable: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClientDaemonPtyKind {
+    BuildShell,
+    SourceShell,
+    LayerShell,
+    RecipeShell,
+    DevtoolShell,
+    Devshell,
+    Menuconfig,
+    SdkShell,
+    NativeShell,
+    Utility,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClientDaemonPtyScreen {
     pub session_id: u64,
     pub columns: u16,
@@ -467,6 +494,7 @@ pub struct ClientDaemonPtyScreen {
     pub rows: Vec<String>,
     pub cells: Vec<ClientDaemonTerminalCell>,
     pub scrollback_lines: u32,
+    pub dropped_line_feeds_lower_bound: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -510,6 +538,7 @@ pub struct ClientDaemonView {
     pub bitbake: ClientDaemonLifecycle,
     pub jobs: Vec<ClientDaemonJobSummary>,
     pub pty_sessions: Vec<ClientDaemonPtySummary>,
+    pub pty_details: Vec<ClientDaemonPtyDetails>,
     pub pty_screens: Vec<ClientDaemonPtyScreen>,
     pub connected_clients: usize,
     pub recent_logs: Vec<String>,
@@ -527,6 +556,7 @@ impl Default for ClientDaemonView {
             bitbake: ClientDaemonLifecycle::Disconnected,
             jobs: Vec::new(),
             pty_sessions: Vec::new(),
+            pty_details: Vec::new(),
             pty_screens: Vec::new(),
             connected_clients: 0,
             recent_logs: Vec::new(),

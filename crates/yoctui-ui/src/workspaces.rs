@@ -36,6 +36,7 @@ pub(super) fn workspace(
         Screen::Configuration => config(frame, app, area),
         Screen::Bbmask => bbmask(frame, app, area),
         Screen::RawMode => raw_mode_workspace(frame, app, area, terminal_width),
+        Screen::TerminalSessions => terminal_sessions_workspace(frame, app, area),
         Screen::Maintenance => maintenance_workspace(frame, app, area),
         Screen::Compatibility => compatibility_workspace(frame, app, area),
         Screen::Help => help(frame, app, area),

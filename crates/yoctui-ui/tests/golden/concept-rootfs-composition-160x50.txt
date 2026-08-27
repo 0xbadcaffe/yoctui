@@ -21,13 +21,13 @@
 │  ? QA              ││base-system-001               base-system                 520000   ││                                                                   │
 │▾ TOOLS             ││   4                                                               ││Selected group: base system                                        │
 │  ? Raw Mode        ││base-system-002               base-system                 520000   ││Selected package: base-system-000                                  │
-│  ? Devtool         ││   5                                                               ││Recipe: base-system                                                │
-│  ? QEMU / Wic      ││base-system-003               base-system                 520000   ││Category: base system                                              │
-│  ? Maintenance     ││   6                                                               ││Installed bytes: 520000                                            │
-│  ▱ Build environmen││base-system-004               base-system                 520000   ││Reported files: 3                                                  │
-│  ▱ Compatibility   ││   7                                                               ││                                                                   │
-│  ▱ Settings        ││base-system-005               base-system                 520000   ││Limitations                                                        │
-│                    ││   8                                                               ││! package ownership is partial                                     │
+│  ? Terminal Session││   5                                                               ││Recipe: base-system                                                │
+│  ? Devtool         ││base-system-003               base-system                 520000   ││Category: base system                                              │
+│  ? QEMU / Wic      ││   6                                                               ││Installed bytes: 520000                                            │
+│  ? Maintenance     ││base-system-004               base-system                 520000   ││Reported files: 3                                                  │
+│  ▱ Build environmen││   7                                                               ││                                                                   │
+│  ▱ Compatibility   ││base-system-005               base-system                 520000   ││Limitations                                                        │
+│  ▱ Settings        ││   8                                                               ││! package ownership is partial                                     │
 │                    ││base-system-006               base-system                 520000   ││                                                                   │
 │                    ││   9                                                               ││▾ RELATED PATHS                                                    │
 │                    ││base-system-007               base-system                 520000   ││/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-mini│

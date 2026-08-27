@@ -21,13 +21,13 @@
 │  ? QA              ││                                                                   ││- Inspect the recipe task and its metadata.                        │
 │▾ TOOLS             ││                                                                   ││                                                                   │
 │  ? Raw Mode        ││                                                                   ││Related diagnostics:                                               │
-│  ? Devtool         ││                                                                   ││none                                                               │
-│  ? QEMU / Wic      ││                                                                   ││                                                                   │
-│  ? Maintenance     ││                                                                   ││▾ RELATED PATHS                                                    │
-│  ▱ Build environmen││                                                                   ││/home/user/yocto/build/tmp/log.do_compile.85873                    │
-│  ▱ Compatibility   ││                                                                   ││                                                                   │
-│  ▱ Settings        ││                                                                   ││▾ CONTEXTUAL ACTIONS                                               │
-│                    ││                                                                   ││✓ Inspect retained diagnostic source  [Enter/o] — Local            │
+│  ? Terminal Session││                                                                   ││none                                                               │
+│  ? Devtool         ││                                                                   ││                                                                   │
+│  ? QEMU / Wic      ││                                                                   ││▾ RELATED PATHS                                                    │
+│  ? Maintenance     ││                                                                   ││/home/user/yocto/build/tmp/log.do_compile.85873                    │
+│  ▱ Build environmen││                                                                   ││                                                                   │
+│  ▱ Compatibility   ││                                                                   ││▾ CONTEXTUAL ACTIONS                                               │
+│  ▱ Settings        ││                                                                   ││✓ Inspect retained diagnostic source  [Enter/o] — Local            │
 │                    ││                                                                   ││                                                                   │
 │                    ││                                                                   ││                                                                   │
 │                    ││                                                                   ││                                                                   │

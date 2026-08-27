@@ -2638,6 +2638,61 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                         outcome,
                     }))?;
                 }
+                Ok(ClientMessage::PtyViewport(viewport)) if negotiated && attached => {
+                    let outcome = if viewport.scrollback_offset as usize
+                        > yoctui_protocol::daemon::MAX_TERMINAL_SCROLLBACK_LINES
+                    {
+                        CommandOutcome::Rejected {
+                            code: yoctui_protocol::daemon::ProtocolErrorCode::LimitExceeded,
+                            message: "PTY scrollback offset exceeds the protocol limit".into(),
+                            current_generation: daemon_journal.snapshot().generation,
+                        }
+                    } else {
+                        match pty_supervisor.snapshot(
+                            yoctui_model::PtySessionId(viewport.session_id.0),
+                            viewport.scrollback_offset as usize,
+                        ) {
+                            Ok(screen) => {
+                                let event = daemon_journal
+                                    .publish(yoctui_protocol::daemon::DaemonEvent::PtyScreen(
+                                        screen,
+                                    ))?;
+                                connection.send(&ServerMessage::Event(event))?;
+                                CommandOutcome::Accepted
+                            }
+                            Err(message) => CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                message,
+                                current_generation: daemon_journal.snapshot().generation,
+                            },
+                        }
+                    };
+                    connection.send(&ServerMessage::CommandResult(CommandResult {
+                        request_id: viewport.request_id,
+                        outcome,
+                    }))?;
+                }
+                Ok(ClientMessage::Layout { event }) if negotiated && attached => {
+                    use yoctui_protocol::daemon::ClientLayoutEvent;
+                    match event {
+                        ClientLayoutEvent::AttachSession { session_id, .. } => {
+                            let _ = pty_supervisor.attach(
+                                yoctui_model::PtySessionId(session_id.0),
+                                yoctui_model::PtyClientId(client_id.0),
+                            );
+                        }
+                        ClientLayoutEvent::DetachSession { session_id, .. } => {
+                            let _ = pty_supervisor.detach(
+                                yoctui_model::PtySessionId(session_id.0),
+                                yoctui_model::PtyClientId(client_id.0),
+                            );
+                        }
+                        ClientLayoutEvent::FocusWriter { .. } => {
+                            // Writer acquisition remains an epoch-checked command; layout focus
+                            // can never bypass the single-writer lease.
+                        }
+                    }
+                }
                 Ok(ClientMessage::Command(request))
                     if matches!(request.command, DaemonCommand::PrepareShutdown) =>
                 {
@@ -3085,15 +3140,15 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             cwd,
                             command,
                             dimensions,
-                        } => match pty_supervisor.start_new(name, kind, cwd, command, dimensions) {
+                        } => match pty_supervisor.start_new(name.clone(), kind, cwd.clone(), command, dimensions) {
                             Ok(session_id) => {
                                 let event = daemon_journal.publish(
                                     yoctui_protocol::daemon::DaemonEvent::PtyChanged(
                                         yoctui_protocol::daemon::PtySessionSummary {
                                             id: yoctui_protocol::daemon::PtySessionId(session_id.0),
-                                            name: "starting".into(),
-                                            kind: yoctui_protocol::daemon::PtyKind::Utility,
-                                            cwd: String::new(),
+                                            name,
+                                            kind,
+                                            cwd,
                                             lifecycle: yoctui_protocol::daemon::LifecycleState::Connecting,
                                             dimensions,
                                             writer: None,
@@ -3133,7 +3188,14 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                 current_generation: daemon_journal.snapshot().generation,
                             },
                         },
-                        DaemonCommand::TerminatePty { session_id, .. } => {
+                        DaemonCommand::TerminatePty { session_id, force, .. } => {
+                            if !force {
+                                CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::ConfirmationRequired,
+                                    message: "PTY termination requires an explicit confirmed force request".into(),
+                                    current_generation: daemon_journal.snapshot().generation,
+                                }
+                            } else {
                             if let Some(daemon_raw::DaemonRawCancel::Pty { state, .. }) =
                                 raw_supervisor.cancel_pty(yoctui_model::PtySessionId(session_id.0))?
                             {
@@ -3155,12 +3217,67 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                     current_generation: daemon_journal.snapshot().generation,
                                 },
                             }
+                            }
                         }
-                        DaemonCommand::RenamePty { .. } => CommandOutcome::Rejected {
-                            code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
-                            message: "PTY rename is not yet exposed by the daemon runner".into(),
-                            current_generation: daemon_journal.snapshot().generation,
-                        },
+                        DaemonCommand::RenamePty { session_id, name } => {
+                            match pty_supervisor.rename(
+                                yoctui_model::PtySessionId(session_id.0),
+                                name,
+                            ) {
+                                Ok(()) => CommandOutcome::Accepted,
+                                Err(message) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                                    message,
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            }
+                        }
+                        DaemonCommand::ClosePty { session_id } => {
+                            let terminal = daemon_journal
+                                .snapshot()
+                                .pty_sessions
+                                .iter()
+                                .find(|terminal| terminal.id == session_id);
+                            if terminal.is_none() {
+                                CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                    message: format!("unknown PTY session {}", session_id.0),
+                                    current_generation: daemon_journal.snapshot().generation,
+                                }
+                            } else if terminal.is_some_and(|terminal| {
+                                matches!(
+                                    terminal.lifecycle,
+                                    yoctui_protocol::daemon::LifecycleState::Connecting
+                                        | yoctui_protocol::daemon::LifecycleState::Running
+                                        | yoctui_protocol::daemon::LifecycleState::Stopping
+                                )
+                            }) {
+                                CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::ConfirmationRequired,
+                                    message: "running PTY must be explicitly terminated before close".into(),
+                                    current_generation: daemon_journal.snapshot().generation,
+                                }
+                            } else {
+                                match pty_supervisor
+                                    .close(yoctui_model::PtySessionId(session_id.0))
+                                {
+                                    Ok(()) => {
+                                        let event = daemon_journal.publish(
+                                            yoctui_protocol::daemon::DaemonEvent::PtyRemoved {
+                                                session_id,
+                                            },
+                                        )?;
+                                        connection.send(&ServerMessage::Event(event))?;
+                                        CommandOutcome::Accepted
+                                    }
+                                    Err(message) => CommandOutcome::Rejected {
+                                        code: yoctui_protocol::daemon::ProtocolErrorCode::NotFound,
+                                        message,
+                                        current_generation: daemon_journal.snapshot().generation,
+                                    },
+                                }
+                            }
+                        }
                         _ => CommandOutcome::Rejected {
                             code: yoctui_protocol::daemon::ProtocolErrorCode::UnsupportedCapability,
                             message: "daemon command is not implemented by this runtime".into(),
@@ -10181,6 +10298,15 @@ async fn tui(
         if event::poll(refresh)? {
             let terminal_event = event::read()?;
             if let Event::Paste(text) = terminal_event {
+                if app.screen == Screen::TerminalSessions
+                    && app.active_dialog().is_none()
+                    && !app.menu.is_open()
+                    && !app.command_palette_open
+                {
+                    let _ =
+                        compatibility_workspace_action(&mut app, Action::TerminalStagePaste(text));
+                    continue;
+                }
                 if active_popup_accepts_paste(&app) {
                     let _ = compatibility_workspace_action(
                         &mut app,
@@ -10330,7 +10456,7 @@ async fn tui(
                     match prefix_state.feed(input, Instant::now()) {
                         PrefixEvent::Awaiting => {
                             app.notification = Some(
-                                "Prefix Ctrl+B: c create | n/p session | %/\" split | d detach | : palette | ? help"
+                                "Prefix Ctrl+B: t terminals | c create | n/p session | %/\" split | z zoom | [ copy | / search | d detach | : palette | ? help"
                                     .into(),
                             );
                             continue;
@@ -10351,9 +10477,34 @@ async fn tui(
                                 }
                             }
                             if command == PrefixCommand::Detach
-                                && let Some(runtime) = daemon_runtime.take()
+                                && let Some(runtime) = daemon_runtime.as_mut()
+                                && let Err(error) = runtime.detach_terminal(&app)
                             {
-                                let _ = runtime.detach(&mut app);
+                                app.notification = Some(format!("Terminal detach failed: {error}"));
+                            }
+                            if command == PrefixCommand::OpenTerminalSessions {
+                                let _ = compatibility_workspace_action(
+                                    &mut app,
+                                    Action::Open(Screen::TerminalSessions),
+                                );
+                            }
+                            let terminal_action = match command {
+                                PrefixCommand::CopyMode => Some(Action::TerminalEnterCopyMode),
+                                PrefixCommand::Search => Some(Action::TerminalBeginSearch),
+                                PrefixCommand::Rename => Some(Action::TerminalBeginRename),
+                                PrefixCommand::ReleaseControl => {
+                                    Some(Action::TerminalReleaseControl)
+                                }
+                                PrefixCommand::Kill => Some(Action::TerminalBeginKill),
+                                PrefixCommand::Zoom => Some(Action::TogglePaneZoom),
+                                _ => None,
+                            };
+                            if let Some(action) = terminal_action
+                                && let Some(effect @ Effect::Terminal(_)) =
+                                    compatibility_workspace_action(&mut app, action)
+                            {
+                                let _ =
+                                    submit_daemon_effect(&mut daemon_runtime, &mut app, &effect);
                             }
                             if command == PrefixCommand::NextSession {
                                 let _ = compatibility_workspace_action(
@@ -10400,10 +10551,12 @@ async fn tui(
                                     "Command palette opened".into()
                                 }
                                 PrefixCommand::Help => {
-                                    let _ = compatibility_workspace_action(
-                                        &mut app,
-                                        Action::Open(Screen::Help),
-                                    );
+                                    let action = if app.screen == Screen::TerminalSessions {
+                                        Action::TerminalToggleHelp
+                                    } else {
+                                        Action::Open(Screen::Help)
+                                    };
+                                    let _ = compatibility_workspace_action(&mut app, action);
                                     "Help opened".into()
                                 }
                                 PrefixCommand::CreateSession => {
@@ -10420,6 +10573,17 @@ async fn tui(
                                 PrefixCommand::ClosePane => "Terminal pane close requested".into(),
                                 PrefixCommand::Detach => "Detached from terminal session".into(),
                                 PrefixCommand::TakeControl => "PTY writer control requested".into(),
+                                PrefixCommand::OpenTerminalSessions => {
+                                    "Terminal Sessions opened".into()
+                                }
+                                PrefixCommand::CopyMode => "Terminal copy mode opened".into(),
+                                PrefixCommand::Search => "Terminal search opened".into(),
+                                PrefixCommand::Rename => "Terminal rename opened".into(),
+                                PrefixCommand::ReleaseControl => {
+                                    "Terminal writer release requested".into()
+                                }
+                                PrefixCommand::Kill => "Terminal kill confirmation opened".into(),
+                                PrefixCommand::Zoom => "Terminal pane zoom toggled".into(),
                             });
                             continue;
                         }
@@ -11881,6 +12045,42 @@ async fn tui(
                         }
                         _ => {}
                     }
+                } else if app.screen == Screen::TerminalSessions {
+                    let terminal_action = if replayed_context_action {
+                        yoctui_app::terminal_context_action(input)
+                    } else {
+                        yoctui_app::terminal_workspace_action(&app, input)
+                    };
+                    if let Some(action) = terminal_action {
+                        match compatibility_workspace_action(&mut app, action) {
+                            Some(effect @ Effect::Terminal(_)) => {
+                                let _ =
+                                    submit_daemon_effect(&mut daemon_runtime, &mut app, &effect);
+                            }
+                            Some(Effect::CopyToClipboard(content)) => {
+                                copy_to_clipboard(&mut app, content).await;
+                            }
+                            _ => {}
+                        }
+                    } else if app.selected_terminal_is_writer() {
+                        if let (Some(bytes), Some(session), Some(details)) = (
+                            terminal_input_bytes(input),
+                            app.selected_terminal_session(),
+                            app.selected_terminal_details(),
+                        ) {
+                            let effect = Effect::Terminal(yoctui_model::TerminalEffect::Input {
+                                session_id: session.id,
+                                writer_epoch: details.writer_epoch,
+                                bytes,
+                            });
+                            let _ = submit_daemon_effect(&mut daemon_runtime, &mut app, &effect);
+                        }
+                    } else {
+                        app.notification = Some(
+                            "Terminal is read-only; press o or Ctrl+B o to take writer control."
+                                .into(),
+                        );
+                    }
                 } else if let Some(action) = notification_input_action(
                     app.notification.is_some(),
                     app.screen == Screen::Settings && app.settings_dirty,
@@ -13117,6 +13317,45 @@ fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::PageDown => Some(Input::PageDown),
         _ => None,
     }
+}
+
+fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
+    let bytes = match input {
+        Input::Char(character) => {
+            let mut buffer = [0; 4];
+            return Some(character.encode_utf8(&mut buffer).as_bytes().to_vec());
+        }
+        Input::Enter => b"\r".as_slice(),
+        Input::CtrlC => b"\x03".as_slice(),
+        Input::CtrlV => b"\x16".as_slice(),
+        Input::CtrlB => b"\x02".as_slice(),
+        Input::CtrlP => b"\x10".as_slice(),
+        Input::CtrlU => b"\x15".as_slice(),
+        Input::CtrlS => b"\x13".as_slice(),
+        Input::Tab => b"\t".as_slice(),
+        Input::BackTab => b"\x1b[Z".as_slice(),
+        Input::Esc => b"\x1b".as_slice(),
+        Input::Backspace => b"\x7f".as_slice(),
+        Input::Up => b"\x1b[A".as_slice(),
+        Input::Down => b"\x1b[B".as_slice(),
+        Input::Right => b"\x1b[C".as_slice(),
+        Input::Left => b"\x1b[D".as_slice(),
+        Input::Home => b"\x1b[H".as_slice(),
+        Input::End => b"\x1b[F".as_slice(),
+        Input::PageUp => b"\x1b[5~".as_slice(),
+        Input::PageDown => b"\x1b[6~".as_slice(),
+        Input::F1 => b"\x1bOP".as_slice(),
+        Input::F2 => b"\x1bOQ".as_slice(),
+        Input::F3 => b"\x1bOR".as_slice(),
+        Input::F4 => b"\x1bOS".as_slice(),
+        Input::F5 => b"\x1b[15~".as_slice(),
+        Input::F6 => b"\x1b[17~".as_slice(),
+        Input::F7 => b"\x1b[18~".as_slice(),
+        Input::F8 => b"\x1b[19~".as_slice(),
+        Input::F9 => b"\x1b[20~".as_slice(),
+        Input::F10 => b"\x1b[21~".as_slice(),
+    };
+    Some(bytes.to_vec())
 }
 
 #[cfg(test)]
@@ -19623,5 +19862,21 @@ esac"#,
             );
             assert_eq!(decision.transport, transport);
         }
+    }
+
+    #[test]
+    fn ux_terminal_cli_encodes_exact_pty_bytes_including_literal_prefix() {
+        assert_eq!(
+            terminal_input_bytes(Input::Char('界')),
+            Some("界".as_bytes().to_vec())
+        );
+        assert_eq!(terminal_input_bytes(Input::Enter), Some(b"\r".to_vec()));
+        assert_eq!(terminal_input_bytes(Input::CtrlB), Some(vec![0x02]));
+        assert_eq!(terminal_input_bytes(Input::Up), Some(b"\x1b[A".to_vec()));
+        assert_eq!(
+            terminal_input_bytes(Input::BackTab),
+            Some(b"\x1b[Z".to_vec())
+        );
+        assert_eq!(terminal_input_bytes(Input::F10), Some(b"\x1b[21~".to_vec()));
     }
 }

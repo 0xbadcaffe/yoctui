@@ -3073,8 +3073,8 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 125 validated definitions: 25
-global command targets and 100 contextual workspace targets. `OperatorActionId`
+`yoctui-model::action_catalog` now supplies 127 validated definitions: 26
+global command targets and 101 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
 requirement, safety, footer priority, Help group, and typed target travel

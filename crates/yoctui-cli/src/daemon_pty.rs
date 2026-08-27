@@ -11,7 +11,8 @@ use yoctui_model::{
     PtyWorkspaceContext,
 };
 use yoctui_protocol::daemon::{
-    MAX_DAEMON_PTY_SESSIONS, MAX_PTY_OUTPUT_EVENT_BYTES, PtyCommand, PtyKind, TerminalDimensions,
+    MAX_DAEMON_PTY_SESSIONS, MAX_PTY_INPUT_BYTES, MAX_PTY_OUTPUT_EVENT_BYTES, PtyCommand, PtyKind,
+    TerminalDimensions,
 };
 
 use crate::pty_attach::{DaemonPtySession, PtyAttachEvent};
@@ -28,6 +29,8 @@ enum Control {
     Release(PtyClientId, u64),
     Input(PtyClientId, u64, Vec<u8>),
     Resize(PtyClientId, u64, PtyDimensions),
+    Snapshot(usize),
+    Rename(String),
     Terminate,
 }
 
@@ -35,6 +38,7 @@ enum Control {
 enum Response {
     Epoch(u64),
     Unit,
+    Screen(Box<yoctui_protocol::daemon::PtyScreenSnapshot>),
 }
 
 type ControlReply = SyncSender<Result<Response, String>>;
@@ -248,6 +252,8 @@ impl DaemonPtySupervisor {
                             Control::Release(client, epoch) => session.release_control(client, epoch).map(|_| Response::Unit),
                             Control::Input(client, epoch, bytes) => session.input(client, epoch, &bytes).await.map(|_| Response::Unit),
                             Control::Resize(client, epoch, dimensions) => session.resize(client, epoch, dimensions).map(|_| Response::Unit),
+                            Control::Snapshot(offset) => session.snapshot(offset).map(|snapshot| Response::Screen(Box::new(terminal_to_wire(session_id, &snapshot.terminal)))),
+                            Control::Rename(name) => session.rename(name).map(|_| Response::Unit),
                             Control::Terminate => unreachable!("handled above"),
                         };
                         let _ = response.send(result.map_err(|error| error.to_string()));
@@ -310,6 +316,7 @@ impl DaemonPtySupervisor {
         match self.request(id, Control::Take(client, epoch))? {
             Response::Epoch(epoch) => Ok(epoch),
             Response::Unit => Err("PTY did not return a writer epoch".into()),
+            Response::Screen(_) => Err("PTY returned a screen instead of a writer epoch".into()),
         }
     }
     pub fn release(&self, id: PtySessionId, client: PtyClientId, epoch: u64) -> Result<(), String> {
@@ -323,6 +330,11 @@ impl DaemonPtySupervisor {
         epoch: u64,
         bytes: Vec<u8>,
     ) -> Result<(), String> {
+        if bytes.is_empty() || bytes.len() > MAX_PTY_INPUT_BYTES {
+            return Err(format!(
+                "PTY input must contain 1..={MAX_PTY_INPUT_BYTES} bytes"
+            ));
+        }
         self.request(id, Control::Input(client, epoch, bytes))
             .map(|_| ())
     }
@@ -338,6 +350,27 @@ impl DaemonPtySupervisor {
     }
     pub fn terminate(&self, id: PtySessionId) -> Result<(), String> {
         self.request(id, Control::Terminate).map(|_| ())
+    }
+    pub fn snapshot(
+        &self,
+        id: PtySessionId,
+        scrollback_offset: usize,
+    ) -> Result<yoctui_protocol::daemon::PtyScreenSnapshot, String> {
+        match self.request(id, Control::Snapshot(scrollback_offset))? {
+            Response::Screen(screen) => Ok(*screen),
+            Response::Epoch(_) | Response::Unit => {
+                Err("PTY did not return a terminal screen".into())
+            }
+        }
+    }
+    pub fn rename(&self, id: PtySessionId, name: String) -> Result<(), String> {
+        self.request(id, Control::Rename(name)).map(|_| ())
+    }
+    pub fn close(&mut self, id: PtySessionId) -> Result<(), String> {
+        self.sessions
+            .remove(&id)
+            .map(|_| ())
+            .ok_or_else(|| format!("unknown PTY session {}", id.0))
     }
     pub fn disconnect_client(&self, client: PtyClientId) {
         for id in self.sessions.keys().copied().collect::<Vec<_>>() {
@@ -443,7 +476,7 @@ fn snapshot_to_wire(
             PtySessionKind::NativeShell => PtyKind::NativeShell,
             PtySessionKind::InteractiveTool | PtySessionKind::DeployShell => PtyKind::Utility,
         },
-        cwd: String::new(),
+        cwd: listing.cwd.display().to_string(),
         lifecycle: match listing.lifecycle {
             crate::pty_attach::PtyAttachLifecycle::Running => {
                 yoctui_protocol::daemon::LifecycleState::Running
@@ -468,7 +501,7 @@ fn snapshot_to_wire(
             yoctui_model::PtyExitStatus::Code(code) => Some(code),
             yoctui_model::PtyExitStatus::Signal(_) => None,
         }),
-        restartable: true,
+        restartable: listing.restartable,
     }
 }
 
@@ -507,6 +540,7 @@ fn terminal_to_wire(
         scrollback_offset: terminal.scrollback_offset.min(u32::MAX as usize) as u32,
         cells,
         scrollback_lines: terminal.max_scrollback_offset.min(u32::MAX as usize) as u32,
+        dropped_line_feeds_lower_bound: terminal.dropped_line_feeds_lower_bound,
     }
 }
 

@@ -988,6 +988,9 @@ fn footer_shortcuts(app: &App) -> String {
                 "←/→ Pane | ↑/↓ Select | Enter Open | / Search | f Favorite | H History | Tab Focus | F1 Help | F10 Menu | q Quit"
             }
         }
+        Screen::TerminalSessions => {
+            "Ctrl+B prefix | [ copy | / search | r rename | O release | K confirmed kill | z zoom | paste review | o take (viewer)"
+        }
         Screen::Layers => {
             "↑/↓ select | Enter browse | i image | R relationships | e in-TUI edit | o external editor | / search | Esc dashboard | ? help | q quit"
         }
@@ -1115,6 +1118,10 @@ fn current_search_state(app: &App) -> Option<(bool, bool)> {
         Screen::RawMode => (
             app.raw_mode.search.editing,
             !app.raw_mode.search.query.is_empty(),
+        ),
+        Screen::TerminalSessions => (
+            app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Search,
+            !app.terminal.query.is_empty(),
         ),
         Screen::Compatibility => (
             app.compatibility_ui.searching,
@@ -2944,6 +2951,179 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    if app.daemon.pty_sessions.is_empty() {
+        let state = match app.daemon.status {
+            yoctui_model::ClientReplicaStatus::Current => {
+                "No daemon terminal sessions are active.\n\nCtrl+B c creates a build shell. Context actions can open devshell, menuconfig, SDK, Devtool, and Raw sessions."
+            }
+            yoctui_model::ClientReplicaStatus::Synchronizing => {
+                "Synchronizing terminal sessions with the daemon…"
+            }
+            yoctui_model::ClientReplicaStatus::Stale => {
+                "Terminal session state is stale. Reconnect before creating or controlling a process."
+            }
+            yoctui_model::ClientReplicaStatus::Disconnected => {
+                "Daemon disconnected. Retained terminal identities are unavailable until reconnect."
+            }
+        };
+        frame.render_widget(
+            Paragraph::new(state)
+                .block(pane_block(
+                    app,
+                    "Terminal Sessions · daemon-owned",
+                    app.focus == FocusTarget::Workspace,
+                ))
+                .wrap(Wrap { trim: false }),
+            area,
+        );
+        return;
+    }
+
+    let regions = Layout::vertical([
+        Constraint::Length(2),
+        Constraint::Length(1),
+        Constraint::Min(1),
+    ])
+    .split(area);
+    let tabs = app
+        .daemon
+        .pty_sessions
+        .iter()
+        .enumerate()
+        .map(|(index, session)| {
+            let marker = if index == app.pty_selection {
+                "▶"
+            } else {
+                " "
+            };
+            format!(
+                "{marker} {}:{} [{:?}]",
+                session.id, session.name, session.lifecycle
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("  │  ");
+    frame.render_widget(
+        Paragraph::new(bounded_cell_text(&tabs, regions[0].width.saturating_sub(2)))
+            .block(
+                Block::default()
+                    .borders(Borders::BOTTOM)
+                    .title(" Terminal Sessions "),
+            )
+            .style(palette.role(palette.secondary_foreground, Modifier::BOLD)),
+        regions[0],
+    );
+
+    let selected = app.selected_terminal_session();
+    let screen = app.selected_terminal_screen();
+    let details = app.selected_terminal_details();
+    let access = selected.map_or("unavailable", |_| {
+        if app.daemon.status != yoctui_model::ClientReplicaStatus::Current {
+            return "RETAINED READ-ONLY · reconnect for control";
+        }
+        if app.selected_terminal_is_writer() {
+            "WRITER"
+        } else if details.is_some_and(|details| details.writer.is_some()) {
+            "READ-ONLY · writer held by another client"
+        } else {
+            "VIEWER · writer available (o takes control)"
+        }
+    });
+    let hits = if app.terminal.query.is_empty() {
+        0
+    } else {
+        screen.map_or(0, |screen| {
+            let query = app.terminal.query.to_lowercase();
+            screen
+                .rows
+                .iter()
+                .filter(|row| row.to_lowercase().contains(&query))
+                .count()
+        })
+    };
+    let replica = match app.daemon.status {
+        yoctui_model::ClientReplicaStatus::Current => "CURRENT",
+        yoctui_model::ClientReplicaStatus::Synchronizing => "RECONNECTING",
+        yoctui_model::ClientReplicaStatus::Stale => "STALE",
+        yoctui_model::ClientReplicaStatus::Disconnected => "DISCONNECTED",
+    };
+    let mode = match app.terminal.mode {
+        yoctui_model::TerminalWorkbenchMode::Live => {
+            let mut status = format!(
+                "{replica} · LIVE · {access} · scrollback {}",
+                app.terminal.scrollback_offset
+            );
+            if let Some(dropped) = screen
+                .map(|screen| screen.dropped_line_feeds_lower_bound)
+                .filter(|dropped| *dropped > 0)
+            {
+                status.push_str(&format!(" · dropped line-feeds ≥ {dropped}"));
+            }
+            status
+        }
+        yoctui_model::TerminalWorkbenchMode::Copy => format!(
+            "COPY · row {} · ↑/↓ select · y/Enter copy · Esc live",
+            app.terminal.copy_row.saturating_add(1)
+        ),
+        yoctui_model::TerminalWorkbenchMode::Search => format!(
+            "SEARCH · {}▏ · {hits} visible match(es) · Enter/Esc finish",
+            if app.terminal.query.is_empty() {
+                "<empty>"
+            } else {
+                app.terminal.query.as_str()
+            }
+        ),
+        yoctui_model::TerminalWorkbenchMode::Rename => {
+            format!(
+                "RENAME · {}▏ · Enter save · Esc cancel",
+                app.terminal.rename
+            )
+        }
+        yoctui_model::TerminalWorkbenchMode::PasteReview => format!(
+            "PASTE REVIEW · {} bytes / {} line(s) · Enter send to writer · Esc cancel",
+            app.terminal.pending_paste.len(),
+            app.terminal
+                .pending_paste
+                .iter()
+                .filter(|byte| **byte == b'\n')
+                .count()
+                + 1
+        ),
+        yoctui_model::TerminalWorkbenchMode::KillConfirmation => {
+            "KILL CONFIRMATION · terminate the selected process group? Enter confirm · Esc cancel"
+                .into()
+        }
+        yoctui_model::TerminalWorkbenchMode::Help => {
+            "PREFIX HELP · Esc/? close · terminal input is paused while help is open".into()
+        }
+    };
+    frame.render_widget(
+        Paragraph::new(bounded_cell_text(&mode, regions[1].width)).style(match app.terminal.mode {
+            yoctui_model::TerminalWorkbenchMode::KillConfirmation
+            | yoctui_model::TerminalWorkbenchMode::PasteReview => {
+                palette.role(palette.warning, Modifier::BOLD)
+            }
+            _ => palette.role(palette.informational, Modifier::BOLD),
+        }),
+        regions[1],
+    );
+
+    if app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Help {
+        frame.render_widget(
+            Paragraph::new(
+                "Ctrl+B t  open Terminal Sessions\nCtrl+B c  create build shell\nCtrl+B n/p  next/previous session\nCtrl+B % / \"  horizontal/vertical split\nCtrl+B z  zoom focused pane\nCtrl+B x  close pane (process keeps running)\nCtrl+B d  detach client (process keeps running)\nCtrl+B o/O  take/release writer control\nCtrl+B [  copy mode · Ctrl+B / search\nCtrl+B r  rename · Ctrl+B K confirmed kill\nCtrl+B Ctrl+B  send literal Ctrl+B\n\nWriter mode forwards ordinary characters and terminal keys verbatim. Paste always pauses for bounded review. Viewers can use the visible direct shortcuts because they cannot send PTY input.\n\nOnly the current daemon writer lease can send keyboard, paste, mouse, or resize input. Retained and remote-writer replicas remain read-only.",
+            )
+            .block(pane_block(app, "Terminal keyboard help", true))
+            .wrap(Wrap { trim: false }),
+            regions[2],
+        );
+    } else {
+        terminal_session_panes(frame, app, regions[2]);
+    }
+}
+
 fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
     let layout = &app.pane_layout;
     let mut panes = Vec::new();
@@ -2959,6 +3139,12 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 .iter()
                 .find(|screen| screen.session_id == session.id)
         });
+        let details = session.and_then(|session| {
+            app.daemon
+                .pty_details
+                .iter()
+                .find(|details| details.id == session.id)
+        });
         let block = pane_block(app, &title, index == app.pty_selection);
         let inner = block.inner(rect);
         frame.render_widget(block, rect);
@@ -2966,10 +3152,27 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
         let status = session.map_or_else(
             || "No PTY session".into(),
             |session| {
+                let access = if app.terminal.client_id.is_some()
+                    && details.is_some_and(|details| details.writer == app.terminal.client_id)
+                {
+                    "writer"
+                } else if details.is_some_and(|details| details.writer.is_some()) {
+                    "read-only"
+                } else {
+                    "viewer"
+                };
                 format!(
-                    "{} viewer(s) | selection {}",
+                    "{:?} · {access} · {} viewer(s) · {}x{} · {}",
+                    details.map_or(yoctui_model::ClientDaemonPtyKind::Utility, |details| {
+                        details.kind
+                    }),
                     session.viewers,
-                    app.pty_selection + 1
+                    details.map_or(0, |details| details.columns),
+                    details.map_or(0, |details| details.rows),
+                    bounded_status_line(
+                        details.map_or_else(String::new, |details| details.cwd.clone()),
+                        32
+                    )
                 )
             },
         );
@@ -2991,6 +3194,111 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
             frame.render_widget(Paragraph::new(lines), regions[1]);
         }
     }
+}
+
+fn terminal_session_inspector_text(app: &App) -> String {
+    let Some(session) = app.selected_terminal_session() else {
+        return format!(
+            "Replica: {:?}\n\nNo terminal session is selected.",
+            app.daemon.status
+        );
+    };
+    let details = app.selected_terminal_details();
+    let role = if app.selected_terminal_is_writer() {
+        "Writer (keyboard/paste/resize enabled)"
+    } else if details.is_some_and(|details| details.writer.is_some()) {
+        "Read-only viewer (another client owns writer)"
+    } else {
+        "Viewer (writer lease available)"
+    };
+    let writer = details.and_then(|details| details.writer).map_or_else(
+        || "none".into(),
+        |id| {
+            id.iter()
+                .take(4)
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>()
+        },
+    );
+    let mut lines = vec![
+        format!("Session: {} ({})", session.name, session.id),
+        format!(
+            "Identity: {:?}",
+            details.map_or(yoctui_model::ClientDaemonPtyKind::Utility, |details| {
+                details.kind
+            })
+        ),
+        format!("Lifecycle: {:?}", session.lifecycle),
+        format!("Role: {role}"),
+        format!(
+            "Writer: {writer} · epoch {}",
+            details.map_or(0, |details| details.writer_epoch)
+        ),
+        format!("Viewers: {}", session.viewers),
+        format!(
+            "Dimensions: {}x{}",
+            details.map_or(0, |details| details.columns),
+            details.map_or(0, |details| details.rows)
+        ),
+        format!(
+            "Working directory: {}",
+            details.map_or("unavailable", |details| details.cwd.as_str())
+        ),
+        format!(
+            "Restartable: {}",
+            if details.is_some_and(|details| details.restartable) {
+                "yes"
+            } else {
+                "no"
+            }
+        ),
+        format!(
+            "Exit code: {}",
+            details
+                .and_then(|details| details.exit_code)
+                .map_or_else(|| "unavailable".into(), |code| code.to_string())
+        ),
+    ];
+    if let Some(screen) = app.selected_terminal_screen() {
+        lines.extend([
+            String::new(),
+            "Replica / history".into(),
+            format!("Viewport offset: {}", screen.scrollback_offset),
+            format!("Retained scrollback: {} lines", screen.scrollback_lines),
+            if screen.dropped_line_feeds_lower_bound == 0 {
+                "Dropped history: none observed".into()
+            } else {
+                format!(
+                    "Dropped history: at least {} observed line-feed(s)",
+                    screen.dropped_line_feeds_lower_bound
+                )
+            },
+            format!(
+                "Cursor: {},{} ({})",
+                screen.cursor_column,
+                screen.cursor_row,
+                if screen.cursor_hidden {
+                    "hidden"
+                } else {
+                    "visible"
+                }
+            ),
+        ]);
+    } else {
+        lines.extend([
+            String::new(),
+            "Screen replica unavailable; process identity and lifecycle remain authoritative."
+                .into(),
+        ]);
+    }
+    if matches!(session.lifecycle, yoctui_model::ClientDaemonLifecycle::Lost) {
+        lines.extend([
+            String::new(),
+            "Lost means the daemon cannot prove a live process remains attached. No automatic restart is implied."
+                .into(),
+        ]);
+    }
+    lines.join("\n")
 }
 
 fn collect_terminal_panes(
@@ -3322,7 +3630,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 21] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 22] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -3350,6 +3658,11 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         ("Security", Screen::Security, WorkspaceDestination::Security),
         ("QA", Screen::Qa, WorkspaceDestination::Qa),
         ("Raw Mode", Screen::RawMode, WorkspaceDestination::RawMode),
+        (
+            "Terminal Sessions",
+            Screen::TerminalSessions,
+            WorkspaceDestination::TerminalSessions,
+        ),
         ("Devtool", Screen::Recipes, WorkspaceDestination::Devtool),
         ("QEMU / Wic", Screen::Images, WorkspaceDestination::QemuWic),
         (
@@ -5247,6 +5560,7 @@ fn inspector(
         Screen::Security => security_inspector_text(app),
         Screen::Qa => qa_inspector_text(app),
         Screen::RawMode => raw_command_help_text(app),
+        Screen::TerminalSessions => terminal_session_inspector_text(app),
         Screen::Maintenance => maintenance_inspector_text(app),
         Screen::Compatibility => compatibility_inspector_text(app),
         _ => format!(
@@ -17216,8 +17530,9 @@ mod tests {
 
     fn concept_terminal_sessions_app() -> App {
         let mut app = concept_idle_dashboard_app();
-        app.screen = Screen::Dashboard;
+        app.screen = Screen::TerminalSessions;
         app.focus = FocusTarget::Workspace;
+        app.terminal.client_id = Some([1; 16]);
         let first = app.pane_layout.focused;
         app.pane_layout
             .split(first, SplitAxis::Vertical)
@@ -17226,18 +17541,42 @@ mod tests {
         app.daemon.pty_sessions = [
             yoctui_model::ClientDaemonPtySummary {
                 id: 1,
-                name: "shell · writer local-1".into(),
+                name: "shell".into(),
                 lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
                 viewers: 2,
             },
             yoctui_model::ClientDaemonPtySummary {
                 id: 2,
-                name: "devshell:busybox · read-only".into(),
+                name: "devshell:busybox".into(),
                 lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
                 viewers: 2,
             },
         ]
         .into();
+        app.daemon.pty_details = vec![
+            yoctui_model::ClientDaemonPtyDetails {
+                id: 1,
+                kind: yoctui_model::ClientDaemonPtyKind::BuildShell,
+                cwd: "/home/user/yocto/build".into(),
+                columns: 88,
+                rows: 18,
+                writer: Some([1; 16]),
+                writer_epoch: 4,
+                exit_code: None,
+                restartable: true,
+            },
+            yoctui_model::ClientDaemonPtyDetails {
+                id: 2,
+                kind: yoctui_model::ClientDaemonPtyKind::Devshell,
+                cwd: "/home/user/yocto/build".into(),
+                columns: 88,
+                rows: 18,
+                writer: Some([2; 16]),
+                writer_epoch: 7,
+                exit_code: None,
+                restartable: true,
+            },
+        ];
         app.daemon.pty_screens = vec![
             yoctui_model::ClientDaemonPtyScreen {
                 session_id: 1,
@@ -17257,6 +17596,7 @@ mod tests {
                 ],
                 cells: Vec::new(),
                 scrollback_lines: 0,
+                dropped_line_feeds_lower_bound: 0,
             },
             yoctui_model::ClientDaemonPtyScreen {
                 session_id: 2,
@@ -17275,6 +17615,7 @@ mod tests {
                 ],
                 cells: Vec::new(),
                 scrollback_lines: 312,
+                dropped_line_feeds_lower_bound: 14,
             },
         ];
         if let Some(telemetry) = app.daemon.telemetry.as_mut() {
@@ -18240,7 +18581,7 @@ mod tests {
         }
 
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 15;
+        app.navigator_selection = 16;
         let devtool = rendered_text(&app, 180, 58);
         for expected in [
             "Destination: Devtool",
@@ -18290,7 +18631,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 15;
+        app.navigator_selection = 16;
         let unavailable = rendered_text(&app, 180, 56);
         assert!(unavailable.contains("Upgrade recipe"), "{unavailable}");
         assert!(unavailable.contains("[U] — Unavailable"), "{unavailable}");
@@ -18317,7 +18658,7 @@ mod tests {
             },
         );
         yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
-        assert_eq!(app.navigator_selection, 15);
+        assert_eq!(app.navigator_selection, 16);
         let available = rendered_text(&app, 180, 56);
         assert!(available.contains("Upgrade recipe"), "{available}");
         assert!(available.contains("[U] — Available"), "{available}");
@@ -18349,7 +18690,7 @@ mod tests {
             .implementations
             .remove(&yoctui_model::CapabilityId::DevtoolUpgrade);
         yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
-        assert_eq!(app.navigator_selection, 15);
+        assert_eq!(app.navigator_selection, 16);
         let replaced = rendered_text(&app, 180, 56);
         assert!(
             replaced.contains("The reconnected Devtool omits upgrade."),
@@ -19182,7 +19523,7 @@ mod tests {
     fn workbench_navigator_scrolls_the_last_destination_into_view() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 20;
+        app.navigator_selection = 21;
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("TOOLS"), "{output}");
         assert!(output.contains("Settings"), "{output}");
@@ -19220,9 +19561,9 @@ mod tests {
     fn next_generation_navigator_reports_bounded_scroll_position() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 20;
+        app.navigator_selection = 21;
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Navigator 26/26"), "{output}");
+        assert!(output.contains("Navigator 27/27"), "{output}");
         assert!(output.contains("Settings"), "{output}");
     }
 
@@ -22222,6 +22563,7 @@ mod tests {
     #[test]
     fn pane_split_renders_daemon_sessions_with_focus_and_narrow_safety() {
         let mut app = App::new(32, 4096);
+        app.screen = Screen::TerminalSessions;
         app.daemon
             .pty_sessions
             .push(yoctui_model::ClientDaemonPtySummary {
@@ -22232,7 +22574,7 @@ mod tests {
             });
         let rendered = rendered_text(&app, 80, 24);
         assert!(rendered.contains("build shell"), "{rendered}");
-        assert!(rendered.contains("selection 1"), "{rendered}");
+        assert!(rendered.contains("1 viewer(s)"), "{rendered}");
     }
 
     #[test]
@@ -22264,6 +22606,7 @@ mod tests {
             rows: vec!["A界".into(), String::new()],
             cells,
             scrollback_lines: 3,
+            dropped_line_feeds_lower_bound: 0,
         };
         let mut app = App::new(8, 128);
         let mut terminal = Terminal::new(TestBackend::new(4, 2)).unwrap();
@@ -22309,8 +22652,9 @@ mod tests {
     }
 
     #[test]
-    fn mouse_runtime_dashboard_keeps_terminal_pane_labels_visible() {
+    fn mouse_runtime_terminal_workspace_keeps_pane_labels_visible() {
         let mut app = App::new(16, 4096);
+        app.screen = Screen::TerminalSessions;
         app.daemon
             .pty_sessions
             .push(yoctui_model::ClientDaemonPtySummary {
@@ -22777,8 +23121,8 @@ mod tests {
             &terminal_app,
             &SemanticSnapshot {
                 name: "terminal-session",
-                screen: Screen::Dashboard,
-                anchors: &["terminal #1 Running", "1 viewer(s)", "selection 1"],
+                screen: Screen::TerminalSessions,
+                anchors: &["terminal #1 Running", "1 viewer(s)", "Screen unavailable"],
                 selected: None,
             },
         );
@@ -28607,6 +28951,7 @@ mod tests {
                     rows: vec!["interactive prompt".into(), "typed terminal row".into()],
                     cells: Vec::new(),
                     scrollback_lines: 2,
+                    dropped_line_feeds_lower_bound: 0,
                 });
         }
         app
@@ -29410,5 +29755,106 @@ mod tests {
             hierarchy.sstate.state,
             yoctui_model::WidgetState::Unavailable
         );
+    }
+
+    fn ux_terminal_render_fixture() -> App {
+        let mut app = App::new(16, 4_096);
+        app.screen = Screen::TerminalSessions;
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.terminal.client_id = Some([1; 16]);
+        for (id, name, writer, kind) in [
+            (
+                1,
+                "shell",
+                Some([1; 16]),
+                yoctui_model::ClientDaemonPtyKind::BuildShell,
+            ),
+            (
+                2,
+                "devshell:busybox",
+                Some([2; 16]),
+                yoctui_model::ClientDaemonPtyKind::Devshell,
+            ),
+        ] {
+            app.daemon
+                .pty_sessions
+                .push(yoctui_model::ClientDaemonPtySummary {
+                    id,
+                    name: name.into(),
+                    lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                    viewers: 2,
+                });
+            app.daemon
+                .pty_details
+                .push(yoctui_model::ClientDaemonPtyDetails {
+                    id,
+                    kind,
+                    cwd: "/work/poky/build".into(),
+                    columns: 120,
+                    rows: 30,
+                    writer,
+                    writer_epoch: 4,
+                    exit_code: None,
+                    restartable: true,
+                });
+            app.daemon
+                .pty_screens
+                .push(yoctui_model::ClientDaemonPtyScreen {
+                    session_id: id,
+                    columns: 120,
+                    rows_count: 30,
+                    cursor_column: 2,
+                    cursor_row: 1,
+                    cursor_hidden: false,
+                    scrollback_offset: 0,
+                    rows: vec![format!("{name}: bounded output"), "$ ".into()],
+                    cells: Vec::new(),
+                    scrollback_lines: 4_096,
+                    dropped_line_feeds_lower_bound: 312,
+                });
+        }
+        app.pane_layout
+            .split(app.pane_layout.focused, yoctui_model::SplitAxis::Vertical)
+            .unwrap();
+        app
+    }
+
+    #[test]
+    fn ux_terminal_workbench_renders_writer_read_only_recovery_and_help_states() {
+        let mut app = ux_terminal_render_fixture();
+        let wide = rendered_text(&app, 160, 50);
+        assert!(wide.contains("Terminal Sessions"), "{wide}");
+        assert!(wide.contains("WRITER"), "{wide}");
+        assert!(wide.contains("read-only"), "{wide}");
+        assert!(wide.contains("dropped line-feeds ≥ 312"), "{wide}");
+
+        app.color_enabled = false;
+        let narrow = rendered_text(&app, 80, 24);
+        assert!(!narrow.contains('�'), "{narrow}");
+        assert!(narrow.contains("CURRENT"), "{narrow}");
+
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Synchronizing;
+        let reconnecting = rendered_text(&app, 100, 30);
+        assert!(reconnecting.contains("RECONNECTING"), "{reconnecting}");
+        assert!(
+            reconnecting.contains("reconnect for control"),
+            "{reconnecting}"
+        );
+
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        app.terminal.mode = yoctui_model::TerminalWorkbenchMode::Help;
+        let help = rendered_text(&app, 120, 35);
+        assert!(help.contains("literal Ctrl+B"), "{help}");
+        assert!(
+            help.contains("close pane (process keeps running)"),
+            "{help}"
+        );
+
+        app.terminal.mode = yoctui_model::TerminalWorkbenchMode::Live;
+        app.daemon.pty_sessions[0].lifecycle = yoctui_model::ClientDaemonLifecycle::Exited;
+        app.daemon.pty_sessions[1].lifecycle = yoctui_model::ClientDaemonLifecycle::Lost;
+        let terminal_outcomes = rendered_text(&app, 120, 35);
+        assert!(terminal_outcomes.contains("Exited"), "{terminal_outcomes}");
+        assert!(terminal_outcomes.contains("Lost"), "{terminal_outcomes}");
     }
 }

@@ -26,10 +26,8 @@ pub(super) fn responsive_shell(
         );
         match zoomed {
             FocusTarget::Navigator => navigator(frame, app, rows[1], task_rows),
-            FocusTarget::Workspace
-                if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() =>
-            {
-                terminal_session_panes(frame, app, rows[1]);
+            FocusTarget::Workspace if app.screen == Screen::TerminalSessions => {
+                terminal_sessions_workspace(frame, app, rows[1]);
             }
             FocusTarget::Workspace if app.screen == Screen::Signatures => {
                 signatures_workspace(frame, app, rows[1], terminal_width);
@@ -48,10 +46,6 @@ pub(super) fn responsive_shell(
                 workspace(frame, app, rows[1], terminal_width, now, task_rows);
             }
         }
-        return;
-    }
-    if app.screen == Screen::Dashboard && !app.daemon.pty_sessions.is_empty() {
-        terminal_session_panes(frame, app, area);
         return;
     }
     if app.screen == Screen::Signatures {

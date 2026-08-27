@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                          Daemon: ✓ Connected  •  BitBake: – Exited│
-┌ shell · writer local-1 #1 Running ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│2 viewer(s) | selection 1                                                                                                                                     │
-│bspguy@builder:~/yocto/build$ bitbake-layers show-layers                                                                                                      │
-│layer                 path                                                                                                                                    │
-│meta                  /home/user/yocto/meta                                                                                                                   │
-│meta-poky             /home/user/yocto/meta-poky                                                                                                              │
-│meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp                                                                                                         │
-│bspguy@builder:~/yocto/build$                                                                                                                                 │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌ devshell:busybox · read-only #2 Running ─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│2 viewer(s) | selection 1                                                                                                                                     │
-│busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                                                                              │
-│CC      coreutils/ls.o                                                                                                                                        │
-│CC      coreutils/cp.o                                                                                                                                        │
-│LD      busybox_unstripped                                                                                                                                    │
-│busybox-devshell$                                                                                                                                             │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-B options   Ctrl+B prefix   Tab focus   ↑/↓ package progress   i image   ! shell   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit  19:28:27
+┌Navigator───────────┐ Terminal Sessions                                                   ┌Inspector: Daemon / session────────────────────────────────────────┐
+│▾ OVERVIEW          │─────────────────────────────────────────────────────────────────────│▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       │CURRENT · LIVE · WRITER · scrollback 0                               │Session: shell (1)                                                 │
+│▾ CONTENT           │┌ shell #1 Running ─────────────────────────────────────────────────┐│Identity: BuildShell                                               │
+│  ? Layers          ││BuildShell · writer · 2 viewer(s) · 88x18 · /home/user/yocto/build ││Lifecycle: Running                                                 │
+│  ? Recipes         ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers           ││Role: Writer (keyboard/paste/resize enabled)                       │
+│  ? Packages        ││layer                 path                                         ││Writer: 01010101 · epoch 4                                         │
+│  ? Images          ││meta                  /home/user/yocto/meta                        ││Viewers: 2                                                         │
+│  ? SDK             ││meta-poky             /home/user/yocto/meta-poky                   ││Dimensions: 88x18                                                  │
+│▾ BUILD             ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp              ││Working directory: /home/user/yocto/build                          │
+│  ? Tasks           ││bspguy@builder:~/yocto/build$                                      ││Restartable: yes                                                   │
+│  ▱ Logs        LIVE││                                                                   ││Exit code: unavailable                                             │
+│  ▱ Errors          ││                                                                   ││                                                                   │
+│  ? Configuration   ││                                                                   ││Replica / history                                                  │
+│  ? Dependencies    ││                                                                   ││Viewport offset: 0                                                 │
+│▾ VALIDATE          ││                                                                   ││Retained scrollback: 0 lines                                       │
+│  ? Testing         ││                                                                   ││Dropped history: none observed                                     │
+│  ? Security        ││                                                                   ││Cursor: 35,6 (visible)                                             │
+│  ? QA              ││                                                                   ││                                                                   │
+│▾ TOOLS             ││                                                                   ││▾ CONTEXTUAL ACTIONS                                               │
+│  ? Raw Mode        ││                                                                   ││✓ Open build shell        [n] — Local                              │
+│  ? Terminal Session││                                                                   ││? Open devshell           [s] — Unknown                            │
+│  ? Devtool         ││                                                                   ││  Reason: No current environment capability snapshot: devshell.    │
+│  ? QEMU / Wic      │└───────────────────────────────────────────────────────────────────┘│? Open menuconfig         [m] — Unknown                            │
+│  ? Maintenance     │┌ devshell:busybox #2 Running ──────────────────────────────────────┐│  Reason: No current environment capability snapshot: menuconfig.  │
+│  ▱ Build environmen││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build││✓ Take writer control     [o] — Local                              │
+│  ▱ Compatibility   ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                   ││✓ Release writer control  [c] — Local                              │
+│  ▱ Settings        ││CC      coreutils/ls.o                                             ││                                                                   │
+│                    ││CC      coreutils/cp.o                                             ││                                                                   │
+│                    ││LD      busybox_unstripped                                         ││                                                                   │
+│                    ││busybox-devshell$                                                  ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+Ctrl+B prefix   [ copy   / search   r rename   O release   K confirmed kill   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit       19:28:27
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

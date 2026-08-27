@@ -3,10 +3,10 @@ use std::{collections::BTreeSet, time::Duration};
 use thiserror::Error;
 use yoctui_protocol::{
     daemon::{
-        Capability, ClientHello, ClientId, ClientMessage, CommandRequest, DaemonHello,
-        DaemonInstanceId, DaemonSnapshot, MAX_FRAME_BYTES, ProtocolFailure, ProtocolVersion,
-        ResumeCursor, SequencedEvent, ServerMessage, Subscription, WorkspaceIdentity,
-        negotiate_capabilities, negotiate_version,
+        Capability, ClientHello, ClientId, ClientLayoutEvent, ClientMessage, CommandRequest,
+        DaemonHello, DaemonInstanceId, DaemonSnapshot, MAX_FRAME_BYTES, ProtocolFailure,
+        ProtocolVersion, PtyInput, PtyViewport, ResumeCursor, SequencedEvent, ServerMessage,
+        Subscription, WorkspaceIdentity, negotiate_capabilities, negotiate_version,
     },
     daemon_ipc::{DaemonConnection, IpcError, RuntimePaths, runtime_paths},
 };
@@ -157,6 +157,21 @@ impl DaemonClientTransport {
     pub fn command(&mut self, request: CommandRequest) -> Result<(), ClientTransportError> {
         self.require_attached()?;
         self.send(&ClientMessage::Command(request))
+    }
+
+    pub fn pty_input(&mut self, input: PtyInput) -> Result<(), ClientTransportError> {
+        self.require_attached()?;
+        self.send(&ClientMessage::PtyInput(input))
+    }
+
+    pub fn pty_viewport(&mut self, viewport: PtyViewport) -> Result<(), ClientTransportError> {
+        self.require_attached()?;
+        self.send(&ClientMessage::PtyViewport(viewport))
+    }
+
+    pub fn pty_layout(&mut self, event: ClientLayoutEvent) -> Result<(), ClientTransportError> {
+        self.require_attached()?;
+        self.send(&ClientMessage::Layout { event })
     }
 
     pub fn receive(&mut self) -> Result<ClientServerEvent, ClientTransportError> {

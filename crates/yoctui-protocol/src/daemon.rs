@@ -9,7 +9,7 @@ use thiserror::Error;
 use crate::{TaskStatsData, WorkspaceData};
 
 pub const PROTOCOL_MAJOR: u16 = 1;
-pub const PROTOCOL_MINOR: u16 = 1;
+pub const PROTOCOL_MINOR: u16 = 2;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_CAPABILITIES: usize = 128;
 pub const MAX_RETAINED_EVENTS: usize = 65_536;
@@ -23,6 +23,7 @@ pub const MAX_TERMINAL_CELLS: usize = 250_000;
 pub const MAX_TERMINAL_CELL_BYTES: usize = 1_024;
 pub const MAX_UTILITY_OUTPUT_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_PTY_OUTPUT_EVENT_BYTES: usize = 64 * 1024;
+pub const MAX_PTY_INPUT_BYTES: usize = 64 * 1024;
 pub const MAX_DAEMON_BUILD_EVENTS: usize = 2_048;
 pub const COMPATIBILITY_SCHEMA_VERSION: u16 = 1;
 pub const MAX_COMPATIBILITY_CAPABILITIES: usize = 512;
@@ -1367,6 +1368,7 @@ pub enum ClientMessage {
     Command(CommandRequest),
     PtyInput(PtyInput),
     PtyResize(PtyResize),
+    PtyViewport(PtyViewport),
     Layout {
         event: ClientLayoutEvent,
     },
@@ -1576,6 +1578,9 @@ pub enum DaemonCommand {
     RenamePty {
         session_id: PtySessionId,
         name: String,
+    },
+    ClosePty {
+        session_id: PtySessionId,
     },
     TerminatePty {
         session_id: PtySessionId,
@@ -1927,6 +1932,13 @@ pub struct PtyResize {
     pub dimensions: TerminalDimensions,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct PtyViewport {
+    pub request_id: RequestId,
+    pub session_id: PtySessionId,
+    pub scrollback_offset: u32,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum ClientLayoutEvent {
@@ -2084,6 +2096,9 @@ pub enum DaemonEvent {
         request_id: String,
     },
     PtyChanged(PtySessionSummary),
+    PtyRemoved {
+        session_id: PtySessionId,
+    },
     PtyOutput {
         session_id: PtySessionId,
         bytes: Vec<u8>,
@@ -2249,6 +2264,7 @@ pub struct PtyScreenSnapshot {
     pub scrollback_offset: u32,
     pub cells: Vec<PtyScreenCell>,
     pub scrollback_lines: u32,
+    pub dropped_line_feeds_lower_bound: u64,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -2551,6 +2567,12 @@ pub fn apply_sequenced_event(
         }
         DaemonEvent::PtyChanged(pty) => {
             replace_by(&mut snapshot.pty_sessions, pty.clone(), |item| item.id);
+        }
+        DaemonEvent::PtyRemoved { session_id } => {
+            snapshot.pty_sessions.retain(|item| item.id != *session_id);
+            snapshot
+                .pty_screens
+                .retain(|item| item.session_id != *session_id);
         }
         DaemonEvent::PtyScreen(screen) => {
             validate_pty_screen(screen)?;
@@ -3364,6 +3386,7 @@ mod tests {
             scrollback_offset: 0,
             cells: Vec::new(),
             scrollback_lines: 7,
+            dropped_line_feeds_lower_bound: 0,
         };
         journal
             .publish(DaemonEvent::PtyScreen(screen.clone()))
@@ -3412,6 +3435,7 @@ mod tests {
                 wide_continuation: false,
             }],
             scrollback_lines: 0,
+            dropped_line_feeds_lower_bound: 0,
         };
         assert!(matches!(
             journal.publish(DaemonEvent::PtyScreen(invalid)),

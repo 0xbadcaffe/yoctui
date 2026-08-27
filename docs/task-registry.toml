@@ -6245,12 +6245,12 @@ notes = "Admitted pinned MIT tui-term 0.3.4 strictly through generic Screen/Cell
 id = "UX-TERMINAL-UX-001"
 milestone = "M21"
 title = "Complete the first-class built-in terminal workbench"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 725
 required = true
 depends_on = ["UX-TERMINAL-EVAL-001", "UX-FOCUS-001", "UX-SCROLL-001", "UX-KEYMAP-MODEL-001"]
 verify = ["cargo test -p yoctui-model ux_terminal", "cargo test -p yoctui-app ux_terminal", "cargo test -p yoctui-ui ux_terminal", "cargo test -p yoctui -- ux_terminal"]
-notes = "Add a Terminal Sessions destination, contextual creation, tabs/list, splits, zoom, rename, writer/take-control state, copy/search, paste, dropped history, detach/reattach, close/confirmed kill, prefix Help, literal prefix, and honest recovery outcomes."
+notes = "Terminal Sessions is a navigator/menu/palette/prefix destination with typed build-shell, authoritative selected-recipe devshell/menuconfig creation; tabs, splits, zoom, rename, detach/reattach, close, and explicit process-group kill confirmation; current-replica single-writer enforcement; bounded copy/search/paste review/scrollback and conservative dropped-history accounting; rich shell/Devtool/SDK/Raw identities; prefix Help and literal Ctrl+B forwarding; retained read-only reconnect, exited, and lost states. Ordinary writer characters cannot become workbench commands. Model/app/TestBackend/CLI tests and a real daemon PTY cover prompt input, viewport, resize, rename, termination, and close."
 
 [[task]]
 id = "UX-DASHBOARD-001"

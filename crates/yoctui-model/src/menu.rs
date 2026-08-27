@@ -57,9 +57,10 @@ impl ApplicationMenuGroup {
             | CommandId::PreviousSubfocus
             | CommandId::NextSubfocus
             | CommandId::TogglePaneZoom => Self::View,
-            CommandId::OpenRawMode | CommandId::OpenCompatibility | CommandId::OpenSettings => {
-                Self::Tools
-            }
+            CommandId::OpenRawMode
+            | CommandId::OpenTerminalSessions
+            | CommandId::OpenCompatibility
+            | CommandId::OpenSettings => Self::Tools,
             CommandId::OpenHelp => Self::Help,
         }
     }

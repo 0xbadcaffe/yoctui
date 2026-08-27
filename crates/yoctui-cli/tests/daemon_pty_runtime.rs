@@ -11,8 +11,8 @@ use std::{
 use yoctui_protocol::{
     daemon::{
         Capability, ClientHello, ClientId, ClientMessage, CommandRequest, DaemonCommand,
-        ProtocolVersion, PtyCommand, PtyInput, PtyKind, PtyResize, RequestId, ServerMessage,
-        Subscription, TerminalDimensions,
+        ProtocolVersion, PtyCommand, PtyInput, PtyKind, PtyResize, PtyViewport, RequestId,
+        ServerMessage, Subscription, TerminalDimensions,
     },
     daemon_ipc::{DaemonConnection, runtime_paths_for},
 };
@@ -94,7 +94,7 @@ fn receive_command_result(connection: &mut DaemonConnection) {
 }
 
 #[test]
-fn pty_integration_real_prompt_input_resize_and_writer_lease() {
+fn ux_terminal_real_pty_prompt_input_viewport_resize_rename_kill_and_close() {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
     let runtime = std::env::temp_dir().join(format!(
         "yoctui-cli-daemon-pty-runtime-{}",
@@ -227,6 +227,72 @@ fn pty_integration_real_prompt_input_resize_and_writer_lease() {
             dimensions: TerminalDimensions {
                 columns: 100,
                 rows: 30,
+            },
+        }))
+        .unwrap();
+    receive_command_result(&mut connection);
+
+    connection
+        .send(&ClientMessage::PtyViewport(PtyViewport {
+            request_id: RequestId(5),
+            session_id: yoctui_protocol::daemon::PtySessionId(1),
+            scrollback_offset: 0,
+        }))
+        .unwrap();
+    receive_command_result(&mut connection);
+    connection
+        .send(&ClientMessage::Command(CommandRequest {
+            request_id: RequestId(6),
+            expected_generation: None,
+            command: DaemonCommand::RenamePty {
+                session_id: yoctui_protocol::daemon::PtySessionId(1),
+                name: "renamed shell".into(),
+            },
+        }))
+        .unwrap();
+    receive_command_result(&mut connection);
+    connection
+        .send(&ClientMessage::Command(CommandRequest {
+            request_id: RequestId(7),
+            expected_generation: None,
+            command: DaemonCommand::TerminatePty {
+                session_id: yoctui_protocol::daemon::PtySessionId(1),
+                force: true,
+                confirmation: None,
+            },
+        }))
+        .unwrap();
+    receive_command_result(&mut connection);
+
+    let mut exited = false;
+    for _ in 0..30 {
+        match connection.receive::<ServerMessage>().unwrap() {
+            ServerMessage::Event(event) => {
+                if let yoctui_protocol::daemon::DaemonEvent::PtyChanged(session) = event.event {
+                    exited = matches!(
+                        session.lifecycle,
+                        yoctui_protocol::daemon::LifecycleState::Exited
+                            | yoctui_protocol::daemon::LifecycleState::Lost
+                    );
+                }
+            }
+            ServerMessage::Ping { .. } | ServerMessage::CommandResult(_) => {}
+            other => panic!("expected terminal event, got {other:?}"),
+        }
+        if exited {
+            break;
+        }
+    }
+    assert!(
+        exited,
+        "terminated PTY did not report an honest terminal state"
+    );
+    connection
+        .send(&ClientMessage::Command(CommandRequest {
+            request_id: RequestId(8),
+            expected_generation: None,
+            command: DaemonCommand::ClosePty {
+                session_id: yoctui_protocol::daemon::PtySessionId(1),
             },
         }))
         .unwrap();
