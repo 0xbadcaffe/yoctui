@@ -4780,5 +4780,10 @@ research only; their code, screenshots, themes, and assets are not copied.
 
 All new views pass wide, medium, narrow, and below-minimum rendering; keyboard
 and mouse parity; no-color, ASCII, high contrast, and reduced motion; real PTY
-input; bounded large-data behavior; the existing 10 ms/frame performance
-ceiling; and supported live-Yocto evidence before M21 completion.
+input; bounded large-data behavior; and the existing 10 ms/frame performance
+ceiling. The 2026-08-27 live M21 run also passed menus/availability, progress,
+completion, safe failure, image manifest/pkgdata/rootfs state, context-terminal,
+and reconnect scenarios during an exact Poky 5.2.4 `core-image-minimal` build.
+The [keymap reference](keymap.md), [Rootfs evidence guide](rootfs-composition.md),
+and [compatibility record](compatibility.md#current-one-stop-workbench-live-evidence)
+are the operator-facing boundaries for those results.

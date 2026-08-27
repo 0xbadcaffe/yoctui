@@ -321,6 +321,9 @@ cargo install flamegraph
 ## Learn more
 
 - [Operator guide](docs/operator-guide.md) — daily workflows and troubleshooting
+- [Keymap reference](docs/keymap.md) — menus, focus, navigation, customization, and the `Ctrl+B` terminal prefix
+- [Rootfs composition](docs/rootfs-composition.md) — package/filesystem authority and accessible chart fallbacks
+- [Embedded shells and terminal sessions](docs/embedded-shell.md) — inherited-shell and persistent-PTY behavior
 - [Compatibility evidence](docs/compatibility.md) — live, fixture, and host validation boundaries
 - [Release compatibility matrix](docs/compatibility-matrix.md) — support classifications, exact tested revisions, and renewal policy
 - [UI specification](docs/ui-spec.md) — screens, focus, dialogs, and shortcuts

@@ -21,6 +21,41 @@ and immediately cancels `core-image-minimal`. Override these with
 
 `scripts/test-terminal.sh` starts Yoctui in a Linux pseudo-terminal, sends a quit key, and asserts that alternate-screen and cursor hide/show sequences are both emitted.
 
+## Live workbench evidence
+
+The checked-in M21 evidence is verified without rebuilding Yocto by:
+
+```bash
+./scripts/test-live-workbench-ux.sh
+./scripts/verify-live-workbench-ux-evidence.sh
+./scripts/verify-compatibility.sh
+```
+
+The first command drives the release binary through real PTYs against the
+recorded live workspace and checks semantic menus, progress, completion,
+failure, manifest/pkgdata/rootfs, context-terminal, and reconnect screens. The
+second validates scenario coverage, hashes, freshness, source ancestry, package
+evidence, and the current latest/older release anchors. `check-docs.sh` also
+re-renders the three live SVGs from their semantic captures and fails when a
+checked-in visual is stale.
+
+Regeneration is opt-in and requires a disposable supported Yocto host. The live
+harness accepts an exact already-built release binary so an older supported
+container does not need the development Rust toolchain:
+
+```bash
+YOCTUI_LIVE_COMPLETE=1 \
+YOCTUI_LIVE_SOURCE=/absolute/path/to/poky \
+YOCTUI_LIVE_PREBUILT_BINARY=/absolute/path/to/release/yoctui \
+./scripts/test-live-next-generation-ui.sh
+python3 scripts/render-next-generation-ui-screenshots.py
+```
+
+Record the host distribution/libc, source revision, binary hash, machine,
+target, and every terminal outcome. The current run used Ubuntu 24.04.4 with
+glibc 2.39 because the development host is outside the tested Yocto host
+matrix. A failed host build is never converted into passing evidence.
+
 ## Documentation validation
 
 `./scripts/check-docs.sh` validates every tracked repository Markdown link and

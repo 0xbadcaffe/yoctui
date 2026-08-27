@@ -423,6 +423,31 @@ This exact maintained revision is the current **Claimed supported** lower live
 anchor. The claim covers the recorded required workflow set and does not infer
 support for an untested Scarthgap point revision.
 
+## Current one-stop workbench live evidence
+
+On **2026-08-27**, the production release binary was exercised through real
+PTYs while a complete `core-image-minimal` build ran on a supported Yocto host:
+
+| Field | Recorded value |
+|---|---|
+| Host | Ubuntu 24.04.4 LTS, glibc 2.39, Linux x86_64 |
+| Poky | 5.2.4, branch `yocto-5.2.4`, commit `d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1` |
+| BitBake | 2.12.1 |
+| Machine / target | `qemux86-64` / `core-image-minimal` |
+| Yoctui source | `879f9ee3c922dc30b7f11048f7dc398b7072d30d`, a verified ancestor of the current checkout |
+| Release binary SHA-256 | `2578e1d8060b2fd56d5e9b303bbd742491ddc13f2840cd5bcbdf2a8bd6ace432` |
+| UI scenarios | Startup, environment, Layers, Recipes, Tasks, live logs, completion, safe failure, menus/availability, manifest/pkgdata/rootfs, interactive task availability, context terminal, and daemon reconnect passed |
+| Image evidence | 38 manifest packages and 14,995 pkgdata files; exact manifest SHA-256 retained |
+| Filesystem evidence | `Unavailable (cleaned)`: `rm_work` removed transient `IMAGE_ROOTFS`; no logical-filesystem total is claimed |
+
+This run establishes the interactive one-stop-workbench workflow for this exact
+host/release/binary boundary. It complements rather than replaces the newer
+6.0.2 and older-LTS 5.0.19 release anchors: those records establish release
+compatibility roles, while this run establishes complete UI behavior and a
+successful image build. `./scripts/verify-live-workbench-ux-evidence.sh`
+requires the evidence to remain within 90 days and its source commit to remain
+an ancestor of `HEAD`.
+
 ## Observed live Yocto combination
 
 The following combination was observed on **2026-07-24** using the production
@@ -494,14 +519,14 @@ recipe, task, or external tool is supported.
 
 | Workflow | Validation level | Current evidence or blocker |
 |---|---|---|
-| Persistent shell, responsive UI, dialogs, Tasks, Logs, Errors | Fixture/static observed | Reducer/input and Ratatui TestBackend coverage pass at supported breakpoints; Linux pseudo-terminal restoration passes. The live bridge emitted task/log/build events, but the complete interactive TUI was not recorded as an end-to-end live matrix run. |
+| Persistent shell, responsive UI, menus, dialogs, Tasks, Logs, Errors, Terminal Sessions | Live observed for the M21 boundary; fixture/static observed across the full matrix | The 2026-08-27 PTY run recorded active tasks, logs, successful completion, safe failure, contextual menus, a daemon-owned build shell, and reconnect. Breakpoint, accessibility, focus, and invalid-context breadth remains deterministic fixture/static evidence. |
 | Layers and Recipes | Live observed for inventory/detail; fixture observed for editing | Live configured layers and `base-files` metadata passed. Lazy trees, previews, editors, path rejection, and external-editor lifecycle are fixture/static evidence. |
 | Configuration | Live observed for reads; copy-only validation for writes | Live value/provenance data passed. Atomic edit logic was applied only to a temporary copy of live `local.conf`; no live metadata write is claimed. |
 | Devtool | Not validated | Exact command construction, status, Git state, editor, cancellation, and terminal outcomes use fake processes/filesystems. No live `devtool modify/update/finish/deploy/reset` combination is recorded. |
 | Dependencies | Live observed for `base-files` | The live graph counts above passed through the modern Tinfoil API. Legacy fallback and process `bitbake -g` behavior are fixture-only. |
 | Signatures | Live observed for the two recorded tasks | Other recipes, tasks, histories, releases, and recursive detail remain unvalidated. |
-| Package data | Blocked live attempt | The selected live build lacked `build/tmp/pkgdata`; no live package inventory is claimed. Build a target through `do_package`, then run `YOCTUI_LIVE_BUILD_DIR=/path cargo test -p yoctui-bitbake --test live_pkgdata -- --ignored --nocapture`. |
-| Deployed Images | Not validated | Bounded deploy scanning, typed artifact association, opening, cancellation, and failure paths use fake filesystems. No live deployed-artifact layout is recorded. |
+| Package data and Rootfs composition | Live observed for the M21 image; fixture observed for traversal breadth | The 2026-08-27 build recorded 38 exact manifest packages and 14,995 pkgdata files. `rm_work` removed `IMAGE_ROOTFS`, which passed as an explicit cleaned/unavailable state; bounded logical traversal remains fixture evidence rather than a claimed live filesystem total. |
+| Deployed Images | Live observed for the selected image manifest; fixture observed for general scanning/actions | `core-image-minimal` manifest association passed for qemux86-64. Other artifact formats, opening, cancellation, and failure paths retain fake-filesystem coverage; no blanket deploy-operation claim is made. |
 | SDK | Not validated | Populate/test request routing, artifact scans, publication, native tools, and lifecycle use typed fixtures and fake processes only. |
 | QEMU | Not validated | `runqemu` discovery, exact arguments, output, cancellation, and loss use fake artifacts/processes. No live boot is recorded. |
 | Wic create and device write | Not validated | Command, kickstart, generated-output, fake-device safety, revalidation, and cancellation tests pass. No live Wic tool or removable-media write is recorded. |
@@ -514,6 +539,7 @@ recipe, task, or external tool is supported.
 
 | Environment | Date | Level | Evidence and limitation |
 |---|---|---|---|
+| Ubuntu 24.04.4 LTS, glibc 2.39, Linux x86_64 | 2026-08-27 | Live observed for exact M21 combination | A complete Poky 5.2.4 `core-image-minimal` build and real-PTY workbench scenarios passed. This exact host is the recorded live-build boundary; it does not imply support for every distribution or libc. |
 | GitHub Actions `ubuntu-latest`, stable Rust, Python 3.12 | Current CI definition | Static/host observed | Format, Clippy, workspace tests, terminal, stress, CLI, Python unit/static/coverage gates run without a real Yocto checkout. `ubuntu-latest` is not a pinned production host claim. |
 | Linux `7.0.0-28-generic` x86_64, Rust/Cargo 1.97.0, Python 3.14.4 | 2026-08-01 | Static/host observed | Workspace tests, Clippy, Python tests, terminal, stress, ASan/LSan, coverage, security checks, Valgrind, and deterministic profile gates have passed on this development host. This is not the recorded live-snapshot host identity. |
 | Linux pseudo-terminal | Current baseline | Static/host observed | Alternate-screen and cursor hide/show restoration pass `./scripts/test-terminal.sh`. macOS, BSD, native Windows, and WSL terminal matrices are not recorded. |

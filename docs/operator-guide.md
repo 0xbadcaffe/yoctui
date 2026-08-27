@@ -37,6 +37,11 @@ the currently focused pane; disabled actions remain visible with a reason.
 - `Tab` and `Shift+Tab` move between Navigator, Workspace, and Inspector.
 - `Ctrl+P` opens the searchable command palette. Unavailable commands explain
   their prerequisites and remain inert.
+- `F10` opens the six-group application menu. Press `a` or right-click for the
+  selected workspace item's contextual actions.
+- `PageUp`/`PageDown`, `Home`/`End`, and `gg`/`G` provide consistent bounded
+  collection movement. `/` searches, `Ctrl+U` clears, and `n`/`N` moves among
+  matches where search is available.
 - `Esc` leaves a search, closes a dialog, moves outward, or cancels the current
   transient mode. Dialogs trap focus until closed.
 - `q` requests application exit. Exiting Yoctui and cancelling a build are
@@ -69,8 +74,8 @@ press `q`; Yoctui deliberately renders no partial workspace.
    cancellation, timeout, and backend loss are different terminal outcomes.
    A failed completion can open the exact retained diagnostic in Errors.
 
-`F5` or the contextual build command may open the normal build dialog. A
-recipe selected in Recipes uses `b` to build that recipe, not the current
+`F5` opens Logs; it never starts a build. `B` is the global image-build route.
+A recipe selected in Recipes uses `b` to build that recipe, not the current
 image. Recipe task, forced, clean, and unusual requests always show their exact
 intent before execution.
 
@@ -83,7 +88,9 @@ intent before execution.
 | Logs | Follow bounded live output and inspect exact selected records. | `f` follow, `w` wrap, `/` search, `n`/`N` matches, `s`/`R`/`T`/`B` filters, `o` source log, `C` copy when a clipboard helper is available. |
 | Errors | Inspect structured warnings, errors, backend loss, and suggested actions. | `Enter` opens exact retained log context; `o` opens an authoritative source path. Missing source identity stays disabled. |
 | Images | Select image recipes and inspect deployed artifacts for the active machine. | `i` target picker, `b` confirmed build, `R` rescan, `c` cancel scan, `o` artifact, and `m`/`l`/`s`/`w` exact associated manifest/license/SPDX/Wic paths. A buildable target and a deployed artifact are separate facts. |
+| Rootfs composition | Inspect the selected image's installed packages and, when retained, its logical filesystem. | Open the Images composition views. Package totals come only from the exact image manifest and pkgdata; filesystem totals come only from the exact reported `IMAGE_ROOTFS`. Unavailable and Partial remain explicit. |
 | Packages | Query generated package data and follow runtime relationships. | `R` inventory, `Enter` detail, `/` search, `D` dependency direction, `[`/`]` dependency, `d` follow, `u` back, `o` recipe, `e` provider, `c` cancel. Missing `tmp/pkgdata` means a target must complete `do_package`. |
+| Terminal Sessions | Keep daemon-owned build shells alive across UI navigation and client reconnects. | Use the `Ctrl+B` prefix for session, split, zoom, copy/search, detach, and writer-control commands. Closing a pane does not kill its process. |
 
 ## Browse and edit layers, recipes, and configuration
 
@@ -244,6 +251,39 @@ acknowledgement or an explicit rejection/forced outcome. Never assume that
 closing Yoctui cancelled an external operation. If a backend or runner is lost,
 inspect retained output and the exact external state before retrying.
 
+### Rootfs composition workflow
+
+Select an exact image in Images and open Rootfs composition. Installed-package
+composition is authoritative only when the image manifest and generated
+pkgdata correlate to that image, machine, and build. The optional filesystem
+view is separate authority and is available only while BitBake's exact
+`IMAGE_ROOTFS` remains beneath the active build directory. An `rm_work` build
+may legitimately leave package composition available while reporting the
+logical filesystem as `Unavailable (cleaned)`.
+
+The wide color view pairs its pie with exact values and an inspectable `Other`
+group. Medium, narrow, ASCII, no-color, and reader-oriented layouts use bars,
+tables, and trees carrying the same totals. A `Partial` result names the exact
+entry, depth, byte, time, or cancellation bound; do not use it as a complete
+size total. See [Rootfs composition evidence](rootfs-composition.md).
+
+### First-class terminal workflow
+
+Open Terminal Sessions from the Navigator, menu, palette, or Dashboard. Create
+a shell in the active build or selected safe context, then type normally. The
+daemon owns the PTY, so navigation, UI restart/reconnect, pane close, and client
+detach do not silently terminate the process. Writer ownership is explicit;
+read-only clients cannot send input until control is granted or taken through
+the typed command.
+
+Press `Ctrl+B` and then a command within one second. Common routes are `c`
+create, `n`/`p` next/previous session, `%`/`"` horizontal/vertical split, `z`
+zoom, `[` copy, `/` search, `d` detach, `o`/`O` take/release writer, `x` close
+pane, and `K` confirmed process kill. `Ctrl+B Ctrl+B` sends a literal prefix.
+Use `Ctrl+B ?` for the complete prefix map. The inherited shell opened by `!`
+is a separate compatibility route; see [Embedded shells and terminal
+sessions](embedded-shell.md).
+
 ## Settings, configuration, and sessions
 
 Settings supports theme, comfortable/compact density, Unicode/ASCII symbols,
@@ -254,6 +294,13 @@ selects and `Left`/`Right` or `Enter` changes or opens a value. Locked rows show
 why the choice is unavailable. Changes apply immediately and are atomically
 saved to `session.toml`; `r` retries a failed save and `R` resets the complete
 preference set and pane layout.
+
+Open Settings → Keybindings to inspect the effective command catalog. Search
+by action, menu, scope, or binding; `Enter`/`c` captures up to three strokes,
+`Ctrl+S` validates and saves, `x` removes, `r` resets one, `R` resets all, and
+`e` exports the effective map. Reserved terminal-prefix collisions, ambiguous
+sequences, same-scope collisions, and removal of the last critical route are
+rejected without replacing the active map. See the [keymap reference](keymap.md).
 
 Startup precedence is CLI flags, `YOCTUI_*` environment variables,
 `$XDG_CONFIG_HOME/yoctui/config.toml`, the recent session, then built-in
@@ -298,6 +345,9 @@ task or configuration. Build prerequisites such as `do_package`, SDK, image,
 or report generation may need to complete before an artifact inventory exists.
 Refresh the owning workspace after correcting the external state. Do not work
 around canonical-path or symlink rejection by copying a displayed command.
+For Rootfs composition, package evidence and filesystem evidence are separate:
+an image manifest may be available while `IMAGE_ROOTFS` is cleaned by
+`rm_work`. A Partial result names a traversal bound and is not a full total.
 
 ### A build or job failed, timed out, was cancelled, or was lost
 
@@ -334,6 +384,9 @@ optional tool as a passing release gate.
 
 - [README installation and quickstart](../README.md)
 - [Authoritative UI behavior](ui-spec.md)
+- [Keymap reference](keymap.md)
+- [Rootfs composition evidence](rootfs-composition.md)
+- [Embedded shells and terminal sessions](embedded-shell.md)
 - [Architecture and authority boundaries](architecture.md)
 - [Protocol](protocol.md)
 - [Live and fixture compatibility evidence](compatibility.md)

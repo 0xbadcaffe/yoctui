@@ -3247,3 +3247,21 @@ and the reviewed stripped size-optimized link benchmark grew by 319,048 bytes
 fallback projection: root filesystems point to typed composition and every
 other kind retains exact metadata/workflows. The production renderer issues no
 graphics escape sequences or terminal probes.
+
+### Live validation and evidence boundary
+
+Live workbench evidence is an immutable projection of one exact release binary,
+source commit, Poky revision, host distribution/libc, machine, target, and
+bounded scenario set. The opt-in harness may run a prebuilt Yoctui binary inside
+a supported Yocto host container; it hashes that binary and records failed task
+logs before cleaning its disposable build. The evidence-only verifier performs
+no build or external mutation. It verifies checksums, scenario coverage,
+freshness, source ancestry, image manifest/pkgdata authority, context-terminal
+semantics, and separate latest/older supported-release records.
+
+Rootfs evidence preserves the same ownership boundary: a correlated image
+manifest and pkgdata can be Available while an `rm_work`-cleaned
+`IMAGE_ROOTFS` is Unavailable. The UI and documentation cannot combine those
+authorities or promote unavailable/partial filesystem data into a total. See
+[Rootfs composition evidence](rootfs-composition.md), [Testing](testing.md),
+and [Compatibility](compatibility.md).

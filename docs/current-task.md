@@ -2,39 +2,29 @@
 
 ## Task
 
-**ID:** UX-DOC-001
-**Title:** Document the polished one-stop workbench
+**ID:** UX-001
+**Title:** Complete the one-stop Yocto workbench UX milestone
 **Status:** NOT_STARTED
 
 ## Objective
 
-Complete the operator-facing and maintainer-facing documentation for the
-polished workbench, its interaction model, authority boundaries, accessibility,
-performance, dependencies, and verified live behavior.
+Run the dedicated one-stop workbench gate and unchanged full completion gate,
+then close M21 only if every required child and release-quality invariant passes.
 
 ## Dependencies
 
-- `UX-LIVE-001` — DONE
-- `UX-A11Y-001` — DONE
-- `UX-PERF-001` — DONE
-- `UX-PTY-E2E-001` — DONE
+- All 37 required M21 child tasks — DONE
 
 ## Definition of done
 
-- The operator guide, UI specification, architecture, keymap reference,
-  terminal guide, settings, accessibility, and troubleshooting describe the
-  implemented menus, focus, scrolling, widgets, workflows, and shortcuts.
-- Rootfs/package composition documentation distinguishes manifest, pkgdata,
-  deployed filesystem, partial, unavailable, and cleaned authority precisely.
-- Dependency decisions, licenses, notices, SBOM, live evidence identities,
-  validity windows, and reproduction commands remain complete and auditable.
-- Screenshots and semantic captures correspond to the current production UI
-  and are generated or validated by repository gates.
+- All 38 M21 tasks are `DONE` with no waived child or evidence requirement.
+- The dedicated workbench gate passes interaction, dependency, accessibility,
+  performance, PTY, live-Yocto, and documentation checks.
+- The unchanged strict clean-checkout completion gate passes.
 
 ## Verification
 
 ```bash
-./scripts/check-docs.sh
-./scripts/verify-live-workbench-ux-evidence.sh
-./scripts/verify-third-party-notices.sh
+./scripts/verify-workbench-ux.sh
+./scripts/verify-completion.sh
 ```

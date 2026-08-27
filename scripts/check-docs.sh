@@ -44,6 +44,23 @@ required_documents = {
         "Adding a supported live combination",
     },
     "docs/testing.md": {"Testing", "Completion gate"},
+    "docs/keymap.md": {
+        "Yoctui Keymap Reference",
+        "Global destinations",
+        "Terminal prefix",
+        "Customize safely",
+    },
+    "docs/rootfs-composition.md": {
+        "Rootfs Composition Evidence",
+        "Installed-package authority",
+        "Logical-filesystem authority",
+        "Recorded live boundary",
+    },
+    "docs/embedded-shell.md": {
+        "Embedded Shells and Terminal Sessions",
+        "Inherited Yocto shell",
+        "Daemon-owned Terminal Sessions",
+    },
     "docs/profiling.md": {"Profiling"},
     "docs/architecture.md": set(),
     "docs/protocol.md": set(),

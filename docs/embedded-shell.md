@@ -1,29 +1,49 @@
-# Embedded native shell
+# Embedded Shells and Terminal Sessions
 
-Yoctui keeps the child shell inside its alternate-screen application. A shell
-session has a stable ID, validated absolute cwd, environment identity, bounded
-4,000-line scrollback, lifecycle status, and unread-activity marker. At most
-four sessions are retained.
+Yoctui provides two deliberately separate shell routes. The inherited shell is
+a compatibility escape from the current client. Terminal Sessions are
+daemon-owned persistent PTYs integrated into the workbench.
 
-While the shell has foreground focus, ordinary keys are sent to its PTY.
-`Ctrl+]` is reserved by Yoctui and always returns input to the application;
-the child cannot consume it. `Tab`, `Shift+Tab`, dialogs, and confirmation
-overlays retain Yoctui priority. Copy and search modes suspend child input.
+## Inherited Yocto shell
 
-The PTY propagates terminal resize and owns the child process group. Shutdown
-attempts graceful HUP/TERM handling before forced cleanup. Output is bounded;
-failure evidence contains redacted ANSI/text logs and terminal dimensions.
-Interactive programs, Unicode, cursor movement, alternate-screen controls,
-and bracketed-paste-safe terminal emulation are supported by the embedded
-terminal state machine. Multiline paste requires explicit confirmation.
+Press `!` to suspend the TUI and open the configured inherited shell in its
+Yocto environment. Ordinary keys belong to that shell. `Ctrl+]` is reserved by
+Yoctui as the emergency return route and cannot be consumed by the child; a
+normal `exit` also restores Yoctui. This shell follows the client lifecycle and
+does not provide reconnectable sessions or splits.
 
-Shells may be opened at a build directory, source directory, selected
+The terminal is restored around the child process. If an abnormal child exit
+leaves it damaged, run `reset` and `stty sane`, then use
+`./scripts/test-terminal.sh` when diagnosing restoration behavior.
+
+## Daemon-owned Terminal Sessions
+
+Open Terminal Sessions from the Navigator, Dashboard, application menu, or
+command palette. Each shell has a stable identity, validated absolute working
+directory and environment identity, bounded screen/scrollback, lifecycle
+state, unread activity, attachments, and explicit writer ownership. The daemon
+owns PTY processes and terminal emulation; clients receive typed bounded cells
+and never reparse ANSI.
+
+While a terminal pane has focus, ordinary keys go to the writer-owned PTY.
+`Ctrl+B` begins the fixed one-second command prefix. `Ctrl+B ?` shows the full
+map; create/navigation, splits, zoom, copy/search, rename, detach, and writer
+control are described in the [keymap reference](keymap.md). A literal prefix is
+`Ctrl+B Ctrl+B`. Multiline paste requires confirmation.
+
+Closing a pane or detaching a client keeps the process. Process-group
+termination is a separate `Ctrl+B K` route with confirmation. Disconnect,
+daemon restart, normal terminal exit, and process loss remain distinct
+outcomes. A replica reports dropped-history limits rather than implying
+complete scrollback.
+
+Shells may be created at a build directory, source directory, selected
 layer/file/recipe context, SDK environment, or another validated safe
-directory. Yocto variables are inherited from the initialized process and are
-not silently re-sourced into a running session. If cwd or environment becomes
-stale, Yoctui marks the session and offers controlled restart/refresh.
+directory. Yocto variables come from the initialized environment and are not
+silently re-sourced into a running session. If cwd or environment becomes
+stale, Yoctui marks the session and offers controlled restart or refresh.
 
-The typed utility workbench remains the preferred route for common operations.
+The typed utility workbench remains the preferred route for routine operations.
 Expert utility forms produce indexed argv previews; commands typed manually in
-the native shell remain the user's responsibility and are never parsed by
-Yoctui.
+either shell remain the user's responsibility and are never parsed as Yoctui
+actions.

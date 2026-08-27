@@ -6366,12 +6366,12 @@ notes = "The required live gate now combines exact focused menu/rootfs/terminal 
 id = "UX-DOC-001"
 milestone = "M21"
 title = "Document the polished one-stop workbench"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 736
 required = true
 depends_on = ["UX-LIVE-001", "UX-A11Y-001", "UX-PERF-001", "UX-PTY-E2E-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-live-workbench-ux-evidence.sh", "./scripts/verify-third-party-notices.sh"]
-notes = "Update the operator guide, UI spec, architecture, keymap reference, terminal guide, rootfs authority/limitations, settings, accessibility, dependency notices/SBOM, live evidence, screenshots, and troubleshooting."
+notes = "The operator guide now covers the canonical F1-F10/B/a routes, collection movement, focus/zoom discovery, Rootfs composition, daemon-owned Terminal Sessions, keymap editing, and exact troubleshooting limitations. New keymap and Rootfs authority references distinguish package manifest/pkgdata from optional cleaned or partial IMAGE_ROOTFS evidence; the shell guide separates the inherited Ctrl+] route from the persistent Ctrl+B prefix. UI, architecture, testing, compatibility, acceptance, and README guidance record dependency/accessibility boundaries, the exact supported-host live build and 90-day evidence verifier, and reproduction commands. Three production semantic PTY captures regenerate their checked-in SVGs. Documentation, live-evidence, notices/SBOM, roadmap, and diff gates pass."
 
 [[task]]
 id = "UX-001"

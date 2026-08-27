@@ -47,7 +47,7 @@ entry is disabled:
 
 | Scope | Keys and required result |
 | --- | --- |
-| Global | `?` Help; `F5` build; `Ctrl+P` command palette; `/` search; `Tab`/`Shift+Tab` focus; `Esc` dashboard/out; `q` quit confirmation; `Ctrl+C` cancel; arrows and `j/k` selection; `Enter` activate; `Backspace` edit/delete where offered |
+| Global | `F1` Help; `F2` Tasks; `F3` History; `F4` Dashboard; `F5` Logs; `F6` Layers; `F7` Recipes; `F8` Images; `F9`/`Ctrl+P` command palette; `F10` application menu; `B` image build options; `a`/right-click context actions; `?` contextual Help; `/` search; `Tab`/`Shift+Tab` focus; `Esc` outward; `q` quit confirmation; `Ctrl+C` context cancel; arrows/`j`/`k`, `PageUp`/`PageDown`, `Home`/`End`, and `gg`/`G` collection movement; `Enter` activate; `Space` toggle |
 | Navigator | `j/k` or `Up/Down` move; `Enter` open; `Tab` workspace; `Shift+Tab` inspector |
 | Layers/files | `Right/l` expand, `Left/h` collapse, `Enter` open/toggle, `e` edit, `o` external editor, `R` relationships, `r` refresh, `.` hidden files, `/` search, `i` Git, `m` metadata, `d` dependencies |
 | Tasks | `f` state filter, `F` field filter, `/` edit filter, `d` duration filter, `c` cancel |
@@ -56,6 +56,7 @@ entry is disabled:
 | Images/QEMU/Wic/SDK | `Q` launch QEMU, `x` cancel session, `D` protected device write, `w` Wic, `s` SDK, `i` image selection |
 | Dialog/editor | `Tab`, `Shift+Tab`, arrows, `Space`, `Enter`, `Esc`, `Backspace`, `Ctrl+S` save, `Ctrl+B` build saved recipe, `Ctrl+C` cancel |
 | Palette/help/settings | printable search, arrows, `Enter` dispatch, `Esc` close, `r` retry settings save, `Space`/arrows change values |
+| Terminal Sessions | ordinary keys reach only the writer-owned PTY; `Ctrl+B` prefix covers create, session movement, splits, zoom, close-without-kill, detach, palette/help, take/release writer, copy/search, rename, confirmed kill, and literal-prefix input |
 
 The help screen and contextual footer are the oracle for labels. Any active
 shortcut absent from the typed catalog or any documented shortcut without an
@@ -65,8 +66,8 @@ executable path fails the release gate.
 
 Every PTY scenario records raw ANSI input/output, parsed terminal cells, final
 dimensions, semantic screen text, process/job logs, and exit status. Failures
-also retain a terminal capture and a rendered text/PNG or HTML diff when a
-visual assertion applies. Artifacts are bounded, deterministic, and stored
+also retain a terminal capture and a rendered text/SVG, PNG, or HTML diff when
+a visual assertion applies. Artifacts are bounded, deterministic, and stored
 under `artifacts/release-quality/` with the scenario, commit, host, and
 fixture/live label. Secrets and environment tokens must be redacted.
 
@@ -78,8 +79,10 @@ Only those records may claim live compatibility. Deterministic fixtures and
 fake bridges are valid for control-flow coverage only. The required live
 workflow is a clean checkout, `oe-init-build-env`, qemux86-64, doctor,
 workspace/layer/recipe/configuration inspection, `core-image-minimal` start,
-progress observation, cancellation, and a bounded successful completion (or
-an explicitly documented upstream/environment blocker).
+progress observation, cancellation, and a bounded successful completion. M21
+additionally requires menus/availability, manifest and pkgdata evidence,
+honest Rootfs state, a context terminal, and daemon reconnect. A documented
+upstream or host blocker is diagnostic evidence, not a passing substitute.
 
 ## Exit criteria
 
