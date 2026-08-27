@@ -4,10 +4,16 @@ repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 cargo build -p yoctui >/dev/null
 python3 - "$repo_root" <<'PY'
-import atexit, os, pty, select, struct, subprocess, sys, termios, fcntl, time, tempfile, re
+import atexit, importlib.util, os, pty, select, struct, subprocess, sys, termios, fcntl, time, tempfile, re
 root = sys.argv[1]
 artifact = os.path.join(root, 'artifacts', 'release-quality', 'snapshots')
 os.makedirs(artifact, exist_ok=True)
+screen_spec = importlib.util.spec_from_file_location(
+    'yoctui_capture_screen',
+    os.path.join(root, 'scripts', 'capture-live-next-generation-ui.py'),
+)
+screen_module = importlib.util.module_from_spec(screen_spec)
+screen_spec.loader.exec_module(screen_module)
 for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, 'wide')):
     with tempfile.TemporaryDirectory(prefix='yoctui-snapshot-', dir='/tmp') as tmp:
         os.mkdir(os.path.join(tmp, 'build'))
@@ -83,8 +89,14 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
             check=False,
         )
         text = bytes(raw).decode('utf-8', 'replace')
-        normalized = re.sub(r'\x1b\[[0-9;?]*[ -/]*[@-~]', '', text)
-        normalized = '\n'.join(line.rstrip() for line in normalized.splitlines() if line.strip())
+        screen = screen_module.Screen(width, height)
+        screen.feed(text)
+        normalized = screen.text()
+        # The footer clock is useful in the live UI but must not make tracked
+        # semantic evidence change on every verification run. Activity phase
+        # is likewise timing-dependent while its textual lifecycle is stable.
+        normalized = re.sub(r'(?<!\d)\d{2}:\d{2}:\d{2}(?!\d)', '00:00:00', normalized)
+        normalized = re.sub(r'[⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏⠟⠯⠷⠾⠽⠻]', '⠋', normalized)
         open(os.path.join(artifact, f'{name}.txt'), 'w').write(normalized[-32768:])
         if 'yoctui' not in normalized.lower() or proc.returncode not in (0, 1, -9):
             raise SystemExit(f'snapshot failed at {name}: returncode={proc.returncode}')

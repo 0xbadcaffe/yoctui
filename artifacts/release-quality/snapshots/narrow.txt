@@ -1,1 +1,24 @@
-┌──────────────────────────────────────────────────────────────────────────────┐│y┌modal · Yoctui workflow guide · focus trapped─────────────────────────────┐d│Pa│0/6completed·opening/resumingstartsnobuildorprocess│  ┌C└──────────────────────────────────────────────────────────────────────────┘─┐│O┌Six-stepworkbenchpath───────────────────────────────────────────────────┐ ││A│Workflow step                  State        Authoritative destination     │ ││T│[>] Verify environment         CURRENT      Build environment             │││P│[-] Select a target            BLOCKED      Image target picker           │││M│[-] Review the first build     BLOCKED      Build options confirmation    │││H│[-] Inspect logs and errors    BLOCKED      Logs / Errors                 │││S│[-] Explore artifacts and root BLOCKED      Images / Rootfs               ││││[-] Use Terminal Sessions      BLOCKED      Terminal Sessions             ││││││└─││─┘┌O││─┐│N└──────────────────────────────────────────────────────────────────────────┘││A┌Selectedstep─────────────────────────────────────────────────────────────┐││C│Configuresource,builddirectory,andinitscript;verifybefore│││A│continuing.│││F│Prerequisite:Verifiedconnectedenvironmentiscurrent.│││T│EnteropensBuildenvironment.Itdoesnotbypassconfirmationorcreatea││└─└──────────────────────────────────────────────────────────────────────────┘─┘EnEsc dismiss · Enter open · n next · s skip · r restart · j/k select         ────────────────────────────────────────────────────────────────────────────────octui • – Idle • T:not selected                                 D:✓ Connectenes: Navigator  [Workspace]  Inspector  Tab/Shift+Tab                       ┌Current Build · Idle──┐│verall  progress unknown⠟  0/?                                              ││0 W0 !0 ✕0 --                                                               ││arget: none  Backend: bridge  Status: Idle  Exit code: none                 ││arse progress: not parsing  Tasks: 0/? (active: 0)  Warnings: 0  Errors: 0  ││achine: unknown  Distro: unknown  Release: unknown                          ││ost CPU: unavailable  Build disk free: unavailable  Environment: ready      ││state reuse: unavailable — backend does not report progress                 ││                                                                            ││  │└──────────────────────────────────────────────────────────────────────────────┘perationalCommandCenter───────────────────────────────────────────────────ext: Build image [B] — unknown                                              ctiv: 0 task(s) · 0 job(s) | Attention: none retained                      ontext: none retained                                        rtifact: oneretained avorite: non [f]                                     erminal: none [t]                                                  ──B build   f favorites  t terminals F2 Tasks ? Help  Ctrl+P Menuq Quit⠻⠽⠾⠷
+┌──────────────────────────────────────────────────────────────────────────────┐
+│yoctui • – Idle • T:not selected                                 D:✓ Connected│
+Panes: Navigator  [Workspace]  Inspector  Tab/Shift+Tab
+┌Current Build · Idle──────────────────────────────────────────────────────────┐
+│Overall  progress unknown⠋  0/?                                               │
+│A0 W0 !0 ✕0 --                                                                │
+│Target: none  Backend: bridge  Status: Idle  Exit code: none                  │
+│Parse progress: not parsing  Tasks: 0/? (active: 0)  Warnings: 0  Errors: 0   │
+│Machine: unknown  Distro: unknown  Release: unknown                           │
+│Host CPU: unavailable  Build disk free: unavailable  Environment: ready       │
+│Sstate reuse: unavailable — backend does not report progress                  │
+│                                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Operational Command Center────────────────────────────────────────────────────┐
+│Next: Build image [B] — unknown                                               │
+│Active: 0 task(s) · 0 job(s) | Attention: none retained                       │
+│Context: none retained                                                        │
+│Artifact: none retained                                                       │
+│Favorite: none [f]                                                            │
+│Terminal: none [t]                                                            │
+└──────────────────────────────────────────────────────────────────────────────┘
+B build   f favorites   t terminals   F2 Tasks   ? Help   Ctrl+P Menu   q Quit
+────────────────────────────────────────────────────────────────────────────────
