@@ -781,7 +781,9 @@ class BitBakeAdapter:
             response.get(key) is not None and not isinstance(response.get(key), str)
             for key in keys
         ):
-            raise ServerUnavailable("BitBake server returned malformed rootfs source data")
+            raise ServerUnavailable(
+                "BitBake server returned malformed rootfs source data"
+            )
         return {key: response.get(key) for key in keys}
 
     def recipes(self, filter_value):
