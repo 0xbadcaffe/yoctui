@@ -2,40 +2,39 @@
 
 ## Task
 
-**ID:** UX-LIVE-001
-**Title:** Validate the one-stop workbench against supported live Yocto
+**ID:** UX-DOC-001
+**Title:** Document the polished one-stop workbench
 **Status:** NOT_STARTED
 
 ## Objective
 
-Validate the complete workbench against the supported older and latest live
-Yocto environments and publish bounded, current release evidence.
+Complete the operator-facing and maintainer-facing documentation for the
+polished workbench, its interaction model, authority boundaries, accessibility,
+performance, dependencies, and verified live behavior.
 
 ## Dependencies
 
-- `UX-WORKBENCH-CENTER-001` — DONE
-- `UX-ROOTFS-UI-001` — DONE
-- `UX-TERMINAL-UX-001` — DONE
-- `UX-KEYMAP-E2E-001` — DONE
+- `UX-LIVE-001` — DONE
+- `UX-A11Y-001` — DONE
+- `UX-PERF-001` — DONE
+- `UX-PTY-E2E-001` — DONE
 
 ## Definition of done
 
-- The supported older and latest Yocto/BitBake environments exercise menus and
-  exact availability, a real build and cancellation, progress/log correlation,
-  reconnect, and bounded large-data behavior.
-- Image manifests, pkgdata, and filesystem composition remain correlated to the
-  exact image/build identity with honest unavailable and partial states.
-- Context terminals and supported interactive tasks such as devshell and
-  menuconfig run through daemon-owned typed routes where the environment
-  advertises them.
-- Evidence records revisions, toolchain/environment identities, checksums,
-  semantic PTY captures, outcomes, and timestamps and remains within the
-  documented 90-day validity window.
+- The operator guide, UI specification, architecture, keymap reference,
+  terminal guide, settings, accessibility, and troubleshooting describe the
+  implemented menus, focus, scrolling, widgets, workflows, and shortcuts.
+- Rootfs/package composition documentation distinguishes manifest, pkgdata,
+  deployed filesystem, partial, unavailable, and cleaned authority precisely.
+- Dependency decisions, licenses, notices, SBOM, live evidence identities,
+  validity windows, and reproduction commands remain complete and auditable.
+- Screenshots and semantic captures correspond to the current production UI
+  and are generated or validated by repository gates.
 
 ## Verification
 
 ```bash
-./scripts/test-live-workbench-ux.sh
+./scripts/check-docs.sh
 ./scripts/verify-live-workbench-ux-evidence.sh
-./scripts/verify-compatibility.sh
+./scripts/verify-third-party-notices.sh
 ```

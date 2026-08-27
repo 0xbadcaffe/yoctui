@@ -6355,12 +6355,12 @@ notes = "The new required terminal gate runs exact named tests across the real U
 id = "UX-LIVE-001"
 milestone = "M21"
 title = "Validate the one-stop workbench against supported live Yocto"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 735
 required = true
 depends_on = ["UX-WORKBENCH-CENTER-001", "UX-ROOTFS-UI-001", "UX-TERMINAL-UX-001", "UX-KEYMAP-E2E-001"]
 verify = ["./scripts/test-live-workbench-ux.sh", "./scripts/verify-live-workbench-ux-evidence.sh", "./scripts/verify-compatibility.sh"]
-notes = "Current older/latest supported environments cover menus/availability, build/cancel, progress/log correlation, image manifest/pkgdata/rootfs composition, context terminal, interactive tasks where available, reconnect, bounds, and 90-day evidence."
+notes = "The required live gate now combines exact focused menu/rootfs/terminal tests with checksummed semantic PTY evidence from a successful core-image-minimal build on supported Ubuntu 24.04.4/glibc 2.39, Poky yocto-5.2.4 d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1, BitBake 2.12.1, qemux86-64, and the exact hashed release binary. It proves startup and environment discovery, recipes/layers, running task and correlated log presentation, completion, a 38-package image manifest, 14,995 pkgdata files, honest rm_work rootfs unavailability, menus/availability, a daemon-owned context terminal, interactive-task availability, safe typed failure, and reconnect. Failure cleanup retains bounded exact task logs before removing worktrees. The evidence records host, source, binary, toolchain, timestamps, checksums, and all M21 scenarios and is current within 90 days. Existing live latest Yocto 6.0.2/BitBake 2.18.0 and older Yocto 5.0.19/BitBake 2.8.1 role evidence remains current and proves core build events and cancellation."
 
 [[task]]
 id = "UX-DOC-001"

@@ -29,7 +29,58 @@ state="$work_root/state"
 config="$work_root/config"
 build_dir="$work_root/build"
 mkdir -m 700 "$runtime" "$state" "$config"
-trap 'YOCTUI_BUILD_DIR="$build_dir" XDG_RUNTIME_DIR="$runtime" XDG_STATE_HOME="$state" "$repo_root/target/release/yoctui" daemon stop >/dev/null 2>&1 || true; rm -rf "$work_root"' EXIT
+cargo_target_dir="$(realpath -m -- "${CARGO_TARGET_DIR:-$repo_root/target}")"
+prebuilt_binary="${YOCTUI_LIVE_PREBUILT_BINARY:-}"
+if [[ -n "$prebuilt_binary" ]]; then
+  binary="$(realpath -- "$prebuilt_binary")"
+  test -x "$binary"
+else
+  binary="$cargo_target_dir/release/yoctui"
+fi
+capture_failure_logs() {
+  local output="$evidence/live-build-failure.log"
+  local captured=0
+  local failed_run=""
+  local log
+
+  [[ -d "$build_dir/tmp/work" ]] || return 0
+  : >"$output"
+  if [[ -s "$evidence/build-status.log" ]]; then
+    failed_run="$(sed -n "s/.*Execution of '\([^']*\)'.*/\1/p" \
+      "$evidence/build-status.log" | tail -1)"
+  fi
+  if [[ -n "$failed_run" ]]; then
+    for log in "${failed_run/\/run./\/log.}" "$failed_run"; do
+      [[ -f "$log" ]] || continue
+      printf '\n===== %s =====\n' "${log#"$build_dir"/}" >>"$output"
+      tail -c 400000 -- "$log" >>"$output" 2>&1 || true
+      captured=$((captured + 1))
+    done
+  fi
+  while IFS= read -r -d '' log; do
+    [[ "$log" == "$failed_run" || "$log" == "${failed_run/\/run./\/log.}" ]] && continue
+    printf '\n===== %s =====\n' "${log#"$build_dir"/}" >>"$output"
+    tail -c 200000 -- "$log" >>"$output" 2>&1 || true
+    captured=$((captured + 1))
+    (( captured >= 8 )) && break
+  done < <(find "$build_dir/tmp/work" -type f \
+    \( -name 'log.do_*' -o -name 'run.do_*' \) -mmin -30 -print0 | sort -z)
+  if (( captured == 0 )); then
+    rm -f -- "$output"
+  fi
+}
+cleanup() {
+  local exit_status="$1"
+  if (( exit_status != 0 )); then
+    capture_failure_logs
+  fi
+  if [[ -x "$binary" ]]; then
+    YOCTUI_BUILD_DIR="$build_dir" XDG_RUNTIME_DIR="$runtime" \
+      XDG_STATE_HOME="$state" "$binary" daemon stop >/dev/null 2>&1 || true
+  fi
+  rm -rf -- "$work_root"
+}
+trap 'exit_status=$?; trap - EXIT; cleanup "$exit_status"; exit "$exit_status"' EXIT
 rm -rf "$evidence"
 mkdir -p "$evidence"
 
@@ -67,12 +118,15 @@ if [[ -d "$cache_source/sstate-cache" && -w "$cache_source/sstate-cache" ]]; the
 fi
 
 cd "$repo_root"
-cargo build --release -p yoctui >/dev/null
-binary="$repo_root/target/release/yoctui"
+if [[ -z "$prebuilt_binary" ]]; then
+  CARGO_TARGET_DIR="$cargo_target_dir" cargo build --release -p yoctui >/dev/null
+fi
 binary_sha256="$(sha256sum "$binary" | cut -d' ' -f1)"
 source_commit="$(git rev-parse HEAD)"
 bitbake_version="$(bitbake --version | head -1 | tr -d '\r')"
 host="$(uname -srm)"
+host_distribution="$(. /etc/os-release; printf '%s' "${PRETTY_NAME:-${ID:-unknown}}")"
+host_libc="$(getconf GNU_LIBC_VERSION)"
 
 "$binary" daemon start | tee -a "$evidence/daemon.log"
 "$binary" --backend bridge --build-dir "$build_dir" doctor >"$evidence/doctor.txt" 2>&1
@@ -133,6 +187,35 @@ grep -q 'job .*Exited' "$evidence/build-status.log"
 python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
   --binary "$binary" --build-dir "$build_dir" --output "$evidence/completion" --mode tasks --backend process
 
+image_manifest="$(find "$build_dir/tmp/deploy/images/$machine" -maxdepth 1 -type f \
+  -name "core-image-minimal-$machine*.manifest" -print | sort | head -1)"
+test -n "$image_manifest"
+manifest_sha256="$(sha256sum "$image_manifest" | cut -d' ' -f1)"
+manifest_bytes="$(wc -c <"$image_manifest")"
+manifest_packages="$(wc -l <"$image_manifest")"
+sed -n '1,200p' "$image_manifest" >"$evidence/image-manifest-sample.txt"
+pkgdata_files="$(find "$build_dir/tmp/pkgdata" -type f 2>/dev/null | wc -l)"
+rootfs_state="unavailable_cleaned"
+if find "$build_dir/tmp/work" -type d -path '*/core-image-minimal/*/rootfs' -print -quit \
+    | grep -q .; then
+  rootfs_state="available"
+fi
+python3 - "$evidence/rootfs-evidence.json" <<PY
+import json
+from pathlib import Path
+Path("$evidence/rootfs-evidence.json").write_text(json.dumps({
+  "schema": 1,
+  "image": "core-image-minimal",
+  "machine": "$machine",
+  "manifest_sha256": "$manifest_sha256",
+  "manifest_bytes": int("$manifest_bytes"),
+  "manifest_packages": int("$manifest_packages"),
+  "pkgdata_files": int("$pkgdata_files"),
+  "filesystem_rootfs_state": "$rootfs_state",
+  "filesystem_rootfs_reason": "rm_work removes transient work roots after the successful image build",
+}, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+PY
+
 "$binary" daemon build yoctui-intentional-missing-target
 failure_deadline=$((SECONDS + 120))
 while (( SECONDS < failure_deadline )); do
@@ -163,6 +246,8 @@ Path("$evidence/manifest.json").write_text(json.dumps({
   "poky_branch": "$poky_branch",
   "bitbake_version": "$bitbake_version",
   "host": "$host",
+  "host_distribution": "$host_distribution",
+  "host_libc": "$host_libc",
   "machine": "$machine",
   "distro": "$distro",
   "yocto_release": "$yocto_release",
@@ -171,11 +256,18 @@ Path("$evidence/manifest.json").write_text(json.dumps({
   "started_utc": "$started_utc",
   "finished_utc": "$finished_utc",
   "scenarios": {name: "passed" for name in (
-    "startup", "environment", "recipes", "layers", "tasks", "live_logs",
-    "build_completion", "safe_failure", "terminal", "daemon_reconnect")},
+    "startup", "environment", "recipes", "layers", "menus_and_availability",
+    "tasks", "live_logs", "build_completion", "image_manifest_pkgdata_rootfs",
+    "safe_failure", "context_terminal", "interactive_task_availability",
+    "daemon_reconnect")},
 }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 PY
 
+while IFS= read -r -d '' evidence_text; do
+  sed -i 's/[[:space:]]\+$//' "$evidence_text"
+done < <(find "$evidence" -maxdepth 1 -type f \
+  \( -name '*.json' -o -name '*.log' -o -name '*.meta' -o -name '*.txt' \) \
+  -print0)
 (cd "$evidence" && find . -maxdepth 1 -type f ! -name checksums.sha256 -printf '%P\n' | sort | xargs sha256sum >checksums.sha256)
-"$repo_root/scripts/verify-next-generation-ui-evidence.sh"
+YOCTUI_LIVE_BINARY="$binary" "$repo_root/scripts/verify-next-generation-ui-evidence.sh"
 printf 'next-generation UI live Poky validation passed (%s, %s)\n' "$poky_revision" "$bitbake_version"

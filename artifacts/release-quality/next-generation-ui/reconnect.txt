@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: poky  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Disconnected│
-┌ build shell #1 Running ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│0 viewer(s) | selection 1                                                                                                                                     │
-│$                                                                                                                                                             │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-│                                                                                                                                                              │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-B options   Ctrl+B prefix   Tab focus   ↑/↓ package progress   i image   ! shell   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit  21:23:45
+┌Navigator───────────┐┌Current Build · Failed─────────────────────────────────────────────┐┌Inspector: Daemon / session────────────────────────────────────────┐
+│▾ OVERVIEW          ││Overall  progress unknown⠾  0/?                                    ││▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       ││A0 W0 !0 ✕1 --                                                     ││Target: core-image-minimal                                         │
+│▾ CONTENT           ││Target: core-image-minimal  Status: Failed  Exit code: 1           ││Status: Failed                                                     │
+│  ~ Layers          ││Backend: bridge  Parse progress: 923/923                           ││                                                                   │
+│  ~ Recipes         ││Tasks: 0/?  Active: 0  Warnings: 0  Errors: 1                      ││Select an item in the workspace to inspect its details.            │
+│  × Packages        ││Machine: qemux86-64  Distro: poky  Release: 5.2.4                  ││                                                                   │
+│  ~ Images          ││CPU: unavailable  Disk free: unavailable                           ││▾ SECONDARY FACTS                                                  │
+│  ▱ SDK             ││Environment: ready  Sstate reuse: unavailable                      ││A0 Q0 F0 Done0 D2                                                  │
+│▾ BUILD             │└───────────────────────────────────────────────────────────────────┘│                                                                   │
+│  ~ Tasks           │┌Active Tasks · 0 active · 0 retained c┐┌Next Action────────────────┐│▾ CONTEXTUAL ACTIONS                                               │
+│  ▱ Logs        LIVE││No active task events. Start a build w││Recommended                ││~ Build image                  [B] — Limited                       │
+│  ▱ Errors         1││                                      ││Review failures [e] —      ││  Reason: Direct probing was inconclusive; a centralized BitBake   │
+│  ▱ Configuration   ││                                      ││available                  ││adapter fallback was selected.                                     │
+│  ~ Dependencies    ││                                      ││                           ││  Limitation: Modern Tinfoil API family is inferred only through   │
+│▾ VALIDATE          ││                                      ││Common actions             ││the latest documented BitBake 2.18 boundary; direct negotiation is │
+│  ▱ Testing         ││                                      ││[F2] Tasks  [l] Logs  [e]  ││still preferred.                                                   │
+│  ? Security        ││                                      ││Errors  [F3] Recent work   ││  Implementation: tinfoil.adapter.modern                           │
+│  ▱ QA              ││                                      ││[F8] Artifacts  [f]        ││~ Cancel active build          [c] — Limited                       │
+│▾ TOOLS             ││                                      ││Favorites  [t] Terminals   ││  Reason: Direct probing was inconclusive; a centralized BitBake   │
+│  ▱ Raw Mode        ││                                      ││[E] Environment  [M] Sstate││adapter fallback was selected.                                     │
+│  ~ Terminal Session││                                      ││readiness                  ││  Limitation: Modern Tinfoil API family is inferred only through   │
+│  ▱ Devtool         ││                                      ││                           ││the latest documented BitBake 2.18 boundary; direct negotiation is │
+│  ▱ QEMU / Wic      ││                                      ││                           ││still preferred.                                                   │
+│  ▱ Maintenance     ││                                      ││                           ││  Implementation: tinfoil.adapter.modern                           │
+│  ▱ Build environmen││                                      ││                           ││✓ Monitor active tasks         [F2] — Local                        │
+│  ▱ Compatibility   ││                                      ││                           ││✓ Open retained logs           [l] — Local                         │
+│  ▱ Settings        │└──────────────────────────────────────┘└───────────────────────────┘│✓ Review failures              [e] — Local                         │
+│                    │┌Attention · 1 retained · e rev┐┌Workbench Center · live source proj┐│✓ Inspect recent work          [F3] — Local                        │
+│                    ││✕ Build failed with exit code ││Next: Review failures [e] · availa…││✓ Inspect artifacts            [F8] — Local                        │
+│                    ││1                             ││[F3] Context: none retained        ││✓ Configure build environment  [E] — Local                         │
+│                    ││                              ││[F2/F3] Active: tasks 0 · jobs 0   ││✓ Sstate readiness             [M] — Local                         │
+│                    ││                              ││[e] Failure: Build failed with exi…││✓ Browse favorite commands     [f] — Local                         │
+│                    ││                              ││[F8] Artifact: none retained       ││✓ Open terminal sessions       [t] — Local                         │
+│                    ││                              ││[f] Favorite: none                 ││                                                                   │
+│                    ││                              ││[t] Terminal: build shell · Runnin…││▾ SYSTEM / COMPATIBILITY                                           │
+│                    ││                              ││[F3] Recent: none retained         ││✓ Daemon Connected · version unavailable · up 00:05:19             │
+│                    ││                              ││                                   ││– BitBake Disconnected · v2.12.1 · Jobs 0                          │
+│                    ││                              ││                                   ││! Compat Degraded g1 · A64 L14 U5 ?24 · PTY 1 · Clients 0          │
+│                    ││                              ││                                   ││! Build FS unavailable · Workspace /home/bspguy-dev/projects/yoctu…│
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+└────────────────────┘└──────────────────────────────┘└───────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   Tab Inspector   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit          08:43:12
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

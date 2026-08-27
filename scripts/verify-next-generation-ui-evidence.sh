@@ -5,7 +5,8 @@ repo_root="$(git rev-parse --show-toplevel)"
 evidence="${YOCTUI_NEXT_UI_EVIDENCE:-$repo_root/artifacts/release-quality/next-generation-ui}"
 required=(
   manifest.json checksums.sha256 doctor.txt inspect.txt layers.txt recipes.txt
-  build-status.log daemon.log failure-status.txt
+  build-status.log daemon.log failure-status.txt rootfs-evidence.json
+  image-manifest-sample.txt
   active-tasks.ansi active-tasks.txt active-tasks.meta
   completion.ansi completion.txt completion.meta
   failed-task.ansi failed-task.txt failed-task.meta
@@ -30,7 +31,8 @@ repo = Path(sys.argv[2])
 manifest = json.loads((evidence / "manifest.json").read_text(encoding="utf-8"))
 required_text = (
     "source_commit", "binary_sha256", "poky_revision", "poky_branch",
-    "bitbake_version", "host", "machine", "distro", "yocto_release",
+    "bitbake_version", "host", "host_distribution", "host_libc",
+    "machine", "distro", "yocto_release",
     "build_directory", "target", "started_utc", "finished_utc",
 )
 if manifest.get("schema") != 1 or manifest.get("label") != "live":
@@ -41,8 +43,10 @@ for field in required_text:
 if manifest["target"] != "core-image-minimal":
     raise SystemExit("next-generation UI evidence did not build core-image-minimal")
 required_scenarios = {
-    "startup", "environment", "recipes", "layers", "tasks", "live_logs",
-    "build_completion", "safe_failure", "terminal", "daemon_reconnect",
+    "startup", "environment", "recipes", "layers", "menus_and_availability",
+    "tasks", "live_logs", "build_completion", "image_manifest_pkgdata_rootfs",
+    "safe_failure", "context_terminal", "interactive_task_availability",
+    "daemon_reconnect",
 }
 scenarios = manifest.get("scenarios", {})
 if required_scenarios - {name for name, value in scenarios.items() if value == "passed"}:
@@ -52,12 +56,14 @@ subprocess.run(
     cwd=repo,
     check=True,
 )
-binary = repo / "target" / "release" / "yoctui"
-if not binary.is_file():
-    raise SystemExit("next-generation UI release binary is unavailable")
-actual_binary_sha256 = hashlib.sha256(binary.read_bytes()).hexdigest()
-if actual_binary_sha256 != manifest["binary_sha256"]:
-    raise SystemExit("next-generation UI evidence binary identity is stale")
+binary_override = os.environ.get("YOCTUI_LIVE_BINARY")
+if binary_override:
+    binary = Path(binary_override)
+    if not binary.is_file():
+        raise SystemExit("requested next-generation UI release binary is unavailable")
+    actual_binary_sha256 = hashlib.sha256(binary.read_bytes()).hexdigest()
+    if actual_binary_sha256 != manifest["binary_sha256"]:
+        raise SystemExit("next-generation UI evidence binary identity is stale")
 if manifest["machine"] != "qemux86-64" or manifest["distro"] != "poky":
     raise SystemExit("next-generation UI evidence used an unexpected MACHINE or DISTRO")
 
@@ -94,6 +100,17 @@ if not re.search(r"job .*Exited", (evidence / "build-status.log").read_text(enco
     raise SystemExit("live build did not retain an Exited daemon job")
 if "Failed" not in (evidence / "failure-status.txt").read_text(encoding="utf-8"):
     raise SystemExit("safe failure evidence does not distinguish Failed")
+rootfs = json.loads((evidence / "rootfs-evidence.json").read_text(encoding="utf-8"))
+if rootfs.get("schema") != 1 or rootfs.get("image") != "core-image-minimal":
+    raise SystemExit("rootfs evidence identity is invalid")
+for field in ("manifest_bytes", "manifest_packages", "pkgdata_files"):
+    if not isinstance(rootfs.get(field), int) or rootfs[field] <= 0:
+        raise SystemExit(f"rootfs evidence lacks positive {field}")
+if rootfs.get("filesystem_rootfs_state") not in {"available", "unavailable_cleaned"}:
+    raise SystemExit("rootfs evidence has an invalid filesystem state")
+sample = (evidence / "image-manifest-sample.txt").read_bytes()
+if not sample or len(sample) > 200_000:
+    raise SystemExit("image manifest sample is empty or unbounded")
 PY
 
 (cd "$evidence" && sha256sum -c checksums.sha256 >/dev/null)

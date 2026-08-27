@@ -1,27 +1,27 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: poky  •  ▶ Parsing  •  Target: core-image-minimal  •  Machine: qemux86-64                       Daemon: ✓ Connected  •  BitBake: ✓ Running│
 ┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
-│▾ Layers                ││████████████████████████████████Overall  98%  3796/3837 █████████████████████████████  ││Task        do_rootfs                      │
-│  ▱ core                ││Active 1  Waiting 0  Warnings 0  Errors 0  Elapsed 00:00:02                            ││Recipe      core-image-minimal             │
-│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          core-image-minimal             │
-│  ▱ yoctobsp            ││do_rootfs        core-image-minimal    ▶ Running     00:00:02  ▎░░░░░░░░░ 3%           ││PV          unavailable                    │
-│▾ Recipes               ││do_create_spdx_s acl                   · Queued      --        --                      ││PR          unavailable                    │
-│  ▸ discovering…        ││do_populate_sysr acl                   · Queued      --        --                      ││State       ▶ Running                      │
-│▾ Images                ││do_recipe_qa_set acl                   · Queued      --        --                      ││Progress    3%                             │
-│  ▱ none discovered     ││do_create_packag alsa-lib              · Queued      --        --                      ││                                           │
-│▾ Tasks                 ││do_create_spdx_s alsa-lib              · Queued      --        --                      ││                                           │
-│  ▱ Build               ││do_populate_lic_ alsa-lib              · Queued      --        --                      │└───────────────────────────────────────────┘
-│  ▱ Test                ││do_populate_sysr alsa-lib              · Queued      --        --                      │┌Secondary facts · Paths · Dependencies─────┐
-│  ▱ QA                  ││do_recipe_qa_set alsa-lib              · Queued      --        --                      ││Worker      unavailable                    │
-│  ▱ Devtool             │└───────────────────────────────────────────────────────────────────────────────────────┘│PID         40843                          │
-│  ▱ Wic                 │┌Log Viewer — do_rootfs (core-image-minimal) · ▶ Follow─────────────────────────────────┐│Started     21:22:00                       │
+│▾ Layers                ││                                 Overall  0%  20/3837                                  ││Task        do_populate_sysroot_setscene   │
+│  ▱ core                ││Active 5  Waiting 3715  Warnings 0  Errors 0  Elapsed 00:00:02                         ││Recipe      qemu-system-native             │
+│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          qemu-system-native             │
+│  ▱ yoctobsp            ││do_populate_sysr qemu-system-native    ▶ Running     00:00:02  progress unknown⠾       ││PV          unavailable                    │
+│▾ Recipes               ││do_package_qa_se update-rc.d           ✓ Succeeded   00:00:00  ██████████ 100%         ││PR          unavailable                    │
+│  ▸ discovering…        ││do_populate_lic_ pkgconfig-native      ✓ Succeeded   00:00:00  ██████████ 100%         ││State       ▶ Running                      │
+│▾ Images                ││do_populate_lic_ busybox               ✓ Succeeded   00:00:00  ██████████ 100%         ││Progress    unknown                        │
+│  ▱ none discovered     ││do_package_write mpfr                  ✓ Succeeded   00:00:00  ██████████ 100%         ││                                           │
+│▾ Tasks                 ││do_create_packag glibc-locale          ✓ Succeeded   00:00:01  ██████████ 100%         ││                                           │
+│  ▱ Build               ││do_create_spdx_s core-image-minimal    ✓ Succeeded   00:00:00  ██████████ 100%         │└───────────────────────────────────────────┘
+│  ▱ Test                ││do_create_packag libtasn1-native       ✓ Succeeded   00:00:00  ██████████ 100%         │┌Secondary facts · Paths · Dependencies─────┐
+│  ▱ QA                  ││do_package_write json-c                ✓ Succeeded   00:00:00  ██████████ 100%         ││Worker      unavailable                    │
+│  ▱ Devtool             │└───────────────────────────────────────────────────────────────────────────────────────┘│PID         4727                           │
+│  ▱ Wic                 │┌Log Viewer — do_populate_sysroot_setscene (qemu-system-native) · ▶ Follow──────────────┐│Started     08:40:03                       │
 │  ▱ SDK                 ││Waiting for typed log entries for the selected task.                                   ││Elapsed     00:00:02                       │
 │  ▱ Security            ││                                                                                       ││Workdir     unavailable                    │
 │  ▱ Utility             ││                                                                                       ││Log file                                   │
 │▾ Targets               ││                                                                                       ││/home/bspguy-dev/projects/yoctui/.yoctui-ne│
-│  ▱ qemux86-64          ││                                                                                       ││xt-ui-live.TLuBKK/build/tmp/work/qemux86_64│
-│                        ││                                                                                       ││-poky-linux/core-image-minimal/1.0/temp/log│
-│                        ││                                                                                       ││.do_rootfs.40843                           │
+│  ▱ qemux86-64          ││                                                                                       ││xt-ui-live.Np2QYf/build/tmp/work/x86_64-lin│
+│                        ││                                                                                       ││ux/qemu-system-native/9.2.0/temp/log.do_pop│
+│                        ││                                                                                       ││ulate_sysroot_setscene.4727                │
 │                        ││                                                                                       │└───────────────────────────────────────────┘
 │                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
 │                        ││                                                                                       ││Waiting for typed log entries for the      │
@@ -39,12 +39,12 @@
 │                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
 │                        │└───────────────────────────────────────────────────────────────────────────────────────┘│✓ Build History        [h] — Local         │
 │                        │┌Telemetry · bounded 60-sample histories────────────────────────────────────────────────┐│~ Build options        [B] — Limited       │
-│                        ││████                 │███                  │████████████████████│R 143.9 MiB/s █▇      │└───────────────────────────────────────────┘
-│                        ││████                 │███                  │████████████████████│W 0 B/s               │┌System Status──────────────────────────────┐
-│                        ││████                 │███                  │████████████████████│                      ││✓ Daemon Connected · version unavailable ·…│
-│                        ││████CPU 18% · 8c     │███    RAM 14%       │████BUILD FS 99% ███│                      ││✓ BitBake Running · v2.12.1 · Jobs 1       │
-│                        ││████                 │███                  │████████████████████│                      ││! Compat Degraded g1 · A63 L14 U5 ?25 · PT…│
-│L: core  R: 1  P:40843  ││████                 │███                  │████████████████████│                      ││✕ Build FS 99% · 3.9/456.3 GiB free · Work…│
+│                        ││█████████████████████│███                  │██████████████████  │R 650.6 KiB/s █▇      │└───────────────────────────────────────────┘
+│                        ││█████████████████████│███                  │██████████████████  │W 52.8 MiB/s   █      │┌System Status──────────────────────────────┐
+│                        ││█████████████████████│███                  │██████████████████  │                      ││✓ Daemon Connected · version unavailable ·…│
+│                        ││████CPU 98% · 8c ████│███    RAM 16%       │████BUILD FS 92% █  │                      ││✓ BitBake Running · v2.12.1 · Jobs unavail…│
+│                        ││█████████████████████│███                  │██████████████████  │                      ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
+│L: core  R: 1  P:4727   ││█████████████████████│███                  │██████████████████  │                      ││✕ Build FS 92% · 32.4/456.3 GiB free · Wor…│
 └────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
-│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit                               ▶ BitBake parsing  21:22:02│
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit                               ▶ BitBake parsing  08:40:05│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

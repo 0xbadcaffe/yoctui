@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: poky  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Disconnected│
 ┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
-│▾ Layers                ││Overall  progress unknown▹▹▹▹▹▸▸▸  0/?                                                 ││No task selected.                          │
+│▾ Layers                ││Overall  progress unknown⠾  0/?                                                        ││No task selected.                          │
 │  ▱ core                ││Active 0  Waiting 0  Warnings 0  Errors 1  Elapsed --                                  ││Task facts appear as typed BitBake events  │
 │  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││arrive.                                    │
 │  ▱ yoctobsp            ││                                                                                       ││                                           │
@@ -43,8 +43,8 @@
 │                        ││                                                                                       │┌System Status──────────────────────────────┐
 │                        ││                                                                                       ││✓ Daemon Connected · version unavailable ·…│
 │                        ││                                                                                       ││– BitBake Disconnected · v2.12.1 · Jobs 0  │
-│                        ││                                                                                       ││! Compat Degraded g1 · A63 L14 U5 ?25 · PT…│
+│                        ││                                                                                       ││! Compat Degraded g1 · A64 L14 U5 ?24 · PT…│
 │L: core  R: 2  P:--     ││                                                                                       ││! Build FS unavailable · Workspace /home/b…│
 └────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
-│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      21:23:28│
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   Tab Inspector   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit      08:42:55│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

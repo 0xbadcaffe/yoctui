@@ -19,7 +19,7 @@ application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-35/38 (92.1%); overall required registry progress is 575/578 (99.5%).
+36/38 (94.7%); overall required registry progress is 576/578 (99.7%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic
@@ -1043,6 +1043,7 @@ See `docs/current-task.md`.
 | Responsive layouts | DONE | M21 production fixtures cover every screen plus menus, editors, dependency topology, rootfs, terminal sessions, Workbench Center, onboarding, Settings, and dialogs at 200x60, 160x50, 130x40, 100x30, 80x24, and bounded below-minimum recovery. Typed focus/selection/session state survives resize; real PTY snapshots dismiss first-run onboarding before exact navigation |
 | Real-terminal keymap UX | DONE | Exhaustive catalog/default/custom binding, validation, reset, focus/zoom, and scrolling tests are paired with a controlling-PTY semantic workflow for F10, Ctrl+P, F2, keyboard/right-click context menus, search/page/edge input, and 160x40↔80x24 resize retention. Baseline PTY harnesses now isolate state, establish a controlling terminal, and exercise the live unconfigured workbench rather than accepting an early backend failure |
 | Built-in terminal E2E | DONE | Exact runner/daemon/protocol/model/app/mouse/UI/E2E tests cover raw and Unicode bytes, modes, bounded paste/scrollback, split/session focus, writer epochs/takeover/release, literal prefix, copy/search/rename, resize, detach/reattach/reconnect, exit/loss, and confirmed termination. An isolated live daemon plus controlling-PTY client validates prefix navigation, split/help, narrow resize, clean exit/restoration, and cleanup; prefix help now remains visible with zero sessions |
+| Live one-stop workbench | DONE | Supported Ubuntu 24.04.4/glibc 2.39 evidence binds the exact release binary and source to a successful Poky 5.2.4/BitBake 2.12.1 core-image-minimal build, semantic task/log/completion/failure/terminal/reconnect captures, a 38-package image manifest, 14,995 pkgdata files, honest cleaned-rootfs state, and bounded checksums. Current latest 6.0.2 and older 5.0.19 live release-role evidence independently retains build and cancellation coverage |
 | Focus routing | DONE | Bidirectional pane cycling, modal input trapping, nested-modal return targets, exact pane restoration, quit cancellation, and responsive focus rendering are covered |
 | Dialogs | DONE | One typed FIFO queue drives build, image, recipe, Devtool, BBMASK, editor, quit, and completion workflows; invalid actions are inert and asynchronous completion waits behind active input |
 | Command palette | DONE | Typed catalog, case-insensitive search, contextual availability, disabled explanations, inert invalid activation, focus restore, themes, and narrow rendering are covered |

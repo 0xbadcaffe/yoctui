@@ -1,0 +1,11 @@
+{
+  "filesystem_rootfs_reason": "rm_work removes transient work roots after the successful image build",
+  "filesystem_rootfs_state": "unavailable_cleaned",
+  "image": "core-image-minimal",
+  "machine": "qemux86-64",
+  "manifest_bytes": 1319,
+  "manifest_packages": 38,
+  "manifest_sha256": "b798dc6f4135dd0da986af477f42604592cf55f38bbddfa2c20193c0473c6e09",
+  "pkgdata_files": 14995,
+  "schema": 1
+}
