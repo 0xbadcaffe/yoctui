@@ -103,8 +103,9 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8")
         text, replacements = re.subn(
-            r'(implementation_tasks = \["UX-DASHBOARD-001"\]\n)open_gaps = \[\]',
-            r'\1open_gaps = [{ task = "UX-DASHBOARD-001", description = "test gap" }]',
+            r'(implementation_tasks = \[[^\n]*"UX-DASHBOARD-001"[^\n]*\]\n'
+            r'open_gaps = \[\n)',
+            r'\1  { task = "UX-DASHBOARD-001", description = "test gap" },\n',
             text,
             count=1,
         )

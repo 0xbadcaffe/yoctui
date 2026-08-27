@@ -11,15 +11,25 @@ Status values:
 
 ## Current phase
 
-M21 One-Stop Yocto Workbench Usability is active under the user's explicit
-request and is now complete. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
+M22 Concept-to-Live UI Parity is active under the user's explicit request to
+close the gap between the reviewed concept screens and a real working Yoctui
+instance. The audit found that M21's anchor-only fixture checks and broad live
+scenario labels overstated visual/workflow parity: failed-build composition,
+rootfs composition at the canonical width, the editor-plus-F10-menu composition,
+terminal live navigation, deterministic app-derived raster proof, and exact
+live scenario attribution still need work. `UX-CONCEPT-GOV-001` records those
+gaps without rewriting completed M21 history. M21 remains 38/38 complete under
+its original contract; overall required registry progress is 579/587 (98.6%).
+`UX-CONCEPT-ACCEPTANCE-001` is active first.
+
+M21 One-Stop Yocto Workbench Usability is complete. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
 and third-party widget showcases were mapped to Yoctui's existing typed
 workbench; the UI and architecture contracts now define one action catalog,
 application/context menus, scoped keybindings, consistent focus/zoom/scroll,
 progress and telemetry, bounded logs and editing, checkboxes, dependency and
 rootfs visualization, the first-class terminal path, dependency/license policy,
 38 atomic tasks, required tests, and measurable completion. M21 progress is
-38/38 (100.0%); overall required registry progress is 578/578 (100.0%).
+38/38 (100.0%).
 `UX-CONCEPT-VALIDATION-001` is complete: all six concept identities render from
 typed fixtures through production `render_at` at `160x50`, with reviewed
 semantic captures and exact cell/style goldens. The manifest checks semantic

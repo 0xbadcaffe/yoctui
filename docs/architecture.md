@@ -3265,3 +3265,20 @@ manifest and pkgdata can be Available while an `rm_work`-cleaned
 authorities or promote unavailable/partial filesystem data into a total. See
 [Rootfs composition evidence](rootfs-composition.md), [Testing](testing.md),
 and [Compatibility](compatibility.md).
+
+### Concept-to-live parity evidence boundary
+
+Concept parity has three independent projections over one scenario identity.
+The production fixture is the exact TestBackend cell/style authority. The
+deterministic raster is a pinned rendering of those cells and cannot introduce
+content, layout, focus, or state. Live PTY evidence is a transcript of explicit
+typed input and observed semantic screen assertions from one exact binary and
+environment. Passing one projection never implies that another passed.
+
+The manifest owns the bounded scenario feature contract and maps each missing
+feature to one incomplete registry task. The offline verifier checks fixture
+dimensions/styles, required semantic features, raster provenance/checksum, and
+live interaction attribution independently. The live harness may claim only a
+scenario it navigated and asserted; it cannot synthesize menu, rootfs, editor,
+error, or terminal success from unrelated startup/build captures. Generated
+concept artwork remains human-review input outside this authority chain.

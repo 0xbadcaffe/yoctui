@@ -4787,3 +4787,29 @@ and reconnect scenarios during an exact Poky 5.2.4 `core-image-minimal` build.
 The [keymap reference](keymap.md), [Rootfs evidence guide](rootfs-composition.md),
 and [compatibility record](compatibility.md#current-one-stop-workbench-live-evidence)
 are the operator-facing boundaries for those results.
+
+## 34. Concept-to-live parity contract
+
+The six reviewed M21 concept images remain non-authoritative visual direction.
+M22 acceptance is scenario-based: each manifest entry declares concrete
+features and separately identifies production TestBackend, deterministic raster,
+and live PTY evidence. Text anchors alone cannot establish that a workflow was
+composed, focused, navigated, or operated as shown.
+
+Failed-build acceptance requires the Errors workspace to compose an explicit
+failed summary, structured error/warning inventory, correlated paused log with
+loss and match position, textual filter selection, and recovery actions. Rootfs
+acceptance requires chart and exact composition table to coexist at the
+canonical width, with accessible checkbox semantics and a separately labelled
+filesystem tree. Editor acceptance requires the production recipe editor and
+the focus-trapped F10 application menu to be visible in the same scene with the
+menu owning input. Terminal acceptance requires the live client to navigate to
+Terminal Sessions, create or attach daemon-owned sessions, render split panes,
+show writer/read-only ownership, and expose prefix help.
+
+Raster validation must be derived deterministically from exact production
+cells/styles with a pinned renderer and font. It is review evidence, not a new
+UI authority. Live evidence must record the exact input sequence and assert the
+resulting screen anchors before a scenario can be named as passed. Unsupported
+host combinations may produce diagnostics but cannot replace supported-host
+evidence.

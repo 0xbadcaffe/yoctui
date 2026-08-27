@@ -6383,3 +6383,105 @@ required = true
 depends_on = ["UX-SPEC-001", "UX-CONCEPT-VALIDATION-001", "UX-LICENSE-001", "UX-ACTION-CATALOG-001", "UX-KEYMAP-MODEL-001", "UX-KEYMAP-UI-001", "UX-MENU-001", "UX-FOCUS-001", "UX-SCROLL-001", "UX-WIDGET-PRIMITIVES-001", "UX-PROGRESS-001", "UX-THROBBER-001", "UX-TELEMETRY-001", "UX-LOGS-001", "UX-INTERNAL-LOG-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CHECKBOX-001", "UX-LIST-TREE-001", "UX-DEPENDENCY-GRAPH-001", "UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-IMAGE-PREVIEW-001", "UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-DASHBOARD-001", "UX-WORKBENCH-CENTER-001", "UX-ONBOARDING-001", "UX-PREFERENCES-001", "UX-RESPONSIVE-001", "UX-A11Y-001", "UX-PERF-001", "UX-KEYMAP-E2E-001", "UX-PTY-E2E-001", "UX-LIVE-001", "UX-DOC-001"]
 verify = ["./scripts/verify-workbench-ux.sh", "./scripts/verify-completion.sh"]
 notes = "All 37 child tasks and the parent are complete. The dedicated aggregate gate validates the exact child/dependency registry, roadmap, production concept pack, audited widget graph and locked offline build, notices/SBOM, format, all-feature workspace tests, Clippy, real-PTY menus/keybindings/focus/scroll and daemon terminal lifecycle, deterministic responsive snapshots, accessibility/UI contracts, the expanded sub-10-ms performance and flamegraph matrices, supported-host live workbench evidence, current latest/older compatibility roles, documentation, and roadmap. PTY snapshots now replay ANSI into bounded semantic cells and normalize clock/animation phase, so consecutive real-terminal runs are byte-identical. The unchanged strict full completion gate also passes from a clean checkout."
+
+# M22 — Concept-to-Live UI Parity. This milestone records gaps discovered by a
+# post-M21 comparison and does not rewrite the evidence or status of M21 tasks.
+
+[[task]]
+id = "UX-CONCEPT-GOV-001"
+milestone = "M22"
+title = "Register concept-to-live parity gaps"
+status = "DONE"
+priority = 738
+required = true
+depends_on = ["UX-001"]
+verify = ["./scripts/verify-roadmap.sh", "./scripts/verify-m21-concept-screens.sh"]
+notes = "The post-M21 audit separates fixture, raster, and live proof and assigns the failed-build, rootfs, editor/menu, terminal, raster, and live-attribution gaps to new incomplete tasks without changing completed M21 history."
+
+[[task]]
+id = "UX-CONCEPT-ACCEPTANCE-001"
+milestone = "M22"
+title = "Make concept-screen acceptance scenario-complete and truthful"
+status = "IN_PROGRESS"
+priority = 739
+required = true
+depends_on = ["UX-CONCEPT-GOV-001"]
+verify = ["python3 scripts/test-m21-concept-screen-verifier.py", "./scripts/verify-m21-concept-screens.sh", "./scripts/verify-roadmap.sh"]
+notes = "Add machine-checked required features and separate fixture/raster/live evidence so broad labels or incidental anchors cannot satisfy a scenario."
+
+[[task]]
+id = "UX-CONCEPT-ERRORS-001"
+milestone = "M22"
+title = "Compose the complete failed-build concept workflow"
+status = "NOT_STARTED"
+priority = 740
+required = true
+depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
+verify = ["cargo test -p yoctui-ui concept_failed_build", "cargo test -p yoctui-model concept_failed_build"]
+notes = "Compose failed summary, structured diagnostics, correlated paused log, textual filters, loss/match state, and recovery actions in one production scene."
+
+[[task]]
+id = "UX-CONCEPT-ROOTFS-001"
+milestone = "M22"
+title = "Compose the canonical Rootfs exploration concept"
+status = "NOT_STARTED"
+priority = 741
+required = true
+depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
+verify = ["cargo test -p yoctui-ui concept_rootfs_composition", "cargo test -p yoctui-app ux_rootfs"]
+notes = "Keep chart, exact table, accessible selection, limitations, and filesystem drill-down simultaneously visible at the canonical width."
+
+[[task]]
+id = "UX-CONCEPT-EDITOR-MENU-001"
+milestone = "M22"
+title = "Compose the recipe editor with the application menu"
+status = "NOT_STARTED"
+priority = 742
+required = true
+depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
+verify = ["cargo test -p yoctui-ui concept_editor_application_menu", "cargo test -p yoctui-app ux_menu"]
+notes = "Render the real multiline recipe editor and focus-trapped F10 menu together with menu ownership, disabled reasons, validation, diff, and editor actions."
+
+[[task]]
+id = "UX-CONCEPT-TERMINAL-LIVE-001"
+milestone = "M22"
+title = "Drive the Terminal Sessions concept through a real client"
+status = "NOT_STARTED"
+priority = 743
+required = true
+depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
+verify = ["cargo test -p yoctui -- ux_terminal_runtime", "./scripts/test-workbench-terminal.sh"]
+notes = "Navigate with Ctrl+B t, prove daemon-owned split panes and writer/read-only state, and capture visible prefix help from the real client."
+
+[[task]]
+id = "UX-CONCEPT-RASTER-001"
+milestone = "M22"
+title = "Render deterministic PNGs from production cells"
+status = "NOT_STARTED"
+priority = 744
+required = true
+depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001"]
+verify = ["./scripts/render-m22-concept-screenshots.sh --check", "python3 scripts/test-m22-concept-raster.py"]
+notes = "Use a pinned font and renderer to convert exact production cell/style goldens into reproducible review PNGs with provenance and checksums."
+
+[[task]]
+id = "UX-CONCEPT-LIVE-001"
+milestone = "M22"
+title = "Capture every concept workflow on a supported live Yocto host"
+status = "NOT_STARTED"
+priority = 745
+required = true
+depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-TERMINAL-LIVE-001"]
+verify = ["./scripts/test-live-m22-concept-parity.sh", "./scripts/verify-live-m22-concept-evidence.sh"]
+notes = "The live harness must drive and assert each named workflow against one exact supported-host binary; unsupported-host diagnostics cannot satisfy this task."
+
+[[task]]
+id = "UX-CONCEPT-PARITY-001"
+milestone = "M22"
+title = "Complete concept-to-live UI parity"
+status = "NOT_STARTED"
+priority = 746
+required = true
+depends_on = ["UX-CONCEPT-ACCEPTANCE-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+verify = ["./scripts/verify-m22-concept-parity.sh", "./scripts/verify-completion.sh"]
+notes = "All six scenarios have complete production fixtures, deterministic raster proof, explicitly driven supported-host live evidence, no open manifest gaps, and the unchanged repository completion gate."

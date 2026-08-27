@@ -27,8 +27,11 @@ state = "daemon current; BitBake idle"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt"
 real_yoctui_anchors = ["Current Build · Idle", "Next Action", "Workbench Center", "Sstate reuse: unavailable", "Daemon: ✓ Connected", "19:28:27"]
-implementation_tasks = ["UX-DASHBOARD-001"]
-open_gaps = []
+implementation_tasks = ["UX-DASHBOARD-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = [
+  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
+  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert this exact idle Dashboard scenario." },
+]
 anchors = [
   "persistent header, Navigator, Workspace, Inspector, and footer",
   "Dashboard selected with one focused Workspace border",
@@ -50,8 +53,11 @@ state = "daemon current; BitBake running; bash:do_compile selected at 72 percent
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.txt"
 real_yoctui_anchors = ["Tasks: core-image-minimal", "Overall  40%  4/10", "do_compile", "72%", "Log Viewer", "Job History", "19:28:27"]
-implementation_tasks = ["UX-PROGRESS-001", "UX-TELEMETRY-001", "UX-LOGS-001"]
-open_gaps = []
+implementation_tasks = ["UX-PROGRESS-001", "UX-TELEMETRY-001", "UX-LOGS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = [
+  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
+  { task = "UX-CONCEPT-LIVE-001", description = "Existing live task evidence is not yet attributed through this scenario's exact interaction and assertion contract." },
+]
 anchors = [
   "7,240 of 10,056 determinate build progress at 72 percent",
   "selected active task row and Task Inspector agree",
@@ -73,8 +79,11 @@ state = "daemon current; BitBake failed; bash:do_compile error selected"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt"
 real_yoctui_anchors = ["Inspector: Error", "ERROR: bash:do_compile failed with exit code 1", "do_compile", "Daemon: ✓ Connected", "19:28:27"]
-implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001"]
+implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = [
+  { task = "UX-CONCEPT-ERRORS-001", description = "The production scene does not yet compose the failed summary, structured list, paused correlated log, filters, and recovery actions together." },
+  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
+  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert the complete failed-build Errors workflow." },
 ]
 anchors = [
   "failed lifecycle is explicit in header and result summary",
@@ -97,8 +106,12 @@ state = "current installed-package manifest; BitBake idle"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt"
 real_yoctui_anchors = ["Images · Rootfs composition", "Installed-package authority", "412 packages", "126400000 exact bytes", "Other", "Filesystem tree: partial", "19:28:27"]
-implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001"]
-open_gaps = []
+implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = [
+  { task = "UX-CONCEPT-ROOTFS-001", description = "At 160 columns the production scene does not yet show chart, exact table, accessible selection, and filesystem drill-down together." },
+  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
+  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert the Rootfs composition workspace." },
+]
 anchors = [
   "installed-packages and filesystem-tree authorities are separate",
   "composition chart is paired with an exact sortable table",
@@ -120,8 +133,11 @@ state = "modified recipe editor; BitBake idle; F10 Build menu owns focus"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt"
 real_yoctui_anchors = ["Recipe editor: bash", "Workspace file tree: bash", "bash_5.2.bb (editing modified)", "Ctrl+B build recipe"]
-implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001"]
+implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = [
+  { task = "UX-CONCEPT-EDITOR-MENU-001", description = "The production fixture currently renders the recipe editor without the focus-trapped F10 menu composition." },
+  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
+  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet open the recipe editor and F10 menu together and assert menu focus." },
 ]
 anchors = [
   "stable F10 menu groups and one focus-trapped dropdown",
@@ -144,8 +160,12 @@ state = "two PTY panes; local writer and remote read-only client"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt"
 real_yoctui_anchors = ["Terminal Sessions", "BuildShell · writer · 2 viewer(s)", "Devshell · read-only · 2 viewer(s)", "bitbake-layers show-layers", "Ctrl+B prefix", "19:28:27"]
-implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001"]
-open_gaps = []
+implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
+open_gaps = [
+  { task = "UX-CONCEPT-TERMINAL-LIVE-001", description = "The checked live capture creates a shell from Dashboard rather than proving Ctrl+B t navigation and the split-session workflow." },
+  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
+  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet assert both writer/read-only panes and visible prefix help for this scenario." },
+]
 anchors = [
   "session tabs and two bounded split PTY panes",
   "writer and read-only ownership are textual",

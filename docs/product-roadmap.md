@@ -480,3 +480,31 @@ Exit criteria:
 - the expanded performance matrix stays below the existing 10 ms/frame ceiling
 - supported live-Yocto evidence and user documentation are current
 - `./scripts/verify-workbench-ux.sh` and the unchanged completion gate pass
+
+## M22 — Concept-to-Live UI Parity
+
+Goal: make every reviewed concept use case reproducible through the production
+Yoctui renderer and demonstrably reachable in a real supported-host instance,
+without treating generated artwork or broad scenario labels as implementation
+evidence.
+
+Capabilities:
+
+- machine-checked per-scenario feature, fixture, raster, and live-evidence contracts
+- a complete failed-build workspace with summary, structured diagnostics,
+  correlated paused log, textual filters, and recovery actions
+- canonical-width Rootfs composition with chart, exact table, accessible batch
+  selection, and filesystem drill-down visible together
+- a real recipe editor and focus-trapped F10 application menu composition
+- live daemon-owned Terminal Sessions navigation, split, writer/read-only, and
+  prefix-help evidence
+- deterministic PNG rendering from exact production TestBackend cells and styles
+- supported-host live captures attributed only to interactions the harness drove
+
+Exit criteria:
+
+- every scenario manifest gap is closed by a `DONE` owner task
+- deterministic cell/style goldens and app-derived raster captures agree
+- the live harness drives and verifies each claimed screen instead of inferring it
+- the concept comparison report records fixture, raster, and live results separately
+- `./scripts/verify-m22-concept-parity.sh` and the unchanged completion gate pass
