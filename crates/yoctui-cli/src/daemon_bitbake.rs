@@ -114,7 +114,26 @@ impl DaemonBitBakeSupervisor {
                 }
             };
             match backend.inspect_workspace().await {
-                Ok(workspace) => {
+                Ok(mut workspace) => {
+                    // The lightweight workspace response intentionally omits
+                    // metadata collections.  Populate them through the same
+                    // daemon-owned bridge before the build starts so attached
+                    // clients retain authoritative Recipes and Layers views
+                    // without opening a competing BitBake server.
+                    match backend.list_recipes(None).await {
+                        Ok(recipes) => workspace.recipes = recipes,
+                        Err(error) => tracing::warn!(
+                            %error,
+                            "daemon BitBake recipe inventory is unavailable"
+                        ),
+                    }
+                    match backend.list_layers().await {
+                        Ok(layers) => workspace.layers = layers,
+                        Err(error) => tracing::warn!(
+                            %error,
+                            "daemon BitBake layer inventory is unavailable"
+                        ),
+                    }
                     let _ = tx.send(DaemonBitBakeEvent::Backend {
                         job_id,
                         event: Box::new(BackendEvent::Workspace(workspace)),
@@ -274,6 +293,8 @@ mod tests {
     fn cancellation_authority(build: &Path) -> DaemonCompatibilitySnapshot {
         let capabilities = [
             CapabilityId::BitBakeWorkspaceInspection,
+            CapabilityId::BitBakeRecipeInventory,
+            CapabilityId::BitBakeLayerInventory,
             CapabilityId::BitBakeBuild,
             CapabilityId::BitBakeCancellation,
             CapabilityId::BitBakeNativeEvents,
@@ -365,6 +386,10 @@ class Connection:
  def __init__(self): self.cancelled = False
  def inspect_workspace(self):
   return {{"build_dir": {build:?}, "source_dir": None, "variables": {{}}, "variable_provenance": {{}}, "variable_provenance_chain": {{}}, "bitbake_version": "2.18.0", "release": "6.0.2", "layers": [], "recipes": []}}
+ def list_recipes(self, filter_value):
+  return [{{"name": "busybox", "version": "1.36", "layer": "core", "preferred_version": None, "file": None, "append_count": 0}}]
+ def list_layers(self):
+  return [{{"name": "core", "path": "/layer", "priority": 5}}]
  def start_build(self, targets, task, force=False): pass
  def cancel_build(self):
   self.cancelled = True
@@ -412,10 +437,18 @@ server = Server()
         let mut cancellation_sent = false;
         let mut terminal_count = 0;
         let mut late_started = false;
+        let mut saw_inventory = false;
         while Instant::now() < deadline && terminal_count == 0 {
             while let Some(event) = supervisor.try_event() {
                 match event {
                     DaemonBitBakeEvent::Backend { event, .. } => match *event {
+                        BackendEvent::Workspace(workspace) => {
+                            assert_eq!(workspace.recipes.len(), 1);
+                            assert_eq!(workspace.recipes[0].name, "busybox");
+                            assert_eq!(workspace.layers.len(), 1);
+                            assert_eq!(workspace.layers[0].name, "core");
+                            saw_inventory = true;
+                        }
                         BackendEvent::ParseProgress { .. } if !cancellation_sent => {
                             supervisor.cancel(job_id).unwrap();
                             cancellation_sent = true;
@@ -434,6 +467,7 @@ server = Server()
         }
 
         assert!(cancellation_sent, "event stream never became active");
+        assert!(saw_inventory, "daemon workspace omitted metadata inventory");
         assert_eq!(terminal_count, 1);
         assert!(!late_started);
         assert!(

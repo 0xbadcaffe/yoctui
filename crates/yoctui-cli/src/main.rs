@@ -2265,6 +2265,17 @@ fn stop_daemon() -> Result<()> {
 }
 
 #[cfg(unix)]
+const MAX_DAEMON_CLIENT_EVENTS_PER_TICK: usize = 4;
+
+#[cfg(unix)]
+const _: () = assert!(MAX_DAEMON_CLIENT_EVENTS_PER_TICK < client_runtime::MAX_EVENTS_PER_POLL);
+
+#[cfg(unix)]
+fn daemon_replay_is_bounded(event_count: usize) -> bool {
+    event_count <= MAX_DAEMON_CLIENT_EVENTS_PER_TICK
+}
+
+#[cfg(unix)]
 async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
     use yoctui_protocol::{
         daemon::{
@@ -2399,6 +2410,10 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     let mut shutting_down = false;
     let mut last_telemetry_ms = record.started_unix_ms;
     const MAX_SUPERVISOR_EVENTS_PER_TICK: usize = 32;
+    // Keep socket production comfortably below the interactive client's
+    // bounded 64-event/8-ms poll. A busy reducer may not consume all 64 before
+    // its time bound, so matching the 32-event supervisor ingress can still
+    // fill the socket. Cursor expiry is recovered by a replacement Snapshot.
     while !shutting_down {
         for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
             let Some(event) = devtool_supervisor.try_event() else {
@@ -2574,27 +2589,55 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                     last_sequence,
                 })) {
                     yoctui_protocol::daemon::DaemonSnapshotSync::Replay { events, .. } => {
-                        for event in events {
-                            last_sequence = event.sequence;
-                            if let Err(error) = connection.send(&ServerMessage::Event(event)) {
-                                tracing::debug!(%error, "dropping daemon client during event fan-out");
+                        if daemon_replay_is_bounded(events.len()) {
+                            for event in events {
+                                last_sequence = event.sequence;
+                                if let Err(error) = connection.send(&ServerMessage::Event(event)) {
+                                    tracing::debug!(%error, "dropping daemon client during event fan-out");
+                                    keep_client = false;
+                                    break;
+                                }
+                            }
+                        } else {
+                            // Do not repeatedly clone and trickle a large
+                            // retained journal. One current snapshot bounds
+                            // both daemon work and client recovery latency.
+                            let snapshot = daemon_journal.snapshot().clone();
+                            last_sequence = snapshot.sequence;
+                            let replacement = connection
+                                .send(&ServerMessage::ResyncRequired {
+                                    reason: format!(
+                                        "client replica is {event_count} events behind; replacing it with the current snapshot",
+                                        event_count = events.len()
+                                    ),
+                                    current_sequence: snapshot.sequence,
+                                })
+                                .and_then(|()| connection.send(&ServerMessage::Snapshot(snapshot)));
+                            if let Err(error) = replacement {
+                                tracing::debug!(%error, "dropping daemon client during replica replacement");
                                 keep_client = false;
-                                break;
                             }
                         }
                     }
                     yoctui_protocol::daemon::DaemonSnapshotSync::Replace { snapshot, reason } => {
-                        if reason != SnapshotReplacementReason::InitialAttach {
+                        last_sequence = snapshot.sequence;
+                        // This client is already attached. `Attached` is only
+                        // valid during the handshake; after a cursor expires,
+                        // replace the live replica through the Snapshot frame
+                        // that the attached transport accepts.
+                        let replacement = if reason != SnapshotReplacementReason::InitialAttach {
                             connection.send(&ServerMessage::ResyncRequired {
                                 reason: format!("client replica must be replaced: {reason:?}"),
                                 current_sequence: snapshot.sequence,
-                            })?;
+                            })
+                        } else {
+                            Ok(())
                         }
-                        last_sequence = snapshot.sequence;
-                        connection.send(&ServerMessage::Attached {
-                            snapshot: *snapshot,
-                            replayed_through: last_sequence,
-                        })?;
+                        .and_then(|()| connection.send(&ServerMessage::Snapshot(*snapshot)));
+                        if let Err(error) = replacement {
+                            tracing::debug!(%error, "dropping daemon client during replica replacement");
+                            keep_client = false;
+                        }
                     }
                 }
             }
@@ -2666,14 +2709,38 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             events,
                             replayed_through,
                         } => {
-                            for event in events {
-                                connection.send(&ServerMessage::Event(event))?;
+                            if daemon_replay_is_bounded(events.len()) {
+                                for event in events {
+                                    connection.send(&ServerMessage::Event(event))?;
+                                }
+                                connection.send(&ServerMessage::Attached {
+                                    snapshot: daemon_journal.snapshot().clone(),
+                                    replayed_through,
+                                })?;
+                                last_sequence = replayed_through;
+                            } else {
+                                // An attaching client cannot yield while its
+                                // handshake is in progress. Replaying a large
+                                // retained history here monopolizes the daemon
+                                // and can starve the build supervisor. Replace
+                                // the stale replica with one current snapshot;
+                                // bounded incremental fan-out resumes after the
+                                // attach has completed.
+                                let snapshot = daemon_journal.snapshot().clone();
+                                let current_sequence = snapshot.sequence;
+                                connection.send(&ServerMessage::ResyncRequired {
+                                    reason: format!(
+                                        "client resume requires {event_count} events; replacing it with the current snapshot",
+                                        event_count = events.len()
+                                    ),
+                                    current_sequence,
+                                })?;
+                                connection.send(&ServerMessage::Attached {
+                                    snapshot,
+                                    replayed_through: current_sequence,
+                                })?;
+                                last_sequence = current_sequence;
                             }
-                            connection.send(&ServerMessage::Attached {
-                                snapshot: daemon_journal.snapshot().clone(),
-                                replayed_through,
-                            })?;
-                            last_sequence = replayed_through;
                             attached = true;
                         }
                     }
@@ -8820,6 +8887,45 @@ struct ImageArtifactBackgroundOperation {
     handle: tokio::task::JoinHandle<BackendEvent>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum LocalWorkspaceEffectRoute {
+    ImageArtifacts,
+    RootfsComposition,
+    Other,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DaemonDevtoolModifyCompletion {
+    Pending,
+    Succeeded,
+    Failed,
+}
+
+fn daemon_devtool_modify_completion(
+    app: &App,
+    identity: &RecipeIdentity,
+) -> DaemonDevtoolModifyCompletion {
+    let label = format!("Devtool {}", identity.name);
+    let Some(job) = app.daemon.jobs.iter().rev().find(|job| job.label == label) else {
+        return DaemonDevtoolModifyCompletion::Pending;
+    };
+    match job.lifecycle {
+        yoctui_model::ClientDaemonLifecycle::Exited => DaemonDevtoolModifyCompletion::Succeeded,
+        yoctui_model::ClientDaemonLifecycle::Failed | yoctui_model::ClientDaemonLifecycle::Lost => {
+            DaemonDevtoolModifyCompletion::Failed
+        }
+        _ => DaemonDevtoolModifyCompletion::Pending,
+    }
+}
+
+fn local_workspace_effect_route(effect: &Effect) -> LocalWorkspaceEffectRoute {
+    match effect {
+        Effect::GetImageArtifacts(_) => LocalWorkspaceEffectRoute::ImageArtifacts,
+        Effect::GetRootfsComposition(_) => LocalWorkspaceEffectRoute::RootfsComposition,
+        _ => LocalWorkspaceEffectRoute::Other,
+    }
+}
+
 struct WicCapabilityBackgroundOperation {
     image_generation: u64,
     handle: tokio::task::JoinHandle<WicCapability>,
@@ -9187,12 +9293,15 @@ async fn begin_rootfs_composition_operation(
         source("PKGDATA_DIR", pkgdata),
         source("IMAGE_ROOTFS", rootfs),
     ) {
-        (Ok(manifest), Ok(pkgdata_directory), Ok(image_rootfs)) => RootfsCompositionSources {
-            image: request.image.clone(),
-            manifest,
-            pkgdata_directory,
-            image_rootfs,
-        },
+        (Ok(manifest), Ok(pkgdata_directory), Ok(image_rootfs)) => {
+            client_rootfs_composition_sources(
+                app,
+                &request,
+                manifest,
+                pkgdata_directory,
+                image_rootfs,
+            )
+        }
         values => {
             let message = [values.0.err(), values.1.err(), values.2.err()]
                 .into_iter()
@@ -9210,6 +9319,39 @@ async fn begin_rootfs_composition_operation(
         request,
         sources,
     );
+}
+
+fn client_rootfs_composition_sources(
+    app: &App,
+    request: &RootfsCompositionRequest,
+    manifest: Option<PathBuf>,
+    pkgdata_directory: Option<PathBuf>,
+    image_rootfs: Option<PathBuf>,
+) -> RootfsCompositionSources {
+    let selected = app
+        .image_artifacts
+        .artifacts()
+        .unwrap_or_default()
+        .iter()
+        .find(|artifact| artifact.identity == request.image);
+    let manifest = manifest.or_else(|| {
+        selected
+            .and_then(|artifact| artifact.manifests.available())
+            .and_then(|paths| paths.first().cloned())
+    });
+    let pkgdata_directory = pkgdata_directory.or_else(|| {
+        app.workspace
+            .variables
+            .get("PKGDATA_DIR")
+            .map(PathBuf::from)
+    });
+    let image_rootfs = image_rootfs.filter(|path| path.is_dir());
+    RootfsCompositionSources {
+        image: request.image.clone(),
+        manifest,
+        pkgdata_directory,
+        image_rootfs,
+    }
 }
 
 async fn poll_rootfs_composition_operation(
@@ -9369,12 +9511,25 @@ async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
 }
 
 async fn inspect_devtool_status(
-    _app: &App,
+    app: &App,
     build_dir: &Path,
     identity: RecipeIdentity,
 ) -> yoctui_model::DevtoolStatus {
     let inspector = DevtoolInspector::default();
-    inspector.inspect(build_dir, identity).await
+    let authority = app.workspace_compatibility.authority().cloned();
+    match authority {
+        Some(authority) => {
+            inspector
+                .inspect_with_compatibility(
+                    build_dir,
+                    identity,
+                    &authority,
+                    authority.snapshot.generation,
+                )
+                .await
+        }
+        None => inspector.inspect(build_dir, identity).await,
+    }
 }
 
 async fn complete_devtool_modify(app: &mut App, build_dir: &Path, identity: RecipeIdentity) {
@@ -10196,6 +10351,7 @@ async fn tui(
     let mut devtool_jobs = DevtoolJobCoordinator::default();
     let mut devtool_runner = None;
     let mut pending_devtool_modify = None;
+    let mut pending_daemon_devtool_modify = None;
     let mut pending_devtool_update = None;
     let mut pending_devtool_finish = None;
     let mut pending_devtool_deploy = None;
@@ -10333,6 +10489,26 @@ async fn tui(
             daemon_runtime = None;
             app.daemon.status = yoctui_model::ClientReplicaStatus::Disconnected;
             yoctui_model::invalidate_workspace_compatibility(&mut app);
+        }
+        if let Some(identity) = pending_daemon_devtool_modify.as_ref() {
+            match daemon_devtool_modify_completion(&app, identity) {
+                DaemonDevtoolModifyCompletion::Pending => {}
+                DaemonDevtoolModifyCompletion::Succeeded => {
+                    let identity = pending_daemon_devtool_modify
+                        .take()
+                        .expect("daemon Devtool identity was present");
+                    complete_devtool_modify(&mut app, &session_build_dir, identity).await;
+                }
+                DaemonDevtoolModifyCompletion::Failed => {
+                    let identity = pending_daemon_devtool_modify
+                        .take()
+                        .expect("daemon Devtool identity was present");
+                    app.notification = Some(format!(
+                        "Devtool modify {} failed in the daemon; inspect Jobs and Logs.",
+                        identity.name
+                    ));
+                }
+            }
         }
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
@@ -11565,6 +11741,7 @@ async fn tui(
                         )
                         .is_some()
                         {
+                            pending_daemon_devtool_modify = Some(identity);
                             continue;
                         }
                         let recipe = identity.name.clone();
@@ -13034,8 +13211,28 @@ async fn tui(
                             }
                         }
                     } else {
-                        if let Some(effect) = compatibility_workspace_action(&mut app, action)
-                            && !route_independent_security_effect(
+                        if let Some(effect) = compatibility_workspace_action(&mut app, action) {
+                            if local_workspace_effect_route(&effect)
+                                == LocalWorkspaceEffectRoute::ImageArtifacts
+                            {
+                                begin_image_artifact_operation(
+                                    &mut app,
+                                    image_artifact_adapter.as_ref(),
+                                    &mut image_artifact_operation,
+                                    effect,
+                                );
+                            } else if local_workspace_effect_route(&effect)
+                                == LocalWorkspaceEffectRoute::RootfsComposition
+                            {
+                                begin_rootfs_composition_operation(
+                                    backend.as_mut(),
+                                    &mut app,
+                                    &session_build_dir,
+                                    &mut rootfs_composition_operation,
+                                    effect,
+                                )
+                                .await;
+                            } else if !route_independent_security_effect(
                                 &guard,
                                 &mut app,
                                 &mut security_coordinator,
@@ -13043,24 +13240,25 @@ async fn tui(
                                 editor.as_deref(),
                             )
                             .await
-                            && !route_independent_qa_effect(
-                                &guard,
-                                &mut app,
-                                &mut qa_coordinator,
-                                effect.clone(),
-                                editor.as_deref(),
-                            )
-                            .await
-                            && !route_independent_maintenance_effect(
-                                &guard,
-                                &mut app,
-                                &mut maintenance_coordinator,
-                                effect.clone(),
-                                editor.as_deref(),
-                            )
-                            .await
-                        {
-                            let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                                && !route_independent_qa_effect(
+                                    &guard,
+                                    &mut app,
+                                    &mut qa_coordinator,
+                                    effect.clone(),
+                                    editor.as_deref(),
+                                )
+                                .await
+                                && !route_independent_maintenance_effect(
+                                    &guard,
+                                    &mut app,
+                                    &mut maintenance_coordinator,
+                                    effect.clone(),
+                                    editor.as_deref(),
+                                )
+                                .await
+                            {
+                                let _ = test_coordinator.handle_effect(&mut app, effect).await;
+                            }
                         }
                     }
                 }
@@ -13910,6 +14108,69 @@ mod tests {
             &build_directory,
         )
         .unwrap()
+    }
+
+    #[tokio::test]
+    async fn client_devtool_status_uses_installed_daemon_compatibility_authority() {
+        let build_directory = std::env::temp_dir();
+        let executable = PathBuf::from("/bin/true");
+        let capability = yoctui_model::CapabilityId::DevtoolStatus;
+        let authority = yoctui_model::DaemonCompatibilitySnapshot {
+            snapshot: yoctui_model::CapabilitySnapshot {
+                generation: 7,
+                environment: yoctui_model::YoctoEnvironmentIdentity {
+                    build_directory: yoctui_model::AuthoritativeValue::detected(
+                        build_directory.clone(),
+                        yoctui_model::IdentityAuthority::InitializedEnvironment,
+                    ),
+                    available_tools: yoctui_model::AuthoritativeValue::detected(
+                        vec![yoctui_model::ToolIdentity {
+                            id: "devtool".into(),
+                            executable,
+                            version: None,
+                        }],
+                        yoctui_model::IdentityAuthority::ExecutableProbe,
+                    ),
+                    ..yoctui_model::YoctoEnvironmentIdentity::default()
+                },
+                capabilities: vec![yoctui_model::CapabilityRecord {
+                    id: capability,
+                    state: yoctui_model::CapabilityState::Available,
+                    evidence: vec![yoctui_model::CapabilityEvidence {
+                        kind: yoctui_model::CapabilityEvidenceKind::DirectProbe,
+                        outcome: yoctui_model::CapabilityEvidenceOutcome::Positive,
+                        subject: "devtool status test probe".into(),
+                        detail: "Fixture exposes a successful status command.".into(),
+                        argv: vec!["/bin/true".into(), "status".into()],
+                    }],
+                }],
+            },
+            implementations: std::collections::BTreeMap::from([(
+                capability,
+                yoctui_model::CapabilityImplementation {
+                    id: yoctui_bitbake::DEVTOOL_STATUS_IMPLEMENTATION.into(),
+                    kind: yoctui_model::CapabilityImplementationKind::Command,
+                },
+            )]),
+        }
+        .normalize()
+        .unwrap();
+        let mut app = App::new(16, 4096);
+        yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+        };
+
+        let status = inspect_devtool_status(&app, &build_directory, identity.clone()).await;
+
+        assert_eq!(status.identity, identity);
+        assert_eq!(
+            status.capability,
+            yoctui_model::DevtoolCapability::Available
+        );
+        assert_eq!(status.workspace, DevtoolWorkspace::NotMember);
+        assert!(status.error.is_none());
     }
 
     fn signature_test_compatibility(
@@ -20132,5 +20393,108 @@ esac"#,
             Some(b"\x1b[Z".to_vec())
         );
         assert_eq!(terminal_input_bytes(Input::F10), Some(b"\x1b[21~".to_vec()));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn daemon_live_event_replay_is_bounded_below_client_poll_capacity() {
+        assert!(daemon_replay_is_bounded(MAX_DAEMON_CLIENT_EVENTS_PER_TICK));
+        assert!(!daemon_replay_is_bounded(
+            MAX_DAEMON_CLIENT_EVENTS_PER_TICK + 1
+        ));
+    }
+
+    #[test]
+    fn function_key_image_navigation_routes_its_local_inventory_effect() {
+        let mut app = yoctui_model::App::new(64, 64 * 1024);
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "qemux86-64".into());
+        let effect = yoctui_model::update(
+            &mut app,
+            yoctui_model::Action::Open(yoctui_model::Screen::Images),
+        )
+        .expect("opening an unloaded Images workspace requests its inventory");
+        assert_eq!(
+            local_workspace_effect_route(&effect),
+            LocalWorkspaceEffectRoute::ImageArtifacts
+        );
+    }
+
+    #[test]
+    fn daemon_devtool_modify_completion_drives_client_editor_handoff() {
+        let identity = yoctui_model::RecipeIdentity {
+            name: "busybox".into(),
+            file: "/poky/meta/recipes-core/busybox/busybox.bb".into(),
+        };
+        let mut app = yoctui_model::App::new(64, 64 * 1024);
+        assert_eq!(
+            daemon_devtool_modify_completion(&app, &identity),
+            DaemonDevtoolModifyCompletion::Pending
+        );
+        app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
+            id: 7,
+            label: "Devtool busybox".into(),
+            lifecycle: yoctui_model::ClientDaemonLifecycle::Exited,
+        });
+        assert_eq!(
+            daemon_devtool_modify_completion(&app, &identity),
+            DaemonDevtoolModifyCompletion::Succeeded
+        );
+        app.daemon.jobs[0].lifecycle = yoctui_model::ClientDaemonLifecycle::Failed;
+        assert_eq!(
+            daemon_devtool_modify_completion(&app, &identity),
+            DaemonDevtoolModifyCompletion::Failed
+        );
+    }
+
+    #[test]
+    fn daemon_client_rootfs_uses_selected_manifest_and_workspace_pkgdata() {
+        use yoctui_model::{
+            ImageArtifact, ImageArtifactField, ImageArtifactIdentity, ImageArtifactInventory,
+            ImageArtifactInventoryState, ImageArtifactKind, ImageArtifactRequest,
+        };
+
+        let image = ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: "/deploy/core-image-minimal.rootfs.ext4".into(),
+        };
+        let manifest: PathBuf = "/deploy/core-image-minimal.rootfs.manifest".into();
+        let pkgdata: PathBuf = "/build/tmp/pkgdata/qemux86-64".into();
+        let mut app = yoctui_model::App::new(64, 64 * 1024);
+        app.workspace
+            .variables
+            .insert("PKGDATA_DIR".into(), pkgdata.display().to_string());
+        app.image_artifacts = ImageArtifactInventoryState::Available {
+            request: ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: ImageArtifactField::Available("/deploy".into()),
+                artifacts: vec![ImageArtifact {
+                    identity: image.clone(),
+                    kind: ImageArtifactKind::RootFilesystem,
+                    size_bytes: ImageArtifactField::Available(1),
+                    modified_unix_seconds: ImageArtifactField::Unavailable,
+                    checksums: ImageArtifactField::Unavailable,
+                    manifests: ImageArtifactField::Available(vec![manifest.clone()]),
+                    licenses: ImageArtifactField::Unavailable,
+                    spdx: ImageArtifactField::Unavailable,
+                    wic_files: ImageArtifactField::Unavailable,
+                }],
+            },
+        };
+        let request = RootfsCompositionRequest {
+            generation: 1,
+            image,
+        };
+        let sources =
+            client_rootfs_composition_sources(&app, &request, None, None, Some("/gone".into()));
+        assert_eq!(sources.manifest, Some(manifest));
+        assert_eq!(sources.pkgdata_directory, Some(pkgdata));
+        assert_eq!(sources.image_rootfs, None);
     }
 }

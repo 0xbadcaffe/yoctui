@@ -10,6 +10,7 @@ if [[ ! "$timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
 fi
 release_evidence_root="$repo_root/artifacts/release-quality"
 evidence="$(realpath -m -- "${YOCTUI_NEXT_UI_EVIDENCE:-$release_evidence_root/next-generation-ui}")"
+m22_evidence="$(realpath -m -- "${YOCTUI_M22_EVIDENCE:-$release_evidence_root/m22-concept-live}")"
 case "$evidence" in
   "$release_evidence_root"/*) ;;
   *)
@@ -17,8 +18,17 @@ case "$evidence" in
     exit 2
     ;;
 esac
+case "$m22_evidence" in
+  "$release_evidence_root"/*) ;;
+  *)
+    printf 'M22 concept evidence must stay below artifacts/release-quality: %s\n' "$m22_evidence" >&2
+    exit 2
+    ;;
+esac
 test -x "$source_poky/oe-init-build-env"
-if command -v unshare >/dev/null 2>&1 && ! unshare -Ur true >/dev/null 2>&1; then
+if [[ "${YOCTUI_LIVE_CONTAINER:-0}" != "1" ]] \
+  && command -v unshare >/dev/null 2>&1 \
+  && ! unshare -Ur true >/dev/null 2>&1; then
   printf '%s\n' 'next-generation UI live test requires unprivileged user namespaces for BitBake' >&2
   exit 2
 fi
@@ -31,6 +41,7 @@ build_dir="$work_root/build"
 mkdir -m 700 "$runtime" "$state" "$config"
 cargo_target_dir="$(realpath -m -- "${CARGO_TARGET_DIR:-$repo_root/target}")"
 prebuilt_binary="${YOCTUI_LIVE_PREBUILT_BINARY:-}"
+active_capture_pid=""
 if [[ -n "$prebuilt_binary" ]]; then
   binary="$(realpath -- "$prebuilt_binary")"
   test -x "$binary"
@@ -71,18 +82,38 @@ capture_failure_logs() {
 }
 cleanup() {
   local exit_status="$1"
+  local daemon_pid=""
   if (( exit_status != 0 )); then
     capture_failure_logs
   fi
+  if [[ "$active_capture_pid" =~ ^[1-9][0-9]*$ ]] && kill -0 "$active_capture_pid" 2>/dev/null; then
+    kill -TERM "$active_capture_pid" 2>/dev/null || true
+    wait "$active_capture_pid" 2>/dev/null || true
+  fi
   if [[ -x "$binary" ]]; then
+    daemon_pid="$(YOCTUI_BUILD_DIR="$build_dir" XDG_RUNTIME_DIR="$runtime" \
+      XDG_STATE_HOME="$state" "$binary" daemon status 2>/dev/null \
+      | sed -n 's/^pid: //p' | head -1 || true)"
     YOCTUI_BUILD_DIR="$build_dir" XDG_RUNTIME_DIR="$runtime" \
       XDG_STATE_HOME="$state" "$binary" daemon stop >/dev/null 2>&1 || true
+    if [[ "$daemon_pid" =~ ^[1-9][0-9]*$ ]] && kill -0 "$daemon_pid" 2>/dev/null; then
+      kill -TERM "$daemon_pid" 2>/dev/null || true
+      for _ in {1..50}; do
+        kill -0 "$daemon_pid" 2>/dev/null || break
+        sleep 0.1
+      done
+    fi
   fi
-  rm -rf -- "$work_root"
+  rm -rf -- "$work_root" || {
+    sleep 1
+    rm -rf -- "$work_root"
+  }
 }
 trap 'exit_status=$?; trap - EXIT; cleanup "$exit_status"; exit "$exit_status"' EXIT
 rm -rf "$evidence"
 mkdir -p "$evidence"
+rm -rf "$m22_evidence"
+mkdir -p "$m22_evidence"
 
 started_utc="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 git clone --local --no-hardlinks "$source_poky" "$work_root/poky" >/dev/null
@@ -101,7 +132,7 @@ export XDG_RUNTIME_DIR="$runtime"
 export XDG_STATE_HOME="$state"
 export XDG_CONFIG_HOME="$config"
 export YOCTUI_DAEMON_LOG="$evidence/daemon.log"
-printf '\nBB_DISKMON_DIRS = ""\nINHERIT += "rm_work"\n' >>"$build_dir/conf/local.conf"
+printf '\nBB_DISKMON_DIRS = ""\nINHERIT += "rm_work"\nBB_NUMBER_THREADS = "4"\nPARALLEL_MAKE = "-j 4"\n' >>"$build_dir/conf/local.conf"
 # The live target never launches QEMU; omit its optional graphical host stack so
 # a cold image build does not compile Mesa/LLVM solely for an unused display.
 printf 'PACKAGECONFIG:remove:pn-qemu-native = "sdl virglrenderer epoxy"\n' >>"$build_dir/conf/local.conf"
@@ -142,26 +173,31 @@ machine="$(sed -n 's/^MACHINE=//p' "$evidence/inspect.txt" | head -1)"
 distro="$(sed -n 's/^DISTRO=//p' "$evidence/inspect.txt" | head -1)"
 yocto_release="$(sed -n 's/^Yocto\/OpenEmbedded release: //p' "$evidence/inspect.txt" | head -1)"
 
+python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
+  --binary "$binary" --build-dir "$build_dir" --output "$m22_evidence/idle-dashboard" \
+  --mode dashboard --backend process
+
+active_ready="$work_root/active-capture-ready"
+python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
+  --binary "$binary" --build-dir "$build_dir" --output "$evidence/active-tasks" \
+  --mode tasks --backend process --seconds 600 \
+  --expect '▶ Running' --expect 'Log Viewer' --ready-file "$active_ready" &
+active_capture_pid="$!"
+active_ready_deadline=$((SECONDS + 60))
+while [[ ! -s "$active_ready" ]] && (( SECONDS < active_ready_deadline )); do
+  kill -0 "$active_capture_pid" 2>/dev/null || wait "$active_capture_pid"
+  sleep 1
+done
+test -s "$active_ready"
+
 : >"$evidence/build-status.log"
 "$binary" daemon build core-image-minimal
 "$binary" daemon status >>"$evidence/build-status.log" 2>&1 || true
 deadline=$((SECONDS + timeout_seconds))
-active_deadline=$((SECONDS + 180))
-captured_active_task=0
-while (( SECONDS < active_deadline && SECONDS < deadline )); do
-  python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
-    --binary "$binary" --build-dir "$build_dir" --output "$evidence/active-tasks" \
-    --mode tasks --backend process --seconds 0.5
-  if grep -Fq '▶ Running' "$evidence/active-tasks.txt" && \
-    grep -Fq 'Log Viewer' "$evidence/active-tasks.txt"; then
-    captured_active_task=1
-    break
-  fi
-  status="$($binary daemon status 2>&1 || true)"
-  printf '%s\n' "$status" >>"$evidence/build-status.log"
-  grep -q 'job .*Failed\|job .*Lost\|job .*Exited' <<<"$status" && break
-done
-(( captured_active_task == 1 ))
+wait "$active_capture_pid"
+active_capture_pid=""
+grep -Fq '▶ Running' "$evidence/active-tasks.txt"
+grep -Fq 'Log Viewer' "$evidence/active-tasks.txt"
 
 seen_running=0
 grep -q 'job .*Running' "$evidence/build-status.log" && seen_running=1 || true
@@ -216,6 +252,16 @@ Path("$evidence/rootfs-evidence.json").write_text(json.dumps({
 }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 PY
 
+cp "$evidence/active-tasks.ansi" "$m22_evidence/active-build-tasks.ansi"
+cp "$evidence/active-tasks.txt" "$m22_evidence/active-build-tasks.txt"
+cp "$evidence/active-tasks.meta" "$m22_evidence/active-build-tasks.meta"
+python3 "$repo_root/scripts/capture-live-m22-concepts.py" \
+  --binary "$binary" --build-dir "$build_dir" --output "$m22_evidence/rootfs-composition" \
+  --scenario rootfs --backend process
+python3 "$repo_root/scripts/capture-live-m22-concepts.py" \
+  --binary "$binary" --build-dir "$build_dir" --output "$m22_evidence/editor-application-menu" \
+  --scenario editor-menu --backend process
+
 "$binary" daemon build yoctui-intentional-missing-target
 failure_deadline=$((SECONDS + 120))
 while (( SECONDS < failure_deadline )); do
@@ -226,6 +272,40 @@ done
 grep -q 'job .*Failed' "$evidence/failure-status.txt"
 python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
   --binary "$binary" --build-dir "$build_dir" --output "$evidence/failed-task" --mode tasks --backend process
+
+python3 "$repo_root/scripts/capture-live-m22-concepts.py" \
+  --binary "$binary" --build-dir "$build_dir" --output "$m22_evidence/failed-build-errors" \
+  --scenario errors --backend process
+YOCTUI_TEST_BINARY="$binary" YOCTUI_TERMINAL_EVIDENCE="$m22_evidence" \
+  "$repo_root/scripts/test-workbench-terminal.sh"
+
+python3 - "$m22_evidence" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+reports = {
+    "idle-dashboard": {
+        "interactions": ["launch a real client against the idle supported-host daemon"],
+        "observed_assertions": ["Current Build · Idle", "Daemon: ✓ Connected", "F10 Menu"],
+    },
+    "active-build-tasks": {
+        "interactions": ["submit core-image-minimal", "press F2 while real BitBake tasks are running"],
+        "observed_assertions": ["Tasks: core-image-minimal", "▶ Running", "Log Viewer", "Daemon: ✓ Connected"],
+    },
+}
+for scenario, contract in reports.items():
+    contract.update({
+        "schema": 1,
+        "scenario": scenario,
+        "terminal": f"{scenario}.ansi",
+        "semantic": f"{scenario}.txt",
+    })
+    (root / f"{scenario}.report.json").write_text(
+        json.dumps(contract, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+PY
 
 python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
   --binary "$binary" --build-dir "$build_dir" --output "$evidence/terminal" --mode terminal --backend process

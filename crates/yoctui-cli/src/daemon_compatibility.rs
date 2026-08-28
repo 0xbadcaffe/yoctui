@@ -130,9 +130,17 @@ impl DaemonCompatibilityCoordinator {
             }
         }
         let semaphore = Arc::new(tokio::sync::Semaphore::new(PROBE_CONCURRENCY));
+        let tool_semaphores = unique_probes
+            .iter()
+            .filter_map(probe_tool)
+            .map(|tool| (tool, Arc::new(tokio::sync::Semaphore::new(1))))
+            .collect::<BTreeMap<_, _>>();
         let mut tasks = tokio::task::JoinSet::new();
         for (index, probe) in unique_probes.iter().cloned().enumerate() {
             let semaphore = Arc::clone(&semaphore);
+            let tool_semaphore = probe_tool(&probe)
+                .and_then(|tool| tool_semaphores.get(&tool))
+                .cloned();
             let runner = self.runner.clone();
             let context = context.clone();
             tasks.spawn(async move {
@@ -140,6 +148,17 @@ impl DaemonCompatibilityCoordinator {
                     .acquire_owned()
                     .await
                     .map_err(|error| DaemonCompatibilityError::StartupProbe(error.to_string()))?;
+                // Help/version commands for one executable can share caches,
+                // locks, or workspace initialization. Running them in
+                // parallel makes individually bounded probes time each other
+                // out (notably Devtool on supported Poky). Keep cross-tool
+                // concurrency while serializing commands for the same tool.
+                let _tool_permit = match tool_semaphore {
+                    Some(semaphore) => Some(semaphore.acquire_owned().await.map_err(|error| {
+                        DaemonCompatibilityError::StartupProbe(error.to_string())
+                    })?),
+                    None => None,
+                };
                 Ok::<_, DaemonCompatibilityError>((index, runner.probe(&context, &probe).await))
             });
         }
@@ -206,6 +225,23 @@ impl DaemonCompatibilityCoordinator {
         self.active_key = None;
         self.implementations.clear();
         Ok(self.cache.invalidate()?)
+    }
+}
+
+fn probe_tool(probe: &yoctui_model::CapabilityProbeSpec) -> Option<yoctui_model::CapabilityToolId> {
+    use yoctui_model::CapabilityProbeSpec;
+    match probe {
+        CapabilityProbeSpec::Executable { tool }
+        | CapabilityProbeSpec::CommandVersion { tool }
+        | CapabilityProbeSpec::CommandHelp { tool, .. }
+        | CapabilityProbeSpec::CommandOption { tool, .. }
+        | CapabilityProbeSpec::CommandHelpText { tool, .. } => Some(*tool),
+        CapabilityProbeSpec::MetadataAnyTask { .. }
+        | CapabilityProbeSpec::MetadataVariable { .. }
+        | CapabilityProbeSpec::BackendCapability { .. }
+        | CapabilityProbeSpec::ProtocolCapability { .. }
+        | CapabilityProbeSpec::Artifact { .. }
+        | CapabilityProbeSpec::Configuration { .. } => None,
     }
 }
 
@@ -789,6 +825,23 @@ pub enum DaemonCompatibilityError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn command_probes_are_grouped_by_executable_for_serial_scheduling() {
+        assert_eq!(
+            probe_tool(&yoctui_model::CapabilityProbeSpec::CommandHelpText {
+                tool: yoctui_model::CapabilityToolId::Devtool,
+                needle: "status".into(),
+            }),
+            Some(yoctui_model::CapabilityToolId::Devtool)
+        );
+        assert_eq!(
+            probe_tool(&yoctui_model::CapabilityProbeSpec::MetadataVariable {
+                name: "MACHINE".into(),
+            }),
+            None
+        );
+    }
 
     #[test]
     fn authoritative_value_ignores_bitbake_diagnostics() {

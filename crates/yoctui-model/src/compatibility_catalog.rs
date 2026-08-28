@@ -731,12 +731,25 @@ fn definition(id: CapabilityId) -> Definition {
             &[],
             "devtool.modify.argv",
         ),
-        Id::DevtoolStatus => tool_command(
+        // `devtool status --help` initializes workspace context on supported
+        // Poky releases and can exceed the bounded read-only probe deadline.
+        // The global help command is side-effect free and authoritatively
+        // enumerates the status subcommand, so probe that command list while
+        // retaining the exact `devtool status` execution requirement.
+        Id::DevtoolStatus => (
             "Devtool status",
-            Tool::Devtool,
-            Some("status"),
-            &[],
-            "devtool.status.argv",
+            vec![Tool::Devtool],
+            vec![command(Tool::Devtool, Some("status"), &[])],
+            Vec::new(),
+            vec![
+                executable(Tool::Devtool),
+                CapabilityProbeSpec::CommandHelpText {
+                    tool: Tool::Devtool,
+                    needle: "status".into(),
+                },
+            ],
+            implementation("devtool.status.argv", Kind::Command),
+            None,
         ),
         Id::DevtoolEditRecipe => tool_command(
             "Devtool edit-recipe",
@@ -1204,6 +1217,35 @@ mod catalog {
                 .probes
                 .iter()
                 .any(|probe| matches!(probe, CapabilityProbeSpec::CommandVersion { .. }))
+        );
+    }
+
+    #[test]
+    fn devtool_status_uses_bounded_global_help_without_running_status() {
+        let catalog = CapabilityCatalog::builtin();
+        let status = catalog.entry(CapabilityId::DevtoolStatus).unwrap();
+
+        assert!(status.probes.iter().any(|probe| matches!(
+            probe,
+            CapabilityProbeSpec::CommandHelpText {
+                tool: CapabilityToolId::Devtool,
+                needle,
+            } if needle == "status"
+        )));
+        assert!(!status.probes.iter().any(|probe| matches!(
+            probe,
+            CapabilityProbeSpec::CommandHelp {
+                tool: CapabilityToolId::Devtool,
+                subcommand: Some(subcommand),
+            } if subcommand == "status"
+        )));
+        assert_eq!(
+            status.required_commands,
+            vec![CommandRequirement {
+                tool: CapabilityToolId::Devtool,
+                subcommand: Some("status".into()),
+                options: Vec::new(),
+            }]
         );
     }
 

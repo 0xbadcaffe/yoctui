@@ -104,6 +104,9 @@ def main() -> int:
     )
     parser.add_argument("--backend", choices=("bridge", "process"), default="bridge")
     parser.add_argument("--seconds", type=float, default=6.0)
+    parser.add_argument("--startup-seconds", type=float, default=30.0)
+    parser.add_argument("--expect", action="append", default=[])
+    parser.add_argument("--ready-file")
     parser.add_argument("--width", type=int, default=160)
     parser.add_argument("--height", type=int, default=50)
     args = parser.parse_args()
@@ -142,7 +145,13 @@ def main() -> int:
                 break
             raw.extend(chunk)
 
-    collect(2.0)
+    startup_deadline = time.monotonic() + args.startup_seconds
+    while time.monotonic() < startup_deadline and process.poll() is None:
+        collect(0.5)
+        startup_screen = Screen(args.width, args.height)
+        startup_screen.feed(bytes(raw).decode("utf-8", "replace"))
+        if "Daemon: ✓ Connected" in startup_screen.text():
+            break
     if args.mode == "tasks":
         os.write(master, b"\x1bOQ")
     elif args.mode == "terminal":
@@ -151,7 +160,20 @@ def main() -> int:
         os.write(master, b"\x02c")
     else:
         os.write(master, b"\x1b")
-    collect(args.seconds)
+    if args.ready_file:
+        ready_file = Path(args.ready_file)
+        ready_file.parent.mkdir(parents=True, exist_ok=True)
+        ready_file.write_text("connected\n", encoding="utf-8")
+    if args.expect:
+        expected_deadline = time.monotonic() + args.seconds
+        while time.monotonic() < expected_deadline and process.poll() is None:
+            collect(0.5)
+            expected_screen = Screen(args.width, args.height)
+            expected_screen.feed(bytes(raw).decode("utf-8", "replace"))
+            if all(value in expected_screen.text() for value in args.expect):
+                break
+    else:
+        collect(args.seconds)
 
     screen = Screen(args.width, args.height)
     screen.feed(bytes(raw).decode("utf-8", "replace"))
@@ -184,6 +206,9 @@ def main() -> int:
         raise SystemExit(f"final buffer omitted footer:\n{final_text}")
     if "Daemon: ✓ Connected" not in final_text:
         raise SystemExit(f"final buffer omitted connected daemon state:\n{final_text}")
+    for expected in args.expect:
+        if expected not in final_text:
+            raise SystemExit(f"final buffer omitted expected {expected!r}:\n{final_text}")
     return 0
 
 

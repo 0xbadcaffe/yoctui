@@ -1930,11 +1930,8 @@ impl RecipeEditor {
             .content
             .lines()
             .enumerate()
-            .filter_map(|(index, line)| {
-                line.trim_end()
-                    .ends_with('=')
-                    .then(|| format!("line {}: assignment has no value", index + 1))
-            })
+            .filter(|(_, line)| line.trim_end().ends_with('='))
+            .map(|(index, _)| format!("line {}: assignment has no value", index + 1))
             .collect::<Vec<_>>();
         let opens = self
             .content

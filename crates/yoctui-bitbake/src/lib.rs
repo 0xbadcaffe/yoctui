@@ -1092,7 +1092,13 @@ impl DevtoolInspector {
 fn parse_devtool_status(output: &str) -> Result<Vec<(String, PathBuf, Option<PathBuf>)>, String> {
     output
         .lines()
-        .filter(|line| !line.trim().is_empty())
+        .map(str::trim)
+        .filter(|line| {
+            !line.is_empty()
+                && !["NOTE: ", "WARNING: ", "DEBUG: "]
+                    .iter()
+                    .any(|prefix| line.starts_with(prefix))
+        })
         .map(|line| {
             let (recipe, value) = line.split_once(": ").ok_or_else(|| line.to_owned())?;
             if recipe.is_empty() || value.is_empty() {
@@ -3805,6 +3811,20 @@ mod tests {
         assert_eq!(
             parse_git_status("unexpected"),
             Err("unrecognized Git status record: unexpected".into())
+        );
+    }
+
+    #[test]
+    fn devtool_metadata_ignores_bounded_bitbake_diagnostics() {
+        assert_eq!(
+            parse_devtool_status(
+                "NOTE: Starting bitbake server...\nWARNING: using existing server\nbusybox: /workspace/sources/busybox (/layers/core/busybox_1.0.bb)\n"
+            ),
+            Ok(vec![(
+                "busybox".into(),
+                "/workspace/sources/busybox".into(),
+                Some("/layers/core/busybox_1.0.bb".into()),
+            )])
         );
     }
 

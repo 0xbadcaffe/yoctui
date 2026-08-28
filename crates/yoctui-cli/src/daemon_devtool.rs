@@ -41,7 +41,6 @@ pub enum DaemonDevtoolEvent {
 }
 
 pub struct DaemonDevtoolSupervisor {
-    executable: PathBuf,
     compatibility: Option<DaemonCompatibilitySnapshot>,
     cancellation_timeout: Duration,
     next_job_id: u64,
@@ -54,7 +53,6 @@ impl Default for DaemonDevtoolSupervisor {
     fn default() -> Self {
         let (events_tx, events_rx) = mpsc::unbounded_channel();
         Self {
-            executable: PathBuf::from("devtool"),
             compatibility: None,
             cancellation_timeout: Duration::from_secs(5),
             next_job_id: 1,
@@ -66,12 +64,6 @@ impl Default for DaemonDevtoolSupervisor {
 }
 
 impl DaemonDevtoolSupervisor {
-    #[cfg(test)]
-    pub fn with_executable(mut self, executable: PathBuf) -> Self {
-        self.executable = executable;
-        self
-    }
-
     pub fn replace_compatibility(
         &mut self,
         compatibility: Option<DaemonCompatibilitySnapshot>,
@@ -93,8 +85,7 @@ impl DaemonDevtoolSupervisor {
             .compatibility
             .as_ref()
             .ok_or(DaemonDevtoolError::CompatibilityUnavailable)?;
-        let command = DevtoolCommandSpec::with_executable(
-            self.executable.clone(),
+        let command = DevtoolCommandSpec::from_operation(
             &operation,
             compatibility,
             compatibility.snapshot.generation,
@@ -322,7 +313,7 @@ mod tests {
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
         let executable = executable.canonicalize().unwrap();
         let build = root.canonicalize().unwrap();
-        let mut supervisor = DaemonDevtoolSupervisor::default().with_executable(executable.clone());
+        let mut supervisor = DaemonDevtoolSupervisor::default();
         supervisor
             .replace_compatibility(Some(compatibility(&build, &executable)))
             .unwrap();
