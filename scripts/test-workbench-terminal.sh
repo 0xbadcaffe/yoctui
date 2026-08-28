@@ -4,23 +4,30 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-# Keep every terminal layer explicit so a renamed or missing test cannot be
-# hidden by a broad workspace invocation.
-cargo test -q -p yoctui --bin yoctui ux_terminal_runtime
-cargo test -q -p yoctui --test daemon_pty_runtime ux_terminal_real_pty
-cargo test -q -p yoctui --test daemon_state_runtime reattach
-cargo test -q -p yoctui --bin yoctui pty_attach
-cargo test -q -p yoctui --bin yoctui daemon_raw::tests::raw_pty
-cargo test -q -p yoctui-bitbake --lib pty_runner
-cargo test -q -p yoctui-model --lib ux_terminal
-cargo test -q -p yoctui-model --lib pty_session
-cargo test -q -p yoctui-model --lib terminal_emulation
-cargo test -q -p yoctui-app --lib ux_terminal
-cargo test -q -p yoctui-app --lib mouse_runtime_routes_dialog_and_terminal
-cargo test -q -p yoctui-ui --lib ux_terminal
-cargo test -q -p yoctui-protocol --lib next_generation_pty
-cargo test -q -p yoctui-e2e --lib next_generation_pty
-cargo build -q -p yoctui
+test_binary="${YOCTUI_TEST_BINARY:-}"
+if [[ -z "$test_binary" ]]; then
+  # Keep every terminal layer explicit so a renamed or missing test cannot be
+  # hidden by a broad workspace invocation.
+  cargo test -q -p yoctui --bin yoctui ux_terminal_runtime
+  cargo test -q -p yoctui --test daemon_pty_runtime ux_terminal_real_pty
+  cargo test -q -p yoctui --test daemon_state_runtime reattach
+  cargo test -q -p yoctui --bin yoctui pty_attach
+  cargo test -q -p yoctui --bin yoctui daemon_raw::tests::raw_pty
+  cargo test -q -p yoctui-bitbake --lib pty_runner
+  cargo test -q -p yoctui-model --lib ux_terminal
+  cargo test -q -p yoctui-model --lib pty_session
+  cargo test -q -p yoctui-model --lib terminal_emulation
+  cargo test -q -p yoctui-app --lib ux_terminal
+  cargo test -q -p yoctui-app --lib mouse_runtime_routes_dialog_and_terminal
+  cargo test -q -p yoctui-ui --lib ux_terminal
+  cargo test -q -p yoctui-protocol --lib next_generation_pty
+  cargo test -q -p yoctui-e2e --lib next_generation_pty
+  cargo build -q -p yoctui
+  test_binary="$repo_root/target/debug/yoctui"
+else
+  test_binary="$(realpath -- "$test_binary")"
+  test -x "$test_binary"
+fi
 
 harness_root="$(mktemp -d /tmp/yoctui-workbench-terminal.XXXXXX)"
 export XDG_CONFIG_HOME="$harness_root/config"
@@ -30,14 +37,16 @@ mkdir -m 700 "$XDG_CONFIG_HOME" "$XDG_STATE_HOME" "$XDG_RUNTIME_DIR"
 mkdir -m 700 "$harness_root/build"
 
 cleanup() {
-  "$repo_root/target/debug/yoctui" daemon stop >/dev/null 2>&1 || true
+  "$test_binary" daemon stop >/dev/null 2>&1 || true
   rm -rf -- "$harness_root"
 }
 trap cleanup EXIT
 
-"$repo_root/target/debug/yoctui" daemon start >/dev/null
+"$test_binary" daemon start >/dev/null
 
-python3 - "$repo_root" <<'PY'
+python3 - "$repo_root" "$test_binary" "${YOCTUI_TERMINAL_EVIDENCE:-}" <<'PY'
+import hashlib
+import json
 import fcntl
 import os
 import pty
@@ -51,6 +60,8 @@ import time
 import unicodedata
 
 root = sys.argv[1]
+binary = sys.argv[2]
+evidence = sys.argv[3]
 ansi = re.compile(r"\x1b(?:\[[0-9;?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\)|.)")
 screens = {}
 
@@ -58,7 +69,7 @@ screens = {}
 class Screen:
     """Compose the cursor-addressed crossterm stream into visible terminal rows."""
 
-    def __init__(self, rows=40, columns=160):
+    def __init__(self, rows=50, columns=160):
         self.rows = rows
         self.columns = columns
         self.cells = [[" "] * columns for _ in range(rows)]
@@ -264,10 +275,10 @@ def become_session_leader():
 def start_client(label):
     master, slave = pty.openpty()
     screens[master] = Screen()
-    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 160, 0, 0))
+    fcntl.ioctl(slave, termios.TIOCSWINSZ, struct.pack("HHHH", 50, 160, 0, 0))
     process = subprocess.Popen(
         [
-            os.path.join(root, "target/debug/yoctui"),
+            binary,
             "--no-color",
             "--build-dir",
             os.path.realpath(os.path.join(os.environ["XDG_RUNTIME_DIR"], "..", "build")),
@@ -360,6 +371,48 @@ help_text = send_and_expect(master, process, b"\x02?", "PREFIX HELP", "terminal 
 for anchor in ["Ctrl+B t", "Ctrl+B %", "Ctrl+B [", "Ctrl+B K"]:
     if anchor not in help_text:
         raise SystemExit(f"terminal prefix help omitted {anchor!r}: {help_text[-4000:]}")
+if evidence:
+    os.makedirs(evidence, exist_ok=True)
+    split_path = os.path.join(evidence, "terminal-sessions.txt")
+    help_path = os.path.join(evidence, "terminal-prefix-help.txt")
+    ansi_path = os.path.join(evidence, "terminal-sessions.ansi")
+    meta_path = os.path.join(evidence, "terminal-sessions.meta")
+    report_path = os.path.join(evidence, "terminal-sessions.report.json")
+    with open(split_path, "w", encoding="utf-8") as output:
+        output.write(search.rstrip() + "\n")
+    with open(help_path, "w", encoding="utf-8") as output:
+        output.write(help_text.rstrip() + "\n")
+    with open(ansi_path, "wb") as output:
+        output.write(bytes(screens[master].transcript[-2_000_000:]))
+    with open(meta_path, "w", encoding="utf-8") as output:
+        output.write("label=live\nscenario=terminal-sessions\nwidth=160\nheight=50\n")
+    report = {
+        "schema": 1,
+        "scenario": "terminal-sessions",
+        "interactions": [
+            "attach two real clients to one daemon",
+            "create two daemon-owned PTYs and transfer one writer lease",
+            "split the first client into writer and read-only panes",
+            "generate bounded scrollback, search for needle, and open Ctrl+B prefix help",
+        ],
+        "observed_assertions": [
+            "Terminal Sessions",
+            "writer",
+            "read-only",
+            "Dropped history: at least",
+            "visible match(es)",
+            "PREFIX HELP",
+            "Ctrl+B K",
+        ],
+        "terminal": os.path.basename(ansi_path),
+        "semantic": [os.path.basename(split_path), os.path.basename(help_path)],
+    }
+    with open(report_path, "w", encoding="utf-8") as output:
+        json.dump(report, output, indent=2, sort_keys=True)
+        output.write("\n")
+    for path in (split_path, help_path, ansi_path, meta_path, report_path):
+        if not hashlib.sha256(open(path, "rb").read()).hexdigest():
+            raise SystemExit(f"terminal evidence is missing: {path}")
 os.write(master, b"\x1b")
 collect(master, .3)
 

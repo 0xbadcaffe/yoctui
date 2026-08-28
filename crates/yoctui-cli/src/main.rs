@@ -2265,6 +2265,14 @@ fn stop_daemon() -> Result<()> {
 }
 
 #[cfg(unix)]
+const MAX_DAEMON_CLIENT_EVENTS_PER_TICK: usize = 4;
+
+#[cfg(unix)]
+fn bounded_daemon_client_batch<T>(events: impl IntoIterator<Item = T>) -> impl Iterator<Item = T> {
+    events.into_iter().take(MAX_DAEMON_CLIENT_EVENTS_PER_TICK)
+}
+
+#[cfg(unix)]
 async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
     use yoctui_protocol::{
         daemon::{
@@ -2399,6 +2407,10 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     let mut shutting_down = false;
     let mut last_telemetry_ms = record.started_unix_ms;
     const MAX_SUPERVISOR_EVENTS_PER_TICK: usize = 32;
+    // Keep socket production comfortably below the interactive client's
+    // bounded 64-event/8-ms poll. A busy reducer may not consume all 64 before
+    // its time bound, so matching the 32-event supervisor ingress can still
+    // fill the socket. Cursor expiry is recovered by a replacement Snapshot.
     while !shutting_down {
         for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
             let Some(event) = devtool_supervisor.try_event() else {
@@ -2574,7 +2586,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                     last_sequence,
                 })) {
                     yoctui_protocol::daemon::DaemonSnapshotSync::Replay { events, .. } => {
-                        for event in events {
+                        for event in bounded_daemon_client_batch(events) {
                             last_sequence = event.sequence;
                             if let Err(error) = connection.send(&ServerMessage::Event(event)) {
                                 tracing::debug!(%error, "dropping daemon client during event fan-out");
@@ -2591,10 +2603,11 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             })?;
                         }
                         last_sequence = snapshot.sequence;
-                        connection.send(&ServerMessage::Attached {
-                            snapshot: *snapshot,
-                            replayed_through: last_sequence,
-                        })?;
+                        // This client is already attached. `Attached` is only
+                        // valid during the handshake; after a cursor expires,
+                        // replace the live replica through the Snapshot frame
+                        // that the attached transport accepts.
+                        connection.send(&ServerMessage::Snapshot(*snapshot))?;
                     }
                 }
             }
@@ -20132,5 +20145,15 @@ esac"#,
             Some(b"\x1b[Z".to_vec())
         );
         assert_eq!(terminal_input_bytes(Input::F10), Some(b"\x1b[21~".to_vec()));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn daemon_live_event_fanout_is_bounded_below_client_poll_capacity() {
+        let batch = bounded_daemon_client_batch(0..10_000).collect::<Vec<_>>();
+        assert_eq!(batch.len(), MAX_DAEMON_CLIENT_EVENTS_PER_TICK);
+        assert_eq!(batch.first(), Some(&0));
+        assert_eq!(batch.last(), Some(&(MAX_DAEMON_CLIENT_EVENTS_PER_TICK - 1)));
+        assert!(MAX_DAEMON_CLIENT_EVENTS_PER_TICK < client_runtime::MAX_EVENTS_PER_POLL);
     }
 }
