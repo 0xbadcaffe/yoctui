@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    "launch a real client against the idle supported-host daemon"
+  ],
+  "observed_assertions": [
+    "Current Build \u00b7 Idle",
+    "Daemon: \u2713 Connected",
+    "F10 Menu"
+  ],
+  "scenario": "idle-dashboard",
+  "schema": 1,
+  "semantic": "idle-dashboard.txt",
+  "terminal": "idle-dashboard.ansi"
+}

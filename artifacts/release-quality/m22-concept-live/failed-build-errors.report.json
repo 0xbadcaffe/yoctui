@@ -1,0 +1,14 @@
+{
+  "interactions": [
+    "press e to open the Errors workspace after an intentional failed build"
+  ],
+  "observed_assertions": [
+    "Errors",
+    "Failed",
+    "Daemon: \u2713 Connected"
+  ],
+  "scenario": "failed-build-errors",
+  "schema": 1,
+  "semantic": "failed-build-errors.txt",
+  "terminal": "failed-build-errors.ansi"
+}

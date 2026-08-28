@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: poky  •  ✓ Completed  •  Target: core-image-minimal  •  Machine: qemux86-64                Daemon: ✓ Connected  •  BitBake: – Disconnected│
+┌Navigator───────────┐┌Images · Rootfs composition────────────────────────────────────────┐┌Inspector: Artifact────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││ 1 Artifacts  │  2 Rootfs packages  │  3 Rootfs filesystem   Tab/Sh││▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       ││Installed-package authority · 38 packages · 0 exact bytes          ││Rootfs composition                                                 │
+│▾ CONTENT           ││h/l group · j/k package · r refresh · Tab filesystem               ││View: Rootfs packages                                              │
+│  ~ Layers          ││Category                     Packages   Exact bytes        Percent ││State: partial · 64 limitation(s)                                  │
+│  ~ Recipes         ││base                               23             0      0.00% .   ││Image: core-image-minimal                                          │
+│  × Packages        ││kernel                              1             0      0.00% .   ││Path:                                                              │
+│  ~ Images          ││libs                                1             0      0.00% .   ││/repo/.yoctui-next-ui-live.KCSsKf/build/tmp/deploy/images/qemux86-6│
+│  ▱ SDK             ││libs/network                        2             0      0.00% .   ││4/core-image-minimal-qemux86-64.rootfs-20260828075023.ext4         │
+│▾ BUILD             ││uncategorized                      11             0      0.00% .   ││Installed packages: partial · 64 limitation(s)                     │
+│  ~ Tasks           ││                                                                   ││Filesystem tree: unavailable · IMAGE_ROOTFS was not reported for   │
+│  ▱ Logs        LIVE││Packages in base · 1 of 23 · Other membership remains inspectable  ││the selected image                                                 │
+│  ▱ Errors          ││Package                       Recipe                 Exact bytes   ││                                                                   │
+│  ▱ Configuration   ││Files                                                              ││Exact totals                                                       │
+│  ~ Dependencies    ││base-files                    base-files                       0   ││Package bytes: 0                                                   │
+│▾ VALIDATE          ││   0                                                               ││Package files: 0                                                   │
+│  ▱ Testing         ││base-passwd                   base-passwd                      0   ││Filesystem bytes: 0                                                │
+│  ? Security        ││   0                                                               ││Entries: 0 (files 0 · dirs 0 · symlinks 0 · special 0)             │
+│  ▱ QA              ││busybox                       busybox                          0   ││Overflow: false                                                    │
+│▾ TOOLS             ││   0                                                               ││                                                                   │
+│  ▱ Raw Mode        ││busybox-hwclock               busybox                          0   ││Selected group: base                                               │
+│  ~ Terminal Session││   0                                                               ││Selected package: base-files                                       │
+│  ▱ Devtool         ││busybox-syslog                busybox                          0   ││Recipe: base-files                                                 │
+│  ▱ QEMU / Wic      ││   0                                                               ││Category: base                                                     │
+│  ▱ Maintenance     ││busybox-udhcpc                busybox                          0   ││Installed bytes: 0                                                 │
+│  ▱ Build environmen││   0                                                               ││Reported files: 0                                                  │
+│  ▱ Compatibility   ││eudev                         eudev                            0   ││                                                                   │
+│  ▱ Settings        ││   0                                                               ││Limitations                                                        │
+│                    ││init-ifupdown                 init-ifupdown                    0   ││! file count was malformed for package base-files                  │
+│                    ││   0                                                               ││! file count was malformed for package base-passwd                 │
+│                    ││init-system-helpers-service   init-system-helpers              0   ││! file count was malformed for package busybox                     │
+│                    ││   0                                                               ││! file count was malformed for package busybox-hwclock             │
+│                    ││initscripts                   initscripts                      0   ││! file count was malformed for package busybox-syslog              │
+│                    ││   0                                                               ││! file count was malformed for package busybox-udhcpc              │
+│                    ││initscripts-functions         initscripts                      0   ││! file count was malformed for package eudev                       │
+│                    ││   0                                                               ││! file count was malformed for package init-ifupdown               │
+│                    ││kmod                          kmod                             0   ││! file count was malformed for package init-system-helpers-service │
+│                    ││   0                                                               ││! file count was malformed for package initscripts                 │
+│                    ││modutils-initscripts          modutils-initscripts             0   ││! file count was malformed for package initscripts-functions       │
+│                    ││   0                                                               ││! file count was malformed for package                             │
+│                    ││netbase                       netbase                          0   ││kernel-module-uvesafb-6.12.47-yocto-standard                       │
+│                    ││   0                                                               ││! file count was malformed for package kmod                        │
+│                    ││packagegroup-core-boot        packagegroup-core-boot           0   ││! file count was malformed for package ldconfig                    │
+│                    ││   0                                                               ││! file count was malformed for package modutils-initscripts        │
+│                    ││sysvinit                      sysvinit                         0   ││! file count was malformed for package netbase                     │
+└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+Shift+Tab Navigator   h/l group   j/k package   PgUp/PgDn page   r refresh   Tab filesystem   Tab Inspector   F2 Tasks   F1 Help   F10 Menu   q Quit    08:10:47
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -1,3 +1,3 @@
-core /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.Np2QYf/poky/meta
-yocto /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.Np2QYf/poky/meta-poky
-yoctobsp /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.Np2QYf/poky/meta-yocto-bsp
+core /repo/.yoctui-next-ui-live.KCSsKf/poky/meta
+yocto /repo/.yoctui-next-ui-live.KCSsKf/poky/meta-poky
+yoctobsp /repo/.yoctui-next-ui-live.KCSsKf/poky/meta-yocto-bsp

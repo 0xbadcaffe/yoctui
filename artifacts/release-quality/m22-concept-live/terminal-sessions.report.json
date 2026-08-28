@@ -1,0 +1,24 @@
+{
+  "interactions": [
+    "attach two real clients to one daemon",
+    "create two daemon-owned PTYs and transfer one writer lease",
+    "split the first client into writer and read-only panes",
+    "generate bounded scrollback, search for needle, and open Ctrl+B prefix help"
+  ],
+  "observed_assertions": [
+    "Terminal Sessions",
+    "writer",
+    "read-only",
+    "Dropped history: at least",
+    "visible match(es)",
+    "PREFIX HELP",
+    "Ctrl+B K"
+  ],
+  "scenario": "terminal-sessions",
+  "schema": 1,
+  "semantic": [
+    "terminal-sessions.txt",
+    "terminal-prefix-help.txt"
+  ],
+  "terminal": "terminal-sessions.ansi"
+}

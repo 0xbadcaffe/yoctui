@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: build  •  – Idle  •  Target: not selected                                                  Daemon: ✓ Connected  •  BitBake: – Disconnected│
+┌Navigator───────────┐ Terminal Sessions                                                   ┌Inspector: Daemon / session────────────────────────────────────────┐
+│▾ OVERVIEW          │─────────────────────────────────────────────────────────────────────│▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       │SEARCH · needle▏ · 1 visible match(es) · Enter/Esc finish            │Session: build shell (2)                                           │
+│▾ CONTENT           │┌ build shell #1 Running ────────┐┌ build shell #2 Running ─────────┐│Identity: BuildShell                                               │
+│  ~ Layers          ││BuildShell · writer · 1 viewer(…││BuildShell · read-only · 1 viewe…││Lifecycle: Running                                                 │
+│  ~ Recipes         ││last search: needle · 0 matches ││last search: needle · 1 matches  ││Role: Read-only viewer (another client owns writer)                │
+│  ▱ Packages        ││$ █                             ││history 2000 · dropped ≥962      ││Writer: 05031c3f · epoch 1                                         │
+│  ~ Images          ││                                ││2963                             ││Viewers: 1                                                         │
+│  ▱ SDK             ││                                ││2964                             ││Dimensions: 120x40                                                 │
+│▾ BUILD             ││                                ││2965                             ││Working directory: /tmp/yoctui-workbench-terminal.jrOKrR/build     │
+│  ~ Tasks           ││                                ││2966                             ││Restartable: yes                                                   │
+│  ▱ Logs        LIVE││                                ││2967                             ││Exit code: unavailable                                             │
+│  ▱ Errors          ││                                ││2968                             ││                                                                   │
+│  ▱ Configuration   ││                                ││2969                             ││Replica / history                                                  │
+│  ~ Dependencies    ││                                ││2970                             ││Viewport offset: 0                                                 │
+│▾ VALIDATE          ││                                ││2971                             ││Retained scrollback: 2000 lines                                    │
+│  ▱ Testing         ││                                ││2972                             ││Dropped history: at least 962 observed line-feed(s)                │
+│  ? Security        ││                                ││2973                             ││Cursor: 2,39 (visible)                                             │
+│  ▱ QA              ││                                ││2974                             ││                                                                   │
+│▾ TOOLS             ││                                ││2975                             ││▾ CONTEXTUAL ACTIONS                                               │
+│  ▱ Raw Mode        ││                                ││2976                             ││✓ Open build shell        [n] — Local                              │
+│  ~ Terminal Session││                                ││2977                             ││? Open devshell           [s] — Unknown                            │
+│  ▱ Devtool         ││                                ││2978                             ││  Reason: This capability does not declare a release/version       │
+│  ▱ QEMU / Wic      ││                                ││2979                             ││fallback.                                                          │
+│  ▱ Maintenance     ││                                ││2980                             ││? Open menuconfig         [m] — Unknown                            │
+│  ▱ Build environmen││                                ││2981                             ││  Reason: This capability does not declare a release/version       │
+│  ▱ Compatibility   ││                                ││2982                             ││fallback.                                                          │
+│  ▱ Settings        ││                                ││2983                             ││✓ Take writer control     [o] — Local                              │
+│                    ││                                ││2984                             ││✓ Release writer control  [c] — Local                              │
+│                    ││                                ││2985                             ││                                                                   │
+│                    ││                                ││2986                             ││                                                                   │
+│                    ││                                ││2987                             ││                                                                   │
+│                    ││                                ││2988                             ││                                                                   │
+│                    ││                                ││2989                             ││                                                                   │
+│                    ││                                ││2990                             ││                                                                   │
+│                    ││                                ││2991                             ││                                                                   │
+│                    ││                                ││2992                             ││                                                                   │
+│                    ││                                ││2993                             ││                                                                   │
+│                    ││                                ││2994                             ││                                                                   │
+│                    ││                                ││2995                             ││                                                                   │
+│                    ││                                ││2996                             ││                                                                   │
+│                    ││                                ││2997                             ││                                                                   │
+│                    ││                                ││2998                             ││                                                                   │
+│                    ││                                ││2999                             ││                                                                   │
+│                    ││                                ││3000                             ││                                                                   │
+└────────────────────┘└────────────────────────────────┘└─────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+Type query   Backspace edit   Ctrl+U clear   Enter done   Esc done   F2 Tasks   F1 Help   F10 Menu   q Quit                    i Next terminal session  08:14:31
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

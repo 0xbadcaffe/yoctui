@@ -4819,3 +4819,12 @@ gray antialiasing, full hinting, and pinned Cairo/PyCairo plus regular/bold
 DejaVu Sans Mono hashes. The provenance manifest records each source-cell and
 output SHA-256. Raster check mode must regenerate and byte-compare all six
 PNGs; a PNG with no matching exact production-cell source is invalid.
+
+Supported live acceptance uses one checksummed binary for all six workflows.
+Each scenario retains its exact PTY stream, a `160x50` semantic screen and
+metadata record, explicit interactions, observed assertions, and a `1600x1000`
+semantic raster. The aggregate manifest must match the base live-build identity
+for source commit, binary, Ubuntu 24.04/glibc 2.39 host, official Poky 5.2.4
+revision, BitBake 2.12.1, machine, target, and run timestamps. Every artifact is
+checksummed; missing attribution, unsupported hosts, stale hashes, open gaps,
+or a different binary fail parity.

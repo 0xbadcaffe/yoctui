@@ -35,11 +35,9 @@ required_features = [
   { id = "discoverability", description = "Footer routes remain visible", fixture_anchors = ["B build", "F10 Menu"] },
 ]
 raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/01-idle-dashboard.png", sha256 = "ab6df67eaeee7cb79d4ea59d7339036fa15e172bd982be67279790a82d5079ad", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "8443bf1428981df9a9dea511fc371de7b1145ab2fe64d37dcf29a389e39579c6", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v1" }
-live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
+live_evidence = { status = "verified", artifact = "artifacts/release-quality/m22-concept-live/idle-dashboard.txt", sha256 = "5f509a449980f1ecd642c0be7a9abf593d134e82af4f12f7f8b20bdb06f91c11", interactions = ["launch a real client against the idle supported-host daemon"], assertions = ["Current Build · Idle", "Daemon: ✓ Connected", "F10 Menu"] }
 implementation_tasks = ["UX-DASHBOARD-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
-open_gaps = [
-  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert this exact idle Dashboard scenario." },
-]
+open_gaps = []
 anchors = [
   "persistent header, Navigator, Workspace, Inspector, and footer",
   "Dashboard selected with one focused Workspace border",
@@ -69,11 +67,9 @@ required_features = [
   { id = "context-actions", description = "Task actions expose availability", fixture_anchors = ["Contextual Actions", "Cancel active build"] },
 ]
 raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/02-active-build-tasks.png", sha256 = "4a06ac1b914fa5d8fbbb98625c455115be1c4401aebacc4c90e1627483091248", source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells", source_sha256 = "ca6ff7e7e5525c5e09ea22d730bfb7b096f741d1fc27d8d0e37636e4df734793", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v1" }
-live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
+live_evidence = { status = "verified", artifact = "artifacts/release-quality/m22-concept-live/active-build-tasks.txt", sha256 = "fd10d4c6f088aac3fa6e693a6c55617facbfac04874a75ed655c2ffb00764964", interactions = ["submit core-image-minimal", "press F2 while real BitBake tasks are running"], assertions = ["Tasks: core-image-minimal", "▶ Running", "Log Viewer", "Daemon: ✓ Connected"] }
 implementation_tasks = ["UX-PROGRESS-001", "UX-TELEMETRY-001", "UX-LOGS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
-open_gaps = [
-  { task = "UX-CONCEPT-LIVE-001", description = "Existing live task evidence is not yet attributed through this scenario's exact interaction and assertion contract." },
-]
+open_gaps = []
 anchors = [
   "7,240 of 10,056 determinate build progress at 72 percent",
   "selected active task row and Task Inspector agree",
@@ -103,11 +99,9 @@ required_features = [
   { id = "recovery-actions", description = "Recovery actions and confirmation requirements are visible", fixture_anchors = ["Recovery actions", "Enter matching log", "B rebuild options", "confirmation required"] },
 ]
 raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/03-failed-build-errors.png", sha256 = "006cd1080c89887827a65b81427e968885a714354e50c4f8abf960217a231e94", source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells", source_sha256 = "82839ba6348a79d8748117c4d05c51417cb0559482bf8b7f28c34c5a9b84eafa", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v1" }
-live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
+live_evidence = { status = "verified", artifact = "artifacts/release-quality/m22-concept-live/failed-build-errors.txt", sha256 = "58fe7253ab893209f9790c2d3ed90bb51a74dbf2691174d0843c44672106b9d8", interactions = ["press e to open the Errors workspace after an intentional failed build"], assertions = ["Errors", "Failed", "Daemon: ✓ Connected"] }
 implementation_tasks = ["UX-LOGS-001", "UX-CHECKBOX-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
-open_gaps = [
-  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert the complete failed-build Errors workflow." },
-]
+open_gaps = []
 anchors = [
   "failed lifecycle is explicit in header and result summary",
   "structured errors and warnings table",
@@ -137,11 +131,9 @@ required_features = [
   { id = "filesystem-drilldown", description = "Filesystem tree and textual position remain visible", fixture_anchors = ["Filesystem tree: partial", "1-9/9", "/bin/busybox", "Tab drill-down"] },
 ]
 raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/04-rootfs-composition.png", sha256 = "f9a6f286e154282001e0157ad5e05d8eb009b4658a37b7a744d499df8eaa527b", source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells", source_sha256 = "44f8b3ba42f4892c2c7341ed2842bcefd351a24f140377f69ed1628912351752", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v1" }
-live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
+live_evidence = { status = "verified", artifact = "artifacts/release-quality/m22-concept-live/rootfs-composition.txt", sha256 = "733c13fcdae9fb86b6a8c767a518c0b91eb365bf608ec966d405fa9a2322a93a", interactions = ["press F8 to open authoritative image artifacts", "wait for the DEPLOY_DIR_IMAGE scan to select the built artifact", "filter the artifact inventory to the real ext4 root filesystem", "press p to inspect the selected image rootfs composition"], assertions = ["Images · Rootfs composition", "Installed-package authority", "Exact bytes", "Installed packages:", "Exact totals"] }
 implementation_tasks = ["UX-ROOTFS-MODEL-001", "UX-ROOTFS-ADAPTER-001", "UX-ROOTFS-UI-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
-open_gaps = [
-  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert the Rootfs composition workspace." },
-]
+open_gaps = []
 anchors = [
   "installed-packages and filesystem-tree authorities are separate",
   "composition chart is paired with an exact sortable table",
@@ -171,11 +163,9 @@ required_features = [
   { id = "editor-actions", description = "Save, build, and return actions remain discoverable", fixture_anchors = ["Ctrl+S save", "Ctrl+B build recipe", "Esc return to Yoctui"] },
 ]
 raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/05-editor-application-menu.png", sha256 = "5dccc5da263f8690406886bd5c51c4bbc1e1cbdce629fb5e4bf436fc04829ee3", source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells", source_sha256 = "967c961cda1570de77ecfe9c40b603161ba05fd6590781b36a1ccf4a6deef53a", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v1" }
-live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
+live_evidence = { status = "verified", artifact = "artifacts/release-quality/m22-concept-live/editor-application-menu.txt", sha256 = "1620318ccee4ab620e6dd56280089c9367e673b04ceaf31a7af0eed7ceda207b", interactions = ["press F7 to open the daemon-authoritative Recipes inventory", "type /busybox and Enter, then select the exact busybox recipe from bounded matches", "press t to refresh authoritative Devtool status", "press d and Enter to run confirmed devtool modify", "press F10 to compose the application menu over the recipe editor"], assertions = ["Recipe editor:", "Application menu", "focus trapped"] }
 implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
-open_gaps = [
-  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet open the recipe editor and F10 menu together and assert menu focus." },
-]
+open_gaps = []
 anchors = [
   "stable F10 menu groups and one focus-trapped dropdown",
   "disabled cancel action includes exact reason",
@@ -205,11 +195,9 @@ required_features = [
   { id = "prefix-help", description = "Prefix actions remain visible", fixture_anchors = ["Ctrl+B prefix", "[ copy", "/ search", "K confirmed kill"] },
 ]
 raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/06-terminal-sessions.png", sha256 = "f8d3208418096854a52273f8e42292c7204fd679ed8ed92dd12bdab607175e5f", source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells", source_sha256 = "244b03580934092052dd95a9c7f850fa3847e900838c46d02c58e81a9bc998c1", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v1" }
-live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
+live_evidence = { status = "verified", artifact = "artifacts/release-quality/m22-concept-live/terminal-sessions.txt", sha256 = "56f6c21262f637b1c3f99da7af4e31d2670f1fa98c727094840fda3dc8f9f80f", interactions = ["attach two real clients to one daemon", "create two daemon-owned PTYs and transfer one writer lease", "split the first client into writer and read-only panes", "generate bounded scrollback, search for needle, and open Ctrl+B prefix help"], assertions = ["Terminal Sessions", "writer", "read-only", "Dropped history: at least", "visible match(es)"] }
 implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
-open_gaps = [
-  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet assert both writer/read-only panes and visible prefix help for this scenario." },
-]
+open_gaps = []
 anchors = [
   "session tabs and two bounded split PTY panes",
   "writer and read-only ownership are textual",

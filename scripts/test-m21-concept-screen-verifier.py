@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import contextlib
-import hashlib
 import importlib.util
 import io
 import re
@@ -48,6 +47,11 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         raster_source = SOURCE_ROOT / "docs/design/m22/production-raster"
         raster_destination = self.root / "docs/design/m22/production-raster"
         shutil.copytree(raster_source, raster_destination)
+        live_source = SOURCE_ROOT / "artifacts/release-quality/m22-concept-live"
+        live_destination = self.root / "artifacts/release-quality/m22-concept-live"
+        live_destination.mkdir(parents=True)
+        for source in live_source.glob("*.txt"):
+            shutil.copy2(source, live_destination / source.name)
 
         self.verifier = load_verifier()
         self.verifier.ROOT = self.root
@@ -107,9 +111,10 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8")
         text, replacements = re.subn(
-            r'(implementation_tasks = \[[^\n]*"UX-DASHBOARD-001"[^\n]*\]\n'
-            r'open_gaps = \[\n)',
-            r'\1  { task = "UX-DASHBOARD-001", description = "test gap" },\n',
+            r'open_gaps = \[\]',
+            'open_gaps = [\n'
+            '  { task = "UX-DASHBOARD-001", description = "test gap" },\n'
+            ']',
             text,
             count=1,
         )
@@ -134,10 +139,6 @@ class ConceptScreenVerifierTests(unittest.TestCase):
             '  { id = "next-action", description = "Capability-aware next action", fixture_anchors = ["Next Action", "Build image [B] — unknown"] },',
             '  { id = "next-action", description = "Capability-aware next action", gap_task = "UX-CONCEPT-LIVE-001" },',
             1,
-        ).replace(
-            '  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert this exact idle Dashboard scenario." },\n',
-            "",
-            1,
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected(
@@ -161,16 +162,10 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         self.assert_rejected("raster source must be the exact production cell golden")
 
     def test_rejects_verified_live_evidence_without_interactions(self) -> None:
-        artifact = Path(
-            "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt"
-        )
-        digest = hashlib.sha256((self.root / artifact).read_bytes()).hexdigest()
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8").replace(
-            'live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }',
-            f'live_evidence = {{ status = "verified", artifact = "{artifact}", '
-            f'sha256 = "{digest}", assertions = ["Current Build · Idle", '
-            '"Daemon: ✓ Connected"] }',
+            'interactions = ["launch a real client against the idle supported-host daemon"], ',
+            "",
             1,
         )
         path.write_text(text, encoding="utf-8")

@@ -1,0 +1,16 @@
+{
+  "interactions": [
+    "submit core-image-minimal",
+    "press F2 while real BitBake tasks are running"
+  ],
+  "observed_assertions": [
+    "Tasks: core-image-minimal",
+    "\u25b6 Running",
+    "Log Viewer",
+    "Daemon: \u2713 Connected"
+  ],
+  "scenario": "active-build-tasks",
+  "schema": 1,
+  "semantic": "active-build-tasks.txt",
+  "terminal": "active-build-tasks.ansi"
+}

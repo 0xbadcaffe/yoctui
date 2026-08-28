@@ -2803,6 +2803,15 @@ attached client, while command-created events advance the issuing client's
 cursor after their direct response. This keeps global daemon state and event
 ordering shared without making focus or layout global.
 
+Live event recovery uses the attached transport's `Snapshot` frame; the
+handshake-only `Attached` frame is never reused after attachment. A client that
+falls more than the per-tick event budget behind receives an explicit
+`ResyncRequired` boundary followed by one current snapshot instead of forcing
+the daemon to clone and trickle an unbounded retained history. Initial resume
+uses the same limit before completing the handshake. Failed replacement writes
+drop only that client, so a closed or slow UI cannot terminate the daemon or
+starve the BitBake supervisor.
+
 ## Raw BitBake Command Workbench boundary
 
 Raw Mode reuses the existing dependency direction and does not introduce a

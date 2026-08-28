@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: build  •  – Idle  •  Target: not selected                                                  Daemon: ✓ Connected  •  BitBake: – Disconnected│
+┌Navigator───────────┐ Terminal Sessions                                                   ┌Inspector: Daemon / session────────────────────────────────────────┐
+│▾ OVERVIEW          │─────────────────────────────────────────────────────────────────────│▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       │PREFIX HELP · Esc/? close · terminal input is paused while help is o…│Session: build shell (2)                                           │
+│▾ CONTENT           │┌Terminal keyboard help─────────────────────────────────────────────┐│Identity: BuildShell                                               │
+│  ~ Layers          ││Ctrl+B t  open Terminal Sessions                                   ││Lifecycle: Running                                                 │
+│  ~ Recipes         ││Ctrl+B c  create build shell                                       ││Role: Read-only viewer (another client owns writer)                │
+│  ▱ Packages        ││Ctrl+B n/p  next/previous session                                  ││Writer: 05031c3f · epoch 1                                         │
+│  ~ Images          ││Ctrl+B % / "  horizontal/vertical split                            ││Viewers: 1                                                         │
+│  ▱ SDK             ││Ctrl+B z  zoom focused pane                                        ││Dimensions: 120x40                                                 │
+│▾ BUILD             ││Ctrl+B x  close pane (process keeps running)                       ││Working directory: /tmp/yoctui-workbench-terminal.jrOKrR/build     │
+│  ~ Tasks           ││Ctrl+B d  detach client (process keeps running)                    ││Restartable: yes                                                   │
+│  ▱ Logs        LIVE││Ctrl+B o/O  take/release writer control                            ││Exit code: unavailable                                             │
+│  ▱ Errors          ││Ctrl+B [  copy mode · Ctrl+B / search                              ││                                                                   │
+│  ▱ Configuration   ││Ctrl+B r  rename · Ctrl+B K confirmed kill                         ││Replica / history                                                  │
+│  ~ Dependencies    ││Ctrl+B Ctrl+B  send literal Ctrl+B                                 ││Viewport offset: 0                                                 │
+│▾ VALIDATE          ││                                                                   ││Retained scrollback: 2000 lines                                    │
+│  ▱ Testing         ││Writer mode forwards ordinary characters and terminal keys         ││Dropped history: at least 962 observed line-feed(s)                │
+│  ? Security        ││verbatim. Paste always pauses for bounded review. Viewers can use  ││Cursor: 2,39 (visible)                                             │
+│  ▱ QA              ││the visible direct shortcuts because they cannot send PTY input.   ││                                                                   │
+│▾ TOOLS             ││                                                                   ││▾ CONTEXTUAL ACTIONS                                               │
+│  ▱ Raw Mode        ││Only the current daemon writer lease can send keyboard, paste,     ││✓ Open build shell        [n] — Local                              │
+│  ~ Terminal Session││mouse, or resize input. Retained and remote-writer replicas remain ││? Open devshell           [s] — Unknown                            │
+│  ▱ Devtool         ││read-only.                                                         ││  Reason: This capability does not declare a release/version       │
+│  ▱ QEMU / Wic      ││                                                                   ││fallback.                                                          │
+│  ▱ Maintenance     ││                                                                   ││? Open menuconfig         [m] — Unknown                            │
+│  ▱ Build environmen││                                                                   ││  Reason: This capability does not declare a release/version       │
+│  ▱ Compatibility   ││                                                                   ││fallback.                                                          │
+│  ▱ Settings        ││                                                                   ││✓ Take writer control     [o] — Local                              │
+│                    ││                                                                   ││✓ Release writer control  [c] — Local                              │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+│                    ││                                                                   ││                                                                   │
+└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+Ctrl+B prefix   [ copy   / search   r rename   O release   K confirmed kill   F1 Help   F10 Menu   q Quit                                i Help opened  08:14:34
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

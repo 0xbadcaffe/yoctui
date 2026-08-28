@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui  •  Project: build  •  – Idle  •  Target: not selected                                                  Daemon: ✓ Connected  •  BitBake: – Disconnected│
+┌Navigator───────────┐┌Current Build · Idle───────────────────────────────────────────────┐┌Inspector: Daemon / session────────────────────────────────────────┐
+│▾ OVERVIEW          ││Overall  progress unknown⠽  0/?                                    ││▾ PRIMARY FACTS                                                    │
+│  ▱ Dashboard       ││A0 W0 !0 ✕0 --                                                     ││Target: not selected                                               │
+│▾ CONTENT           ││Target: none  Status: Idle  Exit code: none                        ││Status: Idle                                                       │
+│  ~ Layers          ││Backend: bridge  Parse progress: not parsing                       ││                                                                   │
+│  ~ Recipes         ││Tasks: 0/?  Active: 0  Warnings: 0  Errors: 0                      ││Select an item in the workspace to inspect its details.            │
+│  × Packages        ││Machine: unknown  Distro: unknown  Release: unknown                ││                                                                   │
+│  ~ Images          ││CPU: unavailable  Disk free: unavailable                           ││▾ SECONDARY FACTS                                                  │
+│  ▱ SDK             ││Environment: ready  Sstate reuse: unavailable                      ││A0 Q0 F0 Done0 D0                                                  │
+│▾ BUILD             │└───────────────────────────────────────────────────────────────────┘│                                                                   │
+│  ~ Tasks           │┌Active Tasks · 0 active · 0 retained c┐┌Next Action────────────────┐│▾ CONTEXTUAL ACTIONS                                               │
+│  ▱ Logs        LIVE││No active task events. Start a build w││Recommended                ││~ Build image                  [B] — Limited                       │
+│  ▱ Errors          ││                                      ││Build image [B] — limited  ││  Reason: Direct probing was inconclusive; a centralized BitBake   │
+│  ▱ Configuration   ││                                      ││Reason: Direct probing was ││adapter fallback was selected.                                     │
+│  ~ Dependencies    ││                                      ││inconclusive; a centralized││  Limitation: Modern Tinfoil API family is inferred only through   │
+│▾ VALIDATE          ││                                      ││BitBake adapter fallback   ││the latest documented BitBake 2.18 boundary; direct negotiation is │
+│  ▱ Testing         ││                                      ││was selected.              ││still preferred.                                                   │
+│  ? Security        ││                                      ││                           ││  Implementation: tinfoil.adapter.modern                           │
+│  ▱ QA              ││                                      ││Common actions             ││~ Cancel active build          [c] — Limited                       │
+│▾ TOOLS             ││                                      ││[F2] Tasks  [l] Logs  [e]  ││  Reason: Direct probing was inconclusive; a centralized BitBake   │
+│  ▱ Raw Mode        ││                                      ││Errors  [F3] Recent work   ││adapter fallback was selected.                                     │
+│  ~ Terminal Session││                                      ││[F8] Artifacts  [f]        ││  Limitation: Modern Tinfoil API family is inferred only through   │
+│  ▱ Devtool         ││                                      ││Favorites  [t] Terminals   ││the latest documented BitBake 2.18 boundary; direct negotiation is │
+│  ▱ QEMU / Wic      ││                                      ││[E] Environment  [M] Sstate││still preferred.                                                   │
+│  ▱ Maintenance     ││                                      ││readiness                  ││  Implementation: tinfoil.adapter.modern                           │
+│  ▱ Build environmen││                                      ││                           ││✓ Monitor active tasks         [F2] — Local                        │
+│  ▱ Compatibility   ││                                      ││                           ││✓ Open retained logs           [l] — Local                         │
+│  ▱ Settings        │└──────────────────────────────────────┘└───────────────────────────┘│✓ Review failures              [e] — Local                         │
+│                    │┌Attention · 0 retained · e rev┐┌Workbench Center · live source proj┐│✓ Inspect recent work          [F3] — Local                        │
+│                    ││✓ No retained warnings or     ││Next: Build image [B] · limited    ││✓ Inspect artifacts            [F8] — Local                        │
+│                    ││errors. [e] opens diagnostics.││[F3] Context: none retained        ││✓ Configure build environment  [E] — Local                         │
+│                    ││                              ││[F2/F3] Active: tasks 0 · jobs 0   ││✓ Sstate readiness             [M] — Local                         │
+│                    ││                              ││[e] Failure: none retained         ││✓ Browse favorite commands     [f] — Local                         │
+│                    ││                              ││[F8] Artifact: none retained       ││✓ Open terminal sessions       [t] — Local                         │
+│                    ││                              ││[f] Favorite: none                 ││                                                                   │
+│                    ││                              ││[t] Terminal: none                 ││▾ SYSTEM / COMPATIBILITY                                           │
+│                    ││                              ││[F3] Recent: none retained         ││✓ Daemon Connected · version unavailable · up 00:01:49             │
+│                    ││                              ││                                   ││– BitBake Disconnected · vunavailable · Jobs 0                     │
+│                    ││                              ││                                   ││! Compat Degraded g1 · A70 L14 U5 ?18 · PTY 0 · Clients 0          │
+│                    ││                              ││                                   ││! Build FS unavailable · Workspace /repo/.yoctui-next-ui-live.KCSs…│
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+│                    ││                              ││                                   ││                                                                   │
+└────────────────────┘└──────────────────────────────┘└───────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
+B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   Tab Inspector   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit          07:49:34
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

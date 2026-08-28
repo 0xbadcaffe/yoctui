@@ -11,15 +11,14 @@ Status values:
 
 ## Current phase
 
-M22 Concept-to-Live UI Parity is active under the user's explicit request to
-close the gap between the reviewed concept screens and a real working Yoctui
-instance. The audit found that M21's anchor-only fixture checks and broad live
-scenario labels overstated visual/workflow parity: failed-build composition,
-rootfs composition at the canonical width, the editor-plus-F10-menu composition,
-terminal live navigation, deterministic app-derived raster proof, and exact
-live scenario attribution still need work. `UX-CONCEPT-GOV-001` records those
-gaps without rewriting completed M21 history. M21 remains 38/38 complete under
-its original contract; overall required registry progress is 585/587 (99.7%).
+M22 Concept-to-Live UI Parity is complete. The gap audit found that M21's
+anchor-only fixture checks and broad live scenario labels overstated
+visual/workflow parity; M22 closed those gaps without rewriting completed M21
+history. Failed-build composition, rootfs composition at canonical width, the
+editor-plus-F10-menu composition, terminal live navigation, deterministic
+app-derived raster proof, and exact supported-host live scenario attribution
+are now verified. M21 remains 38/38 complete under its original contract;
+overall required registry progress is 587/587 (100.0%).
 `UX-CONCEPT-ACCEPTANCE-001` is complete: every scene now has at least four
 machine-checked features, with each feature proven by production fixture
 anchors or assigned to an incomplete gap owner. Deterministic raster and live
@@ -49,7 +48,11 @@ split writer/read-only ownership, bounded paste, dropped scrollback and search,
 prefix help, resize, and clean detach. `UX-CONCEPT-RASTER-001` is complete:
 six byte-reproducible 1600x1000 PNGs now derive from the exact production
 cell/style goldens with pinned Cairo/font provenance. `UX-CONCEPT-LIVE-001` is
-active.
+complete: one checksummed Ubuntu 24.04/glibc 2.39 binary drove the idle,
+active-task, failed-error, rootfs, editor/menu, and terminal scenarios against
+official Poky yocto-5.2.4 and BitBake 2.12.1. Every scenario retains explicit
+interactions, observed assertions, PTY ANSI, semantic text, metadata, and a
+1600x1000 PNG. `UX-CONCEPT-PARITY-001` is complete with no open manifest gaps.
 
 M21 One-Stop Yocto Workbench Usability is complete. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
 and third-party widget showcases were mapped to Yoctui's existing typed

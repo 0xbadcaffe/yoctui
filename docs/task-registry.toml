@@ -6468,20 +6468,20 @@ notes = "Six 1600x1000 PNGs now render directly from the exact 160x50 production
 id = "UX-CONCEPT-LIVE-001"
 milestone = "M22"
 title = "Capture every concept workflow on a supported live Yocto host"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 745
 required = true
 depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-TERMINAL-LIVE-001"]
 verify = ["./scripts/test-live-m22-concept-parity.sh", "./scripts/verify-live-m22-concept-evidence.sh"]
-notes = "The live harness must drive and assert each named workflow against one exact supported-host binary; unsupported-host diagnostics cannot satisfy this task."
+notes = "One checksummed Ubuntu 24.04/glibc 2.39 binary built from source commit 2c330c14e5f08b0d2602f57b84a8fad49a9ee39d drove all six scenarios against official Poky yocto-5.2.4 and BitBake 2.12.1. Scenario reports retain explicit interactions and observed assertions beside PTY ANSI, semantic text, metadata, and 1600x1000 raster evidence. The live verifier rejects unsupported hosts, stale or mismatched binaries, corrupt hashes, missing attribution, and incomplete scenario sets."
 
 [[task]]
 id = "UX-CONCEPT-PARITY-001"
 milestone = "M22"
 title = "Complete concept-to-live UI parity"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 746
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 verify = ["./scripts/verify-m22-concept-parity.sh", "./scripts/verify-completion.sh"]
-notes = "All six scenarios have complete production fixtures, deterministic raster proof, explicitly driven supported-host live evidence, no open manifest gaps, and the unchanged repository completion gate."
+notes = "All six scenarios have complete production fixtures, deterministic raster proof, explicitly driven supported-host live evidence from one exact binary, and no open manifest gaps. The parity gate composes roadmap, production-fixture, deterministic-raster, live-evidence, mutation, and repository completion verification."

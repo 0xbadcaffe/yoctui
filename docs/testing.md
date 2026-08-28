@@ -52,6 +52,21 @@ the pinned Cairo/font environment, and byte-compares six PNGs. The second also
 checks dimensions, source/output hashes, repeatability, malformed-cell
 rejection, and renderer/font identity.
 
+Checked-in supported-host concept evidence is validated without rebuilding
+Yocto by:
+
+```bash
+./scripts/verify-live-m22-concept-evidence.sh
+python3 scripts/test-live-m22-concept-evidence.py
+./scripts/verify-m22-concept-parity.sh
+```
+
+The verifier requires the exact six attributed scenarios, one supported-host
+run identity and binary hash, alternate-screen `160x50` PTY captures, explicit
+interactions/assertions, complete checksums, and `1600x1000` PNGs. Failure tests
+mutate isolated copies and prove that unsupported hosts, unattributed scenarios,
+and stale artifact hashes are rejected.
+
 Regeneration is opt-in and requires a disposable supported Yocto host. The live
 harness accepts an exact already-built release binary so an older supported
 container does not need the development Rust toolchain:

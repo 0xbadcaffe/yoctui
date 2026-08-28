@@ -1,0 +1,18 @@
+{
+  "interactions": [
+    "press F7 to open the daemon-authoritative Recipes inventory",
+    "type /busybox and Enter, then select the exact busybox recipe from bounded matches",
+    "press t to refresh authoritative Devtool status",
+    "press d and Enter to run confirmed devtool modify",
+    "press F10 to compose the application menu over the recipe editor"
+  ],
+  "observed_assertions": [
+    "Recipe editor:",
+    "Application menu",
+    "focus trapped"
+  ],
+  "scenario": "editor-application-menu",
+  "schema": 1,
+  "semantic": "editor-application-menu.txt",
+  "terminal": "editor-application-menu.ansi"
+}
