@@ -305,7 +305,7 @@ fn scenario_workload(scenario: &str) -> App {
             let mut app = workload();
             app.screen = Screen::Recipes;
             app.focus = FocusTarget::Dialog;
-            let content = (0..4_096)
+            let content: String = (0..4_096)
                 .map(|index| format!("PROFILE_VALUE_{index:05} = \"deterministic-{index:05}\"\n"))
                 .collect();
             app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
