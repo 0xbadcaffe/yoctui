@@ -86,7 +86,10 @@ fn receive_command_result(connection: &mut DaemonConnection) {
                 ));
                 return;
             }
-            ServerMessage::Event(_) | ServerMessage::Ping { .. } => {}
+            ServerMessage::Event(_)
+            | ServerMessage::Snapshot(_)
+            | ServerMessage::ResyncRequired { .. }
+            | ServerMessage::Ping { .. } => {}
             other => panic!("expected command result, got {other:?}"),
         }
     }
@@ -276,7 +279,18 @@ fn ux_terminal_real_pty_prompt_input_viewport_resize_rename_kill_and_close() {
                     );
                 }
             }
-            ServerMessage::Ping { .. } | ServerMessage::CommandResult(_) => {}
+            ServerMessage::Snapshot(snapshot) => {
+                exited = snapshot.pty_sessions.iter().any(|session| {
+                    matches!(
+                        session.lifecycle,
+                        yoctui_protocol::daemon::LifecycleState::Exited
+                            | yoctui_protocol::daemon::LifecycleState::Lost
+                    )
+                });
+            }
+            ServerMessage::ResyncRequired { .. }
+            | ServerMessage::Ping { .. }
+            | ServerMessage::CommandResult(_) => {}
             other => panic!("expected terminal event, got {other:?}"),
         }
         if exited {
