@@ -10094,6 +10094,9 @@ async fn tui(
     } else {
         App::new_unconfigured(log_entries, log_bytes)
     };
+    if build_dir_configured {
+        app.workspace.build_dir = Some(build_dir.clone());
+    }
     app.backend = backend_kind.to_string();
     app.color_forced_off = color_forced_off;
     app.install_preferences(preferences)

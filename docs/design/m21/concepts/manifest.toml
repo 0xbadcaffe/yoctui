@@ -201,19 +201,18 @@ workspace = "Terminal Sessions"
 state = "two PTY panes; local writer and remote read-only client"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt"
-real_yoctui_anchors = ["Terminal Sessions", "BuildShell · writer · 2 viewer(s)", "Devshell · read-only · 2 viewer(s)", "bitbake-layers show-layers", "Ctrl+B prefix", "19:28:27"]
+real_yoctui_anchors = ["Terminal Sessions", "BuildShell · writer · 2 viewer(s)", "Devshell · read-only · 2 viewer(s)", "last search: busybox · 3 matches", "history 312 · dropped ≥14", "Ctrl+B prefix", "19:28:27"]
 required_features = [
   { id = "split-sessions", description = "Two bounded daemon PTY panes are visible", fixture_anchors = ["shell #1 Running", "devshell:busybox #2 Running"] },
   { id = "writer-ownership", description = "Writer and read-only ownership are textual", fixture_anchors = ["BuildShell · writer · 2 viewer(s)", "Devshell · read-only · 2 viewer(s)"] },
   { id = "focused-pane", description = "The selected writer pane owns current focus", fixture_anchors = ["CURRENT · LIVE · WRITER", "Role: Writer"] },
-  { id = "scrollback-search", description = "Lower-pane search exposes matches and dropped-history accounting", gap_task = "UX-CONCEPT-TERMINAL-LIVE-001" },
+  { id = "scrollback-search", description = "Lower-pane search exposes matches and dropped-history accounting", fixture_anchors = ["last search: busybox · 3 matches", "history 312 · dropped ≥14"] },
   { id = "prefix-help", description = "Prefix actions remain visible", fixture_anchors = ["Ctrl+B prefix", "[ copy", "/ search", "K confirmed kill"] },
 ]
 raster_evidence = { status = "gap", task = "UX-CONCEPT-RASTER-001" }
 live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
 implementation_tasks = ["UX-TERMINAL-EVAL-001", "UX-TERMINAL-UX-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = [
-  { task = "UX-CONCEPT-TERMINAL-LIVE-001", description = "The checked live capture creates a shell from Dashboard rather than proving Ctrl+B t navigation and the split-session workflow." },
   { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
   { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet assert both writer/read-only panes and visible prefix help for this scenario." },
 ]

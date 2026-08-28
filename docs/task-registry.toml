@@ -6446,18 +6446,18 @@ notes = "The production renderer now preserves the live RecipeEditor beneath the
 id = "UX-CONCEPT-TERMINAL-LIVE-001"
 milestone = "M22"
 title = "Drive the Terminal Sessions concept through a real client"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 743
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
 verify = ["cargo test -p yoctui -- ux_terminal_runtime", "./scripts/test-workbench-terminal.sh"]
-notes = "Navigate with Ctrl+B t, prove daemon-owned split panes and writer/read-only state, and capture visible prefix help from the real client."
+notes = "The isolated real-client matrix now drives Ctrl+B t through two crossterm clients, creates two daemon-owned build shells, proves independent writer leases plus a split writer/read-only view, exercises bounded paste review, forces and asserts dropped scrollback with a visible search match, validates prefix help and resize, and exits both clients cleanly. The client preserves explicit --build-dir authority across daemon replica updates, a single pane follows the selected session, and the canonical production fixture exposes retained lower-pane search/drop evidence."
 
 [[task]]
 id = "UX-CONCEPT-RASTER-001"
 milestone = "M22"
 title = "Render deterministic PNGs from production cells"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 744
 required = true
 depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001"]

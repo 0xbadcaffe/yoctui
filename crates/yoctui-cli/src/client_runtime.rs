@@ -1,6 +1,7 @@
 use std::{
     fs::File,
     io::Read,
+    path::PathBuf,
     time::{Duration, Instant},
 };
 
@@ -23,6 +24,7 @@ const MAX_POLL_DURATION: Duration = Duration::from_millis(8);
 pub struct InteractiveDaemonRuntime {
     transport: DaemonClientTransport,
     replica: DaemonClientSnapshot,
+    local_build_dir: Option<PathBuf>,
     next_request: u64,
 }
 
@@ -34,6 +36,7 @@ pub enum RuntimeEffectRoute {
 
 impl InteractiveDaemonRuntime {
     pub fn connect(app: &mut App, timeout: Duration) -> Result<Self, ClientRuntimeError> {
+        let local_build_dir = app.workspace.build_dir.clone();
         let client_id = random_client_id()?;
         let mut transport =
             DaemonClientTransport::connect(client_id, "yoctui-ratatui".into(), timeout)?;
@@ -53,10 +56,12 @@ impl InteractiveDaemonRuntime {
         for event in attached.replayed_events {
             replica.apply_event_to_app(app, &event)?;
         }
+        restore_local_build_dir(app, local_build_dir.as_ref());
         app.terminal.client_id = Some(client_id.0);
         Ok(Self {
             transport,
             replica,
+            local_build_dir,
             next_request: 1,
         })
     }
@@ -88,6 +93,7 @@ impl InteractiveDaemonRuntime {
                     app.notification = Some("Yoctui daemon is shutting down.".into());
                 }
             }
+            restore_local_build_dir(app, self.local_build_dir.as_ref());
             if started.elapsed() >= MAX_POLL_DURATION {
                 break;
             }
@@ -299,6 +305,14 @@ impl InteractiveDaemonRuntime {
                 session_id: PtySessionId(session.id),
             })?;
         Ok(())
+    }
+}
+
+fn restore_local_build_dir(app: &mut App, local_build_dir: Option<&PathBuf>) {
+    if app.workspace.build_dir.is_none()
+        && let Some(local_build_dir) = local_build_dir
+    {
+        app.workspace.build_dir = Some(local_build_dir.clone());
     }
 }
 
@@ -1229,6 +1243,22 @@ mod tests {
             prefix_daemon_command(&app, PrefixCommand::SplitHorizontal)
                 .unwrap()
                 .is_none()
+        );
+    }
+
+    #[test]
+    fn ux_terminal_runtime_preserves_explicit_local_build_authority() {
+        let local = PathBuf::from("/configured/build");
+        let mut app = App::new(16, 4096);
+        app.workspace.build_dir = None;
+        restore_local_build_dir(&mut app, Some(&local));
+        assert_eq!(app.workspace.build_dir.as_deref(), Some(local.as_path()));
+
+        app.workspace.build_dir = Some("/daemon/build".into());
+        restore_local_build_dir(&mut app, Some(&local));
+        assert_eq!(
+            app.workspace.build_dir.as_deref(),
+            Some(std::path::Path::new("/daemon/build"))
         );
     }
 

@@ -5,13 +5,13 @@
 │  ▱ Dashboard       │CURRENT · LIVE · WRITER · scrollback 0                               │Session: shell (1)                                                 │
 │▾ CONTENT           │┌ shell #1 Running ─────────────────────────────────────────────────┐│Identity: BuildShell                                               │
 │  ? Layers          ││BuildShell · writer · 2 viewer(s) · 88x18 · /home/user/yocto/build ││Lifecycle: Running                                                 │
-│  ? Recipes         ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers           ││Role: Writer (keyboard/paste/resize enabled)                       │
-│  ? Packages        ││layer                 path                                         ││Writer: 01010101 · epoch 4                                         │
-│  ? Images          ││meta                  /home/user/yocto/meta                        ││Viewers: 2                                                         │
-│  ? SDK             ││meta-poky             /home/user/yocto/meta-poky                   ││Dimensions: 88x18                                                  │
-│▾ BUILD             ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp              ││Working directory: /home/user/yocto/build                          │
-│  ? Tasks           ││bspguy@builder:~/yocto/build$                                      ││Restartable: yes                                                   │
-│  ▱ Logs        LIVE││                                                                   ││Exit code: unavailable                                             │
+│  ? Recipes         ││last search: busybox · 0 matches                                   ││Role: Writer (keyboard/paste/resize enabled)                       │
+│  ? Packages        ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers           ││Writer: 01010101 · epoch 4                                         │
+│  ? Images          ││layer                 path                                         ││Viewers: 2                                                         │
+│  ? SDK             ││meta                  /home/user/yocto/meta                        ││Dimensions: 88x18                                                  │
+│▾ BUILD             ││meta-poky             /home/user/yocto/meta-poky                   ││Working directory: /home/user/yocto/build                          │
+│  ? Tasks           ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp              ││Restartable: yes                                                   │
+│  ▱ Logs        LIVE││bspguy@builder:~/yocto/build$                                      ││Exit code: unavailable                                             │
 │  ▱ Errors          ││                                                                   ││                                                                   │
 │  ? Configuration   ││                                                                   ││Replica / history                                                  │
 │  ? Dependencies    ││                                                                   ││Viewport offset: 0                                                 │
@@ -26,13 +26,13 @@
 │  ? QEMU / Wic      │└───────────────────────────────────────────────────────────────────┘│? Open menuconfig         [m] — Unknown                            │
 │  ? Maintenance     │┌ devshell:busybox #2 Running ──────────────────────────────────────┐│  Reason: No current environment capability snapshot: menuconfig.  │
 │  ▱ Build environmen││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build││✓ Take writer control     [o] — Local                              │
-│  ▱ Compatibility   ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                   ││✓ Release writer control  [c] — Local                              │
-│  ▱ Settings        ││CC      coreutils/ls.o                                             ││                                                                   │
+│  ▱ Compatibility   ││last search: busybox · 3 matches                                   ││✓ Release writer control  [c] — Local                              │
+│  ▱ Settings        ││history 312 · dropped ≥14                                          ││                                                                   │
+│                    ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                   ││                                                                   │
+│                    ││CC      coreutils/ls.o                                             ││                                                                   │
 │                    ││CC      coreutils/cp.o                                             ││                                                                   │
 │                    ││LD      busybox_unstripped                                         ││                                                                   │
 │                    ││busybox-devshell$                                                  ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
 │                    ││                                                                   ││                                                                   │
 │                    ││                                                                   ││                                                                   │
 │                    ││                                                                   ││                                                                   │

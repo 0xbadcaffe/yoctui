@@ -2,31 +2,32 @@
 
 ## Task
 
-**ID:** UX-CONCEPT-TERMINAL-LIVE-001
-**Title:** Drive the Terminal Sessions concept through a real client
+**ID:** UX-CONCEPT-RASTER-001
+**Title:** Render deterministic PNGs from production cells
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Drive a real client to Terminal Sessions with Ctrl+B t, prove the daemon-owned
-split panes and writer/read-only states, and retain visible prefix-help,
-scrollback-search, match, and dropped-history evidence.
+Convert the six exact production cell/style scenes into deterministic PNG
+review artifacts using a pinned font and renderer, with provenance and
+checksums that can be reproduced in CI.
 
 ## Dependencies
 
-- UX-CONCEPT-ACCEPTANCE-001 — DONE
+- UX-CONCEPT-ERRORS-001 — DONE
+- UX-CONCEPT-ROOTFS-001 — DONE
+- UX-CONCEPT-EDITOR-MENU-001 — DONE
 
 ## Definition of done
 
-- Ctrl+B t reaches Terminal Sessions in the real-client harness.
-- Two daemon-owned split panes expose writer/read-only ownership.
-- Prefix help remains visible and owns the prefixed input sequence.
-- Search match and dropped-history counts are asserted.
-- Focused runtime and workbench terminal tests pass.
+- The renderer consumes exact production cell/style goldens.
+- Font identity and rendering parameters are pinned and recorded.
+- All six app-derived PNGs are deterministic and checksummed.
+- Check mode rejects stale, missing, or non-reproducible artifacts.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui -- ux_terminal_runtime
-./scripts/test-workbench-terminal.sh
+./scripts/render-m22-concept-screenshots.sh --check
+python3 scripts/test-m22-concept-raster.py
 ```

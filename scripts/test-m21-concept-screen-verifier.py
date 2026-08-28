@@ -126,14 +126,19 @@ class ConceptScreenVerifierTests(unittest.TestCase):
 
     def test_rejects_feature_gap_missing_from_open_gaps(self) -> None:
         path = self.verifier.MANIFEST
-        text = path.read_text(encoding="utf-8").replace(
-            '  { task = "UX-CONCEPT-TERMINAL-LIVE-001", description = "The checked live capture creates a shell from Dashboard rather than proving Ctrl+B t navigation and the split-session workflow." },\n',
+        text = path.read_text(encoding="utf-8")
+        text = text.replace(
+            '  { id = "next-action", description = "Capability-aware next action", fixture_anchors = ["Next Action", "Build image [B] — unknown"] },',
+            '  { id = "next-action", description = "Capability-aware next action", gap_task = "UX-CONCEPT-RASTER-001" },',
+            1,
+        ).replace(
+            '  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },\n',
             "",
             1,
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected(
-            "feature scrollback-search gap task UX-CONCEPT-TERMINAL-LIVE-001 "
+            "feature next-action gap task UX-CONCEPT-RASTER-001 "
             "is not declared in open_gaps"
         )
 

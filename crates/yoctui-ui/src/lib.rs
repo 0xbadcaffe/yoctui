@@ -1120,10 +1120,10 @@ fn current_search_state(app: &App) -> Option<(bool, bool)> {
             app.raw_mode.search.editing,
             !app.raw_mode.search.query.is_empty(),
         ),
-        Screen::TerminalSessions => (
-            app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Search,
-            !app.terminal.query.is_empty(),
-        ),
+        Screen::TerminalSessions => {
+            let editing = app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Search;
+            (editing, editing && !app.terminal.query.is_empty())
+        }
         Screen::Compatibility => (
             app.compatibility_ui.searching,
             !app.compatibility_ui.query.is_empty(),
@@ -3152,8 +3152,14 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
     let layout = &app.pane_layout;
     let mut panes = Vec::new();
     collect_terminal_panes(&layout.root, area, &mut panes);
+    let pane_count = panes.len();
     for (index, (rect, id)) in panes.into_iter().enumerate() {
-        let session = app.daemon.pty_sessions.get(index);
+        let session_index = if pane_count == 1 {
+            app.pty_selection
+        } else {
+            index
+        };
+        let session = app.daemon.pty_sessions.get(session_index);
         let title = session
             .map(|session| format!(" {} #{} {:?} ", session.name, id.0, session.lifecycle))
             .unwrap_or_else(|| format!(" pane #{} ", id.0));
@@ -3169,10 +3175,9 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 .iter()
                 .find(|details| details.id == session.id)
         });
-        let block = pane_block(app, &title, index == app.pty_selection);
+        let block = pane_block(app, &title, session_index == app.pty_selection);
         let inner = block.inner(rect);
         frame.render_widget(block, rect);
-        let regions = Layout::vertical([Constraint::Length(1), Constraint::Min(0)]).split(inner);
         let status = session.map_or_else(
             || "No PTY session".into(),
             |session| {
@@ -3200,7 +3205,36 @@ fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 )
             },
         );
-        frame.render_widget(Paragraph::new(status), regions[0]);
+        let mut status_lines = vec![Line::raw(bounded_cell_text(&status, inner.width))];
+        if let Some(screen) = screen {
+            if !app.terminal.query.is_empty() {
+                let query = app.terminal.query.to_lowercase();
+                let hits = screen
+                    .rows
+                    .iter()
+                    .filter(|row| row.to_lowercase().contains(&query))
+                    .count();
+                status_lines.push(Line::raw(bounded_cell_text(
+                    &format!("last search: {} · {hits} matches", app.terminal.query),
+                    inner.width,
+                )));
+            }
+            if screen.scrollback_lines > 0 || screen.dropped_line_feeds_lower_bound > 0 {
+                status_lines.push(Line::raw(bounded_cell_text(
+                    &format!(
+                        "history {} · dropped ≥{}",
+                        screen.scrollback_lines, screen.dropped_line_feeds_lower_bound
+                    ),
+                    inner.width,
+                )));
+            }
+        }
+        let regions = Layout::vertical([
+            Constraint::Length(status_lines.len().min(u16::MAX as usize) as u16),
+            Constraint::Min(0),
+        ])
+        .split(inner);
+        frame.render_widget(Paragraph::new(status_lines), regions[0]);
         let rendered = screen.is_some_and(|screen| {
             render_terminal_replica_content(frame, app, screen, regions[1], 0, 0)
         });
@@ -18558,6 +18592,7 @@ mod tests {
         app.screen = Screen::TerminalSessions;
         app.focus = FocusTarget::Workspace;
         app.terminal.client_id = Some([1; 16]);
+        app.terminal.query = "busybox".into();
         let first = app.pane_layout.focused;
         app.pane_layout
             .split(first, SplitAxis::Vertical)
@@ -31383,6 +31418,16 @@ mod tests {
         assert!(wide.contains("WRITER"), "{wide}");
         assert!(wide.contains("read-only"), "{wide}");
         assert!(wide.contains("dropped line-feeds ≥ 312"), "{wide}");
+
+        let mut selected = ux_terminal_render_fixture();
+        selected.pane_layout =
+            yoctui_model::PaneLayout::new(yoctui_model::PaneId(1)).expect("valid single pane");
+        selected.pty_selection = 1;
+        let selected = rendered_text(&selected, 120, 35);
+        assert!(
+            selected.contains("devshell:busybox: bounded output"),
+            "{selected}"
+        );
 
         app.color_enabled = false;
         let narrow = rendered_text(&app, 80, 24);
