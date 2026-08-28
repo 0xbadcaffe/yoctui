@@ -1,0 +1,58 @@
+schema_version = 1
+renderer = "yoctui-cairo-cell-raster-v1"
+pycairo_version = "1.27.0"
+cairo_version = "1.18.4"
+font_family = "DejaVu Sans Mono"
+regular_font_sha256 = "a54dca07c76d6289e717e75e0a58c0128f6d7269ef3faf76417c9d7d3bba37ab"
+bold_font_sha256 = "2d67eed9b325ee2e69f906ce4f3f6264d5105230a13352c8494daad4f17b12c8"
+logical_columns = 160
+logical_rows = 50
+cell_width = 10
+cell_height = 20
+pixel_width = 1600
+pixel_height = 1000
+antialias = "gray"
+hint_style = "full"
+hint_metrics = "on"
+
+[[artifact]]
+id = "idle-dashboard"
+source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
+source_sha256 = "8443bf1428981df9a9dea511fc371de7b1145ab2fe64d37dcf29a389e39579c6"
+file = "docs/design/m22/production-raster/01-idle-dashboard.png"
+sha256 = "ab6df67eaeee7cb79d4ea59d7339036fa15e172bd982be67279790a82d5079ad"
+
+[[artifact]]
+id = "active-build-tasks"
+source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
+source_sha256 = "ca6ff7e7e5525c5e09ea22d730bfb7b096f741d1fc27d8d0e37636e4df734793"
+file = "docs/design/m22/production-raster/02-active-build-tasks.png"
+sha256 = "4a06ac1b914fa5d8fbbb98625c455115be1c4401aebacc4c90e1627483091248"
+
+[[artifact]]
+id = "failed-build-errors"
+source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
+source_sha256 = "82839ba6348a79d8748117c4d05c51417cb0559482bf8b7f28c34c5a9b84eafa"
+file = "docs/design/m22/production-raster/03-failed-build-errors.png"
+sha256 = "006cd1080c89887827a65b81427e968885a714354e50c4f8abf960217a231e94"
+
+[[artifact]]
+id = "rootfs-composition"
+source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
+source_sha256 = "44f8b3ba42f4892c2c7341ed2842bcefd351a24f140377f69ed1628912351752"
+file = "docs/design/m22/production-raster/04-rootfs-composition.png"
+sha256 = "f9a6f286e154282001e0157ad5e05d8eb009b4658a37b7a744d499df8eaa527b"
+
+[[artifact]]
+id = "editor-application-menu"
+source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
+source_sha256 = "967c961cda1570de77ecfe9c40b603161ba05fd6590781b36a1ccf4a6deef53a"
+file = "docs/design/m22/production-raster/05-editor-application-menu.png"
+sha256 = "5dccc5da263f8690406886bd5c51c4bbc1e1cbdce629fb5e4bf436fc04829ee3"
+
+[[artifact]]
+id = "terminal-sessions"
+source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
+source_sha256 = "244b03580934092052dd95a9c7f850fa3847e900838c46d02c58e81a9bc998c1"
+file = "docs/design/m22/production-raster/06-terminal-sessions.png"
+sha256 = "f8d3208418096854a52273f8e42292c7204fd679ed8ed92dd12bdab607175e5f"

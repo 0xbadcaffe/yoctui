@@ -245,6 +245,8 @@ do
 done
 
 python3 scripts/render-next-generation-ui-screenshots.py --check
+./scripts/render-m22-concept-screenshots.sh --check
+python3 scripts/test-m22-concept-raster.py
 
 cli_help="$(cargo run -q -p yoctui -- --help)"
 for expected in \

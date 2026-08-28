@@ -3282,3 +3282,11 @@ live interaction attribution independently. The live harness may claim only a
 scenario it navigated and asserted; it cannot synthesize menu, rootfs, editor,
 error, or terminal success from unrelated startup/build captures. Generated
 concept artwork remains human-review input outside this authority chain.
+
+The concrete raster projection is `yoctui-cairo-cell-raster-v1`: it parses the
+complete symbol and style runs, projects only recorded foreground/background
+and bold state, and renders fixed `10x20` cells through pinned PyCairo 1.27.0,
+Cairo 1.18.4, and SHA-256-identified DejaVu Sans Mono regular/bold faces. Its
+manifest binds every PNG to the exact source `.cells` hash. Check mode renders
+all six scenes into a temporary directory and byte-compares them with the
+tracked artifacts, so metadata-only or independently edited images cannot pass.

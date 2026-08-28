@@ -101,6 +101,7 @@ def verify_external_evidence(
     implementation_tasks: set[str],
     open_gap_tasks: set[str],
     tasks: dict[str, dict[str, object]],
+    fixture_golden: Path | None = None,
 ) -> None:
     if not isinstance(evidence, dict):
         fail(f"{scenario_id}: {kind}_evidence must be a table")
@@ -126,6 +127,24 @@ def verify_external_evidence(
         fail(f"{scenario_id}: verified {kind} evidence needs a SHA-256")
     if hashlib.sha256(artifact.read_bytes()).hexdigest() != sha256:
         fail(f"{scenario_id}: verified {kind} evidence checksum does not match")
+
+    if kind == "raster":
+        if artifact.suffix != ".png" or artifact.read_bytes()[:8] != b"\x89PNG\r\n\x1a\n":
+            fail(f"{scenario_id}: verified raster evidence must be a PNG")
+        source = safe_repo_file(
+            evidence.get("source"), scenario_id, "raster_evidence.source"
+        )
+        if fixture_golden is None or source.resolve() != fixture_golden.resolve():
+            fail(f"{scenario_id}: raster source must be the exact production cell golden")
+        source_sha256 = evidence.get("source_sha256")
+        if source_sha256 != hashlib.sha256(source.read_bytes()).hexdigest():
+            fail(f"{scenario_id}: raster source checksum does not match")
+        safe_repo_file(
+            evidence.get("provenance"), scenario_id, "raster_evidence.provenance"
+        )
+        renderer = evidence.get("renderer")
+        if not isinstance(renderer, str) or not renderer.strip():
+            fail(f"{scenario_id}: raster evidence needs a pinned renderer identity")
 
     if kind == "live":
         interactions = evidence.get("interactions")
@@ -276,6 +295,7 @@ def main() -> None:
             implementation_tasks,
             gap_tasks,
             tasks,
+            golden,
         )
         verify_external_evidence(
             scenario.get("live_evidence"),

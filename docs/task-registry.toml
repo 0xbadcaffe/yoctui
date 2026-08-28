@@ -6407,7 +6407,7 @@ priority = 739
 required = true
 depends_on = ["UX-CONCEPT-GOV-001"]
 verify = ["python3 scripts/test-m21-concept-screen-verifier.py", "./scripts/verify-m21-concept-screens.sh", "./scripts/verify-roadmap.sh"]
-notes = "Every scene now declares at least four machine-checked features, each proven by production fixture anchors or assigned to an incomplete owner. Raster and live evidence have independent gap/verified schemas; verified live proof requires a checksummed artifact, explicit interactions, and observed assertions. Eight verifier failure paths and the complete concept gate pass."
+notes = "Every scene declares at least four machine-checked features, each proven by production fixture anchors or assigned to an incomplete owner. Raster and live evidence have independent gap/verified schemas; raster proof is tied to its exact source-cell hash and provenance, while verified live proof requires a checksummed artifact, explicit interactions, and observed assertions. Ten verifier failure paths and the complete concept gate pass."
 
 [[task]]
 id = "UX-CONCEPT-ERRORS-001"
@@ -6457,18 +6457,18 @@ notes = "The isolated real-client matrix now drives Ctrl+B t through two crosste
 id = "UX-CONCEPT-RASTER-001"
 milestone = "M22"
 title = "Render deterministic PNGs from production cells"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 744
 required = true
 depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001"]
 verify = ["./scripts/render-m22-concept-screenshots.sh --check", "python3 scripts/test-m22-concept-raster.py"]
-notes = "Use a pinned font and renderer to convert exact production cell/style goldens into reproducible review PNGs with provenance and checksums."
+notes = "Six 1600x1000 PNGs now render directly from the exact 160x50 production cell/style goldens through yoctui-cairo-cell-raster-v1. PyCairo 1.27.0, Cairo 1.18.4, DejaVu Sans Mono regular/bold hashes, cell geometry, antialiasing, hinting, source hashes, and output hashes are pinned in provenance. Check mode byte-compares fresh renders; five focused tests cover repeatability, dimensions, source/output hashes, malformed cells, and renderer/font identity."
 
 [[task]]
 id = "UX-CONCEPT-LIVE-001"
 milestone = "M22"
 title = "Capture every concept workflow on a supported live Yocto host"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 745
 required = true
 depends_on = ["UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-TERMINAL-LIVE-001"]

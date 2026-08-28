@@ -45,6 +45,9 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         golden_destination.mkdir(parents=True)
         for source in golden_source.glob("concept-*.*"):
             shutil.copy2(source, golden_destination / source.name)
+        raster_source = SOURCE_ROOT / "docs/design/m22/production-raster"
+        raster_destination = self.root / "docs/design/m22/production-raster"
+        shutil.copytree(raster_source, raster_destination)
 
         self.verifier = load_verifier()
         self.verifier.ROOT = self.root
@@ -129,18 +132,33 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         text = path.read_text(encoding="utf-8")
         text = text.replace(
             '  { id = "next-action", description = "Capability-aware next action", fixture_anchors = ["Next Action", "Build image [B] — unknown"] },',
-            '  { id = "next-action", description = "Capability-aware next action", gap_task = "UX-CONCEPT-RASTER-001" },',
+            '  { id = "next-action", description = "Capability-aware next action", gap_task = "UX-CONCEPT-LIVE-001" },',
             1,
         ).replace(
-            '  { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },\n',
+            '  { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet navigate to and assert this exact idle Dashboard scenario." },\n',
             "",
             1,
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected(
-            "feature next-action gap task UX-CONCEPT-RASTER-001 "
+            "feature next-action gap task UX-CONCEPT-LIVE-001 "
             "is not declared in open_gaps"
         )
+
+    def test_rejects_corrupt_raster_artifact(self) -> None:
+        path = self.root / "docs/design/m22/production-raster/01-idle-dashboard.png"
+        path.write_bytes(path.read_bytes() + b"corrupt")
+        self.assert_rejected("verified raster evidence checksum does not match")
+
+    def test_rejects_raster_from_a_different_cell_golden(self) -> None:
+        path = self.verifier.MANIFEST
+        text = path.read_text(encoding="utf-8").replace(
+            'source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"',
+            'source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"',
+            1,
+        )
+        path.write_text(text, encoding="utf-8")
+        self.assert_rejected("raster source must be the exact production cell golden")
 
     def test_rejects_verified_live_evidence_without_interactions(self) -> None:
         artifact = Path(

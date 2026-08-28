@@ -4813,3 +4813,9 @@ UI authority. Live evidence must record the exact input sequence and assert the
 resulting screen anchors before a scenario can be named as passed. Unsupported
 host combinations may produce diagnostics but cannot replace supported-host
 evidence.
+
+The M22 raster implementation uses fixed `160x50` input, `10x20` pixel cells,
+gray antialiasing, full hinting, and pinned Cairo/PyCairo plus regular/bold
+DejaVu Sans Mono hashes. The provenance manifest records each source-cell and
+output SHA-256. Raster check mode must regenerate and byte-compare all six
+PNGs; a PNG with no matching exact production-cell source is invalid.

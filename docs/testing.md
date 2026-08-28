@@ -39,6 +39,19 @@ evidence, and the current latest/older release anchors. `check-docs.sh` also
 re-renders the three live SVGs from their semantic captures and fails when a
 checked-in visual is stale.
 
+Deterministic M22 visual review artifacts are checked separately from both the
+original concept art and live-host evidence:
+
+```bash
+./scripts/render-m22-concept-screenshots.sh --check
+python3 scripts/test-m22-concept-raster.py
+```
+
+The first command parses all exact production cell/style goldens, renders with
+the pinned Cairo/font environment, and byte-compares six PNGs. The second also
+checks dimensions, source/output hashes, repeatability, malformed-cell
+rejection, and renderer/font identity.
+
 Regeneration is opt-in and requires a disposable supported Yocto host. The live
 harness accepts an exact already-built release binary so an older supported
 container does not need the development Rust toolchain:

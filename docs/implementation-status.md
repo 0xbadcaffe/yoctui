@@ -19,14 +19,15 @@ rootfs composition at the canonical width, the editor-plus-F10-menu composition,
 terminal live navigation, deterministic app-derived raster proof, and exact
 live scenario attribution still need work. `UX-CONCEPT-GOV-001` records those
 gaps without rewriting completed M21 history. M21 remains 38/38 complete under
-its original contract; overall required registry progress is 584/587 (99.5%).
+its original contract; overall required registry progress is 585/587 (99.7%).
 `UX-CONCEPT-ACCEPTANCE-001` is complete: every scene now has at least four
 machine-checked features, with each feature proven by production fixture
 anchors or assigned to an incomplete gap owner. Deterministic raster and live
 evidence have separate gap/verified schemas; verified live evidence requires a
-checksummed artifact, explicit interactions, and observed assertions. Eight
+checksummed artifact, explicit interactions, and observed assertions. Ten
 failure tests reject missing feature anchors, unowned gaps, completed owners,
-bad cells, missing captures, and unattributed live claims.
+bad cells, missing captures, corrupt/misattributed rasters, and unattributed
+live claims.
 `UX-CONCEPT-ERRORS-001` is complete: the real Errors workspace now composes the
 failed summary, structured diagnostics, accessible warning/error/related-state
 checkboxes, and a severity-filtered paused correlated log with match, loss, and
@@ -45,7 +46,10 @@ reason, and menu input cannot leak into the editor. Focused model/app/UI tests
 and refreshed cell/style goldens pass. `UX-CONCEPT-TERMINAL-LIVE-001` is
 complete: two real clients now prove Ctrl+B navigation, two daemon-owned shells,
 split writer/read-only ownership, bounded paste, dropped scrollback and search,
-prefix help, resize, and clean detach. `UX-CONCEPT-RASTER-001` is active.
+prefix help, resize, and clean detach. `UX-CONCEPT-RASTER-001` is complete:
+six byte-reproducible 1600x1000 PNGs now derive from the exact production
+cell/style goldens with pinned Cairo/font provenance. `UX-CONCEPT-LIVE-001` is
+active.
 
 M21 One-Stop Yocto Workbench Usability is complete. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
 and third-party widget showcases were mapped to Yoctui's existing typed
