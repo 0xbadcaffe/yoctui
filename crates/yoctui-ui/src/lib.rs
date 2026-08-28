@@ -21675,7 +21675,7 @@ mod tests {
             rootfs.images_view = ImagesView::RootfsPackages;
             configure(&mut rootfs);
             let rootfs_text = rendered_text_at(&rootfs, 200, 60, literal_now());
-            for expected in ["Installed-package authority", "Exact bytes", "Other"] {
+            for expected in ["Installed packages:", "Exact bytes", "Other"] {
                 assert!(
                     rootfs_text.contains(expected),
                     "missing {expected}: {rootfs_text}"
