@@ -166,19 +166,18 @@ workspace = "Recipes / Editor"
 state = "modified recipe editor; BitBake idle; F10 Build menu owns focus"
 real_yoctui_golden = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
 real_yoctui_capture = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt"
-real_yoctui_anchors = ["Recipe editor: bash", "Workspace file tree: bash", "bash_5.2.bb (editing modified)", "Ctrl+B build recipe"]
+real_yoctui_anchors = ["Recipe editor: bash", "Workspace file tree: bash", "bash_5.2.bb (editing modified)", "Application menu · focus trapped", "[Build]", "Cancel active build", "No active build is available to cancel.", "Validation and diff state", "Local validation: ✕ line 9: assignment has no value", "Diff preview: loaded → buffer", "+   9 BROKEN_OVERRIDE =", "Ctrl+S save", "Ctrl+B build recipe"]
 required_features = [
-  { id = "application-menu", description = "F10 application menu is composed over the editor and owns focus", gap_task = "UX-CONCEPT-EDITOR-MENU-001" },
-  { id = "disabled-reason", description = "Disabled cancel action includes its exact reason", gap_task = "UX-CONCEPT-EDITOR-MENU-001" },
+  { id = "application-menu", description = "F10 application menu is composed over the editor and owns focus", fixture_anchors = ["Application menu · focus trapped", "[Build]", "Esc/F10 close"] },
+  { id = "disabled-reason", description = "Disabled cancel action includes its exact reason", fixture_anchors = ["Cancel active build", "No active build is available to cancel."] },
   { id = "editor-state", description = "Recipe tree, document, and modified state are visible", fixture_anchors = ["Recipe editor: bash", "Workspace file tree: bash", "bash_5.2.bb (editing modified)"] },
-  { id = "validation-diff", description = "Validation diagnostic and diff preview remain visible", gap_task = "UX-CONCEPT-EDITOR-MENU-001" },
+  { id = "validation-diff", description = "Validation diagnostic and diff preview remain visible", fixture_anchors = ["Validation and diff state", "Local validation: ✕ line 9: assignment has no value", "Diff preview: loaded → buffer", "+   9 BROKEN_OVERRIDE =", "BitBake parse remains authoritative"] },
   { id = "editor-actions", description = "Save, build, and return actions remain discoverable", fixture_anchors = ["Ctrl+S save", "Ctrl+B build recipe", "Esc return to Yoctui"] },
 ]
 raster_evidence = { status = "gap", task = "UX-CONCEPT-RASTER-001" }
 live_evidence = { status = "gap", task = "UX-CONCEPT-LIVE-001" }
 implementation_tasks = ["UX-MENU-001", "UX-TEXTAREA-MODEL-001", "UX-TEXTAREA-UI-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 open_gaps = [
-  { task = "UX-CONCEPT-EDITOR-MENU-001", description = "The production fixture currently renders the recipe editor without the focus-trapped F10 menu composition." },
   { task = "UX-CONCEPT-RASTER-001", description = "No deterministic app-derived raster is checked against this production cell/style scene." },
   { task = "UX-CONCEPT-LIVE-001", description = "The live harness does not yet open the recipe editor and F10 menu together and assert menu focus." },
 ]

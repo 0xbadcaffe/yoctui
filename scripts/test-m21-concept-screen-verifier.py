@@ -127,13 +127,13 @@ class ConceptScreenVerifierTests(unittest.TestCase):
     def test_rejects_feature_gap_missing_from_open_gaps(self) -> None:
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8").replace(
-            '  { task = "UX-CONCEPT-EDITOR-MENU-001", description = "The production fixture currently renders the recipe editor without the focus-trapped F10 menu composition." },\n',
+            '  { task = "UX-CONCEPT-TERMINAL-LIVE-001", description = "The checked live capture creates a shell from Dashboard rather than proving Ctrl+B t navigation and the split-session workflow." },\n',
             "",
             1,
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected(
-            "feature application-menu gap task UX-CONCEPT-EDITOR-MENU-001 "
+            "feature scrollback-search gap task UX-CONCEPT-TERMINAL-LIVE-001 "
             "is not declared in open_gaps"
         )
 

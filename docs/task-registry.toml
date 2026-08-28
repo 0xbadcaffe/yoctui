@@ -6435,18 +6435,18 @@ notes = "At 160x50 the production Rootfs scene now keeps the pie chart, exact gr
 id = "UX-CONCEPT-EDITOR-MENU-001"
 milestone = "M22"
 title = "Compose the recipe editor with the application menu"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 742
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]
 verify = ["cargo test -p yoctui-ui concept_editor_application_menu", "cargo test -p yoctui-app ux_menu"]
-notes = "Render the real multiline recipe editor and focus-trapped F10 menu together with menu ownership, disabled reasons, validation, diff, and editor actions."
+notes = "The production renderer now preserves the live RecipeEditor beneath the focus-trapped F10 Build menu. Loaded-content tracking drives deterministic local validation/diff state; Cancel active build is a typed Build-menu item with its exact disabled reason; menu input cannot leak into the editor. Focused model/app/UI tests and refreshed 160x50 goldens pass."
 
 [[task]]
 id = "UX-CONCEPT-TERMINAL-LIVE-001"
 milestone = "M22"
 title = "Drive the Terminal Sessions concept through a real client"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 743
 required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001"]

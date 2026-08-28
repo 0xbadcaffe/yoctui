@@ -19,7 +19,7 @@ rootfs composition at the canonical width, the editor-plus-F10-menu composition,
 terminal live navigation, deterministic app-derived raster proof, and exact
 live scenario attribution still need work. `UX-CONCEPT-GOV-001` records those
 gaps without rewriting completed M21 history. M21 remains 38/38 complete under
-its original contract; overall required registry progress is 582/587 (99.1%).
+its original contract; overall required registry progress is 583/587 (99.3%).
 `UX-CONCEPT-ACCEPTANCE-001` is complete: every scene now has at least four
 machine-checked features, with each feature proven by production fixture
 anchors or assigned to an incomplete gap owner. Deterministic raster and live
@@ -37,7 +37,12 @@ golden plus focused UI/model tests pass.
 workspace now shows the installed-byte pie chart beside its exact group table,
 accessible checked/unchecked/indeterminate/disabled state, and a bounded
 partial-authority filesystem drill-down in the same scene. Responsive UI and
-typed Images input tests pass. `UX-CONCEPT-EDITOR-MENU-001` is active next.
+typed Images input tests pass.
+`UX-CONCEPT-EDITOR-MENU-001` is complete: the live RecipeEditor remains visible
+under the focus-trapped F10 Build menu, loaded-content tracking powers truthful
+local validation and diff state, Cancel active build carries its exact disabled
+reason, and menu input cannot leak into the editor. Focused model/app/UI tests
+and refreshed cell/style goldens pass. `UX-CONCEPT-TERMINAL-LIVE-001` is active.
 
 M21 One-Stop Yocto Workbench Usability is complete. `UX-SPEC-001` is complete: the Ratatui application, built-in widget,
 and third-party widget showcases were mapped to Yoctui's existing typed

@@ -1553,6 +1553,7 @@ pub struct RecipeEditor {
     pub files: Vec<PathBuf>,
     pub selection: usize,
     pub content: String,
+    pub loaded_content: String,
     pub editing: bool,
     pub dirty: bool,
 }
@@ -1922,6 +1923,62 @@ impl RecipeEditor {
         self.files
             .get(self.selection)
             .map(|path| self.root.join(path))
+    }
+
+    pub fn local_validation(&self) -> Vec<String> {
+        let mut diagnostics = self
+            .content
+            .lines()
+            .enumerate()
+            .filter_map(|(index, line)| {
+                line.trim_end()
+                    .ends_with('=')
+                    .then(|| format!("line {}: assignment has no value", index + 1))
+            })
+            .collect::<Vec<_>>();
+        let opens = self
+            .content
+            .chars()
+            .filter(|character| *character == '{')
+            .count();
+        let closes = self
+            .content
+            .chars()
+            .filter(|character| *character == '}')
+            .count();
+        if opens != closes {
+            diagnostics.push(format!(
+                "unbalanced braces: {opens} opening / {closes} closing"
+            ));
+        }
+        diagnostics
+    }
+
+    pub fn diff_preview(&self, maximum_lines: usize) -> Vec<String> {
+        if self.content == self.loaded_content || maximum_lines == 0 {
+            return Vec::new();
+        }
+        let loaded = self.loaded_content.split('\n').collect::<Vec<_>>();
+        let current = self.content.split('\n').collect::<Vec<_>>();
+        let mut preview = Vec::new();
+        for index in 0..loaded.len().max(current.len()) {
+            let before = loaded.get(index).copied();
+            let after = current.get(index).copied();
+            if before == after {
+                continue;
+            }
+            if let Some(before) = before {
+                preview.push(format!("- {:>3} {before}", index + 1));
+            }
+            if let Some(after) = after {
+                preview.push(format!("+ {:>3} {after}", index + 1));
+            }
+            if preview.len() >= maximum_lines {
+                break;
+            }
+        }
+        preview.truncate(maximum_lines);
+        preview
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -4783,7 +4840,8 @@ impl App {
             .collect()
     }
     pub fn application_menu_items(&self, group: ApplicationMenuGroup) -> Vec<MenuItem> {
-        self.command_palette_commands()
+        let mut items = self
+            .command_palette_commands()
             .into_iter()
             .filter(|command| ApplicationMenuGroup::for_command(command.id) == group)
             .map(|command| MenuItem {
@@ -4795,7 +4853,40 @@ impl App {
                 disabled_reason: command.disabled_reason,
                 safety: command.safety,
             })
-            .collect()
+            .collect::<Vec<_>>();
+        if group == ApplicationMenuGroup::Build
+            && let Some(definition) =
+                workspace_operator_action_definitions(WorkspaceDestination::Tasks)
+                    .into_iter()
+                    .find(|definition| definition.id.as_str() == "tasks.cancel")
+        {
+            let availability = compatibility_ui_action_availability(
+                &self.workspace_compatibility,
+                &definition.requirement,
+            );
+            let disabled_reason = context_action_local_disabled_reason(
+                self,
+                WorkspaceDestination::Tasks,
+                definition.id.as_str(),
+            )
+            .or_else(|| {
+                (!availability.enabled).then(|| {
+                    availability.exact_reason().unwrap_or_else(|| {
+                        "The connected environment does not enable this operation.".into()
+                    })
+                })
+            });
+            items.push(MenuItem {
+                action_id: definition.id,
+                target: definition.target,
+                label: definition.label,
+                description: definition.description,
+                shortcut: definition.shortcut,
+                disabled_reason,
+                safety: definition.safety,
+            });
+        }
+        items
     }
     pub fn context_menu_items(&self, destination: WorkspaceDestination) -> Vec<MenuItem> {
         workspace_operator_action_definitions(destination)
@@ -16092,6 +16183,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     files,
                     selection: 0,
                     content: String::new(),
+                    loaded_content: String::new(),
                     editing: false,
                     dirty: false,
                 }),
@@ -16131,6 +16223,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::LoadRecipeEditorContent(content) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                editor.loaded_content = content.clone();
                 editor.content = content;
                 editor.editing = false;
                 editor.dirty = false;
@@ -16170,6 +16263,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::RecipeEditorSaved => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                editor.loaded_content = editor.content.clone();
                 editor.dirty = false;
                 app.notification = Some("Recipe file saved. Press Esc to return to Yoctui.".into());
             }
@@ -20007,6 +20101,13 @@ mod tests {
         );
         let _ = update(&mut app, Action::ToggleRecipeEditorEditing);
         let _ = update(&mut app, Action::AppendRecipeEditor('\n'));
+        let editor = match app.active_dialog() {
+            Some(Dialog::RecipeEditor(editor)) => editor,
+            other => panic!("expected recipe editor, got {other:?}"),
+        };
+        assert_eq!(editor.loaded_content, "int main() {}");
+        assert_eq!(editor.diff_preview(2), vec!["+   2 "]);
+        assert!(editor.local_validation().is_empty());
         let _ = update(&mut app, Action::BeginRecipeEditorBuild);
         assert_eq!(
             app.notification.as_deref(),
@@ -20021,6 +20122,12 @@ mod tests {
             })
         );
         let _ = update(&mut app, Action::RecipeEditorSaved);
+        let editor = match app.active_dialog() {
+            Some(Dialog::RecipeEditor(editor)) => editor,
+            other => panic!("expected recipe editor, got {other:?}"),
+        };
+        assert_eq!(editor.loaded_content, editor.content);
+        assert!(editor.diff_preview(2).is_empty());
         let _ = update(&mut app, Action::BeginRecipeEditorBuild);
         assert_eq!(
             app.active_dialog(),

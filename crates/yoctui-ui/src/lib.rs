@@ -1649,6 +1649,9 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     workbench_footer(frame, app, chunks[2], now);
     let screen_area = area;
     if app.menu.is_open() {
+        if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
+            recipe_editor(frame, app, editor, area);
+        }
         menu_overlay(frame, app, area);
     } else if app.onboarding.open {
         onboarding_overlay(frame, app, area);
@@ -5749,7 +5752,12 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
     );
     let inner = outer.inner(popup);
     frame.render_widget(outer, popup);
-    let regions = Layout::vertical([Constraint::Min(4), Constraint::Length(1)]).split(inner);
+    let regions = Layout::vertical([
+        Constraint::Min(4),
+        Constraint::Length(7),
+        Constraint::Length(1),
+    ])
+    .split(inner);
     let columns = Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)])
         .split(regions[0]);
     let files = editor
@@ -5805,11 +5813,42 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         columns[1],
     );
     frame.render_widget(
+        Paragraph::new({
+            let diagnostics = editor.local_validation();
+            let validation = if diagnostics.is_empty() {
+                "Local validation: ✓ no structural diagnostics".into()
+            } else {
+                format!("Local validation: ✕ {}", diagnostics.join(" · "))
+            };
+            let diff = editor.diff_preview(2);
+            let mut lines = vec![
+                Line::from(validation),
+                Line::from("Diff preview: loaded → buffer"),
+            ];
+            if diff.is_empty() {
+                lines.push(Line::from("  unchanged"));
+            } else {
+                lines.extend(diff.into_iter().map(Line::from));
+            }
+            lines.push(Line::from(
+                "BitBake parse remains authoritative · save before Ctrl+B build",
+            ));
+            lines
+        })
+        .block(
+            Block::default()
+                .title("Validation and diff state")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: false }),
+        regions[1],
+    );
+    frame.render_widget(
         Paragraph::new(
             "↑/↓ file  Enter/e edit  Ctrl+S save  Ctrl+B build recipe  Esc return to Yoctui",
         )
         .style(dialog_styles(app).hint),
-        regions[1],
+        regions[2],
     );
 }
 fn format_bytes_pair(used: u64, total: u64) -> String {
@@ -18492,11 +18531,25 @@ mod tests {
                 "do_install:append() {\n",
                 "    install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash\n",
                 "}\n",
+                "BROKEN_OVERRIDE =\n",
+            )
+            .into(),
+            loaded_content: concat!(
+                "SUMMARY = \"GNU Bourne Again Shell\"\n",
+                "LICENSE = \"GPL-3.0-only\"\n",
+                "SRC_URI = \"https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz\"\n",
+                "inherit autotools\n\n",
+                "do_install:append() {\n",
+                "    install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash\n",
+                "}\n",
             )
             .into(),
             editing: true,
             dirty: true,
         }));
+        let _ = update(&mut app, Action::OpenApplicationMenu);
+        let _ = update(&mut app, Action::SelectMenuGroup { delta: 1 });
+        let _ = update(&mut app, Action::SelectMenuItem { delta: 2 });
         app
     }
 
@@ -21956,6 +22009,35 @@ mod tests {
     }
 
     #[test]
+    fn concept_editor_application_menu_composes_focus_validation_and_diff() {
+        let app = concept_editor_menu_app();
+        assert_eq!(app.focus, FocusTarget::Dialog);
+        assert_eq!(app.menu.kind, Some(yoctui_model::MenuKind::Application));
+        assert!(matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))));
+        let output = rendered_text_at(&app, 160, 50, literal_now());
+
+        for anchor in [
+            "Recipe editor: bash",
+            "Workspace file tree: bash",
+            "bash_5.2.bb (editing modified)",
+            "Application menu · focus trapped",
+            "[Build]",
+            "Cancel active build",
+            "No active build is available to cancel.",
+            "Validation and diff state",
+            "Local validation: ✕ line 9: assignment has no value",
+            "Diff preview: loaded → buffer",
+            "+   9 BROKEN_OVERRIDE =",
+            "BitBake parse remains authoritative",
+            "Ctrl+S save",
+            "Ctrl+B build recipe",
+            "Esc return to Yoctui",
+        ] {
+            assert!(output.contains(anchor), "missing {anchor:?}: {output}");
+        }
+    }
+
+    #[test]
     fn ux_rootfs_filesystem_tree_and_inspector_preserve_exact_separate_authority() {
         let mut app = ux_rootfs_ui_app();
         app.images_view = ImagesView::RootfsFilesystem;
@@ -24790,6 +24872,7 @@ mod tests {
                     files: vec!["main.c".into()],
                     selection: 0,
                     content: "int main() {}".into(),
+                    loaded_content: "int main() {}".into(),
                     editing: false,
                     dirty: false,
                 }),
@@ -26869,6 +26952,7 @@ mod tests {
             files: vec!["main.c".into()],
             selection: 0,
             content: "int main() {}".into(),
+            loaded_content: "int main() {}".into(),
             editing: false,
             dirty: false,
         }));

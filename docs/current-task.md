@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** UX-CONCEPT-EDITOR-MENU-001
-**Title:** Compose the recipe editor with the application menu
+**ID:** UX-CONCEPT-TERMINAL-LIVE-001
+**Title:** Drive the Terminal Sessions concept through a real client
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Compose the production recipe editor with the focus-trapped F10 application
-menu visible over it, preserving menu ownership, exact disabled reasons,
-validation, diff state, and editor actions.
+Drive a real client to Terminal Sessions with Ctrl+B t, prove the daemon-owned
+split panes and writer/read-only states, and retain visible prefix-help,
+scrollback-search, match, and dropped-history evidence.
 
 ## Dependencies
 
@@ -18,15 +18,15 @@ validation, diff state, and editor actions.
 
 ## Definition of done
 
-- The real recipe editor and F10 menu coexist at 160×50.
-- The menu owns focus and traps input while open.
-- Disabled actions expose exact reasons.
-- Validation, diff state, and save/build/return actions remain visible.
-- Focused production-renderer and input-routing tests pass.
+- Ctrl+B t reaches Terminal Sessions in the real-client harness.
+- Two daemon-owned split panes expose writer/read-only ownership.
+- Prefix help remains visible and owns the prefixed input sequence.
+- Search match and dropped-history counts are asserted.
+- Focused runtime and workbench terminal tests pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui concept_editor_application_menu
-cargo test -p yoctui-app ux_menu
+cargo test -p yoctui -- ux_terminal_runtime
+./scripts/test-workbench-terminal.sh
 ```

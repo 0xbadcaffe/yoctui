@@ -315,6 +315,7 @@ fn scenario_workload(scenario: &str) -> App {
                     .map(|index| format!("files/profile-{index:04}.patch").into())
                     .collect(),
                 selection: 1_023,
+                loaded_content: content.clone(),
                 content,
                 editing: true,
                 dirty: true,
