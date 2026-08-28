@@ -43,7 +43,13 @@ impl ApplicationMenuGroup {
             | CommandId::OpenDashboard
             | CommandId::OpenLayers
             | CommandId::OpenRecipes
+            | CommandId::OpenPackages
             | CommandId::OpenImages
+            | CommandId::OpenSdk
+            | CommandId::OpenDependencies
+            | CommandId::OpenTesting
+            | CommandId::OpenSecurity
+            | CommandId::OpenQa
             | CommandId::OpenTasks
             | CommandId::OpenLogs
             | CommandId::OpenErrors
@@ -59,6 +65,8 @@ impl ApplicationMenuGroup {
             | CommandId::TogglePaneZoom => Self::View,
             CommandId::OpenRawMode
             | CommandId::OpenTerminalSessions
+            | CommandId::OpenMaintenance
+            | CommandId::OpenBuildEnvironment
             | CommandId::OpenCompatibility
             | CommandId::OpenSettings => Self::Tools,
             CommandId::OpenOnboarding | CommandId::OpenHelp => Self::Help,

@@ -34,7 +34,7 @@ use tui_piechart::{LegendPosition, PieChart, PieSlice};
 use tui_term::widget::PseudoTerminal;
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
-    BuildStatus, CommandCenterProjection, CompatibilityUiAuthorityStatus,
+    BuildStatus, CommandCenterProjection, CommandPaletteMode, CompatibilityUiAuthorityStatus,
     CompatibilityUiCapabilityRow, CompatibilityUiCapabilityState, CompatibilityUiFilter,
     ConfigCopyValue, DashboardProjection, DependencyEdgeKind, DependencyGraph,
     DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
@@ -2791,9 +2791,14 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         return;
     }
     let palette = ThemePalette::for_app(app);
+    let global_search = app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch;
     clear_popup(frame, app, popup);
     let outer = Block::default()
-        .title("Command Palette · focus trapped")
+        .title(if global_search {
+            "Global Regex Search · focus trapped"
+        } else {
+            "Command Palette · focus trapped"
+        })
         .borders(Borders::ALL)
         .style(palette.base())
         .border_style(palette.focus());
@@ -2812,6 +2817,7 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     ])
     .split(inner);
     let commands = app.filtered_command_palette_commands();
+    let regex_error = app.command_palette_regex_error();
     let selection = app
         .command_palette_selection
         .min(commands.len().saturating_sub(1));
@@ -2841,19 +2847,39 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         selection + 1
     };
     let window_start = if commands.is_empty() { 0 } else { start + 1 };
+    let result_label = if global_search { "Results" } else { "Commands" };
     let list_title = format!(
-        "Commands · {current}/{} · rows {window_start}–{end}",
+        "{result_label} · {current}/{} · rows {window_start}–{end}",
         commands.len()
     );
     let list_block = Block::default()
         .title(list_title)
         .borders(Borders::ALL)
         .border_style(Style::default().fg(palette.inactive_border));
-    if commands.is_empty() {
+    if let Some(error) = regex_error.as_deref() {
+        frame.render_widget(
+            StateView {
+                kind: StateKind::Error,
+                summary: "Invalid regular expression.".into(),
+                detail: Some(bounded_cell_text(error, regions[1].width.saturating_sub(4))),
+                action: Some("Edit the expression with Backspace or clear it with Ctrl+U.".into()),
+            }
+            .paragraph(
+                palette.role(palette.error, Modifier::BOLD),
+                palette.role(palette.secondary_foreground, Modifier::DIM),
+            )
+            .block(list_block),
+            regions[1],
+        );
+    } else if commands.is_empty() {
         frame.render_widget(
             StateView {
                 kind: StateKind::Empty,
-                summary: "No commands match this search.".into(),
+                summary: if global_search {
+                    "No workbench actions match this regular expression.".into()
+                } else {
+                    "No commands match this search.".into()
+                },
                 detail: Some("Backspace edits; Ctrl+U clears the query.".into()),
                 action: None,
             }
@@ -2940,7 +2966,11 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     }
 
     let detail_block = Block::default()
-        .title("Selected command")
+        .title(if global_search {
+            "Selected result"
+        } else {
+            "Selected command"
+        })
         .borders(Borders::ALL)
         .border_style(Style::default().fg(palette.inactive_border));
     let detail_inner = detail_block.inner(regions[2]);
@@ -2958,7 +2988,11 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(bounded_cell_text(
-            "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear",
+            if global_search {
+                "Regex (case-insensitive) · Esc close · Enter open/run · ↑/↓ select · Ctrl+U clear"
+            } else {
+                "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear"
+            },
             regions[3].width,
         ))
         .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
@@ -17860,7 +17894,7 @@ fn help(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     let text = format!(
-        "{function_keys}\n\nAction catalog\n{catalog_actions}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, / search, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Edit current workspace search; Ctrl+U clears its typed query   Esc Dashboard   q Quit\n\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+        "{function_keys}\n\nAction catalog\n{catalog_actions}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Global case-insensitive regex search; Enter opens/runs the result; invalid syntax is explained inline\na Context actions (including local workspace search)   Esc Dashboard   q Quit\n\nTerminal writers and active text editors retain literal /; Terminal search is Ctrl+B /.\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
     );
     frame.render_widget(
         Paragraph::new(text)
@@ -25069,6 +25103,24 @@ mod tests {
     }
 
     #[test]
+    fn global_regex_search_renders_results_and_inline_errors() {
+        let mut app = App::new(10, 1_000);
+        app.command_palette_open = true;
+        app.command_palette_mode = CommandPaletteMode::GlobalRegexSearch;
+        app.command_palette_query = "^open (packages|sdk)$".into();
+        let output = rendered_text(&app, 100, 25);
+        assert!(output.contains("Global Regex Search"), "{output}");
+        assert!(output.contains("Open Packages"), "{output}");
+        assert!(output.contains("Open SDK"), "{output}");
+        assert!(output.contains("Regex (case-insensitive)"), "{output}");
+
+        app.command_palette_query = "[".into();
+        let output = rendered_text(&app, 100, 25);
+        assert!(output.contains("Invalid regular expression"), "{output}");
+        assert!(output.contains("unclosed character class"), "{output}");
+    }
+
+    #[test]
     fn ux_action_catalog_projects_alias_search_palette_details_and_help() {
         let mut app = App::new(10, 1_000);
         app.command_palette_open = true;
@@ -31280,7 +31332,7 @@ mod tests {
         assert!(below_minimum.contains("Yoctui needs at least 80x24"));
 
         let _ = update(&mut app, Action::Open(Screen::Help));
-        let help = rendered_text(&app, 160, 40);
+        let help = rendered_text(&app, 160, 52);
         assert!(help.contains("Raw Mode: Left/Right browser pane"), "{help}");
 
         let _ = update(&mut app, Action::Open(Screen::RawMode));

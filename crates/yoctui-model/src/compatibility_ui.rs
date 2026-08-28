@@ -472,7 +472,15 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::OpenHelp => CompatibilityUiActionDefinition::local(),
         CommandId::OpenLayers => compatibility_ui_destination_action_definition(Screen::Layers),
         CommandId::OpenRecipes => compatibility_ui_destination_action_definition(Screen::Recipes),
+        CommandId::OpenPackages => compatibility_ui_destination_action_definition(Screen::Packages),
         CommandId::OpenImages => compatibility_ui_destination_action_definition(Screen::Images),
+        CommandId::OpenSdk => compatibility_ui_destination_action_definition(Screen::Sdk),
+        CommandId::OpenDependencies => {
+            compatibility_ui_destination_action_definition(Screen::Dependencies)
+        }
+        CommandId::OpenTesting => compatibility_ui_destination_action_definition(Screen::Testing),
+        CommandId::OpenSecurity => compatibility_ui_destination_action_definition(Screen::Security),
+        CommandId::OpenQa => compatibility_ui_destination_action_definition(Screen::Qa),
         CommandId::OpenTasks => compatibility_ui_destination_action_definition(Screen::Tasks),
         CommandId::OpenConfiguration => {
             compatibility_ui_destination_action_definition(Screen::Configuration)
@@ -480,6 +488,12 @@ pub fn compatibility_ui_command_action_definition(
         CommandId::OpenRawMode => compatibility_ui_destination_action_definition(Screen::RawMode),
         CommandId::OpenTerminalSessions => {
             compatibility_ui_destination_action_definition(Screen::TerminalSessions)
+        }
+        CommandId::OpenMaintenance => {
+            compatibility_ui_destination_action_definition(Screen::Maintenance)
+        }
+        CommandId::OpenBuildEnvironment => {
+            compatibility_ui_destination_action_definition(Screen::BuildEnvironment)
         }
     }
 }

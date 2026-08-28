@@ -4065,6 +4065,43 @@ pub fn keymap_action_for_app(app: &mut yoctui_model::App, key: Input) -> KeymapI
     }
 }
 
+/// Route menuconfig-style global search without stealing `/` from an active
+/// text editor, contextual search, or daemon-owned terminal session.
+pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Action> {
+    if key != Input::Char('/')
+        || app.onboarding.open
+        || app.keymap_preferences_ui.open
+        || app.menu.is_open()
+        || app.active_dialog().is_some()
+        || app.command_palette_open
+        || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
+        || app.screen == yoctui_model::Screen::TerminalSessions
+        || app.task_filter_editing
+        || app.logs.searching
+        || app.internal_logs.searching
+        || app.metadata_searching
+        || app.dependency_graph_searching
+        || app.package_searching
+        || app.image_artifact_searching
+        || app.sdk_artifact_searching
+        || app.test_result_searching
+        || app.security.searching
+        || app.qa.searching
+        || app.compatibility_ui.searching
+        || app.raw_mode.search.editing
+        || app.raw_mode.output.searching
+        || (app.screen == yoctui_model::Screen::RawMode
+            && matches!(
+                app.raw_mode.view,
+                yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
+            ))
+    {
+        None
+    } else {
+        Some(Action::OpenGlobalSearch)
+    }
+}
+
 pub fn input_key_stroke(key: Input) -> yoctui_model::KeyStroke {
     use yoctui_model::KeyStroke as Stroke;
     match key {
@@ -7629,6 +7666,28 @@ mod tests {
             KeymapInputResult::Unmatched
         );
         assert!(!app.keymap_chord.is_pending());
+    }
+
+    #[test]
+    fn global_slash_search_routes_without_stealing_owned_text_input() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.screen = yoctui_model::Screen::Recipes;
+        assert_eq!(
+            global_search_action(&app, Input::Char('/')),
+            Some(Action::OpenGlobalSearch)
+        );
+
+        app.metadata_searching = true;
+        assert_eq!(global_search_action(&app, Input::Char('/')), None);
+        app.metadata_searching = false;
+        app.screen = yoctui_model::Screen::TerminalSessions;
+        assert_eq!(global_search_action(&app, Input::Char('/')), None);
+
+        app.screen = yoctui_model::Screen::Dashboard;
+        app.dialogs
+            .push_back(yoctui_model::Dialog::QuitConfirmation);
+        assert_eq!(global_search_action(&app, Input::Char('/')), None);
+        assert_eq!(global_search_action(&app, Input::Char('x')), None);
     }
 
     #[test]

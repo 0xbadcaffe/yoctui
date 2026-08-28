@@ -354,13 +354,21 @@ pub enum CommandId {
     OpenDashboard,
     OpenLayers,
     OpenRecipes,
+    OpenPackages,
     OpenImages,
+    OpenSdk,
+    OpenDependencies,
+    OpenTesting,
+    OpenSecurity,
+    OpenQa,
     OpenTasks,
     OpenLogs,
     OpenErrors,
     OpenConfiguration,
     OpenRawMode,
     OpenTerminalSessions,
+    OpenMaintenance,
+    OpenBuildEnvironment,
     OpenCompatibility,
     OpenSettings,
     ChooseTheme,
@@ -375,6 +383,13 @@ pub enum CommandId {
     OpenOnboarding,
     OpenHelp,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum CommandPaletteMode {
+    #[default]
+    Commands,
+    GlobalRegexSearch,
+}
+pub const MAX_COMMAND_PALETTE_QUERY_CHARS: usize = 256;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PaletteCommand {
     pub action_id: OperatorActionId,
@@ -3749,6 +3764,7 @@ pub struct App {
     pub should_quit: bool,
     pub notification: Option<String>,
     pub command_palette_open: bool,
+    pub command_palette_mode: CommandPaletteMode,
     pub command_palette_selection: usize,
     pub command_palette_query: String,
     pub error_selection: usize,
@@ -3928,6 +3944,7 @@ impl App {
             should_quit: false,
             notification: None,
             command_palette_open: false,
+            command_palette_mode: CommandPaletteMode::Commands,
             command_palette_selection: 0,
             command_palette_query: String::new(),
             error_selection: 0,
@@ -4818,23 +4835,52 @@ impl App {
             .collect()
     }
     pub fn filtered_command_palette_commands(&self) -> Vec<PaletteCommand> {
-        let query = self.command_palette_query.trim().to_lowercase();
+        let query = self.command_palette_query.trim();
+        let regex = match self.command_palette_mode {
+            CommandPaletteMode::Commands => None,
+            CommandPaletteMode::GlobalRegexSearch => regex::RegexBuilder::new(query)
+                .case_insensitive(true)
+                .build()
+                .ok(),
+        };
+        if self.command_palette_mode == CommandPaletteMode::GlobalRegexSearch
+            && !query.is_empty()
+            && regex.is_none()
+        {
+            return Vec::new();
+        }
+        let literal_query = query.to_lowercase();
         self.command_palette_commands()
             .into_iter()
             .filter(|command| {
+                let values = std::iter::once(command.label)
+                    .chain(std::iter::once(command.description.as_str()))
+                    .chain(std::iter::once(command.shortcut))
+                    .chain(std::iter::once(command.action_id.as_str()))
+                    .chain(command.menu_path.iter().copied())
+                    .chain(command.aliases.iter().copied())
+                    .chain(command.palette_keywords.iter().copied());
                 query.is_empty()
-                    || command.label.to_lowercase().contains(&query)
-                    || command.description.to_lowercase().contains(&query)
-                    || command.shortcut.to_lowercase().contains(&query)
-                    || command.action_id.as_str().contains(&query)
-                    || command
-                        .menu_path
-                        .iter()
-                        .chain(&command.aliases)
-                        .chain(&command.palette_keywords)
-                        .any(|value| value.to_lowercase().contains(&query))
+                    || match &regex {
+                        Some(regex) => values.into_iter().any(|value| regex.is_match(value)),
+                        None => values
+                            .into_iter()
+                            .any(|value| value.to_lowercase().contains(&literal_query)),
+                    }
             })
             .collect()
+    }
+    pub fn command_palette_regex_error(&self) -> Option<String> {
+        let query = self.command_palette_query.trim();
+        (self.command_palette_mode == CommandPaletteMode::GlobalRegexSearch && !query.is_empty())
+            .then(|| {
+                regex::RegexBuilder::new(query)
+                    .case_insensitive(true)
+                    .build()
+                    .err()
+                    .map(|error| error.to_string())
+            })
+            .flatten()
     }
     pub fn application_menu_items(&self, group: ApplicationMenuGroup) -> Vec<MenuItem> {
         let mut items = self
@@ -5130,6 +5176,7 @@ pub enum Action {
     },
     Focus(FocusTarget),
     OpenCommandPalette,
+    OpenGlobalSearch,
     SelectCommandPalette {
         delta: isize,
     },
@@ -6565,13 +6612,21 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenDashboard => Action::Open(Screen::Dashboard),
         CommandId::OpenLayers => Action::Open(Screen::Layers),
         CommandId::OpenRecipes => Action::Open(Screen::Recipes),
+        CommandId::OpenPackages => Action::Open(Screen::Packages),
         CommandId::OpenImages => Action::Open(Screen::Images),
+        CommandId::OpenSdk => Action::Open(Screen::Sdk),
+        CommandId::OpenDependencies => Action::Open(Screen::Dependencies),
+        CommandId::OpenTesting => Action::Open(Screen::Testing),
+        CommandId::OpenSecurity => Action::Open(Screen::Security),
+        CommandId::OpenQa => Action::Open(Screen::Qa),
         CommandId::OpenTasks => Action::Open(Screen::Tasks),
         CommandId::OpenLogs => Action::Open(Screen::Logs),
         CommandId::OpenErrors => Action::Open(Screen::Errors),
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenRawMode => Action::Open(Screen::RawMode),
         CommandId::OpenTerminalSessions => Action::Open(Screen::TerminalSessions),
+        CommandId::OpenMaintenance => Action::Open(Screen::Maintenance),
+        CommandId::OpenBuildEnvironment => Action::Open(Screen::BuildEnvironment),
         CommandId::OpenCompatibility => Action::Open(Screen::Compatibility),
         CommandId::OpenSettings => Action::Open(Screen::Settings),
         CommandId::ChooseTheme => Action::OpenThemePicker,
@@ -9051,6 +9106,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::OpenCommandPalette => {
             app.command_palette_open = true;
+            app.command_palette_mode = CommandPaletteMode::Commands;
+            app.command_palette_selection = 0;
+            app.command_palette_query.clear();
+        }
+        Action::OpenGlobalSearch => {
+            app.command_palette_open = true;
+            app.command_palette_mode = CommandPaletteMode::GlobalRegexSearch;
             app.command_palette_selection = 0;
             app.command_palette_query.clear();
         }
@@ -9066,8 +9128,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
         }
         Action::AppendCommandPaletteQuery(character) if app.command_palette_open => {
-            app.command_palette_query.push(character);
-            app.command_palette_selection = 0;
+            if !character.is_control()
+                && app.command_palette_query.chars().count() < MAX_COMMAND_PALETTE_QUERY_CHARS
+            {
+                app.command_palette_query.push(character);
+                app.command_palette_selection = 0;
+            }
         }
         Action::BackspaceCommandPaletteQuery if app.command_palette_open => {
             app.command_palette_query.pop();
@@ -18183,6 +18249,47 @@ mod tests {
         }
         assert!(app.command_palette_query.is_empty());
         assert!(app.filtered_command_palette_commands().len() > 6);
+    }
+    #[test]
+    fn global_search_uses_case_insensitive_regex_and_reports_invalid_patterns() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenGlobalSearch);
+        assert_eq!(
+            app.command_palette_mode,
+            CommandPaletteMode::GlobalRegexSearch
+        );
+        for character in "^open (packages|sdk)$".chars() {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
+        }
+        let ids = app
+            .filtered_command_palette_commands()
+            .into_iter()
+            .map(|command| command.id)
+            .collect::<Vec<_>>();
+        assert_eq!(ids, [CommandId::OpenPackages, CommandId::OpenSdk]);
+        assert_eq!(app.command_palette_regex_error(), None);
+
+        let _ = update(&mut app, Action::ClearCommandPaletteQuery);
+        let _ = update(&mut app, Action::AppendCommandPaletteQuery('['));
+        assert!(app.filtered_command_palette_commands().is_empty());
+        assert!(app.command_palette_regex_error().is_some());
+
+        let _ = update(&mut app, Action::CloseCommandPalette);
+        let _ = update(&mut app, Action::OpenCommandPalette);
+        assert_eq!(app.command_palette_mode, CommandPaletteMode::Commands);
+        assert_eq!(app.command_palette_regex_error(), None);
+    }
+    #[test]
+    fn global_search_query_is_bounded() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenGlobalSearch);
+        for _ in 0..MAX_COMMAND_PALETTE_QUERY_CHARS + 20 {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery('x'));
+        }
+        assert_eq!(
+            app.command_palette_query.chars().count(),
+            MAX_COMMAND_PALETTE_QUERY_CHARS
+        );
     }
     #[test]
     fn command_palette_empty_and_disabled_activation_are_inert() {

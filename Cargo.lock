@@ -2251,6 +2251,7 @@ name = "yoctui-model"
 version = "0.1.0"
 dependencies = [
  "proptest",
+ "regex",
  "serde",
  "sha2",
  "thiserror 2.0.19",

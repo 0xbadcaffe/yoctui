@@ -37,7 +37,7 @@ use yoctui_app::{
     devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
-    devtool_update_confirmation_action, errors_action, focus_action_for_app,
+    devtool_update_confirmation_action, errors_action, focus_action_for_app, global_search_action,
     images_workspace_action_for_view, keymap_action_for_app, keymap_preferences_action,
     log_workspace_action, maintenance_dialog_action, maintenance_workspace_action, menu_action,
     model_action_from_backend_event, mouse_action_for_app, onboarding_action,
@@ -11012,6 +11012,8 @@ async fn tui(
                         )
                         .await;
                     }
+                } else if let Some(action) = global_search_action(&app, input) {
+                    let _ = compatibility_workspace_action(&mut app, action);
                 } else if app.keymap_preferences_ui.open {
                     let effect = keymap_preferences_action(&app, input)
                         .and_then(|action| compatibility_workspace_action(&mut app, action));

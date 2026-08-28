@@ -101,7 +101,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 27] = [
+const GLOBAL_COMMANDS: [CommandId; 35] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -109,13 +109,21 @@ const GLOBAL_COMMANDS: [CommandId; 27] = [
     CommandId::OpenDashboard,
     CommandId::OpenLayers,
     CommandId::OpenRecipes,
+    CommandId::OpenPackages,
     CommandId::OpenImages,
+    CommandId::OpenSdk,
+    CommandId::OpenDependencies,
+    CommandId::OpenTesting,
+    CommandId::OpenSecurity,
+    CommandId::OpenQa,
     CommandId::OpenTasks,
     CommandId::OpenLogs,
     CommandId::OpenErrors,
     CommandId::OpenConfiguration,
     CommandId::OpenRawMode,
     CommandId::OpenTerminalSessions,
+    CommandId::OpenMaintenance,
+    CommandId::OpenBuildEnvironment,
     CommandId::OpenCompatibility,
     CommandId::OpenSettings,
     CommandId::ChooseTheme,
@@ -235,6 +243,15 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &["r", "F7"],
             70,
         ),
+        CommandId::OpenPackages => navigation(
+            "navigate.packages",
+            "Open Packages",
+            "Inspect package inventory, metadata, and rootfs contents",
+            &["pkgdata", "installed packages", "rootfs"],
+            &["packages", "pkgdata", "rootfs", "contents"],
+            &[],
+            60,
+        ),
         CommandId::OpenImages => navigation(
             "navigate.images",
             "Open Images",
@@ -243,6 +260,51 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &["images", "artifacts", "deploy"],
             &["i", "F8"],
             70,
+        ),
+        CommandId::OpenSdk => navigation(
+            "navigate.sdk",
+            "Open SDK",
+            "Inspect SDK artifacts and toolchain workflows",
+            &["toolchain", "populate sdk"],
+            &["sdk", "toolchain", "populate", "artifacts"],
+            &[],
+            55,
+        ),
+        CommandId::OpenDependencies => navigation(
+            "navigate.dependencies",
+            "Open Dependencies",
+            "Inspect dependency graphs, providers, and relationships",
+            &["dependency graph", "providers"],
+            &["dependencies", "graph", "providers", "relationships"],
+            &[],
+            55,
+        ),
+        CommandId::OpenTesting => navigation(
+            "navigate.testing",
+            "Open Testing",
+            "Run and inspect Yocto test workflows and results",
+            &["test results", "testimage", "oe-selftest"],
+            &["testing", "testimage", "oe-selftest", "resulttool"],
+            &[],
+            55,
+        ),
+        CommandId::OpenSecurity => navigation(
+            "navigate.security",
+            "Open Security",
+            "Inspect CVE, SPDX, and software-bill-of-materials workflows",
+            &["cve", "spdx", "sbom"],
+            &["security", "cve", "spdx", "sbom"],
+            &[],
+            55,
+        ),
+        CommandId::OpenQa => navigation(
+            "navigate.qa",
+            "Open QA",
+            "Inspect quality checks and layer validation workflows",
+            &["quality assurance", "yocto-check-layer"],
+            &["qa", "quality", "checks", "yocto-check-layer"],
+            &[],
+            55,
         ),
         CommandId::OpenTasks => navigation(
             "navigate.tasks",
@@ -297,6 +359,24 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &["terminal", "shell", "pty", "session", "devshell"],
             &[],
             65,
+        ),
+        CommandId::OpenMaintenance => navigation(
+            "navigate.maintenance",
+            "Open Maintenance",
+            "Inspect sstate, PR service, build history, and release maintenance",
+            &["sstate", "prserv", "buildhistory"],
+            &["maintenance", "sstate", "prserv", "buildhistory"],
+            &[],
+            45,
+        ),
+        CommandId::OpenBuildEnvironment => navigation(
+            "navigate.build-environment",
+            "Open Build Environment",
+            "Configure and verify the active Poky build environment",
+            &["workspace", "poky environment"],
+            &["build", "environment", "poky", "workspace"],
+            &[],
+            60,
         ),
         CommandId::OpenCompatibility => navigation(
             "navigate.compatibility",
@@ -492,13 +572,20 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenDashboard => "Esc / F4",
         CommandId::OpenLayers => "y / F6",
         CommandId::OpenRecipes => "r / F7",
+        CommandId::OpenPackages => "none",
         CommandId::OpenImages => "i / F8",
+        CommandId::OpenSdk
+        | CommandId::OpenDependencies
+        | CommandId::OpenTesting
+        | CommandId::OpenSecurity
+        | CommandId::OpenQa => "none",
         CommandId::OpenTasks => "t / F2",
         CommandId::OpenLogs => "l / F5",
         CommandId::OpenErrors => "e",
         CommandId::OpenConfiguration => "v",
         CommandId::OpenRawMode => "Ctrl+P raw",
         CommandId::OpenTerminalSessions => "Ctrl+B t",
+        CommandId::OpenMaintenance | CommandId::OpenBuildEnvironment => "none",
         CommandId::OpenCompatibility => "none",
         CommandId::OpenSettings => "none",
         CommandId::ChooseTheme => "Ctrl+P theme",
@@ -520,13 +607,21 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenDashboard => Some(WorkspaceDestination::Dashboard),
         CommandId::OpenLayers => Some(WorkspaceDestination::Layers),
         CommandId::OpenRecipes => Some(WorkspaceDestination::Recipes),
+        CommandId::OpenPackages => Some(WorkspaceDestination::Packages),
         CommandId::OpenImages => Some(WorkspaceDestination::Images),
+        CommandId::OpenSdk => Some(WorkspaceDestination::Sdk),
+        CommandId::OpenDependencies => Some(WorkspaceDestination::Dependencies),
+        CommandId::OpenTesting => Some(WorkspaceDestination::Testing),
+        CommandId::OpenSecurity => Some(WorkspaceDestination::Security),
+        CommandId::OpenQa => Some(WorkspaceDestination::Qa),
         CommandId::OpenTasks => Some(WorkspaceDestination::Tasks),
         CommandId::OpenLogs => Some(WorkspaceDestination::Logs),
         CommandId::OpenErrors => Some(WorkspaceDestination::Errors),
         CommandId::OpenConfiguration => Some(WorkspaceDestination::Configuration),
         CommandId::OpenRawMode => Some(WorkspaceDestination::RawMode),
         CommandId::OpenTerminalSessions => Some(WorkspaceDestination::TerminalSessions),
+        CommandId::OpenMaintenance => Some(WorkspaceDestination::Maintenance),
+        CommandId::OpenBuildEnvironment => Some(WorkspaceDestination::BuildEnvironment),
         CommandId::OpenCompatibility => Some(WorkspaceDestination::Compatibility),
         CommandId::OpenSettings => Some(WorkspaceDestination::Settings),
         CommandId::OpenHelp => Some(WorkspaceDestination::Help),
@@ -765,7 +860,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 137, "27 global plus 110 workspace actions");
+        assert_eq!(catalog.len(), 145, "35 global plus 110 workspace actions");
         assert!(
             catalog
                 .iter()

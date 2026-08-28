@@ -42,13 +42,21 @@ exact selection, scroll, follow, and subfocus state.
 | Move one page | `PageUp`/`PageDown` |
 | First/last row | `Home`/`End` or `gg`/`G` |
 | Tree collapse/expand | `h`/`l` or `Left`/`Right` |
-| Search/clear search | `/` / `Ctrl+U` |
+| Global regex search | `/` (case-insensitive Rust regex) |
+| Edit/clear active search | type or `Backspace` / `Ctrl+U` |
 | Next/previous match | `n`/`N` |
 | Primary action | `Enter` |
 | Toggle checkbox | `Space` |
 
 Mouse wheel movement uses the same bounded scroll route. Dialogs trap focus;
 terminal and editor input is not interpreted as workspace navigation.
+
+`/` opens a menuconfig-style search across all workbench destinations and
+operator actions. Results include labels, descriptions, action IDs, menu paths,
+aliases, and keywords; `Enter` opens or runs the selected result. Invalid regex
+syntax is shown inline. Active editors, contextual searches, and Terminal
+Sessions retain literal `/`; local workspace searches remain available from the
+context action menu (`a`).
 
 ## Terminal prefix
 
@@ -86,4 +94,3 @@ Yoctui rejects same-scope collisions, ambiguous prefixes, reserved `Ctrl+B`
 routes, invalid sequences, and removal of the final Help or Dashboard route.
 A rejected candidate never replaces the working keymap. The contextual footer
 and Help are the runtime authority when a workspace has additional controls.
-
