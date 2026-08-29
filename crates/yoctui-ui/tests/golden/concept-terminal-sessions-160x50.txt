@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                          Daemon: ✓ Connected  •  BitBake: – Exited│
-┌Navigator───────────┐ Terminal Sessions                                                   ┌Inspector: Daemon / session────────────────────────────────────────┐
-│▾ OVERVIEW          │─────────────────────────────────────────────────────────────────────│▾ PRIMARY FACTS                                                    │
-│  ▱ Dashboard       │CURRENT · LIVE · WRITER · scrollback 0                               │Session: shell (1)                                                 │
-│▾ CONTENT           │┌ shell #1 Running ─────────────────────────────────────────────────┐│Identity: BuildShell                                               │
-│  ? Layers          ││BuildShell · writer · 2 viewer(s) · 88x18 · /home/user/yocto/build ││Lifecycle: Running                                                 │
-│  ? Recipes         ││last search: busybox · 0 matches                                   ││Role: Writer (keyboard/paste/resize enabled)                       │
-│  ? Packages        ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers           ││Writer: 01010101 · epoch 4                                         │
-│  ? Images          ││layer                 path                                         ││Viewers: 2                                                         │
-│  ? SDK             ││meta                  /home/user/yocto/meta                        ││Dimensions: 88x18                                                  │
-│▾ BUILD             ││meta-poky             /home/user/yocto/meta-poky                   ││Working directory: /home/user/yocto/build                          │
-│  ? Tasks           ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp              ││Restartable: yes                                                   │
-│  ▱ Logs        LIVE││bspguy@builder:~/yocto/build$                                      ││Exit code: unavailable                                             │
-│  ▱ Errors          ││                                                                   ││                                                                   │
-│  ? Configuration   ││                                                                   ││Replica / history                                                  │
-│  ? Dependencies    ││                                                                   ││Viewport offset: 0                                                 │
-│▾ VALIDATE          ││                                                                   ││Retained scrollback: 0 lines                                       │
-│  ? Testing         ││                                                                   ││Dropped history: none observed                                     │
-│  ? Security        ││                                                                   ││Cursor: 35,6 (visible)                                             │
-│  ? QA              ││                                                                   ││                                                                   │
-│▾ TOOLS             ││                                                                   ││▾ CONTEXTUAL ACTIONS                                               │
-│  ? Raw Mode        ││                                                                   ││✓ Open build shell        [n] — Local                              │
-│  ? Terminal Session││                                                                   ││? Open devshell           [s] — Unknown                            │
-│  ? Devtool         ││                                                                   ││  Reason: No current environment capability snapshot: devshell.    │
-│  ? QEMU / Wic      │└───────────────────────────────────────────────────────────────────┘│? Open menuconfig         [m] — Unknown                            │
-│  ? Maintenance     │┌ devshell:busybox #2 Running ──────────────────────────────────────┐│  Reason: No current environment capability snapshot: menuconfig.  │
-│  ▱ Build environmen││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build││✓ Take writer control     [o] — Local                              │
-│  ▱ Compatibility   ││last search: busybox · 3 matches                                   ││✓ Release writer control  [c] — Local                              │
-│  ▱ Settings        ││history 312 · dropped ≥14                                          ││                                                                   │
-│                    ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                   ││                                                                   │
-│                    ││CC      coreutils/ls.o                                             ││                                                                   │
-│                    ││CC      coreutils/cp.o                                             ││                                                                   │
-│                    ││LD      busybox_unstripped                                         ││                                                                   │
-│                    ││busybox-devshell$                                                  ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-│                    ││                                                                   ││                                                                   │
-└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
-Ctrl+B prefix   [ copy   / search   r rename   O release   K confirmed kill   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit       19:28:27
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / ?  |  Elapsed: --:--:--  |  Workers: 0                                                │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐ Terminal Sessions                                                                    ┌Inspector: Daemon / session─────────────────┐
+│▾ OVERVIEW                │──────────────────────────────────────────────────────────────────────────────────────│▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             │CURRENT · LIVE · WRITER · scrollback 0                                                │Session: shell (1)                          │
+│▾ CONTENT                 │┌ shell #1 Running ──────────────────────────────────────────────────────────────────┐│Identity: BuildShell                        │
+│  ? Layers                ││BuildShell · writer · 2 viewer(s) · 88x18 · /home/user/yocto/build                  ││Lifecycle: Running                          │
+│  ? Recipes               ││last search: busybox · 0 matches                                                    ││Role: Writer (keyboard/paste/resize enabled)│
+│  ? Packages              ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers                            ││Writer: 01010101 · epoch 4                  │
+│  ? Images                ││layer                 path                                                          ││Viewers: 2                                  │
+│  ? SDK                   ││meta                  /home/user/yocto/meta                                         ││Dimensions: 88x18                           │
+│▾ BUILD                   ││meta-poky             /home/user/yocto/meta-poky                                    ││Working directory: /home/user/yocto/build   │
+│  ? Tasks                 ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp                               ││Restartable: yes                            │
+│  ▱ Logs              LIVE││bspguy@builder:~/yocto/build$                                                       ││Exit code: unavailable                      │
+│  ▱ Errors                ││                                                                                    ││                                            │
+│  ? Configuration         ││                                                                                    ││Replica / history                           │
+│  ? Dependencies          ││                                                                                    ││Viewport offset: 0                          │
+│▾ VALIDATE                ││                                                                                    ││Retained scrollback: 0 lines                │
+│  ? Testing               ││                                                                                    ││Dropped history: none observed              │
+│  ? Security              ││                                                                                    ││Cursor: 35,6 (visible)                      │
+│  ? QA                    ││                                                                                    ││                                            │
+│▾ TOOLS                   ││                                                                                    ││▾ CONTEXTUAL ACTIONS                        │
+│  ? Raw Mode              ││                                                                                    ││✓ Open build shell        [n] — Local       │
+│  ? Terminal Sessions     │└────────────────────────────────────────────────────────────────────────────────────┘│? Open devshell           [s] — Unknown     │
+│  ? Devtool               │┌ devshell:busybox #2 Running ───────────────────────────────────────────────────────┐│  Reason: No current environment capability │
+│  ? QEMU / Wic            ││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build                 ││snapshot: devshell.                         │
+│  ? Maintenance           ││last search: busybox · 3 matches                                                    ││? Open menuconfig         [m] — Unknown     │
+│  ▱ Build environment     ││history 312 · dropped ≥14                                                           ││  Reason: No current environment capability │
+│  ▱ Compatibility         ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                    ││snapshot: menuconfig.                       │
+│  ▱ Settings              ││CC      coreutils/ls.o                                                              ││✓ Take writer control     [o] — Local       │
+│                          ││CC      coreutils/cp.o                                                              ││✓ Release writer control  [c] — Local       │
+│                          ││LD      busybox_unstripped                                                          ││                                            │
+│                          ││busybox-devshell$                                                                   ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Ctrl+B prefix   [ copy   / search   r rename   O release   K confirmed kill   Tab Inspector   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit     19:28:27│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

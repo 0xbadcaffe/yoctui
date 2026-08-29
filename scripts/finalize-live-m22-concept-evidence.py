@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import struct
+import runpy
 import subprocess
 from pathlib import Path
 
@@ -35,8 +35,6 @@ FONT_SIZE = 15.0
 FONT_FAMILY = "DejaVu Sans Mono"
 REGULAR_FONT = Path("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
 REGULAR_FONT_SHA256 = "a54dca07c76d6289e717e75e0a58c0128f6d7269ef3faf76417c9d7d3bba37ab"
-BACKGROUND = (4 / 255, 12 / 255, 17 / 255)
-FOREGROUND = (218 / 255, 222 / 255, 224 / 255)
 
 
 def sha256(path: Path) -> str:
@@ -65,55 +63,14 @@ def require_renderer() -> None:
         fail(f"fontconfig resolved {FONT_FAMILY!r} to {resolved!r}")
 
 
-def render(text_path: Path, output: Path) -> None:
-    rows = text_path.read_text(encoding="utf-8").splitlines()
-    if len(rows) > HEIGHT:
-        fail(f"{text_path.name} has {len(rows)} rows, expected at most {HEIGHT}")
-    surface = cairo.ImageSurface(
-        cairo.FORMAT_RGB24, WIDTH * CELL_WIDTH, HEIGHT * CELL_HEIGHT
-    )
-    context = cairo.Context(surface)
-    context.set_source_rgb(*BACKGROUND)
-    context.paint()
-    options = cairo.FontOptions()
-    options.set_antialias(cairo.ANTIALIAS_GRAY)
-    options.set_hint_metrics(cairo.HINT_METRICS_ON)
-    options.set_hint_style(cairo.HINT_STYLE_FULL)
-    context.set_font_options(options)
-    context.select_font_face(FONT_FAMILY, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
-    context.set_font_size(FONT_SIZE)
-    ascent, descent, _, _, _ = context.font_extents()
-    context.set_source_rgb(*FOREGROUND)
-    for row_index, row in enumerate(rows):
-        for column, symbol in enumerate(row[:WIDTH]):
-            if symbol.isspace():
-                continue
-            extents = context.text_extents(symbol)
-            x = column * CELL_WIDTH + (CELL_WIDTH - extents.x_advance) / 2
-            baseline = (
-                row_index * CELL_HEIGHT
-                + (CELL_HEIGHT - ascent - descent) / 2
-                + ascent
-            )
-            context.move_to(x, baseline)
-            context.show_text(symbol)
-    surface.write_to_png(output)
-    surface.finish()
-    header = output.read_bytes()[:24]
-    if (
-        header[:8] != b"\x89PNG\r\n\x1a\n"
-        or header[12:16] != b"IHDR"
-        or struct.unpack(">II", header[16:24]) != (1600, 1000)
-    ):
-        fail(f"invalid live raster: {output}")
-
-
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     parser.add_argument("--base-manifest", type=Path, default=BASE_MANIFEST)
     args = parser.parse_args()
     require_renderer()
+    cell_renderer = runpy.run_path(str(ROOT / "scripts/render-m22-concept-screenshots.py"))
+    cell_renderer["require_renderer"]()
     evidence = args.evidence.resolve()
     if not evidence.is_dir():
         fail(f"missing evidence directory: {evidence}")
@@ -122,9 +79,10 @@ def main() -> int:
     for scenario in SCENARIOS:
         report_path = evidence / f"{scenario}.report.json"
         text_path = evidence / f"{scenario}.txt"
+        cells_path = evidence / f"{scenario}.cells"
         ansi_path = evidence / f"{scenario}.ansi"
         meta_path = evidence / f"{scenario}.meta"
-        for path in (report_path, text_path, ansi_path, meta_path):
+        for path in (report_path, text_path, cells_path, ansi_path, meta_path):
             if not path.is_file() or not path.stat().st_size:
                 fail(f"missing {scenario} artifact: {path.name}")
         report = json.loads(report_path.read_text(encoding="utf-8"))
@@ -151,7 +109,7 @@ def main() -> int:
             if assertion not in semantic:
                 fail(f"{scenario} semantic capture omitted assertion {assertion!r}")
         png_path = evidence / f"{scenario}.png"
-        render(text_path, png_path)
+        cell_renderer["render_cell_golden"](cells_path, png_path)
         indexed[scenario] = {
             "report": report_path.name,
             "report_sha256": sha256(report_path),
@@ -159,6 +117,8 @@ def main() -> int:
             "terminal_sha256": sha256(ansi_path),
             "semantic": text_path.name,
             "semantic_sha256": sha256(text_path),
+            "cells": cells_path.name,
+            "cells_sha256": sha256(cells_path),
             "metadata": meta_path.name,
             "metadata_sha256": sha256(meta_path),
             "raster": png_path.name,
@@ -186,7 +146,7 @@ def main() -> int:
         "target": base["target"],
         "started_utc": base["started_utc"],
         "finished_utc": base["finished_utc"],
-        "raster_renderer": "yoctui-live-semantic-cairo-v1",
+        "raster_renderer": "yoctui-live-cell-style-cairo-v2",
         "scenarios": indexed,
     }
     manifest_path = evidence / "manifest.json"

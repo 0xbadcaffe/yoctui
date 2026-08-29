@@ -72,8 +72,8 @@ use yoctui_model::{
     selected_config_copy_value,
 };
 
-const LITERAL_REFERENCE_WIDTH: u16 = 160;
 const WIDE_WORKBENCH_MIN_WIDTH: u16 = 130;
+const LITERAL_REFERENCE_WIDTH: u16 = 160;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SearchNavigation {
@@ -1546,10 +1546,15 @@ fn header_separator(palette: &ThemePalette, compact: bool) -> Span<'static> {
     )
 }
 
-fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
+fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
+    let concept_geometry = area.height >= 5;
     let block = Block::default()
-        .borders(Borders::TOP | Borders::LEFT | Borders::RIGHT)
+        .borders(if concept_geometry {
+            Borders::ALL
+        } else {
+            Borders::TOP | Borders::LEFT | Borders::RIGHT
+        })
         .style(palette.base())
         .border_style(Style::default().fg(palette.inactive_border));
     let inner = block.inner(area);
@@ -1637,12 +1642,65 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect) {
     let right_width = u16::try_from(right.width())
         .unwrap_or(inner.width)
         .min(inner.width.saturating_sub(12));
-    let columns =
-        Layout::horizontal([Constraint::Min(12), Constraint::Length(right_width)]).split(inner);
-    frame.render_widget(Paragraph::new(Line::from(left)), columns[0]);
+    if !concept_geometry {
+        let columns =
+            Layout::horizontal([Constraint::Min(12), Constraint::Length(right_width)]).split(inner);
+        frame.render_widget(Paragraph::new(Line::from(left)), columns[0]);
+        frame.render_widget(
+            Paragraph::new(right).alignment(Alignment::Right),
+            columns[1],
+        );
+        return;
+    }
+    let header_rows = Layout::vertical([
+        Constraint::Length(1),
+        Constraint::Length(1),
+        Constraint::Length(1),
+    ])
+    .split(inner);
+    let primary_columns =
+        Layout::horizontal([Constraint::Min(12), Constraint::Length(right_width)])
+            .split(header_rows[0]);
+    frame.render_widget(Paragraph::new(Line::from(left)), primary_columns[0]);
     frame.render_widget(
         Paragraph::new(right).alignment(Alignment::Right),
-        columns[1],
+        primary_columns[1],
+    );
+
+    frame.render_widget(
+        Paragraph::new("─".repeat(usize::from(inner.width)))
+            .style(palette.role(palette.inactive_border, Modifier::DIM)),
+        header_rows[1],
+    );
+    let workspace = app
+        .workspace
+        .source_dir
+        .as_deref()
+        .or(app.workspace.build_dir.as_deref())
+        .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
+    let total = app
+        .build
+        .total
+        .map_or_else(|| "?".into(), |total| total.to_string());
+    let elapsed = app
+        .build
+        .started
+        .and_then(|started| now.duration_since(started).ok())
+        .map_or_else(|| "--:--:--".into(), format_duration);
+    let task = format!("{} / {total}", app.build.completed);
+    let workers = app
+        .tasks
+        .values()
+        .filter_map(|task| task.worker.as_deref())
+        .collect::<std::collections::HashSet<_>>()
+        .len();
+    let context = format!(
+        "Workspace: {workspace}  |  Build: {}  |  Task: {task}  |  Elapsed: {elapsed}  |  Workers: {workers}",
+        app.build.target.as_deref().unwrap_or("none")
+    );
+    frame.render_widget(
+        Paragraph::new(bounded_cell_text(&context, header_rows[2].width)),
+        header_rows[2],
     );
 }
 
@@ -1690,9 +1748,10 @@ fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
 
 fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
-    let literal_geometry = area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks;
     let block = Block::default()
-        .borders(if literal_geometry {
+        .borders(if area.height >= 3 {
+            Borders::ALL
+        } else if area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks {
             Borders::LEFT | Borders::RIGHT | Borders::BOTTOM
         } else {
             Borders::BOTTOM
@@ -1797,13 +1856,23 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         );
         return;
     }
-    let chunks = Layout::vertical([
-        Constraint::Length(2),
-        Constraint::Min(1),
-        Constraint::Length(2),
-    ])
-    .split(area);
-    workbench_header(frame, app, chunks[0]);
+    let concept_geometry = area.width == 160 && area.height == 50;
+    let chunks = if concept_geometry {
+        Layout::vertical([
+            Constraint::Length(5),
+            Constraint::Min(1),
+            Constraint::Length(3),
+        ])
+        .split(area)
+    } else {
+        Layout::vertical([
+            Constraint::Length(2),
+            Constraint::Min(1),
+            Constraint::Length(2),
+        ])
+        .split(area)
+    };
+    workbench_header(frame, app, chunks[0], now);
     responsive_shell(frame, app, chunks[1], area.width, now);
     workbench_footer(frame, app, chunks[2], now);
     let screen_area = area;
@@ -3807,7 +3876,13 @@ fn pane_switcher(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn pane_block<'a>(app: &App, title: &'a str, focused: bool) -> Block<'a> {
-    PaneShell::new(title, focused, pane_styles(app)).block()
+    let palette = ThemePalette::for_app(app);
+    PaneShell::new(
+        Line::styled(title, palette.role(palette.informational, Modifier::BOLD)),
+        focused,
+        pane_styles(app),
+    )
+    .block()
 }
 
 fn pane_styles(app: &App) -> PaneStyles {
@@ -5879,6 +5954,10 @@ fn inspector(
         tasks_inspector(frame, app, area, now, task_rows.unwrap_or_default());
         return;
     }
+    if app.screen == Screen::Dashboard && area.width == 46 && area.height == 42 {
+        dashboard_inspector(frame, app, area);
+        return;
+    }
     if app.focus == FocusTarget::Navigator {
         frame.render_widget(
             Paragraph::new(compatibility_destination_detail(
@@ -6050,6 +6129,191 @@ fn inspector(
     );
 }
 
+fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let center = app.command_center_projection_at(SystemTime::now());
+    let dashboard = &center.dashboard;
+    let machine = app
+        .workspace
+        .variables
+        .get("MACHINE")
+        .map_or("unknown", String::as_str);
+    let distro = app
+        .workspace
+        .variables
+        .get("DISTRO")
+        .map_or("unknown", String::as_str);
+    let project = app.build.target.as_deref().unwrap_or("not selected");
+    let source = app
+        .workspace
+        .source_dir
+        .as_deref()
+        .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
+    let build_dir = app
+        .workspace
+        .build_dir
+        .as_deref()
+        .map_or_else(|| "unavailable".into(), |path| path.display().to_string());
+    let disk = app.host_telemetry.disk_available_bytes.map_or_else(
+        || "unavailable".into(),
+        |bytes| format!("{} free", format_bytes(bytes)),
+    );
+    let artifact = dashboard.artifacts.first().map_or_else(
+        || "Artifact: none retained".into(),
+        |artifact| {
+            let name = artifact.path.file_name().map_or_else(
+                || artifact.path.display().to_string(),
+                |name| name.to_string_lossy().into_owned(),
+            );
+            format!("Artifact: {} · {name}", artifact.source.label())
+        },
+    );
+    let recent = dashboard.recent_work.first().copied().map_or_else(
+        || "Recent: none retained".into(),
+        |row| {
+            format!(
+                "Recent: {}",
+                dashboard_recent_work_line(row, SystemTime::now())
+            )
+        },
+    );
+    let context = center.recent_contexts.first().copied().map_or_else(
+        || "Context: none retained".into(),
+        |row| format!("Context: {}", command_center_context_line(row)),
+    );
+    let favorite = center.favorite_commands.first().map_or_else(
+        || "Favorite: none".into(),
+        |favorite| format!("Favorite: {}", favorite.favorite.name),
+    );
+    let terminal = center.terminals.first().map_or_else(
+        || "Terminal: none".into(),
+        |terminal| {
+            format!(
+                "Terminal: {} · {}",
+                terminal.name,
+                daemon_lifecycle_label(terminal.lifecycle)
+            )
+        },
+    );
+    let attention = dashboard.failures.first().map_or_else(
+        || {
+            if app.build.warnings > 0 || app.build.errors > 0 {
+                format!(
+                    "Build reports {} warning(s), {} error(s); no diagnostic rows. [e] opens diagnostics.",
+                    app.build.warnings, app.build.errors
+                )
+            } else {
+                "No retained warnings or errors".into()
+            }
+        },
+        |entry| {
+            let message = entry.message.lines().next().unwrap_or("diagnostic");
+            let line_width = area.width.saturating_sub(4);
+            message.find(" failed").map_or_else(
+                || bounded_status_line(message.to_owned(), line_width),
+                |split| {
+                    if split <= usize::from(line_width) {
+                        format!(
+                            "{}\n{}",
+                            bounded_status_line(message[..split].to_owned(), line_width),
+                            bounded_status_line(message[split + 1..].to_owned(), line_width)
+                        )
+                    } else {
+                        bounded_status_line(message.to_owned(), line_width)
+                    }
+                },
+            )
+        },
+    );
+    let mut lines = vec![
+        Line::styled(
+            "Environment",
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+        Line::from(format!("Project          : {project}")),
+        Line::from(format!("Machine          : {machine}")),
+        Line::from(format!("Distro           : {distro}")),
+        Line::from(format!(
+            "Yocto release    : {}",
+            app.workspace.release.as_deref().unwrap_or("unknown")
+        )),
+        Line::from(format!("Layers enabled   : {}", app.workspace.layers.len())),
+        Line::default(),
+        Line::styled(
+            "Workspace",
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+        Line::from(format!("Source           : {source}")),
+        Line::from(format!("Build directory  : {build_dir}")),
+        Line::from(format!("Disk             : {disk}")),
+        Line::default(),
+        Line::styled(
+            "Enabled Actions",
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+        Line::from("[B] Build image"),
+        Line::from("[F2] Monitor tasks"),
+        Line::from("[l] View logs"),
+        Line::from("[e] View errors"),
+        Line::from("[E] Verify environment"),
+        Line::from("[t] Open terminal"),
+        Line::from("[d] Open devtool"),
+        Line::default(),
+        Line::styled(
+            "Active Tasks",
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+        Line::from(if app.tasks.is_empty() {
+            "No active task events".into()
+        } else {
+            format!("{} active task(s)", app.tasks.len())
+        }),
+        Line::styled(
+            "Next Action",
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+        Line::from(format!(
+            "{} [{}]",
+            dashboard.next_action.label, dashboard.next_action.shortcut
+        )),
+        Line::styled(
+            "Attention",
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+    ];
+    lines.extend(attention.lines().map(|line| Line::from(line.to_owned())));
+    lines.extend([
+        Line::styled(
+            "Workbench Center",
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+        Line::from(context),
+        Line::from(format!(
+            "Active: tasks {} · jobs {}",
+            dashboard.summary.active,
+            center.active_jobs.len()
+        )),
+        Line::from(favorite),
+        Line::from(terminal),
+        Line::from("[t] Terminal sessions"),
+        Line::from(artifact),
+        Line::from(recent),
+    ]);
+    if lines.len() > usize::from(area.height.saturating_sub(2)) {
+        lines.truncate(usize::from(area.height.saturating_sub(2)));
+    }
+    frame.render_widget(
+        Paragraph::new(lines)
+            .block(pane_block(
+                app,
+                "Project Inspector",
+                app.focus == FocusTarget::Inspector,
+            ))
+            .wrap(Wrap { trim: false }),
+        area,
+    );
+}
+
 #[allow(dead_code)]
 fn build_progress_popup(frame: &mut Frame, app: &App, area: Rect) {
     let width = area.width.saturating_sub(14).clamp(50, 110);
@@ -6145,14 +6409,24 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect) {
-    let width = area.width.saturating_sub(4).max(30);
-    let height = area.height.saturating_sub(2).max(8);
-    let popup = Rect::new(
-        (area.width.saturating_sub(width)) / 2,
-        (area.height.saturating_sub(height)) / 2,
-        width,
-        height,
-    );
+    let integrated = area.width == 160 && area.height == 50;
+    let popup = if integrated {
+        Rect::new(
+            20,
+            5,
+            area.width.saturating_sub(20),
+            area.height.saturating_sub(8),
+        )
+    } else {
+        let width = area.width.saturating_sub(4).max(30);
+        let height = area.height.saturating_sub(2).max(8);
+        Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            (area.height.saturating_sub(height)) / 2,
+            width,
+            height,
+        )
+    };
     clear_popup(frame, app, popup);
     let outer = dialog_block(
         app,
@@ -6167,8 +6441,17 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         Constraint::Length(1),
     ])
     .split(inner);
-    let columns = Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)])
-        .split(regions[0]);
+    let columns = if integrated {
+        Layout::horizontal([
+            Constraint::Percentage(18),
+            Constraint::Percentage(57),
+            Constraint::Percentage(25),
+        ])
+        .split(regions[0])
+    } else {
+        Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)])
+            .split(regions[0])
+    };
     let files = editor
         .files
         .iter()
@@ -6226,6 +6509,44 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
             .wrap(Wrap { trim: false }),
         columns[1],
     );
+    if integrated {
+        let layer = app
+            .workspace
+            .recipes
+            .iter()
+            .find(|recipe| recipe.name == editor.recipe)
+            .and_then(|recipe| recipe.layer.as_deref())
+            .unwrap_or("unknown");
+        let inspector = vec![
+            Line::styled(
+                "Recipe",
+                ThemePalette::for_app(app)
+                    .role(ThemePalette::for_app(app).informational, Modifier::BOLD),
+            ),
+            Line::from(format!("Name: {0}", editor.recipe)),
+            Line::from(format!("Layer: {layer}")),
+            Line::from(format!("File: {selected}")),
+            Line::from(format!("Language: {}", editor.language.label())),
+            Line::from(format!("State: {modified}")),
+            Line::default(),
+            Line::styled(
+                "Actions",
+                ThemePalette::for_app(app)
+                    .role(ThemePalette::for_app(app).informational, Modifier::BOLD),
+            ),
+            Line::from("[v] Validate"),
+            Line::from("[p] Preview diff"),
+            Line::from("[Ctrl+S] Save"),
+            Line::from("[Ctrl+B] Build recipe"),
+            Line::from("[e] External editor"),
+        ];
+        frame.render_widget(
+            Paragraph::new(inspector)
+                .block(pane_block(app, "Recipe Inspector", false))
+                .wrap(Wrap { trim: false }),
+            columns[2],
+        );
+    }
     frame.render_widget(
         Paragraph::new({
             let diagnostics = editor.local_validation();
@@ -6579,6 +6900,7 @@ enum TelemetryCell {
     Cpu,
     Ram,
     BuildFilesystem,
+    Sstate,
     DiskRead,
     DiskWrite,
     NetworkReceive,
@@ -6605,6 +6927,14 @@ fn render_telemetry_cell(
         TelemetryCell::Cpu => render_cpu_gauge(frame, app, inner),
         TelemetryCell::Ram => render_ram_gauge(frame, app, inner),
         TelemetryCell::BuildFilesystem => render_disk_gauge(frame, app, inner),
+        TelemetryCell::Sstate => {
+            let palette = ThemePalette::for_app(app);
+            frame.render_widget(
+                Paragraph::new("SSTATE ! unavailable")
+                    .style(palette.role(palette.disabled, Modifier::DIM)),
+                inner,
+            );
+        }
         TelemetryCell::DiskRead => {
             render_disk_io_projection(frame, app, projection, inner, Rect::default());
         }
@@ -6626,15 +6956,17 @@ fn render_telemetry_cell(
 
 fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
     let mode = telemetry_strip_mode(area);
-    if mode == TelemetryStripMode::Hidden || !telemetry_available(app) {
+    if mode == TelemetryStripMode::Hidden {
         return;
     }
     let palette = ThemePalette::for_app(app);
     let projection = app.host_telemetry_projection();
-    let block = Block::default()
-        .title("Telemetry · bounded 60-sample histories")
-        .borders(Borders::ALL)
-        .style(palette.base());
+    let block = pane_block(
+        app,
+        "Resource Telemetry · bounded 60-sample histories",
+        false,
+    )
+    .style(palette.base());
     let inner = block.inner(area);
     frame.render_widget(block, area);
 
@@ -6643,22 +6975,26 @@ fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
         TelemetryCell::Ram,
         TelemetryCell::BuildFilesystem,
     ];
-    match mode {
-        TelemetryStripMode::Wide => {
-            if disk_io_supported(&projection) {
-                cells.extend([TelemetryCell::DiskRead, TelemetryCell::DiskWrite]);
+    if area.width == 86 {
+        cells.push(TelemetryCell::Sstate);
+    } else {
+        match mode {
+            TelemetryStripMode::Wide => {
+                if disk_io_supported(&projection) {
+                    cells.extend([TelemetryCell::DiskRead, TelemetryCell::DiskWrite]);
+                }
+                if network_io_supported(&projection) {
+                    cells.extend([
+                        TelemetryCell::NetworkReceive,
+                        TelemetryCell::NetworkTransmit,
+                    ]);
+                }
             }
-            if network_io_supported(&projection) {
-                cells.extend([
-                    TelemetryCell::NetworkReceive,
-                    TelemetryCell::NetworkTransmit,
-                ]);
+            TelemetryStripMode::Medium if disk_io_supported(&projection) => {
+                cells.push(TelemetryCell::DiskIo);
             }
+            TelemetryStripMode::Medium | TelemetryStripMode::Hidden => {}
         }
-        TelemetryStripMode::Medium if disk_io_supported(&projection) => {
-            cells.push(TelemetryCell::DiskIo);
-        }
-        TelemetryStripMode::Medium | TelemetryStripMode::Hidden => {}
     }
     let count = u32::try_from(cells.len()).unwrap_or(1);
     let areas = Layout::horizontal(vec![Constraint::Ratio(1, count); cells.len()]).split(inner);
@@ -6826,6 +7162,7 @@ fn render_dashboard_build(
     );
 }
 
+#[allow(dead_code)]
 fn dashboard_task_rows(app: &App) -> Vec<(&yoctui_model::TaskInfo, Option<bool>)> {
     let mut active = app.tasks.values().collect::<Vec<_>>();
     active.sort_by(|left, right| {
@@ -6845,6 +7182,7 @@ fn dashboard_task_rows(app: &App) -> Vec<(&yoctui_model::TaskInfo, Option<bool>)
     rows
 }
 
+#[allow(dead_code)]
 fn render_dashboard_tasks(frame: &mut Frame, app: &App, area: Rect) {
     let tasks = dashboard_task_rows(app);
     let block = Block::default()
@@ -6934,6 +7272,7 @@ fn availability_state_word(state: WorkspaceAvailabilityState) -> &'static str {
     }
 }
 
+#[allow(dead_code)]
 fn render_dashboard_actions(
     frame: &mut Frame,
     app: &App,
@@ -6983,6 +7322,7 @@ fn render_dashboard_actions(
     );
 }
 
+#[allow(dead_code)]
 fn render_dashboard_attention(
     frame: &mut Frame,
     app: &App,
@@ -7040,6 +7380,128 @@ fn render_dashboard_attention(
     );
 }
 
+fn render_dashboard_recent_builds(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let block = pane_block(app, "Recent Builds", false);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let rows = app
+        .build_history
+        .iter()
+        .rev()
+        .take(usize::from(inner.height.saturating_sub(1)))
+        .enumerate()
+        .map(|(index, build)| {
+            let result = if build.success {
+                "✓ Succeeded"
+            } else {
+                "✕ Failed"
+            };
+            let style = if build.success {
+                palette.role(palette.success, Modifier::BOLD)
+            } else {
+                palette.role(palette.error, Modifier::BOLD)
+            };
+            Row::new([
+                (index + 1).to_string(),
+                build.target.as_deref().unwrap_or("unknown").to_owned(),
+                result.to_owned(),
+                build.completed_tasks.to_string(),
+                build.elapsed.map_or_else(|| "--".into(), format_duration),
+            ])
+            .style(style)
+        })
+        .collect::<Vec<_>>();
+    if rows.is_empty() {
+        frame.render_widget(
+            Table::new(
+                [Row::new([
+                    "–",
+                    "No completed builds retained",
+                    "–",
+                    "–",
+                    "Press B to build",
+                ])],
+                [
+                    Constraint::Length(4),
+                    Constraint::Percentage(36),
+                    Constraint::Length(13),
+                    Constraint::Length(8),
+                    Constraint::Min(8),
+                ],
+            )
+            .header(
+                Row::new(["#", "Image", "Result", "Tasks", "Duration"])
+                    .style(palette.role(palette.table_header, Modifier::BOLD)),
+            ),
+            inner,
+        );
+        return;
+    }
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(4),
+                Constraint::Percentage(36),
+                Constraint::Length(13),
+                Constraint::Length(8),
+                Constraint::Min(8),
+            ],
+        )
+        .header(
+            Row::new(["#", "Image", "Result", "Tasks", "Duration"])
+                .style(palette.role(palette.table_header, Modifier::BOLD)),
+        ),
+        inner,
+    );
+}
+
+fn render_dashboard_quick_actions(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let block = pane_block(app, "Quick Actions", false);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let columns = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(inner);
+    let actions = [
+        ("1", "Build image", "Start the selected BitBake target"),
+        ("2", "Open terminal", "Use the initialized Yocto shell"),
+        ("3", "Verify environment", "Check layers and configuration"),
+    ];
+    for (index, ((key, label, detail), column)) in
+        actions.into_iter().zip(columns.iter().copied()).enumerate()
+    {
+        let borders = if index + 1 < columns.len() {
+            Borders::RIGHT
+        } else {
+            Borders::NONE
+        };
+        frame.render_widget(
+            Paragraph::new(vec![
+                Line::from(vec![
+                    Span::styled(
+                        format!("[{key}] "),
+                        palette.role(palette.informational, Modifier::BOLD),
+                    ),
+                    Span::styled(label, palette.role(palette.heading, Modifier::BOLD)),
+                ]),
+                Line::default(),
+                Line::from(detail),
+            ])
+            .block(Block::default().borders(borders))
+            .wrap(Wrap { trim: false }),
+            column,
+        );
+    }
+}
+
+#[allow(dead_code)]
 fn dashboard_recent_work_line(row: JobHistoryRowRef<'_>, now: SystemTime) -> String {
     match row {
         JobHistoryRowRef::Background(job) => format!(
@@ -7094,6 +7556,7 @@ fn command_center_context_line(row: JobHistoryRowRef<'_>) -> String {
     }
 }
 
+#[allow(dead_code)]
 fn render_workbench_center(
     frame: &mut Frame,
     center: &CommandCenterProjection<'_>,
@@ -7275,6 +7738,21 @@ fn render_dashboard_compact(
 fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let center = app.command_center_projection_at(now);
     let projection = &center.dashboard;
+    let concept_geometry = area.width == 86 && area.height == 42;
+    if concept_geometry {
+        let rows = Layout::vertical([
+            Constraint::Length(9),
+            Constraint::Length(14),
+            Constraint::Length(10),
+            Constraint::Length(9),
+        ])
+        .split(area);
+        render_dashboard_build(frame, app, projection, rows[0], now);
+        render_dashboard_recent_builds(frame, app, rows[1]);
+        render_telemetry_strip(frame, app, rows[2]);
+        render_dashboard_quick_actions(frame, app, rows[3]);
+        return;
+    }
     let show_telemetry = area.height >= 38
         && telemetry_available(app)
         && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
@@ -7997,7 +8475,19 @@ fn tasks_workspace(
     rows: &[TaskRowRef<'_>],
 ) {
     let selected = rows.get(app.task_progress_scroll);
-    if area.width == 89 && area.height == 44 {
+    if area.width == 86 && area.height == 42 {
+        let panels = Layout::vertical([
+            Constraint::Length(12),
+            Constraint::Length(12),
+            Constraint::Length(10),
+            Constraint::Length(8),
+        ])
+        .split(area);
+        render_task_table(frame, app, panels[0], rows, now);
+        render_task_log(frame, app, panels[1], selected);
+        render_job_history(frame, app, panels[2], now);
+        render_telemetry_strip(frame, app, panels[3]);
+    } else if area.width == 89 && area.height == 44 {
         let panels = Layout::vertical([
             Constraint::Length(17),
             Constraint::Length(18),
@@ -13743,6 +14233,13 @@ fn onboarding_overlay(frame: &mut Frame, app: &App, area: Rect) {
 
 fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
     let items = app.active_menu_items();
+    if app.menu.kind == Some(yoctui_model::MenuKind::Application)
+        && area.width == 160
+        && area.height == 50
+    {
+        application_menu_overlay(frame, app, area, &items);
+        return;
+    }
     let width = area.width.saturating_sub(4).min(94);
     let height = area
         .height
@@ -13895,6 +14392,98 @@ fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
         ))
         .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
         regions[3],
+    );
+}
+
+fn application_menu_overlay(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    items: &[yoctui_model::MenuItem],
+) {
+    let palette = ThemePalette::for_app(app);
+    let width = 60.min(area.width.saturating_sub(4));
+    let height = u16::try_from(items.len())
+        .unwrap_or(u16::MAX)
+        .saturating_add(5)
+        .clamp(10, 18)
+        .min(area.height.saturating_sub(8));
+    let popup = Rect::new(40.min(area.width.saturating_sub(width)), 5, width, height);
+    clear_popup(frame, app, popup);
+    let outer = dialog_block(
+        app,
+        "Application menu · focus trapped",
+        DialogTone::Standard,
+    );
+    let inner = outer.inner(popup);
+    frame.render_widget(outer, popup);
+    if inner.is_empty() {
+        return;
+    }
+    let regions = Layout::vertical([
+        Constraint::Length(2),
+        Constraint::Min(2),
+        Constraint::Length(1),
+    ])
+    .split(inner);
+    let groups = yoctui_model::ApplicationMenuGroup::ALL
+        .iter()
+        .enumerate()
+        .map(|(index, group)| {
+            if index == app.menu.group_selection {
+                Span::styled(format!(" {} ", group.label()), palette.selected())
+            } else {
+                Span::raw(format!(" {} ", group.label()))
+            }
+        })
+        .collect::<Vec<_>>();
+    let prefix = if app.menu.typed_prefix.is_empty() {
+        "Type to jump".into()
+    } else {
+        format!("Jump: {}_", app.menu.typed_prefix)
+    };
+    frame.render_widget(
+        Paragraph::new(vec![Line::from(groups), Line::from(prefix)]),
+        regions[0],
+    );
+    let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
+    let rows = items.iter().enumerate().map(|(index, item)| {
+        let suffix = item
+            .disabled_reason
+            .as_deref()
+            .unwrap_or(item.description.as_str());
+        Row::new([
+            format!(
+                "{} {}",
+                if index == selected { ">" } else { " " },
+                item.label
+            ),
+            item.shortcut.to_owned(),
+            suffix.to_owned(),
+        ])
+        .style(if index == selected {
+            selected_style(app, true)
+        } else if item.enabled() {
+            palette.base()
+        } else {
+            palette.role(palette.disabled, Modifier::DIM)
+        })
+    });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Percentage(44),
+                Constraint::Length(10),
+                Constraint::Percentage(40),
+            ],
+        ),
+        regions[1],
+    );
+    frame.render_widget(
+        Paragraph::new("↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu")
+            .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+        regions[2],
     );
 }
 
@@ -20448,7 +21037,7 @@ mod tests {
         let render = |width| {
             let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
             terminal
-                .draw(|frame| workbench_header(frame, &app, frame.area()))
+                .draw(|frame| workbench_header(frame, &app, frame.area(), literal_now()))
                 .unwrap();
             terminal
                 .backend()
@@ -20546,7 +21135,7 @@ mod tests {
         let render = |width| {
             let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
             terminal
-                .draw(|frame| workbench_header(frame, &app, frame.area()))
+                .draw(|frame| workbench_header(frame, &app, frame.area(), literal_now()))
                 .unwrap();
             terminal
                 .backend()
@@ -22460,13 +23049,15 @@ mod tests {
         let output = rendered_text_at(&app, 160, 50, literal_now());
 
         for anchor in [
-            "Recipe editor: bash",
-            "Workspace file tree: bash",
-            "bash_5.2.bb — BitBake · INSERT · modified",
+            "Recipe Inspector",
+            "Name: bash",
+            "File: bash_5.2.bb",
+            "Language: BitBake",
+            "State: modified",
             "Application menu · focus trapped",
-            "[Build]",
+            "Build  Navigate  View",
             "Cancel active build",
-            "No active build is available to cancel.",
+            "No active build is avai",
             "Validation and diff state",
             "Local validation: ✕ line 9: assignment has no value",
             "Diff preview: loaded → buffer",
@@ -24994,7 +25585,7 @@ mod tests {
             .draw(|frame| render_at(frame, &titled, literal_now()))
             .unwrap();
         let buffer = terminal.backend().buffer();
-        for y in 2..48 {
+        for y in 5..47 {
             for x in 0..160 {
                 if buffer[(x, y)].symbol() != "┌" {
                     continue;
@@ -26699,7 +27290,7 @@ mod tests {
         let render_header = |app: &App| {
             let mut terminal = Terminal::new(TestBackend::new(180, 2)).unwrap();
             terminal
-                .draw(|frame| workbench_header(frame, app, frame.area()))
+                .draw(|frame| workbench_header(frame, app, frame.area(), literal_now()))
                 .unwrap();
             terminal
                 .backend()
@@ -31811,7 +32402,7 @@ mod tests {
 
         let determinate = rendered_text(&app, 160, 50);
         assert!(determinate.contains("Overall  30%  3/10"), "{determinate}");
-        assert!(determinate.contains("CPU  72%"), "{determinate}");
+        assert!(determinate.contains("CPU 72%"), "{determinate}");
         assert!(!determinate.contains("Sstate 0%"), "{determinate}");
 
         app.build.total = None;

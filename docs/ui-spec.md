@@ -4828,22 +4828,42 @@ output SHA-256. Raster check mode must regenerate and byte-compare all six
 PNGs; a PNG with no matching exact production-cell source is invalid.
 
 Supported live acceptance uses one checksummed binary for all six workflows.
-Each scenario retains its exact PTY stream, a `160x50` semantic screen and
-metadata record, explicit interactions, observed assertions, and a `1600x1000`
-semantic raster. The aggregate manifest must match the base live-build identity
+Each scenario retains its exact PTY stream, a `160x50` symbol/style cell screen,
+a semantic text screen and metadata record, explicit interactions, observed
+assertions, and a `1600x1000` cell/style raster. ANSI SGR foreground,
+background, and bold state must survive PTY composition; a monochrome rendering
+of semantic text is not visual evidence. The aggregate manifest must match the base live-build identity
 for source commit, binary, Ubuntu 24.04/glibc 2.39 host, official Poky 5.2.4
 revision, BitBake 2.12.1, machine, target, and run timestamps. Every artifact is
 checksummed; missing attribution, unsupported hosts, stale hashes, open gaps,
 or a different binary fail parity.
 
-The six supported-host live rasters are also retained as an operator-visible
-design regression gallery under `docs/design/m22/live-scenarios`. The gallery
+The six supported-host live rasters are also retained as operator-visible
+historical capture evidence under `docs/design/m22/live-scenarios`. The gallery
 must contain exactly one ordered screen for each M22 scenario, preserve the
 captured source commit, binary, host, Poky, BitBake, machine, target, terminal
 geometry, and raster geometry, and remain byte-identical to the attributed live
 evidence. Its README image list and machine-readable manifest are part of the
-regression contract. Fixture- or production-cell rendering cannot replace a
-live gallery baseline; changing it requires new supported-host evidence.
+evidence-integrity contract. Fixture- or production-cell rendering cannot
+replace fresh live acceptance; changing the historical capture requires new
+supported-host evidence.
+
+## 36. M21 visual resemblance contract
+
+Visual parity is separate from workflow-anchor parity. At the canonical
+`160x50` geometry, Dashboard, Tasks, Errors, rootfs composition, recipe editor
+with F10 menu, and terminal sessions use the M21 workbench silhouette: a
+two-level status header, persistent contextual footer, scene-appropriate
+navigator width, dominant center workspace, bounded right inspector, cyan
+section titles, semantic state colors, and full-row selection.
+
+Dashboard retains Build Overview, Recent Builds, Quick Actions, telemetry, and
+Project Inspector as distinct regions. Recipe editing retains the Navigator,
+recipe-file tree, syntax-aware document, Recipe Inspector, validation/diff rail,
+and an anchored application dropdown in one composition. A test that checks
+only words or actions cannot close this visual contract. Deterministic
+cell/style rasters are reviewed first, followed by six fresh styled PTY captures
+from the same release binary.
 
 ## 35. Integrated Devtool editing and shell workflow
 

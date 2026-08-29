@@ -2,7 +2,9 @@
 
 These six PNGs are deterministic review renderings of Yoctui's exact
 `160x50` Ratatui cell/style goldens. They are generated evidence, not a source
-of UI state and not replacements for the original M21 visual-direction art.
+of UI state. M25 promotes their reviewed shell geometry, scene composition,
+color roles, editor layout, and anchored menu placement into the executable's
+visual acceptance target; M21 remains the visual direction.
 
 The renderer pins PyCairo/Cairo, DejaVu Sans Mono regular and bold font hashes,
 cell geometry, antialiasing, hinting, every source-cell SHA-256, and every PNG

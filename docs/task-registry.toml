@@ -6555,3 +6555,49 @@ required = true
 depends_on = ["UX-CONCEPT-LIVE-001", "DEVWORK-001"]
 verify = ["python3 scripts/test-m22-live-design-gallery.py", "./scripts/verify-m22-concept-parity.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "The six supported-host M22 live rasters are now directly reviewable under docs/design/m22/live-scenarios with exact capture identity and per-screen hashes. Four regression tests enforce manifest identity, exact ordered membership, 1600x1000 dimensions, byte equality with the attributed live evidence, and README link order; the docs and aggregate parity gates invoke them."
+
+# M25 — M21 Visual Resemblance Remediation.
+
+[[task]]
+id = "UX-VISUAL-SHELL-001"
+milestone = "M25"
+title = "Align the six production scene compositions with M21"
+status = "DONE"
+priority = 753
+required = true
+depends_on = ["UX-LIVE-GALLERY-001"]
+verify = ["cargo test -p yoctui-ui", "./scripts/render-m22-concept-screenshots.sh --check", "python3 scripts/test-m22-concept-raster.py"]
+notes = "The production renderer now uses the two-level M21 header/footer, canonical 28/86/46 scene proportions, cyan section titles, concept-shaped Dashboard, 20-column editor Navigator with integrated file tree/document/Recipe Inspector, and the concept-positioned F10 dropdown at 160x50. All 254 UI tests, six reviewed cell/style goldens, six deterministic rasters, concept verification, responsive tests, and documentation checks pass."
+
+[[task]]
+id = "UX-LIVE-STYLE-001"
+milestone = "M25"
+title = "Preserve terminal cell colors and styles in live screenshots"
+status = "DONE"
+priority = 754
+required = true
+depends_on = ["UX-LIVE-GALLERY-001"]
+verify = ["python3 -m unittest scripts/test-terminal-capture.py", "python3 scripts/finalize-live-m22-concept-evidence.py --help"]
+notes = "The shared PTY compositor tracks cursor-addressed UTF-8 symbols, erasure, true-color/indexed SGR foreground and background, and bold state; both live drivers emit exact cell/style data and the finalizer uses the pinned production cell renderer. Three focused tests cover style preservation, bounded serialization, and stale-cell erasure."
+
+[[task]]
+id = "UX-VISUAL-LIVE-001"
+milestone = "M25"
+title = "Recapture all six styled scenarios from the current release binary"
+status = "IN_PROGRESS"
+priority = 755
+required = true
+depends_on = ["UX-VISUAL-SHELL-001", "UX-LIVE-STYLE-001"]
+verify = ["YOCTUI_LIVE_COMPLETE=1 ./scripts/test-live-m22-concept-parity.sh", "python3 scripts/test-m22-live-design-gallery.py"]
+notes = "The historical M22 gallery remains exact workflow evidence but is no longer described as the current visual baseline. The installed release and daemon share SHA-256 d312172c3412eaf2b96c86a66c73ebddca7bc04fdac28d7f83df37e8c366a585; a real 160x50 bridge capture verifies Poky 5.2.4/qemux86-64, four layers, exact styles, and numeric idle CPU/RAM/build-FS meters in the remediated Dashboard. The remaining work is one fresh six-scene supported-host capture."
+
+[[task]]
+id = "UX-VISUAL-PARITY-001"
+milestone = "M25"
+title = "Close M21 visual resemblance remediation"
+status = "IN_PROGRESS"
+priority = 756
+required = true
+depends_on = ["UX-VISUAL-SHELL-001", "UX-LIVE-STYLE-001", "UX-VISUAL-LIVE-001"]
+verify = ["./scripts/verify-m22-concept-parity.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "The parent remains open until deterministic review, styled live evidence, documentation, and the complete repository gate all pass."

@@ -1,8 +1,9 @@
-# Real Yoctui scenario regression screens
+# Historical real Yoctui scenario evidence
 
 These six screens were captured from a real Yoctui client connected to a
-supported-host daemon while exercising the M22 workflows. They are the stable
-live-screen design baseline for regression review. They are distinct from the
+supported-host daemon while exercising the M22 workflows. They preserve that
+exact workflow run. They are historical capture evidence, not the current
+visual target and not a claim that the old layout resembles M21. They are distinct from the
 [deterministic production-cell rasters](../production-raster/README.md), which
 are regenerated from the current production renderer.
 
@@ -63,7 +64,7 @@ retained scrollback/search state.
 
 <!-- REAL-YOCTUI-REGRESSION-SCREENS:END -->
 
-## Regression contract
+## Evidence-integrity contract
 
 Run:
 
@@ -75,5 +76,6 @@ python3 scripts/test-m22-live-design-gallery.py
 The gallery test rejects missing or extra scenarios, reordered or broken image
 links, changed capture identity, stale hashes, wrong dimensions, and any design
 PNG that is not byte-identical to its attributed supported-host live raster.
-Intentional live-baseline replacement requires a new supported-host capture;
-do not regenerate these files from a fixture or concept image.
+It protects historical attribution; visual acceptance uses the current
+production-cell rasters until a fresh six-scene live capture replaces this
+evidence. Do not regenerate these files from a fixture or concept image.

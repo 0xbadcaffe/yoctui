@@ -11,8 +11,25 @@ Status values:
 
 ## Current phase
 
+M25 M21 Visual Resemblance Remediation is in progress. A direct six-pair review
+showed that the previous 6/6 claim proved workflow anchors, not visual parity:
+the historical live rasters came from an older commit, and their finalizer
+discarded ANSI colors and styles. Production now uses the M21 two-level header,
+canonical pane proportions, cyan section titles, bordered footer, concept-shaped
+Dashboard, integrated recipe editor/inspector, and anchored F10 dropdown. The
+live PTY compositor now emits exact symbol/style cells for faithful rastering.
+Attached clients now hydrate the read-only workspace inventory through the
+selected bridge while mutations remain daemon-owned, and bounded host telemetry
+is sampled while idle as well as during builds. A real installed-release
+Dashboard capture verifies Poky 5.2.4, qemux86-64, four layers, numeric CPU/RAM/
+build-FS meters, and exact terminal styles. The deterministic UI and
+styled-capture tasks are complete; fresh current-release six-scene capture and
+the parent gate remain open. Overall required registry progress is 595/597
+(99.7%).
+
 M24 Real Yoctui Design Regression Gallery is complete. The six supported-host
-M22 live scenario rasters are now directly reviewable under
+M22 live scenario rasters remain directly reviewable as historical capture
+evidence under
 `docs/design/m22/live-scenarios`, with a local manifest pinning the captured
 source commit, binary, host, Poky/BitBake environment, machine, target,
 geometry, and hashes. The gallery regression suite enforces exact ordered

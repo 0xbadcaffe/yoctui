@@ -58,7 +58,21 @@ pub(super) fn responsive_shell(
         } else {
             22
         };
-        let panes = if app.screen == Screen::Tasks && terminal_width == 160 {
+        let panes = if terminal_width == 160 && area.height == 42 && app.screen == Screen::Recipes {
+            Layout::horizontal([
+                Constraint::Length(20),
+                Constraint::Length(94),
+                Constraint::Length(46),
+            ])
+            .split(area)
+        } else if terminal_width == 160 && area.height == 42 {
+            Layout::horizontal([
+                Constraint::Length(28),
+                Constraint::Length(86),
+                Constraint::Length(46),
+            ])
+            .split(area)
+        } else if app.screen == Screen::Tasks && terminal_width == 160 {
             Layout::horizontal([
                 Constraint::Length(26),
                 Constraint::Length(89),

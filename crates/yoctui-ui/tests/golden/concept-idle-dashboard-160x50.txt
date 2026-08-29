@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │yoctui  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                          Daemon: ✓ Connected  •  BitBake: – Exited│
-┌Navigator───────────┐┌Current Build · Idle───────────────────────────────────────────────┐┌Inspector: Daemon / session────────────────────────────────────────┐
-│▾ OVERVIEW          ││Overall  progress unknown⠷  0/?                                    ││▾ PRIMARY FACTS                                                    │
-│  ▱ Dashboard       ││A0 W0 !0 ✕0 --                                                     ││Target: core-image-minimal                                         │
-│▾ CONTENT           ││Target: core-image-minimal  Status: Idle  Exit code: none          ││Status: Idle                                                       │
-│  ? Layers          ││Backend: bridge  Parse progress: not parsing                       ││                                                                   │
-│  ? Recipes         ││Tasks: 0/?  Active: 0  Warnings: 0  Errors: 0                      ││Select an item in the workspace to inspect its details.            │
-│  ? Packages        ││Machine: qemux86-64  Distro: poky  Release: scarthgap              ││                                                                   │
-│  ? Images          ││CPU: 24%  Disk free: unavailable                                   ││▾ SECONDARY FACTS                                                  │
-│  ? SDK             ││Environment: ready  Sstate reuse: unavailable                      ││A0 Q0 F1 Done4 D0                                                  │
-│▾ BUILD             │└───────────────────────────────────────────────────────────────────┘│                                                                   │
-│  ? Tasks           │┌Active Tasks · 0 active · 0 retained c┐┌Next Action────────────────┐│▾ CONTEXTUAL ACTIONS                                               │
-│  ▱ Logs        LIVE││No active task events. Start a build w││Recommended                ││? Build image                  [B] — Unknown                       │
-│  ▱ Errors          ││                                      ││Build image [B] — unknown  ││  Reason: No current environment capability snapshot:              │
-│  ? Configuration   ││                                      ││Reason: No current         ││bitbake.build.                                                     │
-│  ? Dependencies    ││                                      ││environment capability     ││? Cancel active build          [c] — Unknown                       │
-│▾ VALIDATE          ││                                      ││snapshot: bitbake.build.   ││  Reason: No current environment capability snapshot:              │
-│  ? Testing         ││                                      ││                           ││bitbake.cancellation.                                              │
-│  ? Security        ││                                      ││Common actions             ││✓ Monitor active tasks         [F2] — Local                        │
-│  ? QA              ││                                      ││[F2] Tasks  [l] Logs  [e]  ││✓ Open retained logs           [l] — Local                         │
-│▾ TOOLS             ││                                      ││Errors  [F3] Recent work   ││✓ Review failures              [e] — Local                         │
-│  ? Raw Mode        ││                                      ││[F8] Artifacts  [f]        ││✓ Inspect recent work          [F3] — Local                        │
-│  ? Terminal Session││                                      ││Favorites  [t] Terminals   ││✓ Inspect artifacts            [F8] — Local                        │
-│  ? Devtool         ││                                      ││[E] Environment  [M] Sstate││✓ Configure build environment  [E] — Local                         │
-│  ? QEMU / Wic      │└──────────────────────────────────────┘└───────────────────────────┘│✓ Sstate readiness             [M] — Local                         │
-│  ? Maintenance     │┌Attention · 0 retained · e rev┐┌Workbench Center · live source proj┐│✓ Browse favorite commands     [f] — Local                         │
-│  ▱ Build environmen││✓ No retained warnings or     ││Next: Build image [B] · unknown    ││✓ Open terminal sessions       [t] — Local                         │
-│  ▱ Compatibility   ││errors. [e] opens diagnostics.││[F3] Context: Work · core-image-mi…││                                                                   │
-│  ▱ Settings        ││                              ││[F2/F3] Active: tasks 0 · jobs 0   ││▾ SYSTEM / COMPATIBILITY                                           │
-│                    ││                              ││[e] Failure: none retained         ││✓ Daemon Connected · version unavailable · up 02:15:00             │
-│                    ││                              ││[F8] Artifact: none retained       ││– BitBake Exited · v2.8.0 · Jobs 0                                 │
-│                    ││                              ││[f] Favorite: none                 ││! Compat Unavailable · PTY 0 · Clients 1                           │
-│                    ││                              ││[t] Terminal: none                 ││! Build FS unavailable · Workspace /home/user/yocto/build          │
-│                    ││                              ││[F3] Recent: ✓ Succeeded core-imag…││                                                                   │
-│                    ││                              ││                                   ││                                                                   │
-│                    ││                              ││                                   ││                                                                   │
-│                    ││                              ││                                   ││                                                                   │
-│                    ││                              ││                                   ││                                                                   │
-│                    │└──────────────────────────────┘└───────────────────────────────────┘│                                                                   │
-│                    │┌Telemetry · bounded 60-sample histories────────────────────────────┐│                                                                   │
-│                    ││█████                │RAM ! unavailable     │BUILD FS ! unavailable││                                                                   │
-│                    ││█████                │                      │                      ││                                                                   │
-│                    ││█████                │                      │                      ││                                                                   │
-│                    ││█████  CPU 24%       │                      │                      ││                                                                   │
-│                    ││█████                │                      │                      ││                                                                   │
-│                    ││█████                │                      │                      ││                                                                   │
-└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
-B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   Tab Inspector   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit          19:28:27
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / ?  |  Elapsed: --:--:--  |  Workers: 0                                                │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Current Build · Idle────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
+│▾ OVERVIEW                ││Overall  progress unknown⠷  0/?                                                     ││Environment                                 │
+│  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                               ││Project          : core-image-minimal       │
+│▾ CONTENT                 ││Target: core-image-minimal  Backend: bridge  Status: Idle  Exit code: none          ││Machine          : qemux86-64               │
+│  ? Layers                ││Parse progress: not parsing  Tasks: 0/? (active: 0)  Warnings: 0  Errors: 0         ││Distro           : poky                     │
+│  ? Recipes               ││Machine: qemux86-64  Distro: poky  Release: scarthgap                               ││Yocto release    : scarthgap                │
+│  ? Packages              ││Host CPU: 24%  Build disk free: unavailable  Environment: ready                     ││Layers enabled   : 7                        │
+│  ? Images                ││Sstate reuse: unavailable — backend does not report progress                        ││                                            │
+│  ? SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
+│▾ BUILD                   │┌Recent Builds───────────────────────────────────────────────────────────────────────┐│Source           : /home/user/yocto         │
+│  ? Tasks                 ││#    Image                          Result        Tasks    Duration                 ││Build directory  : /home/user/yocto/build   │
+│  ▱ Logs              LIVE││–    No completed builds retained   –             –        Press B to build         ││Disk             : 23.0 GiB free            │
+│  ▱ Errors                ││                                                                                    ││                                            │
+│  ? Configuration         ││                                                                                    ││Enabled Actions                             │
+│  ? Dependencies          ││                                                                                    ││[B] Build image                             │
+│▾ VALIDATE                ││                                                                                    ││[F2] Monitor tasks                          │
+│  ? Testing               ││                                                                                    ││[l] View logs                               │
+│  ? Security              ││                                                                                    ││[e] View errors                             │
+│  ? QA                    ││                                                                                    ││[E] Verify environment                      │
+│▾ TOOLS                   ││                                                                                    ││[t] Open terminal                           │
+│  ? Raw Mode              ││                                                                                    ││[d] Open devtool                            │
+│  ? Terminal Sessions     ││                                                                                    ││                                            │
+│  ? Devtool               │└────────────────────────────────────────────────────────────────────────────────────┘│Active Tasks                                │
+│  ? QEMU / Wic            │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│No active task events                       │
+│  ? Maintenance           ││█████               │RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable ││Next Action                                 │
+│  ▱ Build environment     ││█████               │                    │                    │                     ││Build image [B]                             │
+│  ▱ Compatibility         ││█████               │                    │                    │                     ││Attention                                   │
+│  ▱ Settings              ││█████               │                    │                    │                     ││No retained warnings or errors              │
+│                          ││█████ CPU 24%       │                    │                    │                     ││Workbench Center                            │
+│                          ││█████               │                    │                    │                     ││Context: Work · core-image-minimal          │
+│                          ││█████               │                    │                    │                     ││Active: tasks 0 · jobs 0                    │
+│                          ││█████               │                    │                    │                     ││Favorite: none                              │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│Terminal: none                              │
+│                          │┌Quick Actions───────────────────────────────────────────────────────────────────────┐│[t] Terminal sessions                       │
+│                          ││[1] Build image            │[2] Open terminal          │[3] Verify environment      ││Artifact: none retained                     │
+│                          ││                           │                           │                            ││Recent: ✓ Succeeded core-image-minimal ·    │
+│                          ││Start the selected BitBake │Use the initialized Yocto  │Check layers and            ││00:04:55                                    │
+│                          ││target                     │shell                      │configuration               ││                                            │
+│                          ││                           │                           │                            ││                                            │
+│                          ││                           │                           │                            ││                                            │
+│                          ││                           │                           │                            ││                                            │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   Tab Inspector   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit        19:28:27│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

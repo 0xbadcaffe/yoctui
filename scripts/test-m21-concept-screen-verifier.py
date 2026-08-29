@@ -125,7 +125,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
     def test_rejects_missing_required_feature_anchor(self) -> None:
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8").replace(
-            'fixture_anchors = ["Next Action", "Build image [B] — unknown"]',
+            'fixture_anchors = ["Next Action", "Build image [B]"]',
             'fixture_anchors = ["Next Action", "feature anchor that cannot exist"]',
             1,
         )
@@ -136,7 +136,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8")
         text = text.replace(
-            '  { id = "next-action", description = "Capability-aware next action", fixture_anchors = ["Next Action", "Build image [B] — unknown"] },',
+            '  { id = "next-action", description = "Capability-aware next action", fixture_anchors = ["Next Action", "Build image [B]"] },',
             '  { id = "next-action", description = "Capability-aware next action", gap_task = "UX-CONCEPT-LIVE-001" },',
             1,
         )

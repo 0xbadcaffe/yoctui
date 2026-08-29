@@ -40,10 +40,12 @@ STYLE_RE = re.compile(
     r"^T\|(\d+)\|fg=([^;]+);bg=([^;]+);ul=([^;]+);mod=([^;]+)$"
 )
 RGB_RE = re.compile(r"^Rgb\((\d+), (\d+), (\d+)\)$")
+INDEXED_RE = re.compile(r"^Indexed\((\d+)\)$")
 NAMED_COLORS = {
     "Black": (0, 0, 0),
     "Blue": (0, 0, 255),
     "Cyan": (0, 255, 255),
+    "DarkGray": (128, 128, 128),
     "Gray": (128, 128, 128),
     "Green": (0, 255, 0),
     "LightBlue": (128, 128, 255),
@@ -113,6 +115,38 @@ def parse_color(value: str, default: tuple[int, int, int]) -> tuple[int, int, in
             return color  # type: ignore[return-value]
     if value in NAMED_COLORS:
         return NAMED_COLORS[value]
+    indexed = INDEXED_RE.fullmatch(value)
+    if indexed:
+        index = int(indexed.group(1))
+        if index < 16:
+            return (
+                (0, 0, 0),
+                (128, 0, 0),
+                (0, 128, 0),
+                (128, 128, 0),
+                (0, 0, 128),
+                (128, 0, 128),
+                (0, 128, 128),
+                (192, 192, 192),
+                (128, 128, 128),
+                (255, 0, 0),
+                (0, 255, 0),
+                (255, 255, 0),
+                (0, 0, 255),
+                (255, 0, 255),
+                (0, 255, 255),
+                (255, 255, 255),
+            )[index]
+        if index < 232:
+            cube = index - 16
+            levels = (0, 95, 135, 175, 215, 255)
+            return (
+                levels[cube // 36],
+                levels[(cube // 6) % 6],
+                levels[cube % 6],
+            )
+        level = 8 + (index - 232) * 10
+        return (level, level, level)
     fail(f"unsupported cell color {value!r}")
 
 

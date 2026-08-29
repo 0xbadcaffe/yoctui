@@ -563,3 +563,26 @@ Exit criteria:
   baseline checks
 - `python3 scripts/test-m22-live-design-gallery.py`, documentation checks, and
   the M22 parity gate pass
+
+## M25 — M21 Visual Resemblance Remediation
+
+Goal: correct production workbench geometry and scene composition so the real
+executable visibly follows the six M21 concepts, and replace monochrome
+semantic screenshots with color- and style-faithful PTY evidence.
+
+Capabilities:
+
+- two-level workbench header, M21 pane proportions, semantic title color, and
+  bordered footer across all six scenes
+- concept-shaped Dashboard and integrated recipe editor/F10 menu compositions
+- ANSI SGR-aware live terminal composition serialized as exact cell/style data
+- deterministic rasters for review followed by six fresh release-binary live
+  captures from the initialized Poky environment
+
+Exit criteria:
+
+- all six deterministic production rasters pass reviewed geometry and semantic
+  tests and materially resemble their M21 counterparts
+- the live capture pipeline preserves foreground, background, and bold styles
+- six current-commit live captures replace historical evidence as the visual
+  regression baseline; workflow-only anchors cannot satisfy the gate

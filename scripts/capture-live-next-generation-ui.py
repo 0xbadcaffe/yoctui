@@ -16,6 +16,8 @@ import termios
 import time
 from pathlib import Path
 
+from terminal_capture import Screen as StyledScreen
+
 
 CSI = re.compile(r"\x1b\[([0-9;?]*)([ -/]*)([@-~])")
 
@@ -148,7 +150,7 @@ def main() -> int:
     startup_deadline = time.monotonic() + args.startup_seconds
     while time.monotonic() < startup_deadline and process.poll() is None:
         collect(0.5)
-        startup_screen = Screen(args.width, args.height)
+        startup_screen = StyledScreen(args.width, args.height)
         startup_screen.feed(bytes(raw).decode("utf-8", "replace"))
         if "Daemon: ✓ Connected" in startup_screen.text():
             break
@@ -168,14 +170,14 @@ def main() -> int:
         expected_deadline = time.monotonic() + args.seconds
         while time.monotonic() < expected_deadline and process.poll() is None:
             collect(0.5)
-            expected_screen = Screen(args.width, args.height)
+            expected_screen = StyledScreen(args.width, args.height)
             expected_screen.feed(bytes(raw).decode("utf-8", "replace"))
             if all(value in expected_screen.text() for value in args.expect):
                 break
     else:
         collect(args.seconds)
 
-    screen = Screen(args.width, args.height)
+    screen = StyledScreen(args.width, args.height)
     screen.feed(bytes(raw).decode("utf-8", "replace"))
 
     final_text = screen.text()
@@ -183,6 +185,7 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.with_suffix(".ansi").write_bytes(bytes(raw[-2_000_000:]))
     output.with_suffix(".txt").write_text(final_text, encoding="utf-8")
+    output.with_suffix(".cells").write_text(screen.cell_golden(), encoding="utf-8")
     output.with_suffix(".meta").write_text(
         f"label=live\nwidth={args.width}\nheight={args.height}\n"
         f"mode={args.mode}\nraw_bytes={min(len(raw), 2_000_000)}\n",

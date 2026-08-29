@@ -10572,22 +10572,51 @@ async fn tui(
     let mut backend: Box<dyn BitBakeBackend> = if daemon_attached {
         Box::new(ProcessBackend::new(build_dir.clone()))
     } else if build_dir_configured {
-        select_backend_with_timeout(backend_kind.clone(), build_dir, Some(cancellation_timeout))
-            .await?
+        select_backend_with_timeout(
+            backend_kind.clone(),
+            build_dir.clone(),
+            Some(cancellation_timeout),
+        )
+        .await?
     } else {
         Box::new(ProcessBackend::new(PathBuf::from("/")))
     };
-    if build_dir_configured && !daemon_attached {
-        match backend.inspect_workspace().await {
+    if build_dir_configured {
+        let mut metadata_backend = if daemon_attached {
+            match select_backend_with_timeout(
+                backend_kind.clone(),
+                build_dir.clone(),
+                Some(cancellation_timeout),
+            )
+            .await
+            {
+                Ok(backend) => Some(backend),
+                Err(error) => {
+                    let _ = update(
+                        &mut app,
+                        Action::Failure(AppError::new(
+                            "Backend",
+                            error.to_string(),
+                            "run `yoctui doctor` to diagnose the selected backend",
+                        )),
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let inventory_backend = metadata_backend.as_deref_mut().unwrap_or(backend.as_mut());
+        match inventory_backend.inspect_workspace().await {
             Ok(workspace) => {
                 let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
-                match backend.list_recipes(None).await {
+                match inventory_backend.list_recipes(None).await {
                     Ok(recipes) => {
                         let _ = update(&mut app, Action::RecipesLoaded(recipes));
                     }
                     Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
                 }
-                match backend.list_layers().await {
+                match inventory_backend.list_layers().await {
                     Ok(layers) => {
                         let _ = update(&mut app, Action::LayersLoaded(layers));
                     }
@@ -10604,6 +10633,11 @@ async fn tui(
                     )),
                 );
             }
+        }
+        if let Some(mut metadata_backend) = metadata_backend
+            && let Err(error) = metadata_backend.shutdown().await
+        {
+            app.notification = Some(format!("Workspace metadata shutdown failed: {error}"));
         }
     } else if !build_dir_configured {
         app.notification =
@@ -10810,21 +10844,7 @@ async fn tui(
         security_coordinator.poll(&mut app).await;
         qa_coordinator.poll(&mut app).await;
         maintenance_coordinator.poll(&mut app).await;
-        if (matches!(
-            app.build.status,
-            BuildStatus::LoadingWorkspace
-                | BuildStatus::Parsing
-                | BuildStatus::Running
-                | BuildStatus::Cancelling
-        ) || wic_operation.is_some()
-            || sdk_operation.is_some()
-            || test_coordinator.session.is_some()
-            || test_coordinator.result.is_some()
-            || security_coordinator.mapper.is_some()
-            || qa_coordinator.layer.is_some()
-            || maintenance_coordinator.operation_active())
-            && Instant::now() >= next_telemetry_sample
-        {
+        if Instant::now() >= next_telemetry_sample {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
             let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
             next_telemetry_sample = Instant::now() + Duration::from_secs(1);

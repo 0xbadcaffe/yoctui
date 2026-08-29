@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│y┌modal · Recipe editor: bash───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐d│
-┌N│┌Workspace file tree: bash───────────────────────────┐┌▶ bash_5.2.bb — BitBake · INSERT · modified · Ln 10 Col 1─────────────────────────────────────────┐│─┐
-│▾││▶ bash_5.2.bb                                       ││ 1 │ SUMMARY = "GNU Bourne Again Shell"                                                           ││ │
-│ ││  files/0001-fix-build.patch                        ││ 2 │ LICENSE = "GPL-3.0-only"                                                                     ││ │
-│▾││                                                    ││ 3 │ SRC_URI = "https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz"                                     ││ │
-│ ││                                                    ││ 4 │ inherit autotools                                                                            ││ │
-│ ││                                                    ││ 5 │                                                                                              ││ │
-│ ││                                                    ││ 6 │ do_install:append() {                                                                        ││ │
-│ ││                                                    ││ 7 │     install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash                                        ││ │
-│ ││                                                    ││ 8 │ }                                                                                            ││ │
-│▾││                                                    ││ 9 │ BROKEN_OVERRIDE =  [validation]                                                              ││ │
-│ ││                                                    ││10 │ ▏                                                                                            ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││k│
-│ ││                                                    ││                                                                                                  ││ │
-│▾││                                                    ││                                                                                                  ││ │
-│ ││                             ┌modal · Application menu · focus trapped────────────────────────────────────────────────────┐                             ││ │
-│ ││                             │Workspace  [Build]  Navigate  View  Tools  Help                                             │                             ││.│
-│ ││                             │type-ahead: <empty>                                                                         │                             ││ │
-│▾││                             │┌Catalog actions───────────────────────────────────────────────────────────────────────────┐│                             ││ │
-│ ││                             ││Action                Shortcut       Safety       Availability                            ││                             ││ │
-│ ││                             ││> Cancel active build c              DESTRUCTIVE  No active build is available to cancel. ││                             ││ │
-│ ││                             │└──────────────────────────────────────────────────────────────────────────────────────────┘│                             ││ │
-│ ││                             │┌Selected action───────────────────────────────────────────────────────────────────────────┐│                             ││ │
-│ ││                             ││Cancel active build in the Tasks workspace                                                ││                             ││ │
-│ ││                             ││tasks.cancel · No active build is available to cancel.                                    ││                             ││ │
-│ ││                             │└──────────────────────────────────────────────────────────────────────────────────────────┘│                             ││ │
-│ ││                             │Esc/F10 close · Enter activate · ↑/↓ items · ←/→ groups · type prefix · Backspace           │                             ││ │
-│ ││                             └────────────────────────────────────────────────────────────────────────────────────────────┘                             ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ │└────────────────────────────────────────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────────┘│ │
-│ │┌Validation and diff state───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐│ │
-│ ││Local validation: ✕ line 9: assignment has no value                                                                                                     ││ │
-│ ││Diff preview: loaded → buffer                                                                                                                           ││ │
-│ ││+  10 BROKEN_OVERRIDE =                                                                                                                                 ││ │
-│ ││Structural diagnostics only; BitBake/compiler output remains authoritative                                                                              ││ │
-│ ││                                                                                                                                                        ││ │
-│ │└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘│ │
-└─│EDITOR · i insert · v visual · / search · Ctrl+S save · Ctrl+B build · Tab files                                                                          │─┘
-En└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘27
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│yoctui  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                          Daemon: ✓ Connected  •  BitBake: – Exited│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / ?  |  Elapsed: --:--:--  |  Workers: 0                                                │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────┐┌modal · Recipe edit┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
+│▾ OVERVIEW        ││┌Workspace file tre│ Workspace  Build  Navigate  View  Tools  Help            │ol 1────────────────────┐┌Recipe Inspector────────────────┐│
+│  ▱ Dashboard     │││▶ bash_5.2.bb     │Type to jump                                              │                        ││Recipe                          ││
+│▾ CONTENT         │││  files/0001-fix-b│  Build image           B          No current environment │                        ││Name: bash                      ││
+│  ? Layers        │││patch             │  Build selected recipe b          No current environment │.tar.gz"                ││Layer: poky                     ││
+│  ? Recipes       │││                  │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
+│  ? Packages      │││                  │                                                          │                        ││Language: BitBake               ││
+│  ? Images        │││                  │                                                          │                        ││State: modified                 ││
+│  ? SDK           │││                  │↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu        │/bash                   ││                                ││
+│▾ BUILD           │││                  └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
+│  ? Tasks         │││                       ││ 9 │ BROKEN_OVERRIDE =  [validation]                                         ││[v] Validate                    ││
+│  ▱ Logs      LIVE│││                       ││10 │ ▏                                                                       ││[p] Preview diff                ││
+│  ▱ Errors        │││                       ││                                                                             ││[Ctrl+S] Save                   ││
+│  ? Configuration │││                       ││                                                                             ││[Ctrl+B] Build recipe           ││
+│  ? Dependencies  │││                       ││                                                                             ││[e] External editor             ││
+│▾ VALIDATE        │││                       ││                                                                             ││                                ││
+│  ? Testing       │││                       ││                                                                             ││                                ││
+│  ? Security      │││                       ││                                                                             ││                                ││
+│  ? QA            │││                       ││                                                                             ││                                ││
+│▾ TOOLS           │││                       ││                                                                             ││                                ││
+│  ? Raw Mode      │││                       ││                                                                             ││                                ││
+│  ? Terminal Sessi│││                       ││                                                                             ││                                ││
+│  ? Devtool       │││                       ││                                                                             ││                                ││
+│  ? QEMU / Wic    │││                       ││                                                                             ││                                ││
+│  ? Maintenance   │││                       ││                                                                             ││                                ││
+│  ▱ Build environm│││                       ││                                                                             ││                                ││
+│  ▱ Compatibility │││                       ││                                                                             ││                                ││
+│  ▱ Settings      │││                       ││                                                                             ││                                ││
+│                  │││                       ││                                                                             ││                                ││
+│                  │││                       ││                                                                             ││                                ││
+│                  │││                       ││                                                                             ││                                ││
+│                  │││                       ││                                                                             ││                                ││
+│                  ││└───────────────────────┘└─────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────┘│
+│                  ││┌Validation and diff state───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐│
+│                  │││Local validation: ✕ line 9: assignment has no value                                                                                     ││
+│                  │││Diff preview: loaded → buffer                                                                                                           ││
+│                  │││+  10 BROKEN_OVERRIDE =                                                                                                                 ││
+│                  │││Structural diagnostics only; BitBake/compiler output remains authoritative                                                              ││
+│                  │││                                                                                                                                        ││
+│                  ││└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘│
+│                  ││EDITOR · i insert · v visual · / search · Ctrl+S save · Ctrl+B build · Tab files                                                          │
+└──────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Enter select/confirm   Esc cancel   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F8 Images   F1 Help   F10 Menu   q Quit              19:28:27│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

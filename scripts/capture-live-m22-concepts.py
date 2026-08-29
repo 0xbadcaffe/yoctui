@@ -20,6 +20,8 @@ import time
 import unicodedata
 from pathlib import Path
 
+from terminal_capture import Screen as StyledScreen
+
 
 CSI = re.compile(r"\x1b\[([0-9;?]*)([ -/]*)?([@-~])")
 
@@ -176,7 +178,7 @@ def main() -> int:
         preexec_fn=become_session_leader,
     )
     os.close(slave)
-    screen = Screen(args.height, args.width)
+    screen = StyledScreen(args.width, args.height)
     raw = bytearray()
 
     def collect(seconds: float) -> None:
@@ -298,6 +300,7 @@ def main() -> int:
     output.parent.mkdir(parents=True, exist_ok=True)
     output.with_suffix(".ansi").write_bytes(bytes(raw[-2_000_000:]))
     output.with_suffix(".txt").write_text(screen.text(), encoding="utf-8")
+    output.with_suffix(".cells").write_text(screen.cell_golden(), encoding="utf-8")
     output.with_suffix(".meta").write_text(
         f"label=live\nscenario={scenario_id}\nwidth={args.width}\nheight={args.height}\n"
         f"raw_bytes={min(len(raw), 2_000_000)}\n",

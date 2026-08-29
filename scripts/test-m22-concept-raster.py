@@ -53,6 +53,13 @@ class ConceptRasterTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             RASTER.parse_symbol_row("S|3:─"[:-1])
 
+    def test_live_terminal_indexed_colors_have_exact_rgb_projection(self) -> None:
+        default = (1, 2, 3)
+        self.assertEqual(RASTER.parse_color("DarkGray", default), (128, 128, 128))
+        self.assertEqual(RASTER.parse_color("Indexed(16)", default), (0, 0, 0))
+        self.assertEqual(RASTER.parse_color("Indexed(196)", default), (255, 0, 0))
+        self.assertEqual(RASTER.parse_color("Indexed(255)", default), (238, 238, 238))
+
     def test_renderer_and_font_identity_are_pinned(self) -> None:
         RASTER.require_renderer()
         self.assertEqual(RASTER.sha256(RASTER.REGULAR_FONT), RASTER.REGULAR_FONT_SHA256)
