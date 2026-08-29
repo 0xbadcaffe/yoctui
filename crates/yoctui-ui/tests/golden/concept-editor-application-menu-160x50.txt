@@ -1,16 +1,16 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │y┌modal · Recipe editor: bash───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐d│
-┌N│┌Workspace file tree: bash───────────────────────────┐┌bash_5.2.bb (editing modified)────────────────────────────────────────────────────────────────────┐│─┐
-│▾││▶ bash_5.2.bb                                       ││SUMMARY = "GNU Bourne Again Shell"                                                                ││ │
-│ ││  files/0001-fix-build.patch                        ││LICENSE = "GPL-3.0-only"                                                                          ││ │
-│▾││                                                    ││SRC_URI = "https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz"                                          ││ │
-│ ││                                                    ││inherit autotools                                                                                 ││ │
-│ ││                                                    ││                                                                                                  ││ │
-│ ││                                                    ││do_install:append() {                                                                             ││ │
-│ ││                                                    ││    install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash                                             ││ │
-│ ││                                                    ││}                                                                                                 ││ │
-│▾││                                                    ││BROKEN_OVERRIDE =                                                                                 ││ │
-│ ││                                                    ││▏                                                                                                 ││ │
+┌N│┌Workspace file tree: bash───────────────────────────┐┌▶ bash_5.2.bb — BitBake · INSERT · modified · Ln 10 Col 1─────────────────────────────────────────┐│─┐
+│▾││▶ bash_5.2.bb                                       ││ 1 │ SUMMARY = "GNU Bourne Again Shell"                                                           ││ │
+│ ││  files/0001-fix-build.patch                        ││ 2 │ LICENSE = "GPL-3.0-only"                                                                     ││ │
+│▾││                                                    ││ 3 │ SRC_URI = "https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz"                                     ││ │
+│ ││                                                    ││ 4 │ inherit autotools                                                                            ││ │
+│ ││                                                    ││ 5 │                                                                                              ││ │
+│ ││                                                    ││ 6 │ do_install:append() {                                                                        ││ │
+│ ││                                                    ││ 7 │     install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash                                        ││ │
+│ ││                                                    ││ 8 │ }                                                                                            ││ │
+│▾││                                                    ││ 9 │ BROKEN_OVERRIDE =  [validation]                                                              ││ │
+│ ││                                                    ││10 │ ▏                                                                                            ││ │
 │ ││                                                    ││                                                                                                  ││ │
 │ ││                                                    ││                                                                                                  ││ │
 │ ││                                                    ││                                                                                                  ││k│
@@ -41,10 +41,10 @@
 │ │┌Validation and diff state───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐│ │
 │ ││Local validation: ✕ line 9: assignment has no value                                                                                                     ││ │
 │ ││Diff preview: loaded → buffer                                                                                                                           ││ │
-│ ││-   9                                                                                                                                                   ││ │
-│ ││+   9 BROKEN_OVERRIDE =                                                                                                                                 ││ │
-│ ││BitBake parse remains authoritative · save before Ctrl+B build                                                                                          ││ │
+│ ││+  10 BROKEN_OVERRIDE =                                                                                                                                 ││ │
+│ ││Structural diagnostics only; BitBake/compiler output remains authoritative                                                                              ││ │
+│ ││                                                                                                                                                        ││ │
 │ │└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘│ │
-└─│↑/↓ file  Enter/e edit  Ctrl+S save  Ctrl+B build recipe  Esc return to Yoctui                                                                            │─┘
+└─│EDITOR · i insert · v visual · / search · Ctrl+S save · Ctrl+B build · Tab files                                                                          │─┘
 En└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘27
 ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -19717,8 +19717,10 @@ mod tests {
         ));
     }
     #[test]
-    fn selected_recipe_menuconfig_prefills_the_menuconfig_task() {
+    fn selected_recipe_menuconfig_opens_the_embedded_terminal_chooser() {
         let mut app = App::new(10, 1_000);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.workspace.build_dir = Some("/work/build".into());
         app.workspace.recipes = vec![Recipe {
             name: "busybox".into(),
             version: None,
@@ -19736,11 +19738,14 @@ mod tests {
         let _ = update(&mut app, Action::BeginSelectedRecipeMenuConfig);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::RecipeTaskConfirmation(BuildRequest {
-                targets,
-                task: Some(task),
-                force: false,
-            })) if targets == &vec!["busybox".to_owned()] && task == "menuconfig"
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
+                request: TerminalLaunchRequest {
+                    name,
+                    kind: TerminalCreationKind::Menuconfig,
+                    ..
+                },
+                destination: TerminalLaunchDestination::Embedded,
+            })) if name == "menuconfig:busybox"
         ));
     }
     #[test]
@@ -26745,8 +26750,8 @@ mod tests {
             app.active_dialog(),
             Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, .. }))
                 if request.kind == TerminalCreationKind::DevtoolShell
-                    && request.cwd == PathBuf::from("/work/build/workspace/sources/busybox")
-                    && request.program == PathBuf::from("/bin/sh")
+                    && request.cwd.as_path() == Path::new("/work/build/workspace/sources/busybox")
+                    && request.program.as_path() == Path::new("/bin/sh")
         ));
         let _ = update(&mut app, Action::CancelTerminalLaunch);
         let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolEditRecipe);

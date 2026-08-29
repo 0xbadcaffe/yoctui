@@ -22,8 +22,19 @@ language-aware editing, search, diagnostics, exact-recipe builds, and atomic
 conflict-safe saves. The terminal gap is also closed with one zero-spawn chooser
 for embedded daemon PTYs and allowlisted detached graphical terminals across
 build shell, devshell, menuconfig, and Devtool interactive routes.
-`DEVWORK-VALIDATION-001` is active. Overall required registry progress is now
-590/592 (99.7%).
+`DEVWORK-VALIDATION-001` and its `DEVWORK-001` parent gate are complete.
+Overall required registry progress is now 592/592 (100.0%).
+
+The M23 validation pass reran the six concept scenarios through the current
+production renderer. It found and corrected two post-editor drift defects: the
+editor manifest still named the legacy append-only title/footer/diff anchors,
+and the reviewed fixtures could render one workspace while highlighting a
+different Navigator destination. The exact cell/style goldens and deterministic
+PNGs now carry the language-aware editor state and matching Navigator identity;
+the aggregate M22 parity gate is green again. A fresh daemon-backed capture was
+attempted with the initialized Poky build, but this agent sandbox rejected Unix
+socket creation with `EPERM`; the checked-in supported-host live bundle remains
+truthful ancestor evidence and is not relabelled as current-commit evidence.
 
 M22 Concept-to-Live UI Parity is complete. The gap audit found that M21's
 anchor-only fixture checks and broad live scenario labels overstated

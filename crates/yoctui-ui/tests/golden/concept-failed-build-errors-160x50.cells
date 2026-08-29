@@ -86,7 +86,7 @@ T|69|fg=Rgb(218, 222, 224);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|1|fg=Rgb(41, 55, 63);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|67|fg=Rgb(218, 222, 224);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|2|fg=Rgb(41, 55, 63);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
-T|20|fg=Rgb(218, 222, 224);bg=Rgb(13, 57, 132);ul=Reset;mod=NONE
+T|20|fg=Rgb(42, 178, 218);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|1|fg=Rgb(41, 55, 63);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|69|fg=Rgb(218, 222, 224);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|1|fg=Rgb(41, 55, 63);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
@@ -136,7 +136,7 @@ T|1|fg=Rgb(218, 222, 224);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|1|fg=Rgb(41, 55, 63);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|67|fg=Rgb(218, 222, 224);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|2|fg=Rgb(41, 55, 63);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
-T|20|fg=Rgb(139, 211, 0);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
+T|20|fg=Rgb(218, 222, 224);bg=Rgb(13, 57, 132);ul=Reset;mod=NONE
 T|1|fg=Rgb(41, 55, 63);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|1|fg=Rgb(218, 222, 224);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE
 T|67|fg=Rgb(226, 170, 0);bg=Rgb(4, 12, 17);ul=Reset;mod=NONE

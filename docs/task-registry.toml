@@ -6525,20 +6525,20 @@ notes = "Build shell, selected-recipe devshell/menuconfig, Devtool workspace she
 id = "DEVWORK-VALIDATION-001"
 milestone = "M23"
 title = "Validate the complete selected-recipe development loop"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 750
 required = true
 depends_on = ["DEVWORK-EDITOR-001", "DEVWORK-TERMINAL-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
-notes = "Run responsive, cancellation/no-spawn, exact-recipe build, update/finish, embedded PTY, detached-emulator fake process, live read-only Devtool status, installed release, documentation, and unchanged completion gates."
+notes = "Responsive, cancellation/no-spawn, exact-recipe build, update/finish, embedded PTY, detached-emulator fake process, live read-only Devtool status, and repository-wide tests pass. A second concept-to-production audit corrected stale language-aware editor anchors and mismatched Navigator/workspace fixture identity across all six scenes; deterministic cell/style and PNG parity is 6/6 with no open gaps. An optimized release binary was installed and hash-verified, and its initialized-Poky doctor probe passed through the bridge handshake. Fresh daemon-backed capture remains host-limited because this agent sandbox denies the runtime Unix socket with EPERM; existing supported-host evidence was not relabelled."
 
 [[task]]
 id = "DEVWORK-001"
 milestone = "M23"
 title = "Complete integrated Devtool editing and shell workflow"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 751
 required = true
 depends_on = ["DEVWORK-GOV-001", "DEVWORK-EDITOR-001", "DEVWORK-TERMINAL-001", "DEVWORK-VALIDATION-001"]
 verify = ["./scripts/verify-completion.sh"]
-notes = "Parent gate for the language-aware recipe/Devtool editor, exact build-and-publish loop, and explicit embedded/detached interactive-session choice."
+notes = "The language-aware recipe/Devtool editor, exact build-and-publish loop, explicit embedded/detached interactive-session choice, complete validation pass, concept-to-production parity refresh, installed optimized release, and documentation are complete."

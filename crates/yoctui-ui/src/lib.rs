@@ -1113,7 +1113,7 @@ fn footer_shortcuts(app: &App) -> String {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | e provider | o logs | p patches | b/f tasks | v devshell | s workspace shell | E edit-recipe | d modify | u update | F finish | P deploy | D reset | / search"
+            "↑/↓ select | Enter inspect | e provider | o logs | p patches | b/f tasks | v devshell | s workspace shell | E edit-recipe | V CVE | X SPDX | d modify | u update | F finish | P deploy | D reset | / search"
         }
         Screen::Packages => {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
@@ -18694,7 +18694,7 @@ mod tests {
     fn concept_idle_dashboard_app() -> App {
         let mut app = literal_reference_app();
         app.screen = Screen::Dashboard;
-        app.focus = FocusTarget::Workspace;
+        app.navigator_selection = 0;
         app.focus = FocusTarget::Workspace;
         app.build.status = BuildStatus::Idle;
         app.build.started = None;
@@ -18716,6 +18716,7 @@ mod tests {
     fn concept_failed_errors_app() -> App {
         let mut app = literal_reference_app();
         app.screen = Screen::Errors;
+        app.navigator_selection = 8;
         app.focus = FocusTarget::Workspace;
         app.build.status = BuildStatus::Failed;
         app.build.exit_code = Some(1);
@@ -18774,6 +18775,7 @@ mod tests {
     fn concept_rootfs_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::Images;
+        app.navigator_selection = 4;
         app.focus = FocusTarget::Workspace;
         app.build.target = Some("core-image-minimal".into());
         app.workspace.recipes.push(yoctui_model::Recipe {
@@ -18935,6 +18937,7 @@ mod tests {
     fn concept_editor_menu_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::Recipes;
+        app.navigator_selection = 2;
         app.focus = FocusTarget::Dialog;
         app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
             recipe: "bash".into(),
@@ -18965,6 +18968,9 @@ mod tests {
             },
             searching: false,
         }));
+        if let Some(Dialog::RecipeEditor(editor)) = app.dialogs.back_mut() {
+            editor.refresh_language_and_validation();
+        }
         let _ = update(&mut app, Action::OpenApplicationMenu);
         let _ = update(&mut app, Action::SelectMenuGroup { delta: 1 });
         let _ = update(&mut app, Action::SelectMenuItem { delta: 2 });
@@ -18974,6 +18980,7 @@ mod tests {
     fn concept_terminal_sessions_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::TerminalSessions;
+        app.navigator_selection = 15;
         app.focus = FocusTarget::Workspace;
         app.terminal.client_id = Some([1; 16]);
         app.terminal.query = "busybox".into();
@@ -19087,6 +19094,7 @@ mod tests {
     #[test]
     fn concept_screen_contracts_render_through_production_renderer() {
         let mut active = literal_reference_app();
+        active.navigator_selection = 6;
         active.focus = FocusTarget::Workspace;
         let scenes = [
             (
@@ -19230,6 +19238,22 @@ mod tests {
                     "concept screen {name} semantic capture changed; use the explicit update script only after reviewing the UI change"
                 );
             }
+        }
+    }
+
+    #[test]
+    fn concept_screens_keep_navigator_identity_aligned_with_the_visible_workspace() {
+        let mut active = literal_reference_app();
+        active.navigator_selection = 6;
+        for app in [
+            concept_idle_dashboard_app(),
+            active,
+            concept_failed_errors_app(),
+            concept_rootfs_app(),
+            concept_editor_menu_app(),
+            concept_terminal_sessions_app(),
+        ] {
+            assert_eq!(app.navigator_screen(), app.screen);
         }
     }
 
@@ -22438,7 +22462,7 @@ mod tests {
         for anchor in [
             "Recipe editor: bash",
             "Workspace file tree: bash",
-            "bash_5.2.bb (editing modified)",
+            "bash_5.2.bb — BitBake · INSERT · modified",
             "Application menu · focus trapped",
             "[Build]",
             "Cancel active build",
@@ -22446,11 +22470,11 @@ mod tests {
             "Validation and diff state",
             "Local validation: ✕ line 9: assignment has no value",
             "Diff preview: loaded → buffer",
-            "+   9 BROKEN_OVERRIDE =",
-            "BitBake parse remains authoritative",
+            "BROKEN_OVERRIDE =",
+            "BitBake/compiler output remains authoritative",
             "Ctrl+S save",
-            "Ctrl+B build recipe",
-            "Esc return to Yoctui",
+            "Ctrl+B build",
+            "Tab files",
         ] {
             assert!(output.contains(anchor), "missing {anchor:?}: {output}");
         }

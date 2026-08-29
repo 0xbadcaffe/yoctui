@@ -4814,6 +4814,13 @@ resulting screen anchors before a scenario can be named as passed. Unsupported
 host combinations may produce diagnostics but cannot replace supported-host
 evidence.
 
+Every production concept fixture must keep `navigator_selection` aligned with
+the workspace it renders. The selected Navigator row cannot retain a prior
+workspace identity beneath Dashboard, Errors, Images, Recipes, or Terminal
+Sessions. The editor scene additionally anchors the selected file's language,
+mode, modified state, and cursor position so a simpler legacy editor cannot
+satisfy the concept contract.
+
 The M22 raster implementation uses fixed `160x50` input, `10x20` pixel cells,
 gray antialiasing, full hinting, and pinned Cairo/PyCairo plus regular/bold
 DejaVu Sans Mono hashes. The provenance manifest records each source-cell and
