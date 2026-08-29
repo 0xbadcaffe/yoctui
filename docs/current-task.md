@@ -2,40 +2,38 @@
 
 ## Task
 
-**ID:** DEVWORK-VALIDATION-001
-**Title:** Validate the complete selected-recipe development loop
+**ID:** UX-LIVE-GALLERY-001
+**Title:** Publish six real Yoctui screens as design regression baselines
 **Status:** DONE
 
 ## Objective
 
-Run the repository-wide quality gates, verify the selected-recipe development
-loop on the initialized Poky environment, install the release binary, and
-publish the completed milestone.
+Publish the six supported-host M22 Yoctui scenario screens under the design
+documentation and make their exact provenance, membership, ordering,
+dimensions, and bytes regression-tested.
 
-M23 and its parent gate `DEVWORK-001` are complete. The next task is selected
+M24 and `UX-LIVE-GALLERY-001` are complete. The next task is selected
 from new user scope or a newly registered milestone; no required registry task
 remains open.
 
 ## Dependencies
 
-- DEVWORK-EDITOR-001 — DONE
-- DEVWORK-TERMINAL-001 — DONE
+- UX-CONCEPT-LIVE-001 — DONE
+- DEVWORK-001 — DONE
 
 ## Definition of done
 
-- Workspace tests and all-feature Clippy pass without warnings.
-- Roadmap, UI contract, completion, and repository cleanliness gates pass.
-- Live initialized-environment status remains truthful for Devtool and PTYs.
-- A second concept-to-production pass has current cell/style rasters, aligned
-  Navigator/workspace identity, and no stale semantic anchors.
-- A release binary containing M23 is installed and smoke-tested.
+- Six real supported-host Yoctui PNGs are directly visible under `docs/design`.
+- A machine-readable manifest retains the exact live capture identity.
+- Regression tests enforce exact scenario membership, order, README links,
+  dimensions, hashes, and byte equality with the live evidence bundle.
+- Documentation, M22 parity, and roadmap gates pass.
 
 ## Verification
 
 ```bash
-cargo test --workspace --all-features
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-./scripts/verify-roadmap.sh
+python3 scripts/test-m22-live-design-gallery.py
 ./scripts/verify-m22-concept-parity.sh
-./scripts/verify-completion.sh
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ```

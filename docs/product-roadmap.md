@@ -539,3 +539,27 @@ Exit criteria:
   capability- and configured-layer-gated
 - focused model/app/UI/CLI tests, responsive rendering, strict lint, installed
   release smoke validation, and the unchanged completion gate pass
+
+## M24 — Real Yoctui Design Regression Gallery
+
+Goal: keep the six supported-host M22 Yoctui screens directly reviewable under
+the design documentation and prevent their provenance, membership, ordering,
+dimensions, or bytes from drifting away from the live evidence bundle.
+
+Capabilities:
+
+- one documented gallery containing idle, active build, failed build, rootfs,
+  editor/menu, and terminal-session screens
+- a machine-readable capture manifest with exact source commit, binary, host,
+  Yocto/BitBake, machine, target, geometry, and per-screen SHA-256 identity
+- byte-for-byte linkage from every design PNG to its supported-host live raster
+- regression coverage for exact membership, ordering, README links, hashes, and
+  `1600x1000` dimensions
+
+Exit criteria:
+
+- all six real Yoctui screens render from the design README
+- no fixture, production-cell raster, or concept artwork can satisfy the live
+  baseline checks
+- `python3 scripts/test-m22-live-design-gallery.py`, documentation checks, and
+  the M22 parity gate pass

@@ -2200,6 +2200,15 @@ registry and rejects a gap after its owning task is complete. AI-generated PNGs
 remain human design references and are not inputs to UI rendering or exact
 regression comparison.
 
+The M22 live design gallery is a checked documentation projection of supported-
+host evidence, not another capture authority. Its manifest points to the
+checksummed live-evidence manifest and each copied PNG. Regression tests require
+the six design copies to be byte-identical to their attributed live rasters,
+retain `1600x1000` dimensions, and appear exactly once in scenario order in the
+gallery README. The deterministic production-cell rasters remain the current-
+renderer visual gate; the live gallery remains the supported-host historical
+baseline until a newly attributed live capture replaces it.
+
 Release profiling uses a deterministic CPU-bound workbench workload that
 drives the production model reducer and Ratatui renderer at the canonical
 terminal size. The workload is a benchmark target rather than a backend

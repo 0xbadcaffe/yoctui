@@ -11,7 +11,16 @@ Status values:
 
 ## Current phase
 
-M23 Integrated Devtool Editing and Shell Workflow is active. The audit confirms
+M24 Real Yoctui Design Regression Gallery is complete. The six supported-host
+M22 live scenario rasters are now directly reviewable under
+`docs/design/m22/live-scenarios`, with a local manifest pinning the captured
+source commit, binary, host, Poky/BitBake environment, machine, target,
+geometry, and hashes. The gallery regression suite enforces exact ordered
+membership, README links, `1600x1000` dimensions, and byte equality with the
+attributed live evidence. Overall required registry progress is now 593/593
+(100.0%).
+
+M23 Integrated Devtool Editing and Shell Workflow is complete. The audit confirms
 that the existing typed Devtool lifecycle is complete, including status,
 modify, persistent jobs, selected-recipe build, update-recipe, configured-layer
 finish, deploy, reset, and daemon PTYs. It also found two narrower gaps hidden

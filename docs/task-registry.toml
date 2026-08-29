@@ -6542,3 +6542,16 @@ required = true
 depends_on = ["DEVWORK-GOV-001", "DEVWORK-EDITOR-001", "DEVWORK-TERMINAL-001", "DEVWORK-VALIDATION-001"]
 verify = ["./scripts/verify-completion.sh"]
 notes = "The language-aware recipe/Devtool editor, exact build-and-publish loop, explicit embedded/detached interactive-session choice, complete validation pass, concept-to-production parity refresh, installed optimized release, and documentation are complete."
+
+# M24 — Real Yoctui Design Regression Gallery.
+
+[[task]]
+id = "UX-LIVE-GALLERY-001"
+milestone = "M24"
+title = "Publish six real Yoctui screens as design regression baselines"
+status = "DONE"
+priority = 752
+required = true
+depends_on = ["UX-CONCEPT-LIVE-001", "DEVWORK-001"]
+verify = ["python3 scripts/test-m22-live-design-gallery.py", "./scripts/verify-m22-concept-parity.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "The six supported-host M22 live rasters are now directly reviewable under docs/design/m22/live-scenarios with exact capture identity and per-screen hashes. Four regression tests enforce manifest identity, exact ordered membership, 1600x1000 dimensions, byte equality with the attributed live evidence, and README link order; the docs and aggregate parity gates invoke them."

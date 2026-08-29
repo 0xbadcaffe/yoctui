@@ -1,0 +1,52 @@
+schema_version = 1
+label = "supported-live-m22-design-regression-gallery"
+source_manifest = "artifacts/release-quality/m22-concept-live/manifest.json"
+source_manifest_sha256 = "3e15c9f5fb4be558516f246265aa8c68e54a008a8a5fedac557c63920bb6efa7"
+source_commit = "2c330c14e5f08b0d2602f57b84a8fad49a9ee39d"
+binary_sha256 = "bc2d31a044a99cfbd169733558ab785509953eb9e16a8dd454cbb96b6874ff3b"
+host_distribution = "Ubuntu 24.04.4 LTS"
+host_libc = "glibc 2.39"
+poky_revision = "d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1"
+bitbake_version = "BitBake Build Tool Core version 2.12.1"
+machine = "qemux86-64"
+target = "core-image-minimal"
+logical_columns = 160
+logical_rows = 50
+pixel_width = 1600
+pixel_height = 1000
+
+[[scenario]]
+id = "idle-dashboard"
+file = "docs/design/m22/live-scenarios/01-idle-dashboard.png"
+sha256 = "237fd591f27ca114347c25c8d11c200e15bf5d6119a230749e2572d1048158fc"
+source = "artifacts/release-quality/m22-concept-live/idle-dashboard.png"
+
+[[scenario]]
+id = "active-build-tasks"
+file = "docs/design/m22/live-scenarios/02-active-build-tasks.png"
+sha256 = "bb05851ab8d1c5004f4b85e80c52c0850418be8902fb4f6ea6f1d5a4832e6f61"
+source = "artifacts/release-quality/m22-concept-live/active-build-tasks.png"
+
+[[scenario]]
+id = "failed-build-errors"
+file = "docs/design/m22/live-scenarios/03-failed-build-errors.png"
+sha256 = "b6dfb375d17c72044e1d57899ddc789260e7df055bba6bc04d86ebeaf3bb8897"
+source = "artifacts/release-quality/m22-concept-live/failed-build-errors.png"
+
+[[scenario]]
+id = "rootfs-composition"
+file = "docs/design/m22/live-scenarios/04-rootfs-composition.png"
+sha256 = "66d91916fb3601671cdb8b8ae70ddf9dbec75f950e663ef435d04cea21f86ab8"
+source = "artifacts/release-quality/m22-concept-live/rootfs-composition.png"
+
+[[scenario]]
+id = "editor-application-menu"
+file = "docs/design/m22/live-scenarios/05-editor-application-menu.png"
+sha256 = "3cdccf86f81204226c432fee4fa46bc4d54938032e6a929dd535962a69bed651"
+source = "artifacts/release-quality/m22-concept-live/editor-application-menu.png"
+
+[[scenario]]
+id = "terminal-sessions"
+file = "docs/design/m22/live-scenarios/06-terminal-sessions.png"
+sha256 = "ce1793d99ae89c2298e2ec6d00ad17ef3dbee2d19c7f9da0a417d6b8f6b2918c"
+source = "artifacts/release-quality/m22-concept-live/terminal-sessions.png"

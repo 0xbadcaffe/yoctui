@@ -45,12 +45,17 @@ original concept art and live-host evidence:
 ```bash
 ./scripts/render-m22-concept-screenshots.sh --check
 python3 scripts/test-m22-concept-raster.py
+python3 scripts/test-m22-live-design-gallery.py
 ```
 
 The first command parses all exact production cell/style goldens, renders with
 the pinned Cairo/font environment, and byte-compares six PNGs. The second also
 checks dimensions, source/output hashes, repeatability, malformed-cell
 rejection, and renderer/font identity.
+
+The third command checks the six real supported-host design screens separately:
+their capture identity, ordered gallery membership, README image links, hashes,
+dimensions, and byte equality with the attributed live evidence must all agree.
 
 Checked-in supported-host concept evidence is validated without rebuilding
 Yocto by:

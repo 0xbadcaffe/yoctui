@@ -4836,6 +4836,15 @@ revision, BitBake 2.12.1, machine, target, and run timestamps. Every artifact is
 checksummed; missing attribution, unsupported hosts, stale hashes, open gaps,
 or a different binary fail parity.
 
+The six supported-host live rasters are also retained as an operator-visible
+design regression gallery under `docs/design/m22/live-scenarios`. The gallery
+must contain exactly one ordered screen for each M22 scenario, preserve the
+captured source commit, binary, host, Poky, BitBake, machine, target, terminal
+geometry, and raster geometry, and remain byte-identical to the attributed live
+evidence. Its README image list and machine-readable manifest are part of the
+regression contract. Fixture- or production-cell rendering cannot replace a
+live gallery baseline; changing it requires new supported-host evidence.
+
 ## 35. Integrated Devtool editing and shell workflow
 
 The Recipes workspace is the owning surface for one continuous development
