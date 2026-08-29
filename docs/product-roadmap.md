@@ -508,3 +508,34 @@ Exit criteria:
 - the live harness drives and verifies each claimed screen instead of inferring it
 - the concept comparison report records fixture, raster, and live results separately
 - `./scripts/verify-m22-concept-parity.sh` and the unchanged completion gate pass
+
+## M23 — Integrated Devtool Editing and Shell Workflow
+
+Goal: make the selected-recipe development loop explicit and continuous inside
+Yoctui: prepare a Devtool workspace, edit metadata or source with useful
+language context, build the owning recipe, and publish the change back to a
+configured layer without losing terminal or job state.
+
+Capabilities:
+
+- a shared reducer-owned workspace editor for recipes and Devtool source trees
+  with cursor motion, selection, undo/redo, search, diff/save state, line
+  numbers, language detection, syntax presentation, and bounded diagnostics
+- direct continuation from `devtool modify` into edit, selected-recipe build,
+  `update-recipe`, and configured-layer `finish`
+- user-visible Devtool workspace and `edit-recipe` session routes
+- a focus-trapped launch chooser before build shell, devshell, menuconfig, or
+  Devtool interactive sessions start
+- embedded daemon-owned PTY and detached desktop-terminal destinations built
+  from the same validated native argv and initialized environment
+
+Exit criteria:
+
+- no interactive terminal is spawned before the user confirms its destination
+- cancelling the chooser creates neither an embedded nor detached process
+- the editor identifies BitBake metadata and common source languages without
+  claiming LSP authority that is not present
+- recipe builds target the exact Devtool recipe and patch publication remains
+  capability- and configured-layer-gated
+- focused model/app/UI/CLI tests, responsive rendering, strict lint, installed
+  release smoke validation, and the unchanged completion gate pass

@@ -6485,3 +6485,60 @@ required = true
 depends_on = ["UX-CONCEPT-ACCEPTANCE-001", "UX-CONCEPT-ERRORS-001", "UX-CONCEPT-ROOTFS-001", "UX-CONCEPT-EDITOR-MENU-001", "UX-CONCEPT-TERMINAL-LIVE-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001"]
 verify = ["./scripts/verify-m22-concept-parity.sh", "./scripts/verify-completion.sh"]
 notes = "All six scenarios have complete production fixtures, deterministic raster proof, explicitly driven supported-host live evidence from one exact binary, and no open manifest gaps. The parity gate composes roadmap, production-fixture, deterministic-raster, live-evidence, mutation, and repository completion verification."
+
+# M23 — Integrated Devtool Editing and Shell Workflow.
+
+[[task]]
+id = "DEVWORK-GOV-001"
+milestone = "M23"
+title = "Register the integrated Devtool editing and shell workflow"
+status = "DONE"
+priority = 747
+required = true
+depends_on = ["UX-CONCEPT-PARITY-001"]
+verify = ["./scripts/verify-roadmap.sh", "./scripts/verify-ui-spec.sh"]
+notes = "The roadmap, UI and architecture contracts now distinguish the already-complete Devtool lifecycle from the primitive source editor and missing terminal-destination prompt, and register atomic editor, terminal, validation, and parent tasks without rewriting prior evidence."
+
+[[task]]
+id = "DEVWORK-EDITOR-001"
+milestone = "M23"
+title = "Make recipe and Devtool source editing language-aware"
+status = "IN_PROGRESS"
+priority = 748
+required = true
+depends_on = ["DEVWORK-GOV-001", "UX-TEXTAREA-UI-001", "DEVTOOL-MODIFY-001"]
+verify = ["cargo test -p yoctui-model devwork_editor", "cargo test -p yoctui-app devwork_editor", "cargo test -p yoctui-ui devwork_editor", "cargo test -p yoctui -- devwork_editor"]
+notes = "Replace the append-only RecipeEditor buffer with the shared reducer-owned TextAreaState, add closed source-language classification and bounded syntax/diagnostic presentation, preserve exact Devtool recipe build and publish identity, and use atomic contained file saves."
+
+[[task]]
+id = "DEVWORK-TERMINAL-001"
+milestone = "M23"
+title = "Prompt for embedded or detached interactive sessions"
+status = "NOT_STARTED"
+priority = 749
+required = true
+depends_on = ["DEVWORK-GOV-001", "UX-TERMINAL-UX-001", "PTY-DEVTOOL-001", "PTY-MENUCONFIG-001"]
+verify = ["cargo test -p yoctui-model devwork_terminal", "cargo test -p yoctui-app devwork_terminal", "cargo test -p yoctui-ui devwork_terminal", "cargo test -p yoctui -- devwork_terminal"]
+notes = "Add one typed focus-trapped destination chooser and zero-spawn cancellation for build shell, devshell, menuconfig, Devtool workspace shell, and edit-recipe; embedded uses daemon PTY and detached uses a native allowlisted emulator without shell evaluation."
+
+[[task]]
+id = "DEVWORK-VALIDATION-001"
+milestone = "M23"
+title = "Validate the complete selected-recipe development loop"
+status = "NOT_STARTED"
+priority = 750
+required = true
+depends_on = ["DEVWORK-EDITOR-001", "DEVWORK-TERMINAL-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Run responsive, cancellation/no-spawn, exact-recipe build, update/finish, embedded PTY, detached-emulator fake process, live read-only Devtool status, installed release, documentation, and unchanged completion gates."
+
+[[task]]
+id = "DEVWORK-001"
+milestone = "M23"
+title = "Complete integrated Devtool editing and shell workflow"
+status = "NOT_STARTED"
+priority = 751
+required = true
+depends_on = ["DEVWORK-GOV-001", "DEVWORK-EDITOR-001", "DEVWORK-TERMINAL-001", "DEVWORK-VALIDATION-001"]
+verify = ["./scripts/verify-completion.sh"]
+notes = "Parent gate for the language-aware recipe/Devtool editor, exact build-and-publish loop, and explicit embedded/detached interactive-session choice."

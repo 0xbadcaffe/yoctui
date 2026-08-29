@@ -3292,6 +3292,33 @@ scenario it navigated and asserted; it cannot synthesize menu, rootfs, editor,
 error, or terminal success from unrelated startup/build captures. Generated
 concept artwork remains human-review input outside this authority chain.
 
+## M23 integrated development-workbench boundary
+
+`yoctui-model` owns the pending interactive-session request, closed embedded or
+detached destination, focus-trapped chooser state, and editor language/save/
+cursor/search state. Opening or cancelling a chooser is a pure reducer
+transition. Confirmation emits exactly one typed effect.
+
+Embedded confirmation reuses `TerminalEffect::Create` and the daemon PTY actor;
+the daemon remains the sole owner of emulator state, process groups, writer
+leases, input, resize, scrollback, and recovery. Detached confirmation emits a
+client-local `DetachedTerminalRequest` containing the same already-validated
+program, argv, cwd, kind, and display name. The CLI selects only a known native
+terminal-emulator executable and translates the request to that emulator's
+native argument convention without `sh -c`, joined command text, or metadata
+parsing. It starts the emulator only after confirmation and reports spawn
+failure through a typed notification. Detached processes are intentionally not
+daemon-owned and are labelled accordingly.
+
+The Recipes/Devtool workspace editor embeds the existing reducer-owned
+`TextAreaState`; it does not add a widget-owned editor or LSP process. A closed
+`SourceLanguage` classifier derives only from the selected path. UI lexical
+highlighting is a bounded render projection, while structural diagnostics and
+save/diff state remain model data. File discovery and atomic persistence stay
+at the CLI filesystem boundary with canonical-root containment, symlink and
+size checks. Compiler and BitBake diagnostics never enter through syntax
+highlighting; they retain the normal backend/app/reducer path.
+
 The concrete raster projection is `yoctui-cairo-cell-raster-v1`: it parses the
 complete symbol and style runs, projects only recorded foreground/background
 and bold state, and renders fixed `10x20` cells through pinned PyCairo 1.27.0,

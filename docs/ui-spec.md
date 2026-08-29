@@ -4828,3 +4828,68 @@ for source commit, binary, Ubuntu 24.04/glibc 2.39 host, official Poky 5.2.4
 revision, BitBake 2.12.1, machine, target, and run timestamps. Every artifact is
 checksummed; missing attribution, unsupported hosts, stale hashes, open gaps,
 or a different binary fail parity.
+
+## 35. Integrated Devtool editing and shell workflow
+
+The Recipes workspace is the owning surface for one continuous development
+loop:
+
+```text
+refresh status → devtool modify → edit source → save → build recipe
+               → devtool update-recipe or finish into a configured layer
+```
+
+The exact selected recipe identity and provider path remain authoritative
+through every transition. A successful `modify` refresh opens only the
+reported absolute Devtool workspace. `Ctrl+B` in that editor builds the owning
+recipe, never an image. `update-recipe` updates the recipe selected by that
+identity; `finish` retains its existing clean-commit and configured-layer
+picker requirements. Job output, cancellation, navigation retention, and
+failure recovery remain the existing persistent typed Devtool behavior.
+
+### Source and recipe editor
+
+Recipe metadata and Devtool source trees use the same two-pane editor shell:
+bounded file tree on the left and reducer-owned document on the right. The
+document uses the shared `TextAreaState` contract: Normal/Insert/Visual modes,
+Unicode-safe cursor and selection, line/word/page/document motion, line
+numbers, bounded search and match navigation, copy/paste, undo/redo, local diff
+preview, explicit clean/modified/saving/saved/failed/conflict state, and atomic
+save requests. Dirty content must be saved or discarded explicitly before
+changing files, closing, building, updating, or finishing.
+
+The selected path determines a closed language identity. The first supported
+set is BitBake, C, C++, Rust, Python, shell, JavaScript/TypeScript, JSON, TOML,
+YAML, Make, Markdown, and plain text. The title/status line names that identity.
+Syntax presentation uses bounded lexical classification for comments,
+keywords, names, operators, strings, and values; it does not claim compiler or
+LSP results. Local diagnostics are explicitly labelled structural and include
+only deterministic checks owned by Yoctui. External compiler/BitBake failures
+continue to arrive through typed build jobs and Logs/Errors.
+
+The editor footer prioritizes `i` insert, `Esc` normal/outward, movement,
+`Ctrl+S` save, `/` search, `n/N` matches, `u` undo, `Ctrl+R` redo, `v` visual,
+`Ctrl+B` build recipe, and the Devtool update/finish routes. Responsive layouts
+may shorten labels but must preserve mode, dirty/save state, language, cursor
+line/column, and a reachable build/publish route.
+
+### Interactive-session destination chooser
+
+Every request to start a build shell, selected-recipe devshell/menuconfig, a
+Devtool workspace shell, or interactive `devtool edit-recipe` first opens one
+focus-trapped chooser. It shows the exact session kind, recipe when applicable,
+working directory, executable/argv summary, and two destinations:
+
+1. `Embedded in Yoctui` (default): create the existing daemon-owned PTY and
+   navigate/attach to Terminal Sessions.
+2. `Detached terminal`: start a supported local desktop terminal emulator with
+   the same validated native argv, working directory, and initialized build
+   environment. The terminal lives independently after launch.
+
+`Up`/`Down` changes destination, `Enter` confirms, and `Esc` cancels. Neither
+opening nor cancelling the chooser spawns a process. Detached launch is
+disabled with an exact reason when no supported emulator is available or the
+client has no graphical session; Yoctui never constructs a shell command.
+Menuconfig and devshell remain interactive PTY operations rather than ordinary
+captured BitBake jobs. Noninteractive Devtool modify/update/finish/deploy/reset
+remain persistent background jobs.

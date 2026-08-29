@@ -2,32 +2,37 @@
 
 ## Task
 
-**ID:** UX-CONCEPT-PARITY-001
-**Title:** Complete concept-to-live UI parity
-**Status:** DONE
+**ID:** DEVWORK-EDITOR-001
+**Title:** Make recipe and Devtool source editing language-aware
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Keep all six concept workflows aligned across production fixtures,
-deterministic raster proof, and scenario-attributed supported-host live
-evidence.
+Replace the append-only recipe/Devtool source buffer with the existing bounded
+reducer-owned text area and add honest path-derived language awareness without
+introducing widget-owned or fabricated compiler state.
 
 ## Dependencies
 
-- UX-CONCEPT-ACCEPTANCE-001 — DONE
-- UX-CONCEPT-RASTER-001 — DONE
-- UX-CONCEPT-LIVE-001 — DONE
+- DEVWORK-GOV-001 — DONE
+- UX-TEXTAREA-UI-001 — DONE
+- DEVTOOL-MODIFY-001 — DONE
 
 ## Definition of done
 
-- Six production fixtures and deterministic production-cell PNGs pass.
-- One checksummed supported-host binary drives all six named scenarios.
-- Every live scenario retains attributed interactions and assertions.
-- The concept manifest has no open implementation or evidence gaps.
+- Recipe and Devtool workspace files use `TextAreaState` editing semantics.
+- Language identity and bounded syntax/structural diagnostics cover the
+  contracted source-language set without claiming LSP output.
+- Save is canonical-root-contained, conflict-aware, permission-preserving, and
+  atomic.
+- Build/update/finish retain the exact selected Devtool recipe identity.
+- Focused model/app/UI/CLI tests pass.
 
 ## Verification
 
 ```bash
-./scripts/verify-m22-concept-parity.sh
-./scripts/verify-completion.sh
+cargo test -p yoctui-model devwork_editor
+cargo test -p yoctui-app devwork_editor
+cargo test -p yoctui-ui devwork_editor
+cargo test -p yoctui -- devwork_editor
 ```
