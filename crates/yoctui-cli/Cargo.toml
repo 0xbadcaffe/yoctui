@@ -16,6 +16,7 @@ anyhow.workspace = true
 clap.workspace = true
 crossterm.workspace = true
 ratatui.workspace = true
+regex.workspace = true
 yoctui-app = { version = "0.1.0", path = "../yoctui-app" }
 yoctui-bitbake = { version = "0.1.0", path = "../yoctui-bitbake" }
 yoctui-model = { version = "0.1.0", path = "../yoctui-model" }

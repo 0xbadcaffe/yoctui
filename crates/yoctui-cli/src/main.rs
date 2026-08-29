@@ -132,6 +132,7 @@ mod daemon_security;
 mod daemon_test;
 #[cfg(unix)]
 mod daemon_wic;
+mod global_search;
 mod internal_tracing;
 mod maintenance_cli;
 #[cfg(unix)]
@@ -139,6 +140,10 @@ mod maintenance_cli;
 mod pty_attach;
 #[cfg(test)]
 mod pty_workflow_tests;
+
+use global_search::{
+    GlobalSearchCancellation, GlobalSearchPlan, GlobalSearchScanResult, scan_global_content,
+};
 
 use maintenance_cli::MaintenanceCliCoordinator;
 #[derive(Parser, Debug)]
@@ -9218,6 +9223,80 @@ struct RootfsCompositionBackgroundOperation {
     handle: tokio::task::JoinHandle<BackendEvent>,
 }
 
+struct GlobalContentSearchOperation {
+    generation: u64,
+    query: String,
+    cancellation: GlobalSearchCancellation,
+    handle: tokio::task::JoinHandle<Result<GlobalSearchScanResult, String>>,
+}
+
+fn begin_global_content_search(
+    app: &mut App,
+    build_dir: &Path,
+    operation: &mut Option<GlobalContentSearchOperation>,
+) {
+    if let Some(previous) = operation.take() {
+        previous.cancellation.cancel();
+    }
+    if app.command_palette_query.trim().is_empty() || app.command_palette_regex_error().is_some() {
+        return;
+    }
+    let _ = update(app, Action::BeginGlobalContentSearch);
+    let yoctui_model::GlobalSearchContentState::Loading { generation, query } =
+        &app.global_search_content
+    else {
+        return;
+    };
+    let generation = *generation;
+    let query = query.clone();
+    let plan = GlobalSearchPlan::for_app(app, build_dir, query.clone());
+    let cancellation = GlobalSearchCancellation::default();
+    let worker_cancellation = cancellation.clone();
+    let handle =
+        tokio::task::spawn_blocking(move || scan_global_content(&plan, &worker_cancellation));
+    *operation = Some(GlobalContentSearchOperation {
+        generation,
+        query,
+        cancellation,
+        handle,
+    });
+}
+
+async fn poll_global_content_search(
+    app: &mut App,
+    operation: &mut Option<GlobalContentSearchOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    let action = match operation.handle.await {
+        Ok(Ok(result)) => Action::GlobalContentSearchLoaded {
+            generation: operation.generation,
+            query: operation.query,
+            hits: result.hits,
+            truncated: result.truncated,
+            searched_scopes: result.searched_scopes,
+        },
+        Ok(Err(message)) => Action::GlobalContentSearchFailed {
+            generation: operation.generation,
+            query: operation.query,
+            message,
+        },
+        Err(error) => Action::GlobalContentSearchFailed {
+            generation: operation.generation,
+            query: operation.query,
+            message: format!("global search task was lost: {error}"),
+        },
+    };
+    let _ = update(app, action);
+}
+
 fn begin_rootfs_composition_operation_with_sources(
     app: &mut App,
     build_directory: &Path,
@@ -10214,6 +10293,17 @@ async fn refresh_workspace(
     }
 }
 
+fn direct_menu_shortcut_action(app: &App, input: Input, replayed: bool) -> Option<Action> {
+    if replayed || app.command_palette_open {
+        return None;
+    }
+    match input {
+        Input::F10 => Some(Action::OpenApplicationMenu),
+        Input::Char('a') => Some(Action::OpenContextMenu),
+        _ => None,
+    }
+}
+
 async fn tui(
     config: Config,
     targets: Vec<String>,
@@ -10368,6 +10458,7 @@ async fn tui(
         .map(ImageArtifactAdapter::new);
     let mut image_artifact_operation = None;
     let mut rootfs_composition_operation = None;
+    let mut global_content_search_operation = None;
     let sdk_artifact_adapter = app
         .workspace
         .variables
@@ -10521,6 +10612,7 @@ async fn tui(
         )
         .await;
         poll_rootfs_composition_operation(&mut app, &mut rootfs_composition_operation).await;
+        poll_global_content_search(&mut app, &mut global_content_search_operation).await;
         poll_sdk_artifact_operation(&mut app, &mut sdk_artifact_operation).await;
         poll_sdk_capability_operation(&mut app, &mut sdk_capability_operation).await;
         if let Some(completed) = poll_sdk_job(&mut app, &mut sdk_operation).await
@@ -10907,15 +10999,19 @@ async fn tui(
                     }
                     continue;
                 }
-                if !replayed_context_action && input == Input::F10 {
-                    let _ = compatibility_workspace_action(&mut app, Action::OpenApplicationMenu);
-                    continue;
-                }
-                if !replayed_context_action && input == Input::Char('a') {
-                    let _ = compatibility_workspace_action(&mut app, Action::OpenContextMenu);
+                if let Some(action) =
+                    direct_menu_shortcut_action(&app, input, replayed_context_action)
+                {
+                    let _ = compatibility_workspace_action(&mut app, action);
                     continue;
                 }
                 if app.command_palette_open {
+                    let global_search_edit = app.command_palette_mode
+                        == yoctui_model::CommandPaletteMode::GlobalRegexSearch
+                        && matches!(input, Input::Backspace | Input::CtrlU | Input::Char(_));
+                    let global_search_close = app.command_palette_mode
+                        == yoctui_model::CommandPaletteMode::GlobalRegexSearch
+                        && input == Input::Esc;
                     let effect = match input {
                         Input::Up => compatibility_workspace_action(
                             &mut app,
@@ -11011,6 +11107,19 @@ async fn tui(
                             editor.as_deref(),
                         )
                         .await;
+                    } else if let Some(Effect::OpenInEditor(path)) = effect {
+                        open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                    }
+                    if global_search_edit {
+                        begin_global_content_search(
+                            &mut app,
+                            &session_build_dir,
+                            &mut global_content_search_operation,
+                        );
+                    } else if global_search_close
+                        && let Some(operation) = global_content_search_operation.take()
+                    {
+                        operation.cancellation.cancel();
                     }
                 } else if let Some(action) = global_search_action(&app, input) {
                     let _ = compatibility_workspace_action(&mut app, action);
@@ -15670,6 +15779,20 @@ mod tests {
             input_from_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE)),
             Some(Input::Enter)
         );
+
+        let mut app = App::new(10, 1_000);
+        assert_eq!(
+            direct_menu_shortcut_action(&app, Input::Char('a'), false),
+            Some(Action::OpenContextMenu)
+        );
+        let _ = update(&mut app, Action::OpenGlobalSearch);
+        assert_eq!(
+            direct_menu_shortcut_action(&app, Input::Char('a'), false),
+            None,
+            "the search text owner must receive letters that are also global shortcuts"
+        );
+        let _ = update(&mut app, Action::AppendCommandPaletteQuery('a'));
+        assert_eq!(app.command_palette_query, "a");
     }
 
     #[test]

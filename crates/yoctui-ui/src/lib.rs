@@ -2785,6 +2785,42 @@ fn command_palette_detail_lines(
         .collect()
 }
 
+fn global_search_hit_detail_lines(
+    app: &App,
+    hit: &yoctui_model::GlobalSearchHit,
+    width: u16,
+    maximum: usize,
+) -> Vec<Line<'static>> {
+    let palette = ThemePalette::for_app(app);
+    let mut values = vec![
+        (
+            format!(
+                "{} · line {} · column {}",
+                hit.kind.label(),
+                hit.line,
+                hit.column
+            ),
+            palette.role(palette.heading, Modifier::BOLD),
+        ),
+        (
+            hit.path.display().to_string(),
+            palette.role(palette.secondary_foreground, Modifier::DIM),
+        ),
+    ];
+    if let Some(image) = hit.image.as_deref() {
+        values.push((
+            format!("Generated image: {image}"),
+            palette.role(palette.informational, Modifier::BOLD),
+        ));
+    }
+    values.push((hit.preview.clone(), palette.base()));
+    values
+        .into_iter()
+        .take(maximum)
+        .map(|(value, style)| Line::styled(bounded_cell_text(&value, width), style))
+        .collect()
+}
+
 fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     let popup = command_palette_rect(area);
     if popup.width < 4 || popup.height < 4 {
@@ -2817,17 +2853,21 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     ])
     .split(inner);
     let commands = app.filtered_command_palette_commands();
+    let content_hits = if global_search {
+        app.global_search_content.hits()
+    } else {
+        &[]
+    };
+    let total = commands.len() + content_hits.len();
     let regex_error = app.command_palette_regex_error();
-    let selection = app
-        .command_palette_selection
-        .min(commands.len().saturating_sub(1));
+    let selection = app.command_palette_selection.min(total.saturating_sub(1));
     frame.render_widget(
         Paragraph::new(search_line(
             app,
             &app.command_palette_query,
             true,
-            (!commands.is_empty()).then_some(selection),
-            commands.len(),
+            (total > 0).then_some(selection),
+            total,
             SearchNavigation::Results,
             SearchExit::Close,
             regions[0].width,
@@ -2836,22 +2876,24 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     );
 
     let visible_count = usize::from(regions[1].height.saturating_sub(3)).max(1);
-    let maximum_start = commands.len().saturating_sub(visible_count);
+    let maximum_start = total.saturating_sub(visible_count);
     let start = selection
         .saturating_sub(visible_count / 2)
         .min(maximum_start);
-    let end = start.saturating_add(visible_count).min(commands.len());
-    let current = if commands.is_empty() {
-        0
-    } else {
-        selection + 1
-    };
-    let window_start = if commands.is_empty() { 0 } else { start + 1 };
+    let end = start.saturating_add(visible_count).min(total);
+    let current = if total == 0 { 0 } else { selection + 1 };
+    let window_start = if total == 0 { 0 } else { start + 1 };
     let result_label = if global_search { "Results" } else { "Commands" };
-    let list_title = format!(
-        "{result_label} · {current}/{} · rows {window_start}–{end}",
-        commands.len()
-    );
+    let content_state = match &app.global_search_content {
+        yoctui_model::GlobalSearchContentState::Loading { .. } if global_search => " · scanning…",
+        yoctui_model::GlobalSearchContentState::Ready {
+            truncated: true, ..
+        } if global_search => " · limit reached",
+        yoctui_model::GlobalSearchContentState::Failed { .. } if global_search => " · scan failed",
+        _ => "",
+    };
+    let list_title =
+        format!("{result_label} · {current}/{total} · rows {window_start}–{end}{content_state}");
     let list_block = Block::default()
         .title(list_title)
         .borders(Borders::ALL)
@@ -2871,12 +2913,45 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             .block(list_block),
             regions[1],
         );
-    } else if commands.is_empty() {
+    } else if total == 0 && app.global_search_content.loading() {
+        frame.render_widget(
+            StateView {
+                kind: StateKind::Loading,
+                summary: "Searching Yocto sources and generated image rootfs trees…".into(),
+                detail: Some("Results are bounded and generated caches are excluded.".into()),
+                action: Some("Keep typing to replace this search; Esc cancels it.".into()),
+            }
+            .paragraph(
+                palette.role(palette.informational, Modifier::BOLD),
+                palette.role(palette.secondary_foreground, Modifier::DIM),
+            )
+            .block(list_block),
+            regions[1],
+        );
+    } else if total == 0
+        && let yoctui_model::GlobalSearchContentState::Failed { message, .. } =
+            &app.global_search_content
+    {
+        frame.render_widget(
+            StateView {
+                kind: StateKind::Error,
+                summary: "Content search failed.".into(),
+                detail: Some(message.clone()),
+                action: Some("Edit the query to retry.".into()),
+            }
+            .paragraph(
+                palette.role(palette.error, Modifier::BOLD),
+                palette.role(palette.secondary_foreground, Modifier::DIM),
+            )
+            .block(list_block),
+            regions[1],
+        );
+    } else if total == 0 {
         frame.render_widget(
             StateView {
                 kind: StateKind::Empty,
                 summary: if global_search {
-                    "No workbench actions match this regular expression.".into()
+                    "No actions or searched Yocto content match this regular expression.".into()
                 } else {
                     "No commands match this search.".into()
                 },
@@ -2891,18 +2966,14 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             regions[1],
         );
     } else if regions[1].width >= 88 {
-        let rows = commands
-            .iter()
-            .enumerate()
-            .skip(start)
-            .take(visible_count)
-            .map(|(index, command)| {
+        let rows = (0..total).skip(start).take(visible_count).map(|index| {
+            let row_style = if index == selection {
+                selected_style(app, true)
+            } else {
+                palette.base()
+            };
+            if let Some(command) = commands.get(index) {
                 let (availability, state_style) = palette_command_availability(app, command);
-                let row_style = if index == selection {
-                    selected_style(app, true)
-                } else {
-                    palette.base()
-                };
                 let label_style = if command.enabled() {
                     palette.base()
                 } else {
@@ -2920,18 +2991,33 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                     Cell::from(availability).style(state_style),
                 ])
                 .style(row_style)
-            });
+            } else {
+                let hit = &content_hits[index - commands.len()];
+                Row::new([
+                    Cell::from(format!(
+                        "{} {}",
+                        if index == selection { "▶" } else { " " },
+                        bounded_cell_text(&hit.preview, 38)
+                    )),
+                    Cell::from(format!("{}:{}", hit.path.display(), hit.line))
+                        .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+                    Cell::from(hit.kind.label())
+                        .style(palette.role(palette.informational, Modifier::BOLD)),
+                ])
+                .style(row_style)
+            }
+        });
         frame.render_widget(
             Table::new(
                 rows,
                 [
-                    Constraint::Min(20),
-                    Constraint::Length(16),
-                    Constraint::Length(16),
+                    Constraint::Percentage(35),
+                    Constraint::Percentage(43),
+                    Constraint::Percentage(22),
                 ],
             )
             .header(
-                Row::new(["Command", "Shortcut", "Availability"])
+                Row::new(["Result", "Location / Shortcut", "Kind / Availability"])
                     .style(palette.role(palette.heading, Modifier::BOLD)),
             )
             .block(list_block)
@@ -2940,12 +3026,8 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         );
     } else {
         let row_width = regions[1].width.saturating_sub(2);
-        let rows = commands
-            .iter()
-            .enumerate()
-            .skip(start)
-            .take(visible_count)
-            .map(|(index, command)| {
+        let rows = (0..total).skip(start).take(visible_count).map(|index| {
+            if let Some(command) = commands.get(index) {
                 let (availability, state_style) = palette_command_availability(app, command);
                 let value = format!(
                     "{} {} · {} · {availability}",
@@ -2958,7 +3040,22 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
                 } else {
                     state_style
                 })
-            });
+            } else {
+                let hit = &content_hits[index - commands.len()];
+                let value = format!(
+                    "{} {} · {}:{}",
+                    if index == selection { "▶" } else { " " },
+                    hit.kind.label(),
+                    hit.path.display(),
+                    hit.line
+                );
+                Row::new([bounded_cell_text(&value, row_width)]).style(if index == selection {
+                    selected_style(app, true)
+                } else {
+                    palette.base()
+                })
+            }
+        });
         frame.render_widget(
             Table::new(rows, [Constraint::Min(1)]).block(list_block),
             regions[1],
@@ -2974,12 +3071,31 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         .borders(Borders::ALL)
         .border_style(Style::default().fg(palette.inactive_border));
     let detail_inner = detail_block.inner(regions[2]);
-    let detail_lines = command_palette_detail_lines(
-        app,
-        commands.get(selection),
-        detail_inner.width,
-        usize::from(detail_inner.height),
-    );
+    let detail_lines = if let Some(command) = commands.get(selection) {
+        command_palette_detail_lines(
+            app,
+            Some(command),
+            detail_inner.width,
+            usize::from(detail_inner.height),
+        )
+    } else if let Some(hit) = selection
+        .checked_sub(commands.len())
+        .and_then(|index| content_hits.get(index))
+    {
+        global_search_hit_detail_lines(
+            app,
+            hit,
+            detail_inner.width,
+            usize::from(detail_inner.height),
+        )
+    } else {
+        command_palette_detail_lines(
+            app,
+            None,
+            detail_inner.width,
+            usize::from(detail_inner.height),
+        )
+    };
     frame.render_widget(
         Paragraph::new(detail_lines)
             .block(detail_block)
@@ -2989,7 +3105,7 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(
         Paragraph::new(bounded_cell_text(
             if global_search {
-                "Regex (case-insensitive) · Esc close · Enter open/run · ↑/↓ select · Ctrl+U clear"
+                "Unified regex · actions + Yocto sources + image rootfs · Enter open/run · Esc close"
             } else {
                 "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear"
             },
@@ -17894,7 +18010,7 @@ fn help(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     let text = format!(
-        "{function_keys}\n\nAction catalog\n{catalog_actions}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Global case-insensitive regex search; Enter opens/runs the result; invalid syntax is explained inline\na Context actions (including local workspace search)   Esc Dashboard   q Quit\n\nTerminal writers and active text editors retain literal /; Terminal search is Ctrl+B /.\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+        "{function_keys}\n\nAction catalog\n{catalog_actions}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Unified case-insensitive regex: actions, recipes, conf, classes, layers, Poky/BitBake, logs, metadata, generated image rootfs\nEnter opens/runs the result; rootfs hits name their image; invalid syntax is explained inline\na Context actions (including local workspace search)   Esc Dashboard   q Quit\n\nTerminal writers and active text editors retain literal /; Terminal search is Ctrl+B /.\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
     );
     frame.render_widget(
         Paragraph::new(text)
@@ -25112,12 +25228,44 @@ mod tests {
         assert!(output.contains("Global Regex Search"), "{output}");
         assert!(output.contains("Open Packages"), "{output}");
         assert!(output.contains("Open SDK"), "{output}");
-        assert!(output.contains("Regex (case-insensitive)"), "{output}");
+        assert!(output.contains("Unified regex"), "{output}");
 
         app.command_palette_query = "[".into();
         let output = rendered_text(&app, 100, 25);
         assert!(output.contains("Invalid regular expression"), "{output}");
         assert!(output.contains("unclosed character class"), "{output}");
+    }
+
+    #[test]
+    fn global_search_renders_generated_image_service_with_provenance() {
+        let mut app = App::new(10, 1_000);
+        app.command_palette_open = true;
+        app.command_palette_mode = CommandPaletteMode::GlobalRegexSearch;
+        app.command_palette_query = "watchdog".into();
+        app.global_search_content = yoctui_model::GlobalSearchContentState::Ready {
+            generation: 1,
+            query: "watchdog".into(),
+            hits: vec![yoctui_model::GlobalSearchHit {
+                kind: yoctui_model::GlobalSearchContentKind::ImageRootfs,
+                path: "/build/tmp/work/qemux/core-image-demo/1.0/rootfs/usr/lib/systemd/system/watchdog.service".into(),
+                line: 4,
+                column: 13,
+                preview: "Description=watchdog service".into(),
+                image: Some("core-image-demo".into()),
+            }],
+            truncated: false,
+            searched_scopes: vec!["generated-work=/build/tmp/work".into()],
+        };
+        let output = rendered_text(&app, 120, 28);
+        for expected in [
+            "Generated image rootfs",
+            "watchdog.service",
+            "line 4 · column 13",
+            "Description=watchdog service",
+            "Generated image: core-image-demo",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
     }
 
     #[test]

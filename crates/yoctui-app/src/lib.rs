@@ -4076,20 +4076,25 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
         || app.command_palette_open
         || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
         || app.screen == yoctui_model::Screen::TerminalSessions
-        || app.task_filter_editing
-        || app.logs.searching
-        || app.internal_logs.searching
-        || app.metadata_searching
-        || app.dependency_graph_searching
-        || app.package_searching
-        || app.image_artifact_searching
-        || app.sdk_artifact_searching
-        || app.test_result_searching
-        || app.security.searching
-        || app.qa.searching
-        || app.compatibility_ui.searching
-        || app.raw_mode.search.editing
-        || app.raw_mode.output.searching
+        || (app.screen == yoctui_model::Screen::Tasks && app.task_filter_editing)
+        || (app.screen == yoctui_model::Screen::Logs
+            && (app.logs.searching || app.internal_logs.searching))
+        || (matches!(
+            app.screen,
+            yoctui_model::Screen::Recipes
+                | yoctui_model::Screen::Layers
+                | yoctui_model::Screen::Configuration
+        ) && app.metadata_searching)
+        || (app.screen == yoctui_model::Screen::Dependencies && app.dependency_graph_searching)
+        || (app.screen == yoctui_model::Screen::Packages && app.package_searching)
+        || (app.screen == yoctui_model::Screen::Images && app.image_artifact_searching)
+        || (app.screen == yoctui_model::Screen::Sdk && app.sdk_artifact_searching)
+        || (app.screen == yoctui_model::Screen::Testing && app.test_result_searching)
+        || (app.screen == yoctui_model::Screen::Security && app.security.searching)
+        || (app.screen == yoctui_model::Screen::Qa && app.qa.searching)
+        || (app.screen == yoctui_model::Screen::Compatibility && app.compatibility_ui.searching)
+        || (app.screen == yoctui_model::Screen::RawMode
+            && (app.raw_mode.search.editing || app.raw_mode.output.searching))
         || (app.screen == yoctui_model::Screen::RawMode
             && matches!(
                 app.raw_mode.view,
@@ -7680,6 +7685,14 @@ mod tests {
         app.metadata_searching = true;
         assert_eq!(global_search_action(&app, Input::Char('/')), None);
         app.metadata_searching = false;
+        app.screen = yoctui_model::Screen::Dashboard;
+        app.logs.searching = true;
+        assert_eq!(
+            global_search_action(&app, Input::Char('/')),
+            Some(Action::OpenGlobalSearch),
+            "a retained search owned by another screen must not suppress global search"
+        );
+        app.logs.searching = false;
         app.screen = yoctui_model::Screen::TerminalSessions;
         assert_eq!(global_search_action(&app, Input::Char('/')), None);
 

@@ -51,12 +51,25 @@ exact selection, scroll, follow, and subfocus state.
 Mouse wheel movement uses the same bounded scroll route. Dialogs trap focus;
 terminal and editor input is not interpreted as workspace navigation.
 
-`/` opens a menuconfig-style search across all workbench destinations and
-operator actions. Results include labels, descriptions, action IDs, menu paths,
-aliases, and keywords; `Enter` opens or runs the selected result. Invalid regex
-syntax is shown inline. Active editors, contextual searches, and Terminal
-Sessions retain literal `/`; local workspace searches remain available from the
-context action menu (`a`).
+`/` opens a menuconfig-style unified search. It matches workbench destinations
+and operator actions (labels, descriptions, action IDs, menu paths, aliases, and
+keywords) together with content from:
+
+- recipes (`.bb`, `.bbappend`, `.inc`), configuration (`.conf`), and classes
+  (`.bbclass`);
+- configured layer sources and scripts, plus Poky and BitBake sources;
+- build configuration, task logs, pkgdata, and deployed generated metadata;
+- every retained `tmp/work/.../rootfs/...` tree, including installed systemd
+  units and their contents. These hits name the originating image recipe.
+
+Results are case-insensitive Rust regex matches and show source kind,
+`path:line`, a bounded preview, and image provenance where applicable. `Enter`
+opens a content hit in `$EDITOR` or opens/runs an action. Invalid regex syntax is
+shown inline. Searches return at most 500 hits, skip binary/oversized files,
+never follow symlinks, and exclude `.git`, downloads, sstate, cache, and other
+large generated source caches. Active editors, contextual searches, and
+Terminal Sessions retain literal `/`; local workspace searches remain available
+from the context action menu (`a`).
 
 ## Terminal prefix
 

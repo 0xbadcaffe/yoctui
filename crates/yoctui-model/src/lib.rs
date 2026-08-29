@@ -10,6 +10,7 @@ mod daemon_state;
 mod dashboard;
 mod embedded_shell;
 mod focus;
+mod global_search;
 mod image;
 mod internal_log;
 mod keymap;
@@ -55,6 +56,7 @@ pub use daemon_state::*;
 pub use dashboard::*;
 pub use embedded_shell::*;
 pub use focus::*;
+pub use global_search::*;
 pub use image::*;
 pub use internal_log::*;
 pub use keymap::*;
@@ -3767,6 +3769,8 @@ pub struct App {
     pub command_palette_mode: CommandPaletteMode,
     pub command_palette_selection: usize,
     pub command_palette_query: String,
+    pub global_search_generation: u64,
+    pub global_search_content: GlobalSearchContentState,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub layer_selection: usize,
@@ -3947,6 +3951,8 @@ impl App {
             command_palette_mode: CommandPaletteMode::Commands,
             command_palette_selection: 0,
             command_palette_query: String::new(),
+            global_search_generation: 0,
+            global_search_content: GlobalSearchContentState::Idle,
             error_selection: 0,
             recipe_selection: 0,
             layer_selection: 0,
@@ -5177,6 +5183,19 @@ pub enum Action {
     Focus(FocusTarget),
     OpenCommandPalette,
     OpenGlobalSearch,
+    BeginGlobalContentSearch,
+    GlobalContentSearchLoaded {
+        generation: u64,
+        query: String,
+        hits: Vec<GlobalSearchHit>,
+        truncated: bool,
+        searched_scopes: Vec<String>,
+    },
+    GlobalContentSearchFailed {
+        generation: u64,
+        query: String,
+        message: String,
+    },
     SelectCommandPalette {
         delta: isize,
     },
@@ -9115,9 +9134,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.command_palette_mode = CommandPaletteMode::GlobalRegexSearch;
             app.command_palette_selection = 0;
             app.command_palette_query.clear();
+            app.global_search_content = GlobalSearchContentState::Idle;
         }
         Action::SelectCommandPalette { delta } => {
-            let count = app.filtered_command_palette_commands().len();
+            let count = app.filtered_command_palette_commands().len()
+                + if app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch {
+                    app.global_search_content.hits().len()
+                } else {
+                    0
+                };
             app.command_palette_selection = if delta.is_negative() {
                 app.command_palette_selection
                     .saturating_sub(delta.unsigned_abs())
@@ -9133,24 +9158,99 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             {
                 app.command_palette_query.push(character);
                 app.command_palette_selection = 0;
+                app.global_search_content = GlobalSearchContentState::Idle;
             }
         }
         Action::BackspaceCommandPaletteQuery if app.command_palette_open => {
             app.command_palette_query.pop();
             app.command_palette_selection = 0;
+            app.global_search_content = GlobalSearchContentState::Idle;
         }
         Action::ClearCommandPaletteQuery if app.command_palette_open => {
             app.command_palette_query.clear();
             app.command_palette_selection = 0;
+            app.global_search_content = GlobalSearchContentState::Idle;
+        }
+        Action::BeginGlobalContentSearch
+            if app.command_palette_open
+                && app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch
+                && !app.command_palette_query.trim().is_empty()
+                && app.command_palette_regex_error().is_none() =>
+        {
+            app.global_search_generation = app.global_search_generation.wrapping_add(1).max(1);
+            app.global_search_content = GlobalSearchContentState::Loading {
+                generation: app.global_search_generation,
+                query: app.command_palette_query.clone(),
+            };
+        }
+        Action::GlobalContentSearchLoaded {
+            generation,
+            query,
+            mut hits,
+            truncated,
+            mut searched_scopes,
+        } => {
+            if generation != app.global_search_generation
+                || query != app.command_palette_query
+                || app.command_palette_mode != CommandPaletteMode::GlobalRegexSearch
+            {
+                return None;
+            }
+            hits.retain(|hit| {
+                hit.path.is_absolute()
+                    && hit.line > 0
+                    && hit.column > 0
+                    && !hit.preview.chars().any(char::is_control)
+            });
+            hits.truncate(MAX_GLOBAL_SEARCH_HITS);
+            searched_scopes.sort();
+            searched_scopes.dedup();
+            app.global_search_content = GlobalSearchContentState::Ready {
+                generation,
+                query,
+                hits,
+                truncated,
+                searched_scopes,
+            };
+            let count = app.filtered_command_palette_commands().len()
+                + app.global_search_content.hits().len();
+            app.command_palette_selection =
+                app.command_palette_selection.min(count.saturating_sub(1));
+        }
+        Action::GlobalContentSearchFailed {
+            generation,
+            query,
+            message,
+        } => {
+            if generation == app.global_search_generation
+                && query == app.command_palette_query
+                && app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch
+            {
+                app.global_search_content = GlobalSearchContentState::Failed {
+                    generation,
+                    query,
+                    message,
+                };
+            }
         }
         Action::ActivateCommandPalette => {
             if !app.command_palette_open {
                 return None;
             }
-            let command = app
-                .filtered_command_palette_commands()
-                .get(app.command_palette_selection)
-                .cloned()?;
+            let commands = app.filtered_command_palette_commands();
+            if app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch
+                && app.command_palette_selection >= commands.len()
+            {
+                let hit = app
+                    .global_search_content
+                    .hits()
+                    .get(app.command_palette_selection - commands.len())
+                    .cloned()?;
+                app.command_palette_open = false;
+                synchronize_focus(app);
+                return Some(Effect::OpenInEditor(hit.path));
+            }
+            let command = commands.get(app.command_palette_selection).cloned()?;
             if !command.enabled() {
                 return None;
             }
@@ -16978,6 +17078,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::AppendCommandPaletteQuery(_)
         | Action::BackspaceCommandPaletteQuery
         | Action::ClearCommandPaletteQuery
+        | Action::BeginGlobalContentSearch
         | Action::AppendMetadataQuery(_)
         | Action::BackspaceMetadataQuery => {}
         Action::Notify(message) => app.notification = Some(message),
@@ -18290,6 +18391,53 @@ mod tests {
             app.command_palette_query.chars().count(),
             MAX_COMMAND_PALETTE_QUERY_CHARS
         );
+    }
+    #[test]
+    fn global_content_search_rejects_stale_results_and_opens_selected_file() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(&mut app, Action::OpenGlobalSearch);
+        for character in "service token".chars() {
+            let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
+        }
+        let _ = update(&mut app, Action::BeginGlobalContentSearch);
+        let generation = app.global_search_generation;
+        let query = app.command_palette_query.clone();
+        let hit = GlobalSearchHit {
+            kind: GlobalSearchContentKind::ImageRootfs,
+            path: "/build/tmp/work/machine/core-image-demo/1.0/rootfs/usr/lib/systemd/system/demo.service".into(),
+            line: 3,
+            column: 13,
+            preview: "Description=service token".into(),
+            image: Some("core-image-demo".into()),
+        };
+        let _ = update(
+            &mut app,
+            Action::GlobalContentSearchLoaded {
+                generation: generation.saturating_sub(1),
+                query: query.clone(),
+                hits: vec![hit.clone()],
+                truncated: false,
+                searched_scopes: vec!["stale".into()],
+            },
+        );
+        assert!(app.global_search_content.hits().is_empty());
+        let _ = update(
+            &mut app,
+            Action::GlobalContentSearchLoaded {
+                generation,
+                query,
+                hits: vec![hit.clone()],
+                truncated: false,
+                searched_scopes: vec!["generated image".into()],
+            },
+        );
+        assert_eq!(app.global_search_content.hits(), std::slice::from_ref(&hit));
+        app.command_palette_selection = app.filtered_command_palette_commands().len();
+        assert_eq!(
+            update(&mut app, Action::ActivateCommandPalette),
+            Some(Effect::OpenInEditor(hit.path))
+        );
+        assert!(!app.command_palette_open);
     }
     #[test]
     fn command_palette_empty_and_disabled_activation_are_inert() {

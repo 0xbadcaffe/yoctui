@@ -2195,6 +2195,7 @@ dependencies = [
  "crossterm",
  "libc",
  "ratatui",
+ "regex",
  "serde",
  "serde_json",
  "thiserror 2.0.19",
