@@ -7048,6 +7048,22 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
         Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
         Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
+        Input::Char('s') => Some(Action::BeginSelectedRecipeDevtoolWorkspaceShell),
+        Input::Char('E') => Some(Action::BeginSelectedRecipeDevtoolEditRecipe),
+        _ => None,
+    }
+}
+
+pub fn terminal_launch_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Left | Input::Char('k') | Input::Char('h') => {
+            Some(Action::SelectTerminalLaunchDestination { delta: -1 })
+        }
+        Input::Down | Input::Right | Input::Char('j') | Input::Char('l') | Input::Tab => {
+            Some(Action::SelectTerminalLaunchDestination { delta: 1 })
+        }
+        Input::Enter => Some(Action::ConfirmTerminalLaunch),
+        Input::Esc => Some(Action::CancelTerminalLaunch),
         _ => None,
     }
 }
@@ -14356,6 +14372,31 @@ mod tests {
         assert_eq!(
             terminal_workspace_action(&app, Input::Esc),
             Some(Action::TerminalCancelMode)
+        );
+    }
+
+    #[test]
+    fn devwork_terminal_dialog_keys_are_focus_trapped_and_recipe_routes_are_explicit() {
+        assert_eq!(
+            terminal_launch_dialog_action(Input::Down),
+            Some(Action::SelectTerminalLaunchDestination { delta: 1 })
+        );
+        assert_eq!(
+            terminal_launch_dialog_action(Input::Enter),
+            Some(Action::ConfirmTerminalLaunch)
+        );
+        assert_eq!(
+            terminal_launch_dialog_action(Input::Esc),
+            Some(Action::CancelTerminalLaunch)
+        );
+        assert_eq!(terminal_launch_dialog_action(Input::Char('x')), None);
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('s')),
+            Some(Action::BeginSelectedRecipeDevtoolWorkspaceShell)
+        );
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char('E')),
+            Some(Action::BeginSelectedRecipeDevtoolEditRecipe)
         );
     }
 

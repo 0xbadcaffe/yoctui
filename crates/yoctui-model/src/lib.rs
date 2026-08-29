@@ -1916,6 +1916,7 @@ pub enum Dialog {
     DevtoolDeployConfirmation(DevtoolDeployPlan),
     BbmaskEdit(PopupEditor),
     BbmaskConfirmation(String),
+    TerminalLaunch(TerminalLaunchDialog),
     RecipeEditor(RecipeEditor),
     QuitConfirmation,
 }
@@ -1993,6 +1994,7 @@ impl Dialog {
             | Self::DevtoolFinishPicker(_)
             | Self::DevtoolDeploy(_)
             | Self::BbmaskEdit(_)
+            | Self::TerminalLaunch(_)
             | Self::RecipeEditor(_) => false,
         }
     }
@@ -3814,6 +3816,7 @@ pub struct App {
     pub pty_selection: usize,
     pub pane_layout: PaneLayout,
     pub terminal: TerminalWorkbenchState,
+    pub detached_terminal: DetachedTerminalAvailability,
     pub keymap_preferences: KeymapPreferences,
     pub effective_keymap: EffectiveKeymap,
     pub keymap_chord: KeymapChordState,
@@ -3992,6 +3995,7 @@ impl App {
             pty_selection: 0,
             pane_layout: PaneLayout::new(PaneId(1)).expect("valid root pane"),
             terminal: TerminalWorkbenchState::default(),
+            detached_terminal: DetachedTerminalAvailability::default(),
             keymap_preferences: KeymapPreferences::default(),
             effective_keymap: EffectiveKeymap::default(),
             keymap_chord: KeymapChordState::default(),
@@ -5325,6 +5329,12 @@ pub enum Action {
     TerminalCreateBuildShell,
     TerminalCreateSelectedDevshell,
     TerminalCreateSelectedMenuconfig,
+    DetachedTerminalAvailabilityDetected(DetachedTerminalAvailability),
+    SelectTerminalLaunchDestination {
+        delta: isize,
+    },
+    ConfirmTerminalLaunch,
+    CancelTerminalLaunch,
     TerminalEnterCopyMode,
     TerminalMoveCopyRow {
         delta: isize,
@@ -6152,6 +6162,8 @@ pub enum Action {
     BeginSelectedRecipeMenuConfig,
     BeginSelectedRecipeCleanState,
     BeginSelectedRecipeDevshell,
+    BeginSelectedRecipeDevtoolWorkspaceShell,
+    BeginSelectedRecipeDevtoolEditRecipe,
     BeginSelectedRecipeDiffconfig,
     BeginSelectedRecipeDiffsigs,
     BeginSelectedRecipeSignatures,
@@ -6973,7 +6985,7 @@ fn selected_recipe_identity(app: &App) -> Result<RecipeIdentity, &'static str> {
     })
 }
 
-fn terminal_creation_effect(app: &mut App, task: Option<&str>) -> Option<Effect> {
+fn terminal_creation_request(app: &mut App, task: Option<&str>) -> Option<TerminalLaunchRequest> {
     if app.daemon.status != ClientReplicaStatus::Current {
         app.notification =
             Some("Reconnect to a current daemon replica before creating a terminal.".into());
@@ -6989,13 +7001,13 @@ fn terminal_creation_effect(app: &mut App, task: Option<&str>) -> Option<Effect>
         return None;
     };
     if task.is_none() {
-        return Some(Effect::Terminal(TerminalEffect::Create {
+        return Some(TerminalLaunchRequest {
             name: "build shell".into(),
             kind: TerminalCreationKind::BuildShell,
             cwd,
             program: PathBuf::from("/bin/sh"),
             arguments: Vec::new(),
-        }));
+        });
     }
 
     let task = task.expect("the build-shell case returned above");
@@ -7033,7 +7045,7 @@ fn terminal_creation_effect(app: &mut App, task: Option<&str>) -> Option<Effect>
         app.notification = Some(error.to_string());
         return None;
     }
-    Some(Effect::Terminal(TerminalEffect::Create {
+    Some(TerminalLaunchRequest {
         name: format!("{task}:{}", recipe.name),
         kind: if task == "devshell" {
             TerminalCreationKind::Devshell
@@ -7048,7 +7060,75 @@ fn terminal_creation_effect(app: &mut App, task: Option<&str>) -> Option<Effect>
             "-c".into(),
             task.into(),
         ],
-    }))
+    })
+}
+
+fn open_terminal_launch(app: &mut App, request: TerminalLaunchRequest) {
+    open_dialog(
+        app,
+        Dialog::TerminalLaunch(TerminalLaunchDialog {
+            request,
+            destination: TerminalLaunchDestination::Embedded,
+        }),
+    );
+}
+
+fn begin_terminal_creation(app: &mut App, task: Option<&str>) {
+    if let Some(request) = terminal_creation_request(app, task) {
+        open_terminal_launch(app, request);
+    }
+}
+
+fn devtool_terminal_request(app: &mut App, edit_recipe: bool) -> Option<TerminalLaunchRequest> {
+    let identity = match selected_recipe_identity(app) {
+        Ok(identity) => identity,
+        Err(message) => {
+            app.notification = Some(message.to_owned());
+            return None;
+        }
+    };
+    let Some(status) = app.devtool_statuses.get(&identity) else {
+        app.notification =
+            Some("Refresh Devtool status with t before starting an interactive session.".into());
+        return None;
+    };
+    if status.capability != DevtoolCapability::Available || status.error.is_some() {
+        app.notification = Some(
+            status
+                .disabled_reason(DevtoolAction::ModifyOrEdit)
+                .unwrap_or_else(|| "Devtool interactive editing is unavailable.".into()),
+        );
+        return None;
+    }
+    if edit_recipe {
+        let Some(cwd) = app.workspace.build_dir.clone() else {
+            app.notification = Some("No authoritative build directory is available.".into());
+            return None;
+        };
+        return Some(TerminalLaunchRequest {
+            name: format!("devtool edit-recipe {}", identity.name),
+            kind: TerminalCreationKind::Utility,
+            cwd,
+            program: PathBuf::from("/usr/bin/env"),
+            arguments: vec!["devtool".into(), "edit-recipe".into(), identity.name],
+        });
+    }
+    let source_path = match &status.workspace {
+        DevtoolWorkspace::Present { source_path, .. } => source_path.clone(),
+        DevtoolWorkspace::NotMember | DevtoolWorkspace::MissingDirectory { .. } => {
+            app.notification = Some(
+                "Run Devtool modify first; no authoritative workspace source is available.".into(),
+            );
+            return None;
+        }
+    };
+    Some(TerminalLaunchRequest {
+        name: format!("devtool workspace {}", identity.name),
+        kind: TerminalCreationKind::DevtoolShell,
+        cwd: source_path,
+        program: PathBuf::from("/bin/sh"),
+        arguments: Vec::new(),
+    })
 }
 
 fn filtered_config_identities(app: &App) -> Vec<VariableIdentity> {
@@ -8993,13 +9073,57 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some("This client does not own the terminal writer lease.".into());
         }
         Action::TerminalCreateBuildShell => {
-            return terminal_creation_effect(app, None);
+            begin_terminal_creation(app, None);
         }
         Action::TerminalCreateSelectedDevshell => {
-            return terminal_creation_effect(app, Some("devshell"));
+            begin_terminal_creation(app, Some("devshell"));
         }
         Action::TerminalCreateSelectedMenuconfig => {
-            return terminal_creation_effect(app, Some("menuconfig"));
+            begin_terminal_creation(app, Some("menuconfig"));
+        }
+        Action::DetachedTerminalAvailabilityDetected(availability) => {
+            app.detached_terminal = availability;
+        }
+        Action::SelectTerminalLaunchDestination { delta } => {
+            let detached_available = matches!(
+                app.detached_terminal,
+                DetachedTerminalAvailability::Available { .. }
+            );
+            if let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog_mut() {
+                dialog.destination = match (dialog.destination, delta.is_positive()) {
+                    (TerminalLaunchDestination::Embedded, true) if detached_available => {
+                        TerminalLaunchDestination::Detached
+                    }
+                    (TerminalLaunchDestination::Detached, false) => {
+                        TerminalLaunchDestination::Embedded
+                    }
+                    (current, _) => current,
+                };
+            }
+        }
+        Action::ConfirmTerminalLaunch => {
+            if let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog().cloned() {
+                close_dialog(app);
+                return Some(match dialog.destination {
+                    TerminalLaunchDestination::Embedded => {
+                        Effect::Terminal(TerminalEffect::Create {
+                            name: dialog.request.name,
+                            kind: dialog.request.kind,
+                            cwd: dialog.request.cwd,
+                            program: dialog.request.program,
+                            arguments: dialog.request.arguments,
+                        })
+                    }
+                    TerminalLaunchDestination::Detached => {
+                        Effect::LaunchDetachedTerminal(dialog.request)
+                    }
+                });
+            }
+        }
+        Action::CancelTerminalLaunch => {
+            if matches!(app.active_dialog(), Some(Dialog::TerminalLaunch(_))) {
+                close_dialog(app);
+            }
         }
         Action::TerminalEnterCopyMode => {
             if let Some(row) = app
@@ -15019,13 +15143,23 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             begin_recipe_task(app, Some("clean".into()), false);
         }
         Action::BeginSelectedRecipeMenuConfig => {
-            begin_recipe_task(app, Some("menuconfig".into()), false);
+            begin_terminal_creation(app, Some("menuconfig"));
         }
         Action::BeginSelectedRecipeCleanState => {
             begin_recipe_task(app, Some("cleansstate".into()), false);
         }
         Action::BeginSelectedRecipeDevshell => {
-            begin_recipe_task(app, Some("devshell".into()), false);
+            begin_terminal_creation(app, Some("devshell"));
+        }
+        Action::BeginSelectedRecipeDevtoolWorkspaceShell => {
+            if let Some(request) = devtool_terminal_request(app, false) {
+                open_terminal_launch(app, request);
+            }
+        }
+        Action::BeginSelectedRecipeDevtoolEditRecipe => {
+            if let Some(request) = devtool_terminal_request(app, true) {
+                open_terminal_launch(app, request);
+            }
         }
         Action::BeginSelectedRecipeDiffconfig => {
             begin_recipe_task(app, Some("diffconfig".into()), false);
@@ -17568,6 +17702,7 @@ pub enum Effect {
         attached: bool,
     },
     Terminal(TerminalEffect),
+    LaunchDetachedTerminal(TerminalLaunchRequest),
     OpenInEditor(PathBuf),
     CopyToClipboard(String),
     OpenWorkspaceEditor {
@@ -19413,6 +19548,8 @@ mod tests {
     #[test]
     fn recipe_bitbake_action_uses_authoritative_tasks_picker_and_confirmation() {
         let mut app = App::new(10, 1_000);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.workspace.build_dir = Some("/work/build".into());
         app.workspace.recipes.push(Recipe {
             name: "busybox".into(),
             ..Recipe::default()
@@ -19441,8 +19578,6 @@ mod tests {
         let actions = [
             (Action::BeginSelectedRecipeClean, "clean"),
             (Action::BeginSelectedRecipeCleanState, "cleansstate"),
-            (Action::BeginSelectedRecipeMenuConfig, "menuconfig"),
-            (Action::BeginSelectedRecipeDevshell, "devshell"),
             (Action::BeginSelectedRecipeDiffconfig, "diffconfig"),
             (Action::BeginSelectedRecipeDiffsigs, "diffsigs"),
         ];
@@ -19456,6 +19591,18 @@ mod tests {
                     task: Some(task),
                     force: false,
                 })) if targets == &vec!["busybox".to_owned()] && task == expected
+            ));
+        }
+        for (action, expected) in [
+            (Action::BeginSelectedRecipeMenuConfig, "menuconfig"),
+            (Action::BeginSelectedRecipeDevshell, "devshell"),
+        ] {
+            app.dialogs.clear();
+            assert_eq!(update(&mut app, action), None);
+            assert!(matches!(
+                app.active_dialog(),
+                Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, destination: TerminalLaunchDestination::Embedded }))
+                    if request.name == format!("{expected}:busybox")
             ));
         }
 
@@ -19483,6 +19630,8 @@ mod tests {
     #[test]
     fn recipe_bitbake_action_rejects_unavailable_and_malformed_tasks() {
         let mut app = App::new(10, 1_000);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.workspace.build_dir = Some("/work/build".into());
         app.workspace.recipes.push(Recipe {
             name: "demo".into(),
             ..Recipe::default()
@@ -19490,7 +19639,7 @@ mod tests {
         let _ = update(&mut app, Action::BeginSelectedRecipeDevshell);
         assert_eq!(
             app.notification.as_deref(),
-            Some("Load selected recipe metadata with Enter before choosing a task.")
+            Some("Load authoritative recipe tasks with Enter before opening an interactive task.")
         );
         app.recipe_metadata.insert(
             "demo".into(),
@@ -26439,6 +26588,17 @@ mod tests {
         );
         assert_eq!(
             update(&mut app, Action::TerminalCreateSelectedDevshell),
+            None
+        );
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
+                destination: TerminalLaunchDestination::Embedded,
+                ..
+            }))
+        ));
+        assert_eq!(
+            update(&mut app, Action::ConfirmTerminalLaunch),
             Some(Effect::Terminal(TerminalEffect::Create {
                 name: "devshell:busybox".into(),
                 kind: TerminalCreationKind::Devshell,
@@ -26495,5 +26655,106 @@ mod tests {
             update(&mut app, Action::TerminalBeginKill),
             Some(Effect::Terminal(TerminalEffect::Close { session_id: 41 }))
         );
+    }
+
+    #[test]
+    fn devwork_terminal_chooser_is_zero_spawn_defaults_embedded_and_gates_detached() {
+        let mut app = App::new(10, 1_000);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.workspace.build_dir = Some("/work/build".into());
+        assert_eq!(update(&mut app, Action::TerminalCreateBuildShell), None);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
+                destination: TerminalLaunchDestination::Embedded,
+                ..
+            }))
+        ));
+        let _ = update(
+            &mut app,
+            Action::SelectTerminalLaunchDestination { delta: 1 },
+        );
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
+                destination: TerminalLaunchDestination::Embedded,
+                ..
+            }))
+        ));
+        assert_eq!(update(&mut app, Action::CancelTerminalLaunch), None);
+        assert!(app.active_dialog().is_none());
+
+        let _ = update(
+            &mut app,
+            Action::DetachedTerminalAvailabilityDetected(DetachedTerminalAvailability::Available {
+                launcher: "xterm".into(),
+            }),
+        );
+        let _ = update(&mut app, Action::TerminalCreateBuildShell);
+        let _ = update(
+            &mut app,
+            Action::SelectTerminalLaunchDestination { delta: 1 },
+        );
+        assert!(matches!(
+            update(&mut app, Action::ConfirmTerminalLaunch),
+            Some(Effect::LaunchDetachedTerminal(TerminalLaunchRequest {
+                kind: TerminalCreationKind::BuildShell,
+                ..
+            }))
+        ));
+        assert!(app.active_dialog().is_none());
+    }
+
+    #[test]
+    fn devwork_terminal_devtool_routes_use_authoritative_recipe_and_workspace() {
+        let mut app = App::new(10, 1_000);
+        let identity = RecipeIdentity {
+            name: "busybox".into(),
+            file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
+        };
+        app.workspace.build_dir = Some("/work/build".into());
+        app.workspace.recipes.push(Recipe {
+            name: identity.name.clone(),
+            file: Some(identity.file.clone()),
+            ..Recipe::default()
+        });
+        app.devtool_statuses.insert(
+            identity.clone(),
+            DevtoolStatus {
+                identity: identity.clone(),
+                capability: DevtoolCapability::Available,
+                workspace: DevtoolWorkspace::Present {
+                    source_path: "/work/build/workspace/sources/busybox".into(),
+                    recipe_file: Some(identity.file.clone()),
+                },
+                git: DevtoolGitState::Available {
+                    branch: Some("devtool".into()),
+                    head: Some("abc123".into()),
+                    modified: 0,
+                    untracked: 0,
+                    conflicted: 0,
+                },
+                error: None,
+            },
+        );
+        assert_eq!(
+            update(&mut app, Action::BeginSelectedRecipeDevtoolWorkspaceShell),
+            None
+        );
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, .. }))
+                if request.kind == TerminalCreationKind::DevtoolShell
+                    && request.cwd == PathBuf::from("/work/build/workspace/sources/busybox")
+                    && request.program == PathBuf::from("/bin/sh")
+        ));
+        let _ = update(&mut app, Action::CancelTerminalLaunch);
+        let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolEditRecipe);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, .. }))
+                if request.kind == TerminalCreationKind::Utility
+                    && request.arguments == vec!["devtool", "edit-recipe", "busybox"]
+        ));
     }
 }

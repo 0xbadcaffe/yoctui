@@ -19,8 +19,11 @@ by that broad completion label: the prior in-TUI RecipeEditor was append-only,
 and interactive shell routes do not ask the user to choose embedded versus
 detached execution. The editor gap is now closed with reducer-owned
 language-aware editing, search, diagnostics, exact-recipe builds, and atomic
-conflict-safe saves. `DEVWORK-TERMINAL-001` is active. Overall required registry
-progress is now 589/592 (99.5%).
+conflict-safe saves. The terminal gap is also closed with one zero-spawn chooser
+for embedded daemon PTYs and allowlisted detached graphical terminals across
+build shell, devshell, menuconfig, and Devtool interactive routes.
+`DEVWORK-VALIDATION-001` is active. Overall required registry progress is now
+590/592 (99.7%).
 
 M22 Concept-to-Live UI Parity is complete. The gap audit found that M21's
 anchor-only fixture checks and broad live scenario labels overstated

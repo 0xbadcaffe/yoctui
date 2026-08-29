@@ -603,6 +603,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::OpenInEditor(_)
         | Effect::CopyToClipboard(_)
         | Effect::Terminal(_)
+        | Effect::LaunchDetachedTerminal(_)
         | Effect::OpenWorkspaceEditor { .. }
         | Effect::LoadLayerBrowserDirectory { .. }
         | Effect::LoadLayerBrowserPreview(_)
@@ -880,6 +881,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         | Dialog::ConfigEditConfirmation(_)
         | Dialog::BbmaskEdit(_)
         | Dialog::BbmaskConfirmation(_)
+        | Dialog::TerminalLaunch(_)
         | Dialog::RecipeEditor(_)
         | Dialog::QuitConfirmation => WorkspaceEffectRequirement::ClientLocal,
         Dialog::BuildOptions | Dialog::BuildTarget { .. } => {

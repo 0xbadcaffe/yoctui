@@ -53,13 +53,13 @@ use yoctui_app::{
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
     settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
-    test_actions_for_runner_event, test_cancellation_confirmation_action,
-    test_comparison_confirmation_action, test_comparison_dialog_action,
-    test_comparison_workspace_action, test_junit_confirmation_action, test_junit_dialog_action,
-    test_launch_confirmation_action, test_launch_dialog_action,
-    test_result_actions_for_runner_event, test_result_import_dialog_action,
-    test_results_import_action, test_results_workspace_action, testing_workspace_action,
-    wic_actions_for_runner_event, wic_cancellation_confirmation_action,
+    terminal_launch_dialog_action, test_actions_for_runner_event,
+    test_cancellation_confirmation_action, test_comparison_confirmation_action,
+    test_comparison_dialog_action, test_comparison_workspace_action,
+    test_junit_confirmation_action, test_junit_dialog_action, test_launch_confirmation_action,
+    test_launch_dialog_action, test_result_actions_for_runner_event,
+    test_result_import_dialog_action, test_results_import_action, test_results_workspace_action,
+    testing_workspace_action, wic_actions_for_runner_event, wic_cancellation_confirmation_action,
     wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
     wic_write_confirmation_action, wic_write_phrase_action, workspace_collection_action,
 };
@@ -8087,6 +8087,100 @@ fn initialized_path_directories() -> Vec<PathBuf> {
         .unwrap_or_default()
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct DetachedTerminalLauncher {
+    program: PathBuf,
+    command_separator: &'static str,
+}
+
+fn executable_on_initialized_path(name: &str) -> Option<PathBuf> {
+    initialized_path_directories()
+        .into_iter()
+        .map(|directory| directory.join(name))
+        .find(|candidate| fs::metadata(candidate).is_ok_and(|metadata| metadata.is_file()))
+}
+
+fn detect_detached_terminal_launcher() -> Result<DetachedTerminalLauncher, String> {
+    if env::var_os("DISPLAY").is_none() && env::var_os("WAYLAND_DISPLAY").is_none() {
+        return Err("no DISPLAY or WAYLAND_DISPLAY is available".into());
+    }
+    for (name, separator) in [
+        ("x-terminal-emulator", "-e"),
+        ("gnome-terminal", "--"),
+        ("konsole", "-e"),
+        ("kgx", "--"),
+        ("xterm", "-e"),
+    ] {
+        if let Some(program) = executable_on_initialized_path(name) {
+            return Ok(DetachedTerminalLauncher {
+                program,
+                command_separator: separator,
+            });
+        }
+    }
+    Err("no supported terminal emulator was found on PATH".into())
+}
+
+fn detached_terminal_availability() -> yoctui_model::DetachedTerminalAvailability {
+    match detect_detached_terminal_launcher() {
+        Ok(launcher) => yoctui_model::DetachedTerminalAvailability::Available {
+            launcher: launcher
+                .program
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("terminal")
+                .into(),
+        },
+        Err(reason) => yoctui_model::DetachedTerminalAvailability::Unavailable { reason },
+    }
+}
+
+fn detached_terminal_command(
+    launcher: &DetachedTerminalLauncher,
+    request: &yoctui_model::TerminalLaunchRequest,
+) -> Result<ProcessCommand> {
+    if !request.cwd.is_absolute() || !request.cwd.is_dir() {
+        anyhow::bail!(
+            "detached terminal working directory is unavailable: {}",
+            request.cwd.display()
+        );
+    }
+    if !request.program.is_absolute() {
+        anyhow::bail!("detached terminal command must be an absolute executable");
+    }
+    let program = request
+        .program
+        .canonicalize()
+        .with_context(|| format!("could not resolve {}", request.program.display()))?;
+    let metadata = fs::metadata(&program)?;
+    if !metadata.is_file() {
+        anyhow::bail!("detached terminal command is not a regular file");
+    }
+    let mut command = ProcessCommand::new(&launcher.program);
+    command
+        .arg(launcher.command_separator)
+        .arg(program)
+        .args(&request.arguments)
+        .current_dir(&request.cwd)
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    Ok(command)
+}
+
+fn launch_detached_terminal(request: &yoctui_model::TerminalLaunchRequest) -> Result<()> {
+    let launcher = detect_detached_terminal_launcher().map_err(anyhow::Error::msg)?;
+    detached_terminal_command(&launcher, request)?
+        .spawn()
+        .with_context(|| {
+            format!(
+                "could not spawn detached terminal {}",
+                launcher.program.display()
+            )
+        })?;
+    Ok(())
+}
+
 async fn route_independent_maintenance_effect(
     guard: &TerminalGuard,
     app: &mut App,
@@ -10416,6 +10510,10 @@ async fn tui(
     } else {
         App::new_unconfigured(log_entries, log_bytes)
     };
+    let _ = update(
+        &mut app,
+        Action::DetachedTerminalAvailabilityDetected(detached_terminal_availability()),
+    );
     if build_dir_configured {
         app.workspace.build_dir = Some(build_dir.clone());
     }
@@ -11914,6 +12012,35 @@ async fn tui(
                             unreachable!()
                         };
                         begin_qemu_cancellation(&mut app, &mut qemu_operation, id);
+                    }
+                } else if matches!(app.active_dialog(), Some(Dialog::TerminalLaunch(_))) {
+                    let effect = terminal_launch_dialog_action(input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
+                    match effect {
+                        Some(effect @ Effect::Terminal(_)) => {
+                            let _ = submit_daemon_effect(&mut daemon_runtime, &mut app, &effect);
+                        }
+                        Some(Effect::LaunchDetachedTerminal(request)) => {
+                            match launch_detached_terminal(&request) {
+                                Ok(()) => {
+                                    app.notification = Some(format!(
+                                        "Detached terminal started for {}.",
+                                        request.name
+                                    ));
+                                }
+                                Err(error) => {
+                                    app.notification =
+                                        Some(format!("Could not start detached terminal: {error}"));
+                                    let _ = update(
+                                        &mut app,
+                                        Action::DetachedTerminalAvailabilityDetected(
+                                            detached_terminal_availability(),
+                                        ),
+                                    );
+                                }
+                            }
+                        }
+                        _ => {}
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
                     let editor = app.active_dialog().and_then(|dialog| match dialog {
@@ -13987,6 +14114,42 @@ mod tests {
         assert!(error.to_string().contains("symlink"));
         assert_eq!(fs::read_to_string(&outside).unwrap(), "outside\n");
         fs::remove_file(&outside).unwrap();
+    }
+
+    #[test]
+    fn devwork_terminal_detached_plan_preserves_argv_without_shell_evaluation() {
+        let directory = DevworkTempDir::new();
+        let launcher = DetachedTerminalLauncher {
+            program: "/usr/bin/xterm".into(),
+            command_separator: "-e",
+        };
+        let request = yoctui_model::TerminalLaunchRequest {
+            name: "devtool edit-recipe busybox".into(),
+            kind: yoctui_model::TerminalCreationKind::Utility,
+            cwd: directory.0.clone(),
+            program: "/usr/bin/env".into(),
+            arguments: vec![
+                "devtool".into(),
+                "edit-recipe".into(),
+                "busybox;touch /tmp/not-executed".into(),
+            ],
+        };
+        let command = detached_terminal_command(&launcher, &request).unwrap();
+        assert_eq!(
+            command.get_program(),
+            std::ffi::OsStr::new("/usr/bin/xterm")
+        );
+        let arguments = command
+            .get_args()
+            .map(|argument| argument.to_string_lossy().into_owned())
+            .collect::<Vec<_>>();
+        assert_eq!(arguments[0], "-e");
+        assert!(arguments[1].ends_with("/env"));
+        assert_eq!(
+            &arguments[2..],
+            ["devtool", "edit-recipe", "busybox;touch /tmp/not-executed"]
+        );
+        assert!(!arguments.iter().any(|argument| argument == "-c"));
     }
 
     #[test]

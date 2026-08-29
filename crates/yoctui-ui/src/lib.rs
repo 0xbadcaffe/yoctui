@@ -28,6 +28,7 @@ use ratatui::{
 };
 use std::{
     collections::HashMap,
+    path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tui_piechart::{LegendPosition, PieChart, PieSlice};
@@ -649,8 +650,15 @@ fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
         .any(|extension| file_name.ends_with(&format!(".{extension}")));
     let markdown = file_name.ends_with(".md") || file_name.ends_with(".markdown");
     let palette = ThemePalette::for_app(app);
-    if palette.attribute_only || (!bitbake_source && !markdown) {
+    if palette.attribute_only {
         return Text::from(content.to_owned());
+    }
+    if !bitbake_source && !markdown {
+        return generic_source_preview(
+            content,
+            yoctui_model::SourceLanguage::from_path(Path::new(file_name)),
+            app,
+        );
     }
     Text::from(
         content
@@ -718,6 +726,157 @@ fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
                         format!("#{comment}"),
                         Style::default().fg(palette.syntax_comment),
                     ));
+                }
+                Line::from(spans)
+            })
+            .collect::<Vec<_>>(),
+    )
+}
+
+fn generic_source_preview(
+    content: &str,
+    language: yoctui_model::SourceLanguage,
+    app: &App,
+) -> Text<'static> {
+    let palette = ThemePalette::for_app(app);
+    let comment_prefix = match language {
+        yoctui_model::SourceLanguage::C
+        | yoctui_model::SourceLanguage::Cpp
+        | yoctui_model::SourceLanguage::Rust
+        | yoctui_model::SourceLanguage::JavaScript
+        | yoctui_model::SourceLanguage::TypeScript => Some("//"),
+        yoctui_model::SourceLanguage::Python
+        | yoctui_model::SourceLanguage::Shell
+        | yoctui_model::SourceLanguage::Yaml
+        | yoctui_model::SourceLanguage::Make => Some("#"),
+        _ => None,
+    };
+    let keywords: &[&str] = match language {
+        yoctui_model::SourceLanguage::C | yoctui_model::SourceLanguage::Cpp => &[
+            "auto",
+            "bool",
+            "break",
+            "case",
+            "char",
+            "class",
+            "const",
+            "continue",
+            "default",
+            "do",
+            "double",
+            "else",
+            "enum",
+            "extern",
+            "float",
+            "for",
+            "if",
+            "int",
+            "long",
+            "namespace",
+            "private",
+            "protected",
+            "public",
+            "return",
+            "short",
+            "signed",
+            "sizeof",
+            "static",
+            "struct",
+            "switch",
+            "template",
+            "typedef",
+            "union",
+            "unsigned",
+            "using",
+            "virtual",
+            "void",
+            "volatile",
+            "while",
+        ],
+        yoctui_model::SourceLanguage::Rust => &[
+            "as", "async", "await", "break", "const", "continue", "crate", "else", "enum",
+            "extern", "false", "fn", "for", "if", "impl", "in", "let", "loop", "match", "mod",
+            "move", "mut", "pub", "ref", "return", "self", "Self", "static", "struct", "super",
+            "trait", "true", "type", "unsafe", "use", "where", "while",
+        ],
+        yoctui_model::SourceLanguage::Python => &[
+            "and", "as", "assert", "async", "await", "break", "class", "continue", "def", "del",
+            "elif", "else", "except", "False", "finally", "for", "from", "global", "if", "import",
+            "in", "is", "lambda", "None", "nonlocal", "not", "or", "pass", "raise", "return",
+            "True", "try", "while", "with", "yield",
+        ],
+        yoctui_model::SourceLanguage::Shell => &[
+            "case", "do", "done", "elif", "else", "esac", "export", "fi", "for", "function", "if",
+            "in", "local", "return", "then", "while",
+        ],
+        yoctui_model::SourceLanguage::JavaScript | yoctui_model::SourceLanguage::TypeScript => &[
+            "async",
+            "await",
+            "break",
+            "case",
+            "catch",
+            "class",
+            "const",
+            "continue",
+            "default",
+            "delete",
+            "do",
+            "else",
+            "export",
+            "extends",
+            "false",
+            "finally",
+            "for",
+            "from",
+            "function",
+            "if",
+            "import",
+            "in",
+            "instanceof",
+            "interface",
+            "let",
+            "new",
+            "null",
+            "return",
+            "static",
+            "super",
+            "switch",
+            "this",
+            "throw",
+            "true",
+            "try",
+            "type",
+            "typeof",
+            "var",
+            "void",
+            "while",
+            "yield",
+        ],
+        _ => &[],
+    };
+    Text::from(
+        content
+            .lines()
+            .map(|line| {
+                if comment_prefix.is_some_and(|prefix| line.trim_start().starts_with(prefix)) {
+                    return Line::styled(
+                        line.to_owned(),
+                        Style::default().fg(palette.syntax_comment),
+                    );
+                }
+                let mut spans = Vec::new();
+                for token in line.split_inclusive(char::is_whitespace) {
+                    let word = token.trim_matches(|character: char| {
+                        character.is_whitespace() || "(){}[];,:*&<>".contains(character)
+                    });
+                    let style = if keywords.contains(&word) {
+                        Style::default().fg(palette.syntax_keyword)
+                    } else if word.starts_with(['\"', '\'']) {
+                        Style::default().fg(palette.syntax_value)
+                    } else {
+                        Style::default()
+                    };
+                    spans.push(Span::styled(token.to_owned(), style));
                 }
                 Line::from(spans)
             })
@@ -954,7 +1113,7 @@ fn footer_shortcuts(app: &App) -> String {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | z task/Z signatures | e provider | o logs | p patches | b/f tasks | V CVE | X SPDX | d modify | u update | F finish | P deploy | D reset | / search"
+            "↑/↓ select | Enter inspect | e provider | o logs | p patches | b/f tasks | v devshell | s workspace shell | E edit-recipe | d modify | u update | F finish | P deploy | D reset | / search"
         }
         Screen::Packages => {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
@@ -2162,6 +2321,72 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 format!("{} patch review", picker.recipe),
                 DialogTone::Standard,
             )),
+            popup,
+        );
+    } else if let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog() {
+        let width = area.width.saturating_sub(8).clamp(50, 96);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(12) / 2,
+            width,
+            12,
+        );
+        clear_popup(frame, app, popup);
+        let detached = match &app.detached_terminal {
+            yoctui_model::DetachedTerminalAvailability::Available { launcher } => {
+                format!("Detached terminal — {launcher}")
+            }
+            yoctui_model::DetachedTerminalAvailability::Unavailable { reason } => {
+                format!("Detached terminal — unavailable: {reason}")
+            }
+        };
+        let command = std::iter::once(dialog.request.program.display().to_string())
+            .chain(dialog.request.arguments.iter().cloned())
+            .collect::<Vec<_>>()
+            .join(" ");
+        frame.render_widget(
+            Paragraph::new(vec![
+                Line::from(format!("Session: {}", dialog.request.name)),
+                Line::from(format!("Directory: {}", dialog.request.cwd.display())),
+                Line::from(format!("Command: {command}")),
+                Line::from(""),
+                Line::styled(
+                    format!(
+                        "{} Embedded in Yoctui (daemon-owned PTY)",
+                        if dialog.destination == yoctui_model::TerminalLaunchDestination::Embedded {
+                            "▶"
+                        } else {
+                            " "
+                        }
+                    ),
+                    selected_style(
+                        app,
+                        dialog.destination == yoctui_model::TerminalLaunchDestination::Embedded,
+                    ),
+                ),
+                Line::styled(
+                    format!(
+                        "{} {detached}",
+                        if dialog.destination == yoctui_model::TerminalLaunchDestination::Detached {
+                            "▶"
+                        } else {
+                            " "
+                        }
+                    ),
+                    selected_style(
+                        app,
+                        dialog.destination == yoctui_model::TerminalLaunchDestination::Detached,
+                    ),
+                ),
+                Line::from(""),
+                Line::from("↑/↓ choose · Enter launch · Esc cancel without spawning"),
+            ])
+            .block(dialog_block(
+                app,
+                "Choose terminal destination",
+                DialogTone::Confirmation,
+            ))
+            .wrap(Wrap { trim: true }),
             popup,
         );
     } else if let Some(Dialog::RecipeTaskConfirmation(request)) = app.active_dialog() {
@@ -27211,6 +27436,35 @@ mod tests {
         assert!(output.contains("Workspace file tree: busybox"));
         assert!(output.contains("int main() {}"));
         assert!(output.contains("Ctrl+B build recipe"));
+    }
+    #[test]
+    fn devwork_terminal_renders_destination_authority_and_zero_spawn_cancel_hint() {
+        let mut app = App::new(10, 1_000);
+        app.detached_terminal = yoctui_model::DetachedTerminalAvailability::Available {
+            launcher: "x-terminal-emulator".into(),
+        };
+        app.dialogs
+            .push_back(Dialog::TerminalLaunch(yoctui_model::TerminalLaunchDialog {
+                request: yoctui_model::TerminalLaunchRequest {
+                    name: "devshell:busybox".into(),
+                    kind: yoctui_model::TerminalCreationKind::Devshell,
+                    cwd: "/work/build".into(),
+                    program: "/usr/bin/env".into(),
+                    arguments: vec![
+                        "bitbake".into(),
+                        "busybox".into(),
+                        "-c".into(),
+                        "devshell".into(),
+                    ],
+                },
+                destination: yoctui_model::TerminalLaunchDestination::Embedded,
+            }));
+        let output = rendered_text(&app, 120, 30);
+        assert!(output.contains("Choose terminal destination"), "{output}");
+        assert!(output.contains("Embedded in Yoctui"), "{output}");
+        assert!(output.contains("x-terminal-emulator"), "{output}");
+        assert!(output.contains("bitbake busybox -c devshell"), "{output}");
+        assert!(output.contains("cancel without spawning"), "{output}");
     }
     #[test]
     fn ux_list_tree_layer_browser_renders_external_state_and_numbered_preview() {

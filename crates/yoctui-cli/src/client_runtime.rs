@@ -188,6 +188,12 @@ impl InteractiveDaemonRuntime {
                         yoctui_model::TerminalCreationKind::BuildShell => {
                             yoctui_protocol::daemon::PtyKind::BuildShell
                         }
+                        yoctui_model::TerminalCreationKind::DevtoolShell => {
+                            yoctui_protocol::daemon::PtyKind::DevtoolShell
+                        }
+                        yoctui_model::TerminalCreationKind::Utility => {
+                            yoctui_protocol::daemon::PtyKind::Utility
+                        }
                         yoctui_model::TerminalCreationKind::Devshell => {
                             yoctui_protocol::daemon::PtyKind::Devshell
                         }

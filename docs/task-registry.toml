@@ -6514,18 +6514,18 @@ notes = "Recipe and Devtool workspace files now use the shared reducer-owned Tex
 id = "DEVWORK-TERMINAL-001"
 milestone = "M23"
 title = "Prompt for embedded or detached interactive sessions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 749
 required = true
 depends_on = ["DEVWORK-GOV-001", "UX-TERMINAL-UX-001", "PTY-DEVTOOL-001", "PTY-MENUCONFIG-001"]
 verify = ["cargo test -p yoctui-model devwork_terminal", "cargo test -p yoctui-app devwork_terminal", "cargo test -p yoctui-ui devwork_terminal", "cargo test -p yoctui -- devwork_terminal"]
-notes = "Add one typed focus-trapped destination chooser and zero-spawn cancellation for build shell, devshell, menuconfig, Devtool workspace shell, and edit-recipe; embedded uses daemon PTY and detached uses a native allowlisted emulator without shell evaluation."
+notes = "Build shell, selected-recipe devshell/menuconfig, Devtool workspace shell, and devtool edit-recipe now open one focus-trapped destination chooser with Embedded selected by default. Opening and cancelling are zero-spawn. Embedded emits the existing daemon PTY effect; Detached is disabled without a graphical allowlisted emulator and otherwise spawns an argv-preserving native terminal without a shell command string. Focused model/app/UI/CLI tests pass."
 
 [[task]]
 id = "DEVWORK-VALIDATION-001"
 milestone = "M23"
 title = "Validate the complete selected-recipe development loop"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 750
 required = true
 depends_on = ["DEVWORK-EDITOR-001", "DEVWORK-TERMINAL-001"]

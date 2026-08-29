@@ -30,6 +30,42 @@ pub struct TerminalWorkbenchState {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TerminalLaunchRequest {
+    pub name: String,
+    pub kind: TerminalCreationKind,
+    pub cwd: PathBuf,
+    pub program: PathBuf,
+    pub arguments: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TerminalLaunchDestination {
+    #[default]
+    Embedded,
+    Detached,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DetachedTerminalAvailability {
+    Available { launcher: String },
+    Unavailable { reason: String },
+}
+
+impl Default for DetachedTerminalAvailability {
+    fn default() -> Self {
+        Self::Unavailable {
+            reason: "No graphical terminal emulator has been detected.".into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TerminalLaunchDialog {
+    pub request: TerminalLaunchRequest,
+    pub destination: TerminalLaunchDestination,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TerminalEffect {
     Create {
         name: String,
@@ -70,6 +106,8 @@ pub enum TerminalEffect {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TerminalCreationKind {
     BuildShell,
+    DevtoolShell,
+    Utility,
     Devshell,
     Menuconfig,
 }
