@@ -2,37 +2,38 @@
 
 ## Task
 
-**ID:** DEVWORK-EDITOR-001
-**Title:** Make recipe and Devtool source editing language-aware
+**ID:** DEVWORK-TERMINAL-001
+**Title:** Prompt for embedded or detached interactive sessions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Replace the append-only recipe/Devtool source buffer with the existing bounded
-reducer-owned text area and add honest path-derived language awareness without
-introducing widget-owned or fabricated compiler state.
+Present one explicit, focus-trapped destination chooser before interactive
+build shell, devshell, menuconfig, Devtool workspace-shell, or edit-recipe
+sessions are spawned.
 
 ## Dependencies
 
 - DEVWORK-GOV-001 — DONE
-- UX-TEXTAREA-UI-001 — DONE
-- DEVTOOL-MODIFY-001 — DONE
+- UX-TERMINAL-UX-001 — DONE
+- PTY-DEVTOOL-001 — DONE
+- PTY-MENUCONFIG-001 — DONE
 
 ## Definition of done
 
-- Recipe and Devtool workspace files use `TextAreaState` editing semantics.
-- Language identity and bounded syntax/structural diagnostics cover the
-  contracted source-language set without claiming LSP output.
-- Save is canonical-root-contained, conflict-aware, permission-preserving, and
-  atomic.
-- Build/update/finish retain the exact selected Devtool recipe identity.
+- Opening the chooser spawns no process and cancellation remains zero-spawn.
+- Embedded is the default and creates the existing daemon-owned PTY request.
+- Detached uses a detected, allowlisted terminal emulator without shell
+  interpolation and is visibly unavailable when no graphical emulator exists.
+- Build shell, devshell, menuconfig, Devtool workspace shell, and edit-recipe
+  use the same destination policy.
 - Focused model/app/UI/CLI tests pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model devwork_editor
-cargo test -p yoctui-app devwork_editor
-cargo test -p yoctui-ui devwork_editor
-cargo test -p yoctui -- devwork_editor
+cargo test -p yoctui-model devwork_terminal
+cargo test -p yoctui-app devwork_terminal
+cargo test -p yoctui-ui devwork_terminal
+cargo test -p yoctui -- devwork_terminal
 ```

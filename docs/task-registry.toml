@@ -6503,18 +6503,18 @@ notes = "The roadmap, UI and architecture contracts now distinguish the already-
 id = "DEVWORK-EDITOR-001"
 milestone = "M23"
 title = "Make recipe and Devtool source editing language-aware"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 748
 required = true
 depends_on = ["DEVWORK-GOV-001", "UX-TEXTAREA-UI-001", "DEVTOOL-MODIFY-001"]
 verify = ["cargo test -p yoctui-model devwork_editor", "cargo test -p yoctui-app devwork_editor", "cargo test -p yoctui-ui devwork_editor", "cargo test -p yoctui -- devwork_editor"]
-notes = "Replace the append-only RecipeEditor buffer with the shared reducer-owned TextAreaState, add closed source-language classification and bounded syntax/diagnostic presentation, preserve exact Devtool recipe build and publish identity, and use atomic contained file saves."
+notes = "Recipe and Devtool workspace files now use the shared reducer-owned TextAreaState with normal/insert/visual modes, cursor motion, selection, undo/redo, clipboard paste, bounded in-file search, path-derived language labels, structural diagnostics, and exact-recipe builds. Saves canonicalize the workspace boundary, reject symlinks and external changes, preserve permissions, write and sync a same-directory temporary file, and atomically rename it. Focused model/app/UI/CLI tests pass."
 
 [[task]]
 id = "DEVWORK-TERMINAL-001"
 milestone = "M23"
 title = "Prompt for embedded or detached interactive sessions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 749
 required = true
 depends_on = ["DEVWORK-GOV-001", "UX-TERMINAL-UX-001", "PTY-DEVTOOL-001", "PTY-MENUCONFIG-001"]

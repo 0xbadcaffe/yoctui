@@ -5975,22 +5975,27 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         .files
         .get(editor.selection)
         .map_or_else(|| "no file".into(), |path| path.display().to_string());
-    let mode = if editor.editing {
-        "editing"
+    let mode = textarea_mode_label(editor.document.mode());
+    let modified = if editor.is_dirty() {
+        "modified"
     } else {
-        "read-only"
+        "clean"
     };
-    let modified = if editor.dirty { " modified" } else { "" };
-    let content = if editor.editing {
-        format!("{}▏", editor.content)
-    } else {
-        editor.content.clone()
-    };
+    let position = editor.document.position();
+    let content = popup_editor_text(&editor.document);
+    let file_focus = editor.focus == yoctui_model::RecipeEditorFocus::Files;
+    let document_focus = editor.focus == yoctui_model::RecipeEditorFocus::Document;
     frame.render_widget(
         Paragraph::new(source_preview(&content, &selected, app))
             .block(
                 Block::default()
-                    .title(format!("{selected} ({mode}{modified})"))
+                    .title(format!(
+                        "{} {selected} — {} · {mode} · {modified} · Ln {} Col {}",
+                        if document_focus { "▶" } else { " " },
+                        editor.language.label(),
+                        position.line + 1,
+                        position.column + 1,
+                    ))
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false }),
@@ -6014,9 +6019,14 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
             } else {
                 lines.extend(diff.into_iter().map(Line::from));
             }
-            lines.push(Line::from(
-                "BitBake parse remains authoritative · save before Ctrl+B build",
-            ));
+            lines.push(Line::from(if editor.searching {
+                format!(
+                    "Search /{}▏ · Enter finish · n/N next/previous",
+                    editor.document.search_state().query
+                )
+            } else {
+                "Structural diagnostics only; BitBake/compiler output remains authoritative".into()
+            }));
             lines
         })
         .block(
@@ -6028,9 +6038,11 @@ fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect
         regions[1],
     );
     frame.render_widget(
-        Paragraph::new(
-            "↑/↓ file  Enter/e edit  Ctrl+S save  Ctrl+B build recipe  Esc return to Yoctui",
-        )
+        Paragraph::new(if file_focus {
+            "FILES · ↑/↓ select · Enter/e focus editor · Ctrl+B build recipe · Esc close"
+        } else {
+            "EDITOR · i insert · v visual · / search · Ctrl+S save · Ctrl+B build · Tab files"
+        })
         .style(dialog_styles(app).hint),
         regions[2],
     );
@@ -18707,29 +18719,26 @@ mod tests {
                 PathBuf::from("files/0001-fix-build.patch"),
             ],
             selection: 0,
-            content: concat!(
-                "SUMMARY = \"GNU Bourne Again Shell\"\n",
-                "LICENSE = \"GPL-3.0-only\"\n",
-                "SRC_URI = \"https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz\"\n",
-                "inherit autotools\n\n",
-                "do_install:append() {\n",
-                "    install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash\n",
-                "}\n",
-                "BROKEN_OVERRIDE =\n",
-            )
-            .into(),
-            loaded_content: concat!(
-                "SUMMARY = \"GNU Bourne Again Shell\"\n",
-                "LICENSE = \"GPL-3.0-only\"\n",
-                "SRC_URI = \"https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz\"\n",
-                "inherit autotools\n\n",
-                "do_install:append() {\n",
-                "    install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash\n",
-                "}\n",
-            )
-            .into(),
-            editing: true,
-            dirty: true,
+            focus: yoctui_model::RecipeEditorFocus::Document,
+            language: yoctui_model::SourceLanguage::BitBake,
+            document: {
+                let mut document = yoctui_model::TextAreaState::new(
+                    concat!(
+                        "SUMMARY = \"GNU Bourne Again Shell\"\n",
+                        "LICENSE = \"GPL-3.0-only\"\n",
+                        "SRC_URI = \"https://ftp.gnu.org/gnu/bash/bash-5.2.tar.gz\"\n",
+                        "inherit autotools\n\n",
+                        "do_install:append() {\n",
+                        "    install -Dm755 ${WORKDIR}/bash ${D}${bindir}/bash\n",
+                        "}\n",
+                    )
+                    .into(),
+                );
+                document.set_mode(yoctui_model::TextAreaMode::Insert);
+                document.insert("BROKEN_OVERRIDE =\n");
+                document
+            },
+            searching: false,
         }));
         let _ = update(&mut app, Action::OpenApplicationMenu);
         let _ = update(&mut app, Action::SelectMenuGroup { delta: 1 });
@@ -25056,10 +25065,10 @@ mod tests {
                     root: "/workspace/busybox".into(),
                     files: vec!["main.c".into()],
                     selection: 0,
-                    content: "int main() {}".into(),
-                    loaded_content: "int main() {}".into(),
-                    editing: false,
-                    dirty: false,
+                    focus: yoctui_model::RecipeEditorFocus::Files,
+                    language: yoctui_model::SourceLanguage::C,
+                    document: yoctui_model::TextAreaState::new("int main() {}".into()),
+                    searching: false,
                 }),
                 "Workspace file tree",
             ),
@@ -27164,7 +27173,7 @@ mod tests {
         assert!(output.contains("busybox.bb"));
     }
     #[test]
-    fn devtool_modify_renders_confirmation_and_workspace_editor_build_shortcut() {
+    fn devwork_editor_renders_confirmation_and_workspace_editor_build_shortcut() {
         let mut confirmation = App::new(10, 1_000);
         confirmation
             .dialogs
@@ -27186,10 +27195,10 @@ mod tests {
             root: "/build/workspace/sources/busybox".into(),
             files: vec!["main.c".into()],
             selection: 0,
-            content: "int main() {}".into(),
-            loaded_content: "int main() {}".into(),
-            editing: false,
-            dirty: false,
+            focus: yoctui_model::RecipeEditorFocus::Files,
+            language: yoctui_model::SourceLanguage::C,
+            document: yoctui_model::TextAreaState::new("int main() {}".into()),
+            searching: false,
         }));
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal

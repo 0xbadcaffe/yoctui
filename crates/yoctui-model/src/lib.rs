@@ -1569,10 +1569,90 @@ pub struct RecipeEditor {
     pub root: PathBuf,
     pub files: Vec<PathBuf>,
     pub selection: usize,
-    pub content: String,
-    pub loaded_content: String,
-    pub editing: bool,
-    pub dirty: bool,
+    pub focus: RecipeEditorFocus,
+    pub language: SourceLanguage,
+    pub document: TextAreaState,
+    pub searching: bool,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum RecipeEditorFocus {
+    #[default]
+    Files,
+    Document,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SourceLanguage {
+    BitBake,
+    C,
+    Cpp,
+    Rust,
+    Python,
+    Shell,
+    JavaScript,
+    TypeScript,
+    Json,
+    Toml,
+    Yaml,
+    Make,
+    Markdown,
+    #[default]
+    PlainText,
+}
+
+impl SourceLanguage {
+    pub fn from_path(path: &Path) -> Self {
+        let name = path
+            .file_name()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        let extension = path
+            .extension()
+            .and_then(|value| value.to_str())
+            .unwrap_or_default()
+            .to_ascii_lowercase();
+        match extension.as_str() {
+            "bb" | "bbappend" | "bbclass" | "inc" | "conf" | "wks" => Self::BitBake,
+            "c" | "h" => Self::C,
+            "cc" | "cpp" | "cxx" | "c++" | "hh" | "hpp" | "hxx" => Self::Cpp,
+            "rs" => Self::Rust,
+            "py" | "pyi" => Self::Python,
+            "sh" | "bash" | "zsh" | "fish" => Self::Shell,
+            "js" | "jsx" | "mjs" | "cjs" => Self::JavaScript,
+            "ts" | "tsx" | "mts" | "cts" => Self::TypeScript,
+            "json" | "jsonc" => Self::Json,
+            "toml" => Self::Toml,
+            "yaml" | "yml" => Self::Yaml,
+            "md" | "markdown" => Self::Markdown,
+            _ if matches!(name.as_str(), "makefile" | "gnumakefile")
+                || name.starts_with("makefile.") =>
+            {
+                Self::Make
+            }
+            _ => Self::PlainText,
+        }
+    }
+
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::BitBake => "BitBake",
+            Self::C => "C",
+            Self::Cpp => "C++",
+            Self::Rust => "Rust",
+            Self::Python => "Python",
+            Self::Shell => "Shell",
+            Self::JavaScript => "JavaScript",
+            Self::TypeScript => "TypeScript",
+            Self::Json => "JSON",
+            Self::Toml => "TOML",
+            Self::Yaml => "YAML",
+            Self::Make => "Make",
+            Self::Markdown => "Markdown",
+            Self::PlainText => "Plain text",
+        }
+    }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecipeTaskPicker {
@@ -1936,64 +2016,167 @@ pub struct TransientStatus {
 }
 
 impl RecipeEditor {
-    fn selected_path(&self) -> Option<PathBuf> {
+    pub fn selected_path(&self) -> Option<PathBuf> {
         self.files
             .get(self.selection)
             .map(|path| self.root.join(path))
     }
 
+    pub fn is_dirty(&self) -> bool {
+        self.document.is_modified()
+    }
+
+    pub fn refresh_language_and_validation(&mut self) {
+        self.language = self
+            .files
+            .get(self.selection)
+            .map_or(SourceLanguage::PlainText, |path| {
+                SourceLanguage::from_path(path)
+            });
+        self.document.set_validation(source_structural_validation(
+            self.language,
+            &self.document.text,
+        ));
+    }
+
     pub fn local_validation(&self) -> Vec<String> {
-        let mut diagnostics = self
-            .content
-            .lines()
-            .enumerate()
-            .filter(|(_, line)| line.trim_end().ends_with('='))
-            .map(|(index, _)| format!("line {}: assignment has no value", index + 1))
-            .collect::<Vec<_>>();
-        let opens = self
-            .content
-            .chars()
-            .filter(|character| *character == '{')
-            .count();
-        let closes = self
-            .content
-            .chars()
-            .filter(|character| *character == '}')
-            .count();
-        if opens != closes {
-            diagnostics.push(format!(
-                "unbalanced braces: {opens} opening / {closes} closing"
-            ));
-        }
-        diagnostics
+        self.document
+            .validation()
+            .iter()
+            .map(|span| span.message.clone())
+            .collect()
     }
 
     pub fn diff_preview(&self, maximum_lines: usize) -> Vec<String> {
-        if self.content == self.loaded_content || maximum_lines == 0 {
+        if !self.document.is_modified() || maximum_lines == 0 {
             return Vec::new();
         }
-        let loaded = self.loaded_content.split('\n').collect::<Vec<_>>();
-        let current = self.content.split('\n').collect::<Vec<_>>();
-        let mut preview = Vec::new();
-        for index in 0..loaded.len().max(current.len()) {
-            let before = loaded.get(index).copied();
-            let after = current.get(index).copied();
-            if before == after {
-                continue;
-            }
-            if let Some(before) = before {
-                preview.push(format!("- {:>3} {before}", index + 1));
-            }
-            if let Some(after) = after {
-                preview.push(format!("+ {:>3} {after}", index + 1));
-            }
-            if preview.len() >= maximum_lines {
-                break;
-            }
-        }
+        let mut document = self.document.clone();
+        let mut preview = document
+            .preview_diff()
+            .lines
+            .iter()
+            .filter(|line| line.kind != TextAreaDiffKind::Context)
+            .map(|line| {
+                let marker = match line.kind {
+                    TextAreaDiffKind::Removed => '-',
+                    TextAreaDiffKind::Added => '+',
+                    TextAreaDiffKind::Context => ' ',
+                };
+                let number = line.new_line.or(line.old_line).map_or(0, |line| line + 1);
+                format!("{marker} {number:>3} {}", line.text)
+            })
+            .collect::<Vec<_>>();
         preview.truncate(maximum_lines);
         preview
     }
+}
+
+fn source_structural_validation(
+    language: SourceLanguage,
+    text: &str,
+) -> Vec<TextAreaValidationSpan> {
+    let mut diagnostics = Vec::new();
+    if language == SourceLanguage::BitBake {
+        let mut offset = 0usize;
+        for (line, value) in text.lines().enumerate() {
+            if value.trim_end().ends_with('=') {
+                diagnostics.push(TextAreaValidationSpan {
+                    start: offset,
+                    end: offset + value.len(),
+                    severity: TextAreaValidationSeverity::Error,
+                    message: format!("line {}: assignment has no value", line + 1),
+                });
+            }
+            offset = offset.saturating_add(value.len() + 1);
+        }
+    }
+
+    if !matches!(
+        language,
+        SourceLanguage::PlainText | SourceLanguage::Markdown | SourceLanguage::Yaml
+    ) {
+        for (open, close, label) in [
+            ('{', '}', "braces"),
+            ('(', ')', "parentheses"),
+            ('[', ']', "brackets"),
+        ] {
+            let opens = text.chars().filter(|character| *character == open).count();
+            let closes = text.chars().filter(|character| *character == close).count();
+            if opens != closes {
+                diagnostics.push(TextAreaValidationSpan {
+                    start: 0,
+                    end: text.len().min(1),
+                    severity: TextAreaValidationSeverity::Warning,
+                    message: format!(
+                        "structural {label} mismatch: {opens} opening / {closes} closing"
+                    ),
+                });
+            }
+        }
+    }
+    diagnostics
+}
+
+fn apply_recipe_editor_command(
+    editor: &mut TextAreaState,
+    command: PopupEditorCommand,
+) -> Result<Option<String>, String> {
+    match command {
+        PopupEditorCommand::ToggleInsert => editor.toggle_insert(),
+        PopupEditorCommand::ToggleVisual => {
+            let mode = if editor.mode() == TextAreaMode::Visual {
+                TextAreaMode::Normal
+            } else {
+                TextAreaMode::Visual
+            };
+            editor.set_mode(mode);
+        }
+        PopupEditorCommand::Insert(character) if editor.editing && !character.is_control() => {
+            editor
+                .try_insert(&character.to_string())
+                .map_err(|error| format!("Editor input rejected: {error:?}"))?
+        }
+        PopupEditorCommand::Insert(_) => {}
+        PopupEditorCommand::Newline if editor.editing => editor
+            .try_insert("\n")
+            .map_err(|error| format!("Editor input rejected: {error:?}"))?,
+        PopupEditorCommand::Newline => {}
+        PopupEditorCommand::Backspace if editor.editing => editor.backspace(),
+        PopupEditorCommand::Backspace => {}
+        PopupEditorCommand::Delete => editor.delete_forward(),
+        PopupEditorCommand::Left => editor.left(),
+        PopupEditorCommand::Right => editor.right(),
+        PopupEditorCommand::WordLeft => editor.move_cursor(TextAreaMotion::WordLeft),
+        PopupEditorCommand::WordRight => editor.move_cursor(TextAreaMotion::WordRight),
+        PopupEditorCommand::Up => editor.up(),
+        PopupEditorCommand::Down => editor.down(),
+        PopupEditorCommand::Home => editor.home(),
+        PopupEditorCommand::End => editor.end(),
+        PopupEditorCommand::PageUp => editor.move_cursor(TextAreaMotion::PageUp),
+        PopupEditorCommand::PageDown => editor.move_cursor(TextAreaMotion::PageDown),
+        PopupEditorCommand::Undo => {
+            editor.undo();
+        }
+        PopupEditorCommand::Redo => {
+            editor.redo();
+        }
+        PopupEditorCommand::SelectPosition {
+            line,
+            column,
+            extend,
+        } => editor.select_position(line, column, extend),
+        PopupEditorCommand::PasteText { text, source } if editor.editing => editor
+            .paste_text(&text, source)
+            .map_err(|error| format!("Editor paste rejected: {error:?}"))?,
+        PopupEditorCommand::PasteText { .. } => {}
+        PopupEditorCommand::Copy => return Ok(Some(editor.copy_selection_or_line())),
+        PopupEditorCommand::Paste if editor.editing => editor
+            .paste_internal_clipboard()
+            .map_err(|error| format!("Editor paste rejected: {error:?}"))?,
+        PopupEditorCommand::Paste | PopupEditorCommand::SelectValue => {}
+    }
+    Ok(None)
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuildState {
@@ -6148,6 +6331,15 @@ pub enum Action {
         delta: isize,
     },
     LoadRecipeEditorContent(String),
+    FocusRecipeEditor(RecipeEditorFocus),
+    EditRecipeEditor(PopupEditorCommand),
+    BeginRecipeEditorSearch,
+    AppendRecipeEditorSearch(char),
+    BackspaceRecipeEditorSearch,
+    FinishRecipeEditorSearch,
+    NextRecipeEditorMatch {
+        backwards: bool,
+    },
     ToggleRecipeEditorEditing,
     AppendRecipeEditor(char),
     BackspaceRecipeEditor,
@@ -10334,7 +10526,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::BeginCurrentImageBuild => {
             if matches!(
                 app.active_dialog(),
-                Some(Dialog::RecipeEditor(editor)) if editor.dirty
+                Some(Dialog::RecipeEditor(editor)) if editor.is_dirty()
             ) {
                 app.notification = Some("Save the edited file with Ctrl+S before building.".into());
             } else if let Some(target) = app.build.target.clone() {
@@ -16338,6 +16530,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             root,
             files,
         } => {
+            let language = files.first().map_or(SourceLanguage::PlainText, |path| {
+                SourceLanguage::from_path(path)
+            });
             open_dialog(
                 app,
                 Dialog::RecipeEditor(RecipeEditor {
@@ -16345,10 +16540,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     root,
                     files,
                     selection: 0,
-                    content: String::new(),
-                    loaded_content: String::new(),
-                    editing: false,
-                    dirty: false,
+                    focus: RecipeEditorFocus::Files,
+                    language,
+                    document: TextAreaState::new(String::new()),
+                    searching: false,
                 }),
             );
             if let Some(path) = app.active_dialog().and_then(|dialog| match dialog {
@@ -16362,7 +16557,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::SelectRecipeEditorFile { delta } => {
             let path = if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
-                if editor.dirty {
+                if editor.is_dirty() {
                     app.notification =
                         Some("Save changes with Ctrl+S before selecting another file.".into());
                     None
@@ -16386,54 +16581,116 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::LoadRecipeEditorContent(content) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
-                editor.loaded_content = content.clone();
-                editor.content = content;
-                editor.editing = false;
-                editor.dirty = false;
+                editor.document.accept_external_text(content);
+                editor.document.set_mode(TextAreaMode::Normal);
+                editor.searching = false;
+                editor.refresh_language_and_validation();
+            }
+        }
+        Action::FocusRecipeEditor(focus) => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                editor.focus = focus;
+                if focus == RecipeEditorFocus::Files {
+                    editor.document.set_mode(TextAreaMode::Normal);
+                    editor.searching = false;
+                }
+            }
+        }
+        Action::EditRecipeEditor(command) => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                match apply_recipe_editor_command(&mut editor.document, command) {
+                    Ok(Some(content)) => return Some(Effect::CopyToClipboard(content)),
+                    Ok(None) => editor.refresh_language_and_validation(),
+                    Err(message) => app.notification = Some(message),
+                }
+            }
+        }
+        Action::BeginRecipeEditorSearch => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                editor.focus = RecipeEditorFocus::Document;
+                editor.document.set_mode(TextAreaMode::Normal);
+                editor.searching = true;
+            }
+        }
+        Action::AppendRecipeEditorSearch(character) => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()
+                && editor.searching
+                && !character.is_control()
+            {
+                let mut query = editor.document.search_state().query.clone();
+                if query.len() + character.len_utf8() <= 4_096 {
+                    query.push(character);
+                    let _ = editor.document.search(query, false);
+                }
+            }
+        }
+        Action::BackspaceRecipeEditorSearch => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()
+                && editor.searching
+            {
+                let mut query = editor.document.search_state().query.clone();
+                query.pop();
+                let _ = editor.document.search(query, false);
+            }
+        }
+        Action::FinishRecipeEditorSearch => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                editor.searching = false;
+            }
+        }
+        Action::NextRecipeEditorMatch { backwards } => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                editor.document.next_match(backwards);
             }
         }
         Action::ToggleRecipeEditorEditing => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
-                editor.editing = !editor.editing;
+                editor.focus = RecipeEditorFocus::Document;
+                editor.document.toggle_insert();
             }
         }
         Action::AppendRecipeEditor(character) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()
-                && editor.editing
+                && editor.document.editing
+                && !character.is_control()
             {
-                editor.content.push(character);
-                editor.dirty = true;
+                editor.document.insert(&character.to_string());
+                editor.refresh_language_and_validation();
             }
         }
         Action::BackspaceRecipeEditor => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()
-                && editor.editing
+                && editor.document.editing
             {
-                editor.content.pop();
-                editor.dirty = true;
+                editor.document.backspace();
+                editor.refresh_language_and_validation();
             }
         }
         Action::SaveRecipeEditor => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog()
-                && editor.dirty
+                && editor.is_dirty()
                 && let Some(path) = editor.selected_path()
             {
                 return Some(Effect::SaveRecipeEditorFile {
+                    root: editor.root.clone(),
                     path,
-                    content: editor.content.clone(),
+                    content: editor.document.text.clone(),
+                    expected: editor.document.base_revision(),
                 });
             }
         }
         Action::RecipeEditorSaved => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
-                editor.loaded_content = editor.content.clone();
-                editor.dirty = false;
+                let content = editor.document.text.clone();
+                editor.document.accept_external_text(content);
+                editor.document.set_mode(TextAreaMode::Normal);
+                editor.refresh_language_and_validation();
                 app.notification = Some("Recipe file saved. Press Esc to return to Yoctui.".into());
             }
         }
         Action::BeginRecipeEditorBuild => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog().cloned() {
-                if editor.dirty {
+                if editor.is_dirty() {
                     app.notification =
                         Some("Save workspace changes before starting the recipe build.".into());
                 } else {
@@ -16444,8 +16701,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::CloseRecipeEditor => {
-            if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
-                close_dialog(app);
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
+                if editor.is_dirty() {
+                    app.notification = Some(
+                        "Save changes with Ctrl+S before closing the workspace editor.".into(),
+                    );
+                } else {
+                    close_dialog(app);
+                }
             }
         }
         Action::SelectLayer { delta } => {
@@ -17388,8 +17651,10 @@ pub enum Effect {
     GetLayerRelationships,
     LoadRecipeEditorFile(PathBuf),
     SaveRecipeEditorFile {
+        root: PathBuf,
         path: PathBuf,
         content: String,
+        expected: TextAreaRevision,
     },
     WriteBbmask(String),
 }
@@ -20352,13 +20617,19 @@ mod tests {
             Action::LoadRecipeEditorContent("int main() {}".into()),
         );
         let _ = update(&mut app, Action::ToggleRecipeEditorEditing);
-        let _ = update(&mut app, Action::AppendRecipeEditor('\n'));
+        let _ = update(
+            &mut app,
+            Action::EditRecipeEditor(PopupEditorCommand::Newline),
+        );
         let editor = match app.active_dialog() {
             Some(Dialog::RecipeEditor(editor)) => editor,
             other => panic!("expected recipe editor, got {other:?}"),
         };
-        assert_eq!(editor.loaded_content, "int main() {}");
-        assert_eq!(editor.diff_preview(2), vec!["+   2 "]);
+        assert_eq!(
+            editor.document.base_revision(),
+            TextAreaRevision::of("int main() {}")
+        );
+        assert!(editor.is_dirty());
         assert!(editor.local_validation().is_empty());
         let _ = update(&mut app, Action::BeginRecipeEditorBuild);
         assert_eq!(
@@ -20369,8 +20640,10 @@ mod tests {
         assert_eq!(
             update(&mut app, Action::SaveRecipeEditor),
             Some(Effect::SaveRecipeEditorFile {
+                root: root.clone(),
                 path: root.join("main.c"),
                 content: "int main() {}\n".into(),
+                expected: TextAreaRevision::of("int main() {}"),
             })
         );
         let _ = update(&mut app, Action::RecipeEditorSaved);
@@ -20378,7 +20651,7 @@ mod tests {
             Some(Dialog::RecipeEditor(editor)) => editor,
             other => panic!("expected recipe editor, got {other:?}"),
         };
-        assert_eq!(editor.loaded_content, editor.content);
+        assert!(!editor.document.is_modified());
         assert!(editor.diff_preview(2).is_empty());
         let _ = update(&mut app, Action::BeginRecipeEditorBuild);
         assert_eq!(
@@ -20388,6 +20661,85 @@ mod tests {
                 task: None,
                 force: false,
             }))
+        );
+    }
+    #[test]
+    fn devwork_editor_detects_languages_and_supports_search_undo_and_redo() {
+        assert_eq!(
+            SourceLanguage::from_path(Path::new("recipe.bbappend")),
+            SourceLanguage::BitBake
+        );
+        assert_eq!(
+            SourceLanguage::from_path(Path::new("src/main.cpp")),
+            SourceLanguage::Cpp
+        );
+        assert_eq!(
+            SourceLanguage::from_path(Path::new("src/lib.rs")),
+            SourceLanguage::Rust
+        );
+        assert_eq!(
+            SourceLanguage::from_path(Path::new("Makefile")),
+            SourceLanguage::Make
+        );
+
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::OpenRecipeEditor {
+                recipe: "demo".into(),
+                root: "/workspace/demo".into(),
+                files: vec!["src/main.cpp".into()],
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadRecipeEditorContent("int main() { return 0; }".into()),
+        );
+        let _ = update(
+            &mut app,
+            Action::FocusRecipeEditor(RecipeEditorFocus::Document),
+        );
+        let _ = update(
+            &mut app,
+            Action::EditRecipeEditor(PopupEditorCommand::ToggleInsert),
+        );
+        let _ = update(
+            &mut app,
+            Action::EditRecipeEditor(PopupEditorCommand::Newline),
+        );
+        let _ = update(&mut app, Action::EditRecipeEditor(PopupEditorCommand::Undo));
+        let _ = update(&mut app, Action::EditRecipeEditor(PopupEditorCommand::Redo));
+        let _ = update(&mut app, Action::BeginRecipeEditorSearch);
+        for character in "return".chars() {
+            let _ = update(&mut app, Action::AppendRecipeEditorSearch(character));
+        }
+        let editor = match app.active_dialog() {
+            Some(Dialog::RecipeEditor(editor)) => editor,
+            other => panic!("expected recipe editor, got {other:?}"),
+        };
+        assert_eq!(editor.language, SourceLanguage::Cpp);
+        assert_eq!(editor.document.search_state().matches.len(), 1);
+        assert!(editor.is_dirty());
+    }
+
+    #[test]
+    fn devwork_editor_reports_structural_diagnostics_without_claiming_compiler_authority() {
+        let diagnostics = source_structural_validation(SourceLanguage::C, "int main( {\n");
+        assert!(
+            diagnostics
+                .iter()
+                .any(|span| span.message.contains("parentheses"))
+        );
+        assert!(
+            diagnostics
+                .iter()
+                .any(|span| span.message.contains("braces"))
+        );
+        let bitbake = source_structural_validation(SourceLanguage::BitBake, "SUMMARY =\n");
+        assert!(
+            bitbake
+                .iter()
+                .any(|span| span.message.contains("assignment has no value"))
         );
     }
     #[test]

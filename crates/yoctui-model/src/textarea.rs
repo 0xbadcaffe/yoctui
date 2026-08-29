@@ -267,6 +267,14 @@ impl TextAreaState {
         &self.advanced.save
     }
 
+    pub fn base_revision(&self) -> TextAreaRevision {
+        TextAreaRevision::of(&self.advanced.base_text)
+    }
+
+    pub fn is_modified(&self) -> bool {
+        self.base_revision() != TextAreaRevision::of(&self.text)
+    }
+
     pub fn mode(&self) -> TextAreaMode {
         if self.editing {
             TextAreaMode::Insert

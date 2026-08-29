@@ -15,12 +15,12 @@ M23 Integrated Devtool Editing and Shell Workflow is active. The audit confirms
 that the existing typed Devtool lifecycle is complete, including status,
 modify, persistent jobs, selected-recipe build, update-recipe, configured-layer
 finish, deploy, reset, and daemon PTYs. It also found two narrower gaps hidden
-by that broad completion label: the in-TUI RecipeEditor is still an append-only
-buffer with BitBake/Markdown-only coloring, and interactive shell routes do not
-ask the user to choose embedded versus detached execution. M23 registers those
-gaps without rewriting M3/M11/M21/M22 evidence. `DEVWORK-GOV-001` is complete;
-`DEVWORK-EDITOR-001` is active. Overall required registry progress is now
-588/592 (99.3%).
+by that broad completion label: the prior in-TUI RecipeEditor was append-only,
+and interactive shell routes do not ask the user to choose embedded versus
+detached execution. The editor gap is now closed with reducer-owned
+language-aware editing, search, diagnostics, exact-recipe builds, and atomic
+conflict-safe saves. `DEVWORK-TERMINAL-001` is active. Overall required registry
+progress is now 589/592 (99.5%).
 
 M22 Concept-to-Live UI Parity is complete. The gap audit found that M21's
 anchor-only fixture checks and broad live scenario labels overstated

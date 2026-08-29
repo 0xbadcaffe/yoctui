@@ -7112,18 +7112,53 @@ pub fn devtool_reset_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
-pub fn recipe_editor_action(editing: bool, key: Input) -> Option<Action> {
+pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> Option<Action> {
+    use yoctui_model::{RecipeEditorFocus as Focus, TextAreaMode};
+
+    if editor.searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendRecipeEditorSearch(character)),
+            Input::Backspace => Some(Action::BackspaceRecipeEditorSearch),
+            Input::Enter | Input::Esc => Some(Action::FinishRecipeEditorSearch),
+            _ => None,
+        };
+    }
+
+    if editor.focus == Focus::Files {
+        return match key {
+            Input::Esc | Input::Char('q') => Some(Action::CloseRecipeEditor),
+            Input::Up | Input::Char('k') => Some(Action::SelectRecipeEditorFile { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::SelectRecipeEditorFile { delta: 1 }),
+            Input::Enter | Input::Tab => Some(Action::FocusRecipeEditor(Focus::Document)),
+            Input::Char('e') => Some(Action::ToggleRecipeEditorEditing),
+            Input::CtrlS => Some(Action::SaveRecipeEditor),
+            Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
+            _ => None,
+        };
+    }
+
     match key {
-        Input::Esc => Some(Action::CloseRecipeEditor),
-        Input::Up => Some(Action::SelectRecipeEditorFile { delta: -1 }),
-        Input::Down => Some(Action::SelectRecipeEditorFile { delta: 1 }),
-        Input::Enter if editing => Some(Action::AppendRecipeEditor('\n')),
-        Input::Enter | Input::Char('e') if !editing => Some(Action::ToggleRecipeEditorEditing),
         Input::CtrlS => Some(Action::SaveRecipeEditor),
         Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
-        Input::Backspace => Some(Action::BackspaceRecipeEditor),
-        Input::Char(character) => Some(Action::AppendRecipeEditor(character)),
-        _ => None,
+        Input::Tab | Input::BackTab => Some(Action::FocusRecipeEditor(Focus::Files)),
+        Input::Char('/') if editor.document.mode() != TextAreaMode::Insert => {
+            Some(Action::BeginRecipeEditorSearch)
+        }
+        Input::Char('n') if editor.document.mode() != TextAreaMode::Insert => {
+            Some(Action::NextRecipeEditorMatch { backwards: false })
+        }
+        Input::Char('N') if editor.document.mode() != TextAreaMode::Insert => {
+            Some(Action::NextRecipeEditorMatch { backwards: true })
+        }
+        Input::Esc if editor.document.mode() == TextAreaMode::Normal => {
+            Some(Action::FocusRecipeEditor(Focus::Files))
+        }
+        input => {
+            popup_editor_action(editor.document.editing, input).and_then(|action| match action {
+                Action::EditActivePopup(command) => Some(Action::EditRecipeEditor(command)),
+                _ => None,
+            })
+        }
     }
 }
 
@@ -11127,7 +11162,17 @@ mod tests {
     }
 
     #[test]
-    fn devtool_modify_routes_confirmation_and_workspace_editor_build_keys() {
+    fn devwork_editor_routes_confirmation_and_workspace_editor_build_keys() {
+        let mut editor = yoctui_model::RecipeEditor {
+            recipe: "busybox".into(),
+            root: "/workspace/busybox".into(),
+            files: vec!["main.c".into()],
+            selection: 0,
+            focus: yoctui_model::RecipeEditorFocus::Files,
+            language: yoctui_model::SourceLanguage::C,
+            document: yoctui_model::TextAreaState::new("int main() {}".into()),
+            searching: false,
+        };
         assert_eq!(
             devtool_modify_confirmation_action(Input::Enter),
             Some(Action::ConfirmDevtoolModify)
@@ -11138,16 +11183,20 @@ mod tests {
         );
         assert_eq!(devtool_modify_confirmation_action(Input::Char('b')), None);
         assert_eq!(
-            recipe_editor_action(false, Input::CtrlB),
+            recipe_editor_action(&editor, Input::CtrlB),
             Some(Action::BeginRecipeEditorBuild)
         );
         assert_eq!(
-            recipe_editor_action(false, Input::Enter),
-            Some(Action::ToggleRecipeEditorEditing)
+            recipe_editor_action(&editor, Input::Enter),
+            Some(Action::FocusRecipeEditor(
+                yoctui_model::RecipeEditorFocus::Document
+            ))
         );
+        editor.focus = yoctui_model::RecipeEditorFocus::Document;
+        editor.document.set_mode(yoctui_model::TextAreaMode::Insert);
         assert_eq!(
-            recipe_editor_action(true, Input::Enter),
-            Some(Action::AppendRecipeEditor('\n'))
+            recipe_editor_action(&editor, Input::Enter),
+            Some(Action::EditRecipeEditor(PopupEditorCommand::Newline))
         );
     }
 

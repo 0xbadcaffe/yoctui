@@ -13,7 +13,9 @@ use ratatui::Terminal;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
-    env, fs, io,
+    env, fs,
+    fs::OpenOptions,
+    io,
     io::{Read as _, Write as _},
     path::{Path, PathBuf},
     process::{Command as ProcessCommand, Stdio},
@@ -93,11 +95,11 @@ use yoctui_model::{
     RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation,
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityAction, SecurityEffect,
     SecurityOperation, SecurityReportRequest, SecurityScope, SecuritySessionId,
-    SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget, TestComparison,
-    TestOperation, TestSessionId, TestWorkspaceView, Theme, VariableDetail, VariableIdentity,
-    WicCapability, WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest,
-    WicOperation, WicSessionId, WorkbenchPreferences, update, validate_config_edit_request,
-    validate_raw_favorites,
+    SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget,
+    TEXTAREA_MAX_BYTES, TestComparison, TestOperation, TestSessionId, TestWorkspaceView,
+    TextAreaRevision, Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft,
+    WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId,
+    WorkbenchPreferences, update, validate_config_edit_request, validate_raw_favorites,
 };
 use yoctui_ui::render;
 
@@ -10021,8 +10023,83 @@ async fn load_recipe_editor_file(app: &mut App, path: PathBuf) {
     }
 }
 
-async fn save_recipe_editor_file(app: &mut App, path: PathBuf, content: String) {
-    let result = tokio::task::spawn_blocking(move || fs::write(path, content)).await;
+fn write_recipe_editor_file_atomically(
+    root: &Path,
+    path: &Path,
+    content: &str,
+    expected: TextAreaRevision,
+) -> Result<()> {
+    if content.len() > TEXTAREA_MAX_BYTES {
+        anyhow::bail!("source file exceeds the {TEXTAREA_MAX_BYTES}-byte editor limit");
+    }
+    let canonical_root = root
+        .canonicalize()
+        .with_context(|| format!("could not resolve workspace root {}", root.display()))?;
+    let metadata = fs::symlink_metadata(path)
+        .with_context(|| format!("could not inspect {}", path.display()))?;
+    if metadata.file_type().is_symlink() || !metadata.is_file() {
+        anyhow::bail!("refusing to replace a symlink or non-regular workspace file");
+    }
+    let canonical_path = path
+        .canonicalize()
+        .with_context(|| format!("could not resolve {}", path.display()))?;
+    if !canonical_path.starts_with(&canonical_root) {
+        anyhow::bail!("refusing to save outside the Devtool workspace root");
+    }
+    let current = fs::read_to_string(&canonical_path)
+        .with_context(|| format!("could not read {} before saving", canonical_path.display()))?;
+    if TextAreaRevision::of(&current) != expected {
+        anyhow::bail!(
+            "the file changed on disk; reload it before saving to avoid overwriting external edits"
+        );
+    }
+    let parent = canonical_path
+        .parent()
+        .context("workspace source file has no parent directory")?;
+    let file_name = canonical_path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .context("workspace source filename is not valid UTF-8")?;
+    let nonce = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let temporary = parent.join(format!(
+        ".{file_name}.yoctui-{}-{nonce}.tmp",
+        std::process::id()
+    ));
+    let save = (|| -> Result<()> {
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&temporary)
+            .with_context(|| format!("could not create temporary file in {}", parent.display()))?;
+        file.write_all(content.as_bytes())?;
+        file.sync_all()?;
+        fs::set_permissions(&temporary, metadata.permissions())?;
+        fs::rename(&temporary, &canonical_path)?;
+        if let Ok(directory) = fs::File::open(parent) {
+            let _ = directory.sync_all();
+        }
+        Ok(())
+    })();
+    if save.is_err() {
+        let _ = fs::remove_file(&temporary);
+    }
+    save
+}
+
+async fn save_recipe_editor_file(
+    app: &mut App,
+    root: PathBuf,
+    path: PathBuf,
+    content: String,
+    expected: TextAreaRevision,
+) {
+    let result = tokio::task::spawn_blocking(move || {
+        write_recipe_editor_file_atomically(&root, &path, &content, expected)
+    })
+    .await;
     match result {
         Ok(Ok(())) => {
             let _ = update(app, Action::RecipeEditorSaved);
@@ -10666,6 +10743,21 @@ async fn tui(
                 {
                     let _ =
                         compatibility_workspace_action(&mut app, Action::TerminalStagePaste(text));
+                    continue;
+                }
+                if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::RecipeEditor(editor))
+                        if editor.focus == yoctui_model::RecipeEditorFocus::Document
+                            && editor.document.editing
+                ) {
+                    let _ = compatibility_workspace_action(
+                        &mut app,
+                        Action::EditRecipeEditor(yoctui_model::PopupEditorCommand::PasteText {
+                            text,
+                            source: yoctui_model::TextAreaPasteSource::BracketedPaste,
+                        }),
+                    );
                     continue;
                 }
                 if active_popup_accepts_paste(&app) {
@@ -11824,17 +11916,28 @@ async fn tui(
                         begin_qemu_cancellation(&mut app, &mut qemu_operation, id);
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::RecipeEditor(_))) {
-                    let editing = app.active_dialog().is_some_and(
-                        |dialog| matches!(dialog, Dialog::RecipeEditor(editor) if editor.editing),
-                    );
-                    let effect = recipe_editor_action(editing, input)
+                    let editor = app.active_dialog().and_then(|dialog| match dialog {
+                        Dialog::RecipeEditor(editor) => Some(editor.clone()),
+                        _ => None,
+                    });
+                    let effect = editor
+                        .as_ref()
+                        .and_then(|editor| recipe_editor_action(editor, input))
                         .and_then(|action| compatibility_workspace_action(&mut app, action));
                     match effect {
                         Some(Effect::LoadRecipeEditorFile(path)) => {
                             load_recipe_editor_file(&mut app, path).await;
                         }
-                        Some(Effect::SaveRecipeEditorFile { path, content }) => {
-                            save_recipe_editor_file(&mut app, path, content).await;
+                        Some(Effect::SaveRecipeEditorFile {
+                            root,
+                            path,
+                            content,
+                            expected,
+                        }) => {
+                            save_recipe_editor_file(&mut app, root, path, content, expected).await;
+                        }
+                        Some(Effect::CopyToClipboard(content)) => {
+                            copy_to_clipboard(&mut app, content).await;
                         }
                         _ => {}
                     }
@@ -13800,6 +13903,91 @@ fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    struct DevworkTempDir(PathBuf);
+
+    impl DevworkTempDir {
+        fn new() -> Self {
+            let nonce = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+            let path = env::temp_dir().join(format!(
+                "yoctui-devwork-test-{}-{nonce}",
+                std::process::id()
+            ));
+            fs::create_dir(&path).unwrap();
+            Self(path)
+        }
+    }
+
+    impl Drop for DevworkTempDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[test]
+    fn devwork_editor_atomic_save_preserves_permissions_and_detects_conflicts() {
+        let directory = DevworkTempDir::new();
+        let source = directory.0.join("main.c");
+        fs::write(&source, "int main() { return 0; }\n").unwrap();
+        let permissions = fs::metadata(&source).unwrap().permissions();
+        let revision = TextAreaRevision::of("int main() { return 0; }\n");
+        write_recipe_editor_file_atomically(
+            &directory.0,
+            &source,
+            "int main() { return 1; }\n",
+            revision,
+        )
+        .unwrap();
+        assert_eq!(
+            fs::read_to_string(&source).unwrap(),
+            "int main() { return 1; }\n"
+        );
+        assert_eq!(
+            fs::metadata(&source).unwrap().permissions().readonly(),
+            permissions.readonly()
+        );
+
+        let error = write_recipe_editor_file_atomically(
+            &directory.0,
+            &source,
+            "int main() { return 2; }\n",
+            revision,
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("changed on disk"));
+        assert_eq!(
+            fs::read_to_string(&source).unwrap(),
+            "int main() { return 1; }\n"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn devwork_editor_atomic_save_rejects_symlinks_and_paths_outside_workspace() {
+        use std::os::unix::fs::symlink;
+        let directory = DevworkTempDir::new();
+        let outside = directory
+            .0
+            .parent()
+            .unwrap()
+            .join(format!("yoctui-devwork-outside-{}", std::process::id()));
+        fs::write(&outside, "outside\n").unwrap();
+        let link = directory.0.join("linked.c");
+        symlink(&outside, &link).unwrap();
+        let error = write_recipe_editor_file_atomically(
+            &directory.0,
+            &link,
+            "replace\n",
+            TextAreaRevision::of("outside\n"),
+        )
+        .unwrap_err();
+        assert!(error.to_string().contains("symlink"));
+        assert_eq!(fs::read_to_string(&outside).unwrap(), "outside\n");
+        fs::remove_file(&outside).unwrap();
+    }
 
     #[test]
     fn compatibility_config_query_parses_selected_utility_and_environment_forms() {
@@ -16342,7 +16530,7 @@ mod tests {
             Some(Dialog::RecipeEditor(editor))
                 if editor.recipe == "busybox"
                     && editor.root == directory
-                    && editor.content.contains("int main")
+                    && editor.document.text.contains("int main")
         ));
         assert_eq!(
             app.background_jobs.get(job_id).unwrap().status,
