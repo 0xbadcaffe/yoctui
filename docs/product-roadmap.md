@@ -586,3 +586,14 @@ Exit criteria:
 - the live capture pipeline preserves foreground, background, and bold styles
 - six current-commit live captures replace historical evidence as the visual
   regression baseline; workflow-only anchors cannot satisfy the gate
+
+## M26 — Visible release identity
+
+Goal: make the exact running Yoctui revision legible to operators and prevent
+unversioned repository changes.
+
+Exit criteria:
+
+- the persistent header shows `yoctui v<workspace-version>` at every supported width
+- all workspace packages and internal path constraints share one version
+- CI and the completion gate reject commits that do not increment that version

@@ -27,6 +27,8 @@ require "$python_tools/pytest" --version
 require cargo flamegraph --version
 
 ./scripts/check-checkout.sh
+python3 -m unittest scripts/test_version_bump.py
+python3 scripts/check-version-bump.py
 ./scripts/verify-ui-spec.sh
 ./scripts/check-docs.sh
 

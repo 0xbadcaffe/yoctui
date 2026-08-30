@@ -1578,7 +1578,7 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let release = app.workspace.release.as_deref();
     let build_tone = build_status_tone(app.build.status);
     let mut left = vec![Span::styled(
-        "yoctui",
+        format!("yoctui v{}", env!("CARGO_PKG_VERSION")),
         palette.role(palette.progress, Modifier::BOLD),
     )];
     if mode != HeaderMode::Narrow {
@@ -21049,6 +21049,11 @@ mod tests {
         };
 
         let full = render(180);
+        let versioned_brand = concat!("yoctui v", env!("CARGO_PKG_VERSION"));
+        assert!(
+            full.contains(versioned_brand),
+            "missing {versioned_brand}: {full}"
+        );
         for expected in [
             "Project: poky",
             "▶ Running",
@@ -21062,6 +21067,10 @@ mod tests {
         }
 
         let wide = render(160);
+        assert!(
+            wide.contains(versioned_brand),
+            "missing {versioned_brand}: {wide}"
+        );
         for expected in [
             "Project: poky",
             "▶ Running",
@@ -21076,6 +21085,10 @@ mod tests {
         assert!(!wide.contains("scarthgap"), "{wide}");
 
         let compact_wide = render(130);
+        assert!(
+            compact_wide.contains(versioned_brand),
+            "missing {versioned_brand}: {compact_wide}"
+        );
         for expected in [
             "Project: poky",
             "T:core-image-minimal",
@@ -21090,6 +21103,10 @@ mod tests {
         }
 
         let medium = render(110);
+        assert!(
+            medium.contains(versioned_brand),
+            "missing {versioned_brand}: {medium}"
+        );
         for expected in [
             "Project: poky",
             "▶ Running",
@@ -21103,6 +21120,10 @@ mod tests {
         assert!(!medium.contains("Distro:"), "{medium}");
 
         let narrow = render(90);
+        assert!(
+            narrow.contains(versioned_brand),
+            "missing {versioned_brand}: {narrow}"
+        );
         for expected in [
             "yoctui",
             "▶ Running",

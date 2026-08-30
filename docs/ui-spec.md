@@ -652,7 +652,7 @@ the higher-priority build identity.
 
 The left-to-right priority order is:
 
-1. `yoctui` identity
+1. `yoctui v<workspace-version>` identity, compiled from the package version
 2. project identity
 3. build state, including a non-color marker
 4. selected build target
@@ -688,6 +688,12 @@ strip; the header does not duplicate them. Backend names, session numbers,
 daemon versions/PIDs, and other unavailable identities are likewise not
 fabricated merely to fill the visual target. Rendering an empty or undersized
 header rectangle is a no-op and no supported tier may panic or overlap.
+
+The version remains adjacent to `yoctui` at every supported header width. It
+is the exact Cargo workspace/package version of the running binary, never a
+runtime guess or daemon value. Repository verification requires that version
+to increase for every commit and requires all internal path dependency
+constraints to match it.
 
 ---
 

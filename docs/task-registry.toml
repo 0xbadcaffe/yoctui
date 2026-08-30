@@ -6601,3 +6601,16 @@ required = true
 depends_on = ["UX-VISUAL-SHELL-001", "UX-LIVE-STYLE-001", "UX-VISUAL-LIVE-001"]
 verify = ["./scripts/verify-m22-concept-parity.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "The parent remains open until deterministic review, styled live evidence, documentation, and the complete repository gate all pass."
+
+# M26 — Visible Release Identity.
+
+[[task]]
+id = "RELEASE-VERSION-001"
+milestone = "M26"
+title = "Display and enforce the Yoctui release version"
+status = "DONE"
+priority = 757
+required = true
+depends_on = ["UX-VISUAL-SHELL-001"]
+verify = ["python3 -m unittest scripts/test_version_bump.py", "python3 scripts/check-version-bump.py", "cargo test -p yoctui-ui next_generation_header", "./scripts/verify-roadmap.sh"]
+notes = "The persistent header renders the exact Cargo package version next to the Yoctui brand at every supported width. Workspace version 0.1.1 is coherent across package manifests, fuzz dependencies, and packaging validation; CI and the completion gate compare Cargo.toml with the current commit parent and reject a missing or non-increasing version bump."

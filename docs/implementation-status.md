@@ -11,6 +11,13 @@ Status values:
 
 ## Current phase
 
+M26 Visible Release Identity is complete. The persistent Dashboard/workbench
+header now shows the exact compiled workspace version beside `yoctui` at every
+supported width. The workspace is version 0.1.1, all internal path constraints
+match it, and CI/completion verification rejects any later commit that does
+not increase the version relative to its parent. Overall required registry
+progress is 596/598 (99.7%).
+
 M25 M21 Visual Resemblance Remediation is in progress. A direct six-pair review
 showed that the previous 6/6 claim proved workflow anchors, not visual parity:
 the historical live rasters came from an older commit, and their finalizer
