@@ -19,9 +19,9 @@ with a circular active indicator, and unknown
 Navigator/task values no longer add question-mark noise. The header highlights
 Project/Target/Machine/Distro and reports Local or validated SSH client-IP
 access. Theme display names are color-oriented, and exit/build cancellation are
-always explicit typed confirmations. The workspace is version 0.1.3. No btop
+always explicit typed confirmations. The workspace is version 0.1.4. No btop
 source or layout code is copied or linked. Overall required registry progress
-is 602/604 (99.7%).
+is 604/604 (100.0%).
 
 M27 Dashboard Telemetry Dial Fidelity is complete. Normal-height CPU, RAM, and
 Build FS cells now render as compact foreground-only semicircular instruments
@@ -37,7 +37,7 @@ path constraints, and CI/completion verification rejects any later commit that
 does not increase the version relative to its parent. At that milestone,
 required registry progress was 596/598 (99.7%).
 
-M25 M21 Visual Resemblance Remediation is in progress. A direct six-pair review
+M25 M21 Visual Resemblance Remediation is complete. A direct six-pair review
 showed that the previous 6/6 claim proved workflow anchors, not visual parity:
 the historical live rasters came from an older commit, and their finalizer
 discarded ANSI colors and styles. Production now uses the M21 two-level header,
@@ -49,9 +49,10 @@ selected bridge while mutations remain daemon-owned, and bounded host telemetry
 is sampled while idle as well as during builds. A real installed-release
 Dashboard capture verifies Poky 5.2.4, qemux86-64, four layers, numeric CPU/RAM/
 build-FS meters, and exact terminal styles. The deterministic UI and
-styled-capture tasks are complete; fresh current-release six-scene capture and
-the parent gate remain open. Overall required registry progress is 595/597
-(99.7%).
+styled-capture tasks are complete. One 0.1.3 binary drove all six current
+scenarios on Ubuntu 24.04.4/glibc 2.39 against Poky 5.2.4 and BitBake 2.12.1;
+the attributed docs gallery, exact cell/style evidence, and 6/6 parity gate
+pass with no open gaps. At completion, M25 progress is 597/597 (100.0%).
 
 M24 Real Yoctui Design Regression Gallery is complete. The six supported-host
 M22 live scenario rasters remain directly reviewable as historical capture

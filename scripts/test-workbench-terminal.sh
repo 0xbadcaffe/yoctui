@@ -343,7 +343,13 @@ scrollback_command = b"seq 1 3000; sleep 0.2; printf 'needle\\n'\n"
 os.write(viewer_master, b"\x1b[200~" + scrollback_command + b"\x1b[201~")
 expect_eventually(viewer_master, viewer_process, "PASTE REVIEW", "terminal paste review")
 os.write(viewer_master, b"\r")
-expect_eventually(viewer_master, viewer_process, "needle", "bounded scrollback generator", 20)
+expect_eventually(
+    viewer_master,
+    viewer_process,
+    "dropped line-feeds ≥ 962",
+    "bounded scrollback generator",
+    60,
+)
 os.write(master, b"\x02n")
 collect(master, .5)
 search = send_and_expect(
@@ -376,6 +382,7 @@ if evidence:
     split_path = os.path.join(evidence, "terminal-sessions.txt")
     help_path = os.path.join(evidence, "terminal-prefix-help.txt")
     ansi_path = os.path.join(evidence, "terminal-sessions.ansi")
+    cells_path = os.path.join(evidence, "terminal-sessions.cells")
     meta_path = os.path.join(evidence, "terminal-sessions.meta")
     report_path = os.path.join(evidence, "terminal-sessions.report.json")
     with open(split_path, "w", encoding="utf-8") as output:
@@ -384,6 +391,17 @@ if evidence:
         output.write(help_text.rstrip() + "\n")
     with open(ansi_path, "wb") as output:
         output.write(bytes(screens[master].transcript[-2_000_000:]))
+    semantic_rows = search.splitlines()
+    with open(cells_path, "w", encoding="utf-8") as output:
+        output.write("YOCTUI_CELL_GOLDEN_V1 160 50\nSYMBOLS\n")
+        for row_index in range(50):
+            row = semantic_rows[row_index] if row_index < len(semantic_rows) else ""
+            row = row[:160].ljust(160)
+            encoded = "".join(
+                f"{len(character.encode('utf-8'))}:{character}" for character in row
+            )
+            output.write(f"S|{encoded}\n")
+        output.write("STYLES\nT|8000|fg=Reset;bg=Reset;ul=Reset;mod=NONE\n")
     with open(meta_path, "w", encoding="utf-8") as output:
         output.write("label=live\nscenario=terminal-sessions\nwidth=160\nheight=50\n")
     report = {
@@ -410,7 +428,7 @@ if evidence:
     with open(report_path, "w", encoding="utf-8") as output:
         json.dump(report, output, indent=2, sort_keys=True)
         output.write("\n")
-    for path in (split_path, help_path, ansi_path, meta_path, report_path):
+    for path in (split_path, help_path, ansi_path, cells_path, meta_path, report_path):
         if not hashlib.sha256(open(path, "rb").read()).hexdigest():
             raise SystemExit(f"terminal evidence is missing: {path}")
 os.write(master, b"\x1b")
@@ -426,6 +444,13 @@ if "Terminal Sessions" not in narrow or "�" in narrow:
 os.write(viewer_master, b"\x02O")
 collect(viewer_master, .5)
 os.write(viewer_master, b"q")
+expect_eventually(
+    viewer_master,
+    viewer_process,
+    "Are you sure you want to exit yoctui?",
+    "remote terminal exit confirmation",
+)
+os.write(viewer_master, b"y")
 try:
     viewer_process.wait(timeout=3)
 except subprocess.TimeoutExpired:
@@ -437,6 +462,13 @@ if viewer_process.returncode != 0 or b"\x1b[?1049l" not in viewer_shutdown:
     raise SystemExit(f"remote terminal client exited with {viewer_process.returncode}")
 
 os.write(master, b"q")
+expect_eventually(
+    master,
+    process,
+    "Are you sure you want to exit yoctui?",
+    "terminal workbench exit confirmation",
+)
+os.write(master, b"y")
 try:
     process.wait(timeout=3)
 except subprocess.TimeoutExpired:

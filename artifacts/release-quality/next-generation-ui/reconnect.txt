@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui  •  Project: poky  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Disconnected│
-┌Navigator───────────┐┌Current Build · Failed─────────────────────────────────────────────┐┌Inspector: Daemon / session────────────────────────────────────────┐
-│▾ OVERVIEW          ││Overall  progress unknown⠻  0/?                                    ││▾ PRIMARY FACTS                                                    │
-│  ▱ Dashboard       ││A0 W0 !5 ✕1 --                                                     ││Target: core-image-minimal                                         │
-│▾ CONTENT           ││Target: core-image-minimal  Status: Failed  Exit code: 1           ││Status: Failed                                                     │
-│  ~ Layers          ││Backend: bridge  Parse progress: 923/923                           ││                                                                   │
-│  ~ Recipes         ││Tasks: 0/?  Active: 0  Warnings: 5  Errors: 1                      ││Select an item in the workspace to inspect its details.            │
-│  × Packages        ││Machine: qemux86-64  Distro: poky  Release: 5.2.4                  ││                                                                   │
-│  ~ Images          ││CPU: unavailable  Disk free: unavailable                           ││▾ SECONDARY FACTS                                                  │
-│  ▱ SDK             ││Environment: ready  Sstate reuse: unavailable                      ││A0 Q0 F0 Done0 D2                                                  │
-│▾ BUILD             │└───────────────────────────────────────────────────────────────────┘│                                                                   │
-│  ~ Tasks           │┌Active Tasks · 0 active · 0 retained c┐┌Next Action────────────────┐│▾ CONTEXTUAL ACTIONS                                               │
-│  ▱ Logs        LIVE││No active task events. Start a build w││Recommended                ││~ Build image                  [B] — Limited                       │
-│  ▱ Errors         1││                                      ││Review failures [e] —      ││  Reason: Direct probing was inconclusive; a centralized BitBake   │
-│  ▱ Configuration   ││                                      ││available                  ││adapter fallback was selected.                                     │
-│  ~ Dependencies    ││                                      ││                           ││  Limitation: Modern Tinfoil API family is inferred only through   │
-│▾ VALIDATE          ││                                      ││Common actions             ││the latest documented BitBake 2.18 boundary; direct negotiation is │
-│  ▱ Testing         ││                                      ││[F2] Tasks  [l] Logs  [e]  ││still preferred.                                                   │
-│  ? Security        ││                                      ││Errors  [F3] Recent work   ││  Implementation: tinfoil.adapter.modern                           │
-│  ▱ QA              ││                                      ││[F8] Artifacts  [f]        ││~ Cancel active build          [c] — Limited                       │
-│▾ TOOLS             ││                                      ││Favorites  [t] Terminals   ││  Reason: Direct probing was inconclusive; a centralized BitBake   │
-│  ▱ Raw Mode        ││                                      ││[E] Environment  [M] Sstate││adapter fallback was selected.                                     │
-│  ~ Terminal Session││                                      ││readiness                  ││  Limitation: Modern Tinfoil API family is inferred only through   │
-│  ▱ Devtool         ││                                      ││                           ││the latest documented BitBake 2.18 boundary; direct negotiation is │
-│  ▱ QEMU / Wic      ││                                      ││                           ││still preferred.                                                   │
-│  ▱ Maintenance     ││                                      ││                           ││  Implementation: tinfoil.adapter.modern                           │
-│  ▱ Build environmen││                                      ││                           ││✓ Monitor active tasks         [F2] — Local                        │
-│  ▱ Compatibility   ││                                      ││                           ││✓ Open retained logs           [l] — Local                         │
-│  ▱ Settings        │└──────────────────────────────────────┘└───────────────────────────┘│✓ Review failures              [e] — Local                         │
-│                    │┌Attention · 4 retained · e rev┐┌Workbench Center · live source proj┐│✓ Inspect recent work          [F3] — Local                        │
-│                    ││! INFO: Recipe busybox now set││Next: Review failures [e] · availa…││✓ Inspect artifacts            [F8] — Local                        │
-│                    ││up to build from              ││[F3] Context: none retained        ││✓ Configure build environment  [E] — Local                         │
-│                    ││/repo/.yoctui-next-ui-live.KCS││[F2/F3] Active: tasks 0 · jobs 0   ││✓ Sstate readiness             [M] — Local                         │
-│                    ││sKf/build/workspace/sources/bu││[e] Failure: INFO: Recipe busybox …││✓ Browse favorite commands     [f] — Local                         │
-│                    ││sybox                         ││[F8] Artifact: none retained       ││✓ Open terminal sessions       [t] — Local                         │
-│                    ││! INFO: Using source tree as  ││[f] Favorite: none                 ││                                                                   │
-│                    ││build directory since that    ││[t] Terminal: build shell · Runnin…││▾ SYSTEM / COMPATIBILITY                                           │
-│                    ││would be the default for this ││[F3] Recent: none retained         ││✓ Daemon Connected · version unavailable · up 00:27:05             │
-│                    ││recipe                        ││                                   ││– BitBake Disconnected · v2.12.1 · Jobs 0                          │
-│                    ││! WARNING: SRC_URI is         ││                                   ││! Compat Degraded g1 · A70 L14 U5 ?18 · PTY 1 · Clients 0          │
-│                    ││conditionally overridden in   ││                                   ││! Build FS unavailable · Workspace /repo/.yoctui-next-ui-live.KCSs…│
-│                    ││this recipe, thus several     ││                                   ││                                                                   │
-│                    ││devtool-override-* branches   ││                                   ││                                                                   │
-│                    ││have been created, one for    ││                                   ││                                                                   │
-│                    ││each override that makes      ││                                   ││                                                                   │
-│                    ││changes to SRC_URI. It is     ││                                   ││                                                                   │
-└────────────────────┘└──────────────────────────────┘└───────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
-B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   Tab Inspector   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit          08:14:49
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│yoctui v0.1.3  •  Project: build  •  ✕ Failed  •  Target: core-image-minimal                             Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers…│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Current Build · Failed──────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
+│▾ OVERVIEW                ││Overall  progress unknown ◐  0/—                                                    ││Environment                                 │
+│  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 0  Errors 1  Elapsed --                               ││Project          : core-image-minimal       │
+│▾ CONTENT                 ││Target: core-image-minimal  Backend: bridge  Status: Failed  Exit code: 1           ││Machine          : unknown                  │
+│  ~ Layers                ││Parse progress: 923/923  Tasks: 0/— (active: 0)  Warnings: 0  Errors: 1             ││Distro           : unknown                  │
+│  ~ Recipes               ││Machine: unknown  Distro: unknown  Release: unknown                                 ││Yocto release    : unknown                  │
+│  × Packages              ││Host CPU: 8%  Build disk free: 47.2 GiB  Environment: ready                         ││Layers enabled   : 0                        │
+│  ~ Images                ││Sstate reuse: unavailable — backend does not report progress                        ││                                            │
+│  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
+│▾ BUILD                   │┌Recent Builds───────────────────────────────────────────────────────────────────────┐│Source           : unavailable              │
+│  ~ Tasks                 ││#    Image                          Result        Tasks    Duration                 ││Build directory  :                          │
+│  ▱ Logs              LIVE││–    No completed builds retained   –             –        Press B to build         ││/home/bspguy-dev/projects/yoctui/.yoctui-nex│
+│  ▱ Errors               1││                                                                                    ││t-ui-live.09chtF/build                      │
+│  ▱ Configuration         ││                                                                                    ││Disk             : 47.2 GiB free            │
+│  ~ Dependencies          ││                                                                                    ││                                            │
+│▾ VALIDATE                ││                                                                                    ││Enabled Actions                             │
+│  ▱ Testing               ││                                                                                    ││[B] Build image                             │
+│    Security              ││                                                                                    ││[F2] Monitor tasks                          │
+│  ▱ QA                    ││                                                                                    ││[l] View logs                               │
+│▾ TOOLS                   ││                                                                                    ││[e] View errors                             │
+│  ▱ Raw Mode              ││                                                                                    ││[E] Verify environment                      │
+│  ~ Terminal Sessions     ││                                                                                    ││[t] Open terminal                           │
+│  ▱ Devtool               │└────────────────────────────────────────────────────────────────────────────────────┘│[d] Open devtool                            │
+│  ▱ QEMU / Wic            │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│                                            │
+│  ▱ Maintenance           ││CPU Usage         8%│RAM Usage        24%│Build FS Usage   89%│SSTATE ! unavailable ││Active Tasks                                │
+│  ▱ Build environment     ││                    │                    │            ▃▃▃▃▃▃▃ │                     ││No active task events                       │
+│  ▱ Compatibility         ││                    │                    │            ███████ │                     ││Next Action                                 │
+│  ▱ Settings              ││                    │                    │            ███████ │                     ││Review failures [e]                         │
+│                          ││                    │            ▁▁▁▁▁▁▁ │            ███████ │                     ││Attention                                   │
+│                          ││             ▅▃▂▃▂▃ │            ███████ │            ███████ │                     ││Build                                       │
+│                          ││ ━━──────────────── │ ━━━━━───────────── │ ━━━━━━━━━━━━━━━━━─ │                     ││failed with exit code 1                     │
+│                          ││       8 cores      │    3.7/15.0 GiB    │    47.2 GiB free   │                     ││Workbench Center                            │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│Context: none retained                      │
+│                          │┌Quick Actions───────────────────────────────────────────────────────────────────────┐│Active: tasks 0 · jobs 0                    │
+│                          ││[1] Build image            │[2] Open terminal          │[3] Verify environment      ││Favorite: none                              │
+│                          ││                           │                           │                            ││Terminal: build shell · Running             │
+│                          ││Start the selected BitBake │Use the initialized Yocto  │Check layers and            ││[t] Terminal sessions                       │
+│                          ││target                     │shell                      │configuration               ││Artifact: none retained                     │
+│                          ││                           │                           │                            ││Recent: none retained                       │
+│                          ││                           │                           │                            ││                                            │
+│                          ││                           │                           │                            ││                                            │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   ←/→ Focus   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit            19:42:23│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

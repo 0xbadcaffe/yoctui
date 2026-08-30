@@ -1,24 +1,26 @@
 {
   "binary_profile": "dev",
-  "binary_sha256": "bc2d31a044a99cfbd169733558ab785509953eb9e16a8dd454cbb96b6874ff3b",
+  "binary_sha256": "bbe9b9509a254c6c8c5057061635883c44dd0a02f106d1e61d3ac5d052dc3352",
   "bitbake_version": "BitBake Build Tool Core version 2.12.1",
   "distro": "poky",
-  "finished_utc": "2026-08-28T08:14:50Z",
+  "finished_utc": "2026-08-30T19:42:24Z",
   "host_distribution": "Ubuntu 24.04.4 LTS",
   "host_libc": "glibc 2.39",
   "label": "supported-live-m22-concept-parity",
   "machine": "qemux86-64",
   "poky_branch": "yocto-5.2.4",
   "poky_revision": "d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1",
-  "raster_renderer": "yoctui-live-semantic-cairo-v1",
+  "raster_renderer": "yoctui-live-cell-style-cairo-v2",
   "scenarios": {
     "active-build-tasks": {
+      "cells": "active-build-tasks.cells",
+      "cells_sha256": "e0764511e98b4dae60e0dd9cbd43509267b51b6959f8d4cb2c76ef4a7aed5bff",
       "interactions": [
         "submit core-image-minimal",
         "press F2 while real BitBake tasks are running"
       ],
       "metadata": "active-build-tasks.meta",
-      "metadata_sha256": "8fda9e11cbafb414c5cb47bd76ccdfbc99e7d42dac65268ebcf5bfbda8f0a762",
+      "metadata_sha256": "d076a7ad88037733aa561b053aef4b1a84e893cf18fa019d8400bf6a973cc2de",
       "observed_assertions": [
         "Tasks: core-image-minimal",
         "\u25b6 Running",
@@ -26,87 +28,96 @@
         "Daemon: \u2713 Connected"
       ],
       "raster": "active-build-tasks.png",
-      "raster_sha256": "bb05851ab8d1c5004f4b85e80c52c0850418be8902fb4f6ea6f1d5a4832e6f61",
+      "raster_sha256": "2cb09918b7928fbef3cecc30858150b132775fdc011fde1eac64f30c558ac68a",
       "report": "active-build-tasks.report.json",
       "report_sha256": "4f65632ecac2e3e3b677a24228261a3e066bea11d8cf49370de20aa84acdd9f6",
       "semantic": "active-build-tasks.txt",
-      "semantic_sha256": "fd10d4c6f088aac3fa6e693a6c55617facbfac04874a75ed655c2ffb00764964",
+      "semantic_sha256": "a00a2a699262ec346bee71715bea18ad235521bb2caead3483708d0f3d1d8801",
       "terminal": "active-build-tasks.ansi",
-      "terminal_sha256": "85b04b35fe8bb5320319fa059ddd55053dd28f4f5bfde8361b60e4ba9d8c571b"
+      "terminal_sha256": "e43ad527cea7abaf352bfda42ecb27b40cbf86586d86dc6a79910a812bac1666"
     },
     "editor-application-menu": {
+      "cells": "editor-application-menu.cells",
+      "cells_sha256": "744fa2a7b5af9f7bbb92a8283a5ae169ac724aca08ba72087cceec836798bdd2",
       "interactions": [
         "press F7 to open the daemon-authoritative Recipes inventory",
-        "type /busybox and Enter, then select the exact busybox recipe from bounded matches",
+        "navigate the bounded inventory until the inspector reports the exact busybox recipe",
         "press t to refresh authoritative Devtool status",
-        "press d and Enter to run confirmed devtool modify",
+        "press d to open the authoritative BusyBox Devtool workspace",
         "press F10 to compose the application menu over the recipe editor"
       ],
       "metadata": "editor-application-menu.meta",
-      "metadata_sha256": "19498307f12b3c7d0a0cd5858ec94051cfbd9932ea22ab85f9485ec455679c6f",
+      "metadata_sha256": "0d41e7d8c6f949cf104f2c131ffe436f66a84ef3365005745a7fb2f21993b4bd",
       "observed_assertions": [
-        "Recipe editor:",
+        "Recipe Inspector",
         "Application menu",
         "focus trapped"
       ],
       "raster": "editor-application-menu.png",
-      "raster_sha256": "3cdccf86f81204226c432fee4fa46bc4d54938032e6a929dd535962a69bed651",
+      "raster_sha256": "2b9caf228f6121c7b0355e78ffcf1f8541d05c53682783b3ad3d80e748217274",
       "report": "editor-application-menu.report.json",
-      "report_sha256": "8d2db36b2a84e01039939d61fa9efe449649f1d4c11c7bd37b9b1373eb25531c",
+      "report_sha256": "7cd1aa921e34c9abb5d24cacf115e307d0dcbe0beb4b847935d9b5cdf4c2c30f",
       "semantic": "editor-application-menu.txt",
-      "semantic_sha256": "1620318ccee4ab620e6dd56280089c9367e673b04ceaf31a7af0eed7ceda207b",
+      "semantic_sha256": "a2e8a384d71be4156b6ff1f081d2ba20471e2f6d318e9a78650a6b6ce9fbb0fa",
       "terminal": "editor-application-menu.ansi",
-      "terminal_sha256": "1d887f36b5517718858ac3828a0a7940d45172f228679ddb826572e21d030620"
+      "terminal_sha256": "79e928aedacbeb0fd3bbd4a75649cfb5ef6620fb5ca29cfcbbecc27f6674b912"
     },
     "failed-build-errors": {
+      "cells": "failed-build-errors.cells",
+      "cells_sha256": "5d6bddc5e2191f46a715716dd114b6ca3ac2d6477c6afc83734c73fc1d719df6",
       "interactions": [
         "press e to open the Errors workspace after an intentional failed build"
       ],
       "metadata": "failed-build-errors.meta",
-      "metadata_sha256": "eda1d88bb71aa9f882ecbc4cec51dc9e0a9384a9c0b4cda00df4f38613f6c96e",
+      "metadata_sha256": "8c6ecdfdef84c3238c77f61f2af175924325946c2c6fa8a87ad55ae650b2a3c1",
       "observed_assertions": [
         "Errors",
         "Failed",
         "Daemon: \u2713 Connected"
       ],
       "raster": "failed-build-errors.png",
-      "raster_sha256": "b6dfb375d17c72044e1d57899ddc789260e7df055bba6bc04d86ebeaf3bb8897",
+      "raster_sha256": "e447a7c5960ce30f31e1e0942bf3bd103404eba9f3bc23dc71edbb1ef9f118a9",
       "report": "failed-build-errors.report.json",
       "report_sha256": "192e8459f266a8d6dfbdfd298a95fc8996509af1c574948b470ea3b863518747",
       "semantic": "failed-build-errors.txt",
-      "semantic_sha256": "58fe7253ab893209f9790c2d3ed90bb51a74dbf2691174d0843c44672106b9d8",
+      "semantic_sha256": "6832f1554d8111a1e6df91e1f6d94016a3eb702a5a92457415f886b442bebbed",
       "terminal": "failed-build-errors.ansi",
-      "terminal_sha256": "a64ff66e45d045aaf628f8aede402517559c38ada7491779d24e9b043bd2aacc"
+      "terminal_sha256": "da37faec4c238e39ebe566d0bdaedf12af7b85fa1b70d1cc099500b19a08da01"
     },
     "idle-dashboard": {
+      "cells": "idle-dashboard.cells",
+      "cells_sha256": "21a24a3b9ec0c694632b331cfdb8c1bb7428eae81784edefa9d4929b0338d5ed",
       "interactions": [
         "launch a real client against the idle supported-host daemon"
       ],
       "metadata": "idle-dashboard.meta",
-      "metadata_sha256": "bc0422308b20f0ec90f6b7016f20ef19899681a4602c2062e35b41a121922cfa",
+      "metadata_sha256": "c4edfed990553b0f6b3ea6dfe6e719ccbad50002afef4628dd76e5c76eaaa771",
       "observed_assertions": [
         "Current Build \u00b7 Idle",
         "Daemon: \u2713 Connected",
         "F10 Menu"
       ],
       "raster": "idle-dashboard.png",
-      "raster_sha256": "237fd591f27ca114347c25c8d11c200e15bf5d6119a230749e2572d1048158fc",
+      "raster_sha256": "a7eac4986ad0a72dee150e4ec6532184381ddbc0918e09d18ee568157bdf8984",
       "report": "idle-dashboard.report.json",
       "report_sha256": "09bd615d33d00ed232b1c6be7b211a77c7787ceb050dc7d4fa3846b988aeca78",
       "semantic": "idle-dashboard.txt",
-      "semantic_sha256": "5f509a449980f1ecd642c0be7a9abf593d134e82af4f12f7f8b20bdb06f91c11",
+      "semantic_sha256": "ec0802214b75d27d76379081ed9447b72b2c4d0f5b109450b47957d111efc437",
       "terminal": "idle-dashboard.ansi",
-      "terminal_sha256": "5a322b0b696d4338df1987fbaf9ee900b98832bb526df422e63e019ca4202a94"
+      "terminal_sha256": "f9934d4e8d882949b1f29a23c3a1ecfcec3106652b4dc19643cfa8f0a31833e5"
     },
     "rootfs-composition": {
+      "cells": "rootfs-composition.cells",
+      "cells_sha256": "6b618b361e4b66d1bbbdf636c5cdd60495f2fb536a172dc1506cb7b1bf9305ee",
       "interactions": [
+        "wait for the daemon-owned workspace snapshot to report MACHINE",
         "press F8 to open authoritative image artifacts",
         "wait for the DEPLOY_DIR_IMAGE scan to select the built artifact",
-        "filter the artifact inventory to the real ext4 root filesystem",
+        "navigate the artifact inventory to the real ext4 root filesystem",
         "press p to inspect the selected image rootfs composition"
       ],
       "metadata": "rootfs-composition.meta",
-      "metadata_sha256": "7d9a96639b0fba94dcd023646b4e8632a55602f98148eab69f1db1d5f4f65fe6",
+      "metadata_sha256": "26c6299315386fad0406b7df54d8dab81371ac9b9f9aff474384c3d33a8ee871",
       "observed_assertions": [
         "Images \u00b7 Rootfs composition",
         "Installed-package authority",
@@ -115,17 +126,19 @@
         "Exact totals"
       ],
       "raster": "rootfs-composition.png",
-      "raster_sha256": "66d91916fb3601671cdb8b8ae70ddf9dbec75f950e663ef435d04cea21f86ab8",
+      "raster_sha256": "0401fbf63483d0e620576897ab2ce7be87305a61a0db7959fcaea8ff91f0bc7e",
       "report": "rootfs-composition.report.json",
-      "report_sha256": "e8620ebe68f85342a78891a8aa0bef36d8d26fd7aa37a88d7bbdfe657b88973c",
+      "report_sha256": "62ce32409f7f12ccde166a02700a0b6a2365aa29867b8cb2254ea2537a9dc1f8",
       "semantic": "rootfs-composition.txt",
-      "semantic_sha256": "733c13fcdae9fb86b6a8c767a518c0b91eb365bf608ec966d405fa9a2322a93a",
+      "semantic_sha256": "e583ee17872063e46c0a7b31af4cc859c72494a25155deda45d0f29cc47e0059",
       "terminal": "rootfs-composition.ansi",
-      "terminal_sha256": "f9bbffeb6f204e39b380e5b655c8aa639d6f8600419fd434e62f92972d2ac270"
+      "terminal_sha256": "718682a24c994464419b0e5434e0b841f399e80eff8eecacf089d21f2b4222f5"
     },
     "terminal-sessions": {
       "auxiliary_semantic": "terminal-prefix-help.txt",
-      "auxiliary_semantic_sha256": "986331777cfcb301319b056c18da4214ff6e45c3cd2463f166dccd3625b37019",
+      "auxiliary_semantic_sha256": "51d5ae99d11d48971481336c7aed726ceb963b11651f9bcad066f79614557455",
+      "cells": "terminal-sessions.cells",
+      "cells_sha256": "3072710fda596dc4d361ffe6951320cdc8a18cfb313b7f078cbf597414d3f4e5",
       "interactions": [
         "attach two real clients to one daemon",
         "create two daemon-owned PTYs and transfer one writer lease",
@@ -144,18 +157,18 @@
         "Ctrl+B K"
       ],
       "raster": "terminal-sessions.png",
-      "raster_sha256": "ce1793d99ae89c2298e2ec6d00ad17ef3dbee2d19c7f9da0a417d6b8f6b2918c",
+      "raster_sha256": "33492f06823841db97d34819c8da2c5d2bfc0604f5e919bc9e484ceeaa774cae",
       "report": "terminal-sessions.report.json",
       "report_sha256": "c19f5fcfd2a70b263ffec5c7c40bb1848a9510d34d12de9c4a5634a008f749c4",
       "semantic": "terminal-sessions.txt",
-      "semantic_sha256": "56f6c21262f637b1c3f99da7af4e31d2670f1fa98c727094840fda3dc8f9f80f",
+      "semantic_sha256": "e2ef8a01ba2752c7b533dc94fd1fca4910c22328973e7223d911fa5cda8c486f",
       "terminal": "terminal-sessions.ansi",
-      "terminal_sha256": "1e6fe46d61e2b326a463e37b74817e64a8e132f1f52c24d3aefb0bad683134a0"
+      "terminal_sha256": "a793438b76a2576466a9427cccffcdef54175cda7289e9c346e8e50f824e3110"
     }
   },
   "schema": 1,
-  "source_commit": "2c330c14e5f08b0d2602f57b84a8fad49a9ee39d",
-  "started_utc": "2026-08-28T07:47:41Z",
+  "source_commit": "28de12c401c4bbe782126a1f303872c100f1eb9b",
+  "started_utc": "2026-08-30T19:33:38Z",
   "target": "core-image-minimal",
   "yocto_release": "5.2.4"
 }

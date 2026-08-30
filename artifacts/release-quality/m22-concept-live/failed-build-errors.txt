@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui  •  Project: poky  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Disconnected│
-┌Navigator───────────┐┌Failed build summary───────────────────────────────────────────────┐┌Inspector: Error───────────────────────────────────────────────────┐
-│▾ OVERVIEW          ││Target: core-image-minimal  ·  Result: Failed (exit 1)             ││▾ PRIMARY FACTS                                                    │
-│  ▱ Dashboard       ││Diagnostics: 1 error / 5 warning  ·  Selected: unknown recipe:unkno││Category: BitBake error                                            │
-│▾ CONTENT           ││                                                                   ││Summary: Build failed with exit code 1                             │
-│  ~ Layers          │└───────────────────────────────────────────────────────────────────┘│Time: 1787904816s since Unix epoch                                 │
-│  ~ Recipes         │┌Correlated-log filters─────────────────────────────────────────────┐│Build: yoctui-intentional-missing-target                           │
-│  × Packages        ││> ☑ Errors (checked)     ☑ Warnings (checked)                      ││Recipe: unavailable  Task: unavailable                             │
-│  ~ Images          ││  ⊟ Related task context (indeterminate)  ·  s cycles severity     ││Source log: unavailable                                            │
-│  ▱ SDK             ││                                                                   ││Event metadata: severity=Error, protected=true,                    │
-│▾ BUILD             │└───────────────────────────────────────────────────────────────────┘│build=yoctui-intentional-missing-target                            │
-│  ~ Tasks           │┌Errors and warnings (6 retained; 0 warning / 0 error records evicte┐│                                                                   │
-│  ▱ Logs        LIVE││Time    Severi Recipe  Task   Summary            Build             ││Full message:                                                      │
-│  ▱ Errors         1││1787904 Error                 Build failed with  yoctui-intentional││Build failed with exit code 1                                      │
-│  ▱ Configuration   ││1787904 Warnin                INFO: SRC_URI cont yoctui-intentional││                                                                   │
-│  ~ Dependencies    ││1787904 Warnin                INFO: Source tree  yoctui-intentional││Suggested actions:                                                 │
-│▾ VALIDATE          ││1787904 Warnin                WARNING: SRC_URI i yoctui-intentional││- Inspect the matching retained log context.                       │
-│  ▱ Testing         ││1787904 Warnin                INFO: Using source yoctui-intentional││                                                                   │
-│  ? Security        ││1787904 Warnin                INFO: Recipe busyb yoctui-intentional││Related diagnostics:                                               │
-│  ▱ QA              ││                                                                   ││INFO: SRC_URI contains some conditional appends/prepends - will    │
-│▾ TOOLS             │└───────────────────────────────────────────────────────────────────┘│create branches to represent these                                 │
-│  ▱ Raw Mode        │┌Correlated · Following · match 104/104 · loss 0 W0 E0 · ↑  86-104/1┐│INFO: Source tree extracted to                                     │
-│  ~ Terminal Session││Time       Severity  Task          Message                         ││/repo/.yoctui-next-ui-live.KCSsKf/build/workspace/sources/busybox  │
-│  ▱ Devtool         ││1787904763 i Info                  TARGET_SYS           = "x86_64-p││WARNING: SRC_URI is conditionally overridden in this recipe, thus  │
-│  ▱ QEMU / Wic      ││1787904763 i Info                  MACHINE              = "qemux86-││several devtool-override-* branches have been created,             │
-│  ▱ Maintenance     ││1787904763 i Info                  DISTRO               = "poky"   ││                                                                   │
-│  ▱ Build environmen││1787904763 i Info                  DISTRO_VERSION       = "5.2.4"  ││▾ CONTEXTUAL ACTIONS                                               │
-│  ▱ Compatibility   ││1787904764 i Info                  TUNE_FEATURES        = "m64 core││✓ Inspect retained diagnostic source  [Enter/o] — Local            │
-│  ▱ Settings        ││1787904764 i Info                  TARGET_FPU           = ""       ││                                                                   │
-│                    ││1787904764 i Info                  meta                            ││                                                                   │
-│                    ││1787904764 i Info                  meta-poky                       ││                                                                   │
-│                    ││1787904764 i Info                  meta-yocto-bsp       = "HEAD:d0b││                                                                   │
-│                    ││1787904764 i Info                  workspace            = "master:2││                                                                   │
-│                    ││1787904765 i Info                                                  ││                                                                   │
-│                    ││1787904765 i Info                  Initialising tasks...Sstate summ││                                                                   │
-│                    ││1787904765 i Info                  done.                           ││                                                                   │
-│                    ││1787904765 i Info                  NOTE: Executing Tasks           ││                                                                   │
-│                    ││1787904797 i Info                  NOTE: Tasks Summary: Attempted 1││                                                                   │
-│                    ││1787904797 ! Warning               INFO: Source tree extracted to /││                                                                   │
-│                    ││1787904797 ! Warning               WARNING: SRC_URI is conditionall││                                                                   │
-│                    ││1787904797 ! Warning               INFO: Using source tree as build││                                                                   │
-│                    ││1787904798 ! Warning               INFO: Recipe busybox now set up ││                                                                   │
-│                    │└───────────────────────────────────────────────────────────────────┘│                                                                   │
-│                    │┌Recovery actions───────────────────────────────────────────────────┐│                                                                   │
-│                    ││Enter matching log · o source · B rebuild options                  ││                                                                   │
-│                    ││Rebuild: review + confirmation required.                           ││                                                                   │
-└────────────────────┘└───────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────────────────────────────┘
-↑/↓ select   Enter matching log   o source   s severity filter   f pause/follow   B rebuild options   Tab Inspector   F1 Help   F10 Menu   q Quit       08:13:37
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│yoctui v0.1.3  •  Project: poky  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64      Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers:…│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Failed build summary────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
+│▾ OVERVIEW                ││Target: core-image-minimal  ·  Result: Failed (exit 1)                              ││▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             ││Diagnostics: 1 error / 0 warning  ·  Selected: unknown recipe:unknown task          ││Category: BitBake error                     │
+│▾ CONTENT                 ││                                                                                    ││Summary: Build failed with exit code 1      │
+│  ~ Layers                │└────────────────────────────────────────────────────────────────────────────────────┘│Time: 1788118868s since Unix epoch          │
+│  ~ Recipes               │┌Correlated-log filters──────────────────────────────────────────────────────────────┐│Build: yoctui-intentional-missing-target    │
+│  × Packages              ││> ☑ Errors (checked)     ☑ Warnings (checked)                                       ││Recipe: unavailable  Task: unavailable      │
+│  ~ Images                ││  ⊟ Related task context (indeterminate)  ·  s cycles severity                      ││Source log: unavailable                     │
+│  ▱ SDK                   ││                                                                                    ││Event metadata: severity=Error,             │
+│▾ BUILD                   │└────────────────────────────────────────────────────────────────────────────────────┘│protected=true,                             │
+│  ~ Tasks                 │┌Errors and warnings (1 retained; 0 warning / 0 error records evicted)───────────────┐│build=yoctui-intentional-missing-target     │
+│  ▱ Logs              LIVE││Time      Severity  Recipe        Task         Summary            Build             ││                                            │
+│  ▱ Errors               1││178811886 Error                                Build failed with  yoctui-intentional││Full message:                               │
+│  ▱ Configuration         ││                                                                                    ││Build failed with exit code 1               │
+│  ~ Dependencies          ││                                                                                    ││                                            │
+│▾ VALIDATE                ││                                                                                    ││Suggested actions:                          │
+│  ▱ Testing               ││                                                                                    ││- Inspect the matching retained log context.│
+│    Security              ││                                                                                    ││                                            │
+│  ▱ QA                    ││                                                                                    ││Related diagnostics:                        │
+│▾ TOOLS                   │└────────────────────────────────────────────────────────────────────────────────────┘│none                                        │
+│  ▱ Raw Mode              │┌Correlated · Following · match 69/69 · loss 0 W0 E0 · ↑  55-69/69───────────────────┐│                                            │
+│  ~ Terminal Sessions     ││Time       Severity  Task          Message                                          ││▾ CONTEXTUAL ACTIONS                        │
+│  ▱ Devtool               ││1788118700 i Info                  Executing reproducible_final_image_task ...      ││✓ Inspect retained diagnostic …  [Enter/o] —│
+│  ▱ QEMU / Wic            ││1788118700 i Info                  reproducible_final_image_task: mtime set to 15205││Local                                       │
+│  ▱ Maintenance           ││1788118701 i Info                  Direct dependencies are ['/home/bspguy-dev/projec││                                            │
+│  ▱ Build environment     ││1788118701 i Info                  Direct dependencies are ['/home/bspguy-dev/projec││                                            │
+│  ▱ Compatibility         ││1788118701 i Info                  Installed into sysroot: ['tar-native']           ││                                            │
+│  ▱ Settings              ││1788118701 i Info                  Skipping as already exists in sysroot: ['gettext-││                                            │
+│                          ││1788118701 i Info                  Installed into sysroot: ['e2fsprogs-native']     ││                                            │
+│                          ││1788118701 i Info                  Skipping as already exists in sysroot: ['gettext-││                                            │
+│                          ││1788118702 i Info                  Creating symlink: /home/bspguy-dev/projects/yoctu││                                            │
+│                          ││1788118702 i Info                  Creating symlink: /home/bspguy-dev/projects/yoctu││                                            │
+│                          ││1788118703 i Info                  Direct dependencies are ['/home/bspguy-dev/projec││                                            │
+│                          ││1788118703 i Info                  Installed into sysroot: ['qemu-helper-native', 'q││                                            │
+│                          ││1788118703 i Info                  Skipping as already exists in sysroot: ['gettext-││                                            │
+│                          ││1788118704 i Info                  Using umask 0o002 (not 22) for sstate packaging  ││                                            │
+│                          ││1788118707 i Info                  Tasks Summary: Attempted %d tasks of which %d did││                                            │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│                          │┌Recovery actions────────────────────────────────────────────────────────────────────┐│                                            │
+│                          ││Enter matching log · o source · B rebuild options                                   ││                                            │
+│                          ││Rebuild: review + confirmation required.                                            ││                                            │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   Enter matching log   o source   s severity filter   f pause/follow   B rebuild options   ←/→ Focus   F1 Help   F10 Menu   q Quit         19:41:13│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -205,6 +205,17 @@ def main() -> int:
             f"{label} omitted {anchors!r} (returncode={process.poll()}):\n{screen.text()}"
         )
 
+    def inspector_text() -> str:
+        """Return the selected item's inspector, independent of theme styling."""
+        inspector_start = args.width * 7 // 10
+        return "\n".join(
+            "".join(cell.symbol for cell in row[inspector_start:])
+            for row in screen.cells
+        )
+
+    def inspector_contains(needle: str) -> bool:
+        return needle.casefold() in inspector_text().casefold()
+
     expect(["yoctui", "Daemon: ✓ Connected"], "live startup", 20)
     interactions: list[str]
     assertions: list[str]
@@ -215,11 +226,13 @@ def main() -> int:
         expect(assertions, "failed-build Errors workflow", 20)
     elif args.scenario == "rootfs":
         interactions = [
+            "wait for the daemon-owned workspace snapshot to report MACHINE",
             "press F8 to open authoritative image artifacts",
             "wait for the DEPLOY_DIR_IMAGE scan to select the built artifact",
-            "filter the artifact inventory to the real ext4 root filesystem",
+            "navigate the artifact inventory to the real ext4 root filesystem",
             "press p to inspect the selected image rootfs composition",
         ]
+        expect(["Machine:"], "daemon-owned workspace snapshot", 120)
         os.write(master, b"\x1b[19~")
         assertions = [
             "Images · Rootfs composition",
@@ -231,6 +244,7 @@ def main() -> int:
         deadline = time.monotonic() + 180
         next_retry = 0.0
         selected_rootfs = False
+        navigation_attempts = 0
         while time.monotonic() < deadline and process.poll() is None:
             collect(0.25)
             visible = screen.text()
@@ -243,11 +257,19 @@ def main() -> int:
                 and now >= next_retry
             ):
                 if not selected_rootfs:
-                    os.write(master, b"/ext4\r")
-                    selected_rootfs = True
+                    if inspector_contains("ext4"):
+                        selected_rootfs = True
+                    elif navigation_attempts < 128:
+                        os.write(master, b"\x1b[B")
+                        navigation_attempts += 1
+                    else:
+                        raise SystemExit(
+                            "no selectable ext4 artifact was found in the bounded inventory:\n"
+                            + screen.text()
+                        )
                 else:
                     os.write(master, b"p")
-                next_retry = now + 2
+                next_retry = now + (2 if selected_rootfs else 0.1)
         else:
             raise SystemExit(
                 f"rootfs composition workflow omitted {assertions!r} "
@@ -256,9 +278,9 @@ def main() -> int:
     else:
         interactions = [
             "press F7 to open the daemon-authoritative Recipes inventory",
-            "type /busybox and Enter, then select the exact busybox recipe from bounded matches",
+            "navigate the bounded inventory until the inspector reports the exact busybox recipe",
             "press t to refresh authoritative Devtool status",
-            "press d and Enter to run confirmed devtool modify",
+            "press d to open the authoritative BusyBox Devtool workspace",
             "press F10 to compose the application menu over the recipe editor",
         ]
         os.write(master, b"\x1b[18~")
@@ -267,26 +289,24 @@ def main() -> int:
             "daemon-authoritative recipe inventory",
             60,
         )
-        os.write(master, b"/busybox\r")
-        expect(["Query: busybox", "Recipes (shown: 3"], "busybox recipe filter", 10)
-        for _ in range(3):
-            collect(0.25)
-            if "Recipe: busybox " in screen.text():
+        for _ in range(2_048):
+            collect(0.05)
+            selected = inspector_text()
+            if "Recipe: busybox " in selected and "busybox_" in selected:
                 break
             os.write(master, b"\x1b[B")
         else:
             raise SystemExit(
-                "exact busybox recipe selection was absent from three bounded matches:\n"
+                "exact busybox recipe selection was absent from the bounded inventory:\n"
                 + screen.text()
             )
         os.write(master, b"t")
-        expect(["Workspace/Devtool: not in workspace"], "authoritative Devtool status", 30)
+        expect(["Workspace/Devtool: member at"], "authoritative Devtool workspace", 60)
         os.write(master, b"d")
-        expect(["Confirm Devtool modify"], "devtool modify confirmation", 10)
-        os.write(master, b"\r")
-        expect(["Recipe editor:", "Workspace file tree:"], "real devtool recipe editor", 600)
+        editor_anchors = ["Recipe Inspector", "Workspace file tree"]
+        expect(editor_anchors, "real devtool recipe editor", 60)
         os.write(master, b"\x1b[21~")
-        assertions = ["Recipe editor:", "Application menu", "focus trapped"]
+        assertions = ["Recipe Inspector", "Application menu", "focus trapped"]
         expect(assertions, "application menu over recipe editor", 20)
 
     if "�" in screen.text():

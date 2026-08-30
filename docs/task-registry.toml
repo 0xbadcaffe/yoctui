@@ -6584,23 +6584,23 @@ notes = "The shared PTY compositor tracks cursor-addressed UTF-8 symbols, erasur
 id = "UX-VISUAL-LIVE-001"
 milestone = "M25"
 title = "Recapture all six styled scenarios from the current release binary"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 755
 required = true
 depends_on = ["UX-VISUAL-SHELL-001", "UX-LIVE-STYLE-001"]
 verify = ["YOCTUI_LIVE_COMPLETE=1 ./scripts/test-live-m22-concept-parity.sh", "python3 scripts/test-m22-live-design-gallery.py"]
-notes = "The historical M22 gallery remains exact workflow evidence but is no longer described as the current visual baseline. The installed release and daemon share SHA-256 d312172c3412eaf2b96c86a66c73ebddca7bc04fdac28d7f83df37e8c366a585; a real 160x50 bridge capture verifies Poky 5.2.4/qemux86-64, four layers, exact styles, and numeric idle CPU/RAM/build-FS meters in the remediated Dashboard. The remaining work is one fresh six-scene supported-host capture."
+notes = "DONE: one optimized 0.1.3 binary (SHA-256 bbe9b9509a254c6c8c5057061635883c44dd0a02f106d1e61d3ac5d052dc3352) drove all six current 160x50 scenarios on Ubuntu 24.04.4/glibc 2.39 against Poky 5.2.4, BitBake 2.12.1, and qemux86-64. Exact ANSI, semantic text, cell/style goldens, reports, PNGs, manifest identity, and checksums are retained; the directly visible docs gallery is byte-identical to the verified rasters."
 
 [[task]]
 id = "UX-VISUAL-PARITY-001"
 milestone = "M25"
 title = "Close M21 visual resemblance remediation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 756
 required = true
 depends_on = ["UX-VISUAL-SHELL-001", "UX-LIVE-STYLE-001", "UX-VISUAL-LIVE-001"]
 verify = ["./scripts/verify-m22-concept-parity.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
-notes = "The parent remains open until deterministic review, styled live evidence, documentation, and the complete repository gate all pass."
+notes = "DONE: deterministic production scenes, supported-host live evidence, directly visible docs rasters, M21 attribution, and all six pairwise parity contracts pass with no open implementation gaps. The repository roadmap is 604/604 required tasks complete."
 
 # M26 — Visible Release Identity.
 

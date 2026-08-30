@@ -254,13 +254,16 @@ PY
 
 cp "$evidence/active-tasks.ansi" "$m22_evidence/active-build-tasks.ansi"
 cp "$evidence/active-tasks.txt" "$m22_evidence/active-build-tasks.txt"
+cp "$evidence/active-tasks.cells" "$m22_evidence/active-build-tasks.cells"
 cp "$evidence/active-tasks.meta" "$m22_evidence/active-build-tasks.meta"
 python3 "$repo_root/scripts/capture-live-m22-concepts.py" \
   --binary "$binary" --build-dir "$build_dir" --output "$m22_evidence/rootfs-composition" \
-  --scenario rootfs --backend process
+  --scenario rootfs --backend bridge
+devtool modify busybox >"$evidence/devtool-modify.log" 2>&1
+devtool status | grep -Eq '^busybox:'
 python3 "$repo_root/scripts/capture-live-m22-concepts.py" \
   --binary "$binary" --build-dir "$build_dir" --output "$m22_evidence/editor-application-menu" \
-  --scenario editor-menu --backend process
+  --scenario editor-menu --backend bridge
 
 "$binary" daemon build yoctui-intentional-missing-target
 failure_deadline=$((SECONDS + 120))
@@ -275,7 +278,7 @@ python3 "$repo_root/scripts/capture-live-next-generation-ui.py" \
 
 python3 "$repo_root/scripts/capture-live-m22-concepts.py" \
   --binary "$binary" --build-dir "$build_dir" --output "$m22_evidence/failed-build-errors" \
-  --scenario errors --backend process
+  --scenario errors --backend bridge
 YOCTUI_TEST_BINARY="$binary" YOCTUI_TERMINAL_EVIDENCE="$m22_evidence" \
   "$repo_root/scripts/test-workbench-terminal.sh"
 

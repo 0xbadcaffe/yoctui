@@ -1,8 +1,9 @@
 {
   "interactions": [
+    "wait for the daemon-owned workspace snapshot to report MACHINE",
     "press F8 to open authoritative image artifacts",
     "wait for the DEPLOY_DIR_IMAGE scan to select the built artifact",
-    "filter the artifact inventory to the real ext4 root filesystem",
+    "navigate the artifact inventory to the real ext4 root filesystem",
     "press p to inspect the selected image rootfs composition"
   ],
   "observed_assertions": [

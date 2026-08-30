@@ -1,9 +1,9 @@
 schema_version = 1
 label = "supported-live-m22-design-regression-gallery"
 source_manifest = "artifacts/release-quality/m22-concept-live/manifest.json"
-source_manifest_sha256 = "3e15c9f5fb4be558516f246265aa8c68e54a008a8a5fedac557c63920bb6efa7"
-source_commit = "2c330c14e5f08b0d2602f57b84a8fad49a9ee39d"
-binary_sha256 = "bc2d31a044a99cfbd169733558ab785509953eb9e16a8dd454cbb96b6874ff3b"
+source_manifest_sha256 = "aab7efbd30c1f8a214a924f2ad3c9075003c335cf6b2a17c23e5bbef347955dc"
+source_commit = "28de12c401c4bbe782126a1f303872c100f1eb9b"
+binary_sha256 = "bbe9b9509a254c6c8c5057061635883c44dd0a02f106d1e61d3ac5d052dc3352"
 host_distribution = "Ubuntu 24.04.4 LTS"
 host_libc = "glibc 2.39"
 poky_revision = "d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1"
@@ -18,35 +18,35 @@ pixel_height = 1000
 [[scenario]]
 id = "idle-dashboard"
 file = "docs/design/m22/live-scenarios/01-idle-dashboard.png"
-sha256 = "237fd591f27ca114347c25c8d11c200e15bf5d6119a230749e2572d1048158fc"
+sha256 = "a7eac4986ad0a72dee150e4ec6532184381ddbc0918e09d18ee568157bdf8984"
 source = "artifacts/release-quality/m22-concept-live/idle-dashboard.png"
 
 [[scenario]]
 id = "active-build-tasks"
 file = "docs/design/m22/live-scenarios/02-active-build-tasks.png"
-sha256 = "bb05851ab8d1c5004f4b85e80c52c0850418be8902fb4f6ea6f1d5a4832e6f61"
+sha256 = "2cb09918b7928fbef3cecc30858150b132775fdc011fde1eac64f30c558ac68a"
 source = "artifacts/release-quality/m22-concept-live/active-build-tasks.png"
 
 [[scenario]]
 id = "failed-build-errors"
 file = "docs/design/m22/live-scenarios/03-failed-build-errors.png"
-sha256 = "b6dfb375d17c72044e1d57899ddc789260e7df055bba6bc04d86ebeaf3bb8897"
+sha256 = "e447a7c5960ce30f31e1e0942bf3bd103404eba9f3bc23dc71edbb1ef9f118a9"
 source = "artifacts/release-quality/m22-concept-live/failed-build-errors.png"
 
 [[scenario]]
 id = "rootfs-composition"
 file = "docs/design/m22/live-scenarios/04-rootfs-composition.png"
-sha256 = "66d91916fb3601671cdb8b8ae70ddf9dbec75f950e663ef435d04cea21f86ab8"
+sha256 = "0401fbf63483d0e620576897ab2ce7be87305a61a0db7959fcaea8ff91f0bc7e"
 source = "artifacts/release-quality/m22-concept-live/rootfs-composition.png"
 
 [[scenario]]
 id = "editor-application-menu"
 file = "docs/design/m22/live-scenarios/05-editor-application-menu.png"
-sha256 = "3cdccf86f81204226c432fee4fa46bc4d54938032e6a929dd535962a69bed651"
+sha256 = "2b9caf228f6121c7b0355e78ffcf1f8541d05c53682783b3ad3d80e748217274"
 source = "artifacts/release-quality/m22-concept-live/editor-application-menu.png"
 
 [[scenario]]
 id = "terminal-sessions"
 file = "docs/design/m22/live-scenarios/06-terminal-sessions.png"
-sha256 = "ce1793d99ae89c2298e2ec6d00ad17ef3dbee2d19c7f9da0a417d6b8f6b2918c"
+sha256 = "33492f06823841db97d34819c8da2c5d2bfc0604f5e919bc9e484ceeaa774cae"
 source = "artifacts/release-quality/m22-concept-live/terminal-sessions.png"

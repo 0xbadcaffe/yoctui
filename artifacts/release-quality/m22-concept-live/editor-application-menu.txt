@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│y┌modal · Recipe editor: busybox────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐d│
-┌N│┌Workspace file tree: busybox────────────────────────┐┌AUTHORS (read-only)───────────────────────────────────────────────────────────────────────────────┐│─┐
-│▾││▶ AUTHORS                                           ││List of the authors of code contained in BusyBox.                                                 ││ │
-│ ││  Config.in                                         ││                                                                                                  ││ │
-│▾││  Makefile                                          ││If you have code in BusyBox, you should be listed here.  If you should be                         ││ │
-│ ││  Makefile.flags                                    ││listed, or the description of what you have done needs more detail, or is                         ││ │
-│ ││  NOFORK_NOEXEC.sh                                  ││incorrect, _please_ let me know.                                                                  ││ │
-│ ││  TODO_unicode                                      ││                                                                                                  ││ │
-│ ││  coreutils/Config.src                              ││ -Erik                                                                                            ││u│
-│ ││  coreutils/Kbuild.src                              ││                                                                                                  ││ │
-│▾││  coreutils/basename.c                              ││-----------                                                                                       ││ │
-│ ││  coreutils/cat.c                                   ││                                                                                                  ││ │
-│ ││  coreutils/chgrp.c                                 ││Peter Willis <psyphreak@phreaker.net>                                                             ││ │
-│ ││  coreutils/chmod.c                                 ││    eject                                                                                         ││ │
-│ ││  coreutils/chown.c                                 ││                                                                                                  ││ │
-│ ││  coreutils/chroot.c                                ││Emanuele Aina <emanuele.aina@tiscali.it>                                                          ││ │
-│▾││  coreutils/cksum.c                                 ││    run-parts                                                                                     ││ │
-│ ││  coreutils/comm.c                                  ││                                                                                                  ││ │
-│ ││  coreutils/cp.c             ┌modal · Application menu · focus trapped────────────────────────────────────────────────────┐                             ││ │
-│ ││  coreutils/cut.c            │[Workspace]  Build  Navigate  View  Tools  Help                                             │                             ││ │
-│▾││  coreutils/date.c           │type-ahead: <empty>                                                                         │                             ││ │
-│ ││  coreutils/dd.c             │┌Catalog actions───────────────────────────────────────────────────────────────────────────┐│                             ││ │
-│ ││  coreutils/df.c             ││Action                Shortcut       Safety       Availability                            ││                             ││ │
-│ ││  coreutils/dirname.c        ││> Edit BBMASK         x then e       confirm      available                               ││                             ││ │
-│ ││  coreutils/dos2unix.c       │└──────────────────────────────────────────────────────────────────────────────────────────┘│                             ││.│
-│ ││  coreutils/du.c             │┌Selected action───────────────────────────────────────────────────────────────────────────┐│                             ││ │
-│ ││  coreutils/echo.c           │└──────────────────────────────────────────────────────────────────────────────────────────┘│                             ││ │
-│ ││  coreutils/env.c            │Esc/F10 close · Enter activate · ↑/↓ items · ←/→ groups · type prefix · Backspace           │                             ││ │
-│ ││  coreutils/expand.c         └────────────────────────────────────────────────────────────────────────────────────────────┘                             ││ │
-│ ││  coreutils/expr.c                                  ││                                                                                                  ││ │
-│ ││  coreutils/factor.c                                ││Enrik Berkhan <Enrik.Berkhan@inka.de>                                                             ││ │
-│ ││  coreutils/false.c                                 ││    setconsole                                                                                    ││ │
-│ ││  coreutils/fold.c                                  ││                                                                                                  ││ │
-│ ││  coreutils/head.c                                  ││Jim Bauer <jfbauer@nfr.com>                                                                       ││ │
-│ ││  coreutils/hostid.c                                ││    modprobe shell dependency                                                                     ││ │
-│ ││  coreutils/id.c                                    ││                                                                                                  ││ │
-│ ││  coreutils/id_test.sh                              ││Edward Betts <edward@debian.org>                                                                  ││ │
-│ ││  coreutils/install.c                               ││    expr, hostid, logname, whoami                                                                 ││ │
-│ │└────────────────────────────────────────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────────┘│u│
-│ │┌Validation and diff state───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐│ │
-│ ││Local validation: ✓ no structural diagnostics                                                                                                           ││ │
-│ ││Diff preview: loaded → buffer                                                                                                                           ││ │
-│ ││  unchanged                                                                                                                                             ││ │
-│ ││BitBake parse remains authoritative · save before Ctrl+B build                                                                                          ││ │
-│ ││                                                                                                                                                        ││ │
-│ │└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘│ │
-└─│↑/↓ file  Enter/e edit  Ctrl+S save  Ctrl+B build recipe  Esc return to Yoctui                                                                            │─┘
-En└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘21
-────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+│yoctui v0.1.3  •  Project: poky  •  ✓ Completed  •  Target: core-image-minimal  •  Machine: qemux86-64   Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky  |  Build: core-image-minimal  |  Task: 3837 / 3837  |  Elapsed: 00:00:15  |  Wo…│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────┐┌modal · Recipe edit┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
+│▾ OVERVIEW        ││┌Workspace file tre│ Workspace  Build  Navigate  View  Tools  Help            │1───────────────────────┐┌Recipe Inspector────────────────┐│
+│  ▱ Dashboard     │││▶ AUTHORS         │Type to jump                                              │x.                      ││Recipe                          ││
+│▾ CONTENT         │││  Config.in       │> Edit BBMASK           x then e   Preview and save the ef│                        ││Name: busybox                   ││
+│  ~ Layers        │││  Makefile        │                                                          │ed here.  If you should ││Layer: core                     ││
+│  ~ Recipes       │││  Makefile.flags  │                                                          │                        ││File: AUTHORS                   ││
+│  × Packages      │││  NOFORK_NOEXEC.sh│                                                          │e needs more detail, or ││Language: Plain text            ││
+│  ~ Images        │││  TODO_unicode    │                                                          │                        ││State: clean                    ││
+│  ▱ SDK           │││  coreutils/Config│↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu        │                        ││                                ││
+│▾ BUILD           │││  coreutils/Kbuild└──────────────────────────────────────────────────────────┘                        ││Actions                         ││
+│  ~ Tasks         │││  coreutils/basename.c ││  7 │  -Erik                                                                 ││[v] Validate                    ││
+│  ▱ Logs      LIVE│││  coreutils/cat.c      ││  8 │                                                                        ││[p] Preview diff                ││
+│  ▱ Errors        │││  coreutils/chgrp.c    ││  9 │ -----------                                                            ││[Ctrl+S] Save                   ││
+│  ▱ Configuration │││  coreutils/chmod.c    ││ 10 │                                                                        ││[Ctrl+B] Build recipe           ││
+│  ~ Dependencies  │││  coreutils/chown.c    ││ 11 │ Peter Willis <psyphreak@phreaker.net>                                  ││[e] External editor             ││
+│▾ VALIDATE        │││  coreutils/chroot.c   ││ 12 │     eject                                                              ││                                ││
+│  ▱ Testing       │││  coreutils/cksum.c    ││ 13 │                                                                        ││                                ││
+│    Security      │││  coreutils/comm.c     ││ 14 │ Emanuele Aina <emanuele.aina@tiscali.it>                               ││                                ││
+│  ▱ QA            │││  coreutils/cp.c       ││ 15 │     run-parts                                                          ││                                ││
+│▾ TOOLS           │││  coreutils/cut.c      ││ 16 │                                                                        ││                                ││
+│  ▱ Raw Mode      │││  coreutils/date.c     ││ 17 │ Erik Andersen <andersen@codepoet.org>                                  ││                                ││
+│  ~ Terminal Sessi│││  coreutils/dd.c       ││ 18 │     Tons of new stuff, major rewrite of most of the                    ││                                ││
+│  ▱ Devtool      1│││  coreutils/df.c       ││ 19 │     core apps, tons of new apps as noted in header files.              ││                                ││
+│  ▱ QEMU / Wic    │││  coreutils/dirname.c  ││ 20 │     Lots of tedious effort writing these boring docs that              ││                                ││
+│  ▱ Maintenance   │││  coreutils/dos2unix.c ││ 21 │     nobody is going to actually read.                                  ││                                ││
+│  ▱ Build environm│││  coreutils/du.c       ││ 22 │                                                                        ││                                ││
+│  ▱ Compatibility │││  coreutils/echo.c     ││ 23 │ Laurence Anderson <l.d.anderson@warwick.ac.uk>                         ││                                ││
+│  ▱ Settings      │││  coreutils/env.c      ││ 24 │     rpm2cpio, unzip, get_header_cpio, read_gz interface, rpm           ││                                ││
+│                  │││  coreutils/expand.c   ││ 25 │                                                                        ││                                ││
+│                  │││  coreutils/expr.c     ││ 26 │ Jeff Angielski <jeff@theptrgroup.com>                                  ││                                ││
+│                  │││  coreutils/factor.c   ││ 27 │     ftpput, ftpget                                                     ││                                ││
+│                  │││  coreutils/false.c    ││ 28 │                                                                        ││                                ││
+│                  ││└───────────────────────┘└─────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────┘│
+│                  ││┌Validation and diff state───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐│
+│                  │││Local validation: ✓ no structural diagnostics                                                                                           ││
+│                  │││Diff preview: loaded → buffer                                                                                                           ││
+│                  │││  unchanged                                                                                                                             ││
+│                  │││Structural diagnostics only; BitBake/compiler output remains authoritative                                                              ││
+│                  │││                                                                                                                                        ││
+│                  ││└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘│
+│                  ││FILES · ↑/↓ select · Enter/e focus editor · Ctrl+B build recipe · Esc close                                                               │
+└──────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Enter select/confirm   Esc cancel   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F8 Images   F1 Help   F10 Menu   q Quit              19:40:53│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

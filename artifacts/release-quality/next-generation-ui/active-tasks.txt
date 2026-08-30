@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui  •  Project: poky  •  ▶ Parsing  •  Target: core-image-minimal  •  Machine: qemux86-64                       Daemon: ✓ Connected  •  BitBake: ✓ Running│
-┌Navigator───────────────┐┌Tasks: core-image-minimal · All────────────────────────────────────────────────────────┐┌Inspector: Task────────────────────────────┐
-│▾ Layers                ││                                  Overall  0%  0/3837                                  ││Task        do_create_spdx_setscene        │
-│  ▱ core                ││Active 2  Waiting 3823  Warnings 0  Errors 0  Elapsed 00:00:00                         ││Recipe      debianutils-native             │
-│  ▱ yocto               ││Task             Recipe                Status        Time      Progress                ││PN          debianutils-native             │
-│  ▱ yoctobsp            ││do_create_spdx_s debianutils-native    ▶ Running     00:00:00  progress unknown⠽       ││PV          5.21                           │
-│▾ Recipes               ││do_populate_lic_ diffutils-native      ▶ Running     00:00:00  progress unknown⠽       ││PR          unavailable                    │
-│  ▸ nativesdk-sdk-provid││do_populate_lic_ alsa-lib              · Queued      --        --                      ││State       ▶ Running                      │
-│  ▸ xf86-video-vmware   ││do_create_image_ core-image-minimal    · Queued      --        --                      ││Progress    unknown                        │
-│  ▸ acpid               ││do_create_packag debianutils           · Queued      --        --                      ││                                           │
-│▾ Images                ││do_create_spdx_s debianutils           · Queued      --        --                      ││                                           │
-│  ▱ core-image-x11      ││do_populate_lic_ diffutils             · Queued      --        --                      │└───────────────────────────────────────────┘
-│  ▱ core-image-kernel-de││do_populate_lic_ dtc                   · Queued      --        --                      │┌Secondary facts · Paths · Dependencies─────┐
-│▾ Tasks                 ││do_populate_lic_ libpng                · Queued      --        --                      ││Worker      unavailable                    │
-│  ▱ Build               │└───────────────────────────────────────────────────────────────────────────────────────┘│PID         849                            │
-│  ▱ Test                │┌Log Viewer — do_create_spdx_setscene (debianutils-native) · ▶ Follow───────────────────┐│Started     07:58:04                       │
-│  ▱ QA                  ││Waiting for typed log entries for the selected task.                                   ││Elapsed     00:00:00                       │
-│  ▱ Devtool             ││                                                                                       ││Workdir     unavailable                    │
-│  ▱ Wic                 ││                                                                                       ││Log file                                   │
-│  ▱ SDK                 ││                                                                                       ││/repo/.yoctui-next-ui-live.KCSsKf/build/tmp│
-│  ▱ Security            ││                                                                                       ││/work/x86_64-linux/debianutils-native/5.21/│
-│  ▱ Utility             ││                                                                                       ││temp/log.do_create_spdx_setscene.849       │
-│▾ Targets               ││                                                                                       ││Dependencies none reported                 │
-│  ▱ qemux86-64          ││                                                                                       │└───────────────────────────────────────────┘
-│                        ││                                                                                       │┌Recent output · Recent Log (tail)──────────┐
-│                        ││                                                                                       ││Waiting for typed log entries for the      │
-│                        ││                                                                                       ││selected task.                             │
-│                        ││                                                                                       ││                                           │
-│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│                                           │
-│                        │┌Job History · Active 0 · Queued 0 · Failed 0 · Recent complete 0 · Daemon-owned 1──────┐│                                           │
-│                        ││Status        Operation       Type         Target / Context         Started   Elapsed  ││                                           │
-│                        ││                                                                                       │└───────────────────────────────────────────┘
-│                        ││                                                                                       │┌Contextual Actions─────────────────────────┐
-│                        ││                                                                                       ││~ Cancel active build  [c] — Limited       │
-│                        ││                                                                                       ││  Reason: Direct probing was inconclusive; │
-│                        ││                                                                                       ││  Limitation: Modern Tinfoil API family is │
-│                        ││                                                                                       ││  Implementation: tinfoil.adapter.modern   │
-│                        ││                                                                                       ││✓ Open Logs            [l] — Local         │
-│                        │└───────────────────────────────────────────────────────────────────────────────────────┘│✓ Build History        [h] — Local         │
-│                        │┌Telemetry · bounded 60-sample histories────────────────────────────────────────────────┐│~ Build options        [B] — Limited       │
-│                        ││████                 │████                 │██████████████      │R 3.6 KiB/s           │└───────────────────────────────────────────┘
-│                        ││████                 │████                 │██████████████      │W 273.2 KiB/s         │┌System Status──────────────────────────────┐
-│                        ││████                 │████                 │██████████████      │                      ││✓ Daemon Connected · version unavailable ·…│
-│                        ││████CPU 20% · 8c     │████   RAM 20%       │████BUILD FS 71%    │                      ││✓ BitBake Running · v2.12.1 · Jobs unavail…│
-│                        ││████                 │████                 │██████████████      │                      ││! Compat Degraded g1 · A70 L14 U5 ?18 · PT…│
-│L: core  R: 1  P:849    ││████                 │████                 │██████████████      │                      ││! Build FS 71% · 132.1/456.3 GiB free · Wo…│
-└────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────────────────┘
-│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit            i Daemon resynchronization required…  07:58:05│
+│yoctui v0.1.3  •  Project: poky  •  ▶ Parsing  •  Target: core-image-minimal  •  Machine: qemux86-64          Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky  |  Build: core-image-minimal  |  Task: 0 / 3837  |  Elapsed: 00:00:00  |  Worke…│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Tasks: core-image-minimal · All─────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
+│▾ OVERVIEW                ││                                Overall  0%  0/3837                                 ││Task        do_populate_lic_setscene        │
+│  ▱ Dashboard             ││Active 3  Waiting 3825  Warnings 0  Errors 0  Elapsed 00:00:00                      ││Recipe      tar-native                      │
+│▾ CONTENT                 ││Task           Recipe               Status        Time      Progress                ││PN          tar-native                      │
+│  ~ Layers                ││◓ do_populate_ tar-native           ▶ Running     00:00:00  progress unknown ◓      ││PV          1.35                            │
+│  ~ Recipes               ││◓ do_populate_ alsa-lib-native      ▶ Running     00:00:00  progress unknown ◓      ││PR          unavailable                     │
+│  × Packages              ││◓ do_populate_ unfs3-native         ▶ Running     00:00:00  progress unknown ◓      ││State       ▶ Running                       │
+│  ~ Images                ││  do_populate_ alsa-lib             · Queued      --        --                      ││Progress    unknown                         │
+│  ▱ SDK                   ││  do_create_pa debianutils          · Queued      --        --                      ││                                            │
+│▾ BUILD                   ││  do_populate_ diffutils            · Queued      --        --                      ││                                            │
+│  ~ Tasks                3││  do_populate_ dtc                  · Queued      --        --                      │└────────────────────────────────────────────┘
+│  ▱ Logs              LIVE│└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│  ▱ Errors                │┌Log Viewer — do_populate_lic_setscene (tar-native) · ▶ Follow───────────────────────┐│Worker      unavailable                     │
+│  ▱ Configuration         ││Waiting for typed log entries for the selected task.                                ││PID         719                             │
+│  ~ Dependencies          ││                                                                                    ││Started     19:36:27                        │
+│▾ VALIDATE                ││                                                                                    ││Elapsed     00:00:00                        │
+│  ▱ Testing               ││                                                                                    ││Workdir     unavailable                     │
+│    Security              ││                                                                                    ││Log file                                    │
+│  ▱ QA                    ││                                                                                    ││/home/bspguy-dev/projects/yoctui/.yoctui-nex│
+│▾ TOOLS                   ││                                                                                    ││t-ui-live.09chtF/build/tmp/work/x86_64-linux│
+│  ▱ Raw Mode              ││                                                                                    ││/tar-native/1.35/temp/log.do_populate_lic_se│
+│  ~ Terminal Sessions     ││                                                                                    │└────────────────────────────────────────────┘
+│  ▱ Devtool               ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
+│  ▱ QEMU / Wic            │└────────────────────────────────────────────────────────────────────────────────────┘│Waiting for typed log entries for the       │
+│  ▱ Maintenance           │┌Job History · Active 0 · Queued 0 · Failed 0 · Recent complete 0 · Daemon-owned 1───┐│selected task.                              │
+│  ▱ Build environment     ││Status        Operation     Type         Target / Context        Started   Elapsed  ││                                            │
+│  ▱ Compatibility         ││                                                                                    │└────────────────────────────────────────────┘
+│  ▱ Settings              ││                                                                                    │┌Contextual Actions──────────────────────────┐
+│                          ││                                                                                    ││~ Cancel active build  [c] — Limited        │
+│                          ││                                                                                    ││  Reason: Direct probing was inconclusive; a│
+│                          ││                                                                                    ││  Limitation: Modern Tinfoil API family is i│
+│                          ││                                                                                    ││  Implementation: tinfoil.adapter.modern    │
+│                          ││                                                                                    ││✓ Open Logs            [l] — Local          │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│✓ Build History        [h] — Local          │
+│                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│~ Build options        [B] — Limited        │
+│                          ││CPU Usage        69%│RAM Usage        27%│Build FS Usage   89%│SSTATE ! unavailable │└────────────────────────────────────────────┘
+│                          ││               ▁    │                    │ ▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅ │                     │┌System Status───────────────────────────────┐
+│                          ││ ▇▇▇█▇█▇▇██████████ │                    │ ██████████████████ │                     ││✓ Daemon Connected · Local · version unavai…│
+│                          ││ ██████████████████ │ ▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆▆ │ ██████████████████ │                     ││✓ BitBake Running · v2.12.1 · Jobs unavaila…│
+│                          ││ ━━━━━━━━━━━━━───── │ ━━━━━───────────── │ ━━━━━━━━━━━━━━━━━─ │                     ││! Compat Degraded g1 · A69 L14 U5 ?19 · PTY…│
+│                          ││       8 cores      │    4.2/15.0 GiB    │    50.0 GiB free   │                     ││! Build FS 89% · 50.0/456.3 GiB free · Work…│
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   ←/→ Focus   F1 Help   F10 Menu   q Quiti Daemon resynchronization required…  19:36:27│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

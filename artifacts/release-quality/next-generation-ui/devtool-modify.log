@@ -1,0 +1,33 @@
+NOTE: Starting bitbake server...
+INFO: Creating workspace layer in /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace
+NOTE: Reconnecting to bitbake server...
+Loading cache...done.
+Loaded 0 entries from dependency cache.
+Parsing recipes...done.
+Parsing of 923 .bb files complete (0 cached, 923 parsed). 1884 targets, 49 skipped, 0 masked, 0 errors.
+INFO: SRC_URI contains some conditional appends/prepends - will create branches to represent these
+NOTE: Resolving any missing task queue dependencies
+
+Build Configuration:
+BB_VERSION           = "2.12.1"
+BUILD_SYS            = "x86_64-linux"
+NATIVELSBSTRING      = "universal"
+TARGET_SYS           = "x86_64-poky-linux"
+MACHINE              = "qemux86-64"
+DISTRO               = "poky"
+DISTRO_VERSION       = "5.2.4"
+TUNE_FEATURES        = "m64 core2"
+TARGET_FPU           = ""
+meta
+meta-poky
+meta-yocto-bsp       = "HEAD:d0b46a6624ec9c61c47270745dd0b2d5abbe6ac1"
+workspace            = "master:28de12c401c4bbe782126a1f303872c100f1eb9b"
+
+Initialising tasks...Sstate summary: Wanted 10 Local 10 Mirrors 0 Missed 0 Current 20 (100% match, 100% complete)
+done.
+NOTE: Executing Tasks
+NOTE: Tasks Summary: Attempted 103 tasks of which 100 didn't need to be rerun and all succeeded.
+INFO: Source tree extracted to /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace/sources/busybox
+WARNING: SRC_URI is conditionally overridden in this recipe, thus several devtool-override-* branches have been created, one for each override that makes changes to SRC_URI. It is recommended that you make changes to the devtool branch first, then checkout and rebase each devtool-override-* branch and update any unique patches there (duplicates on those branches will be ignored by devtool finish/update-recipe)
+INFO: Using source tree as build directory since that would be the default for this recipe
+INFO: Recipe busybox now set up to build from /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build/workspace/sources/busybox

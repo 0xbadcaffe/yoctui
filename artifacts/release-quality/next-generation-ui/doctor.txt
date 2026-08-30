@@ -1,5 +1,5 @@
 environment initialized: yes
-build directory: /repo/.yoctui-next-ui-live.KCSsKf/build (usable)
+build directory: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build (usable)
 bitbake: BitBake Build Tool Core version 2.12.1
 BitBake Python module: 2.12.1
 conf/local.conf: present
@@ -10,7 +10,7 @@ compatibility report:
   release support: Unknown (Runtime capability evidence is current; no live release-support claim is encoded yet.)
   snapshot generation: 1
   operating mode: Some(Degraded)
-  build directory: /repo/.yoctui-next-ui-live.KCSsKf/build [InitializedEnvironment]
+  build directory: /home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/build [InitializedEnvironment]
   BitBake: 2.12.1 [BitBakeVersionProbe]
   OE-Core: walnascar unknown [BitBakeDatastore]
   Poky: walnascar 5.2.4 [BitBakeDatastore]
@@ -18,31 +18,31 @@ compatibility report:
   MACHINE: qemux86-64 [BitBakeDatastore]
   backend: unknown
   protocol: yoctui-daemon 1.2 [ProtocolNegotiation]
-  capabilities: available=70 limited=14 unavailable=5 unknown=18 unsupported=0
-  source root: layer=/repo/.yoctui-next-ui-live.KCSsKf/poky/meta [ConfiguredLayerMetadata]
-  source root: layer=/repo/.yoctui-next-ui-live.KCSsKf/poky/meta-poky [ConfiguredLayerMetadata]
-  source root: layer=/repo/.yoctui-next-ui-live.KCSsKf/poky/meta-yocto-bsp [ConfiguredLayerMetadata]
-  layer series: core=/repo/.yoctui-next-ui-live.KCSsKf/poky/meta (walnascar) [ConfiguredLayerMetadata]
-  available tool: bitbake=/repo/.yoctui-next-ui-live.KCSsKf/poky/bitbake/bin/bitbake 2.12.1 [ExecutableProbe]
-  available tool: bitbake-diffsigs=/repo/.yoctui-next-ui-live.KCSsKf/poky/bitbake/bin/bitbake-diffsigs unknown [ExecutableProbe]
-  available tool: bitbake-dumpsig=/repo/.yoctui-next-ui-live.KCSsKf/poky/bitbake/bin/bitbake-dumpsig unknown [ExecutableProbe]
-  available tool: bitbake-getvar=/repo/.yoctui-next-ui-live.KCSsKf/poky/bitbake/bin/bitbake-getvar unknown [ExecutableProbe]
-  available tool: bitbake-layers=/repo/.yoctui-next-ui-live.KCSsKf/poky/bitbake/bin/bitbake-layers unknown [ExecutableProbe]
-  available tool: bitbake-prserv=/repo/.yoctui-next-ui-live.KCSsKf/poky/bitbake/bin/bitbake-prserv unknown [ExecutableProbe]
-  available tool: bitbake-selftest=/repo/.yoctui-next-ui-live.KCSsKf/poky/bitbake/bin/bitbake-selftest unknown [ExecutableProbe]
-  available tool: buildhistory-diff=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/buildhistory-diff unknown [ExecutableProbe]
-  available tool: devtool=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/devtool unknown [ExecutableProbe]
-  available tool: oe-check-sstate=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/oe-check-sstate unknown [ExecutableProbe]
-  available tool: oe-find-native-sysroot=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/oe-find-native-sysroot unknown [ExecutableProbe]
-  available tool: oe-git-archive=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/oe-git-archive unknown [ExecutableProbe]
-  available tool: oe-pkgdata-util=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/oe-pkgdata-util unknown [ExecutableProbe]
-  available tool: oe-publish-sdk=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/oe-publish-sdk unknown [ExecutableProbe]
-  available tool: oe-selftest=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/oe-selftest unknown [ExecutableProbe]
-  available tool: recipetool=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/recipetool unknown [ExecutableProbe]
-  available tool: resulttool=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/resulttool unknown [ExecutableProbe]
-  available tool: runqemu=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/runqemu unknown [ExecutableProbe]
-  available tool: wic=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/wic unknown [ExecutableProbe]
-  available tool: yocto-check-layer=/repo/.yoctui-next-ui-live.KCSsKf/poky/scripts/yocto-check-layer unknown [ExecutableProbe]
+  capabilities: available=69 limited=14 unavailable=5 unknown=19 unsupported=0
+  source root: layer=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/meta [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/meta-poky [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/meta-yocto-bsp [ConfiguredLayerMetadata]
+  layer series: core=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/meta (walnascar) [ConfiguredLayerMetadata]
+  available tool: bitbake=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/bitbake/bin/bitbake 2.12.1 [ExecutableProbe]
+  available tool: bitbake-diffsigs=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/bitbake/bin/bitbake-diffsigs unknown [ExecutableProbe]
+  available tool: bitbake-dumpsig=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/bitbake/bin/bitbake-dumpsig unknown [ExecutableProbe]
+  available tool: bitbake-getvar=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/bitbake/bin/bitbake-getvar unknown [ExecutableProbe]
+  available tool: bitbake-layers=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/bitbake/bin/bitbake-layers unknown [ExecutableProbe]
+  available tool: bitbake-prserv=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/bitbake/bin/bitbake-prserv unknown [ExecutableProbe]
+  available tool: bitbake-selftest=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/bitbake/bin/bitbake-selftest unknown [ExecutableProbe]
+  available tool: buildhistory-diff=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/buildhistory-diff unknown [ExecutableProbe]
+  available tool: devtool=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/devtool unknown [ExecutableProbe]
+  available tool: oe-check-sstate=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/oe-check-sstate unknown [ExecutableProbe]
+  available tool: oe-find-native-sysroot=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/oe-find-native-sysroot unknown [ExecutableProbe]
+  available tool: oe-git-archive=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/oe-git-archive unknown [ExecutableProbe]
+  available tool: oe-pkgdata-util=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/oe-pkgdata-util unknown [ExecutableProbe]
+  available tool: oe-publish-sdk=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/oe-publish-sdk unknown [ExecutableProbe]
+  available tool: oe-selftest=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/oe-selftest unknown [ExecutableProbe]
+  available tool: recipetool=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/recipetool unknown [ExecutableProbe]
+  available tool: resulttool=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/resulttool unknown [ExecutableProbe]
+  available tool: runqemu=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/runqemu unknown [ExecutableProbe]
+  available tool: wic=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/wic unknown [ExecutableProbe]
+  available tool: yocto-check-layer=/home/bspguy-dev/projects/yoctui/.yoctui-next-ui-live.09chtF/poky/scripts/yocto-check-layer unknown [ExecutableProbe]
   missing tool: build-compare — build-compare is absent from the initialized environment
   missing tool: sstate-cache-management.sh — sstate-cache-management.sh is absent from the initialized environment
   limited: bitbake.workspace_inspection — Direct probing was inconclusive; a centralized BitBake adapter fallback was selected. [fallback.version_inference]; limitations=Modern Tinfoil API family is inferred only through the latest documented BitBake 2.18 boundary; direct negotiation is still preferred.; implementation=tinfoil.adapter.modern
@@ -64,8 +64,9 @@ compatibility report:
   unavailable: prserv.diagnostics — Connected environment does not expose PR service diagnostics. [environment.capability_unavailable]
   unavailable: sstate.cleanup — Connected environment does not expose shared-state cache cleanup. [environment.capability_unavailable]
   unavailable: build_compare — Connected environment does not expose build output comparison. [environment.capability_unavailable]
+  unknown: devtool.finish — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: recipetool.create — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
   unknown: recipetool.create_outfile — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
-  unknown: recipetool.appendfile — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
   unknown: sdk.populate — This capability does not declare a release/version fallback. [fallback.not_declared]
   unknown: sdk.extensible — This capability does not declare a release/version fallback. [fallback.not_declared]
   unknown: sdk.native_tools — Direct capability probes returned conflicting positive and negative evidence. [evidence.conflict]
