@@ -11,6 +11,18 @@ Status values:
 
 ## Current phase
 
+M28 Operator Shell Polish is complete. CPU, RAM, and Build FS now use original
+history-first monitor tiles with a live trend field and thin threshold meter
+instead of pointed dials; narrow network and disk rate cells preserve their live
+history graphs. Left/Right cycle the three main panes, task rows are left-aligned
+with a circular active indicator, and unknown
+Navigator/task values no longer add question-mark noise. The header highlights
+Project/Target/Machine/Distro and reports Local or validated SSH client-IP
+access. Theme display names are color-oriented, and exit/build cancellation are
+always explicit typed confirmations. The workspace is version 0.1.3. No btop
+source or layout code is copied or linked. Overall required registry progress
+is 602/604 (99.7%).
+
 M27 Dashboard Telemetry Dial Fidelity is complete. Normal-height CPU, RAM, and
 Build FS cells now render as compact foreground-only semicircular instruments
 matching the M21 concept composition, with a muted remainder, centered exact

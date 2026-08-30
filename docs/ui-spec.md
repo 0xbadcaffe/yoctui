@@ -4694,8 +4694,8 @@ always includes exact numeric or numerator/denominator text. Unknown progress
 uses an indeterminate text/activity state and never a zero-percent gauge.
 Reduced motion replaces animation with stable lifecycle text.
 
-Indeterminate activity uses the reviewed six-phase `BRAILLE_SIX` symbol set in
-Unicode terminals and the four-phase `|/-\\` set in ASCII presentation. The
+Indeterminate activity uses the reviewed four-phase `BLACK_CIRCLE` symbol set
+in Unicode terminals and the four-phase `|/-\\` set in ASCII presentation. The
 phase is a pure projection of the reducer-owned animation tick and configured
 fast/slow divisor; the widget never advances itself and random stepping is not
 compiled. Every indicator remains adjacent to `loading`, `running`, `waiting`,
@@ -4883,6 +4883,38 @@ and an anchored application dropdown in one composition. A test that checks
 only words or actions cannot close this visual contract. Deterministic
 cell/style rasters are reviewed first, followed by six fresh styled PTY captures
 from the same release binary.
+
+## 37. Operator shell polish contract
+
+The Dashboard telemetry strip uses an original history-first terminal-monitor
+vocabulary. CPU, RAM, and Build FS render a bounded 60-sample trend field, a
+one-row threshold meter, and exact percentage/context. Active meter segments
+cross semantic green, warning, and error thresholds; the remainder stays
+visibly muted. This design may draw general inspiration from terminal resource
+monitors, but it must not copy btop source, strings, or screen geometry. Narrow
+network and disk cells stack the current rate over retained history so a
+responsive layout cannot silently hide the graph.
+
+Left/Right cycle Navigator, Workspace, and Inspector in both directions; Tab and
+Shift+Tab remain aliases. Navigator h/l collapse and expand groups. An Unknown
+destination reserves marker width without printing `?`; unavailable, limited,
+and unsupported states retain their distinct markers and explanations. Compact
+task lists are left-aligned. Active rows begin with a compact circular throbber,
+falling back to `●` under reduced motion and `*` in ASCII mode; inactive rows
+retain the same indentation and unavailable totals use an em dash.
+
+The persistent header gives Project, Target, Machine, and Distro values the
+informational highlight role. Daemon status includes `Local`, `SSH <client-ip>`,
+or `SSH (IP unavailable)`; the latter is required when SSH is detected but its
+first endpoint is not a valid IPv4/IPv6 address. Theme selectors use color names
+such as `Dark gray` and `Light gray`; the serialized enum names remain unchanged
+for preference compatibility and never appear in the UI.
+
+`q` and `Ctrl-C` always open “Are you sure you want to exit yoctui?”. `c` while
+a build is Parsing or Running opens “Are you sure you want to cancel the
+build?”. `y`, `Y`, or Enter confirms; `n`, `N`, or Escape declines. Declining is
+side-effect free. Confirmed build cancellation still passes through current
+capability authority immediately before any backend effect is emitted.
 
 ## 35. Integrated Devtool editing and shell workflow
 

@@ -115,6 +115,14 @@ impl App {
                     &history.memory_percent,
                 ),
                 series(
+                    TelemetryMetric::BuildFilesystemCapacity,
+                    TelemetryUnit::IntegerPercent,
+                    "Build FS",
+                    WidgetRole::Progress,
+                    utilization_percent(telemetry.disk_total_bytes, telemetry.disk_available_bytes),
+                    &history.build_filesystem_percent,
+                ),
+                series(
                     TelemetryMetric::DiskReadRate,
                     TelemetryUnit::BytesPerSecond,
                     "Disk read",

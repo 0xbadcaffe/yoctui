@@ -6096,7 +6096,7 @@ priority = 711
 required = true
 depends_on = ["UX-PROGRESS-001", "UX-LICENSE-001"]
 verify = ["cargo test -p yoctui-model ux_throbber", "cargo test -p yoctui-ui ux_throbber", "cargo deny check"]
-notes = "throbber-widgets-tui 0.11.1 is admitted with default features disabled and std only; rand remains absent. A pure ActivityProjection derives six bounded phases solely from reducer-owned ticks and speed, while the UI selects reviewed BRAILLE_SIX or ASCII symbols. Reduced motion is stable lifecycle text, terminal success/failure/cancellation never animate, no-color retains words/markers, and unknown work never becomes numeric progress. Focused model/UI, candidate graph, notices/SBOM, offline lock, and cargo-deny gates pass."
+notes = "throbber-widgets-tui 0.11.1 is admitted with default features disabled and std only; rand remains absent. A pure ActivityProjection derives bounded phases solely from reducer-owned ticks and speed, while the UI selects reviewed BLACK_CIRCLE or ASCII symbols. Reduced motion is stable lifecycle text, terminal success/failure/cancellation never animate, no-color retains words/markers, and unknown work never becomes numeric progress. Focused model/UI, candidate graph, notices/SBOM, offline lock, and cargo-deny gates pass."
 
 [[task]]
 id = "UX-TELEMETRY-001"
@@ -6627,3 +6627,60 @@ required = true
 depends_on = ["UX-VISUAL-SHELL-001", "RELEASE-VERSION-001"]
 verify = ["cargo test -p yoctui-ui next_generation_telemetry_strip_composes_wide_medium_and_hidden_tiers", "./scripts/render-m22-concept-screenshots.sh --check", "./scripts/verify-roadmap.sh"]
 notes = "Normal-height CPU, RAM, and Build FS strip cells now use foreground-only semicircular utilization arcs with a muted remainder, centered whole percent, and metric-specific context. Short cells retain the compact linear fallback; unavailable data remains explicit. Unicode/ASCII rendering, responsive tiers, semantic thresholds, deterministic production cells, and rasters are regression-covered."
+
+# M28 — Operator Shell Polish.
+
+[[task]]
+id = "UX-TELEMETRY-BTOP-001"
+milestone = "M28"
+title = "Replace pointed telemetry dials with original dense resource meters"
+status = "DONE"
+priority = 759
+required = true
+depends_on = ["UX-TELEMETRY-DIAL-001"]
+verify = ["cargo test -p yoctui-ui next_generation_telemetry_strip_composes_wide_medium_and_hidden_tiers", "cargo test -p yoctui-ui next_generation_network_io_sparklines_keep_current_and_history_distinct"]
+notes = "CPU, RAM, and Build FS now use independently implemented history-first monitor tiles with bounded trend fields, thin threshold meters, and exact values/context. Narrow rate cells stack current network/disk rate above retained history instead of hiding the graph. No btop source, strings, or layout code is copied or linked."
+
+[[task]]
+id = "UX-SHELL-NAV-001"
+milestone = "M28"
+title = "Make horizontal pane navigation and active task scanning explicit"
+status = "DONE"
+priority = 760
+required = true
+depends_on = ["UX-TELEMETRY-BTOP-001"]
+verify = ["cargo test -p yoctui-app next_generation_navigator_mouse_and_keyboard_share_typed_routing", "cargo test -p yoctui-ui animation_is_absent_from_determinate_and_terminal_rows"]
+notes = "Left/Right cycle Navigator, Workspace, and Inspector while h/l retain Navigator group collapse/expand. Unknown Navigator question marks are blank, active tasks are left-aligned with an animated or reduced-motion bullet indicator, and unknown totals use an em dash rather than question-mark noise."
+
+[[task]]
+id = "UX-SHELL-IDENTITY-001"
+milestone = "M28"
+title = "Clarify header identities, client access origin, and theme names"
+status = "DONE"
+priority = 761
+required = true
+depends_on = ["UX-SHELL-NAV-001", "RELEASE-VERSION-001"]
+verify = ["cargo test -p yoctui-ui next_generation_header", "cargo test -p yoctui-ui theme_picker_renders_named_choices_and_immediate_apply_hint", "cargo test -p yoctui -- ssh_access_origin_uses_the_valid_remote_client_ip"]
+notes = "Project, Target, Machine, and Distro values use the informational highlight role. The header and system status identify Local access or SSH plus the validated remote client IPv4/IPv6 address. Theme selectors use color-oriented display names while persisted enum identifiers remain backward compatible."
+
+[[task]]
+id = "UX-SAFETY-CONFIRM-001"
+milestone = "M28"
+title = "Require explicit exit and active-build cancellation confirmation"
+status = "DONE"
+priority = 762
+required = true
+depends_on = ["UX-SHELL-IDENTITY-001"]
+verify = ["cargo test -p yoctui-model quitting_always_requires_confirmation", "cargo test -p yoctui-app exit_and_build_cancel_confirmations_trap_yes_no_and_enter", "cargo test -p yoctui-ui next_generation_dialogs_keep_accessible_focus_and_bounded_geometry"]
+notes = "q/Ctrl-C always opens the exact exit question; c on an active build opens the exact cancellation question. y/Y/Enter confirms and n/N/Esc declines through typed modal actions. Cancellation capability is revalidated only after confirmation and no backend effect is emitted on decline."
+
+[[task]]
+id = "UX-OPERATOR-POLISH-001"
+milestone = "M28"
+title = "Complete the resource and operator shell polish release"
+status = "DONE"
+priority = 763
+required = true
+depends_on = ["UX-TELEMETRY-BTOP-001", "UX-SHELL-NAV-001", "UX-SHELL-IDENTITY-001", "UX-SAFETY-CONFIRM-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "The requested telemetry, rate history, navigation, marker cleanup, identity, theme naming, and confirmation contracts ship together in version 0.1.3 with focused and repository-wide regression coverage."

@@ -1,39 +1,39 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.2  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Exited│
+│yoctui v0.1.3  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64             Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / ?  |  Elapsed: --:--:--  |  Workers: 0                                                │
+│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Current Build · Idle────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
-│▾ OVERVIEW                ││Overall  progress unknown⠷  0/?                                                     ││Environment                                 │
+│▾ OVERVIEW                ││Overall  progress unknown ◑  0/—                                                    ││Environment                                 │
 │  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                               ││Project          : core-image-minimal       │
 │▾ CONTENT                 ││Target: core-image-minimal  Backend: bridge  Status: Idle  Exit code: none          ││Machine          : qemux86-64               │
-│  ? Layers                ││Parse progress: not parsing  Tasks: 0/? (active: 0)  Warnings: 0  Errors: 0         ││Distro           : poky                     │
-│  ? Recipes               ││Machine: qemux86-64  Distro: poky  Release: scarthgap                               ││Yocto release    : scarthgap                │
-│  ? Packages              ││Host CPU: 24%  Build disk free: unavailable  Environment: ready                     ││Layers enabled   : 7                        │
-│  ? Images                ││Sstate reuse: unavailable — backend does not report progress                        ││                                            │
-│  ? SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
+│    Layers                ││Parse progress: not parsing  Tasks: 0/— (active: 0)  Warnings: 0  Errors: 0         ││Distro           : poky                     │
+│    Recipes               ││Machine: qemux86-64  Distro: poky  Release: scarthgap                               ││Yocto release    : scarthgap                │
+│    Packages              ││Host CPU: 24%  Build disk free: unavailable  Environment: ready                     ││Layers enabled   : 7                        │
+│    Images                ││Sstate reuse: unavailable — backend does not report progress                        ││                                            │
+│    SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
 │▾ BUILD                   │┌Recent Builds───────────────────────────────────────────────────────────────────────┐│Source           : /home/user/yocto         │
-│  ? Tasks                 ││#    Image                          Result        Tasks    Duration                 ││Build directory  : /home/user/yocto/build   │
+│    Tasks                 ││#    Image                          Result        Tasks    Duration                 ││Build directory  : /home/user/yocto/build   │
 │  ▱ Logs              LIVE││–    No completed builds retained   –             –        Press B to build         ││Disk             : 23.0 GiB free            │
 │  ▱ Errors                ││                                                                                    ││                                            │
-│  ? Configuration         ││                                                                                    ││Enabled Actions                             │
-│  ? Dependencies          ││                                                                                    ││[B] Build image                             │
+│    Configuration         ││                                                                                    ││Enabled Actions                             │
+│    Dependencies          ││                                                                                    ││[B] Build image                             │
 │▾ VALIDATE                ││                                                                                    ││[F2] Monitor tasks                          │
-│  ? Testing               ││                                                                                    ││[l] View logs                               │
-│  ? Security              ││                                                                                    ││[e] View errors                             │
-│  ? QA                    ││                                                                                    ││[E] Verify environment                      │
+│    Testing               ││                                                                                    ││[l] View logs                               │
+│    Security              ││                                                                                    ││[e] View errors                             │
+│    QA                    ││                                                                                    ││[E] Verify environment                      │
 │▾ TOOLS                   ││                                                                                    ││[t] Open terminal                           │
-│  ? Raw Mode              ││                                                                                    ││[d] Open devtool                            │
-│  ? Terminal Sessions     ││                                                                                    ││                                            │
-│  ? Devtool               │└────────────────────────────────────────────────────────────────────────────────────┘│Active Tasks                                │
-│  ? QEMU / Wic            │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│No active task events                       │
-│  ? Maintenance           ││      CPU Usage     │RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable ││Next Action                                 │
-│  ▱ Build environment     ││      ╱━━━━━━╲      │                    │                    │                     ││Build image [B]                             │
-│  ▱ Compatibility         ││    ╱╱        ╲╲    │                    │                    │                     ││Attention                                   │
-│  ▱ Settings              ││   ╱            ╲   │                    │                    │                     ││No retained warnings or errors              │
-│                          ││  ╱              ╲  │                    │                    │                     ││Workbench Center                            │
-│                          ││                    │                    │                    │                     ││Context: Work · core-image-minimal          │
-│                          ││ ╱       24%      ╲ │                    │                    │                     ││Active: tasks 0 · jobs 0                    │
+│    Raw Mode              ││                                                                                    ││[d] Open devtool                            │
+│    Terminal Sessions     ││                                                                                    ││                                            │
+│    Devtool               │└────────────────────────────────────────────────────────────────────────────────────┘│Active Tasks                                │
+│    QEMU / Wic            │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│No active task events                       │
+│    Maintenance           ││CPU Usage        24%│RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable ││Next Action                                 │
+│  ▱ Build environment     ││                    │                    │                    │                     ││Build image [B]                             │
+│  ▱ Compatibility         ││                    │                    │                    │                     ││Attention                                   │
+│  ▱ Settings              ││                    │                    │                    │                     ││No retained warnings or errors              │
+│                          ││                  ▁ │                    │                    │                     ││Workbench Center                            │
+│                          ││                  █ │                    │                    │                     ││Context: Work · core-image-minimal          │
+│                          ││ ━━━━━───────────── │                    │                    │                     ││Active: tasks 0 · jobs 0                    │
 │                          ││     utilization    │                    │                    │                     ││Favorite: none                              │
 │                          │└────────────────────────────────────────────────────────────────────────────────────┘│Terminal: none                              │
 │                          │┌Quick Actions───────────────────────────────────────────────────────────────────────┐│[t] Terminal sessions                       │
@@ -46,5 +46,5 @@
 │                          ││                           │                           │                            ││                                            │
 └──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   Tab Inspector   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit        19:28:27│
+│B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   ←/→ Focus   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit            19:28:27│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

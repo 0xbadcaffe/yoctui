@@ -612,3 +612,23 @@ Exit criteria:
 - Unicode, ASCII, no-color, reduced-motion, short-cell fallback, and
   unavailable-state behavior remain deterministic and tested
 - production scenario goldens and design rasters encode the reviewed change
+
+## M28 — Operator shell polish
+
+Goal: make resource monitoring and everyday shell navigation denser, quieter,
+safer, and more immediately legible without importing another application's
+implementation or visual identity wholesale.
+
+Exit criteria:
+
+- CPU, RAM, and Build FS use original history-first monitor tiles with a live
+  trend field and thin threshold meter, and narrow network/disk cells keep both
+  current rates and retained history visible
+- Left/Right navigate Navigator, Workspace, and Inspector; Navigator tree
+  expansion remains available on h/l
+- unknown Navigator/task state avoids repeated question-mark markers, while
+  active tasks remain left-aligned with an explicit circular activity marker
+- the header highlights project/target/machine/distro and identifies Local or
+  SSH access with a validated remote client IP
+- theme choices use color-oriented names without changing persisted identifiers
+- q/Ctrl-C and active-build c require exact, focus-trapped confirmations

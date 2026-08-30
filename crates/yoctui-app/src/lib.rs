@@ -5558,6 +5558,24 @@ pub fn key_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn build_cancellation_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char('y') | Input::Char('Y') | Input::Enter => {
+            Some(Action::ConfirmBuildCancellation)
+        }
+        Input::Char('n') | Input::Char('N') | Input::Esc => Some(Action::CancelBuildCancellation),
+        _ => None,
+    }
+}
+
+pub fn quit_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char('y') | Input::Char('Y') | Input::Enter => Some(Action::ConfirmQuit),
+        Input::Char('n') | Input::Char('N') | Input::Esc => Some(Action::CancelQuit),
+        _ => None,
+    }
+}
+
 pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
     if focus == FocusTarget::Navigator
         && let Some(delta) = collection_scroll_delta(key)
@@ -5576,8 +5594,15 @@ pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
             Some(Action::SelectNavigator { delta: 1 })
         }
         (FocusTarget::Navigator, Input::Enter) => Some(Action::ActivateNavigator),
-        (FocusTarget::Navigator, Input::Left) => Some(Action::CollapseNavigatorGroup),
-        (FocusTarget::Navigator, Input::Right) => Some(Action::ExpandNavigatorGroup),
+        (FocusTarget::Navigator, Input::Char('h')) => Some(Action::CollapseNavigatorGroup),
+        (FocusTarget::Navigator, Input::Char('l')) => Some(Action::ExpandNavigatorGroup),
+        (FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector, Input::Left) => {
+            Some(Action::CycleFocus { backwards: true })
+        }
+        (
+            FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector,
+            Input::Right,
+        ) => Some(Action::CycleFocus { backwards: false }),
         (FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector, Input::Tab) => {
             Some(Action::CycleFocus { backwards: false })
         }
@@ -7905,6 +7930,17 @@ mod tests {
             compatibility_workspace_action(&mut app, yoctui_model::Action::Cancel),
             None
         );
+        assert!(matches!(
+            app.active_dialog(),
+            Some(yoctui_model::Dialog::BuildCancellationConfirmation)
+        ));
+        assert_eq!(
+            compatibility_workspace_action(
+                &mut app,
+                yoctui_model::Action::ConfirmBuildCancellation,
+            ),
+            None
+        );
         assert_eq!(app.build, before);
         assert!(
             app.notification
@@ -9861,8 +9897,13 @@ mod tests {
             coordinator
                 .actions_for_backend_event(BackendEvent::BuildStarted, SystemTime::UNIX_EPOCH),
         );
+        assert_eq!(update(&mut app, Action::Cancel), None);
         assert!(matches!(
-            update(&mut app, Action::Cancel),
+            app.active_dialog(),
+            Some(yoctui_model::Dialog::BuildCancellationConfirmation)
+        ));
+        assert!(matches!(
+            update(&mut app, Action::ConfirmBuildCancellation),
             Some(yoctui_model::Effect::Cancel)
         ));
         apply_actions(&mut app, vec![coordinator.request_cancellation().unwrap()]);
@@ -9885,8 +9926,9 @@ mod tests {
                 .contains("may still be running")
         );
 
+        assert_eq!(update(&mut app, Action::Cancel), None);
         assert!(matches!(
-            update(&mut app, Action::Cancel),
+            update(&mut app, Action::ConfirmBuildCancellation),
             Some(yoctui_model::Effect::Cancel)
         ));
         apply_actions(&mut app, vec![coordinator.request_cancellation().unwrap()]);
@@ -9949,6 +9991,26 @@ mod tests {
             key_action(Input::BackTab),
             Some(Action::CycleFocus { backwards: true })
         );
+    }
+    #[test]
+    fn exit_and_build_cancel_confirmations_trap_yes_no_and_enter() {
+        assert_eq!(
+            build_cancellation_confirmation_action(Input::Enter),
+            Some(Action::ConfirmBuildCancellation)
+        );
+        assert_eq!(
+            build_cancellation_confirmation_action(Input::Char('n')),
+            Some(Action::CancelBuildCancellation)
+        );
+        assert_eq!(
+            quit_confirmation_action(Input::Char('y')),
+            Some(Action::ConfirmQuit)
+        );
+        assert_eq!(
+            quit_confirmation_action(Input::Esc),
+            Some(Action::CancelQuit)
+        );
+        assert_eq!(quit_confirmation_action(Input::Char('q')), None);
     }
     #[test]
     fn settings_input_maps_selection_and_typed_changes() {
@@ -10241,10 +10303,18 @@ mod tests {
 
         assert_eq!(
             focus_action(FocusTarget::Navigator, Input::Left),
-            Some(Action::CollapseNavigatorGroup)
+            Some(Action::CycleFocus { backwards: true })
         );
         assert_eq!(
             focus_action(FocusTarget::Navigator, Input::Right),
+            Some(Action::CycleFocus { backwards: false })
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Char('h')),
+            Some(Action::CollapseNavigatorGroup)
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Char('l')),
             Some(Action::ExpandNavigatorGroup)
         );
 

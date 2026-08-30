@@ -200,7 +200,7 @@ impl App {
             .into_iter()
             .map(|setting| {
                 let (label, value, disabled_reason) = match setting {
-                    Setting::Theme => ("Theme", format!("{:?}", preferences.theme), None),
+                    Setting::Theme => ("Theme", preferences.theme.display_name().into(), None),
                     Setting::Density => {
                         ("Visual density", format!("{:?}", preferences.density), None)
                     }

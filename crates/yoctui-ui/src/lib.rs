@@ -901,9 +901,9 @@ fn numbered_source_preview(content: &str, file_name: &str, app: &App) -> Text<'s
 
 fn pane_focus_shortcuts(app: &App) -> Option<String> {
     let route = match app.focus {
-        FocusTarget::Navigator => Some("Tab Workspace | Shift+Tab Inspector"),
-        FocusTarget::Workspace => Some("Tab Inspector | Shift+Tab Navigator"),
-        FocusTarget::Inspector => Some("Tab Navigator | Shift+Tab Workspace"),
+        FocusTarget::Navigator => Some("→ Workspace | ← Inspector"),
+        FocusTarget::Workspace => Some("→ Inspector | ← Navigator"),
+        FocusTarget::Inspector => Some("→ Navigator | ← Workspace"),
         FocusTarget::Dialog | FocusTarget::CommandPalette => None,
     }?;
     Some(format!(
@@ -1076,7 +1076,7 @@ fn footer_shortcuts(app: &App) -> String {
             app.navigator_compatibility_destination(),
             with_focus_shortcuts(
                 app,
-                "j/k or ↑/↓ select | ←/→ collapse/open | Enter open | Ctrl+B prefix | q quit",
+                "↑/↓ select | h/l groups | ←/→ focus | Enter open | Ctrl+B prefix | q quit",
             ),
         );
     }
@@ -1353,9 +1353,9 @@ fn footer_context_items(app: &App, width: u16) -> Vec<String> {
     });
     items.truncate(6);
     let focus = match app.focus {
-        FocusTarget::Navigator => Some("Tab Workspace"),
-        FocusTarget::Workspace => Some("Tab Inspector"),
-        FocusTarget::Inspector => Some("Tab Navigator"),
+        FocusTarget::Navigator => Some("←/→ Focus"),
+        FocusTarget::Workspace => Some("←/→ Focus"),
+        FocusTarget::Inspector => Some("←/→ Focus"),
         FocusTarget::Dialog | FocusTarget::CommandPalette => None,
     };
     if let Some(focus) = focus {
@@ -1546,6 +1546,22 @@ fn header_separator(palette: &ThemePalette, compact: bool) -> Span<'static> {
     )
 }
 
+fn header_identity_spans(
+    palette: &ThemePalette,
+    label: &'static str,
+    compact_label: &'static str,
+    value: String,
+    compact: bool,
+) -> [Span<'static>; 2] {
+    [
+        Span::styled(
+            if compact { compact_label } else { label },
+            palette.role(palette.muted, Modifier::DIM),
+        ),
+        Span::styled(value, palette.role(palette.informational, Modifier::BOLD)),
+    ]
+}
+
 fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
     let concept_geometry = area.height >= 5;
@@ -1583,7 +1599,13 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     )];
     if mode != HeaderMode::Narrow {
         left.push(header_separator(&palette, compact));
-        left.push(Span::raw(format!("Project: {project}")));
+        left.extend(header_identity_spans(
+            &palette,
+            "Project: ",
+            "Project: ",
+            project,
+            compact,
+        ));
     }
     left.push(header_separator(&palette, compact));
     left.push(status_label(
@@ -1592,21 +1614,31 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         status_tone_style(&palette, build_tone),
     ));
     left.push(header_separator(&palette, compact));
-    left.push(Span::raw(if compact {
-        format!("T:{target}")
-    } else {
-        format!("Target: {target}")
-    }));
+    left.extend(header_identity_spans(
+        &palette, "Target: ", "T:", target, compact,
+    ));
     if matches!(mode, HeaderMode::Full | HeaderMode::Wide)
         && let Some(machine) = machine
     {
         left.push(header_separator(&palette, false));
-        left.push(Span::raw(format!("Machine: {machine}")));
+        left.extend(header_identity_spans(
+            &palette,
+            "Machine: ",
+            "M:",
+            machine.clone(),
+            false,
+        ));
     }
     if mode == HeaderMode::Full {
         if let Some(distro) = distro {
             left.push(header_separator(&palette, false));
-            left.push(Span::raw(format!("Distro: {distro}")));
+            left.extend(header_identity_spans(
+                &palette,
+                "Distro: ",
+                "D:",
+                distro.clone(),
+                false,
+            ));
         }
         if let Some(release) = release {
             left.push(Span::raw(format!(" ({release})")));
@@ -1628,6 +1660,10 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         daemon_tone,
         daemon_status_label(app.daemon.status),
         status_tone_style(&palette, daemon_tone),
+    ));
+    right.push(Span::styled(
+        format!("/{}", app.client_access_origin.label()),
+        palette.role(palette.informational, Modifier::BOLD),
     ));
     if mode != HeaderMode::Narrow {
         right.push(header_separator(&palette, compact));
@@ -1681,7 +1717,7 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let total = app
         .build
         .total
-        .map_or_else(|| "?".into(), |total| total.to_string());
+        .map_or_else(|| "—".into(), |total| total.to_string());
     let elapsed = app
         .build
         .started
@@ -2100,15 +2136,31 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         maintenance_dialog(frame, app, dialog, area);
     } else if matches!(app.active_dialog(), Some(Dialog::BuildCompletion)) {
         build_completion_popup(frame, app, area);
-    } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
-        let popup = Rect::new(area.width / 4, area.height / 3, area.width / 2, 3);
+    } else if matches!(
+        app.active_dialog(),
+        Some(Dialog::BuildCancellationConfirmation)
+    ) {
+        let popup = bounded_dialog_rect(area, 58, 5);
         clear_popup(frame, app, popup);
         frame.render_widget(
-            Paragraph::new("[Y] Quit UI  [Esc] Continue active build.").block(dialog_block(
+            Paragraph::new(
+                "Are you sure you want to cancel the build?\n\n[y/Enter] Cancel build  [n/Esc] Keep building",
+            )
+            .block(dialog_block(
                 app,
-                "Confirm quit",
+                "Confirm build cancellation",
                 DialogTone::Destructive,
             )),
+            popup,
+        )
+    } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
+        let popup = bounded_dialog_rect(area, 56, 5);
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Paragraph::new(
+                "Are you sure you want to exit yoctui?\n\n[y/Enter] Exit yoctui  [n/Esc] Stay",
+            )
+            .block(dialog_block(app, "Confirm exit", DialogTone::Destructive)),
             popup,
         )
     } else if let Some(Dialog::SignatureTaskPicker(picker)) = app.active_dialog() {
@@ -2852,9 +2904,9 @@ fn theme_picker(frame: &mut Frame, app: &App, selection: usize, area: Rect) {
         .enumerate()
         .map(|(index, theme)| {
             Row::new([format!(
-                "{} {:?}",
+                "{} {}",
                 if index == selection { "▶" } else { " " },
-                theme
+                theme.display_name()
             )])
             .style(selected_style(app, index == selection))
         });
@@ -4274,7 +4326,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
                     WorkspaceAvailabilityState::Available => "▱",
                     WorkspaceAvailabilityState::AvailableWithLimitations => "~",
                     WorkspaceAvailabilityState::Unavailable => "×",
-                    WorkspaceAvailabilityState::Unknown => "?",
+                    WorkspaceAvailabilityState::Unknown => " ",
                     WorkspaceAvailabilityState::Unsupported => "!",
                 };
                 let badge = navigator_badge(app, *destination);
@@ -5511,6 +5563,7 @@ fn stronger_tone(left: StatusTone, right: StatusTone) -> StatusTone {
 }
 
 fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatusLine> {
+    let access = app.client_access_origin.label();
     let current = app.daemon.status == yoctui_model::ClientReplicaStatus::Current;
     let uptime = if current {
         app.daemon.telemetry.as_ref().map_or_else(
@@ -5654,7 +5707,7 @@ fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatusLine> {
     let lines = if width >= 40 {
         vec![
             (
-                format!("Daemon {daemon} · version unavailable · up {uptime}"),
+                format!("Daemon {daemon} · {access} · version unavailable · up {uptime}"),
                 daemon_tone,
             ),
             (
@@ -5670,7 +5723,7 @@ fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatusLine> {
     } else {
         vec![
             (
-                format!("Daemon {daemon} · version unavailable"),
+                format!("Daemon {daemon} · {access} · version unavailable"),
                 daemon_tone,
             ),
             (
@@ -6743,6 +6796,27 @@ fn render_rate_history(frame: &mut Frame, app: &App, area: Rect, rate: RateHisto
     } else {
         palette.role(palette.disabled, Modifier::DIM)
     };
+    if area.height >= 2 {
+        let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
+        frame.render_widget(Paragraph::new(text).style(text_style), rows[0]);
+        frame.render_widget(
+            Sparkline::default()
+                .data(&rate.series.history.points)
+                .max(
+                    rate.series
+                        .history
+                        .points
+                        .iter()
+                        .copied()
+                        .max()
+                        .unwrap_or(1)
+                        .max(1),
+                )
+                .style(palette.widget_styles().role(rate.series.history.role)),
+            rows[1],
+        );
+        return;
+    }
     if area.width < 18 {
         frame.render_widget(Paragraph::new(text).style(text_style), area);
         return;
@@ -6895,28 +6969,102 @@ fn telemetry_available(app: &App) -> bool {
             .is_some())
 }
 
-fn render_telemetry_dial(
+struct DenseTelemetryMeter<'a> {
+    title: &'a str,
+    percent: u8,
+    detail: &'a str,
+    active_style: Style,
+    history: &'a [u64],
+}
+
+fn render_dense_telemetry_meter(
     frame: &mut Frame,
     app: &App,
     area: Rect,
-    title: &str,
-    percent: u8,
-    detail: &str,
-    active_style: Style,
+    meter: DenseTelemetryMeter<'_>,
 ) {
     if area.is_empty() {
         return;
     }
     let palette = ThemePalette::for_app(app);
-    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+    let DenseTelemetryMeter {
+        title,
+        percent,
+        detail,
+        active_style,
+        history,
+    } = meter;
+    let percent = percent.min(100);
+    let percent_text = format!("{percent:>3}%");
+    let title_width = area.width.saturating_sub(5);
     frame.render_widget(
-        Paragraph::new(title)
-            .alignment(Alignment::Center)
-            .style(palette.role(palette.informational, Modifier::BOLD)),
-        Rect::new(area.x, area.y, area.width, 1),
+        Paragraph::new(title).style(palette.role(palette.informational, Modifier::BOLD)),
+        Rect::new(area.x, area.y, title_width, 1),
+    );
+    frame.render_widget(
+        Paragraph::new(percent_text)
+            .alignment(Alignment::Right)
+            .style(active_style.add_modifier(Modifier::BOLD)),
+        Rect::new(area.x + title_width, area.y, area.width - title_width, 1),
     );
 
     let detail_y = area.bottom().saturating_sub(1);
+    let meter_y = detail_y.saturating_sub(1);
+    let graph_top = area.y.saturating_add(1);
+    let graph_height = meter_y.saturating_sub(graph_top);
+    if graph_height > 0 {
+        let graph_width = usize::from(area.width.saturating_sub(2));
+        let retained = history.len().min(graph_width);
+        let mut points = vec![0; graph_width.saturating_sub(retained)];
+        points.extend_from_slice(&history[history.len().saturating_sub(retained)..]);
+        if points.last().copied().unwrap_or_default() != u64::from(percent) {
+            if points.len() == graph_width && !points.is_empty() {
+                points.remove(0);
+            }
+            points.push(u64::from(percent));
+        }
+        frame.render_widget(
+            Sparkline::default()
+                .data(&points)
+                .max(100)
+                .style(active_style),
+            Rect::new(
+                area.x.saturating_add(1),
+                graph_top,
+                area.width.saturating_sub(2),
+                graph_height,
+            ),
+        );
+    }
+
+    let meter_width = usize::from(area.width.saturating_sub(2));
+    let filled = (usize::from(percent) * meter_width).div_ceil(100);
+    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+    let muted_style = palette.role(palette.muted, Modifier::DIM);
+    for index in 0..meter_width {
+        let Some(cell) = frame
+            .buffer_mut()
+            .cell_mut((area.x.saturating_add(1 + index as u16), meter_y))
+        else {
+            continue;
+        };
+        if index < filled {
+            let segment_percent = ((index + 1) * 100) / meter_width.max(1);
+            let segment_style = if segment_percent >= 90 {
+                palette.role(palette.error, Modifier::BOLD)
+            } else if segment_percent >= 70 {
+                palette.role(palette.warning, Modifier::BOLD)
+            } else {
+                palette.role(palette.success, Modifier::BOLD)
+            };
+            cell.set_symbol(if unicode { "━" } else { "=" })
+                .set_style(segment_style);
+        } else {
+            cell.set_symbol(if unicode { "─" } else { "-" })
+                .set_style(muted_style);
+        }
+    }
+
     if detail_y > area.y {
         frame.render_widget(
             Paragraph::new(detail)
@@ -6925,64 +7073,10 @@ fn render_telemetry_dial(
             Rect::new(area.x, detail_y, area.width, 1),
         );
     }
-
-    let arc_top = area.y.saturating_add(1);
-    let arc_bottom = detail_y.saturating_sub(1);
-    if arc_bottom < arc_top || area.width < 5 {
-        return;
-    }
-    let dial_width = area.width.saturating_sub(2).clamp(5, 29);
-    let dial_x = area.x + area.width.saturating_sub(dial_width) / 2;
-    let radius_x = f64::from(dial_width.saturating_sub(1)) / 2.0;
-    let radius_y = f64::from(arc_bottom.saturating_sub(arc_top)).max(1.0);
-    let center_x = radius_x;
-    let mut points = Vec::with_capacity(usize::from(dial_width));
-    for column in 0..dial_width {
-        let normalized = (f64::from(column) - center_x) / radius_x;
-        let height = (1.0 - normalized * normalized).max(0.0).sqrt();
-        let row = arc_bottom.saturating_sub((height * radius_y).round() as u16);
-        points.push((dial_x + column, row));
-    }
-    let filled = ((usize::from(percent.min(100)) * points.len()) + 50) / 100;
-    let muted_style = palette.role(palette.muted, Modifier::DIM);
-    for (index, &(x, y)) in points.iter().enumerate() {
-        let previous_y = points
-            .get(index.saturating_sub(1))
-            .map_or(y, |point| point.1);
-        let next_y = points.get(index + 1).map_or(y, |point| point.1);
-        let symbol = if unicode {
-            match next_y.cmp(&previous_y) {
-                std::cmp::Ordering::Less => "╱",
-                std::cmp::Ordering::Greater => "╲",
-                std::cmp::Ordering::Equal => "━",
-            }
-        } else {
-            match next_y.cmp(&previous_y) {
-                std::cmp::Ordering::Less => "/",
-                std::cmp::Ordering::Greater => "\\",
-                std::cmp::Ordering::Equal => "-",
-            }
-        };
-        let Some(cell) = frame.buffer_mut().cell_mut((x, y)) else {
-            continue;
-        };
-        cell.set_symbol(symbol).set_style(if index < filled {
-            active_style
-        } else {
-            muted_style
-        });
-    }
-
-    frame.render_widget(
-        Paragraph::new(format!("{}%", percent.min(100)))
-            .alignment(Alignment::Center)
-            .style(active_style.add_modifier(Modifier::BOLD)),
-        Rect::new(area.x, arc_bottom, area.width, 1),
-    );
 }
 
-fn telemetry_dial_supported(area: Rect) -> bool {
-    area.width >= 16 && area.height >= 6
+fn dense_telemetry_meter_supported(area: Rect) -> bool {
+    area.width >= 12 && area.height >= 4
 }
 
 fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
@@ -6994,7 +7088,7 @@ fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
         render_cpu_gauge(frame, app, area);
         return;
     };
-    if !telemetry_dial_supported(area) {
+    if !dense_telemetry_meter_supported(area) {
         render_cpu_gauge(frame, app, area);
         return;
     }
@@ -7002,14 +7096,21 @@ fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
         .host_telemetry
         .logical_cpu_count
         .map_or_else(|| "utilization".into(), |cores| format!("{cores} cores"));
-    render_telemetry_dial(
+    let projection = app.host_telemetry_projection();
+    render_dense_telemetry_meter(
         frame,
         app,
         area,
-        "CPU Usage",
-        percent,
-        &detail,
-        cpu_meter_style(app, percent),
+        DenseTelemetryMeter {
+            title: "CPU Usage",
+            percent,
+            detail: &detail,
+            active_style: cpu_meter_style(app, percent),
+            history: &projection
+                .series(TelemetryMetric::HostCpuUtilization)
+                .history
+                .points,
+        },
     );
 }
 
@@ -7022,19 +7123,26 @@ fn render_ram_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
         render_ram_gauge(frame, app, area);
         return;
     };
-    if !telemetry_dial_supported(area) {
+    if !dense_telemetry_meter_supported(area) {
         render_ram_gauge(frame, app, area);
         return;
     }
     let detail = format_bytes_pair(total - available, total);
-    render_telemetry_dial(
+    let projection = app.host_telemetry_projection();
+    render_dense_telemetry_meter(
         frame,
         app,
         area,
-        "RAM Usage",
-        percent,
-        &detail,
-        memory_meter_style(app, percent),
+        DenseTelemetryMeter {
+            title: "RAM Usage",
+            percent,
+            detail: &detail,
+            active_style: memory_meter_style(app, percent),
+            history: &projection
+                .series(TelemetryMetric::HostMemoryCapacity)
+                .history
+                .points,
+        },
     );
 }
 
@@ -7050,19 +7158,26 @@ fn render_build_filesystem_telemetry_cell(frame: &mut Frame, app: &App, area: Re
         render_disk_gauge(frame, app, area);
         return;
     };
-    if !telemetry_dial_supported(area) {
+    if !dense_telemetry_meter_supported(area) {
         render_disk_gauge(frame, app, area);
         return;
     }
     let detail = format!("{} free", format_bytes(available));
-    render_telemetry_dial(
+    let projection = app.host_telemetry_projection();
+    render_dense_telemetry_meter(
         frame,
         app,
         area,
-        "Build FS Usage",
-        percent,
-        &detail,
-        telemetry_meter_style(app, percent),
+        DenseTelemetryMeter {
+            title: "Build FS Usage",
+            percent,
+            detail: &detail,
+            active_style: telemetry_meter_style(app, percent),
+            history: &projection
+                .series(TelemetryMetric::BuildFilesystemCapacity)
+                .history
+                .points,
+        },
     );
 }
 
@@ -7262,7 +7377,7 @@ fn dashboard_build_details(app: &App, projection: &DashboardProjection<'_>, widt
     let total = app
         .build
         .total
-        .map_or_else(|| "?".into(), |total| total.to_string());
+        .map_or_else(|| "—".into(), |total| total.to_string());
     let exit = app
         .build
         .exit_code
@@ -7410,28 +7525,27 @@ fn render_dashboard_tasks(frame: &mut Frame, app: &App, area: Rect) {
         };
         let label = match completed {
             Some(success) => format!(
-                "{}:{} 100% {}",
+                " {} {}:{} · 100% {}",
+                if *success { "✓" } else { "×" },
                 task.recipe,
                 task.task,
                 if *success { "complete" } else { "failed" }
             ),
-            None if task.progress.is_some() => {
-                format!("{}:{} {progress}%", task.recipe, task.task)
-            }
-            None => format!(
-                "? {}:{}{}",
+            None if task.progress.is_some() => format!(
+                " {} {}:{} · {}",
+                "›",
                 task.recipe,
                 task.task,
-                task_activity(app, None)
+                task_progress_bar(progress)
+            ),
+            None => format!(
+                " {} {}:{} · active",
+                task_activity(app, None),
+                task.recipe,
+                task.task,
             ),
         };
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(progress) / 100.0)
-                .label(label)
-                .gauge_style(style),
-            row,
-        );
+        frame.render_widget(Paragraph::new(label).style(style), row);
     }
 }
 
@@ -8187,7 +8301,13 @@ fn task_table_cell(
         (TaskRowRef::WaitingSummary(_), TaskTableColumn::Worker | TaskTableColumn::Pid) => {
             Cell::from("--")
         }
-        (TaskRowRef::Task { task, .. }, TaskTableColumn::Task) => Cell::from(task.task.clone()),
+        (TaskRowRef::Task { task, state }, TaskTableColumn::Task) => {
+            Cell::from(if *state == TaskState::Active {
+                format!("{} {}", task_activity(app, None), task.task)
+            } else {
+                format!("  {}", task.task)
+            })
+        }
         (TaskRowRef::Task { task, .. }, TaskTableColumn::Recipe) => Cell::from(task.recipe.clone()),
         (TaskRowRef::Task { state, .. }, TaskTableColumn::State) => Cell::from(Span::styled(
             task_state_label(*state),
@@ -8201,7 +8321,7 @@ fn task_table_cell(
         (TaskRowRef::Task { task, state }, TaskTableColumn::Progress) => Cell::from(Span::styled(
             match (*state, task.progress) {
                 (TaskState::Active, None) => {
-                    format!("progress unknown{}", task_activity(app, None))
+                    format!("progress unknown {}", task_activity(app, None))
                 }
                 (_, Some(progress)) => task_progress_bar(progress),
                 _ => "--".into(),
@@ -8260,7 +8380,7 @@ fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
     } else {
         frame.render_widget(
             Paragraph::new(format!(
-                "Overall  progress unknown{}  {}/?",
+                "Overall  progress unknown {}  {}/—",
                 task_activity(app, None),
                 summary.completed
             ))
@@ -20112,7 +20232,7 @@ mod tests {
                     env!("CARGO_MANIFEST_DIR"),
                     "/tests/golden/target-idle-dashboard-160x50.cells"
                 )),
-                ["Status: Idle", "Tasks: 0/?", "Daemon: ✓ Connected"].as_slice(),
+                ["Status: Idle", "Tasks: 0/—", "Daemon: ✓ Connected"].as_slice(),
             ),
             (
                 "active-tasks",
@@ -20212,8 +20332,9 @@ mod tests {
         };
         let rail = row(46);
         for label in [
-            "j/k or ↑/↓ select",
-            "←/→ collapse/open",
+            "↑/↓ select",
+            "h/l groups",
+            "←/→ focus",
             "Enter open",
             "Ctrl+B prefix",
             "F1 Help",
@@ -20760,7 +20881,8 @@ mod tests {
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = 1;
         let navigator = rendered_text(&app, 180, 36);
-        assert!(navigator.contains("? Layers"), "{navigator}");
+        assert!(navigator.contains("Layers"), "{navigator}");
+        assert!(!navigator.contains("? Layers"), "{navigator}");
         assert!(navigator.contains("Compatibility: Unknown"), "{navigator}");
         assert!(
             navigator.contains("No current environment capability snapshot"),
@@ -21026,7 +21148,7 @@ mod tests {
         local.dialogs.push_front(Dialog::QuitConfirmation);
         local.focus = FocusTarget::Dialog;
         let output = rendered_text(&local, 80, 24);
-        assert!(output.contains("Confirm quit"), "{output}");
+        assert!(output.contains("Confirm exit"), "{output}");
         assert!(!output.contains("Confirmation disabled"), "{output}");
     }
 
@@ -21379,7 +21501,7 @@ mod tests {
             "F field",
             "/ edit filter",
             "c cancel",
-            "Tab Inspector",
+            "←/→ Focus",
             "F1 Help",
             "F10 Menu",
             "q Quit",
@@ -22336,7 +22458,9 @@ mod tests {
         });
         let output = rendered_text(&app, 100, 30);
         assert!(output.contains("Theme — applies immediately"));
-        assert!(output.contains("WhiteClassic"));
+        assert!(output.contains("White"));
+        assert!(output.contains("Dark gray"));
+        assert!(!output.to_ascii_lowercase().contains("vscode"));
         assert!(output.contains("Enter apply"));
     }
 
@@ -22403,7 +22527,8 @@ mod tests {
         let output = rendered_text(&app, 100, 30);
         assert!(output.contains("Settings (not saved)"));
         assert!(output.contains("Theme"));
-        assert!(output.contains("MatrixGreen"));
+        assert!(output.contains("Green"));
+        assert!(!output.to_ascii_lowercase().contains("vscode"));
         assert!(output.contains("Animation speed"));
         assert!(output.contains("Reduced motion"));
         assert!(output.contains("Log wrap"));
@@ -22633,25 +22758,23 @@ mod tests {
     }
 
     #[test]
-    fn animation_fast_slow_and_reduced_motion_have_deterministic_cadence() {
-        let mut fast = App::new(10, 1_000);
-        fast.animation_frame = 0;
-        let first = task_activity(&fast, None);
-        fast.animation_frame = 1;
-        assert_ne!(task_activity(&fast, None), first);
+    fn active_task_indicator_uses_circular_motion_and_accessible_fallbacks() {
+        let mut app = App::new(10, 1_000);
+        app.animation_frame = 0;
+        let first = task_activity(&app, None);
+        app.animation_frame = 1;
+        assert_ne!(task_activity(&app, None), first);
+        assert!(
+            throbber_widgets_tui::BLACK_CIRCLE
+                .symbols
+                .contains(&first.as_str())
+        );
+        assert_eq!(task_activity(&app, Some(0)), "");
 
-        let mut slow = App::new(10, 1_000);
-        slow.animation_speed = yoctui_model::AnimationSpeed::Slow;
-        slow.animation_frame = 0;
-        let first = task_activity(&slow, None);
-        slow.animation_frame = 1;
-        assert_eq!(task_activity(&slow, None), first);
-        slow.animation_frame = 3;
-        assert_ne!(task_activity(&slow, None), first);
-
-        slow.reduced_motion = true;
-        assert_eq!(task_activity(&slow, None), " active");
-        assert_eq!(task_activity(&slow, Some(0)), "");
+        app.reduced_motion = true;
+        assert_eq!(task_activity(&app, None), "●");
+        app.preferences.symbols = SymbolPreference::Ascii;
+        assert_eq!(task_activity(&app, None), "*");
     }
 
     #[test]
@@ -22664,7 +22787,7 @@ mod tests {
         );
         assert_eq!(
             activity_symbol(running, true),
-            throbber_widgets_tui::BRAILLE_SIX.symbols[5]
+            throbber_widgets_tui::BLACK_CIRCLE.symbols[1]
         );
         assert_eq!(
             activity_symbol(running, false),
@@ -22702,7 +22825,7 @@ mod tests {
         app.build.completed = 3;
         app.screen = Screen::Tasks;
         let output = rendered_text(&app, 100, 30);
-        assert!(output.contains("progress unknown active  3/?"), "{output}");
+        assert!(output.contains("progress unknown ●  3/—"), "{output}");
         assert!(!output.contains("0%"), "{output}");
     }
 
@@ -25143,8 +25266,8 @@ mod tests {
         );
         assert_ne!(app.focus, before);
         let footer = responsive_footer_shortcuts(&app, 160);
-        assert!(footer.contains("Tab"), "{footer}");
-        assert!(footer.contains("Shift+Tab Workspace"), "{footer}");
+        assert!(footer.contains("→ Navigator"), "{footer}");
+        assert!(footer.contains("← Workspace"), "{footer}");
     }
 
     #[test]
@@ -25171,9 +25294,10 @@ mod tests {
             success: true,
         });
         let output = rendered_text(&app, 300, 30);
-        assert!(output.contains("busybox:do_compile 42%"));
+        assert!(output.contains("busybox:do_compile"));
+        assert!(output.contains("42%"));
         assert!(
-            output.contains("base-files:do_install 100% complete"),
+            output.contains("base-files:do_install · 100% complete"),
             "{output}"
         );
         assert!(!output.contains("base-files:do_install▸"));
@@ -25632,7 +25756,7 @@ mod tests {
             SemanticSnapshot {
                 name: "settings",
                 screen: Screen::Settings,
-                anchors: &["Settings", "Theme", "DarkPro", "Settings controls"],
+                anchors: &["Settings", "Theme", "Dark blue", "Settings controls"],
                 selected: Some("Theme"),
             },
             SemanticSnapshot {
@@ -26106,7 +26230,11 @@ mod tests {
                 }),
                 "Workspace file tree",
             ),
-            (Dialog::QuitConfirmation, "Confirm quit"),
+            (
+                Dialog::BuildCancellationConfirmation,
+                "Confirm build cancellation",
+            ),
+            (Dialog::QuitConfirmation, "Confirm exit"),
         ];
 
         for (dialog, title) in dialogs {
@@ -26220,12 +26348,30 @@ mod tests {
             app.dialogs.push_front(Dialog::QuitConfirmation);
             let output = rendered_text(&app, 80, 24);
             assert!(
-                output.contains("destructive modal · Confirm quit"),
+                output.contains("destructive modal · Confirm exit"),
                 "{output}"
             );
-            assert!(output.contains("[Y] Quit UI"), "{output}");
-            assert!(output.contains("[Esc] Continue"), "{output}");
+            assert!(
+                output.contains("Are you sure you want to exit yoctui?"),
+                "{output}"
+            );
+            assert!(output.contains("[y/Enter] Exit yoctui"), "{output}");
+            assert!(output.contains("[n/Esc] Stay"), "{output}");
         }
+
+        let mut cancellation = App::new(32, 8192);
+        cancellation.focus = FocusTarget::Dialog;
+        cancellation.build.status = BuildStatus::Running;
+        cancellation
+            .dialogs
+            .push_front(Dialog::BuildCancellationConfirmation);
+        let output = rendered_text(&cancellation, 80, 24);
+        assert!(
+            output.contains("Are you sure you want to cancel the build?"),
+            "{output}"
+        );
+        assert!(output.contains("[y/Enter] Cancel build"), "{output}");
+        assert!(output.contains("[n/Esc] Keep building"), "{output}");
 
         for area in [
             Rect::new(0, 0, 200, 60),
@@ -26484,15 +26630,15 @@ mod tests {
         for (focus, expected) in [
             (
                 FocusTarget::Navigator,
-                ["Focus Navigator", "Tab Workspace", "Shift+Tab Inspector"],
+                ["Focus Navigator", "→ Workspace", "← Inspector"],
             ),
             (
                 FocusTarget::Workspace,
-                ["Focus Workspace", "Tab Inspector", "Shift+Tab Navigator"],
+                ["Focus Workspace", "→ Inspector", "← Navigator"],
             ),
             (
                 FocusTarget::Inspector,
-                ["Focus Inspector", "Tab Navigator", "Shift+Tab Workspace"],
+                ["Focus Inspector", "→ Navigator", "← Workspace"],
             ),
         ] {
             app.focus = focus;
@@ -27165,16 +27311,16 @@ mod tests {
         }
         assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
         assert!(
-            wide.contains('╱'),
-            "wide telemetry lost its dial arc: {wide}"
-        );
-        assert!(
             wide.contains('━'),
-            "wide telemetry lost its dial crown: {wide}"
+            "wide telemetry lost its filled meter: {wide}"
         );
         assert!(
-            wide.contains('╲'),
-            "wide telemetry lost its dial arc: {wide}"
+            wide.contains('─'),
+            "wide telemetry lost its remaining meter track: {wide}"
+        );
+        assert!(
+            !wide.contains('╱') && !wide.contains('╲'),
+            "pointed dial geometry must not return: {wide}"
         );
 
         let medium = render_strip(&app, 100);
@@ -27219,25 +27365,23 @@ mod tests {
 
         app.theme = Theme::HighContrast;
         app.reduced_motion = true;
-        assert!(render_strip(&app, 112).contains("CPU 42%"));
+        let high_contrast = render_strip(&app, 112);
+        assert!(high_contrast.contains("CPU Usage"), "{high_contrast}");
+        assert!(high_contrast.contains("42%"), "{high_contrast}");
         app.color_enabled = false;
         assert!(render_strip(&app, 100).contains("R 42.0 KiB/s"));
         app.preferences.symbols = SymbolPreference::Ascii;
         let ascii = render_strip(&app, 100);
         assert!(
-            ascii.contains('/'),
-            "ASCII telemetry lost its left arc: {ascii}"
+            ascii.contains('='),
+            "ASCII telemetry lost its filled meter: {ascii}"
         );
         assert!(
             ascii.contains('-'),
-            "ASCII telemetry lost its crown: {ascii}"
+            "ASCII telemetry lost its remaining meter track: {ascii}"
         );
         assert!(
-            ascii.contains('\\'),
-            "ASCII telemetry lost its right arc: {ascii}"
-        );
-        assert!(
-            !ascii.contains('╱'),
+            !ascii.contains('╱') && !ascii.contains('╲'),
             "ASCII telemetry leaked Unicode: {ascii}"
         );
         app.preferences.symbols = SymbolPreference::Unicode;
@@ -27390,7 +27534,7 @@ mod tests {
 
         let wide = system_status_text(&app, 72);
         for expected in [
-            "✓ Daemon Connected · version unavailable · up 00:02:05",
+            "✓ Daemon Connected · Local · version unavailable · up 00:02:05",
             "✓ BitBake Running · v2.18.0 · Jobs 2",
             "! Compat Degraded g7 · A1 L1 U1 ?2 · PTY 1 · Clients 3",
             "✓ Build FS 60% · 40.0/100.0 GiB free · Workspace /work/poky/build",
@@ -27398,6 +27542,12 @@ mod tests {
             assert!(wide.contains(expected), "missing {expected}: {wide}");
         }
         assert!(!wide.contains("PID"), "{wide}");
+
+        app.client_access_origin = yoctui_model::ClientAccessOrigin::Ssh {
+            client_ip: "192.0.2.44".into(),
+        };
+        let ssh = system_status_text(&app, 72);
+        assert!(ssh.contains("Daemon Connected · SSH 192.0.2.44"), "{ssh}");
 
         let compact = system_status_text(&app, 32);
         assert_eq!(compact.lines().count(), 4, "{compact}");
@@ -27918,7 +28068,8 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("busybox:do_compile 42%"));
+        assert!(output.contains("busybox:do_compile ·"));
+        assert!(output.contains("42%"));
     }
 
     #[test]
@@ -28017,8 +28168,8 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("busybox:do_compile 100% complete"));
-        assert!(output.contains("bash:do_install 100% failed"));
+        assert!(output.contains("busybox:do_compile · 100% complete"));
+        assert!(output.contains("bash:do_install · 100% failed"));
     }
     #[test]
     fn renders_build_target_editor() {
@@ -29722,13 +29873,7 @@ mod tests {
                 .collect::<String>()
         };
         let wide = render_table(120);
-        for expected in [
-            "Worker",
-            "PID",
-            "worker-7",
-            "4242",
-            "progress unknown active",
-        ] {
+        for expected in ["Worker", "PID", "worker-7", "4242", "progress unknown"] {
             assert!(wide.contains(expected), "missing {expected}: {wide}");
         }
         assert!(!wide.contains("CPU"), "{wide}");
@@ -29913,10 +30058,7 @@ mod tests {
         app.build.total = None;
         app.reduced_motion = true;
         let (unknown, _) = render_table(&app, 70);
-        assert!(
-            unknown.contains("progress unknown active  3/?"),
-            "{unknown}"
-        );
+        assert!(unknown.contains("progress unknown ●  3/—"), "{unknown}");
         assert!(!unknown.contains("30%"), "{unknown}");
         assert!(unknown.contains("A1 W0 !2 ✕1 00:01:00"), "{unknown}");
     }
@@ -32642,7 +32784,7 @@ mod tests {
         app.reduced_motion = true;
         let unknown = rendered_text(&app, 100, 30);
         assert!(
-            unknown.contains("Overall  progress unknown active  3/?"),
+            unknown.contains("Overall  progress unknown ●  3/—"),
             "{unknown}"
         );
         assert!(!unknown.contains("Overall  0%"), "{unknown}");

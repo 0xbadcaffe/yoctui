@@ -15,7 +15,7 @@ pub(super) fn activity_symbol(
         };
     };
     let symbols = if unicode {
-        throbber_widgets_tui::BRAILLE_SIX.symbols
+        throbber_widgets_tui::BLACK_CIRCLE.symbols
     } else {
         throbber_widgets_tui::ASCII.symbols
     };
@@ -26,11 +26,12 @@ pub(super) fn task_activity(app: &App, task_progress: Option<u8>) -> String {
     if task_progress.is_some() {
         return String::new();
     }
+    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
     let projection = app.activity_projection(yoctui_model::ActivityLifecycle::Running);
-    projection.phase.map_or_else(
-        || " active".into(),
-        |_| activity_symbol(projection, true).into(),
-    )
+    if projection.phase.is_none() {
+        return if unicode { "●".into() } else { "*".into() };
+    }
+    activity_symbol(projection, unicode).into()
 }
 
 pub(super) fn task_progress_bar(progress: u8) -> String {

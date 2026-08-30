@@ -2812,6 +2812,14 @@ attached client, while command-created events advance the issuing client's
 cursor after their direct response. This keeps global daemon state and event
 ordering shared without making focus or layout global.
 
+The UI's Local/SSH access label is client-local presentation evidence, not a
+daemon transport claim and not part of the journal snapshot. The CLI inspects
+`SSH_CONNECTION` and then `SSH_CLIENT`, validates the first token as IPv4 or
+IPv6, and stores only that remote client address in `App`. Missing variables
+mean Local; present but malformed SSH evidence remains explicitly
+`SSH (IP unavailable)`. This field cannot authorize work, change the daemon
+socket, or replace compatibility authority.
+
 Live event recovery uses the attached transport's `Snapshot` frame; the
 handshake-only `Attached` frame is never reused after attachment. A client that
 falls more than the per-tick event budget behind receives an explicit

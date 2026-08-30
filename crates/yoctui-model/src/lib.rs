@@ -340,6 +340,44 @@ pub enum Theme {
     /// Legacy persisted setting; new selectors expose the Packrat catalog only.
     Monochrome,
 }
+
+impl Theme {
+    /// Stable, user-facing color names. Persisted enum names remain unchanged so
+    /// existing preferences continue to deserialize across upgrades.
+    pub const fn display_name(self) -> &'static str {
+        match self {
+            Self::DarkPro => "Dark blue",
+            Self::WhiteClassic => "White",
+            Self::MatrixGreen => "Green",
+            Self::VscodeDark => "Dark gray",
+            Self::VscodeLight => "Light gray",
+            Self::AccessibleDark => "Accessible dark",
+            Self::SoftLight => "Soft white",
+            Self::HighContrast => "High contrast",
+            Self::Monochrome => "Monochrome",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum ClientAccessOrigin {
+    #[default]
+    Local,
+    Ssh {
+        client_ip: String,
+    },
+    SshUnknown,
+}
+
+impl ClientAccessOrigin {
+    pub fn label(&self) -> String {
+        match self {
+            Self::Local => "Local".into(),
+            Self::Ssh { client_ip } => format!("SSH {client_ip}"),
+            Self::SshUnknown => "SSH (IP unavailable)".into(),
+        }
+    }
+}
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 #[serde(rename_all = "kebab-case")]
 pub enum AnimationSpeed {
@@ -1081,6 +1119,7 @@ pub const HOST_TELEMETRY_HISTORY_SAMPLES: usize = 60;
 pub struct TelemetryHistory {
     pub cpu_percent: VecDeque<u64>,
     pub memory_percent: VecDeque<u64>,
+    pub build_filesystem_percent: VecDeque<u64>,
     pub disk_read_bytes_per_second: VecDeque<u64>,
     pub disk_write_bytes_per_second: VecDeque<u64>,
     pub network_receive_bytes_per_second: VecDeque<u64>,
@@ -1107,6 +1146,17 @@ impl TelemetryHistory {
         {
             Self::push(
                 &mut self.memory_percent,
+                u64::try_from(u128::from(total - available) * 100 / u128::from(total))
+                    .unwrap_or(100),
+            );
+        }
+        if let (Some(total), Some(available)) =
+            (telemetry.disk_total_bytes, telemetry.disk_available_bytes)
+            && total > 0
+            && available <= total
+        {
+            Self::push(
+                &mut self.build_filesystem_percent,
                 u64::try_from(u128::from(total - available) * 100 / u128::from(total))
                     .unwrap_or(100),
             );
@@ -1918,6 +1968,7 @@ pub enum Dialog {
     BbmaskConfirmation(String),
     TerminalLaunch(TerminalLaunchDialog),
     RecipeEditor(RecipeEditor),
+    BuildCancellationConfirmation,
     QuitConfirmation,
 }
 
@@ -1948,6 +1999,7 @@ impl Dialog {
             | Self::DevtoolFinishConfirmation(_)
             | Self::DevtoolDeployConfirmation(_)
             | Self::BbmaskConfirmation(_)
+            | Self::BuildCancellationConfirmation
             | Self::QuitConfirmation => true,
             Self::Security(dialog) => matches!(
                 dialog,
@@ -3809,6 +3861,7 @@ fn diagnostic_for_entry(entry: &LogEntry) -> DiagnosticInfo {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
     pub daemon: ClientDaemonView,
+    pub client_access_origin: ClientAccessOrigin,
     pub workspace_compatibility: WorkspaceCompatibilityState,
     pub compatibility_ui: CompatibilityUiState,
     pub raw_mode: RawModeState,
@@ -3988,6 +4041,7 @@ impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
             daemon: ClientDaemonView::default(),
+            client_access_origin: ClientAccessOrigin::default(),
             workspace_compatibility: WorkspaceCompatibilityState::default(),
             compatibility_ui: CompatibilityUiState::default(),
             raw_mode: RawModeState::new(builtin_raw_catalog()),
@@ -6106,6 +6160,8 @@ pub enum Action {
         delta: isize,
     },
     Cancel,
+    ConfirmBuildCancellation,
+    CancelBuildCancellation,
     CycleLogWorkspaceView,
     InternalLog(InternalLogRecord),
     InternalLogIngressDropped(usize),
@@ -14851,6 +14907,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 app.build.status,
                 BuildStatus::Running | BuildStatus::Parsing
             ) {
+                open_dialog(app, Dialog::BuildCancellationConfirmation);
+            }
+        }
+        Action::ConfirmBuildCancellation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::BuildCancellationConfirmation)
+            ) && matches!(
+                app.build.status,
+                BuildStatus::Running | BuildStatus::Parsing
+            ) {
+                close_dialog(app);
                 app.build.status = BuildStatus::Cancelling;
                 for task in app.tasks.values_mut() {
                     task.cancellation = Some("cancellation requested".into());
@@ -14861,6 +14929,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     "Build cancellation requested".into(),
                 );
                 return Some(Effect::Cancel);
+            }
+        }
+        Action::CancelBuildCancellation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::BuildCancellationConfirmation)
+            ) {
+                close_dialog(app);
             }
         }
         Action::CycleLogWorkspaceView => {
@@ -17487,16 +17563,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = None;
         }
         Action::DismissNotification => app.notification = None,
-        Action::Quit => {
-            if matches!(
-                app.build.status,
-                BuildStatus::Running | BuildStatus::Parsing | BuildStatus::Cancelling
-            ) {
-                open_dialog(app, Dialog::QuitConfirmation)
-            } else {
-                app.should_quit = true
-            }
-        }
+        Action::Quit => open_dialog(app, Dialog::QuitConfirmation),
         Action::ConfirmQuit => {
             if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
                 app.should_quit = true;
@@ -19166,7 +19233,15 @@ mod tests {
             },
         );
         let _ = update(&mut app, Action::TaskCompleted { id, success: true });
-        assert_eq!(update(&mut app, Action::Cancel), Some(Effect::Cancel));
+        assert_eq!(update(&mut app, Action::Cancel), None);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildCancellationConfirmation)
+        ));
+        assert_eq!(
+            update(&mut app, Action::ConfirmBuildCancellation),
+            Some(Effect::Cancel)
+        );
         let _ = update(
             &mut app,
             Action::BuildCompleted {
@@ -21899,7 +21974,15 @@ mod tests {
         assert!(app.logs.scroll_offset <= visible.saturating_sub(1));
     }
     #[test]
-    fn running_build_requires_confirmation() {
+    fn quitting_always_requires_confirmation() {
+        let mut idle = App::new(2, 10);
+        update(&mut idle, Action::Quit);
+        assert!(matches!(
+            idle.active_dialog(),
+            Some(Dialog::QuitConfirmation)
+        ));
+        assert!(!idle.should_quit);
+
         let mut a = App::new(2, 10);
         a.build.status = BuildStatus::Running;
         update(&mut a, Action::Quit);

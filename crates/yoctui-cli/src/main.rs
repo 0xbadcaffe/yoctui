@@ -31,12 +31,12 @@ use tokio::signal::unix::{SignalKind, signal};
 use tracing_subscriber::prelude::*;
 use yoctui_app::{
     BuildJobCoordinator, DevtoolJobCoordinator, Input, MenuInputResult, MouseInput, MouseKind,
-    PrefixCommand, PrefixEvent, PrefixState, build_environment_action, collection_scroll_delta,
-    compatibility_ui_inspector_action, compatibility_workspace_action,
-    config_compare_dialog_action, config_edit_confirmation_action, config_scope_picker_action,
-    config_source_picker_action, config_workspace_action, daemon_job_state_from_app,
-    daemon_protocol_snapshot, dashboard_workspace_action, dependency_workspace_action,
-    devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
+    PrefixCommand, PrefixEvent, PrefixState, build_cancellation_confirmation_action,
+    build_environment_action, collection_scroll_delta, compatibility_ui_inspector_action,
+    compatibility_workspace_action, config_compare_dialog_action, config_edit_confirmation_action,
+    config_scope_picker_action, config_source_picker_action, config_workspace_action,
+    daemon_job_state_from_app, daemon_protocol_snapshot, dashboard_workspace_action,
+    dependency_workspace_action, devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action_for_app, global_search_action,
@@ -47,8 +47,8 @@ use yoctui_app::{
     qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
     qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
     qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
-    qemu_launch_dialog_action, raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
-    sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    qemu_launch_dialog_action, quit_confirmation_action, raw_mode_input, recipe_editor_action,
+    recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
@@ -84,12 +84,12 @@ use yoctui_bitbake::{
     WicDeviceInventoryResponse, WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
-    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ConfigEditRequest,
-    DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
-    ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
-    LayerRelationship, LayerRelationships, OnboardingProgress, PackageDetailRequest,
-    PackageInventoryRequest, PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect,
-    QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
+    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ClientAccessOrigin,
+    ConfigEditRequest, DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState,
+    HostTelemetry, ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry,
+    LayerInspectorMode, LayerRelationship, LayerRelationships, OnboardingProgress,
+    PackageDetailRequest, PackageInventoryRequest, PreviewKind, QaAction, QaCheckFamily, QaCheckId,
+    QaEffect, QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
     QaReportRequest, QaScope, QaSessionId, QaSessionStatus, QaSourceLocation, QemuCapability,
     QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity,
     RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation,
@@ -10475,6 +10475,29 @@ fn direct_menu_shortcut_action(app: &App, input: Input, replayed: bool) -> Optio
     }
 }
 
+fn client_access_origin() -> ClientAccessOrigin {
+    for variable in ["SSH_CONNECTION", "SSH_CLIENT"] {
+        let Some(value) = env::var_os(variable) else {
+            continue;
+        };
+        return parse_ssh_access_origin(&value.to_string_lossy());
+    }
+    ClientAccessOrigin::Local
+}
+
+fn parse_ssh_access_origin(value: &str) -> ClientAccessOrigin {
+    let Some(client_ip) = value.split_whitespace().next() else {
+        return ClientAccessOrigin::SshUnknown;
+    };
+    if client_ip.parse::<std::net::IpAddr>().is_ok() {
+        ClientAccessOrigin::Ssh {
+            client_ip: client_ip.into(),
+        }
+    } else {
+        ClientAccessOrigin::SshUnknown
+    }
+}
+
 async fn tui(
     config: Config,
     targets: Vec<String>,
@@ -10510,6 +10533,7 @@ async fn tui(
     } else {
         App::new_unconfigured(log_entries, log_bytes)
     };
+    app.client_access_origin = client_access_origin();
     let _ = update(
         &mut app,
         Action::DetachedTerminalAvailabilityDetected(detached_terminal_availability()),
@@ -12214,14 +12238,15 @@ async fn tui(
                         )
                         .await;
                     }
+                } else if matches!(
+                    app.active_dialog(),
+                    Some(Dialog::BuildCancellationConfirmation)
+                ) {
+                    let _ = build_cancellation_confirmation_action(input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if matches!(app.active_dialog(), Some(Dialog::QuitConfirmation)) {
-                    let _ = match input {
-                        Input::Char('Y') => {
-                            compatibility_workspace_action(&mut app, Action::ConfirmQuit)
-                        }
-                        Input::Esc => compatibility_workspace_action(&mut app, Action::CancelQuit),
-                        _ => None,
-                    };
+                    let _ = quit_confirmation_action(input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
                 } else if app.layer_browser.is_some()
                     && !app.metadata_searching
                     && app.focus != yoctui_model::FocusTarget::Dialog
@@ -14050,6 +14075,26 @@ fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn ssh_access_origin_uses_the_valid_remote_client_ip() {
+        assert_eq!(
+            parse_ssh_access_origin("192.0.2.44 50123 192.0.2.10 22"),
+            ClientAccessOrigin::Ssh {
+                client_ip: "192.0.2.44".into(),
+            }
+        );
+        assert_eq!(
+            parse_ssh_access_origin("2001:db8::44 50123 2001:db8::10 22"),
+            ClientAccessOrigin::Ssh {
+                client_ip: "2001:db8::44".into(),
+            }
+        );
+        assert_eq!(
+            parse_ssh_access_origin("not-an-ip 50123 local 22"),
+            ClientAccessOrigin::SshUnknown
+        );
+    }
 
     struct DevworkTempDir(PathBuf);
 
