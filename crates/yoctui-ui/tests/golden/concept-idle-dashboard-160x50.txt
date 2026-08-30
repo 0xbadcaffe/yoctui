@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.1  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Exited│
+│yoctui v0.1.2  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64                   Daemon: ✓ Connected  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / ?  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -27,14 +27,14 @@
 │  ? Terminal Sessions     ││                                                                                    ││                                            │
 │  ? Devtool               │└────────────────────────────────────────────────────────────────────────────────────┘│Active Tasks                                │
 │  ? QEMU / Wic            │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│No active task events                       │
-│  ? Maintenance           ││█████               │RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable ││Next Action                                 │
-│  ▱ Build environment     ││█████               │                    │                    │                     ││Build image [B]                             │
-│  ▱ Compatibility         ││█████               │                    │                    │                     ││Attention                                   │
-│  ▱ Settings              ││█████               │                    │                    │                     ││No retained warnings or errors              │
-│                          ││█████ CPU 24%       │                    │                    │                     ││Workbench Center                            │
-│                          ││█████               │                    │                    │                     ││Context: Work · core-image-minimal          │
-│                          ││█████               │                    │                    │                     ││Active: tasks 0 · jobs 0                    │
-│                          ││█████               │                    │                    │                     ││Favorite: none                              │
+│  ? Maintenance           ││      CPU Usage     │RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable ││Next Action                                 │
+│  ▱ Build environment     ││      ╱━━━━━━╲      │                    │                    │                     ││Build image [B]                             │
+│  ▱ Compatibility         ││    ╱╱        ╲╲    │                    │                    │                     ││Attention                                   │
+│  ▱ Settings              ││   ╱            ╲   │                    │                    │                     ││No retained warnings or errors              │
+│                          ││  ╱              ╲  │                    │                    │                     ││Workbench Center                            │
+│                          ││                    │                    │                    │                     ││Context: Work · core-image-minimal          │
+│                          ││ ╱       24%      ╲ │                    │                    │                     ││Active: tasks 0 · jobs 0                    │
+│                          ││     utilization    │                    │                    │                     ││Favorite: none                              │
 │                          │└────────────────────────────────────────────────────────────────────────────────────┘│Terminal: none                              │
 │                          │┌Quick Actions───────────────────────────────────────────────────────────────────────┐│[t] Terminal sessions                       │
 │                          ││[1] Build image            │[2] Open terminal          │[3] Verify environment      ││Artifact: none retained                     │

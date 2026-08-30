@@ -6895,6 +6895,177 @@ fn telemetry_available(app: &App) -> bool {
             .is_some())
 }
 
+fn render_telemetry_dial(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    title: &str,
+    percent: u8,
+    detail: &str,
+    active_style: Style,
+) {
+    if area.is_empty() {
+        return;
+    }
+    let palette = ThemePalette::for_app(app);
+    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+    frame.render_widget(
+        Paragraph::new(title)
+            .alignment(Alignment::Center)
+            .style(palette.role(palette.informational, Modifier::BOLD)),
+        Rect::new(area.x, area.y, area.width, 1),
+    );
+
+    let detail_y = area.bottom().saturating_sub(1);
+    if detail_y > area.y {
+        frame.render_widget(
+            Paragraph::new(detail)
+                .alignment(Alignment::Center)
+                .style(palette.role(palette.muted, Modifier::DIM)),
+            Rect::new(area.x, detail_y, area.width, 1),
+        );
+    }
+
+    let arc_top = area.y.saturating_add(1);
+    let arc_bottom = detail_y.saturating_sub(1);
+    if arc_bottom < arc_top || area.width < 5 {
+        return;
+    }
+    let dial_width = area.width.saturating_sub(2).clamp(5, 29);
+    let dial_x = area.x + area.width.saturating_sub(dial_width) / 2;
+    let radius_x = f64::from(dial_width.saturating_sub(1)) / 2.0;
+    let radius_y = f64::from(arc_bottom.saturating_sub(arc_top)).max(1.0);
+    let center_x = radius_x;
+    let mut points = Vec::with_capacity(usize::from(dial_width));
+    for column in 0..dial_width {
+        let normalized = (f64::from(column) - center_x) / radius_x;
+        let height = (1.0 - normalized * normalized).max(0.0).sqrt();
+        let row = arc_bottom.saturating_sub((height * radius_y).round() as u16);
+        points.push((dial_x + column, row));
+    }
+    let filled = ((usize::from(percent.min(100)) * points.len()) + 50) / 100;
+    let muted_style = palette.role(palette.muted, Modifier::DIM);
+    for (index, &(x, y)) in points.iter().enumerate() {
+        let previous_y = points
+            .get(index.saturating_sub(1))
+            .map_or(y, |point| point.1);
+        let next_y = points.get(index + 1).map_or(y, |point| point.1);
+        let symbol = if unicode {
+            match next_y.cmp(&previous_y) {
+                std::cmp::Ordering::Less => "╱",
+                std::cmp::Ordering::Greater => "╲",
+                std::cmp::Ordering::Equal => "━",
+            }
+        } else {
+            match next_y.cmp(&previous_y) {
+                std::cmp::Ordering::Less => "/",
+                std::cmp::Ordering::Greater => "\\",
+                std::cmp::Ordering::Equal => "-",
+            }
+        };
+        let Some(cell) = frame.buffer_mut().cell_mut((x, y)) else {
+            continue;
+        };
+        cell.set_symbol(symbol).set_style(if index < filled {
+            active_style
+        } else {
+            muted_style
+        });
+    }
+
+    frame.render_widget(
+        Paragraph::new(format!("{}%", percent.min(100)))
+            .alignment(Alignment::Center)
+            .style(active_style.add_modifier(Modifier::BOLD)),
+        Rect::new(area.x, arc_bottom, area.width, 1),
+    );
+}
+
+fn telemetry_dial_supported(area: Rect) -> bool {
+    area.width >= 16 && area.height >= 6
+}
+
+fn render_cpu_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
+    let Some(percent) = app
+        .host_telemetry
+        .cpu_utilization_percent
+        .map(|value| value.min(100))
+    else {
+        render_cpu_gauge(frame, app, area);
+        return;
+    };
+    if !telemetry_dial_supported(area) {
+        render_cpu_gauge(frame, app, area);
+        return;
+    }
+    let detail = app
+        .host_telemetry
+        .logical_cpu_count
+        .map_or_else(|| "utilization".into(), |cores| format!("{cores} cores"));
+    render_telemetry_dial(
+        frame,
+        app,
+        area,
+        "CPU Usage",
+        percent,
+        &detail,
+        cpu_meter_style(app, percent),
+    );
+}
+
+fn render_ram_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
+    let total = app.host_telemetry.memory_total_bytes;
+    let available = app.host_telemetry.memory_available_bytes;
+    let (Some(percent), Some(total), Some(available)) =
+        (utilization_percent(total, available), total, available)
+    else {
+        render_ram_gauge(frame, app, area);
+        return;
+    };
+    if !telemetry_dial_supported(area) {
+        render_ram_gauge(frame, app, area);
+        return;
+    }
+    let detail = format_bytes_pair(total - available, total);
+    render_telemetry_dial(
+        frame,
+        app,
+        area,
+        "RAM Usage",
+        percent,
+        &detail,
+        memory_meter_style(app, percent),
+    );
+}
+
+fn render_build_filesystem_telemetry_cell(frame: &mut Frame, app: &App, area: Rect) {
+    let total = app.host_telemetry.disk_total_bytes;
+    let available = app.host_telemetry.disk_available_bytes;
+    let (Some(percent), Some(_total), Some(available), Some(_build_dir)) = (
+        utilization_percent(total, available),
+        total,
+        available,
+        app.workspace.build_dir.as_deref(),
+    ) else {
+        render_disk_gauge(frame, app, area);
+        return;
+    };
+    if !telemetry_dial_supported(area) {
+        render_disk_gauge(frame, app, area);
+        return;
+    }
+    let detail = format!("{} free", format_bytes(available));
+    render_telemetry_dial(
+        frame,
+        app,
+        area,
+        "Build FS Usage",
+        percent,
+        &detail,
+        telemetry_meter_style(app, percent),
+    );
+}
+
 #[derive(Clone, Copy)]
 enum TelemetryCell {
     Cpu,
@@ -6924,9 +7095,11 @@ fn render_telemetry_cell(
     let inner = block.inner(area);
     frame.render_widget(block, area);
     match cell {
-        TelemetryCell::Cpu => render_cpu_gauge(frame, app, inner),
-        TelemetryCell::Ram => render_ram_gauge(frame, app, inner),
-        TelemetryCell::BuildFilesystem => render_disk_gauge(frame, app, inner),
+        TelemetryCell::Cpu => render_cpu_telemetry_cell(frame, app, inner),
+        TelemetryCell::Ram => render_ram_telemetry_cell(frame, app, inner),
+        TelemetryCell::BuildFilesystem => {
+            render_build_filesystem_telemetry_cell(frame, app, inner);
+        }
         TelemetryCell::Sstate => {
             let palette = ThemePalette::for_app(app);
             frame.render_widget(
@@ -26976,9 +27149,13 @@ mod tests {
         let wide = render_strip(&app, 210);
         for expected in [
             "Telemetry · bounded 60-sample histories",
-            "CPU  42% · 16 cores",
-            "RAM 75%",
-            "BUILD FS 60%",
+            "CPU Usage",
+            "42%",
+            "16 cores",
+            "RAM Usage",
+            "12.0/16.0 GiB",
+            "Build FS Usage",
+            "40.0 GiB free",
             "Read 42.0 KiB/s",
             "Write 84.0 KiB/s",
             "RX 126.0 KiB/s",
@@ -26987,12 +27164,27 @@ mod tests {
             assert!(wide.contains(expected), "missing {expected}: {wide}");
         }
         assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
+        assert!(
+            wide.contains('╱'),
+            "wide telemetry lost its dial arc: {wide}"
+        );
+        assert!(
+            wide.contains('━'),
+            "wide telemetry lost its dial crown: {wide}"
+        );
+        assert!(
+            wide.contains('╲'),
+            "wide telemetry lost its dial arc: {wide}"
+        );
 
         let medium = render_strip(&app, 100);
         for expected in [
-            "CPU 42% · 16c",
-            "RAM 75%",
-            "BUILD FS 60%",
+            "CPU Usage",
+            "42%",
+            "RAM Usage",
+            "75%",
+            "Build FS Usage",
+            "60%",
             "R 42.0 KiB/s",
             "W 84.0 KiB/s",
         ] {
@@ -27030,6 +27222,25 @@ mod tests {
         assert!(render_strip(&app, 112).contains("CPU 42%"));
         app.color_enabled = false;
         assert!(render_strip(&app, 100).contains("R 42.0 KiB/s"));
+        app.preferences.symbols = SymbolPreference::Ascii;
+        let ascii = render_strip(&app, 100);
+        assert!(
+            ascii.contains('/'),
+            "ASCII telemetry lost its left arc: {ascii}"
+        );
+        assert!(
+            ascii.contains('-'),
+            "ASCII telemetry lost its crown: {ascii}"
+        );
+        assert!(
+            ascii.contains('\\'),
+            "ASCII telemetry lost its right arc: {ascii}"
+        );
+        assert!(
+            !ascii.contains('╱'),
+            "ASCII telemetry leaked Unicode: {ascii}"
+        );
+        app.preferences.symbols = SymbolPreference::Unicode;
 
         let dashboard = rendered_text(&app, 300, 60);
         assert!(dashboard.contains("Telemetry · bounded 60-sample histories"));
@@ -32423,7 +32634,8 @@ mod tests {
 
         let determinate = rendered_text(&app, 160, 50);
         assert!(determinate.contains("Overall  30%  3/10"), "{determinate}");
-        assert!(determinate.contains("CPU 72%"), "{determinate}");
+        assert!(determinate.contains("CPU Usage"), "{determinate}");
+        assert!(determinate.contains("72%"), "{determinate}");
         assert!(!determinate.contains("Sstate 0%"), "{determinate}");
 
         app.build.total = None;

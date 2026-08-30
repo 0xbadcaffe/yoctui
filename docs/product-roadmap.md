@@ -597,3 +597,18 @@ Exit criteria:
 - the persistent header shows `yoctui v<workspace-version>` at every supported width
 - all workspace packages and internal path constraints share one version
 - CI and the completion gate reject commits that do not increment that version
+
+## M27 — Dashboard telemetry dial fidelity
+
+Goal: make normal-height Dashboard telemetry read as compact instruments and
+materially match the M21 resource-meter concepts without sacrificing truthful
+typed values or responsive fallbacks.
+
+Exit criteria:
+
+- CPU, RAM, and Build FS use foreground-only semicircular dials when a strip
+  cell has enough width and height
+- every dial retains its exact percentage and metric-specific context in text
+- Unicode, ASCII, no-color, reduced-motion, short-cell fallback, and
+  unavailable-state behavior remain deterministic and tested
+- production scenario goldens and design rasters encode the reviewed change

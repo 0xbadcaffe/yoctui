@@ -424,22 +424,34 @@ history only. It does not increase redraw frequency: new points arrive on the
 telemetry sampling cadence, and reduced motion disables any presentation-only
 animation.
 
-The CPU cell uses a horizontal terminal gauge with a numeric label in every
-determinate presentation. At 28 or more cell columns the label is
-`CPU n% · N cores`; at 16–27 columns the authoritative core count contracts to
-`Nc`; below 16 columns the gauge retains `CPU n%` and omits the lower-priority
-core count. A missing CPU sample renders `CPU ! unavailable`, never `0%` or a
-perpetual activity claim. A missing logical core count is omitted rather than
-rendered as a guessed or question-mark count. Normal utilization uses the
-semantic CPU-graph role, while warning/error thresholds use their semantic
-roles; no-color retains the text and attribute distinction. The gauge is
-determinate and unchanged by reduced-motion mode.
+When a CPU, RAM, or Build FS strip cell has at least 16 columns and six rows,
+it uses the M21 semicircular dial composition: a centered metric title, a
+left-to-right colored utilization arc with a muted remainder, the exact whole
+percentage inside the dial, and one centered context line below it. Unicode
+uses diagonal and heavy horizontal arc segments; ASCII mode preserves the same
+shape with `/`, `-`, and `\\`. The arc uses foreground styling only and must not
+paint a rectangular filled background. Shorter cells retain the compact
+horizontal terminal-gauge fallback described below so responsive layouts do
+not lose authoritative values.
+
+The CPU dial is titled `CPU Usage`; its context is the authoritative logical
+core count when known and `utilization` otherwise. The compact fallback has a
+numeric label in every determinate presentation. At 28 or more cell columns
+the fallback label is `CPU n% · N cores`; at 16–27 columns the authoritative
+core count contracts to `Nc`; below 16 columns the gauge retains `CPU n%` and
+omits the lower-priority core count. A missing CPU sample renders
+`CPU ! unavailable`, never `0%` or a perpetual activity claim. Normal
+utilization uses the semantic CPU-graph role, while warning/error thresholds
+use their semantic roles; no-color retains shape, text, and attribute
+distinction. The dial and compact fallback are determinate and unchanged by
+reduced-motion mode.
 
 The RAM cell derives whole used percent with overflow-free integer arithmetic
-from valid total/available byte samples. At 38 or more cell columns it labels
-the gauge `RAM n% · used / total`; at 28–37 columns the values share the total's
-largest binary unit as `used/total unit`; below 28 columns the compact gauge
-retains `RAM n%`. Capacity labels use at most one decimal binary-unit digit and
+from valid total/available byte samples. Its dial is titled `RAM Usage` and the
+context line is `used/total unit`. In the compact fallback, at 38 or more cell
+columns it labels the gauge `RAM n% · used / total`; at 28–37 columns the values
+share the total's largest binary unit as `used/total unit`; below 28 columns the
+gauge retains `RAM n%`. Capacity labels use at most one decimal binary-unit digit and
 do not imply a fractional percentage. Missing fields, zero total, or available
 greater than total renders `RAM ! unavailable`, never a synthetic capacity or
 `0%`. Normal memory utilization uses the semantic memory-graph role and high
@@ -447,8 +459,9 @@ pressure uses warning/error roles. No-color and reduced-motion preserve the
 same determinate text.
 
 The build-filesystem cell is valid only when the configured build directory
-and a consistent total/available `statvfs` sample are both present. At 52 or
-more cell columns the label is
+and a consistent total/available `statvfs` sample are both present. Its dial is
+titled `Build FS Usage` and the context line is the exact available capacity
+followed by `free`. In the compact fallback, at 52 or more cell columns the label is
 `BUILD FS n% · free/total unit free · <build-dir>`; at 34–51 columns it omits
 the path but retains free/total; at 16–33 it retains `BUILD FS n%`; below 16 it
 contracts to `FS n%`. The path is the configured build directory, not an

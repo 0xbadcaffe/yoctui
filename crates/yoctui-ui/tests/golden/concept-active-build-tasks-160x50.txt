@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.1  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64               Daemon: ✓ Connected  •  BitBake: ✓ Running│
+│yoctui v0.1.2  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64               Daemon: ✓ Connected  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -38,12 +38,12 @@
 │                          ││                                                                                    ││? Build options        [B] — Unknown        │
 │                          │└────────────────────────────────────────────────────────────────────────────────────┘│  Reason: No current environment capability │
 │                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│                                            │
-│                          ││█████               │RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable │└────────────────────────────────────────────┘
-│                          ││█████               │                    │                    │                     │┌System Status───────────────────────────────┐
-│                          ││█████               │                    │                    │                     ││✓ Daemon Connected · version unavailable · …│
-│                          ││█████ CPU 24%       │                    │                    │                     ││✓ BitBake Running · v2.8.0 · Jobs 1         │
-│                          ││█████               │                    │                    │                     ││! Compat Unavailable · PTY 1 · Clients 1    │
-│                          ││█████               │                    │                    │                     ││! Build FS unavailable · Workspace /home/us…│
+│                          ││      CPU Usage     │RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable │└────────────────────────────────────────────┘
+│                          ││     ╱━━━━━━━━╲     │                    │                    │                     │┌System Status───────────────────────────────┐
+│                          ││   ╱╱          ╲╲   │                    │                    │                     ││✓ Daemon Connected · version unavailable · …│
+│                          ││  ╱              ╲  │                    │                    │                     ││✓ BitBake Running · v2.8.0 · Jobs 1         │
+│                          ││ ╱       24%      ╲ │                    │                    │                     ││! Compat Unavailable · PTY 1 · Clients 1    │
+│                          ││     utilization    │                    │                    │                     ││! Build FS unavailable · Workspace /home/us…│
 └──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │↑/↓ select   f state   F field   / edit filter   d duration   c cancel   F1 Help   F10 Menu   q Quit                      ▶ Build running · 1 active  19:28:27│

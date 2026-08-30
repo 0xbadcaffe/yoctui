@@ -6614,3 +6614,16 @@ required = true
 depends_on = ["UX-VISUAL-SHELL-001"]
 verify = ["python3 -m unittest scripts/test_version_bump.py", "python3 scripts/check-version-bump.py", "cargo test -p yoctui-ui next_generation_header", "./scripts/verify-roadmap.sh"]
 notes = "The persistent header renders the exact Cargo package version next to the Yoctui brand at every supported width. Workspace version 0.1.1 is coherent across package manifests, fuzz dependencies, and packaging validation; CI and the completion gate compare Cargo.toml with the current commit parent and reject a missing or non-increasing version bump."
+
+# M27 — Dashboard Telemetry Dial Fidelity.
+
+[[task]]
+id = "UX-TELEMETRY-DIAL-001"
+milestone = "M27"
+title = "Render dashboard telemetry as concept-shaped dials"
+status = "DONE"
+priority = 758
+required = true
+depends_on = ["UX-VISUAL-SHELL-001", "RELEASE-VERSION-001"]
+verify = ["cargo test -p yoctui-ui next_generation_telemetry_strip_composes_wide_medium_and_hidden_tiers", "./scripts/render-m22-concept-screenshots.sh --check", "./scripts/verify-roadmap.sh"]
+notes = "Normal-height CPU, RAM, and Build FS strip cells now use foreground-only semicircular utilization arcs with a muted remainder, centered whole percent, and metric-specific context. Short cells retain the compact linear fallback; unavailable data remains explicit. Unicode/ASCII rendering, responsive tiers, semantic thresholds, deterministic production cells, and rasters are regression-covered."

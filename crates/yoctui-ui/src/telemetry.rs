@@ -13,7 +13,7 @@ pub(super) fn telemetry_meter_style(app: &App, percent: u8) -> Style {
     }
 }
 
-fn cpu_meter_style(app: &App, percent: u8) -> Style {
+pub(super) fn cpu_meter_style(app: &App, percent: u8) -> Style {
     let palette = ThemePalette::for_app(app);
     if percent >= 90 {
         palette.role(palette.error, Modifier::BOLD)
