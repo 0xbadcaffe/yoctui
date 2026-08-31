@@ -6684,3 +6684,38 @@ required = true
 depends_on = ["UX-TELEMETRY-BTOP-001", "UX-SHELL-NAV-001", "UX-SHELL-IDENTITY-001", "UX-SAFETY-CONFIRM-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "The requested telemetry, rate history, navigation, marker cleanup, identity, theme naming, and confirmation contracts ship together in version 0.1.3 with focused and repository-wide regression coverage."
+
+# M29 — Live client state coherence.
+
+[[task]]
+id = "STATE-RECONNECT-001"
+milestone = "M29"
+title = "Retire stale build work and reconnect the daemon client"
+status = "DONE"
+priority = 764
+required = true
+depends_on = ["UX-OPERATOR-POLISH-001"]
+verify = ["cargo test -p yoctui-model build_authority_loss", "cargo test -p yoctui -- interactive_daemon_reconnect"]
+notes = "Unexpected daemon transport loss moves active and queued tasks to Lost, clears waiting work, labels the build Lost, and schedules bounded periodic reattachment. A successful attach installs the daemon snapshot as the sole recovery authority, including terminal completion."
+
+[[task]]
+id = "UX-REDRAW-001"
+milestone = "M29"
+title = "Invalidate stale terminal cells after resize"
+status = "DONE"
+priority = 765
+required = true
+depends_on = ["UX-OPERATOR-POLISH-001"]
+verify = ["cargo test -p yoctui terminal_resize_requires_full_redraw", "cargo test -p yoctui-ui navigator_and_tasks_titles_render_once_after_resize"]
+notes = "Host Resize events clear Ratatui's terminal backend before the next frame. Focused render tests resize across the live wide geometry and prove grouped Navigator destinations and the Tasks title occur once."
+
+[[task]]
+id = "STATE-COHERENCE-001"
+milestone = "M29"
+title = "Complete live client state coherence"
+status = "DONE"
+priority = 766
+required = true
+depends_on = ["STATE-RECONNECT-001", "UX-REDRAW-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Daemon-loss state retirement, automatic authoritative reattachment, full resize redraw, focused duplicate-row regression coverage, release 0.1.5, and repository-wide completion gates are complete."

@@ -740,6 +740,12 @@ as a fake filesystem in the Navigator. Entries that do not fit remain
 reachable through bounded scrolling, `F10 Menu`, the command palette, or their
 documented global shortcut.
 
+Each rail group heading and each destination is rendered exactly once per
+frame. A destination must never be repeated as both a synthetic group label and
+its real child. A host-terminal resize invalidates the complete terminal
+backend buffer before the next frame so cells from the previous geometry cannot
+survive as duplicate Navigator rows or workspace titles.
+
 Required entries:
 
 - Dashboard
@@ -1482,6 +1488,15 @@ negative/invalid values as unknown, and ignores PID-only task events that
 cannot be correlated with an authoritative active task.
 
 Every dropped or coalesced event count must be observable.
+
+Loss of the daemon client connection immediately invalidates a nonterminal
+build projection. Retained active and queued task rows become `Lost`, waiting
+work becomes zero, and the build is labelled `Lost` rather than continuing to
+look `Parsing` or `Running` without current authority. The interactive client
+then retries a bounded local attach. A successful replacement snapshot is the
+sole recovery authority and may restore the build as active or install its
+terminal completion result. Ordinary client-local navigation and selection do
+not change during this recovery.
 
 ---
 

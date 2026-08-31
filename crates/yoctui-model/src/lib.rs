@@ -554,6 +554,7 @@ pub enum BuildStatus {
     Completed,
     Cancelled,
     Failed,
+    Lost,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Severity {
@@ -4320,7 +4321,10 @@ impl App {
     pub fn waiting_task_count(&self) -> usize {
         if matches!(
             self.build.status,
-            BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed
+            BuildStatus::Completed
+                | BuildStatus::Cancelled
+                | BuildStatus::Failed
+                | BuildStatus::Lost
         ) {
             return 0;
         }
@@ -4329,15 +4333,19 @@ impl App {
         })
     }
     pub fn build_summary_at(&self, now: SystemTime) -> BuildSummary {
-        let elapsed = if matches!(
-            self.build.status,
-            BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed
-        ) {
-            self.build_history.back().and_then(|record| record.elapsed)
-        } else {
-            self.build
+        let elapsed = match self.build.status {
+            BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed => {
+                self.build_history.back().and_then(|record| record.elapsed)
+            }
+            BuildStatus::Lost => None,
+            BuildStatus::Idle
+            | BuildStatus::LoadingWorkspace
+            | BuildStatus::Parsing
+            | BuildStatus::Running
+            | BuildStatus::Cancelling => self
+                .build
                 .started
-                .and_then(|started| now.duration_since(started).ok())
+                .and_then(|started| now.duration_since(started).ok()),
         };
         BuildSummary {
             completed: self.build.completed,
@@ -4505,7 +4513,8 @@ impl App {
             BuildStatus::Idle
             | BuildStatus::Completed
             | BuildStatus::Cancelled
-            | BuildStatus::Failed => return None,
+            | BuildStatus::Failed
+            | BuildStatus::Lost => return None,
         };
         Some(TransientStatus {
             kind: TransientStatusKind::Activity,
@@ -6149,6 +6158,9 @@ pub enum Action {
     BuildCompleted {
         success: bool,
         exit_code: Option<i32>,
+    },
+    BuildAuthorityLost {
+        message: String,
     },
     BuildCancelled {
         exit_code: Option<i32>,
@@ -14831,6 +14843,27 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     app.build.errors
                 )
             });
+        }
+        Action::BuildAuthorityLost { message } => {
+            if matches!(
+                app.build.status,
+                BuildStatus::LoadingWorkspace
+                    | BuildStatus::Parsing
+                    | BuildStatus::Running
+                    | BuildStatus::Cancelling
+            ) {
+                archive_unfinished_tasks(app, TaskState::Lost, Some("build authority lost"));
+                app.build.status = BuildStatus::Lost;
+                app.build.exit_code = None;
+                insert_system_log(
+                    app,
+                    Severity::Warning,
+                    format!("Build authority lost: {message}"),
+                );
+                app.notification = Some(format!(
+                    "Build authority lost: {message}. Reconnecting to the daemon."
+                ));
+            }
         }
         Action::BuildCancelled { exit_code } => {
             archive_unfinished_tasks(app, TaskState::Cancelled, Some("cancelled"));
@@ -26844,5 +26877,58 @@ mod tests {
                 if request.kind == TerminalCreationKind::Utility
                     && request.arguments == vec!["devtool", "edit-recipe", "busybox"]
         ));
+    }
+
+    #[test]
+    fn build_authority_loss_retires_every_nonterminal_task_without_faking_failure() {
+        let mut app = App::new(10, 1_000);
+        app.build.status = BuildStatus::Parsing;
+        app.build.target = Some("core-image-minimal".into());
+        app.build.total = Some(400);
+        app.build.completed = 28;
+        let active = TaskInfo::active(
+            TaskId("busybox:do_compile".into()),
+            "busybox".into(),
+            "do_compile".into(),
+        );
+        let mut queued = TaskInfo::active(
+            TaskId("systemd:do_package".into()),
+            "systemd".into(),
+            "do_package".into(),
+        );
+        queued.state = TaskState::Queued;
+        app.tasks.insert(active.id.clone(), active);
+        app.tasks.insert(queued.id.clone(), queued);
+
+        assert_eq!(app.waiting_task_count(), 370);
+        assert_eq!(
+            update(
+                &mut app,
+                Action::BuildAuthorityLost {
+                    message: "daemon socket closed".into(),
+                },
+            ),
+            None
+        );
+
+        assert_eq!(app.build.status, BuildStatus::Lost);
+        assert!(app.tasks.is_empty());
+        assert_eq!(app.waiting_task_count(), 0);
+        assert_eq!(app.completed_tasks.len(), 2);
+        assert!(
+            app.completed_tasks
+                .iter()
+                .all(|task| task.task.state == TaskState::Lost && !task.success)
+        );
+        assert_eq!(
+            app.build.errors, 0,
+            "transport loss is not a BitBake failure"
+        );
+        assert!(app.build_history.is_empty());
+        assert!(
+            app.notification
+                .as_deref()
+                .is_some_and(|message| message.contains("Reconnecting to the daemon"))
+        );
     }
 }

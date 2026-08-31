@@ -1772,6 +1772,20 @@ SSH loss, and ordinary `q` follow the same detach path. Reattachment restores
 daemon-global state and terminal-emulator screens; client-local layout is
 restored separately and only for still-valid session IDs.
 
+An unexpected transport loss is not an ordinary detach. The client marks its
+daemon replica Disconnected, transitions every retained nonterminal build task
+to `Lost`, and removes the build from the active lifecycle before attempting a
+bounded periodic reconnect. This prevents an authority-free `Parsing` or
+`Running` projection from surviving indefinitely. Successful reconnect uses a
+full daemon snapshot plus ordered replay to replace that provisional lost
+projection; generic job summaries remain index data and are not interpreted as
+build completion.
+
+The Crossterm client treats a host `Resize` event as complete render-buffer
+invalidation. Ratatui remains the only layout renderer, but the next frame is
+forced to repaint every cell at the new geometry so old group headings, rows,
+and panel titles cannot remain visible beside their current positions.
+
 ### Lifecycle and shutdown
 
 `yoctui` normally connects to the local daemon and may auto-start it according

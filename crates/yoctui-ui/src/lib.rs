@@ -1531,6 +1531,7 @@ fn build_status_tone(status: BuildStatus) -> StatusTone {
         BuildStatus::Completed => StatusTone::Success,
         BuildStatus::Cancelled => StatusTone::Warning,
         BuildStatus::Failed => StatusTone::Error,
+        BuildStatus::Lost => StatusTone::Warning,
         BuildStatus::LoadingWorkspace
         | BuildStatus::Parsing
         | BuildStatus::Running
@@ -16362,6 +16363,7 @@ fn recipe_build_state(app: &App, recipe: &str) -> String {
             BuildStatus::Completed => "succeeded",
             BuildStatus::Cancelled => "cancelled",
             BuildStatus::Failed => "failed",
+            BuildStatus::Lost => "lost",
         }
         .into();
     }
@@ -27408,6 +27410,89 @@ mod tests {
         assert!(tasks.contains("Tasks:"), "{tasks}");
         assert!(tasks.contains("Log Viewer"), "{tasks}");
         assert!(tasks.contains("Job History"), "{tasks}");
+    }
+
+    #[test]
+    fn navigator_and_tasks_titles_render_once_after_resize() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
+        app.focus = FocusTarget::Navigator;
+
+        let mut navigator_terminal = Terminal::new(TestBackend::new(30, 55)).unwrap();
+        navigator_terminal
+            .draw(|frame| navigator(frame, &app, frame.area(), None))
+            .unwrap();
+        navigator_terminal.backend_mut().resize(28, 50);
+        navigator_terminal.autoresize().unwrap();
+        navigator_terminal
+            .draw(|frame| navigator(frame, &app, frame.area(), None))
+            .unwrap();
+        let navigator_lines = navigator_terminal
+            .backend()
+            .buffer()
+            .content
+            .chunks(28)
+            .map(|row| {
+                row.iter()
+                    .map(|cell| cell.symbol())
+                    .collect::<String>()
+                    .trim()
+                    .to_owned()
+            })
+            .collect::<Vec<_>>();
+        for group in [
+            "▾ OVERVIEW",
+            "▾ CONTENT",
+            "▾ BUILD",
+            "▾ VALIDATE",
+            "▾ TOOLS",
+        ] {
+            assert_eq!(
+                navigator_lines
+                    .iter()
+                    .filter(|line| line.contains(group))
+                    .count(),
+                1,
+                "group {group:?} was duplicated after resize: {navigator_lines:#?}"
+            );
+        }
+        for destination in ["Dashboard", "Layers", "Tasks"] {
+            assert_eq!(
+                navigator_lines
+                    .iter()
+                    .filter(|line| line.contains(destination))
+                    .count(),
+                1,
+                "destination {destination:?} was duplicated after resize: {navigator_lines:#?}"
+            );
+        }
+
+        app.focus = FocusTarget::Workspace;
+        let rows = app.visible_task_row_refs_at(UNIX_EPOCH);
+        let mut task_terminal = Terminal::new(TestBackend::new(110, 18)).unwrap();
+        task_terminal
+            .draw(|frame| render_task_table(frame, &app, frame.area(), &rows, UNIX_EPOCH))
+            .unwrap();
+        task_terminal.backend_mut().resize(120, 20);
+        task_terminal.autoresize().unwrap();
+        task_terminal
+            .draw(|frame| render_task_table(frame, &app, frame.area(), &rows, UNIX_EPOCH))
+            .unwrap();
+        let task_lines = task_terminal
+            .backend()
+            .buffer()
+            .content
+            .chunks(120)
+            .map(|row| row.iter().map(|cell| cell.symbol()).collect::<String>())
+            .collect::<Vec<_>>();
+        assert_eq!(
+            task_lines
+                .iter()
+                .filter(|line| line.contains("Tasks: not selected · All"))
+                .count(),
+            1,
+            "Tasks title was duplicated after resize: {task_lines:#?}"
+        );
     }
 
     #[test]

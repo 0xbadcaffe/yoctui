@@ -10568,6 +10568,8 @@ async fn tui(
             None
         }
     };
+    #[cfg(unix)]
+    let mut next_daemon_reconnect = Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
     let daemon_attached = daemon_runtime.is_some();
     if daemon_attached && let Some(attached_build_dir) = app.workspace.build_dir.clone() {
         build_dir = attached_build_dir;
@@ -10805,14 +10807,33 @@ async fn tui(
             break;
         }
         #[cfg(unix)]
-        if let Some(runtime) = daemon_runtime.as_mut()
-            && let Err(error) = runtime.poll(&mut app)
-        {
+        let daemon_poll_error = daemon_runtime
+            .as_mut()
+            .and_then(|runtime| runtime.poll(&mut app).err());
+        #[cfg(unix)]
+        if let Some(error) = daemon_poll_error {
             eprintln!("yoctui daemon client disconnected: {error}");
-            app.notification = Some(format!("Daemon connection lost: {error}"));
             daemon_runtime = None;
             app.daemon.status = yoctui_model::ClientReplicaStatus::Disconnected;
             yoctui_model::invalidate_workspace_compatibility(&mut app);
+            let _ = update(
+                &mut app,
+                Action::BuildAuthorityLost {
+                    message: error.to_string(),
+                },
+            );
+            next_daemon_reconnect = Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
+        }
+        #[cfg(unix)]
+        if daemon_runtime.is_none() && Instant::now() >= next_daemon_reconnect {
+            next_daemon_reconnect = Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
+            match client_runtime::InteractiveDaemonRuntime::connect(
+                &mut app,
+                Duration::from_millis(250),
+            ) {
+                Ok(runtime) => daemon_runtime = Some(runtime),
+                Err(error) => tracing::debug!(%error, "daemon reattach not yet available"),
+            }
         }
         if let Some(identity) = pending_daemon_devtool_modify.as_ref() {
             match daemon_devtool_modify_completion(&app, identity) {
@@ -11022,6 +11043,10 @@ async fn tui(
                         );
                     }
                 }
+                continue;
+            }
+            if terminal_event_requires_full_redraw(&terminal_event) {
+                terminal.clear()?;
                 continue;
             }
             if let Event::Mouse(mouse) = terminal_event {
@@ -13983,6 +14008,10 @@ fn active_popup_accepts_paste(app: &yoctui_model::App) -> bool {
     }
 }
 
+fn terminal_event_requires_full_redraw(event: &Event) -> bool {
+    matches!(event, Event::Resize(_, _))
+}
+
 fn mouse_kind_from_event(kind: crossterm::event::MouseEventKind) -> Option<MouseKind> {
     match kind {
         crossterm::event::MouseEventKind::Down(crossterm::event::MouseButton::Right) => {
@@ -16032,6 +16061,24 @@ mod tests {
     fn search_clear_control_key_decodes_without_becoming_text() {
         let key = KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL);
         assert_eq!(input_from_key(key), Some(Input::CtrlU));
+    }
+
+    #[test]
+    fn terminal_resize_requires_full_redraw() {
+        assert!(terminal_event_requires_full_redraw(&Event::Resize(238, 57)));
+        assert!(!terminal_event_requires_full_redraw(&Event::FocusGained));
+        assert!(!terminal_event_requires_full_redraw(&Event::Key(
+            KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE,)
+        )));
+    }
+
+    #[test]
+    fn interactive_daemon_reconnect_uses_a_bounded_retry_interval() {
+        assert_eq!(
+            client_runtime::DAEMON_RECONNECT_INTERVAL,
+            Duration::from_secs(1)
+        );
+        assert!(client_runtime::DAEMON_RECONNECT_INTERVAL <= Duration::from_secs(5));
     }
 
     #[test]

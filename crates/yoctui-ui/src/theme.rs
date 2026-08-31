@@ -36,7 +36,7 @@ pub(super) fn build_status_style(app: &App) -> Style {
     let palette = ThemePalette::for_app(app);
     match app.build.status {
         BuildStatus::Completed => palette.role(palette.success, Modifier::BOLD),
-        BuildStatus::Cancelled => palette.role(palette.warning, Modifier::BOLD),
+        BuildStatus::Cancelled | BuildStatus::Lost => palette.role(palette.warning, Modifier::BOLD),
         BuildStatus::Failed => palette.role(palette.error, Modifier::BOLD | Modifier::UNDERLINED),
         BuildStatus::LoadingWorkspace
         | BuildStatus::Parsing

@@ -11,6 +11,16 @@ Status values:
 
 ## Current phase
 
+M29 Live Client State Coherence is complete. An unexpected daemon transport
+loss now retires every retained nonterminal task as Lost, removes the build
+from Parsing/Running state without fabricating a BitBake failure, and schedules
+one-second bounded reattachment. The current daemon snapshot then restores the
+authoritative active or terminal build state. Host terminal Resize events force
+a complete Ratatui backend repaint, and focused regression tests prove
+Dashboard, Layers, Tasks, their group headings, and the Tasks workspace title
+render once after geometry changes. The workspace and installed release are
+version 0.1.5. Overall required registry progress is 607/607 (100.0%).
+
 M28 Operator Shell Polish is complete. CPU, RAM, and Build FS now use original
 history-first monitor tiles with a live trend field and thin threshold meter
 instead of pointed dials; narrow network and disk rate cells preserve their live
@@ -19,7 +29,8 @@ with a circular active indicator, and unknown
 Navigator/task values no longer add question-mark noise. The header highlights
 Project/Target/Machine/Distro and reports Local or validated SSH client-IP
 access. Theme display names are color-oriented, and exit/build cancellation are
-always explicit typed confirmations. The workspace is version 0.1.4. No btop
+always explicit typed confirmations. The workspace at that milestone was
+version 0.1.4. No btop
 source or layout code is copied or linked. Overall required registry progress
 is 604/604 (100.0%).
 

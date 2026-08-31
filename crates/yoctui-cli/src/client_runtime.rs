@@ -19,6 +19,7 @@ use yoctui_protocol::daemon::{
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
 
 pub(crate) const MAX_EVENTS_PER_POLL: usize = 64;
+pub(crate) const DAEMON_RECONNECT_INTERVAL: Duration = Duration::from_secs(1);
 const MAX_POLL_DURATION: Duration = Duration::from_millis(8);
 
 pub struct InteractiveDaemonRuntime {

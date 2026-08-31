@@ -632,3 +632,17 @@ Exit criteria:
   SSH access with a validated remote client IP
 - theme choices use color-oriented names without changing persisted identifiers
 - q/Ctrl-C and active-build c require exact, focus-trapped confirmations
+
+## M29 — Live client state coherence
+
+Goal: a long-running attached client never presents authority-free build work
+or stale cells from an earlier terminal geometry.
+
+Exit criteria:
+
+- an unexpected daemon transport loss immediately retires active task rows as
+  Lost and removes the build from Parsing/Running state
+- the interactive client performs bounded periodic reattachment and installs
+  the authoritative replacement snapshot
+- terminal resize forces a complete redraw, and regression tests prove
+  Navigator destinations and workspace titles are not duplicated
