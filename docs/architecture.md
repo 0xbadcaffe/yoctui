@@ -1786,6 +1786,16 @@ invalidation. Ratatui remains the only layout renderer, but the next frame is
 forced to repaint every cell at the new geometry so old group headings, rows,
 and panel titles cannot remain visible beside their current positions.
 
+Initial interactive attachment follows the same daemon-authority rule as
+reattachment. The client installs the daemon workspace/build snapshot and does
+not create a second local BitBake metadata connection. The top-level daemon
+workspace identity supplies canonical source and build paths when no retained
+Workspace build event exists. Consequently an uninitialized client shell can
+attach without fabricating a backend/build failure, while unavailable detailed
+inventory stays explicitly unavailable. During daemon recovery, a newly
+inspected workspace identity takes precedence over absent or stale persisted
+identity; persisted identity is used only when current inspection produced none.
+
 ### Lifecycle and shutdown
 
 `yoctui` normally connects to the local daemon and may auto-start it according

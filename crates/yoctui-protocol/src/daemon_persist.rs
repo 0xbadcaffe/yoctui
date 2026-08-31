@@ -196,7 +196,9 @@ pub fn recover_persisted_snapshot(
     let mut lost_raw_executions = 0;
     let mut lost_terminal_sessions = 0;
     let mut terminal_relaunch_intents = Vec::new();
-    current.workspace.clone_from(&persisted.workspace);
+    if current.workspace.is_none() {
+        current.workspace.clone_from(&persisted.workspace);
+    }
     current
         .project_profile
         .clone_from(&persisted.project_profile);
@@ -801,6 +803,34 @@ mod tests {
         assert_eq!(report.terminal_relaunch_intents.len(), 1);
         assert_eq!(report.terminal_relaunch_intents[0].name, "devshell");
         assert_eq!(report.terminal_relaunch_intents[0].cwd, "/work/build");
+    }
+
+    #[test]
+    fn daemon_recovery_keeps_current_workspace_over_stale_persisted_identity() {
+        let mut prior = snapshot();
+        prior.workspace = Some(WorkspaceIdentity {
+            canonical_source: "/srv/old/poky".into(),
+            canonical_build: "/srv/old/build".into(),
+            identity_hash: "old-workspace".into(),
+        });
+        let persisted = DaemonPersistedState::capture(
+            &prior,
+            99,
+            "same-boot".into(),
+            Vec::new(),
+            PersistedPreferences::default(),
+        );
+        let current_workspace = WorkspaceIdentity {
+            canonical_source: "/srv/current/poky".into(),
+            canonical_build: "/srv/current/build".into(),
+            identity_hash: "current-workspace".into(),
+        };
+        let mut current = snapshot();
+        current.workspace = Some(current_workspace.clone());
+
+        let (recovered, _) = recover_persisted_snapshot(current, &persisted, "same-boot");
+
+        assert_eq!(recovered.workspace, Some(current_workspace));
     }
 
     #[test]

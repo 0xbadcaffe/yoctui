@@ -646,3 +646,18 @@ Exit criteria:
   the authoritative replacement snapshot
 - terminal resize forces a complete redraw, and regression tests prove
   Navigator destinations and workspace titles are not duplicated
+
+## M30 — Attached-client authority hardening
+
+Goal: attaching from any shell preserves daemon-owned project/build truth and
+reports the real remote client origin.
+
+Exit criteria:
+
+- an attached client never performs a competing local startup metadata probe
+- daemon workspace identity restores canonical source/build paths even without
+  a retained Workspace build event
+- malformed SSH environment input falls through to another valid OpenSSH
+  client-address variable
+- live attachment outside the initialized shell remains Connected and Idle
+  with zero false build errors

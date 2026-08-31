@@ -2283,6 +2283,59 @@ fn daemon_replay_is_bounded(event_count: usize) -> bool {
 }
 
 #[cfg(unix)]
+async fn inspect_daemon_startup_workspace(
+    startup_environment: &BTreeMap<String, String>,
+    compatibility: Option<yoctui_model::DaemonCompatibilitySnapshot>,
+) -> Result<Option<yoctui_model::Workspace>> {
+    let Some(compatibility) = compatibility else {
+        return Ok(None);
+    };
+    let Some(build_dir) = compatibility
+        .snapshot
+        .environment
+        .build_directory
+        .value()
+        .cloned()
+    else {
+        return Ok(None);
+    };
+    let python = startup_environment
+        .get("PYTHON")
+        .map(String::as_str)
+        .unwrap_or("python3");
+    let mut backend = spawn_configured_bridge_with_compatibility(
+        python,
+        build_dir,
+        Some(startup_environment.clone()),
+        compatibility,
+    )
+    .await
+    .context("could not start the daemon-owned startup metadata bridge")?;
+    let inspection = backend.inspect_workspace().await;
+    let mut workspace = match inspection {
+        Ok(workspace) => workspace,
+        Err(error) => {
+            if let Err(shutdown_error) = backend.shutdown().await {
+                tracing::warn!(%shutdown_error, "failed startup metadata bridge cleanup");
+            }
+            return Err(error).context("daemon startup workspace inspection failed");
+        }
+    };
+    match backend.list_recipes(None).await {
+        Ok(recipes) => workspace.recipes = recipes,
+        Err(error) => tracing::warn!(%error, "daemon startup recipe inventory unavailable"),
+    }
+    match backend.list_layers().await {
+        Ok(layers) => workspace.layers = layers,
+        Err(error) => tracing::warn!(%error, "daemon startup layer inventory unavailable"),
+    }
+    if let Err(error) = backend.shutdown().await {
+        tracing::warn!(%error, "daemon startup metadata bridge shutdown failed");
+    }
+    Ok(Some(workspace))
+}
+
+#[cfg(unix)]
 async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>) -> Result<()> {
     use yoctui_protocol::{
         daemon::{
@@ -2369,7 +2422,35 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             )?;
         }
     }
-    let snapshot = daemon_protocol_snapshot(&daemon_state);
+    let startup_workspace = match inspect_daemon_startup_workspace(
+        &startup_environment,
+        daemon_state.compatibility.clone(),
+    )
+    .await
+    {
+        Ok(workspace) => workspace,
+        Err(error) => {
+            eprintln!("daemon startup workspace inspection unavailable: {error}");
+            tracing::warn!(%error, "daemon startup workspace inspection unavailable");
+            None
+        }
+    };
+    if let Some(workspace) = startup_workspace.clone() {
+        yoctui_app::reduce_daemon_state(
+            &mut daemon_state,
+            yoctui_model::DaemonStateAction::ReplaceWorkspace(workspace),
+        )?;
+    }
+    let mut snapshot = daemon_protocol_snapshot(&daemon_state);
+    if let Some(workspace) = startup_workspace {
+        let (Some(event), _) = daemon_build_event(
+            yoctui_bitbake::BackendEvent::Workspace(workspace),
+            yoctui_protocol::daemon::JobId(0),
+        ) else {
+            unreachable!("workspace backend events always map to daemon workspace events");
+        };
+        snapshot.build_events.push(event);
+    }
     let snapshot = persisted
         .as_ref()
         .map(|persisted| recover_persisted_snapshot(snapshot.clone(), persisted, &record.boot_id).0)
@@ -10476,13 +10557,30 @@ fn direct_menu_shortcut_action(app: &App, input: Input, replayed: bool) -> Optio
 }
 
 fn client_access_origin() -> ClientAccessOrigin {
-    for variable in ["SSH_CONNECTION", "SSH_CLIENT"] {
-        let Some(value) = env::var_os(variable) else {
-            continue;
-        };
-        return parse_ssh_access_origin(&value.to_string_lossy());
+    let values = ["SSH_CONNECTION", "SSH_CLIENT"]
+        .into_iter()
+        .filter_map(env::var_os)
+        .map(|value| value.to_string_lossy().into_owned())
+        .collect::<Vec<_>>();
+    client_access_origin_from_values(values.iter().map(String::as_str))
+}
+
+fn client_access_origin_from_values<'a>(
+    values: impl IntoIterator<Item = &'a str>,
+) -> ClientAccessOrigin {
+    let mut ssh_environment_present = false;
+    for value in values {
+        ssh_environment_present = true;
+        let origin = parse_ssh_access_origin(value);
+        if matches!(origin, ClientAccessOrigin::Ssh { .. }) {
+            return origin;
+        }
     }
-    ClientAccessOrigin::Local
+    if ssh_environment_present {
+        ClientAccessOrigin::SshUnknown
+    } else {
+        ClientAccessOrigin::Local
+    }
 }
 
 fn parse_ssh_access_origin(value: &str) -> ClientAccessOrigin {
@@ -10495,6 +10593,20 @@ fn parse_ssh_access_origin(value: &str) -> ClientAccessOrigin {
         }
     } else {
         ClientAccessOrigin::SshUnknown
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum StartupMetadataAuthority {
+    DaemonSnapshot,
+    ClientBackend,
+}
+
+fn startup_metadata_authority(daemon_attached: bool) -> StartupMetadataAuthority {
+    if daemon_attached {
+        StartupMetadataAuthority::DaemonSnapshot
+    } else {
+        StartupMetadataAuthority::ClientBackend
     }
 }
 
@@ -10607,42 +10719,19 @@ async fn tui(
     } else {
         Box::new(ProcessBackend::new(PathBuf::from("/")))
     };
-    if build_dir_configured {
-        let mut metadata_backend = if daemon_attached {
-            match select_backend_with_timeout(
-                backend_kind.clone(),
-                build_dir.clone(),
-                Some(cancellation_timeout),
-            )
-            .await
-            {
-                Ok(backend) => Some(backend),
-                Err(error) => {
-                    let _ = update(
-                        &mut app,
-                        Action::Failure(AppError::new(
-                            "Backend",
-                            error.to_string(),
-                            "run `yoctui doctor` to diagnose the selected backend",
-                        )),
-                    );
-                    None
-                }
-            }
-        } else {
-            None
-        };
-        let inventory_backend = metadata_backend.as_deref_mut().unwrap_or(backend.as_mut());
-        match inventory_backend.inspect_workspace().await {
+    if build_dir_configured
+        && startup_metadata_authority(daemon_attached) == StartupMetadataAuthority::ClientBackend
+    {
+        match backend.inspect_workspace().await {
             Ok(workspace) => {
                 let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
-                match inventory_backend.list_recipes(None).await {
+                match backend.list_recipes(None).await {
                     Ok(recipes) => {
                         let _ = update(&mut app, Action::RecipesLoaded(recipes));
                     }
                     Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
                 }
-                match inventory_backend.list_layers().await {
+                match backend.list_layers().await {
                     Ok(layers) => {
                         let _ = update(&mut app, Action::LayersLoaded(layers));
                     }
@@ -10659,11 +10748,6 @@ async fn tui(
                     )),
                 );
             }
-        }
-        if let Some(mut metadata_backend) = metadata_backend
-            && let Err(error) = metadata_backend.shutdown().await
-        {
-            app.notification = Some(format!("Workspace metadata shutdown failed: {error}"));
         }
     } else if !build_dir_configured {
         app.notification =
@@ -14122,6 +14206,36 @@ mod tests {
         assert_eq!(
             parse_ssh_access_origin("not-an-ip 50123 local 22"),
             ClientAccessOrigin::SshUnknown
+        );
+    }
+
+    #[test]
+    fn ssh_access_origin_falls_back_to_valid_client_variable() {
+        assert_eq!(
+            client_access_origin_from_values(["", "198.51.100.27 49152 198.51.100.10 22",]),
+            ClientAccessOrigin::Ssh {
+                client_ip: "198.51.100.27".into(),
+            }
+        );
+        assert_eq!(
+            client_access_origin_from_values(["invalid", "also-invalid"]),
+            ClientAccessOrigin::SshUnknown
+        );
+        assert_eq!(
+            client_access_origin_from_values(std::iter::empty()),
+            ClientAccessOrigin::Local
+        );
+    }
+
+    #[test]
+    fn attached_startup_uses_only_daemon_metadata() {
+        assert_eq!(
+            startup_metadata_authority(true),
+            StartupMetadataAuthority::DaemonSnapshot
+        );
+        assert_eq!(
+            startup_metadata_authority(false),
+            StartupMetadataAuthority::ClientBackend
         );
     }
 

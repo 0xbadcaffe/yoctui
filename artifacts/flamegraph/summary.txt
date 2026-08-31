@@ -1,15 +1,15 @@
 schema=yoctui.flamegraph.summary.v1
 workload_frames=6000
-workload_checksum=e2c78682637c40ee
-workload_elapsed_ms=4145
-total_samples=2081
-total_event_count=15887952182
+workload_checksum=5cb2d2d21b87dd58
+workload_elapsed_ms=4093
+total_samples=2056
+total_event_count=15745662655
 unresolved_frames=0
 raw_unresolved_stack_lines=1
-dropped_unresolved_event_count=4661056
-dropped_unresolved_ppm=293
-dominant_1_samples=11291570475 dominant_1_symbol=render_at
-dominant_2_samples=3105083290 dominant_2_symbol=recipes
-dominant_3_samples=3105083290 dominant_3_symbol=workspace
-dominant_4_samples=2246640585 dominant_4_symbol=layers
-dominant_5_samples=49488808 dominant_5_symbol=update
+dropped_unresolved_event_count=7704035
+dropped_unresolved_ppm=489
+dominant_1_samples=11267494155 dominant_1_symbol=render_at
+dominant_2_samples=2644261799 dominant_2_symbol=recipes
+dominant_3_samples=2644261799 dominant_3_symbol=workspace
+dominant_4_samples=1841878099 dominant_4_symbol=layers
+dominant_5_samples=49271965 dominant_5_symbol=update

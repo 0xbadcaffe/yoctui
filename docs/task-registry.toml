@@ -6719,3 +6719,38 @@ required = true
 depends_on = ["STATE-RECONNECT-001", "UX-REDRAW-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Daemon-loss state retirement, automatic authoritative reattachment, full resize redraw, focused duplicate-row regression coverage, release 0.1.5, and repository-wide completion gates are complete."
+
+# M30 — Attached-client authority hardening.
+
+[[task]]
+id = "AUTH-DAEMON-WORKSPACE-001"
+milestone = "M30"
+title = "Restore daemon workspace identity without local probing"
+status = "DONE"
+priority = 767
+required = true
+depends_on = ["STATE-COHERENCE-001"]
+verify = ["cargo test -p yoctui-app daemon_attach_uses_top_level_workspace_identity", "cargo test -p yoctui-protocol daemon_workspace_event_updates_persistent_workspace_identity", "cargo test -p yoctui-protocol daemon_recovery_keeps_current_workspace_over_stale_persisted_identity", "cargo test -p yoctui attached_startup_uses_only_daemon_metadata"]
+notes = "The daemon performs one startup metadata inspection, current workspace evidence wins over stale persisted identity, Workspace events update persistent identity, snapshots restore canonical paths without a retained event, and attached clients perform no client-local BitBake startup probe."
+
+[[task]]
+id = "UX-SSH-FALLBACK-001"
+milestone = "M30"
+title = "Fall through malformed SSH origin variables"
+status = "DONE"
+priority = 768
+required = true
+depends_on = ["STATE-COHERENCE-001"]
+verify = ["cargo test -p yoctui ssh_access_origin_falls_back_to_valid_client_variable"]
+notes = "SSH_CONNECTION remains preferred, but malformed or empty input no longer suppresses a valid SSH_CLIENT address; all-invalid and absent states remain distinct."
+
+[[task]]
+id = "AUTH-ATTACH-001"
+milestone = "M30"
+title = "Harden attached-client startup authority"
+status = "DONE"
+priority = 769
+required = true
+depends_on = ["AUTH-DAEMON-WORKSPACE-001", "UX-SSH-FALLBACK-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "The installed 0.1.6 release passed outside-environment live attachment with canonical project identity, current machine/distro/release metadata, zero active/waiting tasks, zero false errors, and no local backend failure."

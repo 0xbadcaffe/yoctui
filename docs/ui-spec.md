@@ -1498,6 +1498,17 @@ sole recovery authority and may restore the build as active or install its
 terminal completion result. Ordinary client-local navigation and selection do
 not change during this recovery.
 
+An attached client never starts a second client-local BitBake metadata probe
+during startup. Workspace source/build identity and any retained inventory come
+from the daemon snapshot, including when the client shell itself was not
+initialized. Missing optional inventory remains unavailable without changing
+an Idle, successful, cancelled, or otherwise terminal build into Failed.
+
+Client access origin checks both standard OpenSSH variables in priority order.
+A malformed or empty higher-priority value does not hide a valid client IP in
+the fallback variable; when at least one SSH variable exists but neither
+contains a valid address, the origin is explicitly `SSH (unknown)`.
+
 ---
 
 ## 13. Logs workspace

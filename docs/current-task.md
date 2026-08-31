@@ -2,38 +2,44 @@
 
 ## Task
 
-**ID:** STATE-COHERENCE-001
-**Title:** Complete live client state coherence
+**ID:** AUTH-ATTACH-001
+**Title:** Harden attached-client startup authority
 **Status:** DONE
 
 ## Objective
 
-A long-running attached Yoctui client must not retain active task rows after it
-loses daemon authority, and a terminal resize must not leave duplicate
-Navigator rows or workspace titles.
+An attached Yoctui client must use the daemon snapshot as its only startup
+BitBake/workspace authority, preserve canonical workspace identity without a
+retained Workspace build event, and report a valid fallback SSH client IP.
 
 ## Dependencies
 
-- STATE-RECONNECT-001 — DONE
-- UX-REDRAW-001 — DONE
+- STATE-COHERENCE-001 — DONE
 
 ## Definition of done
 
-- Daemon transport loss retires nonterminal task rows as Lost and changes the
-  build from Parsing/Running to Lost.
-- The client retries a bounded attach and installs the current daemon snapshot.
-- Resize invalidates the complete terminal buffer before the next frame.
-- Focused state and render regressions cover the photographed failure mode.
-- Version 0.1.5 is installed and repository completion gates pass.
+- Attached startup does not select or inspect a client-local metadata backend.
+- Top-level daemon workspace identity restores canonical source/build paths.
+- Invalid `SSH_CONNECTION` falls through to valid `SSH_CLIENT` data.
+- A real client launched outside the initialized shell remains Connected and
+  Idle with zero errors.
+- Version 0.1.6 is installed and repository completion gates pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model build_authority_loss
-cargo test -p yoctui terminal_resize_requires_full_redraw
-cargo test -p yoctui-ui navigator_and_tasks_titles_render_once_after_resize
+cargo test -p yoctui-app daemon_attach_uses_top_level_workspace_identity
+cargo test -p yoctui-protocol daemon_workspace_event_updates_persistent_workspace_identity
+cargo test -p yoctui-protocol daemon_recovery_keeps_current_workspace_over_stale_persisted_identity
+cargo test -p yoctui attached_startup_uses_only_daemon_metadata
+cargo test -p yoctui ssh_access_origin_falls_back_to_valid_client_variable
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ./scripts/verify-completion.sh
 ```
+
+The installed 0.1.6 release was additionally captured from a shell without the
+Poky environment. It attached to the release daemon as Project `poky`, MACHINE
+`qemux86-64`, DISTRO `poky`, release `6.0.2`, with Active 0, Waiting 0, Errors
+0, and no client-local backend failure.

@@ -2614,9 +2614,18 @@ fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
     }
 
     match &event {
-        DaemonBuildEvent::Workspace { .. } => snapshot
-            .build_events
-            .retain(|item| !matches!(item, DaemonBuildEvent::Workspace { .. })),
+        DaemonBuildEvent::Workspace { data } => {
+            if let (Some(source), Some(build)) = (&data.source_dir, &data.build_dir) {
+                snapshot.workspace = Some(WorkspaceIdentity {
+                    canonical_source: source.clone(),
+                    canonical_build: build.clone(),
+                    identity_hash: stable_workspace_hash(source, build),
+                });
+            }
+            snapshot
+                .build_events
+                .retain(|item| !matches!(item, DaemonBuildEvent::Workspace { .. }));
+        }
         DaemonBuildEvent::ParseProgress { .. } => snapshot
             .build_events
             .retain(|item| !matches!(item, DaemonBuildEvent::ParseProgress { .. })),
@@ -2664,6 +2673,15 @@ fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
         });
         snapshot.build_events.remove(removable.unwrap_or(0));
     }
+}
+
+fn stable_workspace_hash(source: &str, build: &str) -> String {
+    let mut hash = 0xcbf29ce484222325_u64;
+    for byte in source.bytes().chain([0]).chain(build.bytes()) {
+        hash ^= u64::from(byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("{hash:016x}")
 }
 
 fn replace_by<T, K: PartialEq>(items: &mut Vec<T>, replacement: T, key: impl Fn(&T) -> K) {
@@ -3622,6 +3640,33 @@ mod tests {
         ));
         let encoded = encode_frame(&ServerMessage::Snapshot(journal.snapshot().clone())).unwrap();
         assert!(encoded.len() < MAX_FRAME_BYTES);
+    }
+
+    #[test]
+    fn daemon_workspace_event_updates_persistent_workspace_identity() {
+        let mut journal =
+            DaemonSnapshotJournal::new(daemon_snapshot_fixture(), DaemonSnapshotLimits::default())
+                .unwrap();
+        journal
+            .publish(DaemonEvent::Build(DaemonBuildEvent::Workspace {
+                data: WorkspaceData {
+                    build_dir: Some("/srv/yocto/build".into()),
+                    source_dir: Some("/srv/yocto/poky".into()),
+                    variables: std::collections::HashMap::new(),
+                    variable_provenance: std::collections::HashMap::new(),
+                    variable_provenance_chain: std::collections::HashMap::new(),
+                    bitbake_version: Some("2.18.0".into()),
+                    release: Some("6.0.2".into()),
+                    layers: Vec::new(),
+                    recipes: Vec::new(),
+                },
+            }))
+            .unwrap();
+
+        let identity = journal.snapshot().workspace.as_ref().unwrap();
+        assert_eq!(identity.canonical_source, "/srv/yocto/poky");
+        assert_eq!(identity.canonical_build, "/srv/yocto/build");
+        assert_eq!(identity.identity_hash.len(), 16);
     }
 
     fn raw_execution_request_fixture() -> RawExecutionRequestData {

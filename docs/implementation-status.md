@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+M30 Attached-Client Authority Hardening is complete. Daemon startup now owns
+the sole BitBake workspace inspection, optional recipe/layer inventory failures
+cannot discard valid project identity, and every Workspace event updates the
+persistent top-level source/build identity. Attached clients no longer launch a
+competing local metadata bridge, so an uninitialized client shell cannot turn a
+healthy Idle or completed build into Failed. SSH origin detection falls through
+malformed OpenSSH variables to a valid client address. The installed 0.1.6
+release passed a real outside-environment attach against Poky 6.0.2 with the
+correct project, machine, distro, release, and zero false task/build errors.
+Overall required registry progress is 610/610 (100.0%).
+
 M29 Live Client State Coherence is complete. An unexpected daemon transport
 loss now retires every retained nonterminal task as Lost, removes the build
 from Parsing/Running state without fabricating a BitBake failure, and schedules
@@ -19,7 +30,8 @@ authoritative active or terminal build state. Host terminal Resize events force
 a complete Ratatui backend repaint, and focused regression tests prove
 Dashboard, Layers, Tasks, their group headings, and the Tasks workspace title
 render once after geometry changes. The workspace and installed release are
-version 0.1.5. Overall required registry progress is 607/607 (100.0%).
+version 0.1.5. Overall required registry progress at that milestone was 607/607
+(100.0%).
 
 M28 Operator Shell Polish is complete. CPU, RAM, and Build FS now use original
 history-first monitor tiles with a live trend field and thin threshold meter
