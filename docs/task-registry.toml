@@ -6767,3 +6767,29 @@ required = true
 depends_on = ["AUTH-ATTACH-001"]
 verify = ["cargo test -p yoctui-model image_artifact_build", "cargo test -p yoctui-bitbake boot_artifact_identity", "cargo test -p yoctui daemon_build_job_updates_preserve_the_requested_targets", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Live diagnosis found a deployed bzImage filename submitted as a BitBake target. Recipe-membership enforcement, stable boot artifact identities, target-preserving daemon jobs, and status diagnostics are regression-tested. Poky 6.0.2 / BitBake 2.18.0 planned all 10,159 no-execute tasks for core-image-full-cmdline, core-image-sato, and core-image-weston with no errors; repository-wide validation passes in version 0.1.7."
+
+# M32 — Post-build package authority.
+
+[[task]]
+id = "PKGDATA-AUTH-SYNC-001"
+milestone = "M32"
+title = "Bind package operations to current daemon authority"
+status = "DONE"
+priority = 771
+required = true
+depends_on = ["IMAGE-TARGET-AUTH-001"]
+verify = ["cargo test -p yoctui pkgdata_workspace_background_operation_binds_current_authority_and_reports_results", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "A successful live core-image-kernel-dev build produced machine-scoped pkgdata, but the Packages worker retained the unconfigured adapter created at startup and defaulted to the non-queryable parent directory. Each inventory/detail launch now binds its worker clone to the app's current validated daemon snapshot, exact generation, and BitBake-reported PKGDATA_DIR. The live qemux86-64 path returns 5,699 runtime packages. The regression begins with an unconfigured/pathless adapter and proves inventory, detail, and cancellation. Version 0.1.8 passes the required gates."
+
+# M33 — External-process screen restoration.
+
+[[task]]
+id = "UX-EXTERNAL-REDRAW-001"
+milestone = "M33"
+title = "Invalidate retained terminal cells after external processes"
+status = "DONE"
+priority = 772
+required = true
+depends_on = ["PKGDATA-AUTH-SYNC-001"]
+verify = ["cargo test -p yoctui external_process_redraw_latch_is_edge_triggered", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Neovim could leave its background and cells behind because Ratatui retained the pre-editor frame and emitted only diffs after the alternate screen was re-entered. Every successful editor or inherited-shell resume now requests one backend clear before the next frame; an edge-triggered latch prevents repeated clears. Version 0.1.8 passes the required gates."

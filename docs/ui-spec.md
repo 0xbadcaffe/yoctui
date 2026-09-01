@@ -745,6 +745,9 @@ frame. A destination must never be repeated as both a synthetic group label and
 its real child. A host-terminal resize invalidates the complete terminal
 backend buffer before the next frame so cells from the previous geometry cannot
 survive as duplicate Navigator rows or workspace titles.
+Returning from an inherited shell or external editor has the same full-redraw
+contract: Yoctui clears the terminal backend before its next frame, preventing
+Neovim colors, text, or partial cells from bleeding through unchanged widgets.
 
 Required entries:
 
@@ -2187,6 +2190,13 @@ independent capability records. A missing tool, unsupported command, pkgdata
 not yet generated, and a successful query with no rows have distinct messages.
 Package actions remain disabled with the exact capability reason until the
 current environment snapshot positively authorizes their complete argv.
+Every inventory or detail operation binds its worker adapter to that current
+validated snapshot immediately before spawning. A daemon reconnect or newer
+capability generation therefore replaces the authority used by the next
+operation; an adapter created before attachment or build completion cannot
+retain an absent or stale snapshot. The same late binding uses the current
+BitBake-reported `PKGDATA_DIR`; it never assumes the non-machine-scoped
+`tmp/pkgdata` parent is directly queryable.
 
 The package list shows:
 

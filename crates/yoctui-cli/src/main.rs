@@ -12,6 +12,7 @@ use crossterm::{
 use ratatui::Terminal;
 use serde::{Deserialize, Serialize};
 use std::{
+    cell::Cell,
     collections::BTreeMap,
     env, fs,
     fs::OpenOptions,
@@ -329,7 +330,23 @@ enum DaemonServiceCommand {
     Restart,
     Status,
 }
-struct TerminalGuard;
+#[derive(Default)]
+struct RedrawLatch(Cell<bool>);
+
+impl RedrawLatch {
+    fn request(&self) {
+        self.0.set(true);
+    }
+
+    fn take(&self) -> bool {
+        self.0.replace(false)
+    }
+}
+
+struct TerminalGuard {
+    redraw: RedrawLatch,
+}
+
 impl TerminalGuard {
     fn enter() -> Result<Self> {
         enable_raw_mode()?;
@@ -340,7 +357,9 @@ impl TerminalGuard {
             EnableBracketedPaste,
             Hide
         )?;
-        Ok(Self)
+        Ok(Self {
+            redraw: RedrawLatch::default(),
+        })
     }
     fn suspend(&self) -> Result<()> {
         disable_raw_mode()?;
@@ -362,7 +381,12 @@ impl TerminalGuard {
             EnableBracketedPaste,
             Hide
         )?;
+        self.redraw.request();
         Ok(())
+    }
+
+    fn take_full_redraw_request(&self) -> bool {
+        self.redraw.take()
     }
 }
 
@@ -9023,9 +9047,40 @@ fn begin_package_operation(
         );
         return;
     }
+    let adapter = app.workspace.variables.get("PKGDATA_DIR").map_or_else(
+        || adapter.clone(),
+        |path| adapter.clone().with_pkgdata_dir(PathBuf::from(path)),
+    );
+    let adapter = match app.workspace_compatibility.authority().cloned() {
+        Some(compatibility) => {
+            let generation = compatibility.snapshot.generation;
+            match adapter.with_compatibility(compatibility, generation) {
+                Ok(adapter) => adapter,
+                Err(error) => {
+                    let event = match effect {
+                        Effect::GetPackageInventory(request) => {
+                            BackendEvent::PackageInventoryFailed {
+                                request,
+                                message: error.to_string(),
+                            }
+                        }
+                        Effect::GetPackageDetail(request) => BackendEvent::PackageDetailFailed {
+                            request,
+                            message: error.to_string(),
+                        },
+                        _ => return,
+                    };
+                    if let Some(action) = model_action_from_backend_event(event) {
+                        let _ = update(app, action);
+                    }
+                    return;
+                }
+            }
+        }
+        None => adapter,
+    };
     let cancellation = PackageDataCancellation::default();
     let worker_cancellation = cancellation.clone();
-    let adapter = adapter.clone();
     let (request, handle) = match effect {
         Effect::GetPackageInventory(request) => {
             let worker_request = request;
@@ -11012,6 +11067,9 @@ async fn tui(
             next_telemetry_sample = Instant::now() + Duration::from_secs(1);
         }
         let _ = update(&mut app, Action::Tick);
+        if guard.take_full_redraw_request() {
+            terminal.clear()?;
+        }
         terminal.draw(|f| render(f, &app))?;
         if event::poll(refresh)? {
             let terminal_event = event::read()?;
@@ -16220,6 +16278,16 @@ mod tests {
     }
 
     #[test]
+    fn external_process_redraw_latch_is_edge_triggered() {
+        let latch = RedrawLatch::default();
+
+        assert!(!latch.take());
+        latch.request();
+        assert!(latch.take());
+        assert!(!latch.take());
+    }
+
+    #[test]
     fn interactive_daemon_reconnect_uses_a_bounded_retry_interval() {
         assert_eq!(
             client_runtime::DAEMON_RECONNECT_INTERVAL,
@@ -17532,7 +17600,7 @@ mod tests {
 
     #[cfg(unix)]
     #[tokio::test]
-    async fn pkgdata_workspace_background_operation_reports_inventory_detail_and_cancellation() {
+    async fn pkgdata_workspace_background_operation_binds_current_authority_and_reports_results() {
         use std::os::unix::fs::PermissionsExt;
 
         let directory = std::env::temp_dir().join(format!(
@@ -17563,11 +17631,14 @@ read-value) printf 'busybox libc6\nlibc6\n' ;;
 esac"#,
         );
         let compatibility = pkgdata_test_compatibility(&build_dir, &tool);
-        let adapter = PackageDataAdapter::with_paths(build_dir, tool.clone(), pkgdata_dir)
-            .with_compatibility(compatibility, 1)
-            .unwrap();
+        let adapter = PackageDataAdapter::new(build_dir);
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Packages;
+        app.workspace.variables.insert(
+            "PKGDATA_DIR".into(),
+            pkgdata_dir.to_string_lossy().into_owned(),
+        );
+        yoctui_model::install_workspace_compatibility(&mut app, compatibility).unwrap();
         let effect = update(&mut app, Action::BeginPackageInventory).unwrap();
         let mut operation = None;
         begin_package_operation(&mut app, &adapter, &mut operation, effect);

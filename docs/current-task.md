@@ -2,44 +2,42 @@
 
 ## Task
 
-**ID:** IMAGE-TARGET-AUTH-001
-**Title:** Reject deployed files as image recipe targets
+**ID:** UX-EXTERNAL-REDRAW-001
+**Title:** Invalidate retained terminal cells after external processes
 **Status:** DONE
 
 ## Objective
 
-The Images workspace must submit only exact authoritative recipe identities to
-BitBake, preserve requested target/outcome diagnostics, and prove that standard
-non-minimal Poky image recipes remain buildable.
+Returning from Neovim, another external editor, or an inherited Yocto shell
+must restore a clean Yoctui frame without retained colors or glyphs.
 
 ## Dependencies
 
-- AUTH-ATTACH-001 — DONE
+- PKGDATA-AUTH-SYNC-001 — DONE
 
 ## Definition of done
 
-- A selected deployed artifact builds only when its identity exactly matches
-  an authoritative workspace recipe.
-- Kernel, bootloader, metadata, and other non-recipe deploy entries cannot
-  replace the current build target or open confirmation.
-- Daemon job transitions retain the originally requested targets and status
-  reports target plus terminal outcome.
-- Standard non-minimal Poky image targets pass a live no-execute probe.
-- Version 0.1.7 is installed and repository completion gates pass.
+- Every successful terminal resume requests a full redraw.
+- Ratatui's retained cell buffer and the physical terminal are cleared before
+  the next frame.
+- One resume causes exactly one clear; normal frames do not flicker.
+- External-editor failure paths still restore and repaint the workbench.
+- Version 0.1.8 is installed and repository completion gates pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model image_artifact_build
-cargo test -p yoctui-bitbake boot_artifact_identity
-cargo test -p yoctui daemon_build_job_updates_preserve_the_requested_targets
+cargo test -p yoctui external_process_redraw_latch_is_edge_triggered
+cargo test -p yoctui pkgdata_workspace_background_operation_binds_current_authority_and_reports_results
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ./scripts/verify-completion.sh
 ```
 
-The live Poky 6.0.2 / BitBake 2.18.0 no-execute probe accepted
-`core-image-full-cmdline`, `core-image-sato`, and `core-image-weston`, planned
-10,159 tasks, and completed with no errors. Version 0.1.7 focused and
-repository-wide tests pass.
+The reported Neovim bleed-through was caused by re-entering the alternate
+screen while Ratatui still retained the pre-editor frame. The resume path now
+sets an edge-triggered invalidation latch, and the event loop consumes it by
+clearing the backend immediately before rendering the restored frame.

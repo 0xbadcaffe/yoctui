@@ -9,8 +9,8 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-yoctui-model = { version = "0.1.7", path = "../crates/yoctui-model" }
-yoctui-protocol = { version = "0.1.7", path = "../crates/yoctui-protocol" }
+yoctui-model = { version = "0.1.8", path = "../crates/yoctui-model" }
+yoctui-protocol = { version = "0.1.8", path = "../crates/yoctui-protocol" }
 
 [[bin]]
 name = "protocol_frames"

@@ -208,6 +208,15 @@ generations remain reducer-inert. The model owns bounded package navigation
 history plus dependency-kind/identity selection; the UI renders typed state
 and emits actions without reading adapter output.
 
+The long-lived CLI adapter value owns only paths, limits, and test overrides.
+Immediately before each package worker is cloned, the CLI binds that clone to
+the app's current validated daemon compatibility snapshot and its exact
+generation. This late binding prevents startup-before-attach and post-build
+reconnect states from executing with an absent snapshot while preserving the
+adapter's generation and build-environment checks inside the worker. It also
+binds the exact current workspace `PKGDATA_DIR`, including machine-scoped paths
+such as `tmp/pkgdata/qemux86-64`, instead of deriving a parent directory.
+
 Deployed image artifact state is model-owned and keyed by the exact effective
 machine, image target, and absolute deployed path. A typed field distinguishes
 unavailable metadata from an available empty collection. Inventory lifecycle
@@ -2203,7 +2212,12 @@ Terminal initialization and restoration use RAII. Restoration includes:
 - bracketed paste
 - panic and supported termination paths
 
-Inherited shell and external editor transitions must temporarily restore terminal state and then reconstruct it safely.
+Inherited shell and external editor transitions temporarily restore terminal
+state and then reconstruct it safely. Returning to the alternate screen marks
+Ratatui's retained backend as invalid; the next event-loop iteration clears
+both the physical surface and retained cell buffer before drawing a complete
+frame. This applies to successful, failed, and interrupted child processes, so
+an editor's colors or glyphs cannot survive behind an otherwise unchanged UI.
 
 ## Testing boundaries
 
@@ -2592,7 +2606,11 @@ package-info, list-pkg-files, or read-value argv. It no longer recursively
 searches nearby host paths for a plausible tool. Missing tool, absent generated
 data, missing command, a successful empty query, nonzero exit, and malformed
 output remain separate typed outcomes; unavailable command state fails before
-spawn with the retained capability reason.
+spawn with the retained capability reason. The interactive CLI refreshes the
+adapter clone from the current app authority for every inventory/detail launch,
+and supplies the exact BitBake-reported `PKGDATA_DIR`, so reconnect and
+post-build package scans cannot use startup-stale authority or the wrong
+machine-independent parent.
 
 The complete utility workbench is represented by a typed 19-family inventory,
 including all executables enforced by the utility coverage gate. Its pure

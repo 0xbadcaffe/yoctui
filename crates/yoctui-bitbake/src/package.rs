@@ -198,6 +198,11 @@ impl PackageDataAdapter {
         self
     }
 
+    pub fn with_pkgdata_dir(mut self, pkgdata_dir: PathBuf) -> Self {
+        self.pkgdata_dir = Some(pkgdata_dir);
+        self
+    }
+
     pub fn with_compatibility(
         mut self,
         compatibility: DaemonCompatibilitySnapshot,

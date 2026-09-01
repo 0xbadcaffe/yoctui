@@ -676,3 +676,32 @@ Exit criteria:
 - daemon job labels preserve requested targets through terminal state
 - `daemon status` reports the retained target and terminal outcome
 - standard Poky non-minimal image recipes pass a live BitBake no-execute probe
+
+## M32 — Post-build package authority
+
+Goal: a successful image build exposes generated package data immediately
+without requiring Yoctui to restart.
+
+Exit criteria:
+
+- package inventory and detail workers bind the current validated daemon
+  compatibility snapshot immediately before execution
+- adapter instances created before attachment or build completion cannot retain
+  an absent or stale capability generation
+- every worker uses the exact current BitBake-reported, potentially
+  machine-scoped `PKGDATA_DIR`
+- generated `tmp/pkgdata` is distinguished from missing capability authority
+- focused, workspace, Clippy, documentation, roadmap, and completion gates pass
+
+## M33 — External-process screen restoration
+
+Goal: returning from Neovim, another external editor, or an inherited Yocto
+shell always restores a clean Yoctui frame.
+
+Exit criteria:
+
+- every successful alternate-screen resume schedules one full backend clear
+- the clear occurs before the next rendered frame and resets Ratatui's retained
+  cell buffer as well as the physical terminal
+- repeated loop iterations do not perform noisy redundant clears
+- focused, workspace, Clippy, documentation, roadmap, and completion gates pass

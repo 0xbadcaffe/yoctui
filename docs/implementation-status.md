@@ -11,6 +11,25 @@ Status values:
 
 ## Current phase
 
+M33 External-process Screen Restoration is complete. Returning from Neovim,
+another external editor, or the inherited Yocto shell now invalidates
+Ratatui's retained terminal cells and clears the backend before the next full
+frame. The redraw request is edge-triggered, so one resume produces one clear
+without adding steady-state flicker. The workspace is version 0.1.8. Overall
+required registry progress is 613/613 (100.0%).
+
+M32 Post-build Package Authority is complete. A live successful
+`core-image-kernel-dev` build generated `tmp/pkgdata`, but the Packages worker
+still used the unconfigured adapter created at interactive startup and reported
+that its capability snapshot was unavailable. Every package inventory/detail
+launch now binds its adapter clone to the app's current validated daemon
+snapshot and exact generation, including after reconnect or build completion.
+It also binds the exact current BitBake-reported machine-scoped `PKGDATA_DIR`;
+the live qemux86-64 path returns 5,699 runtime packages while its parent returns
+none. The regression starts with an unconfigured/pathless adapter and proves
+inventory, detail, and cancellation through current authority. The workspace
+is version 0.1.8. Overall required registry progress is 612/612 (100.0%).
+
 M31 Image Build Target Authority is complete. Live daemon evidence showed
 three exit-1 jobs whose selected target had been taken from a deployed kernel
 filename (`bzImage--6.18.24...`) rather than from the recipe inventory. The
@@ -1250,7 +1269,7 @@ See `docs/current-task.md`.
 | Signature adapter | DONE | Shell-free bounded dumpsig/diffsigs adapters validate canonical artifact paths, exact correlation, timeout/cancellation, typed parsing and failures. Live BitBake 2.19.0 returned two real records and 113 typed differences with one explicit recursive-detail limitation |
 | Signature workspace | DONE | `Z` opens an authoritative focus-trapped task picker and responsive child workspace with exact record/sides, typed details/differences, provider navigation, and cancellable background execution |
 | Package data model | DONE | Exact identities, available-versus-unavailable fields, explicit bounded inventory/detail states, deterministic normalization, selection, stale correlation, search, dependency navigation, and typed event/effect mapping pass focused and baseline checks |
-| Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. The real smoke was attempted but `build/tmp/pkgdata` is absent, so no live package-data compatibility is claimed |
+| Package data adapter | DONE | Validated shell-free discovery and exact batched `oe-pkgdata-util` commands return bounded typed inventory/detail data with unavailable fields, timeouts, cancellation, symlink/failure handling, and fake-process coverage. Interactive operations bind current daemon authority and BitBake-reported PKGDATA_DIR immediately before execution; live Poky 6.0.2 returns 5,699 packages from its qemux86-64 pkgdata path |
 | Package data workspace | DONE | Packages is a Navigator destination with correlated background inventory/detail execution, cancellation, search, stable selection, bounded dependency navigation history, exact recipe/provider actions, responsive explicit states, footer hints, and TestBackend coverage |
 | Hardening matrix | DONE | Every integrated gate passes, including fresh perf, deterministic signal-ready CLI cancellation, honest Python coverage, and bounded QA-layer transient spawn handling |
 | Operator documentation | DONE | The concise landing page retains guarded setup paths and embeds a real-binary, fixture-labelled UI demo plus the real perf-backed Flamegraph; the complete operator/troubleshooting and compatibility evidence remain linked and visual artifacts are validated |
