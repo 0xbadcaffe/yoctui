@@ -661,3 +661,18 @@ Exit criteria:
   client-address variable
 - live attachment outside the initialized shell remains Connected and Idle
   with zero false build errors
+
+## M31 — Image build target authority
+
+Goal: deployed output files cannot be submitted to BitBake as image recipe
+targets, and failed daemon jobs retain enough target/outcome context to be
+diagnosed from the CLI.
+
+Exit criteria:
+
+- Images `b` builds only an exact recipe-backed artifact identity
+- kernel, bootloader, and other non-recipe deploy entries remain inspectable
+  without changing the selected build target
+- daemon job labels preserve requested targets through terminal state
+- `daemon status` reports the retained target and terminal outcome
+- standard Poky non-minimal image recipes pass a live BitBake no-execute probe

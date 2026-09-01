@@ -2,44 +2,44 @@
 
 ## Task
 
-**ID:** AUTH-ATTACH-001
-**Title:** Harden attached-client startup authority
+**ID:** IMAGE-TARGET-AUTH-001
+**Title:** Reject deployed files as image recipe targets
 **Status:** DONE
 
 ## Objective
 
-An attached Yoctui client must use the daemon snapshot as its only startup
-BitBake/workspace authority, preserve canonical workspace identity without a
-retained Workspace build event, and report a valid fallback SSH client IP.
+The Images workspace must submit only exact authoritative recipe identities to
+BitBake, preserve requested target/outcome diagnostics, and prove that standard
+non-minimal Poky image recipes remain buildable.
 
 ## Dependencies
 
-- STATE-COHERENCE-001 — DONE
+- AUTH-ATTACH-001 — DONE
 
 ## Definition of done
 
-- Attached startup does not select or inspect a client-local metadata backend.
-- Top-level daemon workspace identity restores canonical source/build paths.
-- Invalid `SSH_CONNECTION` falls through to valid `SSH_CLIENT` data.
-- A real client launched outside the initialized shell remains Connected and
-  Idle with zero errors.
-- Version 0.1.6 is installed and repository completion gates pass.
+- A selected deployed artifact builds only when its identity exactly matches
+  an authoritative workspace recipe.
+- Kernel, bootloader, metadata, and other non-recipe deploy entries cannot
+  replace the current build target or open confirmation.
+- Daemon job transitions retain the originally requested targets and status
+  reports target plus terminal outcome.
+- Standard non-minimal Poky image targets pass a live no-execute probe.
+- Version 0.1.7 is installed and repository completion gates pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-app daemon_attach_uses_top_level_workspace_identity
-cargo test -p yoctui-protocol daemon_workspace_event_updates_persistent_workspace_identity
-cargo test -p yoctui-protocol daemon_recovery_keeps_current_workspace_over_stale_persisted_identity
-cargo test -p yoctui attached_startup_uses_only_daemon_metadata
-cargo test -p yoctui ssh_access_origin_falls_back_to_valid_client_variable
+cargo test -p yoctui-model image_artifact_build
+cargo test -p yoctui-bitbake boot_artifact_identity
+cargo test -p yoctui daemon_build_job_updates_preserve_the_requested_targets
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-roadmap.sh
 ./scripts/verify-completion.sh
 ```
 
-The installed 0.1.6 release was additionally captured from a shell without the
-Poky environment. It attached to the release daemon as Project `poky`, MACHINE
-`qemux86-64`, DISTRO `poky`, release `6.0.2`, with Active 0, Waiting 0, Errors
-0, and no client-local backend failure.
+The live Poky 6.0.2 / BitBake 2.18.0 no-execute probe accepted
+`core-image-full-cmdline`, `core-image-sato`, and `core-image-weston`, planned
+10,159 tasks, and completed with no errors. Version 0.1.7 focused and
+repository-wide tests pass.

@@ -237,6 +237,13 @@ unassociated data becomes a typed error or explicit limitation. The response
 converts directly to `BackendEvent::ImageArtifacts`; raw directory entries and
 checksum text never cross into `yoctui-app`, reducers, or widgets.
 
+An artifact identity is not independently sufficient build authority. The
+model permits the Images `b` route only when that identity exactly matches a
+recipe in the current typed workspace inventory; otherwise it produces no
+build request and retains the prior target. Kernel and bootloader deploy
+artifacts keep stable category identities before machine-suffix extraction, so
+versioned output filenames cannot masquerade as BitBake targets.
+
 The CLI constructs the image adapter only from the typed
 `DEPLOY_DIR_IMAGE` workspace variable and owns at most one short-lived scan
 task plus its cancellation token. Entering Images from not-loaded state and
@@ -245,8 +252,11 @@ converts the typed response/error through the app normalization boundary;
 missing configuration becomes a correlated failed result, and stale
 generations remain reducer-inert. Rendering, keyboard input, telemetry, and
 BitBake jobs continue while scanning. Exact artifact and associated paths use
-the existing editor lifecycle, while selected-image builds reuse the normal
-confirmed `BuildRequest` and persistent BitBake job coordinator.
+the existing editor lifecycle, while recipe-authorized selected-image builds
+reuse the normal confirmed `BuildRequest` and persistent BitBake job
+coordinator. Daemon job updates retain the originally requested target label
+through running and terminal transitions, and `daemon status` reports the
+bounded current build target plus terminal failure/completion evidence.
 
 Host telemetry follows the same typed boundary without invoking shell text.
 The CLI samples aggregate CPU counters, `/proc/meminfo`, `/proc/loadavg`, the

@@ -2270,12 +2270,16 @@ Unavailable fields render `unavailable`; available empty collections render
 `none`. Widgets never classify names, parse checksum text, derive paths from
 logs, or treat a missing field as empty.
 
-`b` opens the normal build confirmation for the selected artifact's exact
-image target. When no artifact is selected it preserves the existing
-current-image behavior. `o` opens the selected artifact path. `m`, `l`, `s`,
-and `w` open the first exact typed manifest, license, SPDX/SBOM, or Wic path
-respectively. Missing selection or typed path leaves the action inert and
-shows a stable explanation. All opens use the configured editor and normal
+`b` opens the normal build confirmation only when the selected artifact's
+image identity exactly matches a recipe in the authoritative workspace
+inventory. Kernel, bootloader, metadata, and other deployed filenames are not
+recipe evidence and remain inspectable rather than executable. A non-recipe
+selection leaves the current target unchanged and explains that `i` selects a
+buildable image recipe. When no artifact is selected, `b` preserves the
+existing current-image behavior. `o` opens the selected artifact path. `m`,
+`l`, `s`, and `w` open the first exact typed manifest, license, SPDX/SBOM, or
+Wic path respectively. Missing selection or typed path leaves the action inert
+and shows a stable explanation. All opens use the configured editor and normal
 terminal restoration.
 
 The Images footer is:

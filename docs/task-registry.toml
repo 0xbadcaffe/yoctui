@@ -6754,3 +6754,16 @@ required = true
 depends_on = ["AUTH-DAEMON-WORKSPACE-001", "UX-SSH-FALLBACK-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "The installed 0.1.6 release passed outside-environment live attachment with canonical project identity, current machine/distro/release metadata, zero active/waiting tasks, zero false errors, and no local backend failure."
+
+# M31 — Image build target authority.
+
+[[task]]
+id = "IMAGE-TARGET-AUTH-001"
+milestone = "M31"
+title = "Reject deployed files as image recipe targets"
+status = "DONE"
+priority = 770
+required = true
+depends_on = ["AUTH-ATTACH-001"]
+verify = ["cargo test -p yoctui-model image_artifact_build", "cargo test -p yoctui-bitbake boot_artifact_identity", "cargo test -p yoctui daemon_build_job_updates_preserve_the_requested_targets", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Live diagnosis found a deployed bzImage filename submitted as a BitBake target. Recipe-membership enforcement, stable boot artifact identities, target-preserving daemon jobs, and status diagnostics are regression-tested. Poky 6.0.2 / BitBake 2.18.0 planned all 10,159 no-execute tasks for core-image-full-cmdline, core-image-sato, and core-image-weston with no errors; repository-wide validation passes in version 0.1.7."

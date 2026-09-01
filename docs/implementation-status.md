@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+M31 Image Build Target Authority is complete. Live daemon evidence showed
+three exit-1 jobs whose selected target had been taken from a deployed kernel
+filename (`bzImage--6.18.24...`) rather than from the recipe inventory. The
+Images build route now requires exact authoritative recipe membership,
+boot/kernel identities cannot inherit versioned deploy filenames, and daemon
+diagnostics retain requested target/outcome context. Focused and
+repository-wide tests pass, and a live Poky 6.0.2 / BitBake 2.18.0 no-execute
+probe planned all 10,159 tasks for `core-image-full-cmdline`,
+`core-image-sato`, and `core-image-weston` with no errors. The workspace is
+version 0.1.7. Overall required registry progress is 611/611 (100.0%).
+
 M30 Attached-Client Authority Hardening is complete. Daemon startup now owns
 the sole BitBake workspace inspection, optional recipe/layer inventory failures
 cannot discard valid project identity, and every Workspace event updates the

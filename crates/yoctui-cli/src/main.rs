@@ -2012,6 +2012,20 @@ fn daemon_status() -> Result<()> {
                 job.id.0, job.lifecycle, job.label, job.exit_code
             );
         }
+        for event in &snapshot.build_events {
+            match event {
+                yoctui_protocol::daemon::DaemonBuildEvent::Reset { targets } => {
+                    println!("build targets: {}", targets.join(" "));
+                }
+                yoctui_protocol::daemon::DaemonBuildEvent::CommandFailed { code, message } => {
+                    println!("build error {code}: {message}");
+                }
+                yoctui_protocol::daemon::DaemonBuildEvent::Completed { success, exit_code } => {
+                    println!("build completed success={success} exit_code={exit_code:?}");
+                }
+                _ => {}
+            }
+        }
         for log in snapshot.recent_logs.iter().rev().take(8).rev() {
             println!("log {:?} {}: {}", log.severity, log.source, log.message);
         }
@@ -3711,7 +3725,14 @@ fn publish_daemon_bitbake_event(
                 if let Some(mapped) = mapped {
                     journal.publish(DaemonEvent::Build(mapped))?;
                 }
-                if let Some(job) = job_update {
+                if let Some(mut job) = job_update {
+                    let existing_label = journal
+                        .snapshot()
+                        .jobs
+                        .iter()
+                        .find(|candidate| candidate.id == job.id)
+                        .map(|candidate| candidate.label.clone());
+                    preserve_bitbake_target_label(existing_label.as_deref(), &mut job);
                     journal.publish(DaemonEvent::JobChanged(job))?;
                 }
             }
@@ -3733,6 +3754,18 @@ fn publish_daemon_bitbake_event(
         }
     }
     Ok(())
+}
+
+#[cfg(unix)]
+fn preserve_bitbake_target_label(
+    existing_label: Option<&str>,
+    job: &mut yoctui_protocol::daemon::JobSummary,
+) {
+    if let Some(existing_label) = existing_label
+        && existing_label.starts_with("BitBake build ")
+    {
+        job.label = existing_label.to_owned();
+    }
 }
 
 #[cfg(unix)]
@@ -21011,6 +21044,23 @@ esac"#,
         let job = job.unwrap();
         assert_eq!(job.progress_current, Some(102));
         assert_eq!(job.progress_total, Some(4090));
+    }
+
+    #[test]
+    fn daemon_build_job_updates_preserve_the_requested_targets() {
+        let mut job = yoctui_protocol::daemon::JobSummary {
+            id: yoctui_protocol::daemon::JobId(7),
+            kind: yoctui_protocol::daemon::JobKind::BitBakeBuild,
+            label: "BitBake build".into(),
+            lifecycle: yoctui_protocol::daemon::LifecycleState::Failed,
+            progress_current: None,
+            progress_total: None,
+            exit_code: Some(1),
+        };
+
+        preserve_bitbake_target_label(Some("BitBake build core-image-full-cmdline"), &mut job);
+
+        assert_eq!(job.label, "BitBake build core-image-full-cmdline");
     }
 
     #[test]

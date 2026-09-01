@@ -326,20 +326,20 @@ fn image_target(path: &Path, machine: &str, kind: ImageArtifactKind) -> String {
         .file_name()
         .and_then(|name| name.to_str())
         .unwrap_or("unknown");
+    match kind {
+        ImageArtifactKind::Kernel => return "kernel".into(),
+        ImageArtifactKind::Bootloader => return "bootloader".into(),
+        _ => {}
+    }
     let marker = format!("-{machine}");
     if let Some(index) = name.find(&marker)
         && index > 0
     {
         return name[..index].to_owned();
     }
-    match kind {
-        ImageArtifactKind::Kernel => "kernel".into(),
-        ImageArtifactKind::Bootloader => "bootloader".into(),
-        _ => name
-            .split_once('.')
-            .map_or(name, |(stem, _)| stem)
-            .to_owned(),
-    }
+    name.split_once('.')
+        .map_or(name, |(stem, _)| stem)
+        .to_owned()
 }
 
 fn associate_typed_files(artifacts: &mut [ImageArtifact]) {
@@ -537,6 +537,26 @@ mod tests {
         assert_eq!(
             classify(Path::new("/deploy/image.wic.gz")),
             ImageArtifactKind::Other
+        );
+    }
+
+    #[test]
+    fn boot_artifact_identity_never_becomes_a_bitbake_recipe_target() {
+        assert_eq!(
+            image_target(
+                Path::new("/deploy/bzImage--6.18.24+git0-r0-qemux86-64-20260831042030.bin"),
+                "qemux86-64",
+                ImageArtifactKind::Kernel,
+            ),
+            "kernel"
+        );
+        assert_eq!(
+            image_target(
+                Path::new("/deploy/u-boot-qemux86-64-20260831042030.bin"),
+                "qemux86-64",
+                ImageArtifactKind::Bootloader,
+            ),
+            "bootloader"
         );
     }
 
