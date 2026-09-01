@@ -1,10 +1,10 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.9  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64             Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.10  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Current Build · Idle────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
-│▾ OVERVIEW                ││Overall  progress unknown ◑  0/—                                                    ││Environment                                 │
+│▾ OVERVIEW                ││Overall  progress unknown ◳  0/—                                                    ││Environment                                 │
 │  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                               ││Project          : core-image-minimal       │
 │▾ CONTENT                 ││Target: core-image-minimal  Backend: bridge  Status: Idle  Exit code: none          ││Machine          : qemux86-64               │
 │    Layers                ││Parse progress: not parsing  Tasks: 0/— (active: 0)  Warnings: 0  Errors: 0         ││Distro           : poky                     │
@@ -33,7 +33,7 @@
 │  ▱ Settings              ││                    │                    │                    │                     ││No retained warnings or errors              │
 │                          ││                  ▁ │                    │                    │                     ││Workbench Center                            │
 │                          ││                  █ │                    │                    │                     ││Context: Work · core-image-minimal          │
-│                          ││ ━━━━━───────────── │                    │                    │                     ││Active: tasks 0 · jobs 0                    │
+│                          ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫ │                    │                    │                     ││Active: tasks 0 · jobs 0                    │
 │                          ││     utilization    │                    │                    │                     ││Favorite: none                              │
 │                          │└────────────────────────────────────────────────────────────────────────────────────┘│Terminal: none                              │
 │                          │┌Quick Actions───────────────────────────────────────────────────────────────────────┐│[t] Terminal sessions                       │

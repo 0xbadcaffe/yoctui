@@ -6806,3 +6806,16 @@ required = true
 depends_on = ["UX-EXTERNAL-REDRAW-001"]
 verify = ["cargo test -p yoctui-bitbake ux_rootfs", "cargo test -p yoctui-ui ux_scrollable_collection_matrix_keeps_the_last_highlighted_row_visible", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "A valid Wrynose 6.0.2 kernel-devsrc runtime-pkgdata record exceeded the legacy 256 KiB whole-file bound and failed the entire Rootfs composition screen. The adapter now streams independently bounded records, parses scoped PKGSIZE/FILES_INFO fields without materializing the file map, and makes an isolated resource limit Partial. Independently clipped collection and picker renderers follow the model-owned selected identity through the final row. Exact live core-image-kernel-dev evidence, focused render tests, and version 0.1.9 pass the required gates."
+
+# M35 — Segmented workbench meters.
+
+[[task]]
+id = "UX-DOT-METERS-001"
+milestone = "M35"
+title = "Unify telemetry and progress with hot-dot meters"
+status = "DONE"
+priority = 774
+required = true
+depends_on = ["ROOTFS-PKGDATA-VIEWPORT-001"]
+verify = ["cargo test -p yoctui-ui", "./scripts/verify-m22-concept-parity.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "CPU, RAM, build-filesystem, semantic, build, and task progress now share original segmented square-dot tracks with threshold heat colors. Indeterminate running work uses the reviewed square throbber set, waiting rows use a hollow square, and ASCII/reduced-motion modes retain explicit non-circular markers. Six exact concept captures and deterministic production PNGs were regenerated for version 0.1.10."

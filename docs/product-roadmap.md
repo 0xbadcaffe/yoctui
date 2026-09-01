@@ -722,3 +722,18 @@ Exit criteria:
   the bottom row at all supported geometries
 - focused, live-rootfs, workspace, Clippy, documentation, roadmap, and
   completion gates pass
+
+## M35 — Segmented workbench meters
+
+Goal: use one compact btop-inspired but original square-dot visual language for
+resource utilization, build progress, task progress, and running activity.
+
+Exit criteria:
+
+- CPU, RAM, and build-filesystem tracks use threshold-colored square segments
+- overall build, task, and reusable semantic progress use the same filled and
+  remaining square-dot vocabulary
+- indeterminate running and waiting markers contain no circular spinner glyphs
+- Unicode, ASCII, no-color, and reduced-motion modes preserve exact text
+- exact cell goldens and all six deterministic production screenshots prove
+  the real renderer, not a separate mockup

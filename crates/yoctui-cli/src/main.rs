@@ -7,7 +7,9 @@ use crossterm::{
         Event, KeyCode, KeyEvent, KeyModifiers,
     },
     execute,
-    terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
+    terminal::{
+        EnterAlternateScreen, LeaveAlternateScreen, SetTitle, disable_raw_mode, enable_raw_mode,
+    },
 };
 use ratatui::Terminal;
 use serde::{Deserialize, Serialize};
@@ -345,13 +347,18 @@ impl RedrawLatch {
 
 struct TerminalGuard {
     redraw: RedrawLatch,
+    application_title: String,
+    shell_title: String,
 }
 
 impl TerminalGuard {
     fn enter() -> Result<Self> {
+        let shell_title = env::var("USER").unwrap_or_else(|_| "terminal".into());
+        let application_title = format!("yoctui · {shell_title}");
         enable_raw_mode()?;
         execute!(
             io::stdout(),
+            SetTitle(&application_title),
             EnterAlternateScreen,
             EnableMouseCapture,
             EnableBracketedPaste,
@@ -359,6 +366,8 @@ impl TerminalGuard {
         )?;
         Ok(Self {
             redraw: RedrawLatch::default(),
+            application_title,
+            shell_title,
         })
     }
     fn suspend(&self) -> Result<()> {
@@ -368,7 +377,8 @@ impl TerminalGuard {
             Show,
             DisableBracketedPaste,
             DisableMouseCapture,
-            LeaveAlternateScreen
+            LeaveAlternateScreen,
+            SetTitle(&self.shell_title)
         )?;
         Ok(())
     }
@@ -376,6 +386,7 @@ impl TerminalGuard {
         enable_raw_mode()?;
         execute!(
             io::stdout(),
+            SetTitle(&self.application_title),
             EnterAlternateScreen,
             EnableMouseCapture,
             EnableBracketedPaste,
@@ -703,6 +714,7 @@ fn disk_capacity_bytes(_path: &Path) -> Option<(u64, u64)> {
 impl Drop for TerminalGuard {
     fn drop(&mut self) {
         restore_terminal();
+        let _ = execute!(io::stdout(), SetTitle(&self.shell_title));
     }
 }
 

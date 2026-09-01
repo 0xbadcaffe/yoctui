@@ -11,6 +11,15 @@ Status values:
 
 ## Current phase
 
+M35 Segmented Workbench Meters is complete. CPU, RAM, build filesystem,
+overall build, task, and reusable semantic progress now share an original
+square-dot track with cool/warning/hot threshold colors. Indeterminate running
+work uses a square throbber, waiting work uses a hollow square, and ASCII plus
+reduced-motion modes keep explicit non-circular markers. The six exact concept
+captures and deterministic PNG regression artifacts were regenerated from the
+production renderer. The workspace is version 0.1.10. Overall required registry
+progress is 615/615 (100.0%).
+
 M34 Rootfs Pkgdata and Selection Viewport Hardening is complete. The exact
 Wrynose 6.0.2 `core-image-kernel-dev` evidence contained a valid 1.1 MiB
 `kernel-devsrc` runtime record, which exceeded a legacy 256 KiB whole-file

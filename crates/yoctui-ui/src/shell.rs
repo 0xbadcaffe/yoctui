@@ -15,7 +15,7 @@ pub(super) fn activity_symbol(
         };
     };
     let symbols = if unicode {
-        throbber_widgets_tui::BLACK_CIRCLE.symbols
+        throbber_widgets_tui::WHITE_SQUARE.symbols
     } else {
         throbber_widgets_tui::ASCII.symbols
     };
@@ -29,24 +29,19 @@ pub(super) fn task_activity(app: &App, task_progress: Option<u8>) -> String {
     let unicode = app.preferences.symbols == SymbolPreference::Unicode;
     let projection = app.activity_projection(yoctui_model::ActivityLifecycle::Running);
     if projection.phase.is_none() {
-        return if unicode { "●".into() } else { "*".into() };
+        return if unicode { "⊞".into() } else { "#".into() };
     }
     activity_symbol(projection, unicode).into()
 }
 
 pub(super) fn task_progress_bar(progress: u8) -> String {
     const WIDTH: usize = 10;
-    const PARTIAL: [&str; 8] = ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉"];
     let progress = progress.min(100);
-    let eighths = usize::from(progress) * WIDTH * 8 / 100;
-    let filled = eighths / 8;
-    let partial = eighths % 8;
-    let occupied = filled + usize::from(partial > 0);
+    let filled = (usize::from(progress) * WIDTH).div_ceil(100);
     format!(
-        "{}{}{} {progress}%",
-        "█".repeat(filled),
-        PARTIAL[partial],
-        "░".repeat(WIDTH.saturating_sub(occupied))
+        "{}{} {progress}%",
+        "▪".repeat(filled),
+        "▫".repeat(WIDTH.saturating_sub(filled))
     )
 }
 

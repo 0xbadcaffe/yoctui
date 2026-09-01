@@ -1,18 +1,18 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.9  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64         Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│yoctui v0.1.10  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: core-image-minimal · All─────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
-│▾ OVERVIEW                ││█████████████████████████████████Overall  40%  4/10                                 ││Task        do_compile                      │
+│▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  40%  4/10▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_compile                      │
 │  ▱ Dashboard             ││Active 1  Waiting 5  Warnings 0  Errors 0  Elapsed 00:16:18                         ││Recipe      bash_5.2.21-2                   │
 │▾ CONTENT                 ││Task           Recipe               Status        Time      Progress                ││PN          bash_5.2.21-2                   │
-│    Layers                ││  do_fetch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ██████████ 100%         ││PV          unavailable                     │
-│    Recipes               ││  do_unpack    bash_5.2.21-2        ✓ Succeeded   00:00:01  ██████████ 100%         ││PR          unavailable                     │
-│    Packages              ││  do_patch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ██████████ 100%         ││State       ▶ Running                       │
-│    Images                ││  do_configure bash_5.2.21-2        ✓ Succeeded   00:00:01  ██████████ 100%         ││Progress    72%                             │
-│    SDK                   ││◑ do_compile   bash_5.2.21-2        ▶ Running     00:09:50  ███████▏░░ 72%          ││                                            │
-│▾ BUILD                   ││5 waiting task unavailable          ○ Waiting     --        metadata unavailable    ││                                            │
+│    Layers                ││  do_fetch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PV          unavailable                     │
+│    Recipes               ││  do_unpack    bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PR          unavailable                     │
+│    Packages              ││  do_patch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││State       ▶ Running                       │
+│    Images                ││  do_configure bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││Progress    72%                             │
+│    SDK                   ││◳ do_compile   bash_5.2.21-2        ▶ Running     00:09:50  ▪▪▪▪▪▪▪▪▫▫ 72%          ││                                            │
+│▾ BUILD                   ││5 waiting task unavailable          ▫ Waiting     --        metadata unavailable    ││                                            │
 │    Tasks                1││                                                                                    │└────────────────────────────────────────────┘
 │  ▱ Logs              LIVE│└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
 │  ▱ Errors                │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow──────────────────────────────────┐│Worker      worker-1                        │
@@ -42,7 +42,7 @@
 │                          ││                    │                    │                    │                     │┌System Status───────────────────────────────┐
 │                          ││                    │                    │                    │                     ││✓ Daemon Connected · Local · version unavai…│
 │                          ││                  ▅ │                    │                    │                     ││✓ BitBake Running · v2.8.0 · Jobs 1         │
-│                          ││ ━━━━━───────────── │                    │                    │                     ││! Compat Unavailable · PTY 1 · Clients 1    │
+│                          ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫ │                    │                    │                     ││! Compat Unavailable · PTY 1 · Clients 1    │
 │                          ││     utilization    │                    │                    │                     ││! Build FS unavailable · Workspace /home/us…│
 └──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐

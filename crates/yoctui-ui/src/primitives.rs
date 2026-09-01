@@ -7,8 +7,8 @@ use ratatui::{
     prelude::{Constraint, Layout, Line, Modifier, Rect, Span, Style, Text},
     symbols,
     widgets::{
-        Bar, BarChart, Block, Borders, Gauge, LineGauge, Paragraph, Row, Scrollbar,
-        ScrollbarOrientation, ScrollbarState, Sparkline, Tabs, Wrap,
+        Bar, BarChart, Block, Borders, Paragraph, Row, Scrollbar, ScrollbarOrientation,
+        ScrollbarState, Sparkline, Tabs, Wrap,
     },
 };
 use yoctui_model::{
@@ -621,13 +621,14 @@ pub fn render_semantic_gauge(
     );
     let style = styles.state(projection.state, projection.role);
     if let Some(fraction) = projection.fraction {
-        frame.render_widget(
-            Gauge::default()
-                .ratio(fraction.ratio())
-                .label(label)
-                .use_unicode(options.unicode)
-                .gauge_style(style),
+        render_segmented_dot_meter(
+            frame,
             area,
+            fraction.ratio(),
+            &label,
+            style,
+            styles.muted,
+            options.unicode,
         );
     } else {
         frame.render_widget(Paragraph::new(label).style(style), area);
@@ -651,24 +652,51 @@ pub fn render_semantic_meter(
     );
     let style = styles.state(projection.state, projection.role);
     if let Some(fraction) = projection.fraction {
-        let (filled, unfilled) = if options.unicode {
-            ("━", "─")
-        } else {
-            ("=", "-")
-        };
-        frame.render_widget(
-            LineGauge::default()
-                .ratio(fraction.ratio())
-                .label(label)
-                .filled_symbol(filled)
-                .unfilled_symbol(unfilled)
-                .filled_style(style)
-                .unfilled_style(styles.muted),
+        render_segmented_dot_meter(
+            frame,
             area,
+            fraction.ratio(),
+            &label,
+            style,
+            styles.muted,
+            options.unicode,
         );
     } else {
         frame.render_widget(Paragraph::new(label).style(style), area);
     }
+}
+
+fn render_segmented_dot_meter(
+    frame: &mut ratatui::Frame,
+    area: Rect,
+    ratio: f64,
+    label: &str,
+    filled_style: Style,
+    muted_style: Style,
+    unicode: bool,
+) {
+    let filled = (ratio.clamp(0.0, 1.0) * f64::from(area.width)).ceil() as usize;
+    for index in 0..usize::from(area.width) {
+        let Some(cell) = frame
+            .buffer_mut()
+            .cell_mut((area.x.saturating_add(index as u16), area.y))
+        else {
+            continue;
+        };
+        if index < filled {
+            cell.set_symbol(if unicode { "▪" } else { "#" })
+                .set_style(filled_style);
+        } else {
+            cell.set_symbol(if unicode { "▫" } else { "." })
+                .set_style(muted_style);
+        }
+    }
+    frame.render_widget(
+        Paragraph::new(label)
+            .style(filled_style)
+            .alignment(ratatui::prelude::Alignment::Center),
+        area,
+    );
 }
 
 fn ascii_history(points: &[u64], width: u16) -> String {

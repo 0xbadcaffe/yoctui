@@ -24,7 +24,7 @@ use primitives::{
 };
 use ratatui::{
     prelude::*,
-    widgets::{Block, Borders, Cell, Clear, Gauge, Paragraph, Row, Sparkline, Table, Wrap},
+    widgets::{Block, Borders, Cell, Clear, Paragraph, Row, Sparkline, Table, Wrap},
 };
 use std::{
     collections::HashMap,
@@ -6749,12 +6749,13 @@ fn render_ram_gauge(frame: &mut Frame, app: &App, area: Rect) {
         (utilization_percent(total, available), total, available)
     {
         let used = total - available;
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(percent) / 100.0)
-                .label(ram_gauge_label(percent, used, total, area.width))
-                .gauge_style(memory_meter_style(app, percent)),
+        render_dot_meter(
+            frame,
+            app,
             area,
+            percent,
+            ram_gauge_label(percent, used, total, area.width),
+            memory_meter_style(app, percent),
         );
     } else {
         frame.render_widget(
@@ -6804,14 +6805,13 @@ fn render_disk_gauge(frame: &mut Frame, app: &App, area: Rect) {
         available,
         build_dir,
     ) {
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(percent) / 100.0)
-                .label(disk_gauge_label(
-                    percent, available, total, build_dir, area.width,
-                ))
-                .gauge_style(telemetry_meter_style(app, percent)),
+        render_dot_meter(
+            frame,
+            app,
             area,
+            percent,
+            disk_gauge_label(percent, available, total, build_dir, area.width),
+            telemetry_meter_style(app, percent),
         );
     } else {
         frame.render_widget(
@@ -7112,10 +7112,10 @@ fn render_dense_telemetry_meter(
             } else {
                 palette.role(palette.success, Modifier::BOLD)
             };
-            cell.set_symbol(if unicode { "━" } else { "=" })
+            cell.set_symbol(if unicode { "▪" } else { "#" })
                 .set_style(segment_style);
         } else {
-            cell.set_symbol(if unicode { "─" } else { "-" })
+            cell.set_symbol(if unicode { "▫" } else { "." })
                 .set_style(muted_style);
         }
     }
@@ -8134,7 +8134,7 @@ fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
 fn task_state_label(state: TaskState) -> &'static str {
     match state {
         TaskState::Queued => "· Queued",
-        TaskState::Waiting => "○ Waiting",
+        TaskState::Waiting => "▫ Waiting",
         TaskState::Active => "▶ Running",
         TaskState::Completed => "✓ Succeeded",
         TaskState::Failed => "✕ Failed",
@@ -8417,20 +8417,17 @@ fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
     if let Some(fraction) = progress.build.fraction {
         let percent = fraction.percent();
         let total = fraction.total;
-        frame.render_widget(
-            Gauge::default()
-                .ratio(f64::from(percent) / 100.0)
-                .label(format!(
-                    "Overall  {percent}%  {}/{}",
-                    fraction.current.min(total),
-                    total
-                ))
-                .gauge_style(
-                    build_status_style(app)
-                        .bg(palette.background)
-                        .add_modifier(Modifier::BOLD),
-                ),
+        render_dot_meter(
+            frame,
+            app,
             rows[0],
+            percent,
+            format!(
+                "Overall  {percent}%  {}/{}",
+                fraction.current.min(total),
+                total
+            ),
+            build_status_style(app).bg(palette.background),
         );
     } else {
         frame.render_widget(
@@ -17549,7 +17546,7 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         };
         Row::new([
             if active {
-                format!("● {}", layer.name)
+                format!("▪ {}", layer.name)
             } else {
                 format!("  {}", layer.name)
             },
@@ -22973,23 +22970,23 @@ mod tests {
     }
 
     #[test]
-    fn active_task_indicator_uses_circular_motion_and_accessible_fallbacks() {
+    fn active_task_indicator_uses_square_motion_and_accessible_fallbacks() {
         let mut app = App::new(10, 1_000);
         app.animation_frame = 0;
         let first = task_activity(&app, None);
         app.animation_frame = 1;
         assert_ne!(task_activity(&app, None), first);
         assert!(
-            throbber_widgets_tui::BLACK_CIRCLE
+            throbber_widgets_tui::WHITE_SQUARE
                 .symbols
                 .contains(&first.as_str())
         );
         assert_eq!(task_activity(&app, Some(0)), "");
 
         app.reduced_motion = true;
-        assert_eq!(task_activity(&app, None), "●");
+        assert_eq!(task_activity(&app, None), "⊞");
         app.preferences.symbols = SymbolPreference::Ascii;
-        assert_eq!(task_activity(&app, None), "*");
+        assert_eq!(task_activity(&app, None), "#");
     }
 
     #[test]
@@ -23002,7 +22999,7 @@ mod tests {
         );
         assert_eq!(
             activity_symbol(running, true),
-            throbber_widgets_tui::BLACK_CIRCLE.symbols[1]
+            throbber_widgets_tui::WHITE_SQUARE.symbols[1]
         );
         assert_eq!(
             activity_symbol(running, false),
@@ -23040,7 +23037,7 @@ mod tests {
         app.build.completed = 3;
         app.screen = Screen::Tasks;
         let output = rendered_text(&app, 100, 30);
-        assert!(output.contains("progress unknown ●  3/—"), "{output}");
+        assert!(output.contains("progress unknown ⊞  3/—"), "{output}");
         assert!(!output.contains("0%"), "{output}");
     }
 
@@ -26196,7 +26193,7 @@ mod tests {
             .collect::<String>();
         for expected in [
             "· Queued",
-            "○ Waiting",
+            "▫ Waiting",
             "▶ Running",
             "progress unknown",
             "42%",
@@ -27526,11 +27523,11 @@ mod tests {
         }
         assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
         assert!(
-            wide.contains('━'),
+            wide.contains('▪'),
             "wide telemetry lost its filled meter: {wide}"
         );
         assert!(
-            wide.contains('─'),
+            wide.contains('▫'),
             "wide telemetry lost its remaining meter track: {wide}"
         );
         assert!(
@@ -27588,11 +27585,11 @@ mod tests {
         app.preferences.symbols = SymbolPreference::Ascii;
         let ascii = render_strip(&app, 100);
         assert!(
-            ascii.contains('='),
+            ascii.contains('#'),
             "ASCII telemetry lost its filled meter: {ascii}"
         );
         assert!(
-            ascii.contains('-'),
+            ascii.contains('.'),
             "ASCII telemetry lost its remaining meter track: {ascii}"
         );
         assert!(
@@ -28386,7 +28383,7 @@ mod tests {
             },
         );
         let output = rendered_text(&app, 120, 30);
-        assert!(output.contains("████▏░░░░░ 42%"), "{output}");
+        assert!(output.contains("▪▪▪▪▪▫▫▫▫▫ 42%"), "{output}");
     }
 
     #[test]
@@ -30261,7 +30258,7 @@ mod tests {
             .collect::<String>();
         for expected in [
             "· Queued",
-            "○ Waiting",
+            "▫ Waiting",
             "▶ Running",
             "✓ Succeeded",
             "✕ Failed",
@@ -30348,7 +30345,7 @@ mod tests {
                 .buffer()
                 .content
                 .iter()
-                .any(|cell| cell.symbol() == "█"),
+                .any(|cell| cell.symbol() == "▪"),
             "determinate progress must have a visible filled bar"
         );
         assert!(!known.contains("Sstate"), "{known}");
@@ -30356,7 +30353,7 @@ mod tests {
         app.build.total = None;
         app.reduced_motion = true;
         let (unknown, _) = render_table(&app, 70);
-        assert!(unknown.contains("progress unknown ●  3/—"), "{unknown}");
+        assert!(unknown.contains("progress unknown ⊞  3/—"), "{unknown}");
         assert!(!unknown.contains("30%"), "{unknown}");
         assert!(unknown.contains("A1 W0 !2 ✕1 00:01:00"), "{unknown}");
     }
@@ -33224,7 +33221,7 @@ mod tests {
         app.reduced_motion = true;
         let unknown = rendered_text(&app, 100, 30);
         assert!(
-            unknown.contains("Overall  progress unknown ●  3/—"),
+            unknown.contains("Overall  progress unknown ⊞  3/—"),
             "{unknown}"
         );
         assert!(!unknown.contains("Overall  0%"), "{unknown}");
