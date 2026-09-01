@@ -19,6 +19,24 @@ and immediately cancels `core-image-minimal`. Override these with
 `build/init-build-env`; otherwise source the environment first or set
 `YOCTUI_OE_INIT_BUILD_ENV` to the checkout's `oe-init-build-env`.
 
+An already-built image can exercise the production Rootfs adapter directly.
+All variables are required except `YOCTUI_LIVE_IMAGE_ROOTFS`, which is optional
+when work cleanup removed the logical root:
+
+```bash
+YOCTUI_LIVE_BUILD_DIR=/absolute/build \
+YOCTUI_LIVE_IMAGE_MANIFEST=/absolute/image.manifest \
+YOCTUI_LIVE_PKGDATA_DIR=/absolute/build/tmp/pkgdata/machine \
+YOCTUI_LIVE_IMAGE_ARTIFACT=/absolute/image.ext4.zst \
+YOCTUI_LIVE_MACHINE=qemux86-64 \
+YOCTUI_LIVE_IMAGE=core-image-kernel-dev \
+cargo test -p yoctui-bitbake --test live_rootfs -- --ignored
+```
+
+The ignored test is never treated as fixture evidence: it requires exact live
+paths and asserts that generated manifest/pkgdata becomes package composition
+without a screen-level failure.
+
 `scripts/test-terminal.sh` starts Yoctui in a Linux pseudo-terminal, sends a quit key, and asserts that alternate-screen and cursor hide/show sequences are both emitted.
 
 ## Live workbench evidence

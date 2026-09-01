@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+M34 Rootfs Pkgdata and Selection Viewport Hardening is complete. The exact
+Wrynose 6.0.2 `core-image-kernel-dev` evidence contained a valid 1.1 MiB
+`kernel-devsrc` runtime record, which exceeded a legacy 256 KiB whole-file
+limit and failed the entire Rootfs composition screen. Runtime pkgdata is now
+streamed with explicit file, line, and aggregate bounds; scoped installed-size
+and file-map values are parsed without retaining the JSON map, and an isolated
+resource limit produces Partial authority. Independently clipped workspaces
+and modal pickers now derive a centered render viewport from their model-owned
+selection, so the final highlighted row remains visible. The workspace is
+version 0.1.9. Overall required registry progress is 614/614 (100.0%).
+
 M33 External-process Screen Restoration is complete. Returning from Neovim,
 another external editor, or the inherited Yocto shell now invalidates
 Ratatui's retained terminal cells and clears the backend before the next full

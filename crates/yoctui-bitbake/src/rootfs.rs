@@ -1,6 +1,7 @@
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeSet,
     fs,
+    io::{BufRead, BufReader},
     path::{Path, PathBuf},
     sync::{
         Arc,
@@ -12,6 +13,7 @@ use std::{
 #[cfg(unix)]
 use std::os::unix::fs::MetadataExt;
 
+use serde::de::{Deserializer as _, IgnoredAny, MapAccess, Visitor};
 use thiserror::Error;
 use yoctui_model::{
     ImageArtifactIdentity, MAX_ROOTFS_DEPTH, MAX_ROOTFS_ENTRIES, MAX_ROOTFS_PACKAGES,
@@ -22,7 +24,8 @@ use yoctui_model::{
 
 const ROOTFS_SCAN_TIMEOUT: Duration = Duration::from_secs(30);
 const MAX_MANIFEST_BYTES: u64 = 8 * 1024 * 1024;
-const MAX_PKGDATA_FILE_BYTES: u64 = 256 * 1024;
+const MAX_PKGDATA_FILE_BYTES: u64 = 8 * 1024 * 1024;
+const MAX_PKGDATA_LINE_BYTES: usize = 8 * 1024 * 1024;
 const MAX_PKGDATA_TOTAL_BYTES: u64 = 32 * 1024 * 1024;
 const MAX_ROOTFS_ACCOUNTED_BYTES: u64 = 1024 * 1024 * 1024 * 1024;
 const MAX_LIMITATIONS: usize = 64;
@@ -60,6 +63,8 @@ pub enum RootfsCompositionAdapterError {
     Timeout(u64),
     #[error("rootfs composition scan was cancelled")]
     Cancelled,
+    #[error("rootfs composition safety bound reached: {0}")]
+    ResourceLimit(String),
     #[error("rootfs composition I/O failed: {0}")]
     Io(String),
 }
@@ -280,11 +285,17 @@ fn scan_manifest(
         };
         if let Some(pkgdata) = &pkgdata {
             let candidate = pkgdata.join("runtime").join(&name);
-            match read_pkgdata(candidate.as_path(), pkgdata, &mut pkgdata_bytes) {
+            match read_pkgdata(candidate.as_path(), pkgdata, &name, &mut pkgdata_bytes) {
                 Ok(values) => populate_package(&mut package, &values, &mut package_limitations),
                 Err(RootfsCompositionAdapterError::InvalidSource(_)) => push_limitation(
                     &mut package_limitations,
                     format!("generated pkgdata was unavailable for installed package {name}"),
+                ),
+                Err(RootfsCompositionAdapterError::ResourceLimit(message)) => push_limitation(
+                    &mut package_limitations,
+                    format!(
+                        "generated pkgdata was limited for installed package {name}: {message}"
+                    ),
                 ),
                 Err(error) => return Err(error),
             }
@@ -306,8 +317,9 @@ fn scan_manifest(
 fn read_pkgdata(
     path: &Path,
     root: &Path,
+    package_name: &str,
     total_bytes: &mut u64,
-) -> Result<BTreeMap<String, String>, RootfsCompositionAdapterError> {
+) -> Result<PkgdataValues, RootfsCompositionAdapterError> {
     let path = canonical_regular_file(path, root)?;
     let length = fs::metadata(&path)
         .map_err(|error| RootfsCompositionAdapterError::Io(error.to_string()))?
@@ -315,33 +327,119 @@ fn read_pkgdata(
     if length > MAX_PKGDATA_FILE_BYTES
         || total_bytes.saturating_add(length) > MAX_PKGDATA_TOTAL_BYTES
     {
-        return Err(RootfsCompositionAdapterError::Io(format!(
+        return Err(RootfsCompositionAdapterError::ResourceLimit(format!(
             "generated pkgdata exceeded its {MAX_PKGDATA_FILE_BYTES}-byte file or {MAX_PKGDATA_TOTAL_BYTES}-byte total bound"
         )));
     }
     *total_bytes += length;
-    let text = fs::read_to_string(path)
+    let file = fs::File::open(path)
         .map_err(|error| RootfsCompositionAdapterError::Io(error.to_string()))?;
-    Ok(text
-        .lines()
-        .filter_map(|line| line.split_once(':'))
-        .map(|(key, value)| (key.trim().to_owned(), value.trim().to_owned()))
-        .collect())
+    let mut reader = BufReader::new(file);
+    let mut bytes = Vec::new();
+    let mut values = PkgdataValues::default();
+    loop {
+        bytes.clear();
+        let read = reader
+            .read_until(b'\n', &mut bytes)
+            .map_err(|error| RootfsCompositionAdapterError::Io(error.to_string()))?;
+        if read == 0 {
+            break;
+        }
+        if bytes.len() > MAX_PKGDATA_LINE_BYTES {
+            return Err(RootfsCompositionAdapterError::ResourceLimit(format!(
+                "generated pkgdata contained a line over the {MAX_PKGDATA_LINE_BYTES}-byte bound"
+            )));
+        }
+        let line = std::str::from_utf8(&bytes)
+            .map_err(|_| {
+                RootfsCompositionAdapterError::Io("generated pkgdata is not UTF-8".into())
+            })?
+            .trim_end_matches(['\r', '\n']);
+        let Some((key, raw_value)) = line.split_once(':') else {
+            continue;
+        };
+        match key.trim() {
+            "PN" => values.recipe = Some(raw_value.trim().to_owned()),
+            "SECTION" => values.category = Some(raw_value.trim().to_owned()),
+            "PKGSIZE" => {
+                values.installed_size = scoped_pkgdata_value(raw_value, package_name)
+                    .parse::<u64>()
+                    .ok();
+            }
+            "FILES_INFO" => {
+                values.file_count =
+                    count_json_object_entries(scoped_pkgdata_value(raw_value, package_name));
+                values.files_info_seen = true;
+            }
+            _ => {}
+        }
+    }
+    Ok(values)
+}
+
+#[derive(Debug, Default, PartialEq, Eq)]
+struct PkgdataValues {
+    recipe: Option<String>,
+    category: Option<String>,
+    installed_size: Option<u64>,
+    file_count: Option<u64>,
+    files_info_seen: bool,
+}
+
+fn scoped_pkgdata_value<'a>(raw_value: &'a str, package_name: &str) -> &'a str {
+    let value = raw_value.trim();
+    value
+        .strip_prefix(package_name)
+        .and_then(|value| value.strip_prefix(':'))
+        .map_or(value, str::trim)
+}
+
+fn count_json_object_entries(value: &str) -> Option<u64> {
+    struct EntryCountVisitor;
+
+    impl<'de> Visitor<'de> for EntryCountVisitor {
+        type Value = u64;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            formatter.write_str("a generated pkgdata FILES_INFO object")
+        }
+
+        fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+        where
+            A: MapAccess<'de>,
+        {
+            let mut count = 0_u64;
+            while map.next_entry::<IgnoredAny, IgnoredAny>()?.is_some() {
+                count = count.saturating_add(1);
+            }
+            Ok(count)
+        }
+    }
+
+    let mut deserializer = serde_json::Deserializer::from_str(value);
+    let count = deserializer.deserialize_map(EntryCountVisitor).ok()?;
+    deserializer.end().ok()?;
+    Some(count)
 }
 
 fn populate_package(
     package: &mut RootfsInstalledPackage,
-    values: &BTreeMap<String, String>,
+    values: &PkgdataValues,
     limitations: &mut Vec<String>,
 ) {
-    package.recipe = values.get("PN").filter(|value| valid_text(value)).cloned();
+    package.recipe = values
+        .recipe
+        .as_ref()
+        .filter(|value| valid_text(value))
+        .cloned();
     package.category = values
-        .get("SECTION")
+        .category
+        .as_ref()
         .filter(|value| valid_text(value) && !value.is_empty())
         .cloned()
         .or_else(|| package.recipe.clone())
         .unwrap_or_else(|| "uncategorized".into());
-    match values.get("PKGSIZE").and_then(|value| value.parse().ok()) {
+    match values.installed_size {
         Some(value) => package.installed_size_bytes = value,
         None => push_limitation(
             limitations,
@@ -351,18 +449,16 @@ fn populate_package(
             ),
         ),
     }
-    match values.get("FILES_INFO") {
-        Some(value) => match serde_json::from_str::<serde_json::Value>(value) {
-            Ok(serde_json::Value::Object(files)) => package.file_count = files.len() as u64,
-            _ => push_limitation(
-                limitations,
-                format!(
-                    "file count was malformed for package {}",
-                    package.identity.name
-                ),
+    match (values.files_info_seen, values.file_count) {
+        (_, Some(value)) => package.file_count = value,
+        (true, None) => push_limitation(
+            limitations,
+            format!(
+                "file count was malformed for package {}",
+                package.identity.name
             ),
-        },
-        None => push_limitation(
+        ),
+        (false, None) => push_limitation(
             limitations,
             format!(
                 "file count was unavailable for package {}",
@@ -571,7 +667,10 @@ fn valid_text(value: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::{
+        io::Write,
+        time::{SystemTime, UNIX_EPOCH},
+    };
 
     fn fixture() -> (PathBuf, RootfsCompositionRequest, RootfsCompositionSources) {
         let build = std::env::temp_dir().join(format!(
@@ -598,7 +697,7 @@ mod tests {
         .unwrap();
         fs::write(
             pkgdata.join("busybox"),
-            "PN: busybox\nSECTION: base\nPKGSIZE: 12\nFILES_INFO: {\"/usr/bin/busybox\":{}}\n",
+            "PN: busybox\nSECTION: base\nPKGSIZE:busybox: 12\nFILES_INFO:busybox: {\"/usr/bin/busybox\":{}}\n",
         )
         .unwrap();
         fs::write(
@@ -655,6 +754,71 @@ mod tests {
                 .limitations
                 .iter()
                 .any(|value| value.contains("ownership"))
+        );
+        fs::remove_dir_all(build).unwrap();
+    }
+
+    #[test]
+    fn ux_rootfs_streams_large_scoped_wrynose_pkgdata_and_counts_files() {
+        let (build, _, sources) = fixture();
+        let pkgdata = sources.pkgdata_directory.unwrap();
+        let runtime = pkgdata.join("runtime");
+        let files = (0..20_000)
+            .map(|index| format!("\"/usr/src/kernel/file-{index}\":{{}}"))
+            .collect::<Vec<_>>()
+            .join(",");
+        let content = format!(
+            "PN: kernel-devsrc\nSECTION: kernel\nFILES_INFO:kernel-devsrc: {{{files}}}\nPKGSIZE:kernel-devsrc: 74306744\n"
+        );
+        assert!(content.len() > 256 * 1024);
+        let path = runtime.join("kernel-devsrc");
+        fs::write(&path, content).unwrap();
+
+        let mut total = 0;
+        let values = read_pkgdata(&path, &pkgdata, "kernel-devsrc", &mut total).unwrap();
+        assert_eq!(values.recipe.as_deref(), Some("kernel-devsrc"));
+        assert_eq!(values.category.as_deref(), Some("kernel"));
+        assert_eq!(values.installed_size, Some(74_306_744));
+        assert_eq!(values.file_count, Some(20_000));
+        assert!(values.files_info_seen);
+        assert_eq!(total, fs::metadata(path).unwrap().len());
+        fs::remove_dir_all(build).unwrap();
+    }
+
+    #[tokio::test]
+    async fn ux_rootfs_oversized_single_pkgdata_is_partial_not_a_screen_failure() {
+        let (build, request, mut sources) = fixture();
+        let manifest = sources.manifest.as_ref().unwrap();
+        fs::OpenOptions::new()
+            .append(true)
+            .open(manifest)
+            .unwrap()
+            .write_all(b"oversized qemux86_64 1.0\n")
+            .unwrap();
+        let oversized = sources
+            .pkgdata_directory
+            .as_ref()
+            .unwrap()
+            .join("runtime/oversized");
+        fs::File::create(&oversized)
+            .unwrap()
+            .set_len(MAX_PKGDATA_FILE_BYTES + 1)
+            .unwrap();
+        sources.image_rootfs = None;
+
+        let response = RootfsCompositionAdapter::new(build.clone(), sources, 4)
+            .scan(request)
+            .await
+            .unwrap();
+        assert!(matches!(
+            response.composition.installed_packages,
+            RootfsAuthority::Partial { .. }
+        ));
+        assert!(
+            response
+                .limitations
+                .iter()
+                .any(|value| value.contains("oversized") && value.contains("limited"))
         );
         fs::remove_dir_all(build).unwrap();
     }

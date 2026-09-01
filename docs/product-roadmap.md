@@ -705,3 +705,20 @@ Exit criteria:
   cell buffer as well as the physical terminal
 - repeated loop iterations do not perform noisy redundant clears
 - focused, workspace, Clippy, documentation, roadmap, and completion gates pass
+
+## M34 — Rootfs pkgdata and selection viewport hardening
+
+Goal: keep current-release image composition available for large generated
+package records and keep the operator's selected row visible in every clipped
+collection.
+
+Exit criteria:
+
+- generated runtime pkgdata is streamed under explicit file, line, aggregate,
+  timeout, and cancellation bounds
+- scoped installed-size and file-map fields retain exact package evidence
+- an isolated resource-limit result is Partial rather than a screen failure
+- workspace collections and modal pickers follow the selected identity through
+  the bottom row at all supported geometries
+- focused, live-rootfs, workspace, Clippy, documentation, roadmap, and
+  completion gates pass

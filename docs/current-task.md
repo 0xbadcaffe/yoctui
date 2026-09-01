@@ -2,33 +2,38 @@
 
 ## Task
 
-**ID:** UX-EXTERNAL-REDRAW-001
-**Title:** Invalidate retained terminal cells after external processes
+**ID:** ROOTFS-PKGDATA-VIEWPORT-001
+**Title:** Stream large rootfs pkgdata and retain visible selection
 **Status:** DONE
 
 ## Objective
 
-Returning from Neovim, another external editor, or an inherited Yocto shell
-must restore a clean Yoctui frame without retained colors or glyphs.
+Rootfs composition must accept valid current-release generated pkgdata without
+losing its safety bounds, and every bounded collection must keep its selected
+row visible when navigation reaches the end.
 
 ## Dependencies
 
-- PKGDATA-AUTH-SYNC-001 — DONE
+- UX-EXTERNAL-REDRAW-001 — DONE
 
 ## Definition of done
 
-- Every successful terminal resume requests a full redraw.
-- Ratatui's retained cell buffer and the physical terminal are cleared before
-  the next frame.
-- One resume causes exactly one clear; normal frames do not flicker.
-- External-editor failure paths still restore and repaint the workbench.
-- Version 0.1.8 is installed and repository completion gates pass.
+- Runtime pkgdata is parsed incrementally with explicit per-file, per-line, and
+  aggregate byte bounds.
+- Current scoped `PKGSIZE:<package>` and `FILES_INFO:<package>` records retain
+  exact installed-size and file-count evidence.
+- One over-bound package degrades installed-package authority to Partial rather
+  than failing the entire Rootfs composition screen.
+- Every workspace table, list, and bounded picker centers a viewport around its
+  selected identity, including the final row.
+- Version 0.1.9 is installed and repository completion gates pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui external_process_redraw_latch_is_edge_triggered
-cargo test -p yoctui pkgdata_workspace_background_operation_binds_current_authority_and_reports_results
+cargo test -p yoctui-bitbake ux_rootfs
+cargo test -p yoctui-bitbake --test live_rootfs -- --ignored
+cargo test -p yoctui-ui ux_scrollable_collection_matrix_keeps_the_last_highlighted_row_visible
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
@@ -37,7 +42,9 @@ python3 -m pytest bridge/tests
 ./scripts/verify-completion.sh
 ```
 
-The reported Neovim bleed-through was caused by re-entering the alternate
-screen while Ratatui still retained the pre-editor frame. The resume path now
-sets an edge-triggered invalidation latch, and the event loop consumes it by
-clearing the backend immediately before rendering the restored frame.
+The reported Rootfs failure came from a legitimate 1.1 MiB `kernel-devsrc`
+runtime-pkgdata record exceeding a legacy 256 KiB whole-file limit. The adapter
+now streams bounded lines, counts the large JSON object without materializing
+it, and preserves partial authority at a single-package limit. The scroll audit
+also removed full-list rendering from independently clipped workspaces and
+pickers, so the render viewport follows the model-owned selection.

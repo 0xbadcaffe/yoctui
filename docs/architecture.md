@@ -3286,6 +3286,19 @@ through symlinks, retains special-file counts, deduplicates regular-file bytes
 by device/inode on Unix, and enforces entry, depth, input-byte, accounted-byte,
 elapsed-time, cancellation, limitation, and stale-generation bounds.
 
+Runtime pkgdata is streamed one bounded line at a time under independent
+per-file and aggregate limits. Scoped Wrynose fields are correlated to the
+exact manifest package, and the `FILES_INFO` JSON map is counted with a visitor
+that discards values instead of allocating a second complete object. A
+per-package resource limit becomes explicit Partial package authority;
+malformed I/O and containment failures retain their typed failure semantics.
+
+Every clipped collection renderer derives a transient centered range from the
+model-owned selected identity and its measured row capacity. This includes
+workspace tables, multi-line records, and modal pickers. Renderers never alter
+selection to compensate for geometry, and reaching the final item cannot place
+its highlight outside the visible viewport.
+
 Images owns a typed three-view selector for artifacts, installed packages, and
 the logical filesystem. Tab and Shift-Tab wrap without replacing the selected
 image; category, package, and path movement remains reducer-owned and the CLI

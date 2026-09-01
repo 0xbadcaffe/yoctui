@@ -11,6 +11,13 @@ authoritative runtime pkgdata. The package view can group and drill into those
 records, including a bounded, inspectable `Other` group. It does not infer
 installation from recipe metadata, deploy filenames, or filesystem contents.
 
+Runtime pkgdata is read incrementally under separate per-file, per-line, and
+aggregate byte limits. Current recipe-scoped fields such as
+`PKGSIZE:<package>` and `FILES_INFO:<package>` are parsed without retaining the
+whole file or JSON file map in memory. If one installed package exceeds a
+safety bound, installed-package composition remains Partial with an explicit
+limitation; the entire Rootfs screen does not become Failed.
+
 If the manifest or pkgdata is absent, stale, outside the active build, or does
 not correlate to the selected identity, the view is Unavailable with a reason.
 A successful image build does not imply that every optional pkgdata operation
@@ -44,6 +51,13 @@ composition are the terminal-safe fallback.
 
 ## Recorded live boundary
 
+An opt-in live adapter regression also scans the exact deployed manifest and
+machine-scoped pkgdata directory from a completed image. On 2026-09-01 it
+validated the Wrynose 6.0.2 `core-image-kernel-dev` output, including the valid
+1.1 MiB `kernel-devsrc` runtime-pkgdata record that originally exposed the
+legacy 256 KiB limit. This is operational regression evidence, not a broader
+release-support claim.
+
 The 2026-08-27 M21 live run built `core-image-minimal` for `qemux86-64` with
 Poky 5.2.4 / BitBake 2.12.1 on Ubuntu 24.04.4. It recorded 38 manifest packages
 and 14,995 pkgdata files. The build enabled `rm_work`, so the exact logical
@@ -51,4 +65,3 @@ root was honestly recorded as `unavailable_cleaned`; no filesystem total is
 claimed. Re-run the evidence verifier described in [Testing](testing.md), and
 consult [Compatibility](compatibility.md) before generalizing that observation
 to another release or host.
-

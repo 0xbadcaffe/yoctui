@@ -1878,6 +1878,14 @@ pub fn render(frame: &mut Frame, app: &App) {
 /// Production uses [`render`]. Deterministic visual tests and the release
 /// profiling workload use this entry point so clock changes cannot alter the
 /// rendered cell buffer between otherwise identical frames.
+fn selected_table_viewport(selection: usize, total: usize, area: Rect) -> std::ops::Range<usize> {
+    yoctui_model::centered_viewport_range(
+        (total > 0).then_some(selection),
+        total,
+        usize::from(area.height.saturating_sub(3)).max(1),
+    )
+}
+
 pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     let area = frame.area();
     let palette = ThemePalette::for_app(app);
@@ -2172,19 +2180,24 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             area.height / 2,
         );
         clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.tasks.len(), popup);
         frame.render_widget(
             Table::new(
-                picker.tasks.iter().enumerate().map(|(index, task)| {
-                    Row::new([format!(
-                        "{} {task}",
-                        if index == picker.selection {
-                            "▶"
-                        } else {
-                            " "
-                        }
-                    )])
-                    .style(selected_style(app, index == picker.selection))
-                }),
+                picker.tasks[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, task)| {
+                        let index = viewport.start + offset;
+                        Row::new([format!(
+                            "{} {task}",
+                            if index == picker.selection {
+                                "▶"
+                            } else {
+                                " "
+                            }
+                        )])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
                 [Constraint::Min(1)],
             )
             .header(Row::new(["Authoritative signature tasks"]).style(Style::default().bold()))
@@ -2203,19 +2216,24 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             area.height / 2,
         );
         clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.tasks.len(), popup);
         frame.render_widget(
             Table::new(
-                picker.tasks.iter().enumerate().map(|(index, task)| {
-                    Row::new([format!(
-                        "{} {task}",
-                        if index == picker.selection {
-                            "▶"
-                        } else {
-                            " "
-                        }
-                    )])
-                    .style(selected_style(app, index == picker.selection))
-                }),
+                picker.tasks[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, task)| {
+                        let index = viewport.start + offset;
+                        Row::new([format!(
+                            "{} {task}",
+                            if index == picker.selection {
+                                "▶"
+                            } else {
+                                " "
+                            }
+                        )])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
                 [Constraint::Min(1)],
             )
             .header(Row::new(["Authoritative BitBake tasks"]).style(Style::default().bold()))
@@ -2238,24 +2256,29 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             area.height / 2,
         );
         clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.logs.len(), popup);
         frame.render_widget(
             Table::new(
-                picker.logs.iter().enumerate().map(|(index, log)| {
-                    Row::new([
-                        Cell::from(format!(
-                            "{} {}",
-                            if index == picker.selection {
-                                "▶"
-                            } else {
-                                " "
-                            },
-                            log.task
-                        )),
-                        Cell::from(format!("{:?}", log.state)),
-                        Cell::from(log.path.display().to_string()),
-                    ])
-                    .style(selected_style(app, index == picker.selection))
-                }),
+                picker.logs[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, log)| {
+                        let index = viewport.start + offset;
+                        Row::new([
+                            Cell::from(format!(
+                                "{} {}",
+                                if index == picker.selection {
+                                    "▶"
+                                } else {
+                                    " "
+                                },
+                                log.task
+                            )),
+                            Cell::from(format!("{:?}", log.state)),
+                            Cell::from(log.path.display().to_string()),
+                        ])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
                 [
                     Constraint::Length(20),
                     Constraint::Length(12),
@@ -2342,20 +2365,25 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             area.height / 2,
         );
         clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.scopes.len(), popup);
         frame.render_widget(
             Table::new(
-                picker.scopes.iter().enumerate().map(|(index, scope)| {
-                    Row::new([format!(
-                        "{} {}",
-                        if index == picker.selection {
-                            "▶"
-                        } else {
-                            " "
-                        },
-                        scope.as_deref().unwrap_or("(global)")
-                    )])
-                    .style(selected_style(app, index == picker.selection))
-                }),
+                picker.scopes[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, scope)| {
+                        let index = viewport.start + offset;
+                        Row::new([format!(
+                            "{} {}",
+                            if index == picker.selection {
+                                "▶"
+                            } else {
+                                " "
+                            },
+                            scope.as_deref().unwrap_or("(global)")
+                        )])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
                 [Constraint::Min(20)],
             )
             .header(Row::new(["Variable scope"]).style(Style::default().bold()))
@@ -2374,28 +2402,33 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             area.height / 2,
         );
         clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.sources.len(), popup);
         frame.render_widget(
             Table::new(
-                picker.sources.iter().enumerate().map(|(index, source)| {
-                    Row::new([
-                        Cell::from(format!(
-                            "{} {}",
-                            if index == picker.selection {
-                                "▶"
-                            } else {
-                                " "
-                            },
-                            source.operation
-                        )),
-                        Cell::from(source.path.display().to_string()),
-                        Cell::from(
-                            source
-                                .line
-                                .map_or_else(|| "—".into(), |line| line.to_string()),
-                        ),
-                    ])
-                    .style(selected_style(app, index == picker.selection))
-                }),
+                picker.sources[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, source)| {
+                        let index = viewport.start + offset;
+                        Row::new([
+                            Cell::from(format!(
+                                "{} {}",
+                                if index == picker.selection {
+                                    "▶"
+                                } else {
+                                    " "
+                                },
+                                source.operation
+                            )),
+                            Cell::from(source.path.display().to_string()),
+                            Cell::from(
+                                source
+                                    .line
+                                    .map_or_else(|| "—".into(), |line| line.to_string()),
+                            ),
+                        ])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
                 [
                     Constraint::Length(12),
                     Constraint::Min(20),
@@ -2421,20 +2454,25 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             area.height / 2,
         );
         clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.patches.len(), popup);
         frame.render_widget(
             Table::new(
-                picker.patches.iter().enumerate().map(|(index, patch)| {
-                    Row::new([format!(
-                        "{} {}",
-                        if index == picker.selection {
-                            "▶"
-                        } else {
-                            " "
-                        },
-                        patch.display()
-                    )])
-                    .style(selected_style(app, index == picker.selection))
-                }),
+                picker.patches[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, patch)| {
+                        let index = viewport.start + offset;
+                        Row::new([format!(
+                            "{} {}",
+                            if index == picker.selection {
+                                "▶"
+                            } else {
+                                " "
+                            },
+                            patch.display()
+                        )])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
                 [Constraint::Min(20)],
             )
             .header(Row::new(["Authoritative local patch"]).style(Style::default().bold()))
@@ -2690,23 +2728,28 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             height,
         );
         clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.layers.len(), popup);
         frame.render_widget(
             Table::new(
-                picker.layers.iter().enumerate().map(|(index, layer)| {
-                    Row::new([
-                        format!(
-                            "{} {}",
-                            if index == picker.selection {
-                                "▶"
-                            } else {
-                                " "
-                            },
-                            layer.name
-                        ),
-                        layer.path.display().to_string(),
-                    ])
-                    .style(selected_style(app, index == picker.selection))
-                }),
+                picker.layers[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, layer)| {
+                        let index = viewport.start + offset;
+                        Row::new([
+                            format!(
+                                "{} {}",
+                                if index == picker.selection {
+                                    "▶"
+                                } else {
+                                    " "
+                                },
+                                layer.name
+                            ),
+                            layer.path.display().to_string(),
+                        ])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
                 [Constraint::Length(24), Constraint::Min(20)],
             )
             .header(
@@ -2761,11 +2804,16 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             .variables
             .get("MACHINE")
             .map_or("unknown", String::as_str);
-        let images = picker
-            .images
+        let viewport = yoctui_model::centered_viewport_range(
+            (!picker.images.is_empty()).then_some(picker.selection),
+            picker.images.len(),
+            usize::from(popup.height.saturating_sub(6)).max(1),
+        );
+        let images = picker.images[viewport.clone()]
             .iter()
             .enumerate()
-            .map(|(index, image)| {
+            .map(|(offset, image)| {
+                let index = viewport.start + offset;
                 format!(
                     "{} {}",
                     if index == picker.selection {
@@ -4014,8 +4062,14 @@ fn signature_records(frame: &mut Frame, app: &App, area: Rect) {
         }
         SignatureDumpState::Available { .. } | SignatureDumpState::Partial { .. } => {
             let (left, right) = signature_comparison_sides(&app.signature_comparison);
-            let mut lines = records
-                .unwrap_or_default()
+            let records = records.unwrap_or_default();
+            let selection = records
+                .iter()
+                .position(|record| app.signature_selection.as_ref() == Some(&record.identity));
+            let capacity = (usize::from(area.height.saturating_sub(2)) / 2).max(1);
+            let viewport =
+                yoctui_model::centered_viewport_range(selection, records.len(), capacity);
+            let mut lines = records[viewport]
                 .iter()
                 .map(|record| {
                     let selected = app.signature_selection.as_ref() == Some(&record.identity);
@@ -8918,12 +8972,13 @@ fn qa_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ),
         Line::from(""),
     ];
+    let collection_capacity = usize::from(area.height.saturating_sub(12)).max(1);
     if app.qa.drilled {
-        qa_finding_lines(app, &palette, &mut lines);
+        qa_finding_lines(app, &palette, &mut lines, collection_capacity);
     } else {
         match app.qa.view {
-            QaView::RecipeKernel => qa_check_lines(app, &palette, &mut lines),
-            QaView::LayerQa => qa_layer_lines(app, &palette, &mut lines),
+            QaView::RecipeKernel => qa_check_lines(app, &palette, &mut lines, collection_capacity),
+            QaView::LayerQa => qa_layer_lines(app, &palette, &mut lines, collection_capacity),
         }
     }
     qa_inventory_lines(app, &palette, &mut lines);
@@ -8949,7 +9004,12 @@ fn qa_scope_label(app: &App) -> String {
     }
 }
 
-fn qa_check_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+fn qa_check_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    capacity: usize,
+) {
     match &app.qa.capability {
         QaCapability::NotInspected => {
             lines.push(Line::from("QA capability is not inspected."));
@@ -8979,7 +9039,11 @@ fn qa_check_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'stati
         "  Family                Exact task             Availability       Findings  Label",
     ));
     let checks = app.qa.visible_checks();
-    for check in &checks {
+    let selection = checks
+        .iter()
+        .position(|check| app.qa.check_selection.as_ref() == Some(&check.id));
+    let viewport = yoctui_model::centered_viewport_range(selection, checks.len(), capacity);
+    for check in &checks[viewport] {
         let selected = app.qa.check_selection.as_ref() == Some(&check.id);
         let findings = app.qa.findings_for_check(&check.id);
         let status = qa_worst_status(findings.iter().map(|finding| finding.status));
@@ -9011,7 +9075,12 @@ fn qa_check_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'stati
     }
 }
 
-fn qa_layer_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+fn qa_layer_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    capacity: usize,
+) {
     match &app.qa.layer_capability {
         QaLayerCapability::NotInspected => {
             lines.push(Line::from("Layer-QA capability is not inspected."));
@@ -9041,7 +9110,11 @@ fn qa_layer_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'stati
         "  Layer                 Capability       Pass Warn Fail Skip Unknown  Exact root",
     ));
     let layers = app.qa.visible_layers();
-    for layer in &layers {
+    let selection = layers
+        .iter()
+        .position(|layer| app.qa.layer_selection.as_ref() == Some(&layer.identity));
+    let viewport = yoctui_model::centered_viewport_range(selection, layers.len(), capacity);
+    for layer in &layers[viewport] {
         let selected = app.qa.layer_selection.as_ref() == Some(&layer.identity);
         let counts = app.qa.layer_finding_counts(&layer.identity);
         let capability = match layer.run {
@@ -9081,12 +9154,21 @@ fn qa_layer_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'stati
     }
 }
 
-fn qa_finding_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+fn qa_finding_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    capacity: usize,
+) {
     lines.push(Line::from(
         "Findings (Esc returns) — Status     Severity      Rule / test                 Message",
     ));
     let findings = app.qa.visible_findings();
-    for finding in &findings {
+    let selection = findings
+        .iter()
+        .position(|finding| app.qa.finding_selection.as_ref() == Some(&finding.identity));
+    let viewport = yoctui_model::centered_viewport_range(selection, findings.len(), capacity);
+    for finding in &findings[viewport] {
         let selected = app.qa.finding_selection.as_ref() == Some(&finding.identity);
         lines.push(
             Line::from(format!(
@@ -9575,7 +9657,8 @@ fn security_workspace(frame: &mut Frame, app: &App, area: Rect) {
         area.width.saturating_sub(2),
     ));
     lines.push(Line::from(""));
-    security_inventory_lines(app, &palette, &mut lines);
+    let collection_capacity = usize::from(area.height.saturating_sub(14)).max(1);
+    security_inventory_lines(app, &palette, &mut lines, collection_capacity);
     security_session_lines(app, &palette, &mut lines);
     frame.render_widget(
         Paragraph::new(lines)
@@ -9589,7 +9672,12 @@ fn security_workspace(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn security_inventory_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+fn security_inventory_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    capacity: usize,
+) {
     match &app.security.inventory {
         SecurityInventoryState::NotLoaded => lines.push(Line::from(
             "Reports are not loaded. Press I to import or R after capability discovery.",
@@ -9608,8 +9696,8 @@ fn security_inventory_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<L
         ))),
         SecurityInventoryState::Available { .. } | SecurityInventoryState::Partial { .. } => {
             match app.security.view {
-                SecurityView::Cves => security_cve_lines(app, palette, lines),
-                SecurityView::Sbom => security_sbom_lines(app, palette, lines),
+                SecurityView::Cves => security_cve_lines(app, palette, lines, capacity),
+                SecurityView::Sbom => security_sbom_lines(app, palette, lines, capacity),
             }
             if let SecurityInventoryState::Partial { limitations, .. } = &app.security.inventory {
                 lines.push(Line::styled(
@@ -9637,7 +9725,12 @@ fn security_inventory_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<L
     }
 }
 
-fn security_cve_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+fn security_cve_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    capacity: usize,
+) {
     lines.push(Line::from(format!(
         "Filter: {} | {} visible finding(s)",
         security_filter_label(app.security.cve_filter),
@@ -9647,7 +9740,11 @@ fn security_cve_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'s
         "  CVE             Status        Recipe / package          Severity/score  Exact source",
     ));
     let findings = app.security.visible_findings();
-    for finding in &findings {
+    let selection = findings
+        .iter()
+        .position(|finding| app.security.finding_selection.as_ref() == Some(&finding.identity));
+    let viewport = yoctui_model::centered_viewport_range(selection, findings.len(), capacity);
+    for finding in &findings[viewport] {
         let selected = app.security.finding_selection.as_ref() == Some(&finding.identity);
         let source = cve_source_for_finding(app, &finding.identity).map_or_else(
             || "unavailable".into(),
@@ -9685,7 +9782,12 @@ fn security_cve_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'s
     }
 }
 
-fn security_sbom_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+fn security_sbom_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    capacity: usize,
+) {
     if app.security.drilled {
         let Some(SecurityReport::Spdx(document)) = app.security.selected_report() else {
             lines.push(Line::styled(
@@ -9703,7 +9805,11 @@ fn security_sbom_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'
             "  Component identity        Name                    Version       Supplier / license",
         ));
         let components = app.security.visible_components();
-        for component in &components {
+        let selection = components.iter().position(|component| {
+            app.security.component_selection.as_deref() == Some(component.identity.as_str())
+        });
+        let viewport = yoctui_model::centered_viewport_range(selection, components.len(), capacity);
+        for component in &components[viewport] {
             let selected =
                 app.security.component_selection.as_deref() == Some(component.identity.as_str());
             lines.push(
@@ -9734,7 +9840,11 @@ fn security_sbom_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'
         "  Kind     SPDX version   Document                 Components  Exact artifact",
     ));
     let reports = app.security.visible_reports();
-    for report in &reports {
+    let selection = reports
+        .iter()
+        .position(|report| app.security.report_selection.as_ref() == Some(report.identity()));
+    let viewport = yoctui_model::centered_viewport_range(selection, reports.len(), capacity);
+    for report in &reports[viewport] {
         let SecurityReport::Spdx(document) = report else {
             continue;
         };
@@ -10195,10 +10305,19 @@ fn testing_workspace(frame: &mut Frame, app: &App, area: Rect) {
     ];
     match app.test_view {
         TestWorkspaceView::Launches => testing_launch_lines(app, &palette, &mut lines),
-        TestWorkspaceView::Results => {
-            testing_result_lines(app, &palette, &mut lines, area.width.saturating_sub(2))
-        }
-        TestWorkspaceView::Comparison => testing_comparison_lines(app, &palette, &mut lines),
+        TestWorkspaceView::Results => testing_result_lines(
+            app,
+            &palette,
+            &mut lines,
+            area.width.saturating_sub(2),
+            usize::from(area.height.saturating_sub(10)).max(1),
+        ),
+        TestWorkspaceView::Comparison => testing_comparison_lines(
+            app,
+            &palette,
+            &mut lines,
+            usize::from(area.height.saturating_sub(10)).max(1),
+        ),
     }
     frame.render_widget(
         Paragraph::new(lines)
@@ -10280,6 +10399,7 @@ fn testing_result_lines(
     palette: &ThemePalette,
     lines: &mut Vec<Line<'static>>,
     width: u16,
+    capacity: usize,
 ) {
     let filtered = app.filtered_test_results();
     let filtered_selection = filtered
@@ -10309,14 +10429,19 @@ fn testing_result_lines(
             record.identity.fingerprint
         )));
         lines.push(Line::from("  Status    Duration     Exact suite / case"));
+        let mut detail_lines = Vec::new();
+        let mut selected_line = None;
         for suite in &record.suites {
-            lines.push(Line::styled(
+            detail_lines.push(Line::styled(
                 format!("  suite                  {}", suite.identity),
                 testing_info_style(palette),
             ));
             for case in &suite.cases {
                 let selected = app.test_case_selection.as_ref() == Some(&case.identity);
-                lines.push(
+                if selected {
+                    selected_line = Some(detail_lines.len());
+                }
+                detail_lines.push(
                     Line::from(format!(
                         "{} {:<9} {:<12} {}/{}",
                         if selected { "▶" } else { " " },
@@ -10335,6 +10460,9 @@ fn testing_result_lines(
                 );
             }
         }
+        let viewport =
+            yoctui_model::centered_viewport_range(selected_line, detail_lines.len(), capacity);
+        lines.extend(detail_lines.drain(viewport));
         return;
     }
     lines.push(Line::from(
@@ -10352,7 +10480,9 @@ fn testing_result_lines(
             lines.push(Line::from("No structured test results were found."))
         }
         TestResultInventoryState::Available { .. } | TestResultInventoryState::Partial { .. } => {
-            for record in app.filtered_test_results() {
+            let viewport =
+                yoctui_model::centered_viewport_range(filtered_selection, filtered.len(), capacity);
+            for record in filtered[viewport].iter().copied() {
                 let selected = app.test_result_selection.as_ref() == Some(&record.identity);
                 let counts = record.counts();
                 lines.push(
@@ -10381,7 +10511,7 @@ fn testing_result_lines(
                     }),
                 );
             }
-            if app.filtered_test_results().is_empty() {
+            if filtered.is_empty() {
                 lines.push(Line::from("No results match the active search."));
             }
             if let TestResultInventoryState::Partial { limitations, .. } = &app.test_results {
@@ -10410,7 +10540,12 @@ fn testing_result_lines(
     }
 }
 
-fn testing_comparison_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<Line<'static>>) {
+fn testing_comparison_lines(
+    app: &App,
+    palette: &ThemePalette,
+    lines: &mut Vec<Line<'static>>,
+    capacity: usize,
+) {
     match &app.test_comparison {
         TestComparisonState::NotSelected => lines.push(Line::from(
             "No comparison selected. Press c to choose exact results.",
@@ -10451,7 +10586,15 @@ fn testing_comparison_lines(app: &App, palette: &ThemePalette, lines: &mut Vec<L
             lines.push(Line::from(
                 "  Category          Baseline → candidate  Exact case",
             ));
-            for transition in &comparison.transitions {
+            let selection = comparison.transitions.iter().position(|transition| {
+                app.test_comparison_selection.as_ref() == Some(&transition.identity)
+            });
+            let viewport = yoctui_model::centered_viewport_range(
+                selection,
+                comparison.transitions.len(),
+                capacity,
+            );
+            for transition in &comparison.transitions[viewport] {
                 let selected = app.test_comparison_selection.as_ref() == Some(&transition.identity);
                 lines.push(
                     Line::from(format!(
@@ -12274,9 +12417,18 @@ fn wic_create_confirmation(frame: &mut Frame, app: &App, preview: &WicCreatePrev
     );
 }
 
-fn wic_device_lines(app: &App, devices: &[WicDevice]) -> Vec<Line<'static>> {
+fn wic_device_lines(
+    app: &App,
+    devices: &[WicDevice],
+    available_lines: usize,
+) -> Vec<Line<'static>> {
     let mut lines = Vec::new();
-    for device in devices {
+    let selection = devices
+        .iter()
+        .position(|device| app.wic_device_selection.as_ref() == Some(&device.identity));
+    let capacity = (available_lines / 3).max(1);
+    let viewport = yoctui_model::centered_viewport_range(selection, devices.len(), capacity);
+    for device in &devices[viewport] {
         let selected = app.wic_device_selection.as_ref() == Some(&device.identity);
         let style = selected_style(app, selected);
         let mounts = if device.descendant_mounts.is_empty() {
@@ -12322,6 +12474,7 @@ fn wic_device_lines(app: &App, devices: &[WicDevice]) -> Vec<Line<'static>> {
 
 fn wic_device_picker(frame: &mut Frame, app: &App, dialog: &WicDevicePickerDialog, area: Rect) {
     let popup = dialog_popup_rect(area, 110, area.height.saturating_sub(2).min(30));
+    let device_lines = usize::from(popup.height.saturating_sub(9)).max(1);
     clear_popup(frame, app, popup);
     let mut lines = vec![
         Line::from(format!(
@@ -12345,7 +12498,7 @@ fn wic_device_picker(frame: &mut Frame, app: &App, dialog: &WicDevicePickerDialo
                     "No eligible removable whole devices were found.",
                 ));
             } else {
-                lines.extend(wic_device_lines(app, devices));
+                lines.extend(wic_device_lines(app, devices, device_lines));
             }
             lines.push(Line::from(""));
             lines.push(Line::from("Discovery limitations: none"));
@@ -12360,7 +12513,7 @@ fn wic_device_picker(frame: &mut Frame, app: &App, dialog: &WicDevicePickerDialo
                     "No eligible removable whole devices were found.",
                 ));
             } else {
-                lines.extend(wic_device_lines(app, devices));
+                lines.extend(wic_device_lines(app, devices, device_lines));
             }
             lines.push(Line::from(""));
             lines.push(Line::from(format!(
@@ -12666,11 +12819,19 @@ fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect) {
         }
         ImageArtifactInventoryState::Available { .. }
         | ImageArtifactInventoryState::Partial { .. } => {
-            let artifacts = app.filtered_image_artifacts();
-            if artifacts.is_empty() {
+            if filtered.is_empty() {
                 lines.push(Line::from("No artifacts match the active search."));
             }
-            for artifact in artifacts {
+            let limitation_rows = usize::from(matches!(
+                &app.image_artifacts,
+                ImageArtifactInventoryState::Partial { .. }
+            ));
+            let capacity = usize::from(area.height.saturating_sub(7))
+                .saturating_sub(limitation_rows)
+                .max(1);
+            let viewport =
+                yoctui_model::centered_viewport_range(filtered_selection, filtered.len(), capacity);
+            for artifact in filtered[viewport].iter().copied() {
                 let selected = app.image_artifact_selection.as_ref() == Some(&artifact.identity);
                 let size = artifact
                     .size_bytes
@@ -14741,28 +14902,37 @@ fn application_menu_overlay(
         regions[0],
     );
     let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
-    let rows = items.iter().enumerate().map(|(index, item)| {
-        let suffix = item
-            .disabled_reason
-            .as_deref()
-            .unwrap_or(item.description.as_str());
-        Row::new([
-            format!(
-                "{} {}",
-                if index == selected { ">" } else { " " },
-                item.label
-            ),
-            item.shortcut.to_owned(),
-            suffix.to_owned(),
-        ])
-        .style(if index == selected {
-            selected_style(app, true)
-        } else if item.enabled() {
-            palette.base()
-        } else {
-            palette.role(palette.disabled, Modifier::DIM)
-        })
-    });
+    let viewport = yoctui_model::centered_viewport_range(
+        (!items.is_empty()).then_some(selected),
+        items.len(),
+        usize::from(regions[1].height).max(1),
+    );
+    let rows = items[viewport.clone()]
+        .iter()
+        .enumerate()
+        .map(|(offset, item)| {
+            let index = viewport.start + offset;
+            let suffix = item
+                .disabled_reason
+                .as_deref()
+                .unwrap_or(item.description.as_str());
+            Row::new([
+                format!(
+                    "{} {}",
+                    if index == selected { ">" } else { " " },
+                    item.label
+                ),
+                item.shortcut.to_owned(),
+                suffix.to_owned(),
+            ])
+            .style(if index == selected {
+                selected_style(app, true)
+            } else if item.enabled() {
+                palette.base()
+            } else {
+                palette.role(palette.disabled, Modifier::DIM)
+            })
+        });
     frame.render_widget(
         Table::new(
             rows,
@@ -16825,9 +16995,15 @@ fn packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
             } else {
                 Layout::vertical([Constraint::Min(4), Constraint::Length(4)]).split(area)[0]
             };
-            let rows = app
-                .filtered_packages()
-                .into_iter()
+            let capacity = usize::from(rows_area.height.saturating_sub(3)).max(1);
+            let viewport = yoctui_model::centered_viewport_range(
+                selected,
+                visible.len(),
+                capacity,
+            );
+            let rows = visible[viewport]
+                .iter()
+                .copied()
                 .map(|package| {
                     let selected = app.package_selection.as_ref() == Some(&package.identity);
                     let style = if selected {
@@ -17345,39 +17521,48 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
                 &[layer.name.as_str(), layer.path.to_str().unwrap_or("")],
             )
         })
-        .map(|layer| {
-            let relationship = layer_relationship(app, &layer.name);
-            let compatibility = relationship.map_or("?", |value| {
-                if value.compatible.is_empty() {
-                    "-"
-                } else {
-                    "yes"
-                }
-            });
-            let active = active_build_layer(app, &layer.name);
-            let style = if layer.name == browser.layer {
-                palette.selected()
-            } else if active {
-                palette.role(palette.success, Modifier::BOLD)
+        .collect::<Vec<_>>();
+    let configured_selection = configured
+        .iter()
+        .position(|layer| layer.name == browser.layer);
+    let configured_viewport = yoctui_model::centered_viewport_range(
+        configured_selection,
+        configured.len(),
+        usize::from(left[0].height.saturating_sub(3)).max(1),
+    );
+    let configured_rows = configured[configured_viewport].iter().map(|layer| {
+        let relationship = layer_relationship(app, &layer.name);
+        let compatibility = relationship.map_or("?", |value| {
+            if value.compatible.is_empty() {
+                "-"
             } else {
-                Style::default()
-            };
-            Row::new([
-                if active {
-                    format!("● {}", layer.name)
-                } else {
-                    format!("  {}", layer.name)
-                },
-                layer
-                    .priority
-                    .map_or_else(|| "?".into(), |priority| priority.to_string()),
-                compatibility.into(),
-            ])
-            .style(style)
+                "yes"
+            }
         });
+        let active = active_build_layer(app, &layer.name);
+        let style = if layer.name == browser.layer {
+            palette.selected()
+        } else if active {
+            palette.role(palette.success, Modifier::BOLD)
+        } else {
+            Style::default()
+        };
+        Row::new([
+            if active {
+                format!("● {}", layer.name)
+            } else {
+                format!("  {}", layer.name)
+            },
+            layer
+                .priority
+                .map_or_else(|| "?".into(), |priority| priority.to_string()),
+            compatibility.into(),
+        ])
+        .style(style)
+    });
     frame.render_widget(
         Table::new(
-            configured,
+            configured_rows,
             [
                 Constraint::Min(8),
                 Constraint::Length(4),
@@ -17789,12 +17974,19 @@ fn config(frame: &mut Frame, app: &App, area: Rect) {
         )),
         list[0],
     );
+    let capacity = usize::from(list[1].height.saturating_sub(3)).max(1);
+    let viewport = yoctui_model::centered_viewport_range(
+        (variable_count > 0).then_some(app.config_selection),
+        variable_count,
+        capacity,
+    );
     frame.render_widget(
         Table::new(
-            variables
-                .into_iter()
+            variables[viewport.clone()]
+                .iter()
                 .enumerate()
                 .map(|(index, (name, value))| {
+                    let index = viewport.start + index;
                     Row::new(vec![Cell::from(name.as_str()), Cell::from(value.as_str())])
                         .style(selected_style(app, index == app.config_selection))
                 }),
@@ -20498,6 +20690,27 @@ mod tests {
             .content
             .iter()
             .map(|cell| cell.symbol())
+            .collect()
+    }
+
+    fn rendered_region_rows(
+        width: u16,
+        height: u16,
+        mut render: impl FnMut(&mut Frame<'_>, Rect),
+    ) -> Vec<String> {
+        let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+        terminal
+            .draw(|frame| {
+                let area = frame.area();
+                render(frame, area);
+            })
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .chunks(usize::from(width))
+            .map(|row| row.iter().map(|cell| cell.symbol()).collect::<String>())
             .collect()
     }
 
@@ -30942,6 +31155,148 @@ mod tests {
             assert!(output.contains("busybox"), "{output}");
         }
         assert!(rendered_text(&app, 50, 16).contains("needs at least 80x24"));
+    }
+
+    #[test]
+    fn ux_scrollable_collection_matrix_keeps_the_last_highlighted_row_visible() {
+        let package_request = yoctui_model::PackageInventoryRequest { generation: 1 };
+        let packages = (0..40)
+            .map(|index| yoctui_model::PackageSummary {
+                identity: PackageIdentity::new(format!("package-{index:02}")),
+                recipe: PackageField::Available(format!("recipe-{index:02}")),
+                provider: PackageField::Unavailable,
+                version: PackageField::Available("1.0".into()),
+                installed_size_bytes: PackageField::Available(index),
+                license: PackageField::Available("MIT".into()),
+                image_membership: PackageField::Unavailable,
+            })
+            .collect::<Vec<_>>();
+        let mut packages_app = App::new(10, 1_000);
+        packages_app.package_selection = Some(PackageIdentity::new("package-39"));
+        packages_app.package_inventory = PackageInventoryState::Available {
+            request: package_request,
+            packages,
+        };
+        let package_rows = rendered_region_rows(90, 12, |frame, area| {
+            packages_workspace(frame, &packages_app, area)
+        });
+        assert!(
+            package_rows.iter().any(|row| row.contains("package-39")),
+            "{}",
+            package_rows.join("\n")
+        );
+        assert!(!package_rows.iter().any(|row| row.contains("package-00")));
+
+        let artifacts = (0..40)
+            .map(|index| {
+                let identity = yoctui_model::ImageArtifactIdentity {
+                    machine: "qemux86-64".into(),
+                    image: format!("scroll-image-{index:02}"),
+                    path: format!("/deploy/scroll-image-{index:02}.ext4").into(),
+                };
+                yoctui_model::ImageArtifact {
+                    identity,
+                    kind: yoctui_model::ImageArtifactKind::RootFilesystem,
+                    size_bytes: ImageArtifactField::Available(4_096),
+                    modified_unix_seconds: ImageArtifactField::Available(1_700_000_000),
+                    checksums: ImageArtifactField::Available(Vec::new()),
+                    manifests: ImageArtifactField::Available(Vec::new()),
+                    licenses: ImageArtifactField::Available(Vec::new()),
+                    spdx: ImageArtifactField::Available(Vec::new()),
+                    wic_files: ImageArtifactField::Available(Vec::new()),
+                }
+            })
+            .collect::<Vec<_>>();
+        let mut images_app = App::new(10, 1_000);
+        images_app.image_artifact_selection = Some(artifacts.last().unwrap().identity.clone());
+        images_app.image_artifacts = ImageArtifactInventoryState::Available {
+            request: yoctui_model::ImageArtifactRequest {
+                generation: 1,
+                machine: "qemux86-64".into(),
+            },
+            inventory: yoctui_model::ImageArtifactInventory {
+                machine: "qemux86-64".into(),
+                deploy_directory: ImageArtifactField::Available("/deploy".into()),
+                artifacts,
+            },
+        };
+        let image_rows = rendered_region_rows(100, 14, |frame, area| {
+            image_artifacts_workspace(frame, &images_app, area)
+        });
+        assert!(
+            image_rows.iter().any(|row| row.contains("scroll-image-39")),
+            "{}",
+            image_rows.join("\n")
+        );
+        assert!(!image_rows.iter().any(|row| row.contains("scroll-image-00")));
+
+        let mut config_app = App::new(10, 1_000);
+        for index in 0..40 {
+            config_app.workspace.variables.insert(
+                format!("SCROLL_VARIABLE_{index:02}"),
+                format!("value-{index:02}"),
+            );
+        }
+        config_app.config_selection = 39;
+        let config_rows =
+            rendered_region_rows(100, 20, |frame, area| config(frame, &config_app, area));
+        assert!(
+            config_rows
+                .iter()
+                .take(8)
+                .any(|row| row.contains("SCROLL_VARIABLE_39")),
+            "{}",
+            config_rows.join("\n")
+        );
+
+        let signature_rows_data = (0..40)
+            .map(|index| yoctui_model::SignatureRecord {
+                identity: yoctui_model::SignatureIdentity {
+                    target: yoctui_model::SignatureTarget {
+                        recipe: "busybox".into(),
+                        task: "do_compile".into(),
+                    },
+                    hash: Some(format!("scroll-signature-{index:02}")),
+                    path: Some(format!("/build/scroll-signature-{index:02}").into()),
+                },
+                base_hash: None,
+                task_hash: None,
+                variables: Vec::new(),
+                dependencies: Vec::new(),
+            })
+            .collect::<Vec<_>>();
+        let mut signatures_app = App::new(10, 1_000);
+        signatures_app.signature_selection =
+            Some(signature_rows_data.last().unwrap().identity.clone());
+        signatures_app.signature_dump = SignatureDumpState::Available {
+            target: signature_rows_data[0].identity.target.clone(),
+            records: signature_rows_data,
+        };
+        let signature_rows = rendered_region_rows(90, 12, |frame, area| {
+            signature_records(frame, &signatures_app, area)
+        });
+        assert!(
+            signature_rows
+                .iter()
+                .any(|row| row.contains("scroll-signature-39")),
+            "{}",
+            signature_rows.join("\n")
+        );
+
+        let mut picker_app = App::new(10, 1_000);
+        picker_app
+            .dialogs
+            .push_back(Dialog::RecipeTaskPicker(yoctui_model::RecipeTaskPicker {
+                recipe: "busybox".into(),
+                tasks: (0..40)
+                    .map(|index| format!("do_scroll_{index:02}"))
+                    .collect(),
+                selection: 39,
+                force: false,
+            }));
+        let picker = rendered_text(&picker_app, 100, 30);
+        assert!(picker.contains("do_scroll_39"), "{picker}");
+        assert!(!picker.contains("do_scroll_00"), "{picker}");
     }
 
     #[test]
