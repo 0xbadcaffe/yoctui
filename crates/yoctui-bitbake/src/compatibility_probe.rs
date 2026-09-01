@@ -944,7 +944,9 @@ mod tests {
         assert!(timed_out.evidence.detail.contains("timed out"));
 
         let large_fixture = Fixture::new("#!/bin/sh\nyes x | head -c 4096\n");
-        let oversized = runner
+        let output_bound_runner =
+            CapabilityProbeRunner::with_limits(Duration::from_secs(1), 128).unwrap();
+        let oversized = output_bound_runner
             .probe(
                 &large_fixture.context(),
                 &CapabilityProbeSpec::CommandVersion {

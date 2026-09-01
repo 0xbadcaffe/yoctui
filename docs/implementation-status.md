@@ -17,7 +17,7 @@ square-dot track with cool/warning/hot threshold colors. Indeterminate running
 work uses a square throbber, waiting work uses a hollow square, and ASCII plus
 reduced-motion modes keep explicit non-circular markers. The six exact concept
 captures and deterministic PNG regression artifacts were regenerated from the
-production renderer. The workspace is version 0.1.10. Overall required registry
+production renderer. The workspace is version 0.1.11. Overall required registry
 progress is 615/615 (100.0%).
 
 M34 Rootfs Pkgdata and Selection Viewport Hardening is complete. The exact

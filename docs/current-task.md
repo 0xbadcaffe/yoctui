@@ -24,7 +24,7 @@ compact square-dot visual language while preserving exact textual authority.
 - Unicode, ASCII, no-color, and reduced-motion states preserve exact text.
 - Six exact concept captures and deterministic PNGs come from the production
   renderer.
-- Version 0.1.10 is installed and repository completion gates pass.
+- Version 0.1.11 is installed and repository completion gates pass.
 
 ## Verification
 
