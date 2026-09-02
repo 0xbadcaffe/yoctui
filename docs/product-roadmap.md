@@ -753,3 +753,19 @@ Exit criteria:
 - the narrow context menu regression proves the last row remains both visible
   and highlighted
 - focused, workspace, Clippy, documentation, roadmap, and completion gates pass
+
+## M37 — Viewport chrome polish
+
+Goal: make every important long menu communicate its current position and
+remaining scroll directions without reducing the content area.
+
+Exit criteria:
+
+- Navigator chrome shows the selected visible row and available direction
+- application/context menus show selection, total, exact visible range, and
+  available direction whenever their catalog is clipped
+- command-palette and Compatibility inventory titles use the same cue
+- cues disappear for collections that fit and remain truthful at the first,
+  middle, and final viewport
+- Unicode, ASCII/no-color, responsive, exact-golden, workspace, Clippy,
+  documentation, roadmap, and completion gates pass

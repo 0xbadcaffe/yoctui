@@ -11,6 +11,14 @@ Status values:
 
 ## Current phase
 
+M37 Viewport Chrome Polish is complete. Navigator, application/context menus,
+command-palette results, and Compatibility inventories now expose one shared,
+compact selection, exact range, and available-direction cue whenever content
+is clipped. Cues disappear when every row fits, preserve focus-trap feedback,
+use ASCII arrows when Unicode symbols are disabled, and consume no content
+column. The workspace is version 0.1.13. Overall required registry progress is
+617/617 (100.0%).
+
 M36 Bottom-edge Selection Visibility is complete. The Compatibility capability
 menu now derives a centered viewport from the selected stable capability and
 the exact border/header-adjusted table capacity instead of passing the complete

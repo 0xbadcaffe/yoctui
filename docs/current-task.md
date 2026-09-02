@@ -2,39 +2,35 @@
 
 ## Task
 
-**ID:** UX-SELECTION-VIEWPORT-002
-**Title:** Keep every menu selection visible at the bottom edge
+**ID:** UX-VIEWPORT-CUES-001
+**Title:** Polish long-menu viewport feedback
 **Status:** DONE
 
 ## Objective
 
-Every independently clipped menu must derive its visible rows from the current
-stable selection and the actual rendered capacity.
+Long Navigator, menu, palette, and Compatibility collections communicate the
+current selection and available scroll directions in compact title chrome.
 
 ## Dependencies
 
-- UX-DOT-METERS-001 — DONE
+- UX-SELECTION-VIEWPORT-002 — DONE
 
 ## Definition of done
 
-- The Compatibility capability inventory follows the selected stable identity
-  through the last row.
-- Viewport capacity accounts for the table border and header.
-- The title reports the exact visible range and filtered inventory size.
-- Full-inventory and narrow context-menu regressions prove the last highlighted
-  row remains visible.
-- Daemon IPC retries signal-interrupted reads so release validation and live
-  sessions do not disconnect on a transient `EINTR`.
-- PTY control responses allow the child termination deadline to complete under
-  load instead of timing out first.
-- Version 0.1.12 is installed and repository completion gates pass.
+- One render-only helper derives truthful one-based selection/range cues.
+- Navigator shows a compact cue only while its visible rows overflow.
+- application/context menus, command palette results, and Compatibility
+  capability inventory expose consistent clipped-collection cues.
+- first, middle, final, fitting, Unicode, and ASCII/no-color cases are covered.
+- Version 0.1.13 is installed and repository completion gates pass.
 
 ## Verification
 
 ```bash
 cargo test -p yoctui-ui tests::ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_states -- --exact
-cargo test -p yoctui-ui tests::ux_scrollable_collection_matrix_keeps_the_last_highlighted_row_visible -- --exact
+cargo test -p yoctui-ui tests::ux_viewport_chrome_reports_position_and_available_directions -- --exact
 cargo test -p yoctui-ui
+./scripts/verify-m22-concept-parity.sh
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh
@@ -42,8 +38,10 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-completion.sh
 ```
 
-The model remains the owner of selection. The renderer recomputes the bounded
-viewport after every selection, filter, inventory replacement, and resize. The
-completion gate also exposed and now covers an interrupted IPC read that could
-otherwise reset a healthy daemon connection, plus a PTY control deadline that
-was shorter than the child termination operation it awaited.
+Selection and scrolling remain model-owned. The UI helper receives only the
+resolved selection, viewport, total, and presentation mode; it owns no state.
+
+Navigator, application/context menus, command-palette results, and the
+Compatibility inventory now share truthful overflow-only viewport chrome.
+First, middle, final, fitting, Unicode, and ASCII/no-color states are covered
+without taking a content column. Version 0.1.13 passes the required gates.

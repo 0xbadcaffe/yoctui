@@ -569,6 +569,13 @@ Indicators are derived from retained length, viewport, selection, and offset;
 they do not imply access to evicted content. Follow mode pins the log indicator
 to the retained tail, while paused mode preserves its exact position.
 
+Primary navigation, catalog menus, the command palette, and long inventory
+tables use one compact viewport cue: the current one-based selection, the
+retained total, and only the vertical arrows that currently lead to additional
+rows. Wide menu and inventory titles may also include the exact visible row
+range. The cue lives in border/title chrome, never steals a data column, and is
+omitted when the complete collection fits.
+
 #### Empty, loading, unavailable, and error states
 
 All workspaces use the same textual state grammar:

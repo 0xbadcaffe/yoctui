@@ -466,6 +466,47 @@ impl BoundedScrollIndicator {
             format!("{up}{down} {first}-{last}/{}", self.total)
         }
     }
+
+    /// Compact title chrome for a clipped, selection-owned collection.
+    ///
+    /// The cue is absent when every retained row fits. `selection` is a
+    /// zero-based retained index; invalid values are clamped to the final row
+    /// so rendering can never advertise a position outside the collection.
+    pub fn title_label(
+        self,
+        selection: Option<usize>,
+        detailed: bool,
+        unicode: bool,
+    ) -> Option<String> {
+        if !self.is_scrollable() || self.total == 0 {
+            return None;
+        }
+        let selected = selection
+            .unwrap_or(self.offset)
+            .min(self.total.saturating_sub(1))
+            .saturating_add(1);
+        let last = self.offset.saturating_add(self.viewport).min(self.total);
+        let up = self.offset > 0;
+        let down = last < self.total;
+        let directions = match (up, down, unicode) {
+            (true, true, true) => "↑↓",
+            (true, false, true) => "↑",
+            (false, true, true) => "↓",
+            (true, true, false) => "^v",
+            (true, false, false) => "^",
+            (false, true, false) => "v",
+            (false, false, _) => "",
+        };
+        if detailed {
+            Some(format!(
+                "{selected}/{} · {directions} · rows {}–{last}",
+                self.total,
+                self.offset.saturating_add(1)
+            ))
+        } else {
+            Some(format!("{selected}/{} {directions}", self.total))
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -1072,6 +1113,22 @@ mod tests {
         assert_eq!(BoundedScrollIndicator::new(0, 5, 12).label(), " ↓ 1-5/12");
         assert_eq!(BoundedScrollIndicator::new(0, 5, 0).label(), "0/0");
         assert!(!BoundedScrollIndicator::new(0, 20, 4).is_scrollable());
+        assert_eq!(
+            BoundedScrollIndicator::new(0, 5, 12).title_label(Some(2), true, true),
+            Some("3/12 · ↓ · rows 1–5".into())
+        );
+        assert_eq!(
+            BoundedScrollIndicator::new(4, 5, 12).title_label(Some(6), true, true),
+            Some("7/12 · ↑↓ · rows 5–9".into())
+        );
+        assert_eq!(
+            BoundedScrollIndicator::new(99, 5, 12).title_label(Some(99), true, false),
+            Some("12/12 · ^ · rows 8–12".into())
+        );
+        assert_eq!(
+            BoundedScrollIndicator::new(0, 20, 4).title_label(Some(0), true, true),
+            None
+        );
     }
 
     #[test]

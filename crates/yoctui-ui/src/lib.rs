@@ -3276,8 +3276,6 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         .saturating_sub(visible_count / 2)
         .min(maximum_start);
     let end = start.saturating_add(visible_count).min(total);
-    let current = if total == 0 { 0 } else { selection + 1 };
-    let window_start = if total == 0 { 0 } else { start + 1 };
     let result_label = if global_search { "Results" } else { "Commands" };
     let content_state = match &app.global_search_content {
         yoctui_model::GlobalSearchContentState::Loading { .. } if global_search => " · scanning…",
@@ -3287,8 +3285,17 @@ fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         yoctui_model::GlobalSearchContentState::Failed { .. } if global_search => " · scan failed",
         _ => "",
     };
-    let list_title =
-        format!("{result_label} · {current}/{total} · rows {window_start}–{end}{content_state}");
+    let viewport_cue = BoundedScrollIndicator::new(start, end.saturating_sub(start), total)
+        .title_label(
+            (total > 0).then_some(selection),
+            true,
+            app.preferences.symbols == SymbolPreference::Unicode,
+        );
+    let match_label = if total == 1 { "match" } else { "matches" };
+    let list_title = viewport_cue.map_or_else(
+        || format!("{result_label} · {total} {match_label}{content_state}"),
+        |cue| format!("{result_label} · {cue}{content_state}"),
+    );
     let list_block = Block::default()
         .title(list_title)
         .borders(Borders::ALL)
@@ -4327,15 +4334,16 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
     }
 
     let expected_visible = usize::from(area.height.saturating_sub(2));
-    let title = if app.navigator_visible_row_count() > expected_visible {
-        format!(
-            "Navigator {}/{}",
-            app.navigator_visual_row() + 1,
-            app.navigator_visible_row_count()
+    let total = app.navigator_visible_row_count();
+    let start = app.navigator_viewport_start(expected_visible);
+    let indicator = BoundedScrollIndicator::new(start, expected_visible, total);
+    let title = indicator
+        .title_label(
+            Some(app.navigator_visual_row()),
+            false,
+            app.preferences.symbols == SymbolPreference::Unicode,
         )
-    } else {
-        "Navigator".into()
-    };
+        .map_or_else(|| "Navigator".into(), |cue| format!("Navigator · {cue}"));
     let block = pane_block(app, &title, app.focus == FocusTarget::Navigator);
     let inner = block.inner(area);
     frame.render_widget(block, area);
@@ -14100,19 +14108,30 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
         )),
         capabilities[0],
     );
-    let first_visible = if !viewport.is_empty() {
-        viewport.start + 1
-    } else {
-        0
-    };
-    let table_title = format!(
-        "Capabilities · {} · rows {}–{} of {} · {}/{} match",
-        compatibility_filter_label(app.compatibility_ui.filter),
-        first_visible,
-        viewport.end,
-        projection.rows.len(),
-        projection.rows.len(),
-        projection.total_capabilities,
+    let viewport_cue =
+        BoundedScrollIndicator::new(viewport.start, viewport.len(), projection.rows.len())
+            .title_label(
+                filtered_selection,
+                true,
+                app.preferences.symbols == SymbolPreference::Unicode,
+            );
+    let table_title = viewport_cue.map_or_else(
+        || {
+            format!(
+                "Capabilities · {} · {}/{} match",
+                compatibility_filter_label(app.compatibility_ui.filter),
+                projection.rows.len(),
+                projection.total_capabilities,
+            )
+        },
+        |cue| {
+            format!(
+                "Capabilities · {} · {cue} · {}/{} match",
+                compatibility_filter_label(app.compatibility_ui.filter),
+                projection.rows.len(),
+                projection.total_capabilities,
+            )
+        },
     );
     frame.render_widget(
         Table::new(
@@ -14773,6 +14792,16 @@ fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
     let start = selected
         .saturating_sub(visible / 2)
         .min(items.len().saturating_sub(visible));
+    let catalog_title = BoundedScrollIndicator::new(start, visible, items.len())
+        .title_label(
+            (!items.is_empty()).then_some(selected),
+            true,
+            app.preferences.symbols == SymbolPreference::Unicode,
+        )
+        .map_or_else(
+            || "Catalog actions".into(),
+            |cue| format!("Catalog actions · {cue}"),
+        );
     let rows = items
         .iter()
         .enumerate()
@@ -14817,11 +14846,7 @@ fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
             Row::new(["Action", "Shortcut", "Safety", "Availability"])
                 .style(palette.role(palette.heading, Modifier::BOLD)),
         )
-        .block(
-            Block::default()
-                .title("Catalog actions")
-                .borders(Borders::ALL),
-        ),
+        .block(Block::default().title(catalog_title).borders(Borders::ALL)),
         regions[1],
     );
 
@@ -14873,11 +14898,24 @@ fn application_menu_overlay(
         .min(area.height.saturating_sub(8));
     let popup = Rect::new(40.min(area.width.saturating_sub(width)), 5, width, height);
     clear_popup(frame, app, popup);
-    let outer = dialog_block(
-        app,
-        "Application menu · focus trapped",
-        DialogTone::Standard,
+    let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
+    let item_viewport_height = usize::from(height.saturating_sub(5)).max(1);
+    let viewport = yoctui_model::centered_viewport_range(
+        (!items.is_empty()).then_some(selected),
+        items.len(),
+        item_viewport_height,
     );
+    let title = BoundedScrollIndicator::new(viewport.start, viewport.len(), items.len())
+        .title_label(
+            (!items.is_empty()).then_some(selected),
+            true,
+            app.preferences.symbols == SymbolPreference::Unicode,
+        )
+        .map_or_else(
+            || "Application menu · focus trapped".into(),
+            |cue| format!("Application menu · {cue} · focus trapped"),
+        );
+    let outer = dialog_block(app, title, DialogTone::Standard);
     let inner = outer.inner(popup);
     frame.render_widget(outer, popup);
     if inner.is_empty() {
@@ -14909,12 +14947,7 @@ fn application_menu_overlay(
         Paragraph::new(vec![Line::from(groups), Line::from(prefix)]),
         regions[0],
     );
-    let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
-    let viewport = yoctui_model::centered_viewport_range(
-        (!items.is_empty()).then_some(selected),
-        items.len(),
-        usize::from(regions[1].height).max(1),
-    );
+    debug_assert_eq!(item_viewport_height, usize::from(regions[1].height).max(1));
     let rows = items[viewport.clone()]
         .iter()
         .enumerate()
@@ -22159,7 +22192,7 @@ mod tests {
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = 21;
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Navigator 27/27"), "{output}");
+        assert!(output.contains("Navigator · 27/27 ↑"), "{output}");
         assert!(output.contains("Settings"), "{output}");
     }
 
@@ -22899,6 +22932,71 @@ mod tests {
         assert!(
             bottom.contains(&selected_prefix),
             "last menu row {last_label:?} lost its highlight: {bottom}"
+        );
+    }
+
+    #[test]
+    fn ux_viewport_chrome_reports_position_and_available_directions() {
+        let mut navigator_app = App::new(10, 1_000);
+        navigator_app.focus = FocusTarget::Navigator;
+        let total_navigation_rows = navigator_app.navigator_visible_row_count();
+        let first_navigation_row = navigator_app.navigator_visual_row() + 1;
+        let top = rendered_text(&navigator_app, 80, 24);
+        assert!(
+            top.contains(&format!(
+                "Navigator · {first_navigation_row}/{total_navigation_rows} ↓"
+            )),
+            "{top}"
+        );
+
+        navigator_app.navigator_selection = 21;
+        let bottom = rendered_text(&navigator_app, 80, 24);
+        assert!(
+            bottom.contains(&format!(
+                "Navigator · {total_navigation_rows}/{total_navigation_rows} ↑"
+            )),
+            "{bottom}"
+        );
+        navigator_app.preferences.symbols = SymbolPreference::Ascii;
+        let ascii = rendered_text(&navigator_app, 80, 24);
+        assert!(
+            ascii.contains(&format!(
+                "Navigator · {total_navigation_rows}/{total_navigation_rows} ^"
+            )),
+            "{ascii}"
+        );
+
+        let mut palette_app = App::new(10, 1_000);
+        palette_app.command_palette_open = true;
+        palette_app.focus = FocusTarget::CommandPalette;
+        let command_count = palette_app.command_palette_commands().len();
+        palette_app.command_palette_selection = command_count.saturating_sub(1);
+        let palette = rendered_text(&palette_app, 80, 24);
+        assert!(
+            palette.contains(&format!(
+                "Commands · {command_count}/{command_count} · ↑ · rows"
+            )),
+            "{palette}"
+        );
+
+        palette_app.command_palette_query = "Open Settings".into();
+        palette_app.command_palette_selection = 0;
+        let fitting = rendered_text(&palette_app, 80, 24);
+        assert!(fitting.contains("Commands · 1 match"), "{fitting}");
+        assert!(!fitting.contains("Commands · 1/1 · rows"), "{fitting}");
+
+        let mut menu_app = App::new(10, 1_000);
+        menu_app.screen = Screen::Recipes;
+        menu_app.workspace.build_dir = Some("/work/build".into());
+        let _ = update(&mut menu_app, Action::OpenContextMenu);
+        let menu_count = menu_app.active_menu_items().len();
+        let _ = update(&mut menu_app, Action::SelectMenuItem { delta: isize::MAX });
+        let menu = rendered_text(&menu_app, 80, 24);
+        assert!(
+            menu.contains(&format!(
+                "Catalog actions · {menu_count}/{menu_count} · ↑ · rows"
+            )),
+            "{menu}"
         );
     }
 
@@ -26760,7 +26858,7 @@ mod tests {
             for expected in [
                 "Command Palette · focus trapped",
                 "[EDITING]",
-                "Commands · 1/1 · rows 1–1",
+                "Commands · 1 match",
                 "Open Dashboard",
                 "Esc",
                 "✓ Ready",
@@ -26812,7 +26910,7 @@ mod tests {
 
         app.command_palette_query = "nothing matches this".repeat(20);
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Commands · 0/0 · rows 0–0"), "{output}");
+        assert!(output.contains("Commands · 0 matches"), "{output}");
         assert!(
             output.contains("No commands match this search."),
             "{output}"
@@ -31374,6 +31472,14 @@ mod tests {
             !compatibility_rows
                 .iter()
                 .any(|row| row.contains(first_capability)),
+            "{}",
+            compatibility_rows.join("\n")
+        );
+        assert!(
+            compatibility_rows.join("\n").contains(&format!(
+                "{0}/{0} · ↑ · rows",
+                yoctui_model::CapabilityId::ALL.len()
+            )),
             "{}",
             compatibility_rows.join("\n")
         );
