@@ -10,8 +10,8 @@ readme.workspace = true
 description = "Ratatui rendering layer for Yoctui"
 publish = ["crates-io"]
 [dependencies]
-yoctui-app = { version = "0.1.11", path = "../yoctui-app" }
-yoctui-model = { version = "0.1.11", path = "../yoctui-model" }
+yoctui-app = { version = "0.1.12", path = "../yoctui-app" }
+yoctui-model = { version = "0.1.12", path = "../yoctui-model" }
 ratatui.workspace = true
 throbber-widgets-tui.workspace = true
 tui-piechart.workspace = true

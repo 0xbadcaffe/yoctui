@@ -13,8 +13,8 @@ publish = ["crates-io"]
 test-fixtures = []
 [dependencies]
 async-trait.workspace = true
-yoctui-model = { version = "0.1.11", path = "../yoctui-model" }
-yoctui-protocol = { version = "0.1.11", path = "../yoctui-protocol" }
+yoctui-model = { version = "0.1.12", path = "../yoctui-model" }
+yoctui-protocol = { version = "0.1.12", path = "../yoctui-protocol" }
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true

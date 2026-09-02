@@ -10,6 +10,6 @@ libc.workspace = true
 
 [dev-dependencies]
 ratatui.workspace = true
-yoctui-app = { version = "0.1.11", path = "../yoctui-app" }
-yoctui-model = { version = "0.1.11", path = "../yoctui-model" }
-yoctui-ui = { version = "0.1.11", path = "../yoctui-ui" }
+yoctui-app = { version = "0.1.12", path = "../yoctui-app" }
+yoctui-model = { version = "0.1.12", path = "../yoctui-model" }
+yoctui-ui = { version = "0.1.12", path = "../yoctui-ui" }

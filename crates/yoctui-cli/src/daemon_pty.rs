@@ -18,6 +18,8 @@ use yoctui_protocol::daemon::{
 use crate::pty_attach::{DaemonPtySession, PtyAttachEvent};
 
 const PTY_SCREEN_MIN_INTERVAL: Duration = Duration::from_millis(33);
+const PTY_TERMINATION_TIMEOUT: Duration = Duration::from_secs(2);
+const PTY_CONTROL_RESPONSE_TIMEOUT: Duration = Duration::from_secs(5);
 const GENERIC_PTY_ID_LIMIT: u64 = 1 << 60;
 const RAW_PTY_NAMESPACE: u64 = 6 << 60;
 
@@ -195,7 +197,7 @@ impl DaemonPtySupervisor {
                 spec,
                 inherited_environment(),
                 2_000,
-                Duration::from_secs(2),
+                PTY_TERMINATION_TIMEOUT,
             )
             .await
             {
@@ -391,7 +393,7 @@ impl DaemonPtySupervisor {
             .control
             .send((control, tx))
             .map_err(|_| "PTY session is no longer active".to_string())?;
-        rx.recv_timeout(Duration::from_secs(1))
+        rx.recv_timeout(PTY_CONTROL_RESPONSE_TIMEOUT)
             .map_err(|_| "PTY session command timed out".to_string())?
     }
 }
@@ -574,6 +576,11 @@ fn terminal_color_to_wire(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pty_control_deadline_outlives_child_termination_deadline() {
+        assert!(PTY_CONTROL_RESPONSE_TIMEOUT > PTY_TERMINATION_TIMEOUT);
+    }
 
     #[test]
     fn resource_limits_reject_oversized_pty_dimensions() {

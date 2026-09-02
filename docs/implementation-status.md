@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+M36 Bottom-edge Selection Visibility is complete. The Compatibility capability
+menu now derives a centered viewport from the selected stable capability and
+the exact border/header-adjusted table capacity instead of passing the complete
+inventory to a top-anchored clipped table. Its title reports the visible row
+range, and full-inventory plus narrow context-menu regressions prove the final
+highlighted row stays visible. A release-gate `EINTR` also identified a daemon
+IPC read that needed a transparent retry; a deterministic reader regression
+now covers it. PTY control replies also now outlive their child-termination
+deadline under load. The workspace is version 0.1.12. Overall required
+registry progress is 616/616 (100.0%).
+
 M35 Segmented Workbench Meters is complete. CPU, RAM, build filesystem,
 overall build, task, and reusable semantic progress now share an original
 square-dot track with cool/warning/hot threshold colors. Indeterminate running

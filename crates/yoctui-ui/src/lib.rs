@@ -14065,7 +14065,12 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .rows
         .iter()
         .position(|row| projection.selected == Some(row.id));
-    let rows = projection.rows.iter().map(|row| {
+    let capabilities =
+        Layout::vertical([Constraint::Length(1), Constraint::Min(4)]).split(sections[1]);
+    let capacity = usize::from(capabilities[1].height.saturating_sub(3)).max(1);
+    let viewport =
+        yoctui_model::centered_viewport_range(filtered_selection, projection.rows.len(), capacity);
+    let rows = projection.rows[viewport.clone()].iter().map(|row| {
         let implementation = row
             .implementation
             .as_ref()
@@ -14082,8 +14087,6 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ])
         .style(style)
     });
-    let capabilities =
-        Layout::vertical([Constraint::Length(1), Constraint::Min(4)]).split(sections[1]);
     frame.render_widget(
         Paragraph::new(search_line(
             app,
@@ -14097,9 +14100,17 @@ fn compatibility_workspace(frame: &mut Frame, app: &App, area: Rect) {
         )),
         capabilities[0],
     );
+    let first_visible = if !viewport.is_empty() {
+        viewport.start + 1
+    } else {
+        0
+    };
     let table_title = format!(
-        "Capabilities · {} · {}/{} visible",
+        "Capabilities · {} · rows {}–{} of {} · {}/{} match",
         compatibility_filter_label(app.compatibility_ui.filter),
+        first_visible,
+        viewport.end,
+        projection.rows.len(),
         projection.rows.len(),
         projection.total_capabilities,
     );
@@ -22875,6 +22886,20 @@ mod tests {
         assert!(output.contains("confirm"), "{output}");
         assert!(output.contains("Select a recipe first."), "{output}");
         assert!(output.contains("> Build selected reci"), "{output}");
+
+        let last_label = app
+            .active_menu_items()
+            .last()
+            .expect("recipe context menu item")
+            .label
+            .to_owned();
+        let _ = update(&mut app, Action::SelectMenuItem { delta: isize::MAX });
+        let bottom = rendered_text(&app, 80, 24);
+        let selected_prefix = format!("> {}", last_label.chars().take(12).collect::<String>());
+        assert!(
+            bottom.contains(&selected_prefix),
+            "last menu row {last_label:?} lost its highlight: {bottom}"
+        );
     }
 
     #[test]
@@ -31294,6 +31319,64 @@ mod tests {
         let picker = rendered_text(&picker_app, 100, 30);
         assert!(picker.contains("do_scroll_39"), "{picker}");
         assert!(!picker.contains("do_scroll_00"), "{picker}");
+
+        let mut compatibility_app = compatibility_ui_inspector_app();
+        let mut authority = compatibility_app
+            .workspace_compatibility
+            .authority()
+            .expect("compatibility fixture authority")
+            .clone();
+        authority.snapshot.generation += 1;
+        authority.snapshot.capabilities = yoctui_model::CapabilityId::ALL
+            .into_iter()
+            .map(|id| yoctui_model::CapabilityRecord {
+                id,
+                state: yoctui_model::CapabilityState::Unknown {
+                    reason: yoctui_model::CapabilityReason::new(
+                        "test.inconclusive",
+                        "Bounded viewport test evidence is intentionally inconclusive.",
+                        None,
+                    )
+                    .unwrap(),
+                },
+                evidence: Vec::new(),
+            })
+            .collect();
+        authority.implementations.clear();
+        let authority = authority.normalize().unwrap();
+        yoctui_model::install_workspace_compatibility(&mut compatibility_app, authority).unwrap();
+        let authority = compatibility_app
+            .workspace_compatibility
+            .authority()
+            .cloned();
+        compatibility_app
+            .compatibility_ui
+            .select(isize::MAX, authority.as_ref());
+        let last_capability = yoctui_model::CapabilityId::ALL
+            .last()
+            .expect("capability inventory")
+            .as_str();
+        let first_capability = yoctui_model::CapabilityId::ALL
+            .first()
+            .expect("capability inventory")
+            .as_str();
+        let compatibility_rows = rendered_region_rows(100, 24, |frame, area| {
+            compatibility_workspace(frame, &compatibility_app, area)
+        });
+        assert!(
+            compatibility_rows
+                .iter()
+                .any(|row| row.contains(last_capability)),
+            "{}",
+            compatibility_rows.join("\n")
+        );
+        assert!(
+            !compatibility_rows
+                .iter()
+                .any(|row| row.contains(first_capability)),
+            "{}",
+            compatibility_rows.join("\n")
+        );
     }
 
     #[test]

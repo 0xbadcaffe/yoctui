@@ -737,3 +737,19 @@ Exit criteria:
 - Unicode, ASCII, no-color, and reduced-motion modes preserve exact text
 - exact cell goldens and all six deterministic production screenshots prove
   the real renderer, not a separate mockup
+
+## M36 — Bottom-edge selection visibility
+
+Goal: every scrollable menu keeps its highlighted selection visible through
+the final row, including inventories larger than the rendered table.
+
+Exit criteria:
+
+- Compatibility capabilities use a selection-aware viewport sized from the
+  table's real border/header-adjusted capacity
+- the capability title reports the exact visible row range and filtered total
+- a full capability inventory regression reaches the last stable identity and
+  proves that the first page has scrolled away
+- the narrow context menu regression proves the last row remains both visible
+  and highlighted
+- focused, workspace, Clippy, documentation, roadmap, and completion gates pass

@@ -279,7 +279,7 @@ impl DaemonConnection {
             }
 
             let mut chunk = [0_u8; 16 * 1024];
-            match self.stream.read(&mut chunk).map_err(map_timeout) {
+            match read_retrying_interrupts(&mut self.stream, &mut chunk).map_err(map_timeout) {
                 Ok(0) => return Err(IpcError::Disconnected),
                 Ok(read) => self.pending.extend_from_slice(&chunk[..read]),
                 Err(error) => return Err(error),
@@ -289,6 +289,15 @@ impl DaemonConnection {
 
     pub fn peer_uid(&self) -> Result<u32, IpcError> {
         peer_uid(&self.stream)
+    }
+}
+
+fn read_retrying_interrupts(reader: &mut impl Read, buffer: &mut [u8]) -> Result<usize, io::Error> {
+    loop {
+        match reader.read(buffer) {
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
+            result => return result,
+        }
     }
 }
 
@@ -447,6 +456,21 @@ mod tests {
     use crate::daemon::ClientMessage;
     use std::sync::mpsc;
 
+    struct InterruptOnce<R> {
+        inner: R,
+        interrupted: bool,
+    }
+
+    impl<R: Read> Read for InterruptOnce<R> {
+        fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+            if !self.interrupted {
+                self.interrupted = true;
+                return Err(io::Error::from(io::ErrorKind::Interrupted));
+            }
+            self.inner.read(buffer)
+        }
+    }
+
     fn test_paths(name: &str) -> RuntimePaths {
         let root = env::temp_dir().join(format!(
             "yoctui-daemon-ipc-{name}-{}-{}",
@@ -466,6 +490,21 @@ mod tests {
         if let Some(root) = paths.directory.parent() {
             let _ = fs::remove_dir(root);
         }
+    }
+
+    #[test]
+    fn daemon_ipc_retries_interrupted_reads_without_losing_bytes() {
+        let mut reader = InterruptOnce {
+            inner: io::Cursor::new(b"frame"),
+            interrupted: false,
+        };
+        let mut buffer = [0_u8; 5];
+
+        assert_eq!(
+            read_retrying_interrupts(&mut reader, &mut buffer).unwrap(),
+            buffer.len()
+        );
+        assert_eq!(&buffer, b"frame");
     }
 
     #[test]
