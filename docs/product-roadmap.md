@@ -769,3 +769,20 @@ Exit criteria:
   middle, and final viewport
 - Unicode, ASCII/no-color, responsive, exact-golden, workspace, Clippy,
   documentation, roadmap, and completion gates pass
+
+## M38 — Braille activity and Rootfs chart polish
+
+Goal: use the admitted third-party widget vocabularies consistently for active
+work and image composition while retaining exact accessible evidence.
+
+Exit criteria:
+
+- every animated Unicode activity marker uses
+  `throbber-widgets-tui::BRAILLE_EIGHT_DOUBLE` through one stateless adapter
+- ASCII, reduced-motion, and terminal lifecycle fallbacks remain explicit
+- wide color/Unicode Rootfs composition uses `tui-piechart` at Braille
+  resolution
+- exact byte/percentage tables and narrow/no-color/ASCII fallbacks remain
+  authoritative and visible
+- focused, exact-golden, workspace, Clippy, documentation, roadmap, and
+  completion gates pass

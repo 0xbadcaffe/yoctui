@@ -4741,8 +4741,9 @@ always includes exact numeric or numerator/denominator text. Unknown progress
 uses an indeterminate text/activity state and never a zero-percent gauge.
 Reduced motion replaces animation with stable lifecycle text.
 
-Indeterminate activity uses the reviewed four-phase `BLACK_CIRCLE` symbol set
-in Unicode terminals and the four-phase `|/-\\` set in ASCII presentation. The
+Indeterminate activity uses the reviewed eight-phase `BRAILLE_EIGHT_DOUBLE`
+symbol set in Unicode terminals and the four-phase `|/-\\` set in ASCII
+presentation. The
 phase is a pure projection of the reducer-owned animation tick and configured
 fast/slow divisor; the widget never advances itself and random stepping is not
 compiled. Every indicator remains adjacent to `loading`, `running`, `waiting`,
@@ -4799,9 +4800,10 @@ deduplicates hard links, identifies special files, and enforces entry, depth,
 byte, time, and cancellation bounds. Missing or cleaned work state is
 Unavailable; hitting a bound is Partial with the exact limitation.
 
-Wide layouts may show a pie chart, exact-byte/percentage table, legend, and
-drill-down tree. Medium layouts prefer bars plus table. Narrow, ASCII,
-no-color, and terminal-reader-oriented layouts use table/tree text. Small
+Wide color/Unicode layouts use `tui-piechart` at Braille resolution together
+with an exact-byte/percentage table, legend, and drill-down tree. Medium
+layouts prefer bars plus table. Narrow, ASCII, no-color, and
+terminal-reader-oriented layouts use table/tree text. Small
 categories combine only into an explicit inspectable `Other` group. Package
 and filesystem authorities never share a total or silently substitute for one
 another.
@@ -4946,9 +4948,10 @@ Left/Right cycle Navigator, Workspace, and Inspector in both directions; Tab and
 Shift+Tab remain aliases. Navigator h/l collapse and expand groups. An Unknown
 destination reserves marker width without printing `?`; unavailable, limited,
 and unsupported states retain their distinct markers and explanations. Compact
-task lists are left-aligned. Active rows begin with a compact circular throbber,
-falling back to `●` under reduced motion and `*` in ASCII mode; inactive rows
-retain the same indentation and unavailable totals use an em dash.
+task lists are left-aligned. Active rows begin with the shared compact
+`BRAILLE_EIGHT_DOUBLE` throbber, falling back to `⣿` under reduced motion and
+`*` in ASCII mode; inactive rows retain the same indentation and unavailable
+totals use an em dash.
 
 The persistent header gives Project, Target, Machine, and Distro values the
 informational highlight role. Daemon status includes `Local`, `SSH <client-ip>`,

@@ -2,46 +2,38 @@
 
 ## Task
 
-**ID:** UX-VIEWPORT-CUES-001
-**Title:** Polish long-menu viewport feedback
-**Status:** DONE
+**ID:** UX-BRAILLE-ACTIVITY-001
+**Title:** Standardize animated activity on Braille Eight Double
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Long Navigator, menu, palette, and Compatibility collections communicate the
-current selection and available scroll directions in compact title chrome.
+Every animated Unicode activity indicator uses the reviewed eight-frame
+`throbber-widgets-tui::BRAILLE_EIGHT_DOUBLE` set from one shared renderer.
 
 ## Dependencies
 
-- UX-SELECTION-VIEWPORT-002 — DONE
+- UX-VIEWPORT-CUES-001 — DONE
 
 ## Definition of done
 
-- One render-only helper derives truthful one-based selection/range cues.
-- Navigator shows a compact cue only while its visible rows overflow.
-- application/context menus, command palette results, and Compatibility
-  capability inventory expose consistent clipped-collection cues.
-- first, middle, final, fitting, Unicode, and ASCII/no-color cases are covered.
-- Version 0.1.13 is installed and repository completion gates pass.
+- The shared activity adapter selects `BRAILLE_EIGHT_DOUBLE` for Unicode.
+- All active task/progress call sites continue through that adapter.
+- ASCII animation remains `|/-\\` and reduced motion remains stable text.
+- Terminal success, failure, and cancellation markers never animate.
+- Focused, workspace, Clippy, documentation, and roadmap checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui tests::ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_states -- --exact
-cargo test -p yoctui-ui tests::ux_viewport_chrome_reports_position_and_available_directions -- --exact
-cargo test -p yoctui-ui
-./scripts/verify-m22-concept-parity.sh
+cargo test -p yoctui-ui ux_throbber
+cargo test -p yoctui-ui active_task_indicator
+cargo test -p yoctui-model ux_throbber
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
-./scripts/verify-completion.sh
 ```
 
-Selection and scrolling remain model-owned. The UI helper receives only the
-resolved selection, viewport, total, and presentation mode; it owns no state.
-
-Navigator, application/context menus, command-palette results, and the
-Compatibility inventory now share truthful overflow-only viewport chrome.
-First, middle, final, fitting, Unicode, and ASCII/no-color states are covered
-without taking a content column. Version 0.1.13 passes the required gates.
+Activity phase remains reducer-owned. The UI maps that immutable phase to an
+admitted symbol constant and retains no third-party widget state.

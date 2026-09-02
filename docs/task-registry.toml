@@ -6845,3 +6845,27 @@ required = true
 depends_on = ["UX-SELECTION-VIEWPORT-002"]
 verify = ["cargo test -p yoctui-ui tests::ux_viewport_chrome_reports_position_and_available_directions -- --exact", "cargo test -p yoctui-ui tests::ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_states -- --exact", "cargo test -p yoctui-ui", "./scripts/verify-m22-concept-parity.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Long collections retain their existing model-owned selection and centered viewport. Navigator, application/context menus, command-palette results, and Compatibility inventories now use one render-only overflow cue for selection, exact range, and currently available vertical directions without reducing content width. Fitting collections remain quiet, focus-trap feedback is preserved, and Unicode plus ASCII/no-color edge states are covered. Version 0.1.13 passes the required gates."
+
+# M38 — Braille activity and Rootfs chart polish.
+
+[[task]]
+id = "UX-BRAILLE-ACTIVITY-001"
+milestone = "M38"
+title = "Standardize animated activity on Braille Eight Double"
+status = "IN_PROGRESS"
+priority = 777
+required = true
+depends_on = ["UX-VIEWPORT-CUES-001"]
+verify = ["cargo test -p yoctui-ui ux_throbber", "cargo test -p yoctui-ui active_task_indicator", "cargo test -p yoctui-model ux_throbber", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "All animated Unicode activity will select the reviewed eight-frame throbber-widgets-tui BRAILLE_EIGHT_DOUBLE set through the existing stateless phase adapter. ASCII, reduced-motion, and terminal lifecycle fallbacks remain explicit."
+
+[[task]]
+id = "UX-ROOTFS-PIE-BRAILLE-001"
+milestone = "M38"
+title = "Render Rootfs composition with high-resolution tui-piechart"
+status = "NOT_STARTED"
+priority = 778
+required = true
+depends_on = ["UX-BRAILLE-ACTIVITY-001"]
+verify = ["cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo test -p yoctui-ui concept_rootfs_composition_keeps_chart_table_selection_and_tree_visible", "./scripts/verify-m22-concept-parity.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "The production Rootfs composition view already uses admitted tui-piechart 1.0.2 on wide color/Unicode layouts. This task selects the widget's Braille resolution and proves the rendered chart while retaining exact byte/percentage tables plus accessible fallbacks."

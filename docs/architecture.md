@@ -3165,9 +3165,10 @@ the projection and never correlates progress by parsing output.
 
 `yoctui_model::ActivityProjection` derives activity lifecycle and a bounded
 phase only from `App::animation_frame`, animation speed, and reduced-motion
-preference. `yoctui-ui` maps that immutable phase to admitted
-`throbber-widgets-tui` symbol constants; it never stores or mutates the crate's
-widget state. The dependency uses `default-features = false, features = [std]`,
+preference. `yoctui-ui` maps that immutable phase to the admitted
+`throbber-widgets-tui::BRAILLE_EIGHT_DOUBLE` symbol constant for Unicode and
+its ASCII set otherwise; it never stores or mutates the crate's widget state.
+The dependency uses `default-features = false, features = [std]`,
 so its random stepping path is absent. ASCII and terminal markers are selected
 at render time without changing the model authority.
 
@@ -3304,7 +3305,8 @@ the logical filesystem. Tab and Shift-Tab wrap without replacing the selected
 image; category, package, and path movement remains reducer-owned and the CLI
 starts acquisition only through the existing correlated effect. The UI admits
 the pinned MIT `tui-piechart` 1.0.2 crate with default features disabled only
-for sufficiently wide color layouts. Every pie is paired with exact byte,
+for sufficiently wide color/Unicode layouts and selects its high-resolution
+Braille renderer. Every pie is paired with exact byte,
 percentage, count, and membership text; narrow, monochrome, no-color, and
 reader-oriented projections use deterministic bars, tables, and trees. No
 widget reads the filesystem or owns selection, scrolling, grouping, or totals.

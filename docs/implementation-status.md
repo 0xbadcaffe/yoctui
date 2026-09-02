@@ -11,6 +11,13 @@ Status values:
 
 ## Current phase
 
+M38 Braille Activity and Rootfs Chart Polish is in progress. Animated Unicode
+activity will move from the square set to the admitted eight-frame double
+Braille set, and the existing `tui-piechart` Rootfs integration will use its
+high-resolution Braille renderer. ASCII, reduced-motion, exact-table, and
+reader-oriented fallbacks remain authoritative. Overall required registry
+progress is 617/619 (99.7%).
+
 M37 Viewport Chrome Polish is complete. Navigator, application/context menus,
 command-palette results, and Compatibility inventories now expose one shared,
 compact selection, exact range, and available-direction cue whenever content
