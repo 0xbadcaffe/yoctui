@@ -11,13 +11,14 @@ Status values:
 
 ## Current phase
 
-M38 Braille Activity and Rootfs Chart Polish is in progress. Animated Unicode
-activity now uses the admitted eight-frame `BRAILLE_EIGHT_DOUBLE` set through
-the shared stateless phase adapter, with explicit ASCII, reduced-motion, and
-terminal-state fallbacks. The existing `tui-piechart` Rootfs integration is
-next moving to its high-resolution Braille renderer while exact-table and
-reader-oriented fallbacks remain authoritative. The workspace is version
-0.1.14. Overall required registry progress is 618/619 (99.8%).
+M38 Braille Activity and Rootfs Chart Polish is complete. Animated Unicode
+activity uses the admitted eight-frame `BRAILLE_EIGHT_DOUBLE` set through the
+shared stateless phase adapter, with explicit ASCII, reduced-motion, and
+terminal-state fallbacks. Wide color/Unicode Rootfs composition uses the
+admitted `tui-piechart` widget's high-resolution Braille renderer while exact
+byte/percentage tables and reader-oriented fallbacks remain authoritative.
+The workspace is version 0.1.15. Overall required registry progress is 619/619
+(100.0%).
 
 M37 Viewport Chrome Polish is complete. Navigator, application/context menus,
 command-palette results, and Compatibility inventories now expose one shared,

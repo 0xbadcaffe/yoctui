@@ -4,7 +4,7 @@
 
 **ID:** UX-ROOTFS-PIE-BRAILLE-001
 **Title:** Render Rootfs composition with high-resolution tui-piechart
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 

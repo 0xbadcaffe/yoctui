@@ -31,7 +31,7 @@ use std::{
     path::Path,
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
-use tui_piechart::{LegendPosition, PieChart, PieSlice};
+use tui_piechart::{LegendPosition, PieChart, PieSlice, Resolution};
 use tui_term::widget::PseudoTerminal;
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
@@ -13010,6 +13010,7 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
         frame.render_widget(
             PieChart::new(slices)
                 .block(Block::bordered().title("Installed bytes · chart"))
+                .resolution(Resolution::Braille)
                 .show_percentages(true)
                 .show_legend(true)
                 .legend_position(LegendPosition::Bottom),
@@ -23656,6 +23657,13 @@ mod tests {
         assert!(wide.contains("remains inspectable"), "{wide}");
         assert!(wide.contains("56320"), "{wide}");
         assert!(wide.contains("exact bytes"), "{wide}");
+        assert!(
+            wide.chars()
+                .filter(|glyph| ('\u{2801}'..='\u{28ff}').contains(glyph))
+                .count()
+                > 8,
+            "the wide production chart must contain tui-piechart Braille cells: {wide}"
+        );
 
         app.theme = Theme::Monochrome;
         app.color_enabled = false;
@@ -23666,6 +23674,20 @@ mod tests {
             assert!(output.contains("Other"), "{output}");
             assert!(!output.contains("Installed bytes · chart"), "{output}");
         }
+
+        app.theme = Theme::DarkPro;
+        app.color_enabled = true;
+        app.preferences.symbols = SymbolPreference::Ascii;
+        let ascii = rendered_text(&app, 100, 30);
+        assert!(ascii.contains("Installed-package authority"), "{ascii}");
+        assert!(ascii.contains("Exact bytes"), "{ascii}");
+        assert!(!ascii.contains("Installed bytes · chart"), "{ascii}");
+        assert!(
+            !ascii
+                .chars()
+                .any(|glyph| ('\u{2800}'..='\u{28ff}').contains(&glyph)),
+            "ASCII fallback must not depend on Braille chart cells: {ascii}"
+        );
     }
 
     #[test]
