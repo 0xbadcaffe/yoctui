@@ -41,15 +41,16 @@ use yoctui_model::{
     DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog,
     FUNCTION_SHORTCUTS, FocusTarget, FunctionKey, FunctionShortcutRoute, GitFileState,
-    ImageArtifactField, ImageArtifactInventoryState, ImagesView, InternalLogLevel,
-    JobHistoryRowRef, LayerBrowser, LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView,
-    MaintenanceCapability, MaintenanceCapabilitySnapshot, MaintenanceDialog,
-    MaintenanceIntegrationDiagnostics, MaintenanceIntegrationsSnapshot, MaintenanceOperation,
-    MaintenanceOperationPreview, MaintenanceServiceDiagnostics, MaintenanceSessionStatus,
-    MaintenanceTool, MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView,
-    NAVIGATOR_GROUPS, PackageDetailState, PackageField, PackageIdentity, PackageInventoryState,
-    PaneNode, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog,
-    QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
+    ImageArtifactField, ImageArtifactInventoryState, ImageConsoleDialog, ImageConsoleField,
+    ImageConsoleMode, ImagesView, InternalLogLevel, JobHistoryRowRef, LayerBrowser,
+    LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView, MaintenanceCapability,
+    MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
+    MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
+    MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
+    MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, NAVIGATOR_GROUPS,
+    PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
+    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
+    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
     QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
     QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
     QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity,
@@ -1952,6 +1953,8 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         render_raw_execution_preview(frame, preview, popup);
     } else if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() {
         recipe_editor(frame, app, editor, area);
+    } else if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog() {
+        image_console_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::QemuLaunch(dialog)) = app.active_dialog() {
         qemu_launch_dialog(frame, app, dialog, area);
     } else if let Some(Dialog::QemuLaunchConfirmation(preview)) = app.active_dialog() {
@@ -12026,6 +12029,116 @@ fn qemu_launch_field_label(field: QemuLaunchField) -> &'static str {
         QemuLaunchField::Serial => "Serial",
         QemuLaunchField::ExtraArguments => "Extra arguments",
     }
+}
+
+fn image_console_field_label(field: ImageConsoleField) -> &'static str {
+    match field {
+        ImageConsoleField::Mode => "Mode",
+        ImageConsoleField::Image => "Selected image",
+        ImageConsoleField::Networking => "QEMU networking",
+        ImageConsoleField::Memory => "QEMU memory MiB",
+        ImageConsoleField::Host => "SSH host",
+        ImageConsoleField::User => "SSH user",
+        ImageConsoleField::Port => "SSH port",
+        ImageConsoleField::IdentityFile => "SSH identity file",
+    }
+}
+
+fn image_console_field_value(dialog: &ImageConsoleDialog, field: ImageConsoleField) -> String {
+    match field {
+        ImageConsoleField::Mode => dialog.draft.mode.label().into(),
+        ImageConsoleField::Image => dialog.draft.image.path.display().to_string(),
+        ImageConsoleField::Networking => format!("{:?}", dialog.draft.networking),
+        ImageConsoleField::Memory => dialog.draft.memory_mib.clone(),
+        ImageConsoleField::Host => {
+            if dialog.draft.host.is_empty() {
+                "required".into()
+            } else {
+                dialog.draft.host.clone()
+            }
+        }
+        ImageConsoleField::User => dialog.draft.user.clone(),
+        ImageConsoleField::Port => dialog.draft.port.clone(),
+        ImageConsoleField::IdentityFile => {
+            if dialog.draft.identity_file.is_empty() {
+                "default SSH configuration".into()
+            } else {
+                dialog.draft.identity_file.clone()
+            }
+        }
+    }
+}
+
+fn image_console_dialog(frame: &mut Frame, app: &App, dialog: &ImageConsoleDialog, area: Rect) {
+    let popup = dialog_popup_rect(area, 104, 20);
+    clear_popup(frame, app, popup);
+    let shell = dialog_shell(app, "Image Console", DialogTone::Standard);
+    let block = shell.clone().block();
+    let inner = block.inner(popup);
+    frame.render_widget(block, popup);
+    let regions = Layout::vertical([
+        Constraint::Length(2),
+        Constraint::Min(5),
+        Constraint::Length(2),
+        Constraint::Length(1),
+    ])
+    .split(inner);
+    let purpose = match dialog.draft.mode {
+        ImageConsoleMode::Qemu => format!(
+            "Boots {} with runqemu in a daemon-owned PTY. nographic + serialstdio are enforced.",
+            dialog.draft.image.image
+        ),
+        ImageConsoleMode::Ssh => format!(
+            "Connects to an already-running target. OpenSSH host-key policy stays enabled. {}",
+            app.ssh_client_capability.status_text()
+        ),
+    };
+    frame.render_widget(
+        Paragraph::new(purpose).wrap(Wrap { trim: true }),
+        regions[0],
+    );
+    let rows = dialog.fields().iter().copied().map(|field| {
+        let selected = field == dialog.selected_field;
+        Row::new([
+            format!(
+                "{} {}{}",
+                if selected { "▶" } else { " " },
+                image_console_field_label(field),
+                if field.is_read_only() {
+                    " [read-only]"
+                } else {
+                    ""
+                }
+            ),
+            image_console_field_value(dialog, field),
+        ])
+        .style(selected_style(app, selected))
+    });
+    frame.render_widget(
+        Table::new(rows, [Constraint::Length(26), Constraint::Min(1)])
+            .header(Row::new(["Field", "Value"]).style(Style::default().bold())),
+        regions[1],
+    );
+    let validation = dialog.validation_error.as_deref().map_or_else(
+        || match dialog.draft.mode {
+            ImageConsoleMode::Qemu => format!("runqemu: {}", qemu_capability_text(app)),
+            ImageConsoleMode::Ssh => {
+                "Password prompts stay inside the PTY; credentials are never stored.".into()
+            }
+        },
+        |message| format!("Cannot launch: {message}"),
+    );
+    frame.render_widget(
+        Paragraph::new(validation).wrap(Wrap { trim: true }),
+        regions[2],
+    );
+    frame.render_widget(
+        Paragraph::new(shell.controls(
+            Some(("Enter", "Launch")),
+            &[("↑/↓", "Field"), ("←/→", "Choice"), ("Esc", "Cancel")],
+        )),
+        regions[3],
+    );
 }
 
 fn qemu_launch_field_value(dialog: &QemuLaunchDialog, field: QemuLaunchField) -> String {
@@ -24720,6 +24833,49 @@ mod tests {
             compatible_images: vec![identity],
         };
         app
+    }
+
+    #[test]
+    fn image_console_dialog_renders_qemu_and_ssh_authority_and_safety() {
+        let mut app = qemu_workspace_app();
+        app.ssh_client_capability = yoctui_model::SshClientCapability::Available {
+            executable: "/usr/bin/ssh".into(),
+        };
+        let _ = yoctui_model::update(&mut app, yoctui_model::Action::BeginSelectedImageConsole);
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let output = rendered_text(&app, width, height);
+            assert!(
+                output.contains("Image Console"),
+                "{width}x{height}: {output}"
+            );
+            assert!(output.contains("Boot with QEMU"), "{output}");
+            assert!(output.contains("nographic +"), "{output}");
+            assert!(output.contains("serialstdio"), "{output}");
+            assert!(output.contains("[Enter] Launch"), "{output}");
+        }
+
+        let Dialog::ImageConsole(dialog) = app.dialogs.front_mut().unwrap() else {
+            unreachable!()
+        };
+        dialog.draft.mode = ImageConsoleMode::Ssh;
+        dialog.selected_field = ImageConsoleField::Host;
+        dialog.draft.host = "target.example".into();
+        let output = rendered_text(&app, 100, 30);
+        assert!(output.contains("Connect over SSH"), "{output}");
+        assert!(output.contains("already-running target"), "{output}");
+        assert!(output.contains("host-key policy stays enabled"), "{output}");
+        assert!(output.contains("/usr/bin/ssh"), "{output}");
+        assert!(output.contains("never stored"), "{output}");
+
+        let Dialog::ImageConsole(dialog) = app.dialogs.front_mut().unwrap() else {
+            unreachable!()
+        };
+        dialog.validation_error = Some("SSH host is required".into());
+        let output = rendered_text(&app, 80, 24);
+        assert!(
+            output.contains("Cannot launch: SSH host is required"),
+            "{output}"
+        );
     }
 
     fn qemu_running_workspace_app() -> (App, QemuSessionId) {

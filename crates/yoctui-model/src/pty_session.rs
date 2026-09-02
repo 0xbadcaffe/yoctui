@@ -51,6 +51,8 @@ pub enum PtySessionKind {
     DeployShell,
     Devshell,
     Menuconfig,
+    QemuConsole,
+    SshConsole,
     InteractiveTool,
 }
 

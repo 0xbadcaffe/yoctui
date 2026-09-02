@@ -424,6 +424,8 @@ fn wire_spec(
             PtyKind::Menuconfig => PtySessionKind::Menuconfig,
             PtyKind::SdkShell => PtySessionKind::SdkShell,
             PtyKind::NativeShell => PtySessionKind::NativeShell,
+            PtyKind::QemuConsole => PtySessionKind::QemuConsole,
+            PtyKind::SshConsole => PtySessionKind::SshConsole,
             PtyKind::Utility => PtySessionKind::InteractiveTool,
         },
         cwd: cwd.clone(),
@@ -476,6 +478,8 @@ fn snapshot_to_wire(
             PtySessionKind::Menuconfig => PtyKind::Menuconfig,
             PtySessionKind::SdkShell => PtyKind::SdkShell,
             PtySessionKind::NativeShell => PtyKind::NativeShell,
+            PtySessionKind::QemuConsole => PtyKind::QemuConsole,
+            PtySessionKind::SshConsole => PtyKind::SshConsole,
             PtySessionKind::InteractiveTool | PtySessionKind::DeployShell => PtyKind::Utility,
         },
         cwd: listing.cwd.display().to_string(),
@@ -629,6 +633,32 @@ mod tests {
                 .iter()
                 .all(|cell| !cell.contents.contains('\x1b'))
         );
+    }
+
+    #[test]
+    fn image_console_wire_specs_preserve_qemu_and_ssh_session_kinds() {
+        for (wire, model) in [
+            (PtyKind::QemuConsole, PtySessionKind::QemuConsole),
+            (PtyKind::SshConsole, PtySessionKind::SshConsole),
+        ] {
+            let spec = wire_spec(
+                PtySessionId(17),
+                "image console".into(),
+                wire,
+                "/tmp".into(),
+                PtyCommand {
+                    program: "/bin/true".into(),
+                    arguments: Vec::new(),
+                    environment_profile_id: None,
+                },
+                TerminalDimensions {
+                    columns: 80,
+                    rows: 24,
+                },
+            )
+            .unwrap();
+            assert_eq!(spec.kind, model);
+        }
     }
 
     #[test]

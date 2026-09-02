@@ -9,7 +9,8 @@
 
 Yoctui is a Rust/Ratatui workbench for Yocto and BitBake. Browse layers and
 recipes, edit metadata, run builds and Devtool, inspect dependencies, follow
-tasks and logs, launch QEMU, create Wic images, and handle QA or maintenance
+tasks and logs, boot an image in an embedded QEMU console or connect to a
+running target over SSH, create Wic images, and handle QA or maintenance
 without losing your terminal context. BitBake remains the authority; Yoctui
 organizes and controls it.
 
@@ -35,8 +36,8 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
 - **Metadata workbench** — layer tree, recipe browser, syntax-aware preview,
   in-TUI editing, configuration provenance, BBMASK, dependencies, and
   signatures.
-- **Yocto workflows** — Devtool, packages, SDK, QEMU, Wic, Testing, CVE/SPDX,
-  QA, sstate, release, and maintenance tools.
+- **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
+  consoles, Wic, Testing, CVE/SPDX, QA, sstate, release, and maintenance tools.
 - **Terminal-native UX** — responsive layouts, command palette, contextual
   shortcuts, themes, persisted sessions, shell escape, and external editor
   support.

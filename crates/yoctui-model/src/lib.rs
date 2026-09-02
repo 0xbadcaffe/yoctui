@@ -12,6 +12,7 @@ mod embedded_shell;
 mod focus;
 mod global_search;
 mod image;
+mod image_console;
 mod internal_log;
 mod keymap;
 mod list_tree;
@@ -58,6 +59,7 @@ pub use embedded_shell::*;
 pub use focus::*;
 pub use global_search::*;
 pub use image::*;
+pub use image_console::*;
 pub use internal_log::*;
 pub use keymap::*;
 pub use list_tree::*;
@@ -1892,6 +1894,7 @@ pub enum Dialog {
         task: Option<String>,
     },
     ImagePicker(ImagePicker),
+    ImageConsole(ImageConsoleDialog),
     QemuLaunch(QemuLaunchDialog),
     QemuLaunchConfirmation(QemuLaunchPreview),
     QemuCancellationConfirmation(QemuSessionId),
@@ -2020,6 +2023,7 @@ impl Dialog {
             | Self::BuildOptions
             | Self::BuildTarget { .. }
             | Self::ImagePicker(_)
+            | Self::ImageConsole(_)
             | Self::QemuLaunch(_)
             | Self::WicCreate(_)
             | Self::WicCreateTomlEditor { .. }
@@ -3971,6 +3975,7 @@ pub struct App {
     pub qa: QaState,
     pub maintenance: MaintenanceState,
     pub qemu_capability: QemuCapability,
+    pub ssh_client_capability: SshClientCapability,
     pub qemu_sessions: VecDeque<QemuSession>,
     pub qemu_session_generation: u64,
     pub wic_capability: WicCapability,
@@ -4155,6 +4160,7 @@ impl App {
             qa: QaState::default(),
             maintenance: MaintenanceState::default(),
             qemu_capability: QemuCapability::default(),
+            ssh_client_capability: SshClientCapability::default(),
             qemu_sessions: VecDeque::new(),
             qemu_session_generation: 0,
             wic_capability: WicCapability::default(),
@@ -5911,6 +5917,18 @@ pub enum Action {
     Maintenance(MaintenanceAction),
     InspectQemuCapability,
     QemuCapabilityLoaded(QemuCapability),
+    SshClientCapabilityDetected(SshClientCapability),
+    BeginSelectedImageConsole,
+    SelectImageConsoleField {
+        delta: isize,
+    },
+    CycleImageConsoleChoice {
+        backwards: bool,
+    },
+    AppendImageConsoleField(char),
+    BackspaceImageConsoleField,
+    ConfirmImageConsole,
+    CancelImageConsole,
     BeginSelectedQemuLaunch,
     UpdateQemuLaunchDraft(QemuLaunchDraft),
     SelectQemuLaunchField {
@@ -13180,6 +13198,113 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::QemuCapabilityLoaded(capability) => {
             app.qemu_capability = capability;
+        }
+        Action::SshClientCapabilityDetected(capability) => {
+            app.ssh_client_capability = capability;
+        }
+        Action::BeginSelectedImageConsole => {
+            let Some(artifact) = app.selected_image_artifact().cloned() else {
+                app.notification = Some("Select a deployed image artifact first.".into());
+                return None;
+            };
+            let mut draft = ImageConsoleDraft::for_artifact(artifact.identity, artifact.kind);
+            let qemu_available = matches!(
+                draft.artifact_kind,
+                ImageArtifactKind::RootFilesystem | ImageArtifactKind::Wic
+            ) && app.qemu_capability.executable_for(&draft.image).is_ok();
+            if !qemu_available && app.ssh_client_capability.executable().is_ok() {
+                draft.mode = ImageConsoleMode::Ssh;
+            }
+            open_dialog(app, Dialog::ImageConsole(ImageConsoleDialog::new(draft)));
+        }
+        Action::SelectImageConsoleField { delta } => {
+            if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog_mut() {
+                dialog.shift_field(delta);
+                dialog.validation_error = None;
+            }
+        }
+        Action::CycleImageConsoleChoice { backwards } => {
+            if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog_mut()
+                && dialog.cycle_choice(backwards)
+            {
+                dialog.validation_error = None;
+            }
+        }
+        Action::AppendImageConsoleField(character) => {
+            if character.is_control() {
+                return None;
+            }
+            if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog_mut()
+                && let Some((text, maximum)) = dialog.selected_text_mut()
+                && text.len().saturating_add(character.len_utf8()) <= maximum
+            {
+                text.push(character);
+                dialog.validation_error = None;
+            }
+        }
+        Action::BackspaceImageConsoleField => {
+            if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog_mut()
+                && let Some((text, _)) = dialog.selected_text_mut()
+            {
+                text.pop();
+                dialog.validation_error = None;
+            }
+        }
+        Action::ConfirmImageConsole => {
+            let Some(Dialog::ImageConsole(dialog)) = app.active_dialog().cloned() else {
+                app.notification = Some("No Image Console request is active.".into());
+                return None;
+            };
+            if !app
+                .selected_image_artifact()
+                .is_some_and(|artifact| artifact.identity == dialog.draft.image)
+            {
+                if let Some(Dialog::ImageConsole(current)) = app.active_dialog_mut() {
+                    current.validation_error =
+                        Some("The selected image artifact is stale; close and reopen.".into());
+                }
+                return None;
+            }
+            let Some(cwd) = app.workspace.build_dir.clone() else {
+                if let Some(Dialog::ImageConsole(current)) = app.active_dialog_mut() {
+                    current.validation_error =
+                        Some("The daemon build directory is unavailable.".into());
+                }
+                return None;
+            };
+            match dialog
+                .draft
+                .preview(&app.qemu_capability, &app.ssh_client_capability)
+            {
+                Ok(preview) => {
+                    close_dialog(app);
+                    app.screen = Screen::TerminalSessions;
+                    app.focus = FocusTarget::Workspace;
+                    app.focus_return = None;
+                    app.pty_selection = app.daemon.pty_sessions.len();
+                    app.notification = Some(
+                        "Image Console requested; press o when the session appears to take writer control."
+                            .into(),
+                    );
+                    return Some(Effect::Terminal(TerminalEffect::Create {
+                        name: preview.name,
+                        kind: preview.kind,
+                        cwd,
+                        program: preview.program,
+                        arguments: preview.arguments,
+                    }));
+                }
+                Err(message) => {
+                    if let Some(Dialog::ImageConsole(current)) = app.active_dialog_mut() {
+                        current.validation_error = Some(message);
+                    }
+                }
+            }
+        }
+        Action::CancelImageConsole => {
+            if matches!(app.active_dialog(), Some(Dialog::ImageConsole(_))) {
+                close_dialog(app);
+            }
         }
         Action::BeginSelectedQemuLaunch => {
             if let Some(reason) = app.qemu_launch_unavailable_reason() {
@@ -24644,7 +24769,77 @@ mod tests {
             executable: "/opt/poky/scripts/runqemu".into(),
             compatible_images: vec![artifact.identity],
         };
+        app.workspace.build_dir = Some("/build".into());
         app
+    }
+
+    #[test]
+    fn image_console_reducer_launches_qemu_or_ssh_through_typed_terminal_effects() {
+        let mut qemu = qemu_model_app();
+        let _ = update(&mut qemu, Action::BeginSelectedImageConsole);
+        assert!(matches!(
+            qemu.active_dialog(),
+            Some(Dialog::ImageConsole(dialog)) if dialog.draft.mode == ImageConsoleMode::Qemu
+        ));
+        let Some(Effect::Terminal(TerminalEffect::Create {
+            kind,
+            program,
+            arguments,
+            ..
+        })) = update(&mut qemu, Action::ConfirmImageConsole)
+        else {
+            panic!("expected QEMU terminal creation");
+        };
+        assert_eq!(kind, TerminalCreationKind::QemuConsole);
+        assert_eq!(program, PathBuf::from("/opt/poky/scripts/runqemu"));
+        assert!(arguments.iter().any(|argument| argument == "nographic"));
+        assert!(arguments.iter().any(|argument| argument == "serialstdio"));
+        assert_eq!(qemu.screen, Screen::TerminalSessions);
+
+        let mut ssh = qemu_model_app();
+        ssh.qemu_capability = QemuCapability::MissingTool;
+        ssh.ssh_client_capability = SshClientCapability::Available {
+            executable: "/usr/bin/ssh".into(),
+        };
+        let _ = update(&mut ssh, Action::BeginSelectedImageConsole);
+        let Some(Dialog::ImageConsole(dialog)) = ssh.active_dialog_mut() else {
+            panic!("expected Image Console dialog");
+        };
+        assert_eq!(dialog.draft.mode, ImageConsoleMode::Ssh);
+        dialog.draft.host = "target.example".into();
+        dialog.draft.user = "root".into();
+        let Some(Effect::Terminal(TerminalEffect::Create {
+            kind,
+            program,
+            arguments,
+            ..
+        })) = update(&mut ssh, Action::ConfirmImageConsole)
+        else {
+            panic!("expected SSH terminal creation");
+        };
+        assert_eq!(kind, TerminalCreationKind::SshConsole);
+        assert_eq!(program, PathBuf::from("/usr/bin/ssh"));
+        assert_eq!(
+            arguments.last().map(String::as_str),
+            Some("root@target.example")
+        );
+    }
+
+    #[test]
+    fn image_console_reducer_keeps_invalid_input_open_and_cancel_is_no_spawn() {
+        let mut app = qemu_model_app();
+        app.qemu_capability = QemuCapability::MissingTool;
+        app.ssh_client_capability = SshClientCapability::Available {
+            executable: "/usr/bin/ssh".into(),
+        };
+        let _ = update(&mut app, Action::BeginSelectedImageConsole);
+        assert_eq!(update(&mut app, Action::ConfirmImageConsole), None);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::ImageConsole(dialog)) if dialog.validation_error.as_deref().is_some_and(|message| message.contains("SSH host"))
+        ));
+        assert_eq!(update(&mut app, Action::CancelImageConsole), None);
+        assert!(app.active_dialog().is_none());
     }
 
     #[test]

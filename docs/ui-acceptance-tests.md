@@ -53,10 +53,10 @@ entry is disabled:
 | Tasks | `f` state filter, `F` field filter, `/` edit filter, `d` duration filter, `c` cancel |
 | Logs/errors | `f` follow, `w` wrap, `n/N` next/previous match, `s/R/T/B` filters, `o` source, `C` copy |
 | Recipes/config/dependencies | `b` build, `i` image, `r` refresh/recipes, `v` configuration, `o` provider, `L` task log, `1/2` comparison sides, `c` compare, `e` editor |
-| Images/QEMU/Wic/SDK | `Q` launch QEMU, `x` cancel session, `D` protected device write, `w` Wic, `s` SDK, `i` image selection |
+| Images/QEMU/Wic/SDK | `T` opens the embedded QEMU/SSH Image Console, `Q` launches the background QEMU workflow, `x` cancels its session, `D` protected device write, `w` Wic, `s` SDK, `i` image selection |
 | Dialog/editor | `Tab`, `Shift+Tab`, arrows, `Space`, `Enter`, `Esc`, `Backspace`, `Ctrl+S` save, `Ctrl+B` build saved recipe, `Ctrl+C` cancel |
 | Palette/help/settings | printable search, arrows, `Enter` dispatch, `Esc` close, `r` retry settings save, `Space`/arrows change values |
-| Terminal Sessions | ordinary keys reach only the writer-owned PTY; `Ctrl+B` prefix covers create, session movement, splits, zoom, close-without-kill, detach, palette/help, take/release writer, copy/search, rename, confirmed kill, and literal-prefix input |
+| Terminal Sessions | shell, QEMU-console, and SSH-console identities remain explicit; ordinary keys reach only the writer-owned PTY; `Ctrl+B` prefix covers create, session movement, splits, zoom, close-without-kill, detach, palette/help, take/release writer, copy/search, rename, confirmed kill, and literal-prefix input |
 
 The help screen and contextual footer are the oracle for labels. Any active
 shortcut absent from the typed catalog or any documented shortcut without an

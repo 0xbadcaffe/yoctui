@@ -879,6 +879,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 Id::BitBakeBuild,
             ),
             Action::capability("images.qemu", "Launch QEMU", "Q", Id::RunQemu),
+            Action::local("images.console", "Open image console", "T"),
             Action::capability("images.wic", "Create Wic image", "W", Id::WicCreate),
             Action::local("images.device_write", "Write selected local device", "D"),
             Action::local("images.artifacts", "Scan/open deployed artifacts", "R/o/O"),

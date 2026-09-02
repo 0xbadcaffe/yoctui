@@ -5030,3 +5030,26 @@ client has no graphical session; Yoctui never constructs a shell command.
 Menuconfig and devshell remain interactive PTY operations rather than ordinary
 captured BitBake jobs. Noninteractive Devtool modify/update/finish/deploy/reset
 remain persistent background jobs.
+
+## 38. Embedded Image Console
+
+Images owns the Image Console entry point. With an artifact selected, `T`
+opens one focus-trapped dialog whose first field chooses `Boot with QEMU` or
+`Connect over SSH`. Opening, changing fields, and cancelling are pure UI/model
+transitions and spawn nothing.
+
+QEMU mode displays the exact selected machine, image, and artifact as
+read-only evidence. It accepts bounded networking and memory choices, uses the
+currently inspected absolute `runqemu` identity, and always forces
+`nographic` plus `serialstdio`; this is the boot path. SSH mode is explicitly a
+connection to an already-running target. It requires host, user, and port,
+accepts an optional normalized absolute identity-file path, uses the detected
+absolute OpenSSH client, preserves the user's normal host-key policy, stores no
+password, and supplies no remote command.
+
+Enter on a valid request creates one daemon-owned QEMU Console or SSH Console
+PTY and navigates to Terminal Sessions. Invalid or stale authority keeps the
+dialog open with its exact reason. The resulting console has the same writer
+lease, `Ctrl+B` prefix, split, zoom, copy, search, paste review, scrollback,
+detach/reattach, reconnect, termination, and `tui-term` rendering behavior as
+every other terminal session. The dialog never claims that SSH boots an image.

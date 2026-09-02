@@ -786,3 +786,23 @@ Exit criteria:
   authoritative and visible
 - focused, exact-golden, workspace, Clippy, documentation, roadmap, and
   completion gates pass
+
+## M39 — Embedded image console
+
+Goal: boot the selected image with QEMU or connect to an already-running target
+over SSH without leaving the daemon-owned `tui-term` terminal workbench.
+
+Exit criteria:
+
+- Images `T` opens one focus-trapped Image Console dialog with explicit “Boot
+  with QEMU” and “Connect over SSH” modes
+- QEMU binds the exact selected rootfs/Wic artifact and inspected `runqemu`
+  executable, forces `nographic` plus `serialstdio`, and starts in a daemon PTY
+- SSH requires explicit host/user/port and an optional absolute identity file,
+  keeps OpenSSH host-key verification enabled, stores no password, and starts
+  no supplied remote command
+- both session kinds are preserved across model, protocol, daemon persistence,
+  terminal summaries, `tui-term` rendering, writer leases, and reconnect
+- opening/cancelling is no-spawn; missing/stale capability and malformed input
+  fail closed with an exact visible reason
+- focused, workspace, Clippy, documentation, roadmap, and completion gates pass

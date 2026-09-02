@@ -479,6 +479,8 @@ pub enum ClientDaemonPtyKind {
     Menuconfig,
     SdkShell,
     NativeShell,
+    QemuConsole,
+    SshConsole,
     Utility,
 }
 

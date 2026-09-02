@@ -47,3 +47,23 @@ The typed utility workbench remains the preferred route for routine operations.
 Expert utility forms produce indexed argv previews; commands typed manually in
 either shell remain the user's responsibility and are never parsed as Yoctui
 actions.
+
+## Image consoles
+
+Select an exact deployed artifact in Images and press `T`. The Image Console
+form offers two bounded launch modes that both become daemon-owned Terminal
+Sessions rendered through the existing `tui-term` replica.
+
+- **Boot with QEMU** uses the current inspected `runqemu`, exact selected
+  rootfs/Wic artifact, explicit networking and memory, and enforced
+  `nographic`/`serialstdio` console options.
+- **Connect over SSH** uses the initialized host's resolved OpenSSH executable
+  and an explicit `user@host`, port, and optional normalized absolute identity
+  file. It connects to an already-running target; SSH is not an image boot
+  mechanism. Normal host-key verification remains enabled, no password is
+  retained, and Yoctui does not append a remote command.
+
+Opening, editing, or cancelling the form starts no process. Missing tools,
+invalid fields, and stale artifact authority keep the form open with an exact
+reason. After confirmation, Terminal Sessions exposes the normal writer lease,
+scrollback, search/copy, split, detach, reconnect, and explicit kill controls.

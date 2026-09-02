@@ -1216,6 +1216,8 @@ pub fn daemon_protocol_snapshot(
                         "menuconfig" => PtyKind::Menuconfig,
                         "sdk_shell" => PtyKind::SdkShell,
                         "native_shell" => PtyKind::NativeShell,
+                        "qemu_console" => PtyKind::QemuConsole,
+                        "ssh_console" => PtyKind::SshConsole,
                         _ => PtyKind::Utility,
                     },
                     cwd: String::new(),
@@ -2266,6 +2268,10 @@ fn daemon_client_view(
                     yoctui_protocol::daemon::PtyKind::NativeShell => {
                         ClientDaemonPtyKind::NativeShell
                     }
+                    yoctui_protocol::daemon::PtyKind::QemuConsole => {
+                        ClientDaemonPtyKind::QemuConsole
+                    }
+                    yoctui_protocol::daemon::PtyKind::SshConsole => ClientDaemonPtyKind::SshConsole,
                     yoctui_protocol::daemon::PtyKind::Utility => ClientDaemonPtyKind::Utility,
                 },
                 cwd: pty.cwd.clone(),
@@ -4313,6 +4319,7 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "packages.cancel" => Input::Char('c'),
         "images.build" => Input::Char('b'),
         "images.qemu" | "qemu_wic.qemu" => Input::Char('Q'),
+        "images.console" => Input::Char('T'),
         "images.wic" | "qemu_wic.wic" => Input::Char('W'),
         "images.device_write" | "qemu_wic.write" => Input::Char('D'),
         "images.artifacts" | "sdk.artifacts" => Input::Char('R'),
@@ -5996,6 +6003,7 @@ pub fn images_workspace_action_for_view(
         Input::Char('R') => Some(Action::RefreshImageArtifactInventory),
         Input::Char('c') => Some(Action::CancelImageArtifactOperation),
         Input::Char('b') => Some(Action::BeginSelectedImageArtifactBuild),
+        Input::Char('T') => Some(Action::BeginSelectedImageConsole),
         Input::Char('Q') => Some(Action::BeginSelectedQemuLaunch),
         Input::Char('W') => Some(Action::BeginSelectedWicCreate),
         Input::Char('D') => Some(Action::BeginSelectedWicDeviceWrite),
@@ -6994,6 +7002,30 @@ pub fn qemu_launch_dialog_action(editing: bool, key: Input) -> Option<Action> {
         Input::Enter => Some(Action::ActivateQemuLaunchField),
         Input::Char('p') => Some(Action::PreviewQemuLaunch),
         Input::Esc => Some(Action::CancelQemuLaunch),
+        _ => None,
+    }
+}
+
+pub fn image_console_dialog_action(
+    dialog: &yoctui_model::ImageConsoleDialog,
+    key: Input,
+) -> Option<Action> {
+    match key {
+        Input::Up => Some(Action::SelectImageConsoleField { delta: -1 }),
+        Input::Down | Input::Tab => Some(Action::SelectImageConsoleField { delta: 1 }),
+        Input::BackTab => Some(Action::SelectImageConsoleField { delta: -1 }),
+        Input::Left => Some(Action::CycleImageConsoleChoice { backwards: true }),
+        Input::Right => Some(Action::CycleImageConsoleChoice { backwards: false }),
+        Input::Enter => Some(Action::ConfirmImageConsole),
+        Input::Esc => Some(Action::CancelImageConsole),
+        Input::Backspace if dialog.selected_field.is_text() => {
+            Some(Action::BackspaceImageConsoleField)
+        }
+        Input::Char(character) if dialog.selected_field.is_text() => {
+            Some(Action::AppendImageConsoleField(character))
+        }
+        Input::Char('h') => Some(Action::CycleImageConsoleChoice { backwards: true }),
+        Input::Char('l') => Some(Action::CycleImageConsoleChoice { backwards: false }),
         _ => None,
     }
 }
@@ -11663,6 +11695,10 @@ mod tests {
             Some(Action::BeginSelectedImageArtifactBuild)
         );
         assert_eq!(
+            images_workspace_action(false, Input::Char('T')),
+            Some(Action::BeginSelectedImageConsole)
+        );
+        assert_eq!(
             images_workspace_action(false, Input::Char('c')),
             Some(Action::CancelImageArtifactOperation)
         );
@@ -11687,6 +11723,38 @@ mod tests {
         assert_eq!(
             images_workspace_action(true, Input::Esc),
             Some(Action::FinishImageArtifactSearch)
+        );
+    }
+
+    #[test]
+    fn image_console_input_keeps_text_typing_separate_from_choice_navigation() {
+        let identity = yoctui_model::ImageArtifactIdentity {
+            machine: "qemux86-64".into(),
+            image: "core-image-minimal".into(),
+            path: "/deploy/image.wic".into(),
+        };
+        let mut dialog =
+            yoctui_model::ImageConsoleDialog::new(yoctui_model::ImageConsoleDraft::for_artifact(
+                identity,
+                yoctui_model::ImageArtifactKind::Wic,
+            ));
+        assert_eq!(
+            image_console_dialog_action(&dialog, Input::Right),
+            Some(Action::CycleImageConsoleChoice { backwards: false })
+        );
+        dialog.draft.mode = yoctui_model::ImageConsoleMode::Ssh;
+        dialog.selected_field = yoctui_model::ImageConsoleField::Host;
+        assert_eq!(
+            image_console_dialog_action(&dialog, Input::Char('j')),
+            Some(Action::AppendImageConsoleField('j'))
+        );
+        assert_eq!(
+            image_console_dialog_action(&dialog, Input::Enter),
+            Some(Action::ConfirmImageConsole)
+        );
+        assert_eq!(
+            image_console_dialog_action(&dialog, Input::Esc),
+            Some(Action::CancelImageConsole)
         );
     }
 

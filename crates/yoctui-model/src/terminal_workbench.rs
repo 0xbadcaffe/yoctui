@@ -110,6 +110,8 @@ pub enum TerminalCreationKind {
     Utility,
     Devshell,
     Menuconfig,
+    QemuConsole,
+    SshConsole,
 }
 
 impl TerminalWorkbenchState {

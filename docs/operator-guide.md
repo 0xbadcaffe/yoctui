@@ -183,6 +183,16 @@ final `Enter` launches. `x` confirms cancellation of the exact managed QEMU
 session. Missing `runqemu` or incompatible artifacts never becomes a guessed
 command.
 
+Press `T` in Images to open the embedded Image Console form. **Boot with
+QEMU** binds the exact selected rootfs/Wic artifact to the inspected `runqemu`
+and forces `nographic` plus `serialstdio`. **Connect over SSH** connects to an
+already-running target; it does not claim to boot or identify that target as
+the selected image. SSH requires an explicit host and user, validates the port
+and optional absolute identity-file path, retains OpenSSH's normal host-key
+policy, stores no password, and supplies no remote command. Confirming either
+mode creates a daemon-owned Terminal Session; when it appears, press `Ctrl+B`
+then `o` to take writer control.
+
 `W` opens cooked-mode Wic creation for an exact image and reported kickstart.
 Review output directory, bmap, compression, source summary, and the indexed
 command preview. Generated output remains correlated to that request. `D`
@@ -275,6 +285,10 @@ daemon owns the PTY, so navigation, UI restart/reconnect, pane close, and client
 detach do not silently terminate the process. Writer ownership is explicit;
 read-only clients cannot send input until control is granted or taken through
 the typed command.
+
+Image Console sessions created with `T` in Images use the same renderer,
+scrollback, splits, copy/search, detach, reconnect, and writer-control model.
+Their session kind remains explicit as QEMU console or SSH console.
 
 Press `Ctrl+B` and then a command within one second. Common routes are `c`
 create, `n`/`p` next/previous session, `%`/`"` horizontal/vertical split, `z`

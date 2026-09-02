@@ -185,23 +185,7 @@ impl InteractiveDaemonRuntime {
                 expected_generation: Some(app.daemon.generation),
                 command: DaemonCommand::CreatePty {
                     name: name.clone(),
-                    kind: match kind {
-                        yoctui_model::TerminalCreationKind::BuildShell => {
-                            yoctui_protocol::daemon::PtyKind::BuildShell
-                        }
-                        yoctui_model::TerminalCreationKind::DevtoolShell => {
-                            yoctui_protocol::daemon::PtyKind::DevtoolShell
-                        }
-                        yoctui_model::TerminalCreationKind::Utility => {
-                            yoctui_protocol::daemon::PtyKind::Utility
-                        }
-                        yoctui_model::TerminalCreationKind::Devshell => {
-                            yoctui_protocol::daemon::PtyKind::Devshell
-                        }
-                        yoctui_model::TerminalCreationKind::Menuconfig => {
-                            yoctui_protocol::daemon::PtyKind::Menuconfig
-                        }
-                    },
+                    kind: wire_terminal_kind(*kind),
                     cwd: cwd.display().to_string(),
                     command: yoctui_protocol::daemon::PtyCommand {
                         program: program.display().to_string(),
@@ -312,6 +296,30 @@ impl InteractiveDaemonRuntime {
                 session_id: PtySessionId(session.id),
             })?;
         Ok(())
+    }
+}
+
+fn wire_terminal_kind(
+    kind: yoctui_model::TerminalCreationKind,
+) -> yoctui_protocol::daemon::PtyKind {
+    match kind {
+        yoctui_model::TerminalCreationKind::BuildShell => {
+            yoctui_protocol::daemon::PtyKind::BuildShell
+        }
+        yoctui_model::TerminalCreationKind::DevtoolShell => {
+            yoctui_protocol::daemon::PtyKind::DevtoolShell
+        }
+        yoctui_model::TerminalCreationKind::Utility => yoctui_protocol::daemon::PtyKind::Utility,
+        yoctui_model::TerminalCreationKind::Devshell => yoctui_protocol::daemon::PtyKind::Devshell,
+        yoctui_model::TerminalCreationKind::Menuconfig => {
+            yoctui_protocol::daemon::PtyKind::Menuconfig
+        }
+        yoctui_model::TerminalCreationKind::QemuConsole => {
+            yoctui_protocol::daemon::PtyKind::QemuConsole
+        }
+        yoctui_model::TerminalCreationKind::SshConsole => {
+            yoctui_protocol::daemon::PtyKind::SshConsole
+        }
     }
 }
 
@@ -1038,6 +1046,18 @@ pub enum ClientRuntimeError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn image_console_terminal_kinds_keep_protocol_identity() {
+        assert_eq!(
+            wire_terminal_kind(yoctui_model::TerminalCreationKind::QemuConsole),
+            yoctui_protocol::daemon::PtyKind::QemuConsole
+        );
+        assert_eq!(
+            wire_terminal_kind(yoctui_model::TerminalCreationKind::SshConsole),
+            yoctui_protocol::daemon::PtyKind::SshConsole
+        );
+    }
 
     #[test]
     fn client_runtime_effect_mapping_uses_daemon_global_state() {

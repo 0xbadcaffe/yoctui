@@ -6869,3 +6869,49 @@ required = true
 depends_on = ["UX-BRAILLE-ACTIVITY-001"]
 verify = ["cargo test -p yoctui-ui ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks", "cargo test -p yoctui-ui concept_rootfs_composition_keeps_chart_table_selection_and_tree_visible", "./scripts/verify-m22-concept-parity.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "The production Rootfs composition view uses admitted tui-piechart 1.0.2 with Braille resolution on wide color/Unicode layouts. Production-buffer and concept regressions prove the rendered Braille cells while retaining exact byte/percentage tables plus accessible fallbacks. Completed in v0.1.15."
+
+# M39 — Embedded image console.
+
+[[task]]
+id = "IMAGE-CONSOLE-MODEL-001"
+milestone = "M39"
+title = "Define typed QEMU and SSH image-console launches"
+status = "DONE"
+priority = 779
+required = true
+depends_on = ["UX-TERMINAL-UX-001", "IMAGE-TARGET-AUTH-001"]
+verify = ["cargo test -p yoctui-model image_console", "cargo test -p yoctui-app image_console"]
+notes = "A bounded focus-trapped Images dialog now produces exact selected-artifact QEMU console requests or explicit SSH destination requests. Validation is fail-closed, cancellation is no-spawn, and focused model/app tests prove argv-preserving terminal effects. Completed in v0.1.16."
+
+[[task]]
+id = "IMAGE-CONSOLE-RUNTIME-001"
+milestone = "M39"
+title = "Carry image consoles through daemon-owned PTY sessions"
+status = "DONE"
+priority = 780
+required = true
+depends_on = ["IMAGE-CONSOLE-MODEL-001"]
+verify = ["cargo test -p yoctui-protocol image_console", "cargo test -p yoctui-cli image_console", "cargo test -p yoctui-cli --test daemon_pty_runtime"]
+notes = "Distinct QEMU-console and SSH-console identities now cross model, protocol, daemon, client, and persistence mappings. The initialized host SSH executable is resolved as an executable absolute path, while both modes reuse the daemon emulator, process group, writer lease, scrollback, attach/detach, and recovery lifecycle. Completed in v0.1.16."
+
+[[task]]
+id = "IMAGE-CONSOLE-UI-001"
+milestone = "M39"
+title = "Expose the embedded Image Console workflow"
+status = "DONE"
+priority = 781
+required = true
+depends_on = ["IMAGE-CONSOLE-RUNTIME-001"]
+verify = ["cargo test -p yoctui-ui image_console", "cargo test -p yoctui-app image_console", "./scripts/check-docs.sh"]
+notes = "Images T now opens the typed responsive Image Console, exposes exact QEMU/SSH authority and safety text, retains validation errors in the form, and navigates confirmed requests into Terminal Sessions using the existing tui-term renderer. UI tests cover 160x50, 100x30, and 80x24. Completed in v0.1.16."
+
+[[task]]
+id = "IMAGE-CONSOLE-001"
+milestone = "M39"
+title = "Complete QEMU and SSH image consoles"
+status = "DONE"
+priority = 782
+required = true
+depends_on = ["IMAGE-CONSOLE-MODEL-001", "IMAGE-CONSOLE-RUNTIME-001", "IMAGE-CONSOLE-UI-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Focused and full workspace tests, Clippy with denied warnings, documentation, concept parity, roadmap, and completion gates pass. Version 0.1.16 was installed from the optimized artifact and its daemon restarted in the Wrynose 6.0.2 build environment. Completed in v0.1.16."

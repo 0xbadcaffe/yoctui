@@ -3410,3 +3410,23 @@ Cairo 1.18.4, and SHA-256-identified DejaVu Sans Mono regular/bold faces. Its
 manifest binds every PNG to the exact source `.cells` hash. Check mode renders
 all six scenes into a temporary directory and byte-compares them with the
 tracked artifacts, so metadata-only or independently edited images cannot pass.
+
+## M39 image-console boundary
+
+The image-console model owns only bounded form state, validation, selected
+artifact correlation, and an argv-preserving terminal launch projection. QEMU
+projection consumes the existing inspected `QemuCapability`, rebuilds the
+exact selected artifact request with `nographic` and `serialstdio`, and cannot
+accept an executable or artifact that is absent from that authority. SSH
+projection consumes a startup-detected absolute OpenSSH identity and validates
+host, user, port, and optional identity path independently; it does not read
+SSH configuration, disable host-key checks, retain credentials, or construct a
+remote shell command.
+
+Both projections become `TerminalEffect::Create` with distinct typed session
+kinds. The protocol transports the native program and argument vector without
+joining it into shell text. The daemon starts it in the existing PTY supervisor
+and remains sole owner of the child process group, parser/emulator, terminal
+screen, writer lease, scrollback, resize, termination, persistence, and journal
+replication. `tui-term` remains a stateless typed-cell renderer and gains no
+process, SSH, QEMU, or input authority.

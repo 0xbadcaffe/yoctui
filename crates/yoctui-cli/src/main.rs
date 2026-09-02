@@ -27,7 +27,7 @@ use std::{
 #[cfg(unix)]
 use std::{
     ffi::CString,
-    os::unix::{ffi::OsStrExt, process::CommandExt},
+    os::unix::{ffi::OsStrExt, fs::PermissionsExt, process::CommandExt},
 };
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
@@ -43,15 +43,16 @@ use yoctui_app::{
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
     devtool_update_confirmation_action, errors_action, focus_action_for_app, global_search_action,
-    images_workspace_action_for_view, keymap_action_for_app, keymap_preferences_action,
-    log_workspace_action, maintenance_dialog_action, maintenance_workspace_action, menu_action,
-    model_action_from_backend_event, mouse_action_for_app, onboarding_action,
-    package_workspace_action, popup_editor_action, qa_dialog_action, qa_layer_capability_action,
-    qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
-    qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
-    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
-    qemu_launch_dialog_action, quit_confirmation_action, raw_mode_input, recipe_editor_action,
-    recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    image_console_dialog_action, images_workspace_action_for_view, keymap_action_for_app,
+    keymap_preferences_action, log_workspace_action, maintenance_dialog_action,
+    maintenance_workspace_action, menu_action, model_action_from_backend_event,
+    mouse_action_for_app, onboarding_action, package_workspace_action, popup_editor_action,
+    qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
+    qa_report_response_action, qa_task_capability_action, qa_workspace_action,
+    qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
+    qemu_launch_confirmation_action, qemu_launch_dialog_action, quit_confirmation_action,
+    raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
+    sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
@@ -8247,7 +8248,21 @@ fn executable_on_initialized_path(name: &str) -> Option<PathBuf> {
     initialized_path_directories()
         .into_iter()
         .map(|directory| directory.join(name))
-        .find(|candidate| fs::metadata(candidate).is_ok_and(|metadata| metadata.is_file()))
+        .find(|candidate| fs::metadata(candidate).is_ok_and(|metadata| executable(&metadata)))
+}
+
+fn executable(metadata: &fs::Metadata) -> bool {
+    if !metadata.is_file() {
+        return false;
+    }
+    #[cfg(unix)]
+    {
+        metadata.permissions().mode() & 0o111 != 0
+    }
+    #[cfg(not(unix))]
+    {
+        true
+    }
 }
 
 fn detect_detached_terminal_launcher() -> Result<DetachedTerminalLauncher, String> {
@@ -8282,6 +8297,23 @@ fn detached_terminal_availability() -> yoctui_model::DetachedTerminalAvailabilit
                 .into(),
         },
         Err(reason) => yoctui_model::DetachedTerminalAvailability::Unavailable { reason },
+    }
+}
+
+fn ssh_client_capability() -> yoctui_model::SshClientCapability {
+    let Some(executable) = executable_on_initialized_path("ssh") else {
+        return yoctui_model::SshClientCapability::Missing;
+    };
+    match executable.canonicalize() {
+        Ok(executable) if executable.is_absolute() => {
+            yoctui_model::SshClientCapability::Available { executable }
+        }
+        Ok(_) => yoctui_model::SshClientCapability::Failed {
+            message: "resolved ssh executable is not absolute".into(),
+        },
+        Err(error) => yoctui_model::SshClientCapability::Failed {
+            message: format!("could not resolve ssh executable: {error}"),
+        },
     }
 }
 
@@ -10750,6 +10782,10 @@ async fn tui(
         &mut app,
         Action::DetachedTerminalAvailabilityDetected(detached_terminal_availability()),
     );
+    let _ = update(
+        &mut app,
+        Action::SshClientCapabilityDetected(ssh_client_capability()),
+    );
     if build_dir_configured {
         app.workspace.build_dir = Some(build_dir.clone());
     }
@@ -12227,6 +12263,12 @@ async fn tui(
                             unreachable!()
                         };
                         begin_wic_cancellation(&mut app, &mut wic_operation, id);
+                    }
+                } else if let Some(Dialog::ImageConsole(dialog)) = app.active_dialog().cloned() {
+                    let effect = image_console_dialog_action(&dialog, input)
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
+                    if let Some(effect @ Effect::Terminal(_)) = effect {
+                        let _ = submit_daemon_effect(&mut daemon_runtime, &mut app, &effect);
                     }
                 } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunch(_))) {
                     let editing = app.active_dialog().is_some_and(

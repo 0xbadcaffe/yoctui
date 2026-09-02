@@ -11,14 +11,14 @@ Status values:
 
 ## Current phase
 
-M38 Braille Activity and Rootfs Chart Polish is complete. Animated Unicode
-activity uses the admitted eight-frame `BRAILLE_EIGHT_DOUBLE` set through the
-shared stateless phase adapter, with explicit ASCII, reduced-motion, and
-terminal-state fallbacks. Wide color/Unicode Rootfs composition uses the
-admitted `tui-piechart` widget's high-resolution Braille renderer while exact
-byte/percentage tables and reader-oriented fallbacks remain authoritative.
-The workspace is version 0.1.15. Overall required registry progress is 619/619
-(100.0%).
+M39 Embedded Image Console is complete. Images `T` opens one typed workflow
+for an exact selected-artifact QEMU serial boot or an explicit connection to
+an already-running SSH target. Both become daemon-owned QEMU-console or
+SSH-console PTYs and reuse the existing `tui-term` renderer, writer lease,
+scrollback, splits, detach, and reconnect behavior. QEMU enforces `nographic`
+and `serialstdio`; SSH retains normal host-key checks, stores no password, and
+supplies no remote command. The workspace is version 0.1.16. Overall required
+registry progress is 623/623 (100.0%).
 
 M37 Viewport Chrome Polish is complete. Navigator, application/context menus,
 command-palette results, and Compatibility inventories now expose one shared,
@@ -2100,3 +2100,11 @@ the deterministic and strict live-evidence verifiers. The exact current support
 anchors are Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose 6.0.2 / BitBake 2.18.0;
 other point releases, fixtures, and development snapshots remain outside that
 claim. All M18 children and the parent are complete.
+
+M39 is complete. The Images workspace now has a typed Image Console flow that
+reuses the admitted feature-free `tui-term` renderer and daemon PTY ownership
+for either an exact selected `runqemu` artifact boot or an explicit OpenSSH
+target connection. SSH is labelled as connection-only, preserves normal
+host-key verification, stores no password, and never receives an
+application-constructed remote command. All four M39 tasks are complete in
+v0.1.16.
