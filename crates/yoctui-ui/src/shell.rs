@@ -15,7 +15,7 @@ pub(super) fn activity_symbol(
         };
     };
     let symbols = if unicode {
-        throbber_widgets_tui::WHITE_SQUARE.symbols
+        throbber_widgets_tui::BRAILLE_EIGHT_DOUBLE.symbols
     } else {
         throbber_widgets_tui::ASCII.symbols
     };
@@ -29,7 +29,7 @@ pub(super) fn task_activity(app: &App, task_progress: Option<u8>) -> String {
     let unicode = app.preferences.symbols == SymbolPreference::Unicode;
     let projection = app.activity_projection(yoctui_model::ActivityLifecycle::Running);
     if projection.phase.is_none() {
-        return if unicode { "⊞".into() } else { "#".into() };
+        return if unicode { "⣿".into() } else { "#".into() };
     }
     activity_symbol(projection, unicode).into()
 }

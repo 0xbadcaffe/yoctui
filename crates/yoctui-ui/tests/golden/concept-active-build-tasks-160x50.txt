@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.13  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│yoctui v0.1.14  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -11,7 +11,7 @@
 │    Recipes               ││  do_unpack    bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PR          unavailable                     │
 │    Packages              ││  do_patch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││State       ▶ Running                       │
 │    Images                ││  do_configure bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││Progress    72%                             │
-│    SDK                   ││◳ do_compile   bash_5.2.21-2        ▶ Running     00:09:50  ▪▪▪▪▪▪▪▪▫▫ 72%          ││                                            │
+│    SDK                   ││⣧ do_compile   bash_5.2.21-2        ▶ Running     00:09:50  ▪▪▪▪▪▪▪▪▫▫ 72%          ││                                            │
 │▾ BUILD                   ││5 waiting task unavailable          ▫ Waiting     --        metadata unavailable    ││                                            │
 │    Tasks                1││                                                                                    │└────────────────────────────────────────────┘
 │  ▱ Logs              LIVE│└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐

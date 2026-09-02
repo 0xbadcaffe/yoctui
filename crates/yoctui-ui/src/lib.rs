@@ -23093,21 +23093,21 @@ mod tests {
     }
 
     #[test]
-    fn active_task_indicator_uses_square_motion_and_accessible_fallbacks() {
+    fn active_task_indicator_uses_braille_motion_and_accessible_fallbacks() {
         let mut app = App::new(10, 1_000);
         app.animation_frame = 0;
         let first = task_activity(&app, None);
         app.animation_frame = 1;
         assert_ne!(task_activity(&app, None), first);
         assert!(
-            throbber_widgets_tui::WHITE_SQUARE
+            throbber_widgets_tui::BRAILLE_EIGHT_DOUBLE
                 .symbols
                 .contains(&first.as_str())
         );
         assert_eq!(task_activity(&app, Some(0)), "");
 
         app.reduced_motion = true;
-        assert_eq!(task_activity(&app, None), "⊞");
+        assert_eq!(task_activity(&app, None), "⣿");
         app.preferences.symbols = SymbolPreference::Ascii;
         assert_eq!(task_activity(&app, None), "#");
     }
@@ -23122,7 +23122,8 @@ mod tests {
         );
         assert_eq!(
             activity_symbol(running, true),
-            throbber_widgets_tui::WHITE_SQUARE.symbols[1]
+            throbber_widgets_tui::BRAILLE_EIGHT_DOUBLE.symbols
+                [running.phase.expect("running activity phase") % 8]
         );
         assert_eq!(
             activity_symbol(running, false),
@@ -23160,7 +23161,7 @@ mod tests {
         app.build.completed = 3;
         app.screen = Screen::Tasks;
         let output = rendered_text(&app, 100, 30);
-        assert!(output.contains("progress unknown ⊞  3/—"), "{output}");
+        assert!(output.contains("progress unknown ⣿  3/—"), "{output}");
         assert!(!output.contains("0%"), "{output}");
     }
 
@@ -30476,7 +30477,7 @@ mod tests {
         app.build.total = None;
         app.reduced_motion = true;
         let (unknown, _) = render_table(&app, 70);
-        assert!(unknown.contains("progress unknown ⊞  3/—"), "{unknown}");
+        assert!(unknown.contains("progress unknown ⣿  3/—"), "{unknown}");
         assert!(!unknown.contains("30%"), "{unknown}");
         assert!(unknown.contains("A1 W0 !2 ✕1 00:01:00"), "{unknown}");
     }
@@ -33410,7 +33411,7 @@ mod tests {
         app.reduced_motion = true;
         let unknown = rendered_text(&app, 100, 30);
         assert!(
-            unknown.contains("Overall  progress unknown ⊞  3/—"),
+            unknown.contains("Overall  progress unknown ⣿  3/—"),
             "{unknown}"
         );
         assert!(!unknown.contains("Overall  0%"), "{unknown}");
