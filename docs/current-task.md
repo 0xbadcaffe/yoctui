@@ -2,39 +2,36 @@
 
 ## Task
 
-**ID:** UX-LAYER-TREE-WIDGET-001
-**Title:** Render Layers with tui-tree-widget
+**ID:** UX-LAYER-KEY-ROUTING-001
+**Title:** Route Enter and horizontal hierarchy keys to Layers and Navigator
 **Status:** DONE
 
 ## Objective
 
-Layers renders its bounded lazy filesystem projection through the admitted
-`tui-tree-widget` crate without transferring selection, expansion, filtering,
-scrolling, filesystem, or input authority out of Yoctui's typed model.
+Layers and Navigator receive hierarchy activation and horizontal movement
+before generic pane-focus or passive-notification routing.
 
 ## Dependencies
 
-- UX-LIST-TREE-001 — DONE
-- UX-SELECTION-VIEWPORT-002 — DONE
+- UX-LAYER-TREE-WIDGET-001 — DONE
 
 ## Definition of done
 
-- Nested visible entries render with `tui-tree-widget` 0.24.1 while collapsed
-  unloaded directories retain an explicit disclosure marker.
-- `LayerBrowser` remains the sole selection, expansion, lazy-loading, Git,
-  filter, bound, and viewport authority.
-- The UI creates and discards `TreeItem`/`TreeState` values per draw and never
-  routes input through widget helpers.
-- Unicode, ASCII/no-color, nested selection, malformed identity, and final-row
-  visibility are covered by deterministic tests.
-- Dependency admission, notices, SBOM, Cargo-deny, focused UI, workspace,
-  Clippy, documentation, roadmap, and completion checks pass.
+- Configured Layers opens with `Enter`, `Right`, or `l` even when a passive
+  notification is visible.
+- The open tree owns `Right`/`l`, `Left`/`h`, and `Enter` hierarchy behavior.
+- Navigator arrows expand/collapse groups; `Tab`/`Shift+Tab` change panes.
+- Focused app, CLI, and reducer regressions cover each route.
+- Workspace, Clippy, documentation, roadmap, and completion checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-ui ux_layer_browser
-./scripts/verify-third-party-notices.sh
+cargo test -p yoctui-app layers_workspace_owns_horizontal_hierarchy_keys_before_pane_focus
+cargo test -p yoctui-app navigator_arrows_expand_and_collapse_groups_without_changing_panes
+cargo test -p yoctui layers_list_enter_right_and_l_open_the_selected_hierarchy
+cargo test -p yoctui focus_routing_notifications_consume_only_their_documented_keys
+cargo test -p yoctui-model layer_tree_loads_children_lazily_and_collapses_without_losing_parent
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh
@@ -42,4 +39,4 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-completion.sh
 ```
 
-The widget is a renderer, not a filesystem browser or interaction authority.
+Tab remains pane navigation; hierarchy arrows belong to the focused hierarchy.

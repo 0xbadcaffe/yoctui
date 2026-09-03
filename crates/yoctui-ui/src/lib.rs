@@ -6106,7 +6106,7 @@ fn inspector(
                     || "No layer selected.".into(),
                     |layer| {
                         format!(
-                            "Layer: {}\nPath: {}\nPriority: {}\n\nEnter browses this layer.",
+                            "Layer: {}\nPath: {}\nPriority: {}\n\nEnter/Right opens this layer tree.",
                             layer.name,
                             layer.path.display(),
                             layer
@@ -19625,7 +19625,7 @@ fn help(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     let text = format!(
-        "{function_keys}\n\nAction catalog\n{catalog_actions}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, f favorite, H history.\ny Layers: e in-TUI edit, o external editor   v Configuration   x effective BBMASK, e edit with preview\n/ Unified case-insensitive regex: actions, recipes, conf, classes, layers, Poky/BitBake, logs, metadata, generated image rootfs\nEnter opens/runs the result; rootfs hits name their image; invalid syntax is explained inline\na Context actions (including local workspace search)   Esc Dashboard   q Quit\n\nTerminal writers and active text editors retain literal /; Terminal search is Ctrl+B /.\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+        "{function_keys}\n\nAction catalog\n{catalog_actions}\n\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, f favorite, H history.\ny Layers: Enter/Right open or expand, Left collapse/parent, e in-TUI edit, o external editor\nNavigator: Right expands a group, Left collapses it, Enter opens, Tab changes pane\nv Configuration   x effective BBMASK, e edit with preview\n/ Unified case-insensitive regex: actions, recipes, conf, classes, layers, Poky/BitBake, logs, metadata, generated image rootfs\nEnter opens/runs the result; rootfs hits name their image; invalid syntax is explained inline\na Context actions (including local workspace search)   Esc Dashboard   q Quit\n\nTerminal writers and active text editors retain literal /; Terminal search is Ctrl+B /.\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
     );
     frame.render_widget(
         Paragraph::new(text)
@@ -26400,6 +26400,7 @@ mod tests {
                     "Active layer tree (shown: 7 of",
                     "meta-oe",
                     "Recipes: meta-oe",
+                    "Enter/Right opens this layer tree",
                 ],
                 selected: Some("meta-oe"),
             },
@@ -27135,6 +27136,8 @@ mod tests {
         assert!(output.contains("Build > Build image"), "{output}");
         assert!(output.contains("[Navigate]"), "{output}");
         assert!(output.contains("Open Tasks"), "{output}");
+        assert!(output.contains("Enter/Right open or expand"), "{output}");
+        assert!(output.contains("Right expands a group"), "{output}");
     }
     #[test]
     fn command_palette_selection_description_and_shortcut_render_in_all_themes() {

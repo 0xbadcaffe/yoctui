@@ -11,6 +11,14 @@ Status values:
 
 ## Current phase
 
+M41 Hierarchical Key Routing is complete. Layers now receives `Enter`, `Right`,
+`Left`, and `h`/`l` before generic pane routing: `Enter` and `Right` open the
+selected layer, the open tree expands/collapses or moves to its parent, and
+`Enter` toggles a directory or edits a file. Navigator arrows now expand and
+collapse groups, with `Tab` retained for pane focus. Passive notifications no
+longer steal `Enter`. Focused routing/reducer tests, UI help, and the full gates
+pass in version 0.1.18. Overall required registry progress is 625/625 (100.0%).
+
 M40 Layers Tree Widget Integration is complete. The Layers filesystem view
 constructs `tui-tree-widget` items and state transiently from the model-selected
 bounded `LayerBrowser` viewport; nested paths, disclosure state, Git suffixes,
@@ -2124,3 +2132,11 @@ expansion, filter, lazy-I/O, bound, and viewport authority. The renderer creates
 and discards widget state per frame and routes no input through the dependency.
 Focused rendering, dependency compliance, exact concepts, workspace tests,
 Clippy, and documentation gates pass in v0.1.17.
+
+M41 is complete. The app focus router now gives hierarchy arrows to their
+focused owner: Navigator uses `Right`/`Left` for group expansion/collapse and
+Layers uses `Right` to open or expand plus `Left` to collapse or move to the
+parent. `Enter` opens a configured layer and toggles directories or edits files
+inside the tree. Passive notifications no longer consume `Enter`; actionable
+failure notifications and dismissal remain explicit. Focused tests cover the
+router, list entry, notification gate, and tree reducer in v0.1.18.

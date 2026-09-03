@@ -824,3 +824,20 @@ Exit criteria:
   are regression-tested
 - notices, SBOM, `cargo deny`, focused UI, workspace, Clippy, documentation,
   roadmap, and completion gates pass
+
+## M41 — Hierarchical key routing
+
+Goal: make Layers and Navigator hierarchy keys reach their typed owners without
+being shadowed by pane focus or passive notifications.
+
+Exit criteria:
+
+- configured Layers opens with `Enter`, `Right`, or `l`
+- the open Layers tree expands with `Right`/`l`, collapses or selects its parent
+  with `Left`/`h`, and toggles directories or edits files with `Enter`
+- Navigator `Right`/`Left` expands/collapses groups, while `Tab`/`Shift+Tab`
+  remain the unambiguous pane-focus controls
+- passive notifications do not consume `Enter`; actionable failure
+  notifications and `Esc` retain their documented routes
+- focused routing, reducer, UI, workspace, Clippy, documentation, roadmap, and
+  completion gates pass

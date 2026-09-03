@@ -10916,7 +10916,7 @@
     "properties": [
       {
         "name": "yoctui:cargo-lock-sha256",
-        "value": "3c59a0996e2a5594ece1513d63706ac43e331822eeadd2db6a1967dc9a3a6d5b"
+        "value": "a7211635f65c27da9d99f10a1440c641bed7ee979ce1abe3c8bfc559cd99a64d"
       }
     ],
     "tools": {
@@ -10929,7 +10929,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:880e8f2b-7e53-539c-9366-ab31d755a793",
+  "serialNumber": "urn:uuid:d96aa590-9144-50e5-bbdd-bcfb5101b08f",
   "specVersion": "1.5",
   "version": 1
 }

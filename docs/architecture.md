@@ -695,6 +695,11 @@ Owns:
 
 The model owns the cached layer tree by stable paths, expansion state,
 selection, Git/file metadata, preview classification, and Inspector mode.
+The app focus router reserves `Right` for opening or expanding the Layers
+hierarchy and reserves both horizontal arrows for the open tree; it maps
+Navigator `Right`/`Left` to group expansion/collapse while `Tab`/`Shift+Tab`
+remain the pane-focus route. The CLI applies passive notification routing only
+to `Esc`, so it cannot shadow the typed Layers `Enter` action.
 Expanding or refreshing emits a directory-specific effect; the CLI reads only
 that directory and returns typed entries. File previews are capped at 64 KiB
 and include path, text/binary classification, and truncation state. The reducer

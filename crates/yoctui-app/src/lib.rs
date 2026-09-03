@@ -5611,15 +5611,18 @@ pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
             Some(Action::SelectNavigator { delta: 1 })
         }
         (FocusTarget::Navigator, Input::Enter) => Some(Action::ActivateNavigator),
-        (FocusTarget::Navigator, Input::Char('h')) => Some(Action::CollapseNavigatorGroup),
-        (FocusTarget::Navigator, Input::Char('l')) => Some(Action::ExpandNavigatorGroup),
-        (FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector, Input::Left) => {
+        (FocusTarget::Navigator, Input::Left | Input::Char('h')) => {
+            Some(Action::CollapseNavigatorGroup)
+        }
+        (FocusTarget::Navigator, Input::Right | Input::Char('l')) => {
+            Some(Action::ExpandNavigatorGroup)
+        }
+        (FocusTarget::Workspace | FocusTarget::Inspector, Input::Left) => {
             Some(Action::CycleFocus { backwards: true })
         }
-        (
-            FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector,
-            Input::Right,
-        ) => Some(Action::CycleFocus { backwards: false }),
+        (FocusTarget::Workspace | FocusTarget::Inspector, Input::Right) => {
+            Some(Action::CycleFocus { backwards: false })
+        }
         (FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector, Input::Tab) => {
             Some(Action::CycleFocus { backwards: false })
         }
@@ -5652,6 +5655,16 @@ pub fn focus_action_for_app(app: &yoctui_model::App, key: Input) -> Option<Actio
         {
             return Some(Action::ResetPaneSubfocus);
         }
+    }
+    // The Layers workspace uses horizontal motion for its hierarchy.  Let the
+    // workspace route Right to opening/expanding, and let an open tree own
+    // Left for collapse/parent navigation.  Tab and BackTab remain the
+    // unambiguous pane-focus controls.
+    if app.focus == FocusTarget::Workspace
+        && app.screen == Screen::Layers
+        && (key == Input::Right || (app.layer_browser.is_some() && key == Input::Left))
+    {
+        return None;
     }
     focus_action(app.focus, key)
 }
@@ -10345,11 +10358,11 @@ mod tests {
 
         assert_eq!(
             focus_action(FocusTarget::Navigator, Input::Left),
-            Some(Action::CycleFocus { backwards: true })
+            Some(Action::CollapseNavigatorGroup)
         );
         assert_eq!(
             focus_action(FocusTarget::Navigator, Input::Right),
-            Some(Action::CycleFocus { backwards: false })
+            Some(Action::ExpandNavigatorGroup)
         );
         assert_eq!(
             focus_action(FocusTarget::Navigator, Input::Char('h')),
@@ -10952,6 +10965,54 @@ mod tests {
         assert_eq!(
             layer_tree_action(true, Input::Char('b')),
             Some(Action::AppendMetadataQuery('b'))
+        );
+    }
+
+    #[test]
+    fn layers_workspace_owns_horizontal_hierarchy_keys_before_pane_focus() {
+        let mut app = yoctui_model::App::new(10, 1_000);
+        app.screen = Screen::Layers;
+        app.focus = FocusTarget::Workspace;
+        assert_eq!(focus_action_for_app(&app, Input::Right), None);
+        assert_eq!(
+            focus_action_for_app(&app, Input::Left),
+            Some(Action::CycleFocus { backwards: true })
+        );
+
+        let _ = yoctui_model::update(
+            &mut app,
+            Action::LoadLayerBrowserDirectory {
+                layer: "meta-test".into(),
+                root: "/tmp/meta-test".into(),
+                directory: "/tmp/meta-test".into(),
+                entries: Vec::new(),
+            },
+        );
+        assert_eq!(focus_action_for_app(&app, Input::Right), None);
+        assert_eq!(focus_action_for_app(&app, Input::Left), None);
+        assert_eq!(
+            focus_action_for_app(&app, Input::Tab),
+            Some(Action::CycleFocus { backwards: false })
+        );
+    }
+
+    #[test]
+    fn navigator_arrows_expand_and_collapse_groups_without_changing_panes() {
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Right),
+            Some(Action::ExpandNavigatorGroup)
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Left),
+            Some(Action::CollapseNavigatorGroup)
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Enter),
+            Some(Action::ActivateNavigator)
+        );
+        assert_eq!(
+            focus_action(FocusTarget::Navigator, Input::Tab),
+            Some(Action::CycleFocus { backwards: false })
         );
     }
 

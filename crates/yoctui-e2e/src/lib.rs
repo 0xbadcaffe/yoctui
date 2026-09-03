@@ -549,12 +549,12 @@ mod tests {
             (
                 "Navigator Left",
                 Input::Left,
-                Action::CycleFocus { backwards: true },
+                Action::CollapseNavigatorGroup,
             ),
             (
                 "Navigator Right",
                 Input::Right,
-                Action::CycleFocus { backwards: false },
+                Action::ExpandNavigatorGroup,
             ),
             (
                 "Navigator h",

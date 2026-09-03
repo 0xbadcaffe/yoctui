@@ -17,4 +17,4 @@ libc.workspace = true
 
 [dev-dependencies]
 proptest.workspace = true
-yoctui-model = { version = "0.1.17", path = "../yoctui-model" }
+yoctui-model = { version = "0.1.18", path = "../yoctui-model" }

@@ -13020,6 +13020,8 @@ async fn tui(
                     }
                 } else if let Some(action) = notification_input_action(
                     app.notification.is_some(),
+                    app.build.status == BuildStatus::Failed
+                        && app.logs.diagnostics().next().is_some(),
                     app.screen == Screen::Settings && app.settings_dirty,
                     input,
                 ) {
@@ -13628,13 +13630,12 @@ async fn tui(
                 {
                     let delta = collection_scroll_delta(input).expect("scroll key was checked");
                     let _ = compatibility_workspace_action(&mut app, Action::SelectLayer { delta });
-                } else if app.screen == yoctui_model::Screen::Layers && input == Input::Enter {
+                } else if let Some(action) = layer_list_open_action(&app, input) {
                     if let Some(Effect::LoadLayerBrowserDirectory {
                         layer,
                         root,
                         directory,
-                    }) =
-                        compatibility_workspace_action(&mut app, Action::BeginSelectedLayerBrowser)
+                    }) = compatibility_workspace_action(&mut app, action)
                     {
                         load_layer_browser_directory(&mut app, layer, root, directory).await;
                     }
@@ -14188,8 +14189,16 @@ fn pane_focus_route(app: &App, input: Input) -> Option<Action> {
     focus_action_for_app(app, input)
 }
 
+fn layer_list_open_action(app: &App, input: Input) -> Option<Action> {
+    (app.screen == Screen::Layers
+        && app.layer_browser.is_none()
+        && matches!(input, Input::Enter | Input::Right | Input::Char('l')))
+    .then_some(Action::BeginSelectedLayerBrowser)
+}
+
 fn notification_input_action(
     visible: bool,
+    actionable: bool,
     settings_retry_available: bool,
     input: Input,
 ) -> Option<Action> {
@@ -14197,7 +14206,7 @@ fn notification_input_action(
         return None;
     }
     match input {
-        Input::Enter => Some(Action::ActivateNotification),
+        Input::Enter if actionable => Some(Action::ActivateNotification),
         Input::Esc => Some(Action::DismissNotification),
         _ => None,
     }
@@ -16604,17 +16613,36 @@ mod tests {
     #[test]
     fn focus_routing_notifications_consume_only_their_documented_keys() {
         assert!(matches!(
-            notification_input_action(true, false, Input::Enter),
+            notification_input_action(true, true, false, Input::Enter),
             Some(Action::ActivateNotification)
         ));
         assert!(matches!(
-            notification_input_action(true, false, Input::Esc),
+            notification_input_action(true, false, false, Input::Esc),
             Some(Action::DismissNotification)
         ));
+        assert!(notification_input_action(true, false, false, Input::Enter).is_none());
         for input in [Input::CtrlP, Input::Char('?'), Input::F5, Input::Char('r')] {
-            assert!(notification_input_action(true, false, input).is_none());
+            assert!(notification_input_action(true, false, false, input).is_none());
         }
-        assert!(notification_input_action(true, true, Input::Char('r')).is_none());
+        assert!(notification_input_action(true, false, true, Input::Char('r')).is_none());
+    }
+
+    #[test]
+    fn layers_list_enter_right_and_l_open_the_selected_hierarchy() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Layers;
+        for input in [Input::Enter, Input::Right, Input::Char('l')] {
+            assert_eq!(
+                layer_list_open_action(&app, input),
+                Some(Action::BeginSelectedLayerBrowser)
+            );
+        }
+        assert!(layer_list_open_action(&app, Input::Left).is_none());
+        app.layer_browser = Some(yoctui_model::LayerBrowser::new(
+            "meta-test".into(),
+            "/tmp/meta-test".into(),
+        ));
+        assert!(layer_list_open_action(&app, Input::Enter).is_none());
     }
 
     #[cfg(unix)]

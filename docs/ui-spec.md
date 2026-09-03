@@ -849,8 +849,9 @@ Rules:
   routes instead of being discarded
 - global actions such as `Ctrl+P`, `F1`, `F10`, `q`, and `Ctrl+C` remain
   reachable from Navigator, Workspace, and Inspector focus
-- a non-dialog notification consumes only its documented `Enter` activation
-  and `Esc` dismissal keys; unrelated input continues through normal routing
+- a non-dialog notification consumes `Enter` only when it has an actionable
+  destination and consumes `Esc` for dismissal; a passive notification never
+  blocks `Enter`, arrows, or unrelated workspace input
 - `Esc`: close dialog, cancel transient mode, or return focus outward
 - dialogs trap focus until closed
 - opening a dialog or command palette remembers the active pane; transitions
@@ -952,7 +953,7 @@ scan or lose path identity.
 
 From the configured-layer inventory:
 
-- `Enter`: open the selected layer's lazy metadata browser
+- `Enter` / `Right` / `l`: open the selected layer's lazy metadata browser
 - `e`: open the selected layer in the large in-TUI two-pane editor
 - `o`: open the selected layer root in the configured external editor
 - `R`: inspect authoritative layer relationships
