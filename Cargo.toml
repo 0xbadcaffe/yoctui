@@ -8,7 +8,7 @@ exclude = ["fuzz"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.16"
+version = "0.1.17"
 edition = "2024"
 license = "MIT"
 authors = ["Roy Cohen <roy@0xbadcaffe.dev>"]
@@ -30,6 +30,7 @@ thiserror = "2.0"
 throbber-widgets-tui = { version = "0.11.1", default-features = false, features = ["std"] }
 tui-piechart = { version = "=1.0.2", default-features = false }
 tui-term = { version = "=0.3.4", default-features = false }
+tui-tree-widget = { version = "=0.24.1", default-features = false }
 tokio = { version = "1.49", features = ["macros", "rt-multi-thread", "process", "io-util", "sync", "time", "signal", "fs"] }
 toml = "0.9"
 tracing = "0.1"

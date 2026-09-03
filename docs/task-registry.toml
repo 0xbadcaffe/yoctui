@@ -6915,3 +6915,16 @@ required = true
 depends_on = ["IMAGE-CONSOLE-MODEL-001", "IMAGE-CONSOLE-RUNTIME-001", "IMAGE-CONSOLE-UI-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Focused and full workspace tests, Clippy with denied warnings, documentation, concept parity, roadmap, and completion gates pass. Version 0.1.16 was installed from the optimized artifact and its daemon restarted in the Wrynose 6.0.2 build environment. Completed in v0.1.16."
+
+# M40 — Layers tree widget integration.
+
+[[task]]
+id = "UX-LAYER-TREE-WIDGET-001"
+milestone = "M40"
+title = "Render Layers with tui-tree-widget"
+status = "DONE"
+priority = 783
+required = true
+depends_on = ["UX-LIST-TREE-001", "UX-SELECTION-VIEWPORT-002"]
+verify = ["cargo test -p yoctui-ui ux_layer_browser", "./scripts/verify-third-party-notices.sh", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Layers uses pinned MIT tui-tree-widget 0.24.1 only as a transient renderer over the model-selected bounded path viewport. Model-owned expansion, selection, filtering, Git, lazy-I/O, and viewport state remain authoritative; widget input helpers are unused. Focused tests cover nested identities, Unicode, ASCII/no-color, malformed identities, and final-row visibility. Dependency compliance, exact concepts, workspace tests, Clippy, and documentation gates pass in v0.1.17."

@@ -806,3 +806,21 @@ Exit criteria:
 - opening/cancelling is no-spawn; missing/stale capability and malformed input
   fail closed with an exact visible reason
 - focused, workspace, Clippy, documentation, roadmap, and completion gates pass
+
+## M40 — Layers tree widget integration
+
+Goal: render the bounded lazy Layers filesystem with the admitted
+`tui-tree-widget` vocabulary without giving a renderer ownership of Yoctui
+state.
+
+Exit criteria:
+
+- nested loaded directories and files render through `tui-tree-widget` 0.24.1
+- stable path selection, lazy expansion, filtering, Git decoration, and
+  viewport intent remain model-owned
+- a fresh transient `TreeState` is derived for each frame and no widget event
+  helper handles keyboard or mouse input
+- Unicode, ASCII/no-color, malformed identity, and bottom-edge selection paths
+  are regression-tested
+- notices, SBOM, `cargo deny`, focused UI, workspace, Clippy, documentation,
+  roadmap, and completion gates pass

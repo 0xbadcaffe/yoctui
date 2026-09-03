@@ -973,6 +973,18 @@ Inside the layer browser/editor:
 
 The tree must not eagerly scan the entire Yocto source tree.
 
+The Layers filesystem projection uses the admitted `tui-tree-widget` 0.24.1
+renderer in both Unicode and ASCII modes. This changes rendering only:
+`LayerBrowser` remains the sole authority for stable paths, selection, lazy
+expansion, filtering, Git state, cycle/depth/count limits, and viewport intent.
+The UI slices the model-selected viewport first, then reconstructs `TreeItem`
+and `TreeState` transiently from that bounded window on every frame and discards
+them immediately. No widget key, click,
+toggle, or scroll helper receives input; the existing typed application actions
+remain the only interaction path. Filtered results retain their original depth,
+selected rows remain visible at the bottom edge, and duplicate or malformed
+widget identities render an explicit unavailable message rather than panicking.
+
 ---
 
 ## 8. Inspector

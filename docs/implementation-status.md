@@ -11,6 +11,14 @@ Status values:
 
 ## Current phase
 
+M40 Layers Tree Widget Integration is complete. The Layers filesystem view
+constructs `tui-tree-widget` items and state transiently from the model-selected
+bounded `LayerBrowser` viewport; nested paths, disclosure state, Git suffixes,
+Unicode/ASCII rendering, malformed identity handling, and final-row visibility
+have focused coverage. The pinned MIT dependency, notices, SBOM, Cargo-deny,
+workspace, Clippy, documentation, and concept gates pass in version 0.1.17.
+Overall required registry progress is 624/624 (100.0%).
+
 M39 Embedded Image Console is complete. Images `T` opens one typed workflow
 for an exact selected-artifact QEMU serial boot or an explicit connection to
 an already-running SSH target. Both become daemon-owned QEMU-console or
@@ -1250,6 +1258,7 @@ See `docs/current-task.md`.
 | M6 Maintenance | DONE | Typed Sstate, Services, Release, and optional integrations pass their atomic, cross-layer, and milestone parent gates |
 | M7 Hardening | DONE | Fuzz, stress/process-tree, ASan/LSan, property, terminal, Valgrind, deterministic profile, real perf-backed Flamegraph, honest Python coverage, transient-spawn handling, deterministic cancellation, CI, documentation, and completion integration pass |
 | M21 One-stop workbench usability | DONE | All 38 tasks pass the dedicated aggregate gate and unchanged strict repository completion gate |
+| M40 Layers tree widget integration | DONE | The bounded model-owned Layers hierarchy renders through a transient admitted `tui-tree-widget` adapter |
 | M12 crates.io distribution | IN_PROGRESS | Bundle the bridge, prepare the public package graph, then publish and clean-install `yoctui` 0.1.0 |
 
 ## Reconciliation evidence
@@ -2108,3 +2117,10 @@ target connection. SSH is labelled as connection-only, preserves normal
 host-key verification, stores no password, and never receives an
 application-constructed remote command. All four M39 tasks are complete in
 v0.1.16.
+
+M40 is complete. Layers now renders its loaded nested filesystem projection
+with `tui-tree-widget` 0.24.1 while the model retains all path, selection,
+expansion, filter, lazy-I/O, bound, and viewport authority. The renderer creates
+and discards widget state per frame and routes no input through the dependency.
+Focused rendering, dependency compliance, exact concepts, workspace tests,
+Clippy, and documentation gates pass in v0.1.17.

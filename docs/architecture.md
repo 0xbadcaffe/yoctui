@@ -3140,9 +3140,16 @@ List and tree virtualization uses `ListTreeProjection` and
 `variable_height_window`: stable string/path identities, expansion, selection,
 1-16-row card heights, viewport position, and 8,192-row/64-depth limits remain
 model values. Layer flattening rejects recursive path cycles and reports count
-or depth truncation. The evaluated tree, scrollview, and widget-list candidates
-were rejected because their state objects duplicate these authorities; Ratatui
-tables and paragraphs render only the bounded returned window.
+or depth truncation. Scrollview and widget-list candidates remain rejected
+because their state objects duplicate these authorities. Layers admits the
+pinned MIT `tui-tree-widget` 0.24.1 crate with default features disabled only
+through a transient UI adapter. The model's selected bounded viewport is sliced
+before adaptation; the adapter constructs nested `TreeItem`s and a fresh
+`TreeState` from those `LayerBrowser` paths, selected identity, and expanded set
+for one draw, then discards them. It invokes none of the
+widget's input, selection, expansion, click, or scroll helpers. Filtering,
+lazy filesystem effects, Git state, interaction, cycle/depth/count limits, and
+selection ownership therefore remain in the model/app/CLI boundaries.
 
 `yoctui_model::widget_projection` is the renderer-independent visual-value
 boundary. It owns overflow-safe fractions, bounded newest-first histories,

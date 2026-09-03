@@ -1,5 +1,5 @@
 schema_version = 1
-observed_at = "2026-08-26"
+observed_at = "2026-09-03"
 registry = "https://github.com/rust-lang/crates.io-index"
 ratatui_version = "0.30.2"
 ratatui_core_version = "0.1.2"
@@ -218,10 +218,10 @@ default_features = false
 enabled_features = []
 transitive_closure = 46
 transitive_sha256 = "22b8c10eaedd78259b3aac4d8d132da6154eb76db9eff0e73c9494e40353af3b"
-decision = "reject"
-admitted = false
-owner_task = "UX-LIST-TREE-001"
-reason = "Rejected after the external-state spike: LayerBrowser and ListTreeProjection already own stable IDs, bounded expansion, selection, cycle/depth/count limits, viewport projection, and exact Unicode/ASCII text without duplicating TreeState or adding the 46-package candidate closure."
+decision = "adopt"
+admitted = true
+owner_task = "UX-LAYER-TREE-WIDGET-001"
+reason = "Admitted only for the Layers filesystem projection with default features disabled. LayerBrowser remains the sole owner of stable paths, bounded lazy expansion, selection, filtering, cycle/depth/count limits, and viewport intent; yoctui-ui reconstructs TreeItem and TreeState transiently per frame, invokes no widget event helper, and retains exact ASCII/no-color fallbacks."
 
 [[candidate]]
 name = "tui-widget-list"

@@ -28,11 +28,12 @@ use ratatui::{
 };
 use std::{
     collections::HashMap,
-    path::Path,
+    path::{Path, PathBuf},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 use tui_piechart::{LegendPosition, PieChart, PieSlice, Resolution};
 use tui_term::widget::PseudoTerminal;
+use tui_tree_widget::{Tree, TreeItem, TreeState};
 use yoctui_model::{
     App, BackgroundJobKind, BackgroundJobOutputSource, BackgroundJobStatus, BuildEnvironmentState,
     BuildStatus, CommandCenterProjection, CommandPaletteMode, CompatibilityUiAuthorityStatus,
@@ -17659,6 +17660,158 @@ fn layer_inspector_text(app: &App, browser: &LayerBrowser) -> Text<'static> {
     }
 }
 
+struct LayerTreeWidgetProjection {
+    items: Vec<TreeItem<'static, PathBuf>>,
+    selected: Option<Vec<PathBuf>>,
+    opened: Vec<Vec<PathBuf>>,
+}
+
+#[derive(Default)]
+struct LayerTreeWidgetState {
+    selected: Option<Vec<PathBuf>>,
+    opened: Vec<Vec<PathBuf>>,
+}
+
+fn layer_tree_entry_label(
+    browser: &LayerBrowser,
+    entry: &LayerBrowserEntry,
+    unicode: bool,
+    widget_branch: bool,
+    leading_depth: usize,
+) -> String {
+    let name = entry.path.file_name().map_or_else(
+        || entry.path.display().to_string(),
+        |name| name.to_string_lossy().into_owned(),
+    );
+    let marker = if widget_branch {
+        ""
+    } else if entry.is_dir {
+        match (unicode, browser.expanded.contains(&entry.path)) {
+            (true, true) => "▾ ",
+            (true, false) => "▸ ",
+            (false, true) => "- ",
+            (false, false) => "+ ",
+        }
+    } else {
+        "  "
+    };
+    let git = match entry.git {
+        GitFileState::Modified => " M",
+        GitFileState::Untracked => " ?",
+        GitFileState::Ignored => " I",
+        GitFileState::Clean => "  ",
+        GitFileState::Unavailable => " -",
+    };
+    format!(
+        "{}{marker}{name}{}{git}",
+        "  ".repeat(leading_depth),
+        if entry.is_dir { "/" } else { "" }
+    )
+}
+
+fn nested_layer_tree_items(
+    browser: &LayerBrowser,
+    entries: &[(usize, &LayerBrowserEntry)],
+    cursor: &mut usize,
+    depth: usize,
+    parent_ids: &[PathBuf],
+    state: &mut LayerTreeWidgetState,
+    unicode: bool,
+) -> std::io::Result<Vec<TreeItem<'static, PathBuf>>> {
+    let mut items = Vec::new();
+    while let Some((index, entry)) = entries.get(*cursor).copied() {
+        if entry.depth < depth {
+            break;
+        }
+        if entry.depth > depth {
+            // LayerBrowser's bounded DFS normally advances one level at a
+            // time. Treat a malformed gap as a visible leaf rather than
+            // allowing a renderer-only projection to panic.
+            let label = layer_tree_entry_label(
+                browser,
+                entry,
+                unicode,
+                false,
+                entry.depth.saturating_sub(depth),
+            );
+            let mut ids = parent_ids.to_vec();
+            ids.push(entry.path.clone());
+            if index == browser.selection {
+                state.selected = Some(ids);
+            }
+            items.push(TreeItem::new_leaf(entry.path.clone(), label));
+            *cursor += 1;
+            continue;
+        }
+
+        *cursor += 1;
+        let mut ids = parent_ids.to_vec();
+        ids.push(entry.path.clone());
+        let has_nested_children = entry.is_dir
+            && entries
+                .get(*cursor)
+                .is_some_and(|(_, next)| next.depth > depth);
+        let children = if has_nested_children {
+            nested_layer_tree_items(browser, entries, cursor, depth + 1, &ids, state, unicode)?
+        } else {
+            Vec::new()
+        };
+        if !children.is_empty() {
+            state.opened.push(ids.clone());
+        }
+        if index == browser.selection {
+            state.selected = Some(ids);
+        }
+        let label = layer_tree_entry_label(browser, entry, unicode, !children.is_empty(), 0);
+        let item = if children.is_empty() {
+            TreeItem::new_leaf(entry.path.clone(), label)
+        } else {
+            TreeItem::new(entry.path.clone(), label, children)?
+        };
+        items.push(item);
+    }
+    Ok(items)
+}
+
+fn layer_tree_widget_projection(
+    browser: &LayerBrowser,
+    entries: &[(usize, &LayerBrowserEntry)],
+    unicode: bool,
+    filtered: bool,
+) -> std::io::Result<LayerTreeWidgetProjection> {
+    if filtered {
+        let mut selected = None;
+        let items = entries
+            .iter()
+            .map(|(index, entry)| {
+                let id = entry.path.clone();
+                if *index == browser.selection {
+                    selected = Some(vec![id.clone()]);
+                }
+                TreeItem::new_leaf(
+                    id,
+                    layer_tree_entry_label(browser, entry, unicode, false, entry.depth),
+                )
+            })
+            .collect();
+        return Ok(LayerTreeWidgetProjection {
+            items,
+            selected,
+            opened: Vec::new(),
+        });
+    }
+
+    let mut cursor = 0;
+    let mut state = LayerTreeWidgetState::default();
+    let items =
+        nested_layer_tree_items(browser, entries, &mut cursor, 0, &[], &mut state, unicode)?;
+    Ok(LayerTreeWidgetProjection {
+        items,
+        selected: state.selected,
+        opened: state.opened,
+    })
+}
+
 fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
     let chunks =
         Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)]).split(area);
@@ -17771,66 +17924,60 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         )),
         tree[0],
     );
-    frame.render_widget(
-        Table::new(
-            entries
-                .into_iter()
-                .skip(viewport.start)
-                .take(viewport.end.saturating_sub(viewport.start))
-                .map(|(index, entry)| {
-                    let name = entry.path.file_name().map_or_else(
-                        || entry.path.display().to_string(),
-                        |name| name.to_string_lossy().into_owned(),
-                    );
-                    let marker = if entry.is_dir {
-                        if browser.expanded.contains(&entry.path) {
-                            "▾"
-                        } else {
-                            "▸"
-                        }
-                    } else {
-                        " "
-                    };
-                    let git = match entry.git {
-                        GitFileState::Modified => " M",
-                        GitFileState::Untracked => " ?",
-                        GitFileState::Ignored => " I",
-                        GitFileState::Clean => "  ",
-                        GitFileState::Unavailable => " -",
-                    };
-                    let indent = "  ".repeat(entry.depth);
-                    Row::new([format!(
-                        "{indent}{marker} {name}{}{git}",
-                        if entry.is_dir { "/" } else { "" }
-                    )])
-                    .style(selected_style(app, index == browser.selection))
-                }),
-            [Constraint::Min(1)],
-        )
-        .block(
-            Block::default()
-                .title(format!(
-                    "{} tree | hidden {} | rows {}-{} of {}{}{}",
-                    browser.layer,
-                    if browser.show_hidden { "on" } else { "off" },
-                    viewport.start.saturating_add(usize::from(viewport.end > 0)),
-                    viewport.end,
-                    browser.entries.len(),
-                    if browser.tree_truncated {
-                        " | bounded"
-                    } else {
-                        ""
-                    },
-                    if browser.cycle_entries > 0 {
-                        " | cycle rejected"
-                    } else {
-                        ""
-                    }
-                ))
-                .borders(Borders::ALL),
-        ),
-        tree[1],
+    let title = format!(
+        "{} tree | hidden {} | rows {}-{} of {}{}{}",
+        browser.layer,
+        if browser.show_hidden { "on" } else { "off" },
+        viewport.start.saturating_add(usize::from(viewport.end > 0)),
+        viewport.end,
+        browser.entries.len(),
+        if browser.tree_truncated {
+            " | bounded"
+        } else {
+            ""
+        },
+        if browser.cycle_entries > 0 {
+            " | cycle rejected"
+        } else {
+            ""
+        }
     );
+    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+    let visible_entries = entries
+        .get(viewport.start..viewport.end)
+        .unwrap_or_default();
+    match layer_tree_widget_projection(browser, visible_entries, unicode, !query.is_empty())
+        .and_then(|projection| {
+            let LayerTreeWidgetProjection {
+                items,
+                selected,
+                opened,
+            } = projection;
+            let widget = Tree::new(&items)?
+                .block(Block::default().title(title.clone()).borders(Borders::ALL))
+                .style(palette.base())
+                .highlight_style(selected_style(app, true))
+                .highlight_symbol("")
+                .node_open_symbol(if unicode { "▾ " } else { "- " })
+                .node_closed_symbol(if unicode { "▸ " } else { "+ " })
+                .node_no_children_symbol("");
+            let mut state = TreeState::default();
+            for path in opened {
+                state.open(path);
+            }
+            if let Some(path) = selected {
+                state.select(path);
+            }
+            frame.render_stateful_widget(widget, tree[1], &mut state);
+            Ok(())
+        }) {
+        Ok(()) => {}
+        Err(_) => frame.render_widget(
+            Paragraph::new("Layer tree unavailable: duplicate or malformed path identity.")
+                .block(Block::default().title(title).borders(Borders::ALL)),
+            tree[1],
+        ),
+    }
 
     let mode = match browser.inspector_mode {
         LayerInspectorMode::Preview => "Preview",
@@ -29104,6 +29251,102 @@ mod tests {
         assert!(output.contains("BBFILE_COLLECTIONS"));
         assert!(output.contains("M"));
         assert!(output.contains("1"));
+    }
+
+    #[test]
+    fn ux_layer_browser_tui_tree_widget_preserves_model_identity_viewport_and_ascii() {
+        let mut app = App::new(10, 1_000);
+        app.screen = Screen::Layers;
+        app.workspace.layers.push(yoctui_model::Layer {
+            name: "meta-demo".into(),
+            path: "/layers/meta-demo".into(),
+            priority: Some(7),
+        });
+        let mut browser = LayerBrowser::new("meta-demo".into(), "/layers/meta-demo".into());
+        let conf = PathBuf::from("/layers/meta-demo/conf");
+        browser.expanded.insert(conf.clone());
+        browser.entries = vec![
+            LayerBrowserEntry {
+                path: conf.clone(),
+                is_dir: true,
+                git: GitFileState::Clean,
+                ..LayerBrowserEntry::default()
+            },
+            LayerBrowserEntry {
+                path: conf.join("layer.conf"),
+                depth: 1,
+                git: GitFileState::Modified,
+                ..LayerBrowserEntry::default()
+            },
+            LayerBrowserEntry {
+                path: "/layers/meta-demo/recipes-core".into(),
+                is_dir: true,
+                git: GitFileState::Untracked,
+                ..LayerBrowserEntry::default()
+            },
+        ];
+        browser.selection = 1;
+
+        let indexed = browser.entries.iter().enumerate().collect::<Vec<_>>();
+        let projection = layer_tree_widget_projection(&browser, &indexed, true, false).unwrap();
+        let mut state = TreeState::default();
+        for path in &projection.opened {
+            state.open(path.clone());
+        }
+        state.select(projection.selected.clone().unwrap());
+        let flattened = state.flatten(&projection.items);
+        assert_eq!(flattened.len(), browser.entries.len());
+        assert_eq!(
+            state.selected().last(),
+            Some(&PathBuf::from("/layers/meta-demo/conf/layer.conf"))
+        );
+        assert!(
+            flattened[1]
+                .identifier
+                .starts_with(&[conf.clone(), conf.join("layer.conf")])
+        );
+
+        app.layer_browser = Some(browser.clone());
+        let unicode = rendered_text(&app, 120, 30);
+        assert!(unicode.contains("▾ conf/"), "{unicode}");
+        assert!(unicode.contains("layer.conf M"), "{unicode}");
+        assert!(unicode.contains("▸ recipes-core/ ?"), "{unicode}");
+
+        app.preferences.symbols = SymbolPreference::Ascii;
+        app.color_enabled = false;
+        let ascii = rendered_text(&app, 120, 30);
+        assert!(ascii.contains("- conf/"), "{ascii}");
+        assert!(ascii.contains("+ recipes-core/ ?"), "{ascii}");
+
+        let browser = app.layer_browser.as_mut().unwrap();
+        browser.entries = (0..40)
+            .map(|index| LayerBrowserEntry {
+                path: format!("/layers/meta-demo/file-{index:02}.bb").into(),
+                ..LayerBrowserEntry::default()
+            })
+            .collect();
+        browser.selection = 39;
+        let bottom = rendered_text(&app, 120, 30);
+        assert!(bottom.contains("file-39.bb"), "{bottom}");
+        assert!(!bottom.contains("file-00.bb"), "{bottom}");
+
+        let browser = app.layer_browser.as_mut().unwrap();
+        browser.entries = vec![
+            LayerBrowserEntry {
+                path: "/layers/meta-demo/duplicate".into(),
+                ..LayerBrowserEntry::default()
+            },
+            LayerBrowserEntry {
+                path: "/layers/meta-demo/duplicate".into(),
+                ..LayerBrowserEntry::default()
+            },
+        ];
+        browser.selection = 0;
+        let malformed = rendered_text(&app, 120, 30);
+        assert!(
+            malformed.contains("Layer tree unavailable: duplicate or ma"),
+            "{malformed}"
+        );
     }
 
     #[test]

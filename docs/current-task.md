@@ -2,43 +2,39 @@
 
 ## Task
 
-**ID:** IMAGE-CONSOLE-001
-**Title:** Complete QEMU and SSH image consoles
+**ID:** UX-LAYER-TREE-WIDGET-001
+**Title:** Render Layers with tui-tree-widget
 **Status:** DONE
 
 ## Objective
 
-Images exposes one typed, bounded console request that either boots the exact
-selected artifact with `runqemu` in a daemon-owned PTY or connects to an
-explicit SSH destination in the same terminal workbench.
+Layers renders its bounded lazy filesystem projection through the admitted
+`tui-tree-widget` crate without transferring selection, expansion, filtering,
+scrolling, filesystem, or input authority out of Yoctui's typed model.
 
 ## Dependencies
 
-- UX-TERMINAL-UX-001 — DONE
-- IMAGE-TARGET-AUTH-001 — DONE
+- UX-LIST-TREE-001 — DONE
+- UX-SELECTION-VIEWPORT-002 — DONE
 
 ## Definition of done
 
-- QEMU console launch is bound to the selected artifact and current inspected
-  `runqemu` executable, with `nographic` and `serialstdio` enforced.
-- SSH requires an explicit validated host, user, port, and optional normalized
-  absolute identity path; it retains normal host-key verification, persists no
-  password, and supplies no remote shell command.
-- Both modes emit argv-preserving daemon PTY requests and use the existing
-  `tui-term` replica renderer.
-- Opening or cancelling the dialog spawns nothing; unavailable executables and
-  stale image authority fail closed with exact reasons.
-- Focused model, app, protocol, daemon, UI, workspace, Clippy, documentation,
-  roadmap, and completion checks pass.
+- Nested visible entries render with `tui-tree-widget` 0.24.1 while collapsed
+  unloaded directories retain an explicit disclosure marker.
+- `LayerBrowser` remains the sole selection, expansion, lazy-loading, Git,
+  filter, bound, and viewport authority.
+- The UI creates and discards `TreeItem`/`TreeState` values per draw and never
+  routes input through widget helpers.
+- Unicode, ASCII/no-color, nested selection, malformed identity, and final-row
+  visibility are covered by deterministic tests.
+- Dependency admission, notices, SBOM, Cargo-deny, focused UI, workspace,
+  Clippy, documentation, roadmap, and completion checks pass.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model image_console
-cargo test -p yoctui-app image_console
-cargo test -p yoctui-protocol image_console
-cargo test -p yoctui-cli image_console
-cargo test -p yoctui-ui image_console
+cargo test -p yoctui-ui ux_layer_browser
+./scripts/verify-third-party-notices.sh
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh
@@ -46,5 +42,4 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/verify-completion.sh
 ```
 
-SSH is a connection to an already-running target, not a claim that SSH boots
-the image. QEMU is the boot path. Both remain daemon-owned terminal sessions.
+The widget is a renderer, not a filesystem browser or interaction authority.
