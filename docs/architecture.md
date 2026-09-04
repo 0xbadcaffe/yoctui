@@ -3442,3 +3442,18 @@ and remains sole owner of the child process group, parser/emulator, terminal
 screen, writer lease, scrollback, resize, termination, persistence, and journal
 replication. `tui-term` remains a stateless typed-cell renderer and gains no
 process, SSH, QEMU, or input authority.
+
+## M42 dashboard, preview, and external-edit boundary
+
+`yoctui-model` owns focus relevance, preview scroll offsets, layer information
+visibility, and the two editor baselines: current disk content and the visual
+pre-edit comparison. `yoctui-app` maps keys to typed actions. `yoctui-ui`
+projects Dashboard through the existing task cockpit, derives transient
+`tui-tree-widget`/`tui-piechart` state, and never performs filesystem or daemon
+I/O.
+
+The CLI alone starts and polls the daemon and owns terminal suspension around
+Vim. On return it reloads the selected file through the containment-checked
+editor workflow; the reducer advances disk authority while retaining the
+visual diff baseline. Builds still leave the model as typed `BuildRequest`
+effects and execute through the existing daemon/backend path.

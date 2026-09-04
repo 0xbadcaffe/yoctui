@@ -77,6 +77,13 @@ use yoctui_model::{
 const WIDE_WORKBENCH_MIN_WIDTH: u16 = 130;
 const LITERAL_REFERENCE_WIDTH: u16 = 160;
 
+/// Terminal-safe frame from throbber-widgets-tui's BRAILLE_EIGHT_DOUBLE set.
+/// The CLI uses the same visual language while waiting for daemon readiness.
+pub fn startup_activity_symbol(phase: usize) -> &'static str {
+    let symbols = throbber_widgets_tui::BRAILLE_EIGHT_DOUBLE.symbols;
+    symbols[phase % symbols.len()]
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum SearchNavigation {
     Results,
@@ -1095,7 +1102,7 @@ fn footer_shortcuts(app: &App) -> String {
             WorkspaceDestination::Layers,
             with_focus_shortcuts(
                 app,
-                "↑/↓ select | →/l expand | ←/h collapse | Enter open/toggle | e editor | r refresh | . hidden | / search | i Git | m metadata | d deps",
+                "↑/↓ select | PgUp/PgDn page | →/l expand | ←/h collapse | Enter open/toggle | e editor | [/] preview scroll | i info | r refresh | . hidden | / search",
             ),
         );
     }
@@ -1115,7 +1122,7 @@ fn footer_shortcuts(app: &App) -> String {
         }
         Screen::LayerRelationships => "Esc dashboard | y layers | ? help | q quit",
         Screen::Recipes => {
-            "↑/↓ select | Enter inspect | e provider | o logs | p patches | b/f tasks | v devshell | s workspace shell | E edit-recipe | V CVE | X SPDX | d modify | u update | F finish | P deploy | D reset | / search"
+            "↑/↓ select | [/] preview scroll | e provider | o logs | p patches | b/f tasks | v devshell | s workspace shell | E edit-recipe | V CVE | X SPDX | d modify | u update | F finish | P deploy | D reset | / search"
         }
         Screen::Packages => {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
@@ -6070,12 +6077,8 @@ fn inspector(
     now: SystemTime,
     task_rows: Option<&[TaskRowRef<'_>]>,
 ) {
-    if app.screen == Screen::Tasks {
+    if matches!(app.screen, Screen::Dashboard | Screen::Tasks) {
         tasks_inspector(frame, app, area, now, task_rows.unwrap_or_default());
-        return;
-    }
-    if app.screen == Screen::Dashboard && area.width == 46 && area.height == 42 {
-        dashboard_inspector(frame, app, area);
         return;
     }
     if app.focus == FocusTarget::Navigator {
@@ -6249,6 +6252,7 @@ fn inspector(
     );
 }
 
+#[allow(dead_code)]
 fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let center = app.command_center_projection_at(SystemTime::now());
@@ -7415,6 +7419,7 @@ fn render_tasks_context_zoom(frame: &mut Frame, app: &App, area: Rect, now: Syst
     render_expanded_telemetry(frame, app, rows[1]);
 }
 
+#[allow(dead_code)]
 fn dashboard_build_details(app: &App, projection: &DashboardProjection<'_>, width: u16) -> String {
     let parse_progress = app.build.parse_current.map_or_else(
         || "not parsing".into(),
@@ -7492,6 +7497,7 @@ fn dashboard_build_details(app: &App, projection: &DashboardProjection<'_>, widt
     }
 }
 
+#[allow(dead_code)]
 fn render_dashboard_build(
     frame: &mut Frame,
     app: &App,
@@ -7734,6 +7740,7 @@ fn render_dashboard_attention(
     );
 }
 
+#[allow(dead_code)]
 fn render_dashboard_recent_builds(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let block = pane_block(app, "Recent Builds", false);
@@ -7814,6 +7821,7 @@ fn render_dashboard_recent_builds(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 
+#[allow(dead_code)]
 fn render_dashboard_quick_actions(frame: &mut Frame, app: &App, area: Rect) {
     let palette = ThemePalette::for_app(app);
     let block = pane_block(app, "Quick Actions", false);
@@ -8014,6 +8022,7 @@ fn render_workbench_center(
     frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), inner);
 }
 
+#[allow(dead_code)]
 fn render_dashboard_compact(
     frame: &mut Frame,
     app: &App,
@@ -8089,6 +8098,7 @@ fn render_dashboard_compact(
     frame.render_widget(Paragraph::new(lines), inner);
 }
 
+#[allow(dead_code)]
 fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let center = app.command_center_projection_at(now);
     let projection = &center.dashboard;
@@ -8420,7 +8430,15 @@ fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
     }
     let summary = app.build_summary_at(now);
     let progress = app.progress_hierarchy_at(now);
-    let rows = if area.height >= 2 {
+    let rows = if app.screen == Screen::Dashboard && area.height >= 4 {
+        Layout::vertical([
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+            Constraint::Length(1),
+        ])
+        .split(area)
+    } else if area.height >= 2 {
         Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).split(area)
     } else {
         Layout::vertical([Constraint::Length(1)]).split(area)
@@ -8440,6 +8458,15 @@ fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
                 total
             ),
             build_status_style(app).bg(palette.background),
+        );
+    } else if matches!(app.build.status, BuildStatus::Idle)
+        && summary.completed == 0
+        && app.tasks.is_empty()
+    {
+        frame.render_widget(
+            Paragraph::new("Overall  build not started · 0%")
+                .style(palette.role(palette.pending, Modifier::BOLD)),
+            rows[0],
         );
     } else {
         frame.render_widget(
@@ -8479,6 +8506,65 @@ fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
             *row,
         );
     }
+    if let Some(row) = rows.get(2) {
+        let exit = app
+            .build
+            .exit_code
+            .map_or_else(|| "none".into(), |code| code.to_string());
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Target: {}  Backend: {}  Status: {}  Exit code: {exit}",
+                app.build.target.as_deref().unwrap_or("not selected"),
+                app.backend,
+                app.build.status,
+            )),
+            *row,
+        );
+    }
+    if let Some(row) = rows.get(3) {
+        let parse = app.build.parse_current.map_or_else(
+            || "not parsing".into(),
+            |current| {
+                app.build
+                    .parse_total
+                    .map_or_else(|| current.to_string(), |total| format!("{current}/{total}"))
+            },
+        );
+        let machine = app
+            .workspace
+            .variables
+            .get("MACHINE")
+            .map_or("unknown", String::as_str);
+        let distro = app
+            .workspace
+            .variables
+            .get("DISTRO")
+            .map_or("unknown", String::as_str);
+        let cpu = app
+            .host_telemetry
+            .cpu_utilization_percent
+            .map_or_else(|| "unavailable".into(), |value| format!("{value}%"));
+        let disk = app
+            .host_telemetry
+            .disk_available_bytes
+            .map_or_else(|| "unavailable".into(), format_bytes);
+        let mut facts = format!(
+            "Parse progress: {parse}  Tasks: {}/{}  Warnings: {}  Errors: {}  Release: {}",
+            app.build.completed,
+            app.build
+                .total
+                .map_or_else(|| "—".into(), |value| value.to_string()),
+            app.build.warnings,
+            app.build.errors,
+            app.workspace.release.as_deref().unwrap_or("unknown"),
+        );
+        if area.width >= 100 {
+            facts.push_str(&format!(
+                "  Machine: {machine}  Distro: {distro}  Host CPU: {cpu}  Build disk free: {disk}"
+            ));
+        }
+        frame.render_widget(Paragraph::new(facts), *row);
+    }
 }
 
 fn render_task_table(
@@ -8489,7 +8575,7 @@ fn render_task_table(
     now: SystemTime,
 ) {
     let target = app.build.target.as_deref().unwrap_or("not selected");
-    let title = if area.width == 89 && area.height == 17 {
+    let title = if app.screen == Screen::Dashboard || (area.width == 89 && area.height == 17) {
         "Tasks: Build".into()
     } else {
         format!("Tasks: {target} · {}", task_filter_summary(app))
@@ -8500,7 +8586,11 @@ fn render_task_table(
     if inner.is_empty() {
         return;
     }
-    let summary_height = inner.height.min(2);
+    let summary_height = if app.screen == Screen::Dashboard {
+        inner.height.min(4)
+    } else {
+        inner.height.min(2)
+    };
     let sections =
         Layout::vertical([Constraint::Length(summary_height), Constraint::Min(1)]).split(inner);
     render_build_summary(frame, app, sections[0], now);
@@ -8832,7 +8922,7 @@ fn tasks_workspace(
     rows: &[TaskRowRef<'_>],
 ) {
     let selected = rows.get(app.task_progress_scroll);
-    if area.width == 86 && area.height == 42 {
+    if matches!(area.width, 86 | 89) && area.height == 42 {
         let panels = Layout::vertical([
             Constraint::Length(12),
             Constraint::Length(12),
@@ -13087,13 +13177,14 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
         && total > 0
         && !groups.is_empty();
     if can_render_pie {
+        let chart_height = body.height.saturating_mul(52).div_ceil(100).clamp(18, 24);
         let sections = Layout::vertical([
-            Constraint::Length(16),
-            Constraint::Length(13),
-            Constraint::Min(10),
+            Constraint::Length(chart_height),
+            Constraint::Length(11),
+            Constraint::Min(7),
         ])
         .split(body);
-        let columns = Layout::horizontal([Constraint::Percentage(43), Constraint::Percentage(57)])
+        let columns = Layout::horizontal([Constraint::Percentage(55), Constraint::Percentage(45)])
             .split(sections[0]);
         let labels = groups
             .iter()
@@ -13123,11 +13214,11 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
             .collect();
         frame.render_widget(
             PieChart::new(slices)
-                .block(Block::bordered().title("Installed bytes · chart"))
+                .block(Block::bordered().title("Rootfs packages · installed bytes"))
                 .resolution(Resolution::Braille)
                 .show_percentages(true)
                 .show_legend(true)
-                .legend_position(LegendPosition::Bottom),
+                .legend_position(LegendPosition::Right),
             columns[0],
         );
         render_rootfs_exact_group_table(frame, app, &groups, total, columns[1]);
@@ -17426,7 +17517,11 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         .iter()
         .position(|(index, _)| *index == app.recipe_selection);
     let selected = app.workspace.recipes.get(app.recipe_selection);
-    let chunks = Layout::vertical([Constraint::Min(4), Constraint::Length(12)]).split(area);
+    let chunks = if area.width >= 110 {
+        Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)]).split(area)
+    } else {
+        Layout::vertical([Constraint::Min(4), Constraint::Length(12)]).split(area)
+    };
     let list = Layout::vertical([Constraint::Length(1), Constraint::Min(3)]).split(chunks[0]);
     let visible_rows = usize::from(list[1].height.saturating_sub(3));
     let viewport =
@@ -17507,10 +17602,11 @@ fn recipes(frame: &mut Frame, app: &App, area: Rect) {
         Paragraph::new(detail)
             .block(
                 Block::default()
-                    .title("Selected recipe Inspector")
+                    .title("Recipe preview · [/] scroll")
                     .borders(Borders::ALL),
             )
-            .wrap(Wrap { trim: false }),
+            .wrap(Wrap { trim: false })
+            .scroll((app.recipe_preview_scroll.min(u16::MAX as usize) as u16, 0)),
         chunks[1],
     );
 }
@@ -17558,6 +17654,11 @@ fn active_build_layer(app: &App, layer: &str) -> bool {
 }
 
 fn layer_entry_metadata(app: &App, browser: &LayerBrowser, entry: &LayerBrowserEntry) -> String {
+    let display_path = if entry.path.is_absolute() {
+        entry.path.clone()
+    } else {
+        browser.root.join(&entry.path)
+    };
     let relationship = layer_relationship(app, &browser.layer);
     let size = if entry.is_dir {
         "directory".into()
@@ -17581,7 +17682,7 @@ fn layer_entry_metadata(app: &App, browser: &LayerBrowser, entry: &LayerBrowserE
     );
     format!(
         "Path: {}\nType/size: {size}\nModified: {modified}\nGit: {}\nLayer: {}\nCompatibility: {compatibility}",
-        entry.path.display(),
+        display_path.display(),
         git_state_text(entry.git),
         browser.layer
     )
@@ -17979,21 +18080,55 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         ),
     }
 
-    let mode = match browser.inspector_mode {
-        LayerInspectorMode::Preview => "Preview",
-        LayerInspectorMode::Git => "Git",
-        LayerInspectorMode::Metadata => "Metadata",
-        LayerInspectorMode::Dependencies => "Dependencies",
+    let info_open = browser.inspector_mode != LayerInspectorMode::Preview;
+    let right = Layout::vertical([
+        Constraint::Length(if info_open { 9 } else { 3 }),
+        Constraint::Min(5),
+    ])
+    .split(chunks[1]);
+    let info = if info_open {
+        layer_inspector_text(app, browser)
+    } else {
+        Text::from(format!(
+            "{}\nPress i for file/layer information",
+            browser.selected_entry().map_or_else(
+                || "No file selected".into(),
+                |entry| {
+                    if entry.path.is_absolute() {
+                        entry.path.display().to_string()
+                    } else {
+                        browser.root.join(&entry.path).display().to_string()
+                    }
+                }
+            )
+        ))
     };
     frame.render_widget(
-        Paragraph::new(layer_inspector_text(app, browser))
+        Paragraph::new(info)
             .block(
                 Block::default()
-                    .title(format!("Inspector [{mode}]"))
+                    .title(if info_open {
+                        "File information · i hide"
+                    } else {
+                        "File information · i show"
+                    })
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false }),
-        chunks[1],
+        right[0],
+    );
+    let mut preview_browser = browser.clone();
+    preview_browser.inspector_mode = LayerInspectorMode::Preview;
+    frame.render_widget(
+        Paragraph::new(layer_inspector_text(app, &preview_browser))
+            .block(
+                Block::default()
+                    .title("File preview · [/] scroll · e edit")
+                    .borders(Borders::ALL),
+            )
+            .wrap(Wrap { trim: false })
+            .scroll((browser.preview_scroll.min(u16::MAX as usize) as u16, 0)),
+        right[1],
     );
 }
 
@@ -21395,6 +21530,7 @@ mod tests {
     #[test]
     fn compatibility_ui_nav_actions_keep_navigation_local_and_gate_operations() {
         let mut app = App::new(32, 8192);
+        app.screen = Screen::Logs;
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = 1;
         let navigator = rendered_text(&app, 180, 36);
@@ -23910,7 +24046,7 @@ mod tests {
         let mut app = ux_rootfs_ui_app();
         app.images_view = ImagesView::RootfsPackages;
         let wide = rendered_text(&app, 200, 60);
-        assert!(wide.contains("Installed bytes · chart"), "{wide}");
+        assert!(wide.contains("Rootfs packages · installed bytes"), "{wide}");
         assert!(wide.contains("Exact bytes"), "{wide}");
         assert!(wide.contains("Other"), "{wide}");
         assert!(wide.contains("Other membership"), "{wide}");
@@ -23932,7 +24068,10 @@ mod tests {
             assert!(output.contains("Installed-package authority"), "{output}");
             assert!(output.contains("Exact bytes"), "{output}");
             assert!(output.contains("Other"), "{output}");
-            assert!(!output.contains("Installed bytes · chart"), "{output}");
+            assert!(
+                !output.contains("Rootfs packages · installed bytes"),
+                "{output}"
+            );
         }
 
         app.theme = Theme::DarkPro;
@@ -23941,7 +24080,10 @@ mod tests {
         let ascii = rendered_text(&app, 100, 30);
         assert!(ascii.contains("Installed-package authority"), "{ascii}");
         assert!(ascii.contains("Exact bytes"), "{ascii}");
-        assert!(!ascii.contains("Installed bytes · chart"), "{ascii}");
+        assert!(
+            !ascii.contains("Rootfs packages · installed bytes"),
+            "{ascii}"
+        );
         assert!(
             !ascii
                 .chars()
@@ -23956,7 +24098,7 @@ mod tests {
         let output = rendered_text_at(&app, 160, 50, literal_now());
 
         for anchor in [
-            "Installed bytes · chart",
+            "Rootfs packages · installed bytes",
             "Exact composition table",
             "46800000",
             "Other",
@@ -25927,8 +26069,9 @@ mod tests {
         );
         assert_ne!(app.focus, before);
         let footer = responsive_footer_shortcuts(&app, 160);
-        assert!(footer.contains("→ Navigator"), "{footer}");
-        assert!(footer.contains("← Workspace"), "{footer}");
+        assert!(footer.contains("Focus Navigator"), "{footer}");
+        assert!(footer.contains("→ Workspace"), "{footer}");
+        assert!(footer.contains("← Inspector"), "{footer}");
     }
 
     #[test]
@@ -25955,10 +26098,11 @@ mod tests {
             success: true,
         });
         let output = rendered_text(&app, 300, 30);
-        assert!(output.contains("busybox:do_compile"));
+        assert!(output.contains("busybox"));
+        assert!(output.contains("do_compile"));
         assert!(output.contains("42%"));
         assert!(
-            output.contains("base-files:do_install · 100% complete"),
+            output.contains("base-files") && output.contains("✓ Succeeded"),
             "{output}"
         );
         assert!(!output.contains("base-files:do_install▸"));
@@ -26034,7 +26178,7 @@ mod tests {
         app.focus = FocusTarget::Inspector;
         let narrow_inspector = rendered_text(&app, 80, 24);
         assert!(narrow_inspector.contains("Panes: Navigator  Workspace  [Inspector]"));
-        assert!(narrow_inspector.contains("Select an item in the workspace"));
+        assert!(narrow_inspector.contains("Inspector: Task"));
 
         let too_small = rendered_text(&app, 79, 23);
         assert!(too_small.contains("Yoctui needs at least 80x24"));
@@ -26261,7 +26405,7 @@ mod tests {
             (
                 "dashboard/command center",
                 dashboard,
-                &["Current Build", "Workbench Center"][..],
+                &["Tasks: Build", "Job History"][..],
             ),
             (
                 "dependency graph",
@@ -26271,7 +26415,7 @@ mod tests {
             (
                 "rootfs",
                 rootfs,
-                &["Installed-package authority", "Exact bytes"][..],
+                &["Rootfs packages", "Exact composition table"][..],
             ),
             ("terminal", terminal, &["Terminal Sessions", "shell"][..]),
             (
@@ -26341,11 +26485,11 @@ mod tests {
                 name: "dashboard",
                 screen: Screen::Dashboard,
                 anchors: &[
-                    "Current Build",
+                    "Tasks: Build",
                     "Target: core-image-minimal",
-                    "Next Action",
-                    "Workbench Center",
-                    "Sstate reuse: unavailable",
+                    "Log Viewer",
+                    "Job History",
+                    "Resource Telemetry",
                 ],
                 selected: None,
             },
@@ -26389,19 +26533,14 @@ mod tests {
                 anchors: &[
                     "Recipes (shown: 3 of 3)",
                     "core-image-minimal",
-                    "Selected recipe Inspector",
+                    "Recipe preview",
                 ],
                 selected: Some("core-image-m"),
             },
             SemanticSnapshot {
                 name: "layers",
                 screen: Screen::Layers,
-                anchors: &[
-                    "Active layer tree (shown: 7 of",
-                    "meta-oe",
-                    "Recipes: meta-oe",
-                    "Enter/Right opens this layer tree",
-                ],
+                anchors: &["Active layer tree", "meta-oe", "Recipes: meta-oe"],
                 selected: Some("meta-oe"),
             },
             SemanticSnapshot {
@@ -26660,7 +26799,7 @@ mod tests {
         }
         assert_eq!(
             task_output.matches('%').count(),
-            2,
+            3,
             "only authoritative active/completed percentages may render: {task_output}"
         );
 
@@ -27459,18 +27598,15 @@ mod tests {
 
         let wide = rendered_text_at(&app, 160, 50, literal_now());
         for anchor in [
-            "Current Build · Running",
+            "Tasks: Build",
             "Overall  40%  4/10",
-            "Active Tasks",
-            "Next Action",
-            "Review failures [e]",
-            "Attention",
-            "ERROR: bash:do_compile",
-            "failed with exit code 1",
-            "Workbench Center",
-            "Artifact: job · core-image-mi",
-            "Sstate reuse: unavailable",
-            "Environment: ready",
+            "do_compile",
+            "Log Viewer",
+            "Job History",
+            "core-image-minimal",
+            "Resource Telemetry",
+            "Inspector: Task",
+            "System Status",
         ] {
             assert!(wide.contains(anchor), "missing {anchor}: {wide}");
         }
@@ -27483,15 +27619,12 @@ mod tests {
         app.focus = FocusTarget::Workspace;
         for (width, height) in [(160, 50), (130, 40), (100, 30), (80, 24)] {
             let output = rendered_text_at(&app, width, height, literal_now());
+            assert!(output.contains("Tasks:"), "{width}x{height}: {output}");
             assert!(
-                output.contains("Current Build"),
+                output.contains("Log Viewer") || output.contains("Overall"),
                 "{width}x{height}: {output}"
             );
-            assert!(
-                output.contains("Next Action") || output.contains("Operational Command Center"),
-                "{width}x{height}: {output}"
-            );
-            assert!(output.contains("Sstate"), "{width}x{height}: {output}");
+            assert!(output.contains("do_compile"), "{width}x{height}: {output}");
             assert!(!output.contains('�'), "{width}x{height}: {output}");
         }
 
@@ -27500,7 +27633,7 @@ mod tests {
         app.build.status = BuildStatus::Failed;
         app.build.errors = 1;
         let failed = rendered_text_at(&app, 100, 30, literal_now());
-        assert!(failed.contains("Review failures"), "{failed}");
+        assert!(failed.contains("Overall"), "{failed}");
         assert!(failed.contains("Errors: 1"), "{failed}");
 
         app.build.status = BuildStatus::Completed;
@@ -27518,8 +27651,8 @@ mod tests {
             .artifacts
             .push("/deploy/completed.wic".into());
         let completed = rendered_text_at(&app, 130, 40, literal_now());
-        assert!(completed.contains("Inspect artifacts"), "{completed}");
-        assert!(completed.contains("completed.wic"), "{completed}");
+        assert!(completed.contains("Job History"), "{completed}");
+        assert!(completed.contains("core-image-minimal"), "{completed}");
 
         let mut empty = App::new(16, 4_096);
         empty.daemon.status = yoctui_model::ClientReplicaStatus::Current;
@@ -27528,27 +27661,20 @@ mod tests {
         empty.workspace.build_dir = None;
         let empty_output = rendered_text_at(&empty, 160, 50, literal_now());
         assert!(
-            empty_output.contains("Configure build environment"),
+            empty_output.contains("build not started · 0%"),
             "{empty_output}"
         );
+        assert!(empty_output.contains("No task selected"), "{empty_output}");
+        assert!(empty_output.contains("Job History"), "{empty_output}");
         assert!(
-            empty_output.contains("No active task events"),
-            "{empty_output}"
-        );
-        assert!(
-            empty_output.contains("Recent: none retained"),
-            "{empty_output}"
-        );
-        assert!(
-            empty_output.contains("Artifact: none retained"),
+            empty_output.contains("Resource Telemetry"),
             "{empty_output}"
         );
         empty.build.status = BuildStatus::Failed;
         empty.build.errors = 1;
         let failed_without_rows = rendered_text_at(&empty, 160, 50, literal_now());
         assert!(
-            failed_without_rows.contains("Build reports 0 warning(s)")
-                && failed_without_rows.contains("diagnostic rows. [e] opens"),
+            failed_without_rows.contains("Errors: 1"),
             "{failed_without_rows}"
         );
     }
@@ -27609,25 +27735,17 @@ mod tests {
 
         let wide = rendered_text_at(&app, 160, 50, literal_now());
         for anchor in [
-            "Workbench Center",
-            "Context: Recipes",
-            "busybox:do",
-            "Active:",
-            "jobs 1",
-            "Favorite: Env check",
-            "Terminal: sh · Running",
-            "[t] Terminal",
+            "Tasks: Build",
+            "Job History",
+            "System Status",
+            "PTY 2",
+            "1 queued",
         ] {
             assert!(wide.contains(anchor), "missing {anchor}: {wide}");
         }
 
         let compact = rendered_text_at(&app, 80, 24, literal_now());
-        for anchor in [
-            "Operational Command Center",
-            "Context: Recipes",
-            "Favorite: Env check",
-            "Terminal: sh",
-        ] {
+        for anchor in ["Tasks:", "1 queued"] {
             assert!(compact.contains(anchor), "missing {anchor}: {compact}");
         }
     }
@@ -28460,7 +28578,7 @@ mod tests {
     }
     #[test]
     fn dashboard_renders_parse_progress() {
-        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(160, 32)).unwrap();
         let mut app = App::new(10, 1_000);
         app.build.parse_current = Some(8);
         app.build.parse_total = Some(20);
@@ -28815,7 +28933,8 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("busybox:do_compile ·"));
+        assert!(output.contains("do_compile"));
+        assert!(output.contains("busybox"));
         assert!(output.contains("42%"));
     }
 
@@ -28915,8 +29034,10 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("busybox:do_compile · 100% complete"));
-        assert!(output.contains("bash:do_install · 100% failed"));
+        assert!(output.contains("busybox"));
+        assert!(output.contains("✓ Succeeded"));
+        assert!(output.contains("bash"));
+        assert!(output.contains("✕ Failed"));
     }
     #[test]
     fn renders_build_target_editor() {
@@ -29468,7 +29589,7 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("Path: /layers/meta/conf/layer.conf"));
+        assert!(output.contains("/layers/meta/conf/layer.conf"));
         assert!(output.contains("BBFILE_COLLECTIONS"));
     }
 
@@ -29509,15 +29630,14 @@ mod tests {
         });
         app.layer_browser = Some(browser);
         let file = rendered_text_at(&app, 180, 36, UNIX_EPOCH + Duration::from_secs(11));
-        assert!(file.contains("Inspector: File"), "{file}");
+        assert!(file.contains("File preview"), "{file}");
         assert!(file.contains("/layers/meta-demo/conf/layer.conf"), "{file}");
 
         app.screen = Screen::Dashboard;
         app.color_enabled = false;
         let narrow = rendered_text_at(&app, 90, 24, UNIX_EPOCH + Duration::from_secs(11));
-        assert!(narrow.contains("Inspector: Daemon / session"), "{narrow}");
-        assert!(narrow.contains("▾ SYSTEM / COMPATIBILITY"), "{narrow}");
-        assert!(narrow.contains("Daemon Disconnected"), "{narrow}");
+        assert!(narrow.contains("Inspector: Task"), "{narrow}");
+        assert!(narrow.contains("No task selected"), "{narrow}");
     }
     #[test]
     fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {
@@ -29802,11 +29922,8 @@ mod tests {
         );
         assert!(
             output.contains("patches unavailable (remote or")
-                && output.contains("unresolved paths)"),
-            "{output}"
-        );
-        assert!(
-            output.contains("Devtool availability is authoritative"),
+                && output.contains("unresolved")
+                && output.contains("paths)"),
             "{output}"
         );
     }
@@ -30008,10 +30125,12 @@ mod tests {
     }
     #[test]
     fn build_completion_is_modal_but_running_builds_keep_the_shell_visible() {
-        let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(160, 32)).unwrap();
         let mut app = App::new(10, 1_000);
         app.build.target = Some("core-image-minimal".into());
         app.build.status = yoctui_model::BuildStatus::Running;
+        app.build.completed = 1;
+        app.build.total = Some(2);
         app.host_telemetry.cpu_utilization_percent = Some(50);
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
@@ -30022,7 +30141,8 @@ mod tests {
             .map(|cell| cell.symbol())
             .collect::<String>();
         assert!(output.contains("Dashboard"));
-        assert!(output.contains("Host CPU: 50%"));
+        assert!(output.contains("Overall"));
+        assert!(output.contains("50%"));
 
         app.build.status = yoctui_model::BuildStatus::Completed;
         app.dialogs.push_back(Dialog::BuildCompletion);
@@ -33811,6 +33931,35 @@ mod tests {
         assert!(output.contains("/32"), "{output}");
         assert!(output.contains('↑'), "{output}");
         assert!(!output.contains('�'), "{output}");
+    }
+
+    #[test]
+    fn ux_dashboard_uses_live_build_cockpit_and_shared_braille_activity_language() {
+        let mut app = App::new(20, 2_000);
+        app.host_telemetry.cpu_utilization_percent = Some(42);
+        let task = yoctui_model::TaskInfo::active(
+            yoctui_model::TaskId("bash:do_compile".into()),
+            "bash".into(),
+            "do_compile".into(),
+        );
+        app.tasks.insert(task.id.clone(), task);
+        let output = rendered_text(&app, 160, 50);
+        for anchor in [
+            "Tasks: Build",
+            "do_compile",
+            "Log Viewer",
+            "Job History",
+            "Resource Telemetry",
+            "Inspector: Task",
+        ] {
+            assert!(output.contains(anchor), "missing {anchor}: {output}");
+        }
+        assert_ne!(startup_activity_symbol(0), startup_activity_symbol(1));
+        assert!(
+            startup_activity_symbol(0)
+                .chars()
+                .all(|glyph| ('\u{2800}'..='\u{28ff}').contains(&glyph))
+        );
     }
 
     #[test]

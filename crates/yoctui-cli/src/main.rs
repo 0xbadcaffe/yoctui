@@ -19,7 +19,7 @@ use std::{
     env, fs,
     fs::OpenOptions,
     io,
-    io::{Read as _, Write as _},
+    io::{IsTerminal as _, Read as _, Write as _},
     path::{Path, PathBuf},
     process::{Command as ProcessCommand, Stdio},
     time::{Duration, Instant, SystemTime},
@@ -2006,11 +2006,29 @@ fn start_daemon() -> Result<()> {
         .spawn()
         .context("could not start the Yoctui daemon")?;
     let deadline = Instant::now() + DAEMON_STARTUP_TIMEOUT;
+    let interactive = io::stderr().is_terminal();
+    let mut indicator_phase = 0usize;
+    let mut next_indicator_frame = Instant::now();
     loop {
+        if interactive && Instant::now() >= next_indicator_frame {
+            eprint!(
+                "\r{} Starting Yoctui daemon…",
+                yoctui_ui::startup_activity_symbol(indicator_phase)
+            );
+            let _ = io::stderr().flush();
+            indicator_phase = indicator_phase.wrapping_add(1);
+            next_indicator_frame = Instant::now() + Duration::from_millis(80);
+        }
         if let Some(status) = child.try_wait()? {
+            if interactive {
+                eprint!("\r\x1b[2K");
+            }
             anyhow::bail!("Yoctui daemon exited during startup with {status}");
         }
         if let Ok(record) = daemon_is_available() {
+            if interactive {
+                eprint!("\r\x1b[2K");
+            }
             println!(
                 "Yoctui daemon started (pid {}, instance {})",
                 record.pid,
@@ -2019,6 +2037,9 @@ fn start_daemon() -> Result<()> {
             return Ok(());
         }
         if Instant::now() >= deadline {
+            if interactive {
+                eprint!("\r\x1b[2K");
+            }
             anyhow::bail!(
                 "Yoctui daemon did not become available at {} within {} seconds",
                 paths.socket.display(),
@@ -10777,6 +10798,9 @@ async fn tui(
     } else {
         App::new_unconfigured(log_entries, log_bytes)
     };
+    // The interactive application always opens on Overview / Dashboard in
+    // Navigator. Model fixtures retain their explicit focus semantics.
+    app.focus = yoctui_model::FocusTarget::Navigator;
     app.client_access_origin = client_access_origin();
     let _ = update(
         &mut app,
@@ -12361,6 +12385,25 @@ async fn tui(
                         }) => {
                             save_recipe_editor_file(&mut app, root, path, content, expected).await;
                         }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path.clone(), Some("vim")).await;
+                            if let Ok(content) = fs::read_to_string(path) {
+                                let _ = compatibility_workspace_action(
+                                    &mut app,
+                                    Action::LoadRecipeEditorExternalContent(content),
+                                );
+                            }
+                        }
+                        Some(Effect::Start(request)) => {
+                            begin_runtime_build(
+                                &mut daemon_runtime,
+                                &mut backend,
+                                &mut app,
+                                &mut build_jobs,
+                                request,
+                            )
+                            .await;
+                        }
                         Some(Effect::CopyToClipboard(content)) => {
                             copy_to_clipboard(&mut app, content).await;
                         }
@@ -12522,6 +12565,14 @@ async fn tui(
                             &mut app,
                             Action::SelectLayerBrowserEntry { delta: 1 },
                         ),
+                        Input::PageUp => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectLayerBrowserEntry { delta: -10 },
+                        ),
+                        Input::PageDown => compatibility_workspace_action(
+                            &mut app,
+                            Action::SelectLayerBrowserEntry { delta: 10 },
+                        ),
                         Input::Enter => {
                             compatibility_workspace_action(&mut app, Action::LayerBrowserEnter)
                         }
@@ -12550,7 +12601,15 @@ async fn tui(
                         }
                         Input::Char('i') => compatibility_workspace_action(
                             &mut app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Git),
+                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                        ),
+                        Input::Char('[') => compatibility_workspace_action(
+                            &mut app,
+                            Action::ScrollLayerBrowserPreview { delta: -10 },
+                        ),
+                        Input::Char(']') => compatibility_workspace_action(
+                            &mut app,
+                            Action::ScrollLayerBrowserPreview { delta: 10 },
                         ),
                         Input::Char('m') => compatibility_workspace_action(
                             &mut app,
@@ -16565,7 +16624,8 @@ mod tests {
             pane_focus_route(&navigator, Input::Down),
             Some(Action::SelectNavigator { delta: 1 })
         ));
-        let workspace = App::new(10, 1_000);
+        let mut workspace = App::new(10, 1_000);
+        workspace.focus = FocusTarget::Workspace;
         assert!(pane_focus_route(&workspace, Input::Down).is_none());
     }
 
@@ -16573,6 +16633,7 @@ mod tests {
     fn ux_focus_menu_activation_and_outward_escape_use_the_same_typed_reducer() {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Tasks;
+        app.focus = yoctui_model::FocusTarget::Workspace;
         let _ = update(&mut app, Action::CyclePaneSubfocus { backwards: false });
         assert_eq!(
             pane_focus_route(&app, Input::Esc),

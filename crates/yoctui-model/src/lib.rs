@@ -2107,7 +2107,7 @@ impl RecipeEditor {
     }
 
     pub fn diff_preview(&self, maximum_lines: usize) -> Vec<String> {
-        if !self.document.is_modified() || maximum_lines == 0 {
+        if !self.document.has_visual_diff() || maximum_lines == 0 {
             return Vec::new();
         }
         let mut document = self.document.clone();
@@ -3377,6 +3377,7 @@ pub struct LayerBrowser {
     pub preview: String,
     pub preview_kind: PreviewKind,
     pub preview_truncated: bool,
+    pub preview_scroll: usize,
     pub inspector_mode: LayerInspectorMode,
     pub tree_truncated: bool,
     pub cycle_entries: usize,
@@ -3397,6 +3398,7 @@ impl LayerBrowser {
             preview: String::new(),
             preview_kind: PreviewKind::Unavailable,
             preview_truncated: false,
+            preview_scroll: 0,
             inspector_mode: LayerInspectorMode::Preview,
             tree_truncated: false,
             cycle_entries: 0,
@@ -4018,6 +4020,7 @@ pub struct App {
     pub global_search_content: GlobalSearchContentState,
     pub error_selection: usize,
     pub recipe_selection: usize,
+    pub recipe_preview_scroll: usize,
     pub layer_selection: usize,
     pub config_selection: usize,
     pub config_scope: Option<String>,
@@ -4203,6 +4206,7 @@ impl App {
             global_search_content: GlobalSearchContentState::Idle,
             error_selection: 0,
             recipe_selection: 0,
+            recipe_preview_scroll: 0,
             layer_selection: 0,
             config_selection: 0,
             config_scope: None,
@@ -6243,6 +6247,9 @@ pub enum Action {
     SelectRecipe {
         delta: isize,
     },
+    ScrollRecipePreview {
+        delta: isize,
+    },
     BeginSelectedRecipeBuild,
     BeginSelectedRecipeClean,
     BeginSelectedRecipeMenuConfig,
@@ -6429,6 +6436,7 @@ pub enum Action {
         delta: isize,
     },
     LoadRecipeEditorContent(String),
+    LoadRecipeEditorExternalContent(String),
     FocusRecipeEditor(RecipeEditorFocus),
     EditRecipeEditor(PopupEditorCommand),
     BeginRecipeEditorSearch,
@@ -6439,6 +6447,7 @@ pub enum Action {
         backwards: bool,
     },
     ToggleRecipeEditorEditing,
+    OpenRecipeEditorExternal,
     AppendRecipeEditor(char),
     BackspaceRecipeEditor,
     SaveRecipeEditor,
@@ -6486,6 +6495,9 @@ pub enum Action {
     RefreshLayerBrowser,
     ToggleLayerBrowserHidden,
     SetLayerInspectorMode(LayerInspectorMode),
+    ScrollLayerBrowserPreview {
+        delta: isize,
+    },
     LoadLayerBrowserPreview {
         path: PathBuf,
         content: String,
@@ -9520,6 +9532,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             return transition.effect.map(Effect::Maintenance);
         }
         Action::Focus(target) => {
+            let target = if focus_target_is_relevant(app, target) {
+                target
+            } else {
+                FocusTarget::Navigator
+            };
             app.focus = target;
             if app.zoomed_pane.is_some() && is_pane_focus(target) {
                 app.zoomed_pane = Some(target);
@@ -10613,16 +10630,20 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 FocusTarget::Workspace,
                 FocusTarget::Inspector,
             ];
-            let current = TARGETS
+            let targets = TARGETS
+                .into_iter()
+                .filter(|target| focus_target_is_relevant(app, *target))
+                .collect::<Vec<_>>();
+            let current = targets
                 .iter()
                 .position(|target| *target == app.focus)
-                .unwrap_or(1);
+                .unwrap_or(0);
             let next = if backwards {
-                (current + TARGETS.len() - 1) % TARGETS.len()
+                (current + targets.len() - 1) % targets.len()
             } else {
-                (current + 1) % TARGETS.len()
+                (current + 1) % targets.len()
             };
-            app.focus = TARGETS[next];
+            app.focus = targets[next];
             if app.zoomed_pane.is_some() {
                 app.zoomed_pane = Some(app.focus);
             }
@@ -15381,6 +15402,17 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .unwrap_or(0);
             let position = shifted_index(position, delta, matches.len());
             app.recipe_selection = matches.get(position).copied().unwrap_or(0);
+            app.recipe_preview_scroll = 0;
+        }
+        Action::ScrollRecipePreview { delta } => {
+            app.recipe_preview_scroll = if delta.is_negative() {
+                app.recipe_preview_scroll
+                    .saturating_sub(delta.unsigned_abs())
+            } else {
+                app.recipe_preview_scroll
+                    .saturating_add(delta as usize)
+                    .min(4_095)
+            };
         }
         Action::BeginSelectedRecipeBuild => {
             begin_recipe_task(app, None, false);
@@ -16967,6 +16999,16 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 editor.refresh_language_and_validation();
             }
         }
+        Action::LoadRecipeEditorExternalContent(content) => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
+                editor.document.accept_external_edit(content);
+                editor.refresh_language_and_validation();
+                app.notification = Some(
+                    "External editor returned; review the diff, then Ctrl+B builds this recipe."
+                        .into(),
+                );
+            }
+        }
         Action::FocusRecipeEditor(focus) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
                 editor.focus = focus;
@@ -17028,6 +17070,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 editor.focus = RecipeEditorFocus::Document;
                 editor.document.toggle_insert();
             }
+        }
+        Action::OpenRecipeEditorExternal => {
+            if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog()
+                && let Some(path) = editor.selected_path()
+            {
+                return Some(Effect::OpenInEditor(path));
+            }
+            app.notification = Some("No recipe file is selected for the external editor.".into());
         }
         Action::AppendRecipeEditor(character) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut()
@@ -17186,6 +17236,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .unwrap_or(0);
                 let position = shifted_index(position, delta, matches.len());
                 browser.selection = matches.get(position).copied().unwrap_or(0);
+                browser.preview_scroll = 0;
                 if browser.selected_entry().is_some_and(|entry| entry.is_dir) {
                     browser.preview.clear();
                     browser.preview_kind = PreviewKind::Unavailable;
@@ -17296,7 +17347,24 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::SetLayerInspectorMode(mode) => {
             if let Some(browser) = app.layer_browser.as_mut() {
-                browser.inspector_mode = mode;
+                browser.inspector_mode = if browser.inspector_mode == mode {
+                    LayerInspectorMode::Preview
+                } else {
+                    mode
+                };
+            }
+        }
+        Action::ScrollLayerBrowserPreview { delta } => {
+            if let Some(browser) = app.layer_browser.as_mut() {
+                let maximum = browser.preview.lines().count().saturating_sub(1);
+                browser.preview_scroll = if delta.is_negative() {
+                    browser.preview_scroll.saturating_sub(delta.unsigned_abs())
+                } else {
+                    browser
+                        .preview_scroll
+                        .saturating_add(delta as usize)
+                        .min(maximum)
+                };
             }
         }
         Action::LoadLayerBrowserPreview {
@@ -18902,6 +18970,7 @@ mod tests {
     #[test]
     fn responsive_pane_focus_cycle_cannot_escape_modal_focus() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
         app.focus = FocusTarget::Dialog;
         let _ = update(&mut app, Action::CycleFocus { backwards: false });
         assert_eq!(app.focus, FocusTarget::Dialog);
@@ -21052,6 +21121,47 @@ mod tests {
         };
         assert!(!editor.document.is_modified());
         assert!(editor.diff_preview(2).is_empty());
+        let _ = update(&mut app, Action::BeginRecipeEditorBuild);
+        assert_eq!(
+            app.active_dialog(),
+            Some(&Dialog::RecipeTaskConfirmation(BuildRequest {
+                targets: vec!["busybox".into()],
+                task: None,
+                force: false,
+            }))
+        );
+    }
+
+    #[test]
+    fn external_recipe_edit_keeps_diff_and_allows_ctrl_b_build() {
+        let mut app = App::new(10, 1_000);
+        app.workspace.recipes.push(Recipe {
+            name: "busybox".into(),
+            ..Recipe::default()
+        });
+        let _ = update(
+            &mut app,
+            Action::OpenRecipeEditor {
+                recipe: "busybox".into(),
+                root: "/workspace/busybox".into(),
+                files: vec!["main.c".into()],
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadRecipeEditorContent("int value = 1;\n".into()),
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadRecipeEditorExternalContent("int value = 2;\n".into()),
+        );
+        let editor = match app.active_dialog() {
+            Some(Dialog::RecipeEditor(editor)) => editor,
+            other => panic!("expected recipe editor, got {other:?}"),
+        };
+        assert!(!editor.is_dirty());
+        assert!(!editor.diff_preview(8).is_empty());
+
         let _ = update(&mut app, Action::BeginRecipeEditorBuild);
         assert_eq!(
             app.active_dialog(),

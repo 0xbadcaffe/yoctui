@@ -5066,3 +5066,36 @@ dialog open with its exact reason. The resulting console has the same writer
 lease, `Ctrl+B` prefix, split, zoom, copy, search, paste review, scrollback,
 detach/reattach, reconnect, termination, and `tui-term` rendering behavior as
 every other terminal session. The dialog never claims that SSH boots an image.
+
+## 42. Unified dashboard and integrated content previews
+
+The interactive client starts on `Overview / Dashboard` with Navigator focus.
+Focus traversal includes only panes that currently offer a selectable,
+scrollable, or editable target. An idle Dashboard cannot trap focus in its
+read-only build or daemon summaries, and Layers and Recipes own their preview
+surfaces inside Workspace rather than exposing a duplicate Inspector.
+
+Dashboard uses the same dense build cockpit as Tasks: overall build state,
+the authoritative task table, selected-task log, retained job history,
+hot-dot resource telemetry, selected-task facts/actions, recent output, and
+system status. With no build and no task evidence it says `build not started ·
+0%`; an active task without an authoritative fraction says `progress unknown`
+and uses the shared `BRAILLE_EIGHT_DOUBLE` activity set. `yoctui daemon start`
+uses that same set until the daemon socket becomes ready.
+
+Layers places file information and the scrollable file preview beside the
+tree. Information is collapsed by default and `i` toggles it; `[` and `]`
+scroll the preview. Recipes places the selected recipe preview beside the
+recipe list with the same preview-scroll keys. Layer trees accept
+`PageUp`/`PageDown` as bounded ten-row movement in addition to hierarchy keys.
+
+In the recipe/source editor, `e` invokes Vim through Yoctui's guarded external
+process lifecycle and restores the editor surface afterward. Content Vim saved
+is the current disk revision, so `Ctrl+B` can build the owning recipe
+immediately. The pre-edit revision remains a separate visual baseline so the
+diff below the editor remains visible until a later in-TUI save/load resets it.
+
+Wide Rootfs composition gives the admitted `tui-piechart` Braille chart the
+primary visual area and retains the exact installed-byte table as independent
+authority. Narrow, no-color, and ASCII layouts retain their existing
+accessible table fallback.

@@ -7084,7 +7084,9 @@ pub fn layer_tree_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('.') => Some(Action::ToggleLayerBrowserHidden),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::CtrlU => Some(Action::ClearMetadataQuery),
-        Input::Char('i') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git)),
+        Input::Char('i') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Metadata)),
+        Input::Char('[') => Some(Action::ScrollLayerBrowserPreview { delta: -10 }),
+        Input::Char(']') => Some(Action::ScrollLayerBrowserPreview { delta: 10 }),
         Input::Char('m') => Some(Action::SetLayerInspectorMode(LayerInspectorMode::Metadata)),
         Input::Char('d') => Some(Action::SetLayerInspectorMode(
             LayerInspectorMode::Dependencies,
@@ -7108,6 +7110,8 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
     match key {
         Input::Up | Input::Char('k') => Some(Action::SelectRecipe { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectRecipe { delta: 1 }),
+        Input::Char('[') => Some(Action::ScrollRecipePreview { delta: -10 }),
+        Input::Char(']') => Some(Action::ScrollRecipePreview { delta: 10 }),
         Input::Enter => Some(Action::BeginSelectedRecipeMetadata),
         Input::Char('/') => Some(Action::BeginMetadataSearch),
         Input::CtrlU => Some(Action::ClearMetadataQuery),
@@ -7226,7 +7230,7 @@ pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> 
             Input::Up | Input::Char('k') => Some(Action::SelectRecipeEditorFile { delta: -1 }),
             Input::Down | Input::Char('j') => Some(Action::SelectRecipeEditorFile { delta: 1 }),
             Input::Enter | Input::Tab => Some(Action::FocusRecipeEditor(Focus::Document)),
-            Input::Char('e') => Some(Action::ToggleRecipeEditorEditing),
+            Input::Char('e') => Some(Action::OpenRecipeEditorExternal),
             Input::CtrlS => Some(Action::SaveRecipeEditor),
             Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
             _ => None,
@@ -7236,6 +7240,9 @@ pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> 
     match key {
         Input::CtrlS => Some(Action::SaveRecipeEditor),
         Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
+        Input::Char('e') if editor.document.mode() != TextAreaMode::Insert => {
+            Some(Action::OpenRecipeEditorExternal)
+        }
         Input::Tab | Input::BackTab => Some(Action::FocusRecipeEditor(Focus::Files)),
         Input::Char('/') if editor.document.mode() != TextAreaMode::Insert => {
             Some(Action::BeginRecipeEditorSearch)
@@ -10960,7 +10967,15 @@ mod tests {
         );
         assert_eq!(
             layer_tree_action(false, Input::Char('i')),
-            Some(Action::SetLayerInspectorMode(LayerInspectorMode::Git))
+            Some(Action::SetLayerInspectorMode(LayerInspectorMode::Metadata))
+        );
+        assert_eq!(
+            layer_tree_action(false, Input::PageUp),
+            Some(Action::SelectLayerBrowserEntry { delta: -10 })
+        );
+        assert_eq!(
+            layer_tree_action(false, Input::PageDown),
+            Some(Action::SelectLayerBrowserEntry { delta: 10 })
         );
         assert_eq!(
             layer_tree_action(true, Input::Char('b')),

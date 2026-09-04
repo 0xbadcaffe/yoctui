@@ -649,6 +649,7 @@ mod tests {
         let rendered = |screen| {
             let mut app = yoctui_model::App::new(32, 8192);
             app.screen = screen;
+            app.focus = yoctui_model::FocusTarget::Workspace;
             let mut terminal = Terminal::new(TestBackend::new(300, 40)).unwrap();
             terminal
                 .draw(|frame| yoctui_ui::render_at(frame, &app, UNIX_EPOCH))

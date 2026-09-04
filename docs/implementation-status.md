@@ -11,6 +11,16 @@ Status values:
 
 ## Current phase
 
+M42 Unified Workbench Parity is complete. Interactive startup focuses
+Overview/Dashboard in Navigator; passive panes are omitted from focus traversal;
+Dashboard uses the live Tasks cockpit; idle and indeterminate progress are
+truthful; Layers and Recipes own integrated scrollable previews; Layers accepts
+PageUp/PageDown; and the Rootfs Braille pie receives the primary visual area.
+Vim-saved source now remains diffable while becoming immediately build-ready
+through Ctrl+B, and daemon startup shares the Braille Eight Double activity
+language. Reviewed cell goldens and focused regressions pass in version 0.1.19.
+Overall required registry progress is 626/626 (100.0%).
+
 M41 Hierarchical Key Routing is complete. Layers now receives `Enter`, `Right`,
 `Left`, and `h`/`l` before generic pane routing: `Enter` and `Right` open the
 selected layer, the open tree expands/collapses or moves to its parent, and

@@ -11,7 +11,7 @@ pub(super) fn workspace(
     task_rows: Option<&[TaskRowRef<'_>]>,
 ) {
     match app.screen {
-        Screen::Dashboard => dashboard(frame, app, area, now),
+        Screen::Dashboard => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
         Screen::Tasks => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
         Screen::BuildHistory => build_history(frame, app, area, now),
         Screen::Dependencies => dependencies(frame, app, area),

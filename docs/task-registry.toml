@@ -6941,3 +6941,16 @@ required = true
 depends_on = ["UX-LAYER-TREE-WIDGET-001"]
 verify = ["cargo test -p yoctui-app layers_workspace_owns_horizontal_hierarchy_keys_before_pane_focus", "cargo test -p yoctui-app navigator_arrows_expand_and_collapse_groups_without_changing_panes", "cargo test -p yoctui layers_list_enter_right_and_l_open_the_selected_hierarchy", "cargo test -p yoctui focus_routing_notifications_consume_only_their_documented_keys", "cargo test -p yoctui-model layer_tree_loads_children_lazily_and_collapses_without_losing_parent", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Workspace focus no longer shadows Layers Right/Left hierarchy input, configured layers open through Enter/Right/l, Navigator arrows expand/collapse groups, and passive notifications cannot consume Enter. Tab/Shift+Tab remain pane focus. Focused routing and reducer regressions plus the full gates pass in v0.1.18."
+
+# M42 — Unified workbench parity.
+
+[[task]]
+id = "UX-WORKBENCH-PARITY-001"
+milestone = "M42"
+title = "Unify Dashboard, integrated previews, and edit-to-build behavior"
+status = "DONE"
+priority = 785
+required = true
+depends_on = ["UX-LAYER-KEY-ROUTING-001", "UX-ROOTFS-PIE-BRAILLE-001"]
+verify = ["cargo test -p yoctui-model external_recipe_edit_keeps_diff_and_allows_ctrl_b_build", "cargo test -p yoctui-app layers_workspace_owns_horizontal_hierarchy_keys_before_pane_focus", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Interactive startup opens Dashboard in Navigator; passive focus targets are skipped; Dashboard reuses the task cockpit; Layers and Recipes integrate scrollable previews; Layer trees page by ten rows; rootfs prioritizes the Braille pie; daemon startup uses Braille Eight Double; and Vim-saved source keeps a visual diff while Ctrl+B builds the recipe. Reviewed goldens and full gates pass in v0.1.19."

@@ -218,6 +218,7 @@ struct TextAreaAdvancedState {
     undo: VecDeque<TextAreaSnapshot>,
     redo: VecDeque<TextAreaSnapshot>,
     base_text: String,
+    diff_base_text: String,
 }
 
 impl TextAreaState {
@@ -226,6 +227,7 @@ impl TextAreaState {
         let cursor = text.len();
         let revision = TextAreaRevision::of(&text);
         let base_text = text.clone();
+        let diff_base_text = text.clone();
         Self {
             text,
             cursor,
@@ -233,6 +235,7 @@ impl TextAreaState {
             editing: false,
             advanced: Box::new(TextAreaAdvancedState {
                 base_text,
+                diff_base_text,
                 layout: TextAreaLayout::default(),
                 search: TextAreaSearchState::default(),
                 validation: Vec::new(),
@@ -273,6 +276,10 @@ impl TextAreaState {
 
     pub fn is_modified(&self) -> bool {
         self.base_revision() != TextAreaRevision::of(&self.text)
+    }
+
+    pub fn has_visual_diff(&self) -> bool {
+        TextAreaRevision::of(&self.advanced.diff_base_text) != TextAreaRevision::of(&self.text)
     }
 
     pub fn mode(&self) -> TextAreaMode {
@@ -678,7 +685,7 @@ impl TextAreaState {
     }
 
     pub fn preview_diff(&mut self) -> &TextAreaDiffPreview {
-        let preview = build_diff(&self.advanced.base_text, &self.text);
+        let preview = build_diff(&self.advanced.diff_base_text, &self.text);
         self.advanced.save = TextAreaSaveState::Preview { preview };
         let TextAreaSaveState::Preview { preview } = &self.advanced.save else {
             unreachable!()
@@ -724,6 +731,7 @@ impl TextAreaState {
         ) && TextAreaRevision::of(&self.text) == request.revision;
         if matches {
             self.advanced.base_text.clone_from(&self.text);
+            self.advanced.diff_base_text.clone_from(&self.text);
             self.advanced.save = TextAreaSaveState::Saved {
                 target: request.target.clone(),
                 revision: request.revision,
@@ -781,6 +789,23 @@ impl TextAreaState {
 
     pub fn accept_external_text(&mut self, text: String) {
         *self = Self::new(text);
+    }
+
+    /// Accept content already saved by an external editor. The disk baseline
+    /// advances so build actions are not blocked, while the prior visual
+    /// baseline is retained so the in-TUI diff remains meaningful.
+    pub fn accept_external_edit(&mut self, mut text: String) {
+        truncate_utf8(&mut text, TEXTAREA_MAX_BYTES);
+        self.text = text;
+        self.advanced.base_text.clone_from(&self.text);
+        self.advanced.save = TextAreaSaveState::Clean {
+            revision: TextAreaRevision::of(&self.text),
+        };
+        self.cursor = self.text.len();
+        self.selection = None;
+        self.editing = false;
+        self.advanced.mode = TextAreaMode::Normal;
+        self.after_history_change();
     }
 
     fn snapshot(&self) -> TextAreaSnapshot {
@@ -1273,6 +1298,17 @@ mod tests {
             })
         );
         assert_eq!(editor, before);
+    }
+
+    #[test]
+    fn external_saved_edit_remains_diffable_without_blocking_the_build() {
+        let mut editor = TextAreaState::new("SUMMARY = \"before\"\n".into());
+        editor.accept_external_edit("SUMMARY = \"after\"\n".into());
+
+        assert!(!editor.is_modified());
+        let diff = editor.preview_diff().clone();
+        assert!(diff.lines.iter().any(|line| line.text.contains("before")));
+        assert!(diff.lines.iter().any(|line| line.text.contains("after")));
     }
 
     #[cfg(feature = "proptest")]

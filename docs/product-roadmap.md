@@ -841,3 +841,19 @@ Exit criteria:
   notifications and `Esc` retain their documented routes
 - focused routing, reducer, UI, workspace, Clippy, documentation, roadmap, and
   completion gates pass
+
+## M42 — Unified workbench parity
+
+Goal: make startup, Dashboard, content previews, rootfs visualization, and the
+edit-to-build loop match the reviewed workbench interaction model.
+
+Exit criteria:
+
+- daemon startup and indeterminate work share Braille Eight Double activity
+- startup focuses Dashboard in Navigator and focus skips passive panes
+- Dashboard uses the Tasks cockpit with honest idle/unknown progress
+- Layers and Recipes integrate scrollable previews without duplicate inspectors
+- Vim-saved source retains a visible diff and can immediately build via Ctrl+B
+- Layers supports PageUp/PageDown and rootfs prioritizes the Braille pie chart
+- focused, exact-golden, workspace, Clippy, documentation, roadmap, and
+  completion gates pass in version 0.1.19

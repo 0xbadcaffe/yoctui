@@ -1,5 +1,27 @@
 use crate::{FocusTarget, Screen};
 
+pub fn focus_target_is_relevant(app: &crate::App, target: FocusTarget) -> bool {
+    match target {
+        FocusTarget::Navigator => true,
+        FocusTarget::Workspace => match app.screen {
+            Screen::Dashboard => {
+                !app.tasks.is_empty()
+                    || !app.completed_tasks.is_empty()
+                    || !app.job_history_rows().is_empty()
+            }
+            _ => true,
+        },
+        // Layers and Recipes carry their selectable preview inside the workspace.
+        // An idle Dashboard inspector is read-only status and must not become a
+        // keyboard focus trap.
+        FocusTarget::Inspector => !matches!(
+            app.screen,
+            Screen::Dashboard | Screen::Layers | Screen::Recipes
+        ),
+        FocusTarget::Dialog | FocusTarget::CommandPalette => true,
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WorkspaceSubfocus {
     Main,
@@ -77,6 +99,30 @@ pub const fn pane_focus_label(
 mod tests {
     use super::*;
     use crate::{Action, App, CommandId, update};
+
+    #[test]
+    fn dashboard_navigator_focus_skips_read_only_panes() {
+        let mut app = App::new(32, 8_192);
+        assert_eq!(app.screen, Screen::Dashboard);
+        let _ = update(&mut app, Action::Focus(FocusTarget::Navigator));
+        assert_eq!(app.focus, FocusTarget::Navigator);
+
+        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Navigator);
+
+        app.tasks.insert(
+            crate::TaskId("busybox:do_compile".into()),
+            crate::TaskInfo::active(
+                crate::TaskId("busybox:do_compile".into()),
+                "busybox".into(),
+                "do_compile".into(),
+            ),
+        );
+        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Workspace);
+        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Navigator);
+    }
 
     #[test]
     fn ux_focus_subfocus_zoom_palette_and_modal_restore_preserve_client_state() {

@@ -1,47 +1,47 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.18  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.19  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
 │▾ OVERVIEW                ││ 1 Artifacts  │  2 Rootfs packages  │  3 Rootfs filesystem   Tab/Shift-Tab switches ││▾ PRIMARY FACTS                             │
-│  ▱ Dashboard             ││┌Installed bytes · chart───────────┐┌Exact composition table · 126400000 B─────────┐││Rootfs composition                          │
-│▾ CONTENT                 │││               ⢀⣀⣄⣀               ││Category             Pkgs  Exact bytes %      │││View: Rootfs packages                       │
-│    Layers                │││              ⢰⣿⣿⣿⣿⣷              ││base system          90    46800000    37.02% │││State: partial · 1 limitation(s)            │
-│    Recipes               │││              ⢹⣿⣿⣿⣿⣿⠁             ││libraries            110   34100000    26.97% │││Image: core-image-minimal                   │
-│    Packages              │││               ⠙⠛⠟⠛⠁              ││kernel and modules   50    18900000    14.95% │││Path:                                       │
-│    Images                │││                                  ││locales              70    11400000    9.01%  │││/home/user/yocto/build/tmp/deploy/images/qem│
-│    SDK                   │││ ■ base system 37.0%              ││utilities            70    8800000     6.96%  │││ux86-64/core-image-minimal-qemux86-64.rootfs│
-│▾ BUILD                   │││                                  ││Other                22    6400000     5.06%  │││.ext4                                       │
-│    Tasks                 │││ ■ libraries 27.0%                ││                                              │││Installed packages: available               │
-│  ▱ Logs              LIVE│││                                  ││                                              │││Filesystem tree: partial · 1 limitation(s)  │
-│  ▱ Errors                │││ ■ kernel and modules 15.0%       ││                                              │││                                            │
-│    Configuration         │││                                  ││                                              │││Exact totals                                │
-│    Dependencies          │││ ■ locales 9.0%                   ││                                              │││Package bytes: 126400000                    │
-│▾ VALIDATE                │││                                  ││                                              │││Package files: 4735                         │
-│    Testing               │││                                  ││                                              │││Filesystem bytes: 1198305                   │
-│    Security              ││└──────────────────────────────────┘└──────────────────────────────────────────────┘││Entries: 9 (files 2 · dirs 5 · symlinks 1 · │
-│    QA                    ││┌Accessible package selection · j/k moves checked row──────────────────────────────┐││special 1)                                  │
-│▾ TOOLS                   │││  ⊟ base system group · 90 packages (indeterminate)                               │││Overflow: false                             │
-│    Raw Mode              │││> ☑ base-system-000 · 520000 B · 3 files (checked)                                │││                                            │
-│    Terminal Sessions     │││  ☐ base-system-001 · 520000 B · 4 files (unchecked)                              │││Selected group: base system                 │
-│    Devtool               │││  ☐ base-system-002 · 520000 B · 5 files (unchecked)                              │││Selected package: base-system-000           │
-│    QEMU / Wic            │││  ☐ base-system-003 · 520000 B · 6 files (unchecked)                              │││Recipe: base-system                         │
-│    Maintenance           │││  ☐ base-system-004 · 520000 B · 7 files (unchecked)                              │││Category: base system                       │
-│  ▱ Build environment     │││  ☐ base-system-005 · 520000 B · 8 files (unchecked)                              │││Installed bytes: 520000                     │
-│  ▱ Compatibility         │││  ☐ base-system-006 · 520000 B · 9 files (unchecked)                              │││Reported files: 3                           │
-│  ▱ Settings              │││  ☐ Filesystem ownership (disabled) — partial; Tab for evidence                   │││                                            │
-│                          │││Other membership remains inspectable · exact bytes stay authoritative             │││Limitations                                 │
-│                          │││                                                                                  │││! package ownership is partial              │
-│                          ││└──────────────────────────────────────────────────────────────────────────────────┘││                                            │
-│                          ││┌Filesystem tree: partial ·  ↓ 1-6/9 · Tab drill-down──────────────────────────────┐││▾ RELATED PATHS                             │
-│                          │││Logical path                                      Kind    Exact B   Package       │││/home/user/yocto/build/tmp/deploy/images/qem│
-│                          │││/                                                 dir     0         unavailable   │││ux86-64/core-image-minimal-qemux86-64.rootfs│
-│                          │││/bin                                              dir     0         unavailable   │││.ext4                                       │
-│                          │││/bin/busybox                                      file    1198080   base-system-00│││                                            │
-│                          │││/bin/sh                                           link    7         base-system-00│││▾ CONTEXTUAL ACTIONS                        │
-│                          │││/etc                                              dir     0         unavailable   │││? Build selected image       [b] — Unknown  │
-│                          │││/etc/os-release                                   file    218       base-system-00│││  Reason: No current environment capability │
+│  ▱ Dashboard             ││┌Rootfs packages · installed bytes───────────┐┌Exact composition table · 126400000 ┐││Rootfs composition                          │
+│▾ CONTENT                 │││                                            ││Category   Pkgs  Exact bytes %      │││View: Rootfs packages                       │
+│    Layers                │││                        ■ base system 37.0% ││base syste 90    46800000    37.02% │││State: partial · 1 limitation(s)            │
+│    Recipes               │││                                            ││libraries  110   34100000    26.97% │││Image: core-image-minimal                   │
+│    Packages              │││                        ■ libraries 27.0%   ││kernel and 50    18900000    14.95% │││Path:                                       │
+│    Images                │││      ⣀⣤⣶⣶⣶⣷⣶⣶⣦⣄⡀                           ││locales    70    11400000    9.01%  │││/home/user/yocto/build/tmp/deploy/images/qem│
+│    SDK                   │││   ⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄     ■ kernel and modules││utilities  70    8800000     6.96%  │││ux86-64/core-image-minimal-qemux86-64.rootfs│
+│▾ BUILD                   │││  ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧                        ││Other      22    6400000     5.06%  │││.ext4                                       │
+│    Tasks                 │││ ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧   ■ locales 9.0%      ││                                    │││Installed packages: available               │
+│  ▱ Logs              LIVE│││ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿                       ││                                    │││Filesystem tree: partial · 1 limitation(s)  │
+│  ▱ Errors                │││ ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁  ■ utilities 7.0%    ││                                    │││                                            │
+│    Configuration         │││ ⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿                       ││                                    │││Exact totals                                │
+│    Dependencies          │││  ⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁   ■ Other 5.1%        ││                                    │││Package bytes: 126400000                    │
+│▾ VALIDATE                │││   ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠁                        ││                                    │││Package files: 4735                         │
+│    Testing               │││     ⠉⠛⠿⣿⣿⣿⣿⣿⣿⡿⠟⠋⠁                          ││                                    │││Filesystem bytes: 1198305                   │
+│    Security              │││           ⠁                                ││                                    │││Entries: 9 (files 2 · dirs 5 · symlinks 1 · │
+│    QA                    │││                                            ││                                    │││special 1)                                  │
+│▾ TOOLS                   │││                                            ││                                    │││Overflow: false                             │
+│    Raw Mode              │││                                            ││                                    │││                                            │
+│    Terminal Sessions     │││                                            ││                                    │││Selected group: base system                 │
+│    Devtool               ││└────────────────────────────────────────────┘└────────────────────────────────────┘││Selected package: base-system-000           │
+│    QEMU / Wic            ││┌Accessible package selection · j/k moves checked row──────────────────────────────┐││Recipe: base-system                         │
+│    Maintenance           │││  ⊟ base system group · 90 packages (indeterminate)                               │││Category: base system                       │
+│  ▱ Build environment     │││> ☑ base-system-000 · 520000 B · 3 files (checked)                                │││Installed bytes: 520000                     │
+│  ▱ Compatibility         │││  ☐ base-system-001 · 520000 B · 4 files (unchecked)                              │││Reported files: 3                           │
+│  ▱ Settings              │││  ☐ base-system-002 · 520000 B · 5 files (unchecked)                              │││                                            │
+│                          │││  ☐ base-system-003 · 520000 B · 6 files (unchecked)                              │││Limitations                                 │
+│                          │││  ☐ base-system-004 · 520000 B · 7 files (unchecked)                              │││! package ownership is partial              │
+│                          │││  ☐ Filesystem ownership (disabled) — partial; Tab for evidence                   │││                                            │
+│                          │││Other membership remains inspectable · exact bytes stay authoritative             │││▾ RELATED PATHS                             │
+│                          │││                                                                                  │││/home/user/yocto/build/tmp/deploy/images/qem│
+│                          ││└──────────────────────────────────────────────────────────────────────────────────┘││ux86-64/core-image-minimal-qemux86-64.rootfs│
+│                          ││┌Filesystem tree: partial · ↑↓ 2-4/9 · Tab drill-down──────────────────────────────┐││.ext4                                       │
+│                          │││Logical path                                      Kind    Exact B   Package       │││                                            │
+│                          │││/bin                                              dir     0         unavailable   │││▾ CONTEXTUAL ACTIONS                        │
+│                          │││/bin/busybox                                      file    1198080   base-system-00│││? Build selected image       [b] — Unknown  │
+│                          │││/bin/sh                                           link    7         base-system-00│││  Reason: No current environment capability │
 │                          │││                                                                                  │││snapshot: bitbake.build.                    │
 │                          ││└──────────────────────────────────────────────────────────────────────────────────┘││? Launch QEMU                [Q] — Unknown  │
 └──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘

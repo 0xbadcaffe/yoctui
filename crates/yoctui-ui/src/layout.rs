@@ -9,7 +9,8 @@ pub(super) fn responsive_shell(
     terminal_width: u16,
     now: SystemTime,
 ) {
-    let task_rows = (app.screen == Screen::Tasks).then(|| app.visible_task_row_refs_at(now));
+    let task_rows = matches!(app.screen, Screen::Dashboard | Screen::Tasks)
+        .then(|| app.visible_task_row_refs_at(now));
     let task_rows = task_rows.as_deref();
     if let Some(zoomed) = app.zoomed_pane {
         let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
@@ -58,6 +59,14 @@ pub(super) fn responsive_shell(
         } else {
             22
         };
+        if matches!(app.screen, Screen::Layers | Screen::Recipes) {
+            let panes =
+                Layout::horizontal([Constraint::Length(navigator_width), Constraint::Min(60)])
+                    .split(area);
+            navigator(frame, app, panes[0], task_rows);
+            workspace(frame, app, panes[1], terminal_width, now, task_rows);
+            return;
+        }
         let panes = if terminal_width == 160 && area.height == 42 && app.screen == Screen::Recipes {
             Layout::horizontal([
                 Constraint::Length(20),
@@ -72,14 +81,14 @@ pub(super) fn responsive_shell(
                 Constraint::Length(46),
             ])
             .split(area)
-        } else if app.screen == Screen::Tasks && terminal_width == 160 {
+        } else if matches!(app.screen, Screen::Dashboard | Screen::Tasks) && terminal_width == 160 {
             Layout::horizontal([
                 Constraint::Length(26),
                 Constraint::Length(89),
                 Constraint::Length(45),
             ])
             .split(area)
-        } else if app.screen == Screen::Tasks {
+        } else if matches!(app.screen, Screen::Dashboard | Screen::Tasks) {
             Layout::horizontal([
                 Constraint::Length(navigator_width),
                 Constraint::Percentage(56),
