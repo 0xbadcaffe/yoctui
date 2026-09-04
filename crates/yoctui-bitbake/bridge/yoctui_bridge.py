@@ -1914,6 +1914,15 @@ def normalize_event(event, task_identities_by_pid=None):
     if normalized_kind in ("log", "logrecord", *diagnostic_levels) and isinstance(
         message, str
     ):
+        pid = normalized_nonnegative_integer(event_value(event, "pid"))
+        if not all(isinstance(value, str) for value in (recipe, task)):
+            identity = (
+                task_identities_by_pid.get(pid)
+                if task_identities_by_pid is not None and pid is not None
+                else None
+            )
+            if identity is not None:
+                recipe, task = identity
         level = event_value(
             event,
             "level",

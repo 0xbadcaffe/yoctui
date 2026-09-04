@@ -877,3 +877,20 @@ Exit criteria:
   without becoming a focus trap
 - focused, workspace, Clippy, documentation, and roadmap checks pass in
   version 0.1.20
+
+## M44 — Live navigation, logs, and cancellation
+
+Goal: remove the regressions that strand collapsed Navigator roots, erase
+task-log context at daemon IPC, and leave accepted cancellation pending.
+
+Exit criteria:
+
+- every collapsed Navigator root remains reachable after moving to another root
+- Right, `l`, and Enter reopen the reselected collapsed root
+- daemon log snapshots and events preserve recipe, task, source path, and build
+  correlation for Dashboard and Logs
+- Logs opens on its scrollable workspace and supports the complete bounded
+  vertical navigation vocabulary
+- accepted cancellation has a bounded forced-server terminal fallback
+- focused, protocol, workspace, Clippy, documentation, and roadmap checks pass
+  in version 0.1.21

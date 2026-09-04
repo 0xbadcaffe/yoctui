@@ -2297,6 +2297,14 @@ pub struct LogRecord {
     pub severity: LogSeverity,
     pub message: String,
     pub unix_ms: u64,
+    #[serde(default)]
+    pub recipe: Option<String>,
+    #[serde(default)]
+    pub task: Option<String>,
+    #[serde(default)]
+    pub path: Option<String>,
+    #[serde(default)]
+    pub build: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -3481,6 +3489,10 @@ mod tests {
                     severity: LogSeverity::Info,
                     message: format!("event-{index}"),
                     unix_ms: index,
+                    recipe: None,
+                    task: None,
+                    path: None,
+                    build: None,
                 }))
                 .unwrap();
             assert_eq!(event.sequence, index);
@@ -3553,6 +3565,10 @@ mod tests {
                     severity: LogSeverity::Info,
                     message: "x".repeat(900),
                     unix_ms: index,
+                    recipe: None,
+                    task: None,
+                    path: None,
+                    build: None,
                 }))
                 .unwrap();
         }
@@ -3594,6 +3610,10 @@ mod tests {
                 severity: LogSeverity::Error,
                 message: "x".repeat(MAX_FRAME_BYTES),
                 unix_ms: 0,
+                recipe: None,
+                task: None,
+                path: None,
+                build: None,
             })),
             Err(DaemonSnapshotError::EventTooLarge { .. })
         ));

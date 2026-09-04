@@ -959,6 +959,8 @@ class TaskStarted:
  def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
 class TaskProgress:
  def __init__(self, pid, progress): self.pid = pid; self.progress = progress
+class LogRecord:
+ def __init__(self, pid, message): self.pid = pid; self.message = message; self.levelname = "INFO"
 class TaskSucceeded:
  def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
 class BuildCompleted:
@@ -970,7 +972,7 @@ class Connection:
    ProcessStarted(), ProcessProgress(77.92379445665797),
    ProcessProgress(180), ProcessProgress(-1), ProcessProgress(float("nan")),
    ProcessProgress(True),
-   TaskProgress(99, 50), TaskStarted(), TaskProgress(42, 63.9),
+   TaskProgress(99, 50), TaskStarted(), LogRecord(42, "compiler output"), TaskProgress(42, 63.9),
    TaskProgress(42, 150), TaskProgress(42, -1), TaskSucceeded(),
    TaskProgress(42, 90), BuildCompleted()
   ]
@@ -1000,6 +1002,7 @@ server = Server()
                 "parse_progress",
                 "parse_progress",
                 "task_started",
+                "log",
                 "task_progress",
                 "task_progress",
                 "task_progress",
@@ -1019,9 +1022,11 @@ server = Server()
         self.assertEqual(messages[7]["pid"], 42)
         self.assertEqual(messages[8]["recipe"], "busybox")
         self.assertEqual(messages[8]["task"], "do_compile")
-        self.assertEqual(messages[8]["progress"], 63)
-        self.assertEqual(messages[9]["progress"], 100)
-        self.assertIsNone(messages[10]["progress"])
+        self.assertEqual(messages[9]["recipe"], "busybox")
+        self.assertEqual(messages[9]["task"], "do_compile")
+        self.assertEqual(messages[9]["progress"], 63)
+        self.assertEqual(messages[10]["progress"], 100)
+        self.assertIsNone(messages[11]["progress"])
         self.assertNotIn("unrecognized BitBake event", result.stdout.decode())
 
     def test_real_build_completion_shape_infers_success_from_failures(self) -> None:

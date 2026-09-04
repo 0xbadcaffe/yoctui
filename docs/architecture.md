@@ -3475,8 +3475,18 @@ file preview.
 Navigator group toggles normalize destination selection to the selected
 group's first stable identity before viewport projection. A collapsed heading
 therefore remains addressable without adding a second group-selection model.
+That first identity remains in the visible keyboard traversal while its child
+row is hidden, so moving away and back cannot strand the heading.
 
 Notifications remain reducer-owned bounded text rather than Dialog state. The
 renderer projects them as a cleared overlay only when no modal surface is open;
 existing `Esc` dismissal and optional failed-build `Enter` activation remain
 the only captured inputs.
+
+Daemon `LogRecord` transport preserves optional recipe, task, source path, and
+build correlation as typed fields. The client maps them directly into model
+`LogEntry`; Dashboard and Logs do not recover context by parsing messages.
+After cancellation is accepted, the BitBake supervisor owns a bounded terminal
+deadline. Missing native terminal output triggers the existing typed server
+termination path and publishes exactly one cancellation terminal before stale
+queued records can re-enter shared state.

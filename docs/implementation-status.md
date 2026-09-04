@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+M44 Live Navigation, Logs, and Cancellation is complete. Live use exposed
+three boundary regressions: collapsed group surrogates were excluded from
+keyboard traversal, daemon IPC flattened typed BitBake logs into uncorrelated
+messages, and a server that accepted cancellation but emitted no terminal event
+could leave the build pending indefinitely. Collapsed roots now remain
+selectable, log context survives snapshots and live events, daemon resync keeps
+paused log navigation stable, and cancellation has a bounded terminal fallback.
+Focused Python/Rust regressions, the full workspace suite, Clippy, and the
+documentation gates pass in release 0.1.21. Overall required registry progress
+is 628/628 (100.0%).
+
 M43 Dashboard Focus and Preview Density is complete. Dashboard remains
 Navigator-only even when live or retained tasks appear; direct focus,
 navigation, and modal restoration all reject its passive Tasks cockpit. Layers

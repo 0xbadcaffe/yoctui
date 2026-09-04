@@ -3763,6 +3763,10 @@ fn publish_daemon_bitbake_event(
                     },
                     message: entry.message,
                     unix_ms: unix_ms(),
+                    recipe: entry.recipe,
+                    task: entry.task,
+                    path: entry.path.map(|path| path.display().to_string()),
+                    build: entry.build,
                 }))?;
             }
             event => {
@@ -4078,6 +4082,10 @@ fn publish_daemon_devtool_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonDevtoolEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
@@ -4167,6 +4175,10 @@ fn publish_daemon_sdk_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonSdkEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
@@ -4270,6 +4282,10 @@ fn publish_daemon_qemu_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonQemuEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
@@ -4366,6 +4382,10 @@ fn publish_daemon_wic_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonWicEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
@@ -4494,6 +4514,10 @@ fn publish_daemon_test_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonTestEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
@@ -4597,6 +4621,10 @@ fn publish_daemon_qa_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonQaEvent::Completed { exit_code, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
@@ -4851,6 +4879,10 @@ fn publish_daemon_security_mapper_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonSecurityMapperEvent::Completed { exit_code, .. } => {
             DaemonEvent::JobChanged(JobSummary {
@@ -4951,6 +4983,10 @@ fn publish_daemon_maintenance_event(
                 line
             },
             unix_ms: unix_ms(),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }),
         DaemonMaintenanceEvent::Completed { exit_code, .. } => {
             DaemonEvent::JobChanged(JobSummary {

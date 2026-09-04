@@ -2,46 +2,53 @@
 
 ## Task
 
-**ID:** UX-DASHBOARD-FOCUS-DENSITY-001
-**Title:** Fix Dashboard focus, Navigator reopening, preview density, and message visibility
+**ID:** UX-LIVE-NAV-LOG-CANCEL-001
+**Title:** Fix live Navigator, log, and cancellation regressions
 **Status:** DONE
 
 ## Objective
 
-Keep passive UI out of keyboard focus, make collapsed Navigator roots reliably
-reopen, allocate unused Layers tree width to the preview, and show guidance in
-a visible popup.
+Keep collapsed Navigator headings reachable after moving away, preserve typed
+BitBake log context across daemon IPC, make live logs scroll immediately, and
+bound cancellation when BitBake does not publish a terminal event.
 
 ## Dependencies
 
-- UX-WORKBENCH-PARITY-001 — DONE
+- UX-DASHBOARD-FOCUS-DENSITY-001 — DONE
 
 ## Definition of done
 
-- Dashboard never admits its read-only Tasks cockpit to pane focus, even when
-  active, completed, or retained build data is present.
-- Direct focus commands, Dashboard navigation, and modal restoration fall back
-  to Navigator.
-- Collapsed Navigator roots retain stable selection and reopen with Right,
-  Enter, or another click.
-- The Layers tree column is bounded by useful label width and the remaining
-  workspace is assigned to the scrollable file preview.
-- Guidance and failure messages appear in a cleared, dismissible popup without
-  becoming a focus trap.
-- Focused, workspace, Clippy, docs, and roadmap checks pass.
+- Collapsed Navigator roots remain part of keyboard traversal, can be selected
+  again after moving away, and reopen with Right, `l`, or Enter.
+- Daemon log records retain recipe, task, source path, and build context so the
+  Dashboard task log and Logs workspace render authoritative live output.
+- Opening Logs places focus on its scrollable workspace; Up/Down, PageUp/
+  PageDown, Home/End, and mouse wheel pause follow and move the visible row.
+- Accepted cancellation reaches a terminal state within a bounded deadline,
+  even when BitBake never emits its terminal event.
+- Focused, protocol, workspace, Clippy, docs, and roadmap checks pass in
+  version 0.1.21.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model dashboard_navigator_focus_always_skips_read_only_panes
-cargo test -p yoctui-model collapsed_navigator_root_remains_selected_and_can_reopen
-cargo test -p yoctui-app next_generation_navigator_mouse_and_keyboard_share_typed_routing
-cargo test -p yoctui-app visible_guidance_popup_owns_its_advertised_enter_and_escape_controls
-cargo test -p yoctui-ui layer_browser_gives_unused_tree_width_to_the_file_preview
-cargo test -p yoctui-ui renders_notification
+cargo test -p yoctui-model collapsed_navigator_root_can_be_reselected_and_reopened
+cargo test -p yoctui-app daemon_log_context_survives_snapshot_and_live_event_mapping
+cargo test -p yoctui-app logs_open_with_scrollable_workspace_focus
+cargo test -p yoctui daemon_cancellation_times_out_to_one_terminal_event
 cargo test -p yoctui-ui
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ```
+
+M44 is complete in v0.1.21. Collapsed Navigator group surrogates remain in
+keyboard traversal and reopen normally. Daemon log snapshots and live events
+retain recipe, task, path, and build identity; snapshot resynchronization keeps
+a paused log viewport stable instead of forcing it back to follow mode. Logs
+opens with workspace focus and the full bounded vertical key vocabulary.
+Cancellation now has a three-second terminal-event deadline, bounded server
+termination, and one synthetic exit-130 cancellation result when BitBake does
+not close the lifecycle itself. The focused Python and Rust regressions, full
+workspace suite, Clippy, and documentation/completion gates pass.

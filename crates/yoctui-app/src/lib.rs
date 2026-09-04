@@ -1247,12 +1247,20 @@ pub fn daemon_protocol_snapshot(
             severity: LogSeverity::Info,
             message: message.clone(),
             unix_ms: 0,
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         })
         .chain(state.recent_errors.iter().map(|message| LogRecord {
             source: "daemon".into(),
             severity: LogSeverity::Error,
             message: message.clone(),
             unix_ms: 0,
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }))
         .collect();
     if recent_logs.len() > state.limits.logs {
@@ -2003,6 +2011,7 @@ impl DaemonClientSnapshot {
         for record in &snapshot.recent_logs {
             let _ = yoctui_model::update(&mut build, daemon_log_action(record));
         }
+        preserve_log_presentation(&app.logs, &mut build.logs);
         app.backend = build.backend;
         app.workspace = build.workspace;
         app.build = build.build;
@@ -2034,6 +2043,33 @@ impl DaemonClientSnapshot {
     }
 }
 
+fn preserve_log_presentation(
+    previous: &yoctui_model::LogState,
+    replacement: &mut yoctui_model::LogState,
+) {
+    replacement.follow = previous.follow;
+    replacement.paused_len = (!previous.follow).then_some(replacement.entries.len());
+    replacement.wrap = previous.wrap;
+    replacement.filter = previous.filter;
+    replacement.recipe_filter = previous.recipe_filter.clone();
+    replacement.task_filter = previous.task_filter.clone();
+    replacement.build_filter = previous.build_filter.clone();
+    replacement.source_filter = previous.source_filter.clone();
+    replacement.time_range = previous.time_range.clone();
+    replacement.query.clone_from(&previous.query);
+    replacement.searching = previous.searching;
+    replacement.horizontal_offset = previous
+        .horizontal_offset
+        .min(replacement.maximum_horizontal_offset());
+    let count = replacement.filtered().count();
+    replacement.selection = if previous.follow {
+        count.saturating_sub(1)
+    } else {
+        previous.selection.min(count.saturating_sub(1))
+    };
+    replacement.scroll_offset = count.saturating_sub(replacement.selection.saturating_add(1));
+}
+
 fn daemon_log_action(record: &yoctui_protocol::daemon::LogRecord) -> yoctui_model::Action {
     use std::time::{Duration, SystemTime};
     let severity = match record.severity {
@@ -2046,11 +2082,11 @@ fn daemon_log_action(record: &yoctui_protocol::daemon::LogRecord) -> yoctui_mode
         id: 0,
         severity,
         message: record.message.clone(),
-        recipe: None,
-        task: None,
-        path: None,
+        recipe: record.recipe.clone(),
+        task: record.task.clone(),
+        path: record.path.clone().map(Into::into),
         timestamp: SystemTime::UNIX_EPOCH + Duration::from_millis(record.unix_ms),
-        build: None,
+        build: record.build.clone(),
         protected: matches!(
             severity,
             yoctui_model::Severity::Warning | yoctui_model::Severity::Error
@@ -2068,6 +2104,12 @@ fn apply_daemon_build_event(
         DaemonBuildEvent::Reset { targets } => yoctui_model::Action::BuildRequested {
             target: targets.into_iter().next(),
         },
+        DaemonBuildEvent::Completed {
+            success: false,
+            exit_code,
+        } if app.build.status == yoctui_model::BuildStatus::Cancelling => {
+            yoctui_model::Action::BuildCancelled { exit_code }
+        }
         event => match backend_event_from_daemon(event) {
             Some(event) => match model_action_from_backend_event(event) {
                 Some(action) => action,
@@ -8365,6 +8407,10 @@ mod tests {
                 severity: yoctui_protocol::daemon::LogSeverity::Info,
                 message: "parsing".into(),
                 unix_ms: 1,
+                recipe: None,
+                task: None,
+                path: None,
+                build: None,
             }),
         };
         client.apply_event(&event).unwrap();
@@ -8395,6 +8441,139 @@ mod tests {
             yoctui_model::ClientReplicaStatus::Disconnected
         );
         assert_eq!(client.snapshot.as_ref(), Some(&initial));
+    }
+
+    #[test]
+    fn daemon_log_context_survives_snapshot_and_live_event_mapping() {
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([8; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&state);
+        let record = yoctui_protocol::daemon::LogRecord {
+            source: "bitbake".into(),
+            severity: yoctui_protocol::daemon::LogSeverity::Info,
+            message: "compiler output".into(),
+            unix_ms: 42,
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: Some("/build/tmp/work/busybox/temp/log.do_compile".into()),
+            build: Some("core-image-minimal".into()),
+        };
+        snapshot.recent_logs.push(record.clone());
+
+        let mut client = DaemonClientSnapshot::default();
+        let mut app = yoctui_model::App::new(16, 4096);
+        client.replace_app(&mut app, snapshot);
+        let retained = app.logs.entries.back().unwrap();
+        assert_eq!(retained.recipe.as_deref(), Some("busybox"));
+        assert_eq!(retained.task.as_deref(), Some("do_compile"));
+        assert_eq!(
+            retained.path.as_deref(),
+            Some(std::path::Path::new(
+                "/build/tmp/work/busybox/temp/log.do_compile"
+            ))
+        );
+        assert_eq!(retained.build.as_deref(), Some("core-image-minimal"));
+
+        let event = yoctui_protocol::daemon::SequencedEvent {
+            sequence: client.snapshot.as_ref().unwrap().sequence + 1,
+            generation: client.snapshot.as_ref().unwrap().generation + 1,
+            event: yoctui_protocol::daemon::DaemonEvent::Log(record),
+        };
+        client.apply_event_to_app(&mut app, &event).unwrap();
+        assert_eq!(
+            app.logs.entries.back().unwrap().task.as_deref(),
+            Some("do_compile")
+        );
+    }
+
+    #[test]
+    fn logs_open_with_scrollable_workspace_focus() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.focus = FocusTarget::Navigator;
+        let _ = yoctui_model::update(&mut app, Action::Open(Screen::Logs));
+        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert_eq!(
+            focus_action_for_app(&app, Input::PageUp),
+            None,
+            "workspace-owned log scrolling must reach the collection router"
+        );
+        assert_eq!(
+            workspace_collection_action(&app, Input::PageUp),
+            Some(Action::ScrollLogs { delta: 10 })
+        );
+    }
+
+    #[test]
+    fn daemon_snapshot_resync_preserves_paused_live_log_scroll() {
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&state);
+        for index in 0..12 {
+            snapshot
+                .recent_logs
+                .push(yoctui_protocol::daemon::LogRecord {
+                    source: "bitbake".into(),
+                    severity: yoctui_protocol::daemon::LogSeverity::Info,
+                    message: format!("line {index}"),
+                    unix_ms: index,
+                    recipe: Some("busybox".into()),
+                    task: Some("do_compile".into()),
+                    path: None,
+                    build: Some("core-image-minimal".into()),
+                });
+        }
+        let mut client = DaemonClientSnapshot::default();
+        let mut app = yoctui_model::App::new(32, 8192);
+        client.replace_app(&mut app, snapshot.clone());
+        let _ = yoctui_model::update(&mut app, Action::ScrollLogs { delta: 5 });
+        app.logs.query = "line".into();
+        let selection = app.logs.selection;
+
+        snapshot.sequence += 1;
+        snapshot.generation += 1;
+        snapshot
+            .recent_logs
+            .push(yoctui_protocol::daemon::LogRecord {
+                source: "bitbake".into(),
+                severity: yoctui_protocol::daemon::LogSeverity::Info,
+                message: "line 12".into(),
+                unix_ms: 12,
+                recipe: Some("busybox".into()),
+                task: Some("do_compile".into()),
+                path: None,
+                build: Some("core-image-minimal".into()),
+            });
+        client.replace_app(&mut app, snapshot);
+
+        assert!(!app.logs.follow);
+        assert_eq!(app.logs.query, "line");
+        assert_eq!(app.logs.selection, selection);
+        assert!(app.logs.scroll_offset > 0);
+    }
+
+    #[test]
+    fn daemon_cancel_terminal_clears_pending_build_state() {
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.build.status = yoctui_model::BuildStatus::Cancelling;
+        apply_daemon_build_event(
+            &mut app,
+            yoctui_protocol::daemon::DaemonBuildEvent::Completed {
+                success: false,
+                exit_code: Some(130),
+            },
+        );
+        assert_eq!(app.build.status, yoctui_model::BuildStatus::Cancelled);
+        assert_eq!(app.build.exit_code, Some(130));
     }
 
     #[test]

@@ -6967,3 +6967,16 @@ required = true
 depends_on = ["UX-WORKBENCH-PARITY-001"]
 verify = ["cargo test -p yoctui-model dashboard_navigator_focus_always_skips_read_only_panes", "cargo test -p yoctui-model collapsed_navigator_root_remains_selected_and_can_reopen", "cargo test -p yoctui-app next_generation_navigator_mouse_and_keyboard_share_typed_routing", "cargo test -p yoctui-app visible_guidance_popup_owns_its_advertised_enter_and_escape_controls", "cargo test -p yoctui-ui layer_browser_gives_unused_tree_width_to_the_file_preview", "cargo test -p yoctui-ui renders_notification", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Dashboard remains Navigator-only regardless of active, completed, or retained build data; direct focus, screen navigation, and modal restoration cannot select its read-only cockpit. Collapsed Navigator roots retain a stable group selection and reopen with Right, Enter, or another click. The Layers browser sizes its left tree column from useful labels and gives unused width to the scrollable file preview. Guidance and failure notifications render as cleared, visible, dismissible Message popups without becoming modal focus traps. Completed in v0.1.20."
+
+# M44 — Live navigation, logs, and cancellation.
+
+[[task]]
+id = "UX-LIVE-NAV-LOG-CANCEL-001"
+milestone = "M44"
+title = "Fix live Navigator, log, and cancellation regressions"
+status = "DONE"
+priority = 787
+required = true
+depends_on = ["UX-DASHBOARD-FOCUS-DENSITY-001"]
+verify = ["cargo test -p yoctui-model collapsed_navigator_root_can_be_reselected_and_reopened", "cargo test -p yoctui-app daemon_log_context_survives_snapshot_and_live_event_mapping", "cargo test -p yoctui-app logs_open_with_scrollable_workspace_focus", "cargo test -p yoctui daemon_cancellation_times_out_to_one_terminal_event", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Collapsed Navigator roots remain keyboard-reachable and reopen normally. Typed BitBake recipe/task/path/build context survives daemon snapshots and live events, snapshot resync preserves paused log navigation, and Logs opens with workspace focus. Cancellation now bounds missing native terminal events, terminates the server, and publishes one exit-130 cancellation result. Focused Python/Rust regressions, full workspace tests, Clippy, and documentation/completion gates pass in v0.1.21."

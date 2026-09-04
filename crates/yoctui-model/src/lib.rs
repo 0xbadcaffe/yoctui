@@ -4337,7 +4337,8 @@ impl App {
             )
     }
     fn navigator_selection_is_visible(&self, selection: usize) -> bool {
-        self.navigator_groups_expanded[navigator_group_for_selection(selection)]
+        let group = navigator_group_for_selection(selection);
+        self.navigator_groups_expanded[group] || selection == NAVIGATOR_GROUPS[group].start
     }
     pub fn waiting_task_count(&self) -> usize {
         if matches!(
@@ -19012,6 +19013,23 @@ mod tests {
         let _ = update(&mut app, Action::ActivateNavigator);
         assert!(app.navigator_groups_expanded[1]);
         assert_eq!(app.screen, Screen::Dashboard, "reopening does not navigate");
+    }
+
+    #[test]
+    fn collapsed_navigator_root_can_be_reselected_and_reopened() {
+        let mut app = App::new(10, 1_000);
+        app.navigator_selection = NAVIGATOR_GROUPS[2].start;
+        let _ = update(&mut app, Action::CollapseNavigatorGroup);
+
+        let _ = update(&mut app, Action::SelectNavigator { delta: 1 });
+        assert_eq!(app.navigator_group_index(), 3);
+        let _ = update(&mut app, Action::SelectNavigator { delta: -1 });
+        assert_eq!(app.navigator_selection, NAVIGATOR_GROUPS[2].start);
+        assert_eq!(app.navigator_visual_row(), 8);
+
+        let _ = update(&mut app, Action::ExpandNavigatorGroup);
+        assert!(app.navigator_groups_expanded[2]);
+        assert_eq!(app.screen, Screen::Dashboard, "reopening must not navigate");
     }
 
     #[test]

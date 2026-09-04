@@ -5097,7 +5097,9 @@ recipe list with the same preview-scroll keys. Layer trees accept
 
 Collapsing a Navigator root anchors selection to that root. `Right`, `l`,
 `Enter`, or another click reopens it; viewport reconciliation cannot strand the
-selection on a hidden destination. Explicit notifications render in a cleared
+selection on a hidden destination. A collapsed root remains one selectable
+row in Up/Down, PageUp/PageDown, Home/End traversal after selection moves to a
+different root. Explicit notifications render in a cleared
 `Message` popup with their complete text and `Esc dismiss`. A failed build with
 diagnostics also offers `Enter view errors`; ordinary notification popups do
 not trap focus or consume unrelated shortcuts.
@@ -5112,3 +5114,10 @@ Wide Rootfs composition gives the admitted `tui-piechart` Braille chart the
 primary visual area and retains the exact installed-byte table as independent
 authority. Narrow, no-color, and ASCII layouts retain their existing
 accessible table fallback.
+
+Logs opens with Workspace focus. Up/Down, PageUp/PageDown, Home/End, and mouse
+wheel input pause live follow and move the retained selection; `f` resumes
+follow at the newest matching entry. Daemon snapshots and incremental log
+events retain optional recipe, task, source-log path, and build correlation.
+Dashboard's selected-task Log Viewer uses the same typed records and never
+depends on parsing human-readable message text.
