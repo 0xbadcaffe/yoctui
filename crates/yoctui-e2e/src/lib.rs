@@ -757,6 +757,7 @@ mod tests {
         }
 
         let mut modal = yoctui_model::App::new(32, 8192);
+        modal.screen = AppScreen::Tasks;
         modal.focus = FocusTarget::Inspector;
         let _ = yoctui_model::update(&mut modal, Action::OpenThemePicker);
         assert_eq!(modal.focus, FocusTarget::Dialog);

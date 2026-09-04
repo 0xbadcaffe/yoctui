@@ -11,6 +11,16 @@ Status values:
 
 ## Current phase
 
+M43 Dashboard Focus and Preview Density is complete. Dashboard remains
+Navigator-only even when live or retained tasks appear; direct focus,
+navigation, and modal restoration all reject its passive Tasks cockpit. Layers
+now bounds the browser column by useful label width and assigns the reclaimed
+workspace to the scrollable file preview. Collapsed Navigator roots retain a
+stable selected group and reopen with Right, Enter, or click. Guidance and
+failure notifications now use a cleared, dismissible Message popup. Focused
+regressions pass in version 0.1.20. Overall required registry progress is
+627/627 (100.0%).
+
 M42 Unified Workbench Parity is complete. Interactive startup focuses
 Overview/Dashboard in Navigator; passive panes are omitted from focus traversal;
 Dashboard uses the live Tasks cockpit; idle and indeterminate progress are

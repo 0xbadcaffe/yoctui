@@ -1552,6 +1552,7 @@ mod tests {
     #[test]
     fn compatibility_dynamic_model_snapshot_change_revalidates_dialog_and_effect() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Packages;
         app.navigator_selection = 3;
         app.dialogs.push_front(Dialog::BuildOptions);
         app.focus = crate::FocusTarget::Dialog;

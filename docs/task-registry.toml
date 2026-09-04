@@ -6954,3 +6954,16 @@ required = true
 depends_on = ["UX-LAYER-KEY-ROUTING-001", "UX-ROOTFS-PIE-BRAILLE-001"]
 verify = ["cargo test -p yoctui-model external_recipe_edit_keeps_diff_and_allows_ctrl_b_build", "cargo test -p yoctui-app layers_workspace_owns_horizontal_hierarchy_keys_before_pane_focus", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Interactive startup opens Dashboard in Navigator; passive focus targets are skipped; Dashboard reuses the task cockpit; Layers and Recipes integrate scrollable previews; Layer trees page by ten rows; rootfs prioritizes the Braille pie; daemon startup uses Braille Eight Double; and Vim-saved source keeps a visual diff while Ctrl+B builds the recipe. Reviewed goldens and full gates pass in v0.1.19."
+
+# M43 — Dashboard focus and preview density.
+
+[[task]]
+id = "UX-DASHBOARD-FOCUS-DENSITY-001"
+milestone = "M43"
+title = "Fix Dashboard focus, Navigator reopening, preview density, and message visibility"
+status = "DONE"
+priority = 786
+required = true
+depends_on = ["UX-WORKBENCH-PARITY-001"]
+verify = ["cargo test -p yoctui-model dashboard_navigator_focus_always_skips_read_only_panes", "cargo test -p yoctui-model collapsed_navigator_root_remains_selected_and_can_reopen", "cargo test -p yoctui-app next_generation_navigator_mouse_and_keyboard_share_typed_routing", "cargo test -p yoctui-app visible_guidance_popup_owns_its_advertised_enter_and_escape_controls", "cargo test -p yoctui-ui layer_browser_gives_unused_tree_width_to_the_file_preview", "cargo test -p yoctui-ui renders_notification", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Dashboard remains Navigator-only regardless of active, completed, or retained build data; direct focus, screen navigation, and modal restoration cannot select its read-only cockpit. Collapsed Navigator roots retain a stable group selection and reopen with Right, Enter, or another click. The Layers browser sizes its left tree column from useful labels and gives unused width to the scrollable file preview. Guidance and failure notifications render as cleared, visible, dismissible Message popups without becoming modal focus traps. Completed in v0.1.20."

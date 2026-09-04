@@ -3650,6 +3650,7 @@ mod tests {
         );
 
         let mut app = App::new(10, 1_000);
+        app.screen = crate::Screen::Qa;
         app.focus = FocusTarget::Inspector;
         app.qa.view = QaView::LayerQa;
         let _ = update(
@@ -3670,6 +3671,7 @@ mod tests {
     #[test]
     fn qa_check_workflow_app_boundary_traps_dialog_focus_and_maps_typed_effects() {
         let mut app = App::new(10, 1_000);
+        app.screen = crate::Screen::Qa;
         app.focus = FocusTarget::Inspector;
         assert_eq!(
             update(&mut app, Action::Qa(QaAction::InspectCapability)),

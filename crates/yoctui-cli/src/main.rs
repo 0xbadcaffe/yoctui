@@ -46,10 +46,10 @@ use yoctui_app::{
     image_console_dialog_action, images_workspace_action_for_view, keymap_action_for_app,
     keymap_preferences_action, log_workspace_action, maintenance_dialog_action,
     maintenance_workspace_action, menu_action, model_action_from_backend_event,
-    mouse_action_for_app, onboarding_action, package_workspace_action, popup_editor_action,
-    qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
-    qa_report_response_action, qa_task_capability_action, qa_workspace_action,
-    qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
+    mouse_action_for_app, notification_popup_action, onboarding_action, package_workspace_action,
+    popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
+    qa_report_error_action, qa_report_response_action, qa_task_capability_action,
+    qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, quit_confirmation_action,
     raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
     sdk_actions_for_runner_event, sdk_build_confirmation_action,
@@ -11503,6 +11503,10 @@ async fn tui(
                         }
                         _ => {}
                     }
+                    continue;
+                }
+                if let Some(action) = notification_popup_action(&app, input) {
+                    let _ = compatibility_workspace_action(&mut app, action);
                     continue;
                 }
                 if let Some(action) =

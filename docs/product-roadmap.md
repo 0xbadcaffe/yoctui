@@ -857,3 +857,23 @@ Exit criteria:
 - Layers supports PageUp/PageDown and rootfs prioritizes the Braille pie chart
 - focused, exact-golden, workspace, Clippy, documentation, roadmap, and
   completion gates pass in version 0.1.19
+
+## M43 — Dashboard focus and preview density
+
+Goal: remove the last passive Dashboard focus target and spend sparse Layers
+browser space on source inspection.
+
+Exit criteria:
+
+- Dashboard remains Navigator-only with idle, active, completed, and retained
+  build evidence
+- direct pane focus, Dashboard navigation, and modal restoration cannot land on
+  its read-only Tasks cockpit
+- collapsed Navigator roots retain their selected group and reopen through
+  Right, Enter, or another click
+- the Layers tree column follows useful label width within responsive bounds
+- unused browser width expands the scrollable file preview
+- guidance and failure notifications use a clearly visible dismissible popup
+  without becoming a focus trap
+- focused, workspace, Clippy, documentation, and roadmap checks pass in
+  version 0.1.20

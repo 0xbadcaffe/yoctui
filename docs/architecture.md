@@ -698,8 +698,10 @@ selection, Git/file metadata, preview classification, and Inspector mode.
 The app focus router reserves `Right` for opening or expanding the Layers
 hierarchy and reserves both horizontal arrows for the open tree; it maps
 Navigator `Right`/`Left` to group expansion/collapse while `Tab`/`Shift+Tab`
-remain the pane-focus route. The CLI applies passive notification routing only
-to `Esc`, so it cannot shadow the typed Layers `Enter` action.
+remain the pane-focus route. The CLI applies notification routing only when the
+same shared predicate used by the renderer has produced a visible
+guidance/failure popup. That route owns the advertised `Esc` dismissal and
+actionable `Enter`; all unrelated keys continue to the selected workspace.
 Expanding or refreshing emits a directory-specific effect; the CLI reads only
 that directory and returns typed entries. File previews are capped at 64 KiB
 and include path, text/binary classification, and truncation state. The reducer
@@ -3457,3 +3459,24 @@ Vim. On return it reloads the selected file through the containment-checked
 editor workflow; the reducer advances disk authority while retaining the
 visual diff baseline. Builds still leave the model as typed `BuildRequest`
 effects and execute through the existing daemon/backend path.
+
+## M43 Dashboard focus and sparse-browser layout
+
+`focus_target_is_relevant` classifies Dashboard Workspace and Inspector as
+unconditionally passive. Focus cycling, direct focus requests, screen opening,
+and modal restoration all consult that model rule, preventing live or retained
+task data from creating a focus trap.
+
+The Layers renderer derives a bounded browser-column width from configured
+layer and visible tree-label needs. It does not store layout state or inspect
+the filesystem; the remaining width is assigned to the existing scrollable
+file preview.
+
+Navigator group toggles normalize destination selection to the selected
+group's first stable identity before viewport projection. A collapsed heading
+therefore remains addressable without adding a second group-selection model.
+
+Notifications remain reducer-owned bounded text rather than Dialog state. The
+renderer projects them as a cleared overlay only when no modal surface is open;
+existing `Esc` dismissal and optional failed-build `Enter` activation remain
+the only captured inputs.

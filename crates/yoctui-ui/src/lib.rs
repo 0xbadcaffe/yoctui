@@ -71,7 +71,7 @@ use yoctui_model::{
     WicWritePhraseDialog, WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
     config_edit_disabled_reason, config_source_disabled_reason, format_duration,
-    selected_config_copy_value,
+    notification_requires_acknowledgement, selected_config_copy_value,
 };
 
 const WIDE_WORKBENCH_MIN_WIDTH: u16 = 130;
@@ -2896,6 +2896,55 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
     {
         dialog_compatibility_overlay(frame, app, dialog, screen_area);
     }
+    if popup_notification(app).is_some()
+        && app.active_dialog().is_none()
+        && !app.menu.is_open()
+        && !app.onboarding.open
+        && !app.keymap_preferences_ui.open
+        && !app.command_palette_open
+        && !(app.screen == Screen::RawMode
+            && matches!(
+                app.raw_mode.view,
+                yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
+            ))
+    {
+        notification_popup(frame, app, screen_area);
+    }
+}
+
+fn notification_popup(frame: &mut Frame, app: &App, area: Rect) {
+    let Some(message) = popup_notification(app) else {
+        return;
+    };
+    let width = area.width.saturating_sub(8).min(76);
+    let content_width = usize::from(width.saturating_sub(4).max(1));
+    let wrapped_lines = message
+        .lines()
+        .map(|line| line.chars().count().max(1).div_ceil(content_width))
+        .sum::<usize>();
+    let height = u16::try_from(wrapped_lines.saturating_add(4))
+        .unwrap_or(u16::MAX)
+        .clamp(5, 10);
+    let popup = bounded_dialog_rect(area, width, height);
+    clear_popup(frame, app, popup);
+    let actionable =
+        app.build.status == BuildStatus::Failed && app.logs.diagnostics().next().is_some();
+    let hint = if actionable {
+        "Enter view errors · Esc dismiss"
+    } else {
+        "Esc dismiss"
+    };
+    frame.render_widget(
+        Paragraph::new(format!("{message}\n\n{hint}"))
+            .block(dialog_block(app, "Message", DialogTone::Standard))
+            .wrap(Wrap { trim: false }),
+        popup,
+    );
+}
+
+fn popup_notification(app: &App) -> Option<&str> {
+    let message = app.notification.as_deref()?;
+    notification_requires_acknowledgement(message).then_some(message)
 }
 
 fn dialog_compatibility_overlay(frame: &mut Frame, app: &App, dialog: &Dialog, area: Rect) {
@@ -17913,9 +17962,32 @@ fn layer_tree_widget_projection(
     })
 }
 
+fn layer_browser_left_width(browser: &LayerBrowser, total_width: u16) -> u16 {
+    let configured = browser.layer.chars().count().saturating_add(18);
+    let tree = browser
+        .entries
+        .iter()
+        .map(|entry| {
+            entry
+                .path
+                .file_name()
+                .map_or(0, |name| name.to_string_lossy().chars().count())
+                .saturating_add(entry.depth.saturating_mul(2))
+                .saturating_add(8)
+        })
+        .max()
+        .unwrap_or(0);
+    let useful = configured.max(tree).clamp(38, 54) as u16;
+    let ratio_cap = total_width.saturating_mul(42) / 100;
+    let preview_floor = if total_width >= 100 { 58 } else { 32 };
+    let preview_cap = total_width.saturating_sub(preview_floor);
+    useful.min(ratio_cap.max(1)).min(preview_cap.max(1))
+}
+
 fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rect) {
+    let left_width = layer_browser_left_width(browser, area.width);
     let chunks =
-        Layout::horizontal([Constraint::Percentage(42), Constraint::Percentage(58)]).split(area);
+        Layout::horizontal([Constraint::Length(left_width), Constraint::Min(1)]).split(area);
     let layer_height = app.workspace.layers.len().saturating_add(2).min(8) as u16;
     let left =
         Layout::vertical([Constraint::Length(layer_height), Constraint::Min(3)]).split(chunks[0]);
@@ -27454,6 +27526,7 @@ mod tests {
     #[test]
     fn dialog_focus_is_trapped_then_visibly_restored_to_inspector() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Logs;
         app.focus = FocusTarget::Inspector;
         let _ = update(&mut app, Action::OpenBuildOptions);
 
@@ -27487,7 +27560,7 @@ mod tests {
     #[test]
     fn renders_notification() {
         let mut app = App::new(1, 1);
-        app.notification = Some("Backend unavailable".into());
+        app.notification = Some("Select an image first with i.".into());
         let mut terminal = Terminal::new(TestBackend::new(140, 30)).unwrap();
         terminal.draw(|f| render(f, &app)).unwrap();
         let screen = terminal
@@ -27497,10 +27570,10 @@ mod tests {
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(screen.contains("Backend unavailable"));
+        assert!(screen.contains("Message"));
+        assert!(screen.contains("Select an image first with i."));
+        assert!(screen.contains("Esc dismiss"));
         assert!(screen.contains("? Help"));
-        assert!(!screen.contains("Press Enter to dismiss."));
-        assert!(!screen.contains("Notice"));
     }
     #[test]
     fn dashboard_renders_backend_and_build_metrics() {
@@ -27745,7 +27818,7 @@ mod tests {
         }
 
         let compact = rendered_text_at(&app, 80, 24, literal_now());
-        for anchor in ["Tasks:", "1 queued"] {
+        for anchor in ["Navigator", "1 queued"] {
             assert!(compact.contains(anchor), "missing {anchor}: {compact}");
         }
     }
@@ -29378,6 +29451,27 @@ mod tests {
     }
 
     #[test]
+    fn layer_browser_gives_unused_tree_width_to_the_file_preview() {
+        let mut browser = LayerBrowser::new("meta-demo".into(), "/layers/meta-demo".into());
+        browser.entries.push(LayerBrowserEntry {
+            path: "/layers/meta-demo/conf/layer.conf".into(),
+            depth: 1,
+            ..LayerBrowserEntry::default()
+        });
+
+        let compact = layer_browser_left_width(&browser, 140);
+        assert_eq!(compact, 38);
+        assert_eq!(140 - compact, 102);
+
+        browser.entries[0].path =
+            "/layers/meta-demo/recipes-core/example/a-very-long-recipe-filename.bb".into();
+        let expanded = layer_browser_left_width(&browser, 140);
+        assert!(expanded > compact);
+        assert!(expanded <= 54);
+        assert!(140 - expanded >= 86);
+    }
+
+    #[test]
     fn ux_layer_browser_tui_tree_widget_preserves_model_identity_viewport_and_ascii() {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Layers;
@@ -29467,10 +29561,7 @@ mod tests {
         ];
         browser.selection = 0;
         let malformed = rendered_text(&app, 120, 30);
-        assert!(
-            malformed.contains("Layer tree unavailable: duplicate or ma"),
-            "{malformed}"
-        );
+        assert!(malformed.contains("Layer tree unavailable"), "{malformed}");
     }
 
     #[test]

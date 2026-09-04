@@ -540,6 +540,17 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     },
 ];
 
+/// Guidance and failure notifications require an explicit acknowledgement in
+/// the client instead of relying on the easy-to-miss transient status line.
+pub fn notification_requires_acknowledgement(message: &str) -> bool {
+    message.starts_with("Select ")
+        || message.starts_with("No ")
+        || message.contains(" unavailable")
+        || message.contains(" cannot ")
+        || message.contains(" could not ")
+        || message.contains(" failed")
+}
+
 fn navigator_group_for_selection(selection: usize) -> usize {
     NAVIGATOR_GROUPS
         .iter()
@@ -6875,10 +6886,15 @@ fn synchronize_focus(app: &mut App) {
             app.focus_return = Some(app.focus);
         }
         app.focus = target;
-    } else if let Some(target) = app.focus_return.take() {
-        app.focus = target;
-    } else if !is_pane_focus(app.focus) {
-        app.focus = FocusTarget::Workspace;
+    } else {
+        let target = app.focus_return.take().unwrap_or(app.focus);
+        app.focus = if is_pane_focus(target) && focus_target_is_relevant(app, target) {
+            target
+        } else if focus_target_is_relevant(app, FocusTarget::Workspace) {
+            FocusTarget::Workspace
+        } else {
+            FocusTarget::Navigator
+        };
     }
 }
 
@@ -8989,11 +9005,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .then(|| selected_correlated_log_id(app))
                 .flatten();
             app.screen = s;
-            app.focus = FocusTarget::Workspace;
+            app.focus = if focus_target_is_relevant(app, FocusTarget::Workspace) {
+                FocusTarget::Workspace
+            } else {
+                FocusTarget::Navigator
+            };
             app.focus_return = None;
             app.workspace_subfocus = WorkspaceSubfocus::Main;
             if app.zoomed_pane.is_some() {
-                app.zoomed_pane = Some(FocusTarget::Workspace);
+                app.zoomed_pane = Some(app.focus);
             }
             if let Some(index) = NAVIGATOR_SCREENS
                 .iter()
@@ -9095,6 +9115,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::ToggleNavigatorGroup { group } => {
             if let Some(expanded) = app.navigator_groups_expanded.get_mut(group) {
                 *expanded = !*expanded;
+                app.navigator_selection = NAVIGATOR_GROUPS[group].start;
                 app.focus = FocusTarget::Navigator;
                 app.focus_return = None;
             }
@@ -9102,6 +9123,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::CollapseNavigatorGroup => {
             let group = app.navigator_group_index();
             app.navigator_groups_expanded[group] = false;
+            app.navigator_selection = NAVIGATOR_GROUPS[group].start;
         }
         Action::ExpandNavigatorGroup => {
             let group = app.navigator_group_index();
@@ -9403,7 +9425,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
-            app.focus = FocusTarget::Workspace;
+            app.focus = if focus_target_is_relevant(app, FocusTarget::Workspace) {
+                FocusTarget::Workspace
+            } else {
+                FocusTarget::Navigator
+            };
             app.focus_return = None;
             if app.screen == Screen::Packages
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
@@ -18967,6 +18993,27 @@ mod tests {
         assert!(app.navigator_groups_expanded[2]);
         assert_eq!(app.screen, Screen::Dashboard, "expansion does not navigate");
     }
+
+    #[test]
+    fn collapsed_navigator_root_remains_selected_and_can_reopen() {
+        let mut app = App::new(10, 1_000);
+        app.navigator_selection = NAVIGATOR_GROUPS[4].start + 3;
+
+        let _ = update(&mut app, Action::ToggleNavigatorGroup { group: 1 });
+        assert!(!app.navigator_groups_expanded[1]);
+        assert_eq!(app.navigator_selection, NAVIGATOR_GROUPS[1].start);
+        assert_eq!(app.navigator_group_index(), 1);
+
+        let _ = update(&mut app, Action::ExpandNavigatorGroup);
+        assert!(app.navigator_groups_expanded[1]);
+
+        let _ = update(&mut app, Action::ToggleNavigatorGroup { group: 1 });
+        assert!(!app.navigator_groups_expanded[1]);
+        let _ = update(&mut app, Action::ActivateNavigator);
+        assert!(app.navigator_groups_expanded[1]);
+        assert_eq!(app.screen, Screen::Dashboard, "reopening does not navigate");
+    }
+
     #[test]
     fn responsive_pane_focus_cycle_cannot_escape_modal_focus() {
         let mut app = App::new(10, 1_000);
@@ -18988,6 +19035,7 @@ mod tests {
     #[test]
     fn focus_restores_exact_pane_after_nested_dialog_transitions() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
         app.focus = FocusTarget::Inspector;
 
         let _ = update(&mut app, Action::OpenBuildOptions);
@@ -19178,6 +19226,7 @@ mod tests {
     #[test]
     fn theme_command_palette_entry_opens_named_picker() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
         app.focus = FocusTarget::Inspector;
         let _ = update(&mut app, Action::OpenCommandPalette);
         for character in "Choose theme".chars() {
@@ -19195,6 +19244,7 @@ mod tests {
     #[test]
     fn focus_async_dialog_waits_behind_palette_then_restores() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
         app.focus = FocusTarget::Inspector;
         let _ = update(&mut app, Action::OpenCommandPalette);
         let _ = update(
@@ -21583,6 +21633,7 @@ mod tests {
     #[test]
     fn config_source_picker_uses_typed_operation_line_and_restores_focus() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Configuration;
         app.focus = FocusTarget::Inspector;
         app.workspace.build_dir = Some("/build".into());
         app.workspace
@@ -23546,6 +23597,7 @@ mod tests {
     #[test]
     fn config_edit_preview_requires_allowlisted_loaded_global_detail() {
         let mut app = App::new(20, 4_000);
+        app.screen = Screen::Configuration;
         app.focus = FocusTarget::Inspector;
         app.workspace.build_dir = Some("/build".into());
         app.workspace
@@ -24859,6 +24911,7 @@ mod tests {
 
     fn qemu_model_app() -> App {
         let mut app = App::new(20, 20_000);
+        app.screen = Screen::Images;
         let artifact = qemu_model_artifact();
         let request = ImageArtifactRequest {
             generation: 1,

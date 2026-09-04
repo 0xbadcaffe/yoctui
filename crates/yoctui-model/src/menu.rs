@@ -146,6 +146,7 @@ mod tests {
     #[test]
     fn ux_menu_groups_context_availability_prefix_and_focus_are_typed_and_bounded() {
         let mut app = App::new(10, 1_000);
+        app.screen = Screen::Tasks;
         let _ = update(&mut app, Action::OpenApplicationMenu);
         assert!(app.menu.is_open());
         assert_eq!(app.focus, FocusTarget::Dialog);

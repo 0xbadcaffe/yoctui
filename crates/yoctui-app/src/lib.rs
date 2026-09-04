@@ -27,8 +27,8 @@ use yoctui_bitbake::{
     WicRunnerOutputStream,
 };
 use yoctui_model::{
-    Action, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId, BackgroundJobKind,
-    BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
+    Action, App, AppError, BackgroundJobContext, BackgroundJobError, BackgroundJobId,
+    BackgroundJobKind, BackgroundJobOutputEntry, BackgroundJobOutputSource, BackgroundJobProgress,
     BackgroundJobResult, BackgroundJobSpec, BuildRequest, DevtoolOperation, FocusTarget,
     FunctionKey, LayerInspectorMode, LayerRelationship, LayerRelationships, MaintenanceAction,
     MaintenanceBuildHistoryField, MaintenanceCleanupField, MaintenanceDialog,
@@ -4026,6 +4026,31 @@ pub fn checkbox_input_action(input: Input) -> Option<CheckboxInputAction> {
         Input::Up | Input::Char('k') => Some(CheckboxInputAction::Move(-1)),
         Input::Down | Input::Char('j') => Some(CheckboxInputAction::Move(1)),
         Input::Enter => Some(CheckboxInputAction::Primary),
+        _ => None,
+    }
+}
+
+/// Route the controls advertised by a visible guidance/failure popup before
+/// screen-local Enter or Esc handling can consume them.
+pub fn notification_popup_action(app: &App, input: Input) -> Option<Action> {
+    let message = app.notification.as_deref()?;
+    if !yoctui_model::notification_requires_acknowledgement(message)
+        || app.active_dialog().is_some()
+        || app.menu.is_open()
+        || app.onboarding.open
+        || app.keymap_preferences_ui.open
+        || app.command_palette_open
+        || (app.screen == Screen::RawMode
+            && matches!(
+                app.raw_mode.view,
+                yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
+            ))
+    {
+        return None;
+    }
+    match input {
+        Input::Enter => Some(Action::ActivateNotification),
+        Input::Esc => Some(Action::DismissNotification),
         _ => None,
     }
 }
@@ -8092,7 +8117,11 @@ mod tests {
         let revalidated = yoctui_model::invalidate_workspace_compatibility(&mut app);
         assert!(revalidated.closed_dialog);
         assert!(app.active_dialog().is_none());
-        assert_eq!(app.focus, yoctui_model::FocusTarget::Inspector);
+        assert_eq!(
+            app.focus,
+            yoctui_model::FocusTarget::Navigator,
+            "Dashboard cannot restore a passive Inspector focus"
+        );
         assert!(
             revalidated
                 .reason
@@ -10389,6 +10418,17 @@ mod tests {
             mouse_action_for_app(content_heading, &app, 180, 40),
             Some(Action::ToggleNavigatorGroup { group: 1 })
         );
+        let collapse = mouse_action_for_app(content_heading, &app, 180, 40).unwrap();
+        let _ = yoctui_model::update(&mut app, collapse);
+        assert!(!app.navigator_groups_expanded[1]);
+        assert_eq!(app.navigator_selection, 1);
+        assert_eq!(
+            mouse_action_for_app(content_heading, &app, 180, 40),
+            Some(Action::ToggleNavigatorGroup { group: 1 })
+        );
+        let reopen = mouse_action_for_app(content_heading, &app, 180, 40).unwrap();
+        let _ = yoctui_model::update(&mut app, reopen);
+        assert!(app.navigator_groups_expanded[1]);
     }
 
     #[test]
@@ -10931,6 +10971,26 @@ mod tests {
     #[test]
     fn enter_activates_contextual_notification() {
         assert_eq!(key_action(Input::Enter), Some(Action::ActivateNotification));
+    }
+
+    #[test]
+    fn visible_guidance_popup_owns_its_advertised_enter_and_escape_controls() {
+        let mut app = yoctui_model::App::new(10, 1_000);
+        app.screen = Screen::Images;
+        app.notification = Some("Select an image first with i.".into());
+
+        assert_eq!(
+            notification_popup_action(&app, Input::Esc),
+            Some(Action::DismissNotification)
+        );
+        assert_eq!(
+            notification_popup_action(&app, Input::Enter),
+            Some(Action::ActivateNotification)
+        );
+        assert_eq!(notification_popup_action(&app, Input::Down), None);
+
+        app.notification = Some("Package inventory refreshed.".into());
+        assert_eq!(notification_popup_action(&app, Input::Esc), None);
     }
     #[test]
     fn maps_severity_filter_control() {

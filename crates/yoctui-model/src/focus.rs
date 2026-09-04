@@ -4,11 +4,10 @@ pub fn focus_target_is_relevant(app: &crate::App, target: FocusTarget) -> bool {
     match target {
         FocusTarget::Navigator => true,
         FocusTarget::Workspace => match app.screen {
-            Screen::Dashboard => {
-                !app.tasks.is_empty()
-                    || !app.completed_tasks.is_empty()
-                    || !app.job_history_rows().is_empty()
-            }
+            // The Dashboard is a read-only cockpit. Its task, log, history,
+            // telemetry, and status panels never become actionable merely
+            // because live or retained build data appears.
+            Screen::Dashboard => false,
             _ => true,
         },
         // Layers and Recipes carry their selectable preview inside the workspace.
@@ -101,7 +100,7 @@ mod tests {
     use crate::{Action, App, CommandId, update};
 
     #[test]
-    fn dashboard_navigator_focus_skips_read_only_panes() {
+    fn dashboard_navigator_focus_always_skips_read_only_panes() {
         let mut app = App::new(32, 8_192);
         assert_eq!(app.screen, Screen::Dashboard);
         let _ = update(&mut app, Action::Focus(FocusTarget::Navigator));
@@ -119,8 +118,24 @@ mod tests {
             ),
         );
         let _ = update(&mut app, Action::CycleFocus { backwards: false });
-        assert_eq!(app.focus, FocusTarget::Workspace);
-        let _ = update(&mut app, Action::CycleFocus { backwards: false });
+        assert_eq!(app.focus, FocusTarget::Navigator);
+
+        app.completed_tasks.push_back(crate::CompletedTask {
+            task: crate::TaskInfo::active(
+                crate::TaskId("bash:do_compile".into()),
+                "bash".into(),
+                "do_compile".into(),
+            ),
+            success: true,
+        });
+        let _ = update(&mut app, Action::CycleFocus { backwards: true });
+        assert_eq!(app.focus, FocusTarget::Navigator);
+        let _ = update(&mut app, Action::Focus(FocusTarget::Workspace));
+        assert_eq!(app.focus, FocusTarget::Navigator);
+
+        app.navigator_selection = 0;
+        let _ = update(&mut app, Action::ActivateNavigator);
+        assert_eq!(app.screen, Screen::Dashboard);
         assert_eq!(app.focus, FocusTarget::Navigator);
     }
 

@@ -3386,16 +3386,18 @@ dialog. Rendering helpers never mutate dialog state.
 
 ## 22. Notifications
 
-Non-dialog notifications render in the bounded transient footer slot; they do
-not clear or cover the Workspace with a popup. Typed dialogs, including build
-completion review, remain modal overlays and use the same footer slot to say
-that confirmation is pending. A notification remains actionable/dismissible
-through the existing typed `Enter`/dismiss route, and important build failures
-retain their action that opens Errors.
+Routine non-dialog notifications render in the bounded transient footer slot.
+Guidance (`Select …`, `No …`, unavailable/cannot/could-not states) and failure
+notifications render their complete text in a cleared, bounded `Message`
+popup so prerequisite instructions cannot be missed. These popups consume only
+their advertised `Esc dismiss` route and, for an actionable build failure,
+`Enter view errors`; unrelated shortcuts remain available. Typed dialogs,
+including build completion review, remain modal overlays and take precedence.
 
 The footer projects informational, success, warning, error, reconnecting, and
-activity marker-plus-text forms from existing model state. Generic strings are
-informational rather than guessed from wording. Exact retained error/warning
+activity marker-plus-text forms from existing model state. Routine strings are
+informational. Guidance/failure popup eligibility is a single shared model
+predicate used by rendering and input routing. Exact retained error/warning
 logs and typed build completion/cancellation supply result severity. Repeated
 backend log lines remain in bounded log retention and do not become one footer
 notification per line.
@@ -5071,8 +5073,10 @@ every other terminal session. The dialog never claims that SSH boots an image.
 
 The interactive client starts on `Overview / Dashboard` with Navigator focus.
 Focus traversal includes only panes that currently offer a selectable,
-scrollable, or editable target. An idle Dashboard cannot trap focus in its
-read-only build or daemon summaries, and Layers and Recipes own their preview
+scrollable, or editable target. Dashboard is always Navigator-only: live,
+completed, or retained build evidence does not turn its read-only Tasks cockpit
+or daemon summaries into focus targets. Direct focus, Dashboard navigation, and
+modal restoration use the same rule. Layers and Recipes own their preview
 surfaces inside Workspace rather than exposing a duplicate Inspector.
 
 Dashboard uses the same dense build cockpit as Tasks: overall build state,
@@ -5084,10 +5088,19 @@ and uses the shared `BRAILLE_EIGHT_DOUBLE` activity set. `yoctui daemon start`
 uses that same set until the daemon socket becomes ready.
 
 Layers places file information and the scrollable file preview beside the
-tree. Information is collapsed by default and `i` toggles it; `[` and `]`
-scroll the preview. Recipes places the selected recipe preview beside the
+tree. Its tree column follows useful visible-label width within responsive
+bounds, and all reclaimed width expands the file preview. Information is
+collapsed by default and `i` toggles it; `[` and `]` scroll the preview.
+Recipes places the selected recipe preview beside the
 recipe list with the same preview-scroll keys. Layer trees accept
 `PageUp`/`PageDown` as bounded ten-row movement in addition to hierarchy keys.
+
+Collapsing a Navigator root anchors selection to that root. `Right`, `l`,
+`Enter`, or another click reopens it; viewport reconciliation cannot strand the
+selection on a hidden destination. Explicit notifications render in a cleared
+`Message` popup with their complete text and `Esc dismiss`. A failed build with
+diagnostics also offers `Enter view errors`; ordinary notification popups do
+not trap focus or consume unrelated shortcuts.
 
 In the recipe/source editor, `e` invokes Vim through Yoctui's guarded external
 process lifecycle and restores the editor surface afterward. Content Vim saved
