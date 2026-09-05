@@ -2,38 +2,39 @@
 
 ## Task
 
-**ID:** PERF-WAKEUPS-001
-**Title:** Measure wakeups and timer behavior
+**ID:** PERF-SATURATION-HARNESS-001
+**Title:** Create a deterministic CPU saturation harness
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure and audit every periodic wakeup source in the exact pre-optimization
-runtime. Identify UI, animation, telemetry, IPC, reconnect, PTY, log, job, and
-status work that still runs when no state changed, with reproducible process
-statistics and code-location evidence before changing loop behavior.
+Create a deterministic, bounded, offline CPU-load fixture that can saturate a
+configured set of logical CPUs without deliberately leaving one free. Make its
+start, readiness, duration, shutdown, and achieved saturation machine-readable
+so later responsiveness gates can run independently of a full Yocto build.
 
 ## Dependencies
 
-- PERF-BASELINE-001 — DONE
+- PERF-SPEC-001 — DONE
 
 ## Definition of done
 
-- Periodic timers and polling loops are cataloged with exact intervals, source
-  locations, visibility/need guards, and whether unchanged work is performed.
-- Idle daemon and attached-client wakeups are measured across a robust window.
-- Available context-switch, syscall, timer, and scheduler evidence is retained;
-  unavailable host counters are recorded honestly rather than invented.
-- The report distinguishes necessary liveness work from removable polling and
-  names follow-up ownership without implementing speculative optimization.
-- Compact machine-readable artifacts and an offline verifier are retained.
+- The fixture uses only local deterministic computation and requires no network,
+  root privilege, real-time scheduling, or Yocto checkout.
+- A caller chooses worker count or the full current affinity set; no logical CPU
+  is implicitly reserved for Yoctui.
+- Warmup/readiness is explicit and the workload terminates after a hard bounded
+  duration, including cleanup on interruption.
+- Machine-readable output records requested/available workers, monotonic timing,
+  per-worker progress, and achieved host/process load.
+- Tests cover validation, readiness, saturation, bounded exit, and cleanup.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --wakeups
+./scripts/verify-saturation-responsiveness.sh --harness
 ./scripts/verify-roadmap.sh
 ```
 
-The pre-optimization baseline and seven workload profiles are complete. No
-runtime optimization has landed.
+The pre-optimization baseline, seven workload profiles, and wakeup audit are
+complete. No runtime optimization has landed.

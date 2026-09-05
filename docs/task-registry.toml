@@ -7033,18 +7033,18 @@ notes = "Seven exact-v0.1.22 15-second 499 Hz cycles:u LBR profiles retain symbo
 id = "PERF-WAKEUPS-001"
 milestone = "M46"
 title = "Measure wakeups and timer behavior"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 792
 required = true
 depends_on = ["PERF-BASELINE-001"]
 verify = ["./scripts/verify-performance.sh --wakeups"]
-notes = "Audit UI, animation, telemetry, IPC, reconnect, PTY, log, job, and status timers and identify unchanged periodic work."
+notes = "The exact-v0.1.22 60-second audit catalogs thirteen timer/polling categories with source, cadence, guard, unchanged idle work, and follow-up owner. It measured 867.24 voluntary context switches/s for the standalone daemon and 60.4 aggregate context switches/s for daemon plus one client; perf, baseline, and qualitative launch-strace evidence are hashed. Unavailable privileged scheduler/wakeup counters are explicit. The offline wakeup verifier passes in v0.1.25."
 
 [[task]]
 id = "PERF-SATURATION-HARNESS-001"
 milestone = "M46"
 title = "Create a deterministic CPU saturation harness"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 793
 required = true
 depends_on = ["PERF-SPEC-001"]

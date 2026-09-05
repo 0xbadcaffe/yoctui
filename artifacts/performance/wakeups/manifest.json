@@ -1,0 +1,171 @@
+{
+  "schema": "yoctui.performance.wakeup-audit.v1",
+  "captured_at_utc": "2026-09-05T06:53:00+00:00",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "binary_sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5",
+  "terminal": {
+    "columns": 160,
+    "rows": 50,
+    "refresh_milliseconds": 100
+  },
+  "measurement": {
+    "warmup_seconds": 10,
+    "sample_window_seconds": 60,
+    "cpu_statistic": "10_percent_trimmed_mean",
+    "clock": "CLOCK_MONOTONIC",
+    "perf_software_counters_available": true,
+    "scheduler_tracepoints_available": false,
+    "scheduler_tracepoints_reason": "tracefs scheduling events are unavailable to the unprivileged user and kernel.perf_event_paranoid is 4",
+    "process_wakeup_counter_available": false,
+    "process_wakeup_counter_reason": "CONFIG_SCHEDSTATS wakeup counters are disabled; /proc/PID/status exposes context switches but not wakeup causes",
+    "strace_attach_available": false,
+    "strace_attach_reason": "Yama/ptrace policy rejected PTRACE_SEIZE; a separately launched qualitative trace was retained instead"
+  },
+  "artifacts": {
+    "idle-attached-perf-stat.csv": "3a9274cc38c69ea5702ed3db49005fae597c479c446e9d88955a411b34237a63",
+    "idle-attached-strace.txt": "994bd4970597e840b6f0ce1942637fac7c51e70acee40a7dec855c8074e28f29",
+    "idle-daemon-baseline.json": "2626c1a5becbf8daa01158556f918b8f110088c1e7eceee325777fd6f53e2319",
+    "idle-attached-client-baseline.json": "e18cf90ca1f923db307e8341278c0957353be0a15459c08ef432c12bdd97c2b5"
+  },
+  "observations": {
+    "idle_daemon_cpu_percent_one_logical_cpu": 5.4173823832923285,
+    "idle_daemon_voluntary_context_switches_per_second": 867.2355998440933,
+    "idle_daemon_involuntary_context_switches_per_second": 0.28315372491897345,
+    "idle_attached_combined_cpu_percent_one_logical_cpu": 2.434567006713483,
+    "idle_attached_daemon_voluntary_context_switches_per_second": 39.200694449309395,
+    "idle_attached_client_voluntary_context_switches_per_second": 19.215540211505516,
+    "idle_attached_perf_context_switches_per_second": 60.4,
+    "idle_attached_perf_cpu_migrations_per_second": 5.483333333333333,
+    "idle_attached_perf_task_clock_percent_one_logical_cpu": 2.9062166666666667,
+    "idle_render_invocations_per_second": 10.0,
+    "daemon_telemetry_publications_per_second": 1.0,
+    "client_telemetry_polls_per_second": 1.0
+  },
+  "timer_sources": [
+    {
+      "category": "ui_tick_render",
+      "source": "crates/yoctui-cli/src/main.rs:11177-11182",
+      "cadence": "default 100 ms; configurable minimum 16 ms",
+      "guard": "none",
+      "idle_behavior": "increments the animation frame and redraws the complete application even when state and visible cells are unchanged",
+      "periodic_when_idle": true,
+      "owner": "PERF-RENDER-001"
+    },
+    {
+      "category": "animation",
+      "source": "crates/yoctui-model/src/lib.rs:18104-18107",
+      "cadence": "every UI tick (10 Hz by default)",
+      "guard": "reduced-motion prevents the model mutation only",
+      "idle_behavior": "advances a global frame on every screen even when no animated content is visible",
+      "periodic_when_idle": true,
+      "owner": "PERF-ANIM-001"
+    },
+    {
+      "category": "client_telemetry",
+      "source": "crates/yoctui-cli/src/main.rs:427-501,11172-11175",
+      "cadence": "1 second",
+      "guard": "none; independent of visible screen",
+      "idle_behavior": "reads proc stat, meminfo, loadavg, diskstats, route and network data and performs statvfs",
+      "periodic_when_idle": true,
+      "owner": "PERF-TELEMETRY-001"
+    },
+    {
+      "category": "daemon_telemetry",
+      "source": "crates/yoctui-cli/src/main.rs:2683-2715",
+      "cadence": "1 second wall-clock check from the outer loop",
+      "guard": "none; publishes with zero attached clients",
+      "idle_behavior": "scans jobs, reads process memory, mutates the journal and fans the event out",
+      "periodic_when_idle": true,
+      "owner": "PERF-TELEMETRY-001"
+    },
+    {
+      "category": "daemon_listener",
+      "source": "crates/yoctui-cli/src/main.rs:2719; crates/yoctui-protocol/src/daemon_ipc.rs:126-149",
+      "cadence": "1 ms accept deadline with nonblocking accept and sleep",
+      "guard": "none",
+      "idle_behavior": "wakes roughly 867 times per second with no clients and reruns every supervisor probe",
+      "periodic_when_idle": true,
+      "owner": "PERF-EVENTLOOP-001"
+    },
+    {
+      "category": "supervisor_polling",
+      "source": "crates/yoctui-cli/src/main.rs:2577-2682",
+      "cadence": "every daemon outer-loop pass",
+      "guard": "each of thirteen queues stops after the first empty try_recv",
+      "idle_behavior": "all supervisor receivers are polled even when none has work",
+      "periodic_when_idle": true,
+      "owner": "PERF-EVENTLOOP-001"
+    },
+    {
+      "category": "client_ipc_polling",
+      "source": "crates/yoctui-cli/src/client_runtime.rs:68-92",
+      "cadence": "every UI pass with a 1 ms socket read timeout, bounded to 64 events or 8 ms",
+      "guard": "attached daemon only",
+      "idle_behavior": "performs one timed receive attempt before every unconditional redraw",
+      "periodic_when_idle": true,
+      "owner": "PERF-IPC-001"
+    },
+    {
+      "category": "reconnect",
+      "source": "crates/yoctui-cli/src/main.rs:11105-11116; crates/yoctui-cli/src/client_runtime.rs:22",
+      "cadence": "1 second; each attempt has a 250 ms deadline and 10 ms connect retries",
+      "guard": "daemon runtime absent only",
+      "idle_behavior": "does no reconnect work while attached",
+      "periodic_when_idle": false,
+      "owner": "PERF-IPC-001"
+    },
+    {
+      "category": "operation_polling",
+      "source": "crates/yoctui-cli/src/main.rs:11118-11171",
+      "cadence": "every UI pass",
+      "guard": "individual optional operation state; coordinator poll methods still execute",
+      "idle_behavior": "walks all signature, package, image, rootfs, search, SDK, Wic, QEMU, test, security, QA and maintenance polling entry points",
+      "periodic_when_idle": true,
+      "owner": "PERF-EVENTLOOP-001"
+    },
+    {
+      "category": "pty_screen",
+      "source": "crates/yoctui-cli/src/daemon_pty.rs:219-299",
+      "cadence": "screen snapshots limited to one per 33 ms of PTY output",
+      "guard": "PTY output event or explicit control operation",
+      "idle_behavior": "tokio::select blocks on control or PTY events; an idle PTY has no screen timer wakeup",
+      "periodic_when_idle": false,
+      "owner": "PERF-ANIM-001"
+    },
+    {
+      "category": "logs_jobs_status",
+      "source": "crates/yoctui-cli/src/main.rs:2577-2715,11077-11182",
+      "cadence": "no separate timer; daemon events plus 1 Hz telemetry are observed by the 10 Hz client loop",
+      "guard": "event availability",
+      "idle_behavior": "no independent log/job scan timer, but full rendering and empty operation polling continue",
+      "periodic_when_idle": true,
+      "owner": "PERF-LOG-001"
+    },
+    {
+      "category": "ipc_heartbeat",
+      "source": "crates/yoctui-cli/src/client_transport.rs:124,196,230",
+      "cadence": "none in production daemon",
+      "guard": "client responds only if a Ping frame arrives",
+      "idle_behavior": "wire types support Ping/Pong but the production daemon schedules no heartbeat",
+      "periodic_when_idle": false,
+      "owner": "PERF-BITBAKE-CONN-001"
+    },
+    {
+      "category": "bitbake_backend",
+      "source": "crates/yoctui-cli/src/daemon_bitbake.rs:169-250",
+      "cadence": "event-driven backend next_event plus action-bound cancellation deadline",
+      "guard": "active build only",
+      "idle_behavior": "no BitBake event task exists while no build is active; daemon still polls its empty receiver",
+      "periodic_when_idle": false,
+      "owner": "PERF-BITBAKE-CONN-001"
+    }
+  ],
+  "findings": [
+    "The standalone daemon's 1 ms accept loop is the largest idle wakeup source and drives roughly 867 voluntary context switches per second.",
+    "An attached client incidentally slows the daemon through its 50 ms socket read timeout, but combined daemon/client overhead still exceeds the release target.",
+    "The client performs a 10 Hz full redraw, global animation mutation, empty coordinator polling, and timed IPC receive even when nothing visible changes.",
+    "Host telemetry is collected at 1 Hz regardless of screen visibility and daemon telemetry is published at 1 Hz even with no clients.",
+    "Idle PTY and inactive BitBake tasks are event-driven; their action-bound deadlines are not steady-state wakeup sources.",
+    "There is no production heartbeat timer despite Ping/Pong wire support; connection liveness and saturation tolerance require separate correctness work."
+  ]
+}

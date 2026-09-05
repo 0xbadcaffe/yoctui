@@ -107,6 +107,47 @@ artifacts, and validates symbol resolution. `./scripts/verify-performance.sh
 --profiles` then validates all seven authorities, report hashes, sampling
 parameters, and required evidence entirely offline.
 
+### Wakeup and timer audit
+
+The matching wakeup audit is retained at
+`artifacts/performance/wakeups/manifest.json`. It reuses the exact v0.1.22
+10-second-warmup/60-second baseline and adds a 60-second Linux perf software-
+counter capture for the daemon plus one idle 160x50 client. The standalone
+daemon produced 867.24 voluntary context switches per second. With a client
+attached, the baseline split was 39.20/s for the daemon and 19.22/s for the
+client; perf independently observed 3,624 aggregate context switches in 60
+seconds (60.4/s), 329 CPU migrations, and 1,743.73 ms of task clock.
+
+The source audit identifies the following steady-state periodic work:
+
+- the daemon uses a nonblocking accept with a 1 ms deadline and probes thirteen
+  supervisor receivers on every outer-loop pass;
+- the client performs a timed IPC receive, every inactive-operation poll,
+  global animation tick, and complete Ratatui draw at the default 100 ms UI
+  cadence, even when state did not change;
+- client host telemetry reads `/proc` network, disk, CPU, memory, and load data
+  plus `statvfs` once per second regardless of the visible workspace;
+- daemon telemetry scans state and publishes a journal event once per second,
+  including when there are no clients;
+- reconnect attempts are correctly guarded by disconnection, and PTY screen
+  snapshots are output-driven with a 33 ms maximum cadence rather than an idle
+  timer;
+- an inactive BitBake supervisor has no backend timer, although its empty
+  receiver is still polled by the daemon loop;
+- Ping/Pong exists in the wire vocabulary, but the production daemon schedules
+  no heartbeat.
+
+The host permits perf software counters, but unprivileged scheduling
+tracepoints and per-process wakeup-cause counters are unavailable
+(`kernel.perf_event_paranoid=4`, scheduler statistics disabled). Ptrace attach
+is also blocked. Those absences are explicit in the manifest. A separately
+launched strace capture is retained only as qualitative syscall evidence
+because tracing perturbs timings; it is not used as CPU gate evidence.
+
+`./scripts/verify-performance.sh --wakeups` validates the source-category
+catalog, exact baseline and auxiliary artifact hashes, measurement window,
+availability declarations, and observations offline.
+
 ## M21 expanded-workbench matrix
 
 `scripts/test-workbench-ux-performance.sh` adds five deterministic 160x48

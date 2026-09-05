@@ -1,0 +1,20 @@
+# Qualitative launch-time trace; tracing perturbs timing and is not CPU gate evidence.
+# Exact v0.1.22 daemon, one idle 160x50 client, isolated runtime/state/config.
+daemon: duration_seconds=12
+syscall,calls,errors
+futex,54,1
+recvfrom,229,226
+clock_nanosleep,420,0
+read,47,0
+sendto,14,0
+write,4,0
+poll,1,0
+client: duration_seconds=15
+syscall,calls,errors
+futex,68,5
+read,762,0
+recvfrom,127,112
+clock_nanosleep,47,0
+write,163,0
+sendto,3,0
+poll,1,0

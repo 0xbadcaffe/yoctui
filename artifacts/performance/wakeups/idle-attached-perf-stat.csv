@@ -1,0 +1,6 @@
+# Linux perf 60-second aggregate for exact v0.1.22 daemon + one idle 160x50 client.
+# command: perf stat -p DAEMON_PID,CLIENT_PID -e task-clock,context-switches,cpu-migrations,page-faults -x, -- sleep 60
+1743.73,msec,task-clock,1743726698,100.00,,
+3624,,context-switches,1743726698,100.00,,
+329,,cpu-migrations,1743726698,100.00,,
+8,,page-faults,1743726698,100.00,,
