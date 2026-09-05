@@ -7308,18 +7308,18 @@ notes = "In v0.1.49 push/PR CI runs a bounded fast gate covering the idle loop, 
 id = "PERF-DOC-001"
 milestone = "M46"
 title = "Document low-overhead architecture and tuning"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 817
 required = true
 depends_on = ["PERF-BITBAKE-COEXIST-001", "PERF-REGRESSION-001", "PERF-REAL-POKY-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-performance.sh --docs"]
-notes = "Document expected CPU, rendering, telemetry, backpressure, saturation behavior, optional host guidance, profiling, and every gate reproduction command."
+notes = "In v0.1.50 the normative performance guide and architecture/UI specifications agree on one-logical-CPU accounting, exact scenarios/windows, 4 Hz normal and 1 Hz saturated cosmetic rendering, telemetry tiers, priority-aware backpressure, and saturation-tolerant BitBake liveness. A compact operator table, safe advisory-only tuning guidance, profile capture, real-Poky capture, CI tiers, and every gate command are documented. An offline documentation test rejects stale cadence and service-bound claims."
 
 [[task]]
 id = "PERF-001"
 milestone = "M46"
 title = "Complete low-overhead build-saturation responsiveness"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 818
 required = true
 depends_on = ["PERF-SPEC-001", "PERF-BASELINE-001", "PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001", "PERF-EVENTLOOP-001", "PERF-RENDER-001", "PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001", "PERF-TOKIO-001", "PERF-SCHED-001", "PERF-CPU-AFFINITY-001", "PERF-BITBAKE-COEXIST-001", "PERF-INPUT-LATENCY-001", "PERF-IPC-LATENCY-001", "PERF-SATURATION-HARNESS-001", "PERF-EVENT-FLOOD-001", "PERF-REAL-POKY-001", "PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001", "PERF-REGRESSION-001", "PERF-CI-001", "PERF-DOC-001"]

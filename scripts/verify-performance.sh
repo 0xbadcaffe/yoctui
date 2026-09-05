@@ -1196,6 +1196,12 @@ verify_ci() {
   ./scripts/verify-performance-ci-fast.sh
 }
 
+verify_docs() {
+  python3 -m unittest scripts/test_performance_documentation.py
+  ./scripts/check-docs.sh
+  printf '%s\n' 'low-overhead architecture and tuning documentation valid'
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -1387,6 +1393,10 @@ case "$mode" in
   --ci)
     "$0" --regressions
     verify_ci
+    ;;
+  --docs)
+    verify_contract
+    verify_docs
     ;;
   all)
     verify_contract

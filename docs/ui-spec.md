@@ -4737,18 +4737,19 @@ Input, meaningful daemon/backend/local state, telemetry that is due for a
 visible surface, resize/full-clear, and due live presentation can request a
 frame. Repeated requests before that frame count as coalesced and cannot cause
 duplicate rendering. An unchanged poll does not render. Normal frames are
-capped at 10 Hz even when a smaller legacy refresh value is configured; input
-is itself an invalidation source and is processed independently of animation
-ticks. Runtime diagnostics retain request, rendered-frame, coalesced-request,
-and skipped-idle-check counters.
+capped at 4 Hz even when a smaller legacy refresh value is configured. During
+a live build at 90% or greater measured host CPU, cosmetic presentation slows
+to 1 Hz. Input and resize are urgent invalidation sources and bypass both
+cadences. Runtime diagnostics retain request, rendered-frame,
+coalesced-request, and skipped-idle-check counters.
 
-Animation and elapsed time use separate clocks. The animation clock runs at 5
+Animation and elapsed time use separate clocks. The animation clock runs at 4
 Hz only when the unobscured Dashboard or Tasks workspace actually renders an
 indeterminate active marker. Determinate progress, terminal state, other
 workspaces, dialogs, menus, and the command palette do not advance it. Reduced
-motion freezes the phase completely. Active build elapsed text remains current
-through an independent one-second invalidation and therefore never depends on
-animation.
+motion freezes the phase completely. Saturated live builds reduce cosmetic
+animation to 1 Hz. Active build elapsed text remains current through an
+independent one-second invalidation and therefore never depends on animation.
 
 Host telemetry is demand-aware: Dashboard and Tasks sample at 1 Hz, while
 background workspaces sample at 0.1 Hz and cannot request a telemetry frame.

@@ -366,7 +366,7 @@ an otherwise idle connection caused about 863 voluntary wakeups/s and 6.25%
 daemon CPU. The daemon now makes one kernel readiness wait over its listener and
 all current client sockets. An idle attached client therefore uses the 100 ms
 idle bound while input or a new connection wakes service immediately; active
-jobs retain the one-millisecond supervisor-service bound.
+jobs retain a 50 ms supervisor-service bound.
 
 The reference release result records 0.0000% idle-daemon, 0.0624% idle-client,
 and 0.1456% combined trimmed-mean CPU of one logical CPU. The attached daemon
@@ -438,7 +438,9 @@ and success/failure/disconnect terminal mode. Stable task identities plus
 ordered critical sentinels cover ordinary logs, progress, warnings, errors,
 task failures, cancellation, backend EOF, and build terminals. Its atomic JSON
 report contains requested and achieved rate, counts by type, monotonic duration,
-critical bridge sequences, and terminal outcome.
+critical bridge sequences, and terminal outcome. Progress is explicitly
+coalescible; warning, error, queued/started lifecycle, failure, cancellation,
+disconnect, and build-terminal evidence remains mandatory.
 
 `scripts/event-flood-harness.py` drives that fixture through the production
 bridge backend, BitBake supervisor, daemon reducer/journal, Unix IPC, and an
@@ -446,7 +448,7 @@ attached client. It records RSS, client frames, resynchronizations, connection
 continuity, ordered received sequences, sent/received critical sets, and the
 declared journal/snapshot bounds. The retained PERF-IPC audit intentionally
 records the former `unbounded_pre_backpressure` terminal starvation. Current
-strict mode adds a non-reading client, requires every sentinel at the healthy
+strict mode adds a non-reading client, requires every correctness sentinel at the healthy
 client, validates typed pressure counters, and proves a fresh attach after the
 flood:
 
@@ -456,7 +458,7 @@ flood:
 
 `scripts/test-idle-event-loops.py` runs an isolated daemon with no build
 environment, clients, jobs, or PTYs. It samples process CPU and voluntary
-context switches for five seconds and bounds shutdown latency. The focused
+context switches for ten seconds and bounds shutdown latency. The focused
 gate also rejects source regressions to the former one-millisecond
 sleep/retry listener, unconditional idle frame rendering, and inactive local
 backend polling:
@@ -468,17 +470,18 @@ backend polling:
 The client render scheduler is checked independently. Its deterministic tests
 record requests, frames, coalesced requests, and idle checks; a 64-update burst
 per cadence produces one frame. The source gate requires one centralized,
-invalidation-guarded production draw call and a 100 ms minimum normal frame
-interval:
+invalidation-guarded production draw call, a 250 ms normal frame interval, and
+the 1 Hz saturated-build presentation interval:
 
 ```sh
 ./scripts/verify-performance.sh --render
 ```
 
-Animation scheduling has its own offline gate. Production uses an explicit 200
-ms (5 Hz) animation interval only for visible indeterminate activity and a
-separate one-second elapsed-time refresh. The tests reject hidden, determinate,
-terminal, overlay-obscured, and reduced-motion animation work:
+Animation scheduling has its own offline gate. Production uses an explicit 250
+ms (4 Hz) animation interval only for visible indeterminate activity, slows
+cosmetic animation to 1 Hz during a saturated live build, and uses a separate
+one-second elapsed-time refresh. The tests reject hidden, determinate, terminal,
+overlay-obscured, and reduced-motion animation work:
 
 ```sh
 ./scripts/verify-performance.sh --animations
@@ -613,6 +616,62 @@ The complete offline CI contract and fast execution path are verified with:
 ```sh
 ./scripts/verify-performance.sh --ci
 ```
+
+## Operator and developer quick reference
+
+| Question | Implemented behavior | Verification |
+| --- | --- | --- |
+| How much CPU? | idle daemon <=0.20%, idle client <=0.50%, daemon plus one client <=1.00% of one logical CPU | `./scripts/verify-low-overhead.sh` |
+| Does input remain responsive? | key/mouse-to-visible-frame p95 <=100 ms with every affinity CPU runnable | `./scripts/verify-saturation-responsiveness.sh` |
+| Can a slow client stall BitBake? | no; each client is isolated by bounded replay and write deadlines | `./scripts/verify-ipc-continuity.sh` |
+| Are buffers bounded? | logs, tasks, journal, IPC queues, telemetry, and PTY scrollback have hard caps | `./scripts/verify-bounded-memory.sh` |
+| Does real BitBake remain connected? | real EOF is authoritative; scheduling delay alone is not disconnect | `./scripts/verify-performance.sh --real-poky-evidence` |
+| How are frames scheduled? | event/dirty driven, ordinary 4 Hz, saturated cosmetic 1 Hz, input immediate | `./scripts/verify-performance.sh --render` |
+| How is telemetry sampled? | visible 1 Hz, background 0.1 Hz, daemon idle 0.2 Hz, no-client paused | `./scripts/verify-performance.sh --telemetry` |
+
+For a new CPU profile, build with release symbols, start the exact workload,
+then pass every measured process as `ROLE=PID`:
+
+```sh
+cargo build --release --locked -p yoctui --all-features
+./scripts/capture-runtime-profile.sh \
+  --scenario idle-client \
+  --duration 20 \
+  --binary target/release/yoctui \
+  --revision "$(git rev-parse HEAD)" \
+  --pid daemon=DAEMON_PID \
+  --pid client=CLIENT_PID
+./scripts/verify-performance.sh --profiles
+```
+
+Capture a fresh supported real-Poky sample only from an initialized build
+environment. This command cleans only `linux-yocto` sstate, waits for its real
+`do_compile` start, measures 120 sustained seconds, and cancels that owned job
+afterward:
+
+```sh
+source /path/to/poky/oe-init-build-env /path/to/build
+cd /path/to/yoctui
+./scripts/capture-real-poky-performance.py \
+  --binary target/release/yoctui \
+  --build-dir "$BUILDDIR" \
+  --poky-root /path/to/poky \
+  --target linux-yocto \
+  --task compile \
+  --preclean \
+  --wait-for-task linux-yocto:do_compile \
+  --warmup-seconds 10 \
+  --seconds 120 \
+  --output /tmp/yoctui-real-poky.json
+```
+
+No supported path requires root, real-time scheduling, a reserved CPU, a nice
+change, or a cgroup override. `yoctui inspect` may suggest reviewing
+`BB_NUMBER_THREADS` and `PARALLEL_MAKE` on an oversubscribed host, but Yoctui
+never changes them. Optional `taskset`, cpuset, nice, or systemd CPUWeight
+experiments remain administrator policy and must be measured on the actual
+machine; the reference evidence found no benefit over inherited defaults.
+
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,
 `./scripts/verify-saturation-responsiveness.sh`,

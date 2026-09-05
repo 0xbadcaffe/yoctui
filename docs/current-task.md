@@ -2,38 +2,36 @@
 
 ## Task
 
-**ID:** PERF-DOC-001
-**Title:** Document low-overhead architecture and tuning
+**ID:** PERF-001
+**Title:** Complete low-overhead build-saturation responsiveness
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the operator and developer documentation for expected CPU use,
-event-driven rendering, telemetry rates, backpressure, saturated-host behavior,
-optional host guidance, profiling, and every reproduction command.
+Run and enforce the independent parent completion gate for all required M46
+tasks, formatting, Clippy, workspace tests, steady-state CPU, saturated
+responsiveness, IPC continuity, bounded memory, profiling, and real-Poky
+evidence.
 
 ## Dependencies
 
-- PERF-BITBAKE-COEXIST-001 — DONE
-- PERF-REGRESSION-001 — DONE
-- PERF-REAL-POKY-001 — DONE
+- All 29 required PERF-* child tasks — DONE
 
 ## Definition of done
 
-- Expected CPU consumption and exact accounting are easy to find.
-- Render, animation, telemetry, IPC/backpressure, and saturated backend behavior
-  match the implemented architecture.
-- Optional nice/cgroup/affinity and BitBake parallelism guidance remains safe,
-  unprivileged, advisory, and never automatic.
-- Profiling and all deterministic/live evidence commands are reproducible.
+- Every required PERF-* child is independently checked as DONE.
+- Formatting, Clippy with warnings denied, and all-feature workspace tests pass.
+- CPU, saturation responsiveness, IPC continuity, and bounded-memory gates pass.
+- Profiling and real-Poky evidence satisfy the repository evidence policy.
+- `./scripts/verify-completion.sh` passes without network access.
 
 ## Verification
 
 ```bash
-./scripts/check-docs.sh
-./scripts/verify-performance.sh --docs
+./scripts/verify-performance.sh
+./scripts/verify-completion.sh
 ./scripts/verify-roadmap.sh
 ```
 
-Performance CI is complete in v0.1.49: fast PR checks, weekly/manual endurance,
-and opt-in self-hosted real-Poky capture retain failure evidence separately.
+Low-overhead documentation is complete in v0.1.50. The parent independent
+completion gate is the only remaining M46 task.

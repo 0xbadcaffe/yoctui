@@ -1008,4 +1008,7 @@ coalescing, full-affinity saturation, and IPC-backpressure checks. Weekly/manual
 CI repeats the release CPU and 30-minute memory paths while validating retained
 profiles and real-Poky evidence; explicitly enabled labeled self-hosted runners
 can capture fresh real-Poky evidence. All performance jobs retain diagnostics
-on failure. Final low-overhead architecture and operator documentation is next.
+on failure. Low-overhead architecture and operator documentation is complete:
+the performance guide, architecture, and UI specification share the exact
+accounting, cadence, telemetry, backpressure, liveness, safe tuning, profiling,
+and evidence rules. The independent M46 parent completion gate is next.

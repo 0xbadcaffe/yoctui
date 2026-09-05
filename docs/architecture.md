@@ -3757,6 +3757,12 @@ task lifecycle/failure, and build terminal records; alternate direct scenarios
 exercise cancellation and backend EOF. Its atomic JSON report is generator
 evidence, never real-BitBake evidence.
 
+Progress in that sentinel tail is measurement-only cosmetic evidence and may
+be absent after bounded coalescing. Warning, error, queued/started lifecycle,
+failure, cancellation, disconnect, and terminal outcomes are correctness
+sentinels and remain mandatory. The verifier encodes this distinction directly
+instead of depending on whether a particular host happened to avoid pressure.
+
 The production observer does not inject daemon state. It starts an isolated
 daemon, submits a normal typed `StartBuild`, and observes the existing
 `BridgeBackend -> DaemonBitBakeSupervisor -> DaemonSnapshotJournal -> Unix IPC`
@@ -3778,6 +3784,16 @@ poll does not render. Inactive local BitBake and devtool backends are not
 polled. The focused Linux gate bounds idle daemon CPU, context switches, and
 SIGTERM latency, while protocol tests prove readiness wakes before a long
 accept deadline.
+
+Machine-readable regression aggregation is derived, not a new authority. One
+deterministic builder reads the retained CPU, latency, pressure, rendering,
+memory, and real-Poky artifacts, embeds each source digest and method identity,
+and emits a compact record. Verification regenerates it byte-for-byte. CI keeps
+the bounded deterministic paths on push/pull_request, moves 60-second CPU and
+30-minute memory work to weekly/manual execution, and isolates fresh real-Poky
+capture behind an explicit repository variable on a labeled self-hosted runner.
+Every tier retains failure diagnostics without allowing fixture evidence to
+become a live-build claim.
 
 Frame invalidation is centralized in the CLI-owned `RenderScheduler`; render
 causes remain presentation metadata and never enter the model or daemon wire

@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-DOC-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -160,6 +160,13 @@ the PR path. The dynamic flood test also now matches the priority contract:
 progress may be coalesced under pressure, while failure, terminal, warning,
 error, and lifecycle sentinels remain mandatory. Overall required registry
 progress is 657/659 (99.7%).
+The normative performance guide, architecture, and UI specification now agree
+on the exact CPU accounting, scenarios, 4 Hz normal/1 Hz saturated rendering,
+telemetry demand tiers, bounded priority model, and BitBake liveness behavior.
+The operator quick reference covers every gate plus profile and real-Poky
+capture; nice, cgroup, affinity, and BitBake settings remain advisory and
+unmodified. An offline documentation test rejects stale cadence and service
+bounds. Overall required registry progress is 658/659 (99.8%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to
