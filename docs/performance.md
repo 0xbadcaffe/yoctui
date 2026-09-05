@@ -137,6 +137,26 @@ labelled as fixture evidence or inferred from a deterministic generator.
 
 ## Reproduction entry points
 
+`scripts/cpu-saturation-harness.py` is the deterministic offline CPU-load
+fixture. With no worker or CPU arguments it discovers the caller's complete OS
+affinity set, pins one worker to every available logical CPU, and deliberately
+reserves none. `--workers` and `--cpu-list` can select a smaller explicit test
+set. Each worker reports readiness before one shared start signal, runs a
+separate warmup, then performs bounded deterministic integer work until the
+monotonic deadline. SIGINT/SIGTERM set the shared stop signal and the parent
+joins, terminates, or kills only its exact child identities before exiting.
+
+The JSON result and optional JSON-lines event log record selected affinity,
+worker PIDs, per-worker iterations/checksum/CPU time, aggregate and minimum
+worker load, host utilization/load average, total elapsed time, and proof that
+all children were reaped. The harness requires no network, Yocto checkout,
+privilege, real-time policy, or deliberately free CPU. The fast gate runs the
+full affinity set with a short bound:
+
+```sh
+./scripts/verify-saturation-responsiveness.sh --harness
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

@@ -7044,18 +7044,18 @@ notes = "The exact-v0.1.22 60-second audit catalogs thirteen timer/polling categ
 id = "PERF-SATURATION-HARNESS-001"
 milestone = "M46"
 title = "Create a deterministic CPU saturation harness"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 793
 required = true
 depends_on = ["PERF-SPEC-001"]
 verify = ["./scripts/verify-saturation-responsiveness.sh --harness"]
-notes = "Provide a bounded offline fixture that can saturate a configured number of logical CPUs without deliberately reserving a core."
+notes = "The offline Python fixture pins deterministic workers to an explicit CPU set or, by default, every CPU in the caller's current affinity without reserving a core. A readiness barrier, separate warmup and measured monotonic deadlines, per-worker work/CPU/checksum evidence, JSON event/result records, and exact child reaping cover normal, invalid, bounded, and interrupted paths. The full-affinity gate passes in v0.1.26."
 
 [[task]]
 id = "PERF-EVENT-FLOOD-001"
 milestone = "M46"
 title = "Create a BitBake-like event flood harness"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 794
 required = true
 depends_on = ["PERF-SPEC-001"]

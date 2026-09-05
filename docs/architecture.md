@@ -3527,3 +3527,13 @@ bounded queues and monotonic ordering for correctness events, and must keep
 keyboard processing independent of render cadence. Fixture saturation can
 prove deterministic behavior but cannot substitute for supported real-Poky
 evidence.
+
+The saturation fixture is an external test-process boundary, not a Yoctui
+runtime service. Its parent discovers the caller's OS affinity and spawns one
+independently pinned deterministic computation worker per selected logical CPU.
+All workers cross one readiness barrier, have separate warmup and measured
+monotonic intervals, and return counters over one-way multiprocessing pipes.
+A shared stop event plus identity-scoped join/terminate/kill cleanup bounds
+normal completion and interruption. No fixture state enters the model,
+protocol, daemon journal, client, or BitBake backend; later responsiveness
+gates observe those production paths while load remains external.
