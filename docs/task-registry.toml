@@ -7220,18 +7220,18 @@ notes = "In v0.1.41 the release real-PTY probe collected 100 post-warmup observa
 id = "PERF-IPC-LATENCY-001"
 milestone = "M46"
 title = "Measure saturated IPC latency"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 809
 required = true
 depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001"]
 verify = ["./scripts/verify-ipc-continuity.sh --latency"]
-notes = "Measure daemon-event receipt, command receipt, and cancellation acknowledgement p50/p95 under saturation."
+notes = "In v0.1.42 a release-profile production-path fixture recorded 100 post-warmup monotonic observations per path at 99.46% host CPU. Daemon-event, command-receipt, and cancellation-ack p95 were 2.522, 1.880, and 6.820 ms; all requests were acknowledged and 75 cancellations were accepted. The offline gate verifies thresholds, exact ordering, primary/reconnect continuity, no backend disconnect, binary/source identity, and raw samples."
 
 [[task]]
 id = "PERF-CPU-GATE-001"
 milestone = "M46"
 title = "Implement the one-percent steady-state CPU gate"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 810
 required = true
 depends_on = ["PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-TOKIO-001"]

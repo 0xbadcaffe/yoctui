@@ -3677,6 +3677,24 @@ uses the shared kernel monotonic clock to include scheduler delivery delay in
 key/mouse-to-model/frame latency, sends the next event only after the previous
 frame marker, and proves each action changes visible Navigator selection.
 
+IPC-latency evidence likewise leaves the shipped wire protocol unchanged. A
+dedicated offline bridge fixture places a Linux monotonic timestamp and stable
+sequence in ordinary BitBake log payloads. The production bridge backend,
+bounded priority supervisor, snapshot journal, shared event encoder, and Unix
+socket deliver those records to an attached protocol client, whose receipt
+timestamp therefore gives a conservative bridge-entry-to-client bound for the
+daemon event path. Client-command receipt is bounded by the round trip to a
+correlated `not_found` result for a deliberately absent job identity, avoiding
+unrelated command workload. Cancellation uses protocol-compliant batches
+against live daemon-owned BitBake jobs and records every correlated result;
+each batch must contain an accepted cancellation. All paths retain 100 raw
+samples, strict daemon event ordering, reconnect proof, and evidence that one
+pinned load worker remained runnable on every affinity CPU.
+The release observation reached 99.46% host CPU and measured daemon-event,
+command-receipt, and cancellation-acknowledgement p95 values of 2.522, 1.880,
+and 6.820 ms respectively. All 100 cancellation requests were acknowledged and
+75 reached the live worker before its cancellation receiver closed.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

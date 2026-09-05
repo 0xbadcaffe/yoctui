@@ -332,6 +332,33 @@ terminal, and load evidence live under `artifacts/performance/input-latency/`.
 ./scripts/verify-saturation-responsiveness.sh --input-latency
 ```
 
+### Saturated IPC latency
+
+The release IPC probe uses the production bridge backend, bounded BitBake
+supervisor, daemon snapshot journal, shared event fanout, and AF_UNIX
+length-prefixed JSON transport. A dedicated offline bridge embeds Linux
+`CLOCK_MONOTONIC` timestamps and stable identities in ordinary log events; the
+client receipt therefore conservatively includes bridge-to-daemon ingestion as
+well as daemon event delivery. A correlated `not_found` result for a
+deliberately absent job bounds command receipt without unrelated command work.
+Two protocol-compliant batches of cancellation requests target live daemon
+BitBake jobs, with every correlated acknowledgement and outcome retained.
+
+After one second of warmup, the reference run collected 100 observations per
+path while one pinned worker ran on every one of eight affinity CPUs. Host CPU
+reached 99.46%, and the least-busy worker reached 86.63%. Daemon-event delivery
+measured 1.826 ms p50 and 2.522 ms p95; command receipt measured 0.068 ms p50
+and 1.880 ms p95; cancellation acknowledgement measured 2.195 ms p50 and 6.820
+ms p95. All 100 cancellation requests were acknowledged and 75 were accepted
+before the active worker closed its cancellation receiver. Protocol sequences
+were strictly increasing, no backend disconnect was observed, and a new client
+attached after measurement. Raw timestamps and exact binary/source identity
+live under `artifacts/performance/ipc-latency/`.
+
+```sh
+./scripts/verify-ipc-continuity.sh --latency
+```
+
 `scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
 fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
 and success/failure/disconnect terminal mode. Stable task identities plus

@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-IPC-LATENCY-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-CPU-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -102,9 +102,14 @@ The new typed `yoctui inspect` diagnostic reports CPU count, load,
 build configuration or runtime policy. The release real-PTY audit then measured
 100 post-warmup samples per route at 99.75% host CPU. Keyboard-to-model,
 keyboard-to-visible-frame, and mouse-to-visible-selection p95 were 1.974,
-4.336, and 4.440 ms respectively, well below 100 ms. Saturated IPC latency is
-next.
-Overall required registry progress is 649/659 (98.5%).
+4.336, and 4.440 ms respectively, well below 100 ms. The production IPC
+latency harness now retains 100 monotonic samples each for timestamped daemon
+events, correlated command receipt, and cancellation acknowledgement while all
+affinity CPUs remain runnable. At 99.46% host CPU, their p95 values were 2.522,
+1.880, and 6.820 ms. It verifies strict event ordering, primary and reconnect
+continuity, no backend disconnect, 100 acknowledgements, and 75 accepted live
+BitBake cancellations. The one-percent steady-state CPU release gate is next.
+Overall required registry progress is 650/659 (98.6%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

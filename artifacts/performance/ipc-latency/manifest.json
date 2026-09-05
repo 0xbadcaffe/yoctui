@@ -1,0 +1,32 @@
+{
+  "schema": "yoctui.performance.ipc-latency-manifest.v1",
+  "source_base_revision": "f171a0e327242233c780b8be5a184b21ce997175",
+  "artifact": "host-audit.json",
+  "artifact_sha256": "8657b666eb1bd63ff685aea89b494654bee261bf3933c7f2e31089594b9fd3cf",
+  "binary_sha256": "ecbb1dd4cfedbd1d884305b8744315e78d58f59560dff9a8482130ab3a7f5e66",
+  "sources": {
+    "scripts/measure-ipc-latency.py": "f3682b2e25c36da3b27e42f5c5e32269fd8b8f46506e6a98774f376e62488383",
+    "scripts/fixtures/bitbake-ipc-latency-bridge.py": "c188754fbf93c6e9e5f6dfc19f49901831b720ace1a7cdfad5abc964838ce4d8",
+    "scripts/cpu-saturation-harness.py": "b54d207b1a79013a2357467792dfd2d48f52b4bffc65951e1523318538d0f473"
+  },
+  "method": {
+    "release_profile": true,
+    "warmup_seconds": 1,
+    "observations_per_path": 100,
+    "event_warmup_observations": 50,
+    "clock": "CLOCK_MONOTONIC",
+    "transport": "AF_UNIX SOCK_STREAM length-prefixed JSON",
+    "load": "one pinned worker per affinity CPU; no deliberately free CPU"
+  },
+  "observations": {
+    "daemon_event_to_client_p50_ms": 1.825735,
+    "daemon_event_to_client_p95_ms": 2.521978,
+    "client_command_to_daemon_p50_ms": 0.067622,
+    "client_command_to_daemon_p95_ms": 1.880097,
+    "cancellation_request_to_ack_p50_ms": 2.194749,
+    "cancellation_request_to_ack_p95_ms": 6.820188,
+    "accepted_cancellation_requests": 75,
+    "host_cpu_utilization_percent": 99.46300715990454,
+    "minimum_load_worker_cpu_percent": 86.63302711794789
+  }
+}

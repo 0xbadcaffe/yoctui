@@ -1,0 +1,2650 @@
+{
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "ecbb1dd4cfedbd1d884305b8744315e78d58f59560dff9a8482130ab3a7f5e66"
+  },
+  "captured_at_unix_ms": 1788619676949,
+  "configuration": {
+    "cancellation_method": "two protocol-compliant batches of 50 pipelined cancel_job requests against active BitBake jobs; every request receives an ordered correlated command_result and each batch proves at least one accepted live-supervisor cancellation",
+    "clock": "CLOCK_MONOTONIC",
+    "command_method": "client cancel_job for a deliberately absent u64 job identity through daemon dispatch to correlated not_found command_result receipt; measured round trip is a conservative upper bound on daemon receipt without command workload",
+    "event_path": [
+      "fixture_bridge",
+      "bridge_backend",
+      "daemon_bitbake_supervisor",
+      "daemon_snapshot_journal",
+      "unix_ipc",
+      "attached_protocol_client"
+    ],
+    "event_rate_per_second": 500,
+    "event_warmup_observations": 50,
+    "load": "one pinned worker per affinity CPU; no deliberately free CPU",
+    "observations_per_path": 100,
+    "transport": "AF_UNIX SOCK_STREAM length-prefixed JSON",
+    "warmup_seconds": 1.0
+  },
+  "continuity": {
+    "backend_disconnect_events": 0,
+    "initial_generation": 3,
+    "primary_client_connected": true,
+    "protocol_event_count": 198,
+    "protocol_sequences_strictly_increasing": true,
+    "reconnect_succeeded": true
+  },
+  "host": {
+    "affinity_cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "kernel": "7.0.0-30-generic",
+    "logical_cpus": 8
+  },
+  "revision": "f171a0e327242233c780b8be5a184b21ce997175",
+  "samples": {
+    "cancellation_request_to_ack": [
+      {
+        "acknowledged_ns": 996801662470834,
+        "job_id": 1,
+        "latency_ms": 0.787618,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2001,
+        "sent_ns": 996801661683216,
+        "sequence": 1
+      },
+      {
+        "acknowledged_ns": 996801662526011,
+        "job_id": 1,
+        "latency_ms": 0.821098,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2002,
+        "sent_ns": 996801661704913,
+        "sequence": 2
+      },
+      {
+        "acknowledged_ns": 996801662573329,
+        "job_id": 1,
+        "latency_ms": 0.851401,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2003,
+        "sent_ns": 996801661721928,
+        "sequence": 3
+      },
+      {
+        "acknowledged_ns": 996801662615068,
+        "job_id": 1,
+        "latency_ms": 0.879187,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2004,
+        "sent_ns": 996801661735881,
+        "sequence": 4
+      },
+      {
+        "acknowledged_ns": 996801662654840,
+        "job_id": 1,
+        "latency_ms": 0.905788,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2005,
+        "sent_ns": 996801661749052,
+        "sequence": 5
+      },
+      {
+        "acknowledged_ns": 996801662695153,
+        "job_id": 1,
+        "latency_ms": 0.933315,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2006,
+        "sent_ns": 996801661761838,
+        "sequence": 6
+      },
+      {
+        "acknowledged_ns": 996801662746826,
+        "job_id": 1,
+        "latency_ms": 0.971395,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2007,
+        "sent_ns": 996801661775431,
+        "sequence": 7
+      },
+      {
+        "acknowledged_ns": 996801662784147,
+        "job_id": 1,
+        "latency_ms": 0.996068,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2008,
+        "sent_ns": 996801661788079,
+        "sequence": 8
+      },
+      {
+        "acknowledged_ns": 996801662821100,
+        "job_id": 1,
+        "latency_ms": 1.019992,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2009,
+        "sent_ns": 996801661801108,
+        "sequence": 9
+      },
+      {
+        "acknowledged_ns": 996801662858258,
+        "job_id": 1,
+        "latency_ms": 1.044392,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2010,
+        "sent_ns": 996801661813866,
+        "sequence": 10
+      },
+      {
+        "acknowledged_ns": 996801662895700,
+        "job_id": 1,
+        "latency_ms": 1.068884,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2011,
+        "sent_ns": 996801661826816,
+        "sequence": 11
+      },
+      {
+        "acknowledged_ns": 996801662932778,
+        "job_id": 1,
+        "latency_ms": 1.09269,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2012,
+        "sent_ns": 996801661840088,
+        "sequence": 12
+      },
+      {
+        "acknowledged_ns": 996801662970249,
+        "job_id": 1,
+        "latency_ms": 1.117618,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2013,
+        "sent_ns": 996801661852631,
+        "sequence": 13
+      },
+      {
+        "acknowledged_ns": 996801663014144,
+        "job_id": 1,
+        "latency_ms": 1.148667,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2014,
+        "sent_ns": 996801661865477,
+        "sequence": 14
+      },
+      {
+        "acknowledged_ns": 996801663054039,
+        "job_id": 1,
+        "latency_ms": 1.175963,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2015,
+        "sent_ns": 996801661878076,
+        "sequence": 15
+      },
+      {
+        "acknowledged_ns": 996801663097656,
+        "job_id": 1,
+        "latency_ms": 1.20683,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2016,
+        "sent_ns": 996801661890826,
+        "sequence": 16
+      },
+      {
+        "acknowledged_ns": 996801663135434,
+        "job_id": 1,
+        "latency_ms": 1.232085,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2017,
+        "sent_ns": 996801661903349,
+        "sequence": 17
+      },
+      {
+        "acknowledged_ns": 996801663177334,
+        "job_id": 1,
+        "latency_ms": 1.260939,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2018,
+        "sent_ns": 996801661916395,
+        "sequence": 18
+      },
+      {
+        "acknowledged_ns": 996801663215926,
+        "job_id": 1,
+        "latency_ms": 1.28642,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2019,
+        "sent_ns": 996801661929506,
+        "sequence": 19
+      },
+      {
+        "acknowledged_ns": 996801663253366,
+        "job_id": 1,
+        "latency_ms": 1.310661,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2020,
+        "sent_ns": 996801661942705,
+        "sequence": 20
+      },
+      {
+        "acknowledged_ns": 996801663290217,
+        "job_id": 1,
+        "latency_ms": 1.335072,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2021,
+        "sent_ns": 996801661955145,
+        "sequence": 21
+      },
+      {
+        "acknowledged_ns": 996801663332224,
+        "job_id": 1,
+        "latency_ms": 1.36452,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2022,
+        "sent_ns": 996801661967704,
+        "sequence": 22
+      },
+      {
+        "acknowledged_ns": 996801663369035,
+        "job_id": 1,
+        "latency_ms": 1.387932,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2023,
+        "sent_ns": 996801661981103,
+        "sequence": 23
+      },
+      {
+        "acknowledged_ns": 996801663405671,
+        "job_id": 1,
+        "latency_ms": 1.411815,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2024,
+        "sent_ns": 996801661993856,
+        "sequence": 24
+      },
+      {
+        "acknowledged_ns": 996801663442125,
+        "job_id": 1,
+        "latency_ms": 1.427619,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2025,
+        "sent_ns": 996801662014506,
+        "sequence": 25
+      },
+      {
+        "acknowledged_ns": 996801663483764,
+        "job_id": 1,
+        "latency_ms": 1.455577,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2026,
+        "sent_ns": 996801662028187,
+        "sequence": 26
+      },
+      {
+        "acknowledged_ns": 996801663526944,
+        "job_id": 1,
+        "latency_ms": 1.480766,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2027,
+        "sent_ns": 996801662046178,
+        "sequence": 27
+      },
+      {
+        "acknowledged_ns": 996801663569107,
+        "job_id": 1,
+        "latency_ms": 1.509516,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2028,
+        "sent_ns": 996801662059591,
+        "sequence": 28
+      },
+      {
+        "acknowledged_ns": 996801663610178,
+        "job_id": 1,
+        "latency_ms": 1.538037,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2029,
+        "sent_ns": 996801662072141,
+        "sequence": 29
+      },
+      {
+        "acknowledged_ns": 996801663650729,
+        "job_id": 1,
+        "latency_ms": 1.565941,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2030,
+        "sent_ns": 996801662084788,
+        "sequence": 30
+      },
+      {
+        "acknowledged_ns": 996801663691452,
+        "job_id": 1,
+        "latency_ms": 1.593988,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2031,
+        "sent_ns": 996801662097464,
+        "sequence": 31
+      },
+      {
+        "acknowledged_ns": 996801663745732,
+        "job_id": 1,
+        "latency_ms": 1.635944,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2032,
+        "sent_ns": 996801662109788,
+        "sequence": 32
+      },
+      {
+        "acknowledged_ns": 996801663788738,
+        "job_id": 1,
+        "latency_ms": 1.666134,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2033,
+        "sent_ns": 996801662122604,
+        "sequence": 33
+      },
+      {
+        "acknowledged_ns": 996801663831444,
+        "job_id": 1,
+        "latency_ms": 1.696349,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2034,
+        "sent_ns": 996801662135095,
+        "sequence": 34
+      },
+      {
+        "acknowledged_ns": 996801663874068,
+        "job_id": 1,
+        "latency_ms": 1.726455,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2035,
+        "sent_ns": 996801662147613,
+        "sequence": 35
+      },
+      {
+        "acknowledged_ns": 996801663916729,
+        "job_id": 1,
+        "latency_ms": 1.756487,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2036,
+        "sent_ns": 996801662160242,
+        "sequence": 36
+      },
+      {
+        "acknowledged_ns": 996801663959043,
+        "job_id": 1,
+        "latency_ms": 1.785963,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2037,
+        "sent_ns": 996801662173080,
+        "sequence": 37
+      },
+      {
+        "acknowledged_ns": 996801664011770,
+        "job_id": 1,
+        "latency_ms": 1.826221,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2038,
+        "sent_ns": 996801662185549,
+        "sequence": 38
+      },
+      {
+        "acknowledged_ns": 996801664062527,
+        "job_id": 1,
+        "latency_ms": 1.864475,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2039,
+        "sent_ns": 996801662198052,
+        "sequence": 39
+      },
+      {
+        "acknowledged_ns": 996801664111746,
+        "job_id": 1,
+        "latency_ms": 1.873206,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2040,
+        "sent_ns": 996801662238540,
+        "sequence": 40
+      },
+      {
+        "acknowledged_ns": 996801664168642,
+        "job_id": 1,
+        "latency_ms": 1.917241,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2041,
+        "sent_ns": 996801662251401,
+        "sequence": 41
+      },
+      {
+        "acknowledged_ns": 996801664217682,
+        "job_id": 1,
+        "latency_ms": 1.953596,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2042,
+        "sent_ns": 996801662264086,
+        "sequence": 42
+      },
+      {
+        "acknowledged_ns": 996801664261646,
+        "job_id": 1,
+        "latency_ms": 1.985081,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2043,
+        "sent_ns": 996801662276565,
+        "sequence": 43
+      },
+      {
+        "acknowledged_ns": 996801664304839,
+        "job_id": 1,
+        "latency_ms": 2.014675,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2044,
+        "sent_ns": 996801662290164,
+        "sequence": 44
+      },
+      {
+        "acknowledged_ns": 996801664347800,
+        "job_id": 1,
+        "latency_ms": 2.044639,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2045,
+        "sent_ns": 996801662303161,
+        "sequence": 45
+      },
+      {
+        "acknowledged_ns": 996801664390493,
+        "job_id": 1,
+        "latency_ms": 2.074953,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2046,
+        "sent_ns": 996801662315540,
+        "sequence": 46
+      },
+      {
+        "acknowledged_ns": 996801664433114,
+        "job_id": 1,
+        "latency_ms": 2.105331,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2047,
+        "sent_ns": 996801662327783,
+        "sequence": 47
+      },
+      {
+        "acknowledged_ns": 996801664475563,
+        "job_id": 1,
+        "latency_ms": 2.135133,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2048,
+        "sent_ns": 996801662340430,
+        "sequence": 48
+      },
+      {
+        "acknowledged_ns": 996801664518243,
+        "job_id": 1,
+        "latency_ms": 2.165002,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2049,
+        "sent_ns": 996801662353241,
+        "sequence": 49
+      },
+      {
+        "acknowledged_ns": 996801664560664,
+        "job_id": 1,
+        "latency_ms": 2.194749,
+        "outcome": "rejected",
+        "rejection_code": "not_found",
+        "request_id": 2050,
+        "sent_ns": 996801662365915,
+        "sequence": 50
+      },
+      {
+        "acknowledged_ns": 996802017289129,
+        "job_id": 2,
+        "latency_ms": 6.82251,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2051,
+        "sent_ns": 996802010466619,
+        "sequence": 51
+      },
+      {
+        "acknowledged_ns": 996802017324850,
+        "job_id": 2,
+        "latency_ms": 6.82511,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2052,
+        "sent_ns": 996802010499740,
+        "sequence": 52
+      },
+      {
+        "acknowledged_ns": 996802017340898,
+        "job_id": 2,
+        "latency_ms": 6.823707,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2053,
+        "sent_ns": 996802010517191,
+        "sequence": 53
+      },
+      {
+        "acknowledged_ns": 996802017355307,
+        "job_id": 2,
+        "latency_ms": 6.823229,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2054,
+        "sent_ns": 996802010532078,
+        "sequence": 54
+      },
+      {
+        "acknowledged_ns": 996802017368196,
+        "job_id": 2,
+        "latency_ms": 6.821518,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2055,
+        "sent_ns": 996802010546678,
+        "sequence": 55
+      },
+      {
+        "acknowledged_ns": 996802017381042,
+        "job_id": 2,
+        "latency_ms": 6.820188,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2056,
+        "sent_ns": 996802010560854,
+        "sequence": 56
+      },
+      {
+        "acknowledged_ns": 996802017393301,
+        "job_id": 2,
+        "latency_ms": 6.817978,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2057,
+        "sent_ns": 996802010575323,
+        "sequence": 57
+      },
+      {
+        "acknowledged_ns": 996802017405366,
+        "job_id": 2,
+        "latency_ms": 6.816039,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2058,
+        "sent_ns": 996802010589327,
+        "sequence": 58
+      },
+      {
+        "acknowledged_ns": 996802017418507,
+        "job_id": 2,
+        "latency_ms": 6.815221,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2059,
+        "sent_ns": 996802010603286,
+        "sequence": 59
+      },
+      {
+        "acknowledged_ns": 996802017430569,
+        "job_id": 2,
+        "latency_ms": 6.813661,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2060,
+        "sent_ns": 996802010616908,
+        "sequence": 60
+      },
+      {
+        "acknowledged_ns": 996802017449284,
+        "job_id": 2,
+        "latency_ms": 6.81832,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2061,
+        "sent_ns": 996802010630964,
+        "sequence": 61
+      },
+      {
+        "acknowledged_ns": 996802017461812,
+        "job_id": 2,
+        "latency_ms": 6.816371,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2062,
+        "sent_ns": 996802010645441,
+        "sequence": 62
+      },
+      {
+        "acknowledged_ns": 996802017473799,
+        "job_id": 2,
+        "latency_ms": 6.814313,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2063,
+        "sent_ns": 996802010659486,
+        "sequence": 63
+      },
+      {
+        "acknowledged_ns": 996802017485792,
+        "job_id": 2,
+        "latency_ms": 6.812464,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2064,
+        "sent_ns": 996802010673328,
+        "sequence": 64
+      },
+      {
+        "acknowledged_ns": 996802017497773,
+        "job_id": 2,
+        "latency_ms": 6.810582,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2065,
+        "sent_ns": 996802010687191,
+        "sequence": 65
+      },
+      {
+        "acknowledged_ns": 996802017510810,
+        "job_id": 2,
+        "latency_ms": 6.809747,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2066,
+        "sent_ns": 996802010701063,
+        "sequence": 66
+      },
+      {
+        "acknowledged_ns": 996802017522723,
+        "job_id": 2,
+        "latency_ms": 6.807922,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2067,
+        "sent_ns": 996802010714801,
+        "sequence": 67
+      },
+      {
+        "acknowledged_ns": 996802017534580,
+        "job_id": 2,
+        "latency_ms": 6.80612,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2068,
+        "sent_ns": 996802010728460,
+        "sequence": 68
+      },
+      {
+        "acknowledged_ns": 996802017546563,
+        "job_id": 2,
+        "latency_ms": 6.804427,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2069,
+        "sent_ns": 996802010742136,
+        "sequence": 69
+      },
+      {
+        "acknowledged_ns": 996802017560115,
+        "job_id": 2,
+        "latency_ms": 6.804007,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2070,
+        "sent_ns": 996802010756108,
+        "sequence": 70
+      },
+      {
+        "acknowledged_ns": 996802017572006,
+        "job_id": 2,
+        "latency_ms": 6.789706,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2071,
+        "sent_ns": 996802010782300,
+        "sequence": 71
+      },
+      {
+        "acknowledged_ns": 996802017584079,
+        "job_id": 2,
+        "latency_ms": 6.78989,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2072,
+        "sent_ns": 996802010794189,
+        "sequence": 72
+      },
+      {
+        "acknowledged_ns": 996802017595992,
+        "job_id": 2,
+        "latency_ms": 6.788565,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2073,
+        "sent_ns": 996802010807427,
+        "sequence": 73
+      },
+      {
+        "acknowledged_ns": 996802017607932,
+        "job_id": 2,
+        "latency_ms": 6.788097,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2074,
+        "sent_ns": 996802010819835,
+        "sequence": 74
+      },
+      {
+        "acknowledged_ns": 996802017619640,
+        "job_id": 2,
+        "latency_ms": 6.787896,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2075,
+        "sent_ns": 996802010831744,
+        "sequence": 75
+      },
+      {
+        "acknowledged_ns": 996802017632289,
+        "job_id": 2,
+        "latency_ms": 6.788972,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2076,
+        "sent_ns": 996802010843317,
+        "sequence": 76
+      },
+      {
+        "acknowledged_ns": 996802017644294,
+        "job_id": 2,
+        "latency_ms": 6.789015,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2077,
+        "sent_ns": 996802010855279,
+        "sequence": 77
+      },
+      {
+        "acknowledged_ns": 996802017656719,
+        "job_id": 2,
+        "latency_ms": 6.78953,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2078,
+        "sent_ns": 996802010867189,
+        "sequence": 78
+      },
+      {
+        "acknowledged_ns": 996802017668585,
+        "job_id": 2,
+        "latency_ms": 6.789502,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2079,
+        "sent_ns": 996802010879083,
+        "sequence": 79
+      },
+      {
+        "acknowledged_ns": 996802017684118,
+        "job_id": 2,
+        "latency_ms": 6.793314,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2080,
+        "sent_ns": 996802010890804,
+        "sequence": 80
+      },
+      {
+        "acknowledged_ns": 996802017696355,
+        "job_id": 2,
+        "latency_ms": 6.793762,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2081,
+        "sent_ns": 996802010902593,
+        "sequence": 81
+      },
+      {
+        "acknowledged_ns": 996802017721818,
+        "job_id": 2,
+        "latency_ms": 6.807248,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2082,
+        "sent_ns": 996802010914570,
+        "sequence": 82
+      },
+      {
+        "acknowledged_ns": 996802017734115,
+        "job_id": 2,
+        "latency_ms": 6.807852,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2083,
+        "sent_ns": 996802010926263,
+        "sequence": 83
+      },
+      {
+        "acknowledged_ns": 996802017746504,
+        "job_id": 2,
+        "latency_ms": 6.808218,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2084,
+        "sent_ns": 996802010938286,
+        "sequence": 84
+      },
+      {
+        "acknowledged_ns": 996802017758712,
+        "job_id": 2,
+        "latency_ms": 6.808621,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2085,
+        "sent_ns": 996802010950091,
+        "sequence": 85
+      },
+      {
+        "acknowledged_ns": 996802017770914,
+        "job_id": 2,
+        "latency_ms": 6.809211,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2086,
+        "sent_ns": 996802010961703,
+        "sequence": 86
+      },
+      {
+        "acknowledged_ns": 996802017783050,
+        "job_id": 2,
+        "latency_ms": 6.808975,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2087,
+        "sent_ns": 996802010974075,
+        "sequence": 87
+      },
+      {
+        "acknowledged_ns": 996802017795345,
+        "job_id": 2,
+        "latency_ms": 6.809237,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2088,
+        "sent_ns": 996802010986108,
+        "sequence": 88
+      },
+      {
+        "acknowledged_ns": 996802017808340,
+        "job_id": 2,
+        "latency_ms": 6.810159,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2089,
+        "sent_ns": 996802010998181,
+        "sequence": 89
+      },
+      {
+        "acknowledged_ns": 996802017820516,
+        "job_id": 2,
+        "latency_ms": 6.802316,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2090,
+        "sent_ns": 996802011018200,
+        "sequence": 90
+      },
+      {
+        "acknowledged_ns": 996802017832773,
+        "job_id": 2,
+        "latency_ms": 6.802172,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2091,
+        "sent_ns": 996802011030601,
+        "sequence": 91
+      },
+      {
+        "acknowledged_ns": 996802017844959,
+        "job_id": 2,
+        "latency_ms": 6.802469,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2092,
+        "sent_ns": 996802011042490,
+        "sequence": 92
+      },
+      {
+        "acknowledged_ns": 996802017857167,
+        "job_id": 2,
+        "latency_ms": 6.802963,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2093,
+        "sent_ns": 996802011054204,
+        "sequence": 93
+      },
+      {
+        "acknowledged_ns": 996802017869576,
+        "job_id": 2,
+        "latency_ms": 6.802363,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2094,
+        "sent_ns": 996802011067213,
+        "sequence": 94
+      },
+      {
+        "acknowledged_ns": 996802017882210,
+        "job_id": 2,
+        "latency_ms": 6.802766,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2095,
+        "sent_ns": 996802011079444,
+        "sequence": 95
+      },
+      {
+        "acknowledged_ns": 996802017894580,
+        "job_id": 2,
+        "latency_ms": 6.803316,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2096,
+        "sent_ns": 996802011091264,
+        "sequence": 96
+      },
+      {
+        "acknowledged_ns": 996802017906663,
+        "job_id": 2,
+        "latency_ms": 6.803698,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2097,
+        "sent_ns": 996802011102965,
+        "sequence": 97
+      },
+      {
+        "acknowledged_ns": 996802017919551,
+        "job_id": 2,
+        "latency_ms": 6.803995,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2098,
+        "sent_ns": 996802011115556,
+        "sequence": 98
+      },
+      {
+        "acknowledged_ns": 996802017935151,
+        "job_id": 2,
+        "latency_ms": 6.807287,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2099,
+        "sent_ns": 996802011127864,
+        "sequence": 99
+      },
+      {
+        "acknowledged_ns": 996802017951038,
+        "job_id": 2,
+        "latency_ms": 6.81138,
+        "outcome": "accepted",
+        "rejection_code": null,
+        "request_id": 2100,
+        "sent_ns": 996802011139658,
+        "sequence": 100
+      }
+    ],
+    "client_command_to_daemon": [
+      {
+        "acknowledged_ns": 996801606032968,
+        "latency_ms": 0.972561,
+        "request_id": 1001,
+        "sent_ns": 996801605060407,
+        "sequence": 1
+      },
+      {
+        "acknowledged_ns": 996801607056137,
+        "latency_ms": 1.005493,
+        "request_id": 1002,
+        "sent_ns": 996801606050644,
+        "sequence": 2
+      },
+      {
+        "acknowledged_ns": 996801608038184,
+        "latency_ms": 0.967603,
+        "request_id": 1003,
+        "sent_ns": 996801607070581,
+        "sequence": 3
+      },
+      {
+        "acknowledged_ns": 996801609056633,
+        "latency_ms": 1.007701,
+        "request_id": 1004,
+        "sent_ns": 996801608048932,
+        "sequence": 4
+      },
+      {
+        "acknowledged_ns": 996801610032070,
+        "latency_ms": 0.965573,
+        "request_id": 1005,
+        "sent_ns": 996801609066497,
+        "sequence": 5
+      },
+      {
+        "acknowledged_ns": 996801611048638,
+        "latency_ms": 1.005138,
+        "request_id": 1006,
+        "sent_ns": 996801610043500,
+        "sequence": 6
+      },
+      {
+        "acknowledged_ns": 996801613030634,
+        "latency_ms": 1.973021,
+        "request_id": 1007,
+        "sent_ns": 996801611057613,
+        "sequence": 7
+      },
+      {
+        "acknowledged_ns": 996801614055684,
+        "latency_ms": 1.015074,
+        "request_id": 1008,
+        "sent_ns": 996801613040610,
+        "sequence": 8
+      },
+      {
+        "acknowledged_ns": 996801615056796,
+        "latency_ms": 0.990397,
+        "request_id": 1009,
+        "sent_ns": 996801614066399,
+        "sequence": 9
+      },
+      {
+        "acknowledged_ns": 996801616045575,
+        "latency_ms": 0.977616,
+        "request_id": 1010,
+        "sent_ns": 996801615067959,
+        "sequence": 10
+      },
+      {
+        "acknowledged_ns": 996801617051423,
+        "latency_ms": 0.994247,
+        "request_id": 1011,
+        "sent_ns": 996801616057176,
+        "sequence": 11
+      },
+      {
+        "acknowledged_ns": 996801619030442,
+        "latency_ms": 1.969582,
+        "request_id": 1012,
+        "sent_ns": 996801617060860,
+        "sequence": 12
+      },
+      {
+        "acknowledged_ns": 996801620063649,
+        "latency_ms": 1.023251,
+        "request_id": 1013,
+        "sent_ns": 996801619040398,
+        "sequence": 13
+      },
+      {
+        "acknowledged_ns": 996801621027850,
+        "latency_ms": 0.952914,
+        "request_id": 1014,
+        "sent_ns": 996801620074936,
+        "sequence": 14
+      },
+      {
+        "acknowledged_ns": 996801621915090,
+        "latency_ms": 0.878007,
+        "request_id": 1015,
+        "sent_ns": 996801621037083,
+        "sequence": 15
+      },
+      {
+        "acknowledged_ns": 996801623029665,
+        "latency_ms": 1.104222,
+        "request_id": 1016,
+        "sent_ns": 996801621925443,
+        "sequence": 16
+      },
+      {
+        "acknowledged_ns": 996801623982810,
+        "latency_ms": 0.943749,
+        "request_id": 1017,
+        "sent_ns": 996801623039061,
+        "sequence": 17
+      },
+      {
+        "acknowledged_ns": 996801625062786,
+        "latency_ms": 1.069298,
+        "request_id": 1018,
+        "sent_ns": 996801623993488,
+        "sequence": 18
+      },
+      {
+        "acknowledged_ns": 996801626030911,
+        "latency_ms": 0.957207,
+        "request_id": 1019,
+        "sent_ns": 996801625073704,
+        "sequence": 19
+      },
+      {
+        "acknowledged_ns": 996801627030025,
+        "latency_ms": 0.989008,
+        "request_id": 1020,
+        "sent_ns": 996801626041017,
+        "sequence": 20
+      },
+      {
+        "acknowledged_ns": 996801628070235,
+        "latency_ms": 1.03043,
+        "request_id": 1021,
+        "sent_ns": 996801627039805,
+        "sequence": 21
+      },
+      {
+        "acknowledged_ns": 996801630067896,
+        "latency_ms": 1.985696,
+        "request_id": 1022,
+        "sent_ns": 996801628082200,
+        "sequence": 22
+      },
+      {
+        "acknowledged_ns": 996801631067205,
+        "latency_ms": 0.978879,
+        "request_id": 1023,
+        "sent_ns": 996801630088326,
+        "sequence": 23
+      },
+      {
+        "acknowledged_ns": 996801632059256,
+        "latency_ms": 0.981287,
+        "request_id": 1024,
+        "sent_ns": 996801631077969,
+        "sequence": 24
+      },
+      {
+        "acknowledged_ns": 996801633063134,
+        "latency_ms": 0.988998,
+        "request_id": 1025,
+        "sent_ns": 996801632074136,
+        "sequence": 25
+      },
+      {
+        "acknowledged_ns": 996801634030191,
+        "latency_ms": 0.954866,
+        "request_id": 1026,
+        "sent_ns": 996801633075325,
+        "sequence": 26
+      },
+      {
+        "acknowledged_ns": 996801636059247,
+        "latency_ms": 2.018929,
+        "request_id": 1027,
+        "sent_ns": 996801634040318,
+        "sequence": 27
+      },
+      {
+        "acknowledged_ns": 996801637056326,
+        "latency_ms": 0.985161,
+        "request_id": 1028,
+        "sent_ns": 996801636071165,
+        "sequence": 28
+      },
+      {
+        "acknowledged_ns": 996801638030182,
+        "latency_ms": 0.963435,
+        "request_id": 1029,
+        "sent_ns": 996801637066747,
+        "sequence": 29
+      },
+      {
+        "acknowledged_ns": 996801639053789,
+        "latency_ms": 1.013962,
+        "request_id": 1030,
+        "sent_ns": 996801638039827,
+        "sequence": 30
+      },
+      {
+        "acknowledged_ns": 996801640034516,
+        "latency_ms": 0.970649,
+        "request_id": 1031,
+        "sent_ns": 996801639063867,
+        "sequence": 31
+      },
+      {
+        "acknowledged_ns": 996801641052209,
+        "latency_ms": 1.007412,
+        "request_id": 1032,
+        "sent_ns": 996801640044797,
+        "sequence": 32
+      },
+      {
+        "acknowledged_ns": 996801642031844,
+        "latency_ms": 0.970042,
+        "request_id": 1033,
+        "sent_ns": 996801641061802,
+        "sequence": 33
+      },
+      {
+        "acknowledged_ns": 996801643054806,
+        "latency_ms": 1.013114,
+        "request_id": 1034,
+        "sent_ns": 996801642041692,
+        "sequence": 34
+      },
+      {
+        "acknowledged_ns": 996801644031809,
+        "latency_ms": 0.966639,
+        "request_id": 1035,
+        "sent_ns": 996801643065170,
+        "sequence": 35
+      },
+      {
+        "acknowledged_ns": 996801647058873,
+        "latency_ms": 3.017385,
+        "request_id": 1036,
+        "sent_ns": 996801644041488,
+        "sequence": 36
+      },
+      {
+        "acknowledged_ns": 996801648052552,
+        "latency_ms": 0.983333,
+        "request_id": 1037,
+        "sent_ns": 996801647069219,
+        "sequence": 37
+      },
+      {
+        "acknowledged_ns": 996801649033710,
+        "latency_ms": 0.971252,
+        "request_id": 1038,
+        "sent_ns": 996801648062458,
+        "sequence": 38
+      },
+      {
+        "acknowledged_ns": 996801650057657,
+        "latency_ms": 1.013435,
+        "request_id": 1039,
+        "sent_ns": 996801649044222,
+        "sequence": 39
+      },
+      {
+        "acknowledged_ns": 996801651061097,
+        "latency_ms": 0.992812,
+        "request_id": 1040,
+        "sent_ns": 996801650068285,
+        "sequence": 40
+      },
+      {
+        "acknowledged_ns": 996801652031202,
+        "latency_ms": 0.959861,
+        "request_id": 1041,
+        "sent_ns": 996801651071341,
+        "sequence": 41
+      },
+      {
+        "acknowledged_ns": 996801653060199,
+        "latency_ms": 1.018879,
+        "request_id": 1042,
+        "sent_ns": 996801652041320,
+        "sequence": 42
+      },
+      {
+        "acknowledged_ns": 996801654028688,
+        "latency_ms": 0.957445,
+        "request_id": 1043,
+        "sent_ns": 996801653071243,
+        "sequence": 43
+      },
+      {
+        "acknowledged_ns": 996801655055259,
+        "latency_ms": 1.017537,
+        "request_id": 1044,
+        "sent_ns": 996801654037722,
+        "sequence": 44
+      },
+      {
+        "acknowledged_ns": 996801656070436,
+        "latency_ms": 1.004704,
+        "request_id": 1045,
+        "sent_ns": 996801655065732,
+        "sequence": 45
+      },
+      {
+        "acknowledged_ns": 996801656148130,
+        "latency_ms": 0.067622,
+        "request_id": 1046,
+        "sent_ns": 996801656080508,
+        "sequence": 46
+      },
+      {
+        "acknowledged_ns": 996801656218373,
+        "latency_ms": 0.061569,
+        "request_id": 1047,
+        "sent_ns": 996801656156804,
+        "sequence": 47
+      },
+      {
+        "acknowledged_ns": 996801656286220,
+        "latency_ms": 0.0596,
+        "request_id": 1048,
+        "sent_ns": 996801656226620,
+        "sequence": 48
+      },
+      {
+        "acknowledged_ns": 996801656353203,
+        "latency_ms": 0.05902,
+        "request_id": 1049,
+        "sent_ns": 996801656294183,
+        "sequence": 49
+      },
+      {
+        "acknowledged_ns": 996801656418514,
+        "latency_ms": 0.05778,
+        "request_id": 1050,
+        "sent_ns": 996801656360734,
+        "sequence": 50
+      },
+      {
+        "acknowledged_ns": 996801656484790,
+        "latency_ms": 0.05844,
+        "request_id": 1051,
+        "sent_ns": 996801656426350,
+        "sequence": 51
+      },
+      {
+        "acknowledged_ns": 996801656549783,
+        "latency_ms": 0.057598,
+        "request_id": 1052,
+        "sent_ns": 996801656492185,
+        "sequence": 52
+      },
+      {
+        "acknowledged_ns": 996801656614988,
+        "latency_ms": 0.057699,
+        "request_id": 1053,
+        "sent_ns": 996801656557289,
+        "sequence": 53
+      },
+      {
+        "acknowledged_ns": 996801656684984,
+        "latency_ms": 0.061978,
+        "request_id": 1054,
+        "sent_ns": 996801656623006,
+        "sequence": 54
+      },
+      {
+        "acknowledged_ns": 996801656768972,
+        "latency_ms": 0.075891,
+        "request_id": 1055,
+        "sent_ns": 996801656693081,
+        "sequence": 55
+      },
+      {
+        "acknowledged_ns": 996801656837974,
+        "latency_ms": 0.060824,
+        "request_id": 1056,
+        "sent_ns": 996801656777150,
+        "sequence": 56
+      },
+      {
+        "acknowledged_ns": 996801656907551,
+        "latency_ms": 0.061466,
+        "request_id": 1057,
+        "sent_ns": 996801656846085,
+        "sequence": 57
+      },
+      {
+        "acknowledged_ns": 996801656977123,
+        "latency_ms": 0.061516,
+        "request_id": 1058,
+        "sent_ns": 996801656915607,
+        "sequence": 58
+      },
+      {
+        "acknowledged_ns": 996801657058189,
+        "latency_ms": 0.072286,
+        "request_id": 1059,
+        "sent_ns": 996801656985903,
+        "sequence": 59
+      },
+      {
+        "acknowledged_ns": 996801657128961,
+        "latency_ms": 0.062501,
+        "request_id": 1060,
+        "sent_ns": 996801657066460,
+        "sequence": 60
+      },
+      {
+        "acknowledged_ns": 996801657198285,
+        "latency_ms": 0.061239,
+        "request_id": 1061,
+        "sent_ns": 996801657137046,
+        "sequence": 61
+      },
+      {
+        "acknowledged_ns": 996801657267623,
+        "latency_ms": 0.061327,
+        "request_id": 1062,
+        "sent_ns": 996801657206296,
+        "sequence": 62
+      },
+      {
+        "acknowledged_ns": 996801657337437,
+        "latency_ms": 0.061624,
+        "request_id": 1063,
+        "sent_ns": 996801657275813,
+        "sequence": 63
+      },
+      {
+        "acknowledged_ns": 996801657406469,
+        "latency_ms": 0.060993,
+        "request_id": 1064,
+        "sent_ns": 996801657345476,
+        "sequence": 64
+      },
+      {
+        "acknowledged_ns": 996801657475264,
+        "latency_ms": 0.060869,
+        "request_id": 1065,
+        "sent_ns": 996801657414395,
+        "sequence": 65
+      },
+      {
+        "acknowledged_ns": 996801657544617,
+        "latency_ms": 0.060747,
+        "request_id": 1066,
+        "sent_ns": 996801657483870,
+        "sequence": 66
+      },
+      {
+        "acknowledged_ns": 996801657613782,
+        "latency_ms": 0.06135,
+        "request_id": 1067,
+        "sent_ns": 996801657552432,
+        "sequence": 67
+      },
+      {
+        "acknowledged_ns": 996801657682116,
+        "latency_ms": 0.060488,
+        "request_id": 1068,
+        "sent_ns": 996801657621628,
+        "sequence": 68
+      },
+      {
+        "acknowledged_ns": 996801657760120,
+        "latency_ms": 0.07015,
+        "request_id": 1069,
+        "sent_ns": 996801657689970,
+        "sequence": 69
+      },
+      {
+        "acknowledged_ns": 996801657824107,
+        "latency_ms": 0.056643,
+        "request_id": 1070,
+        "sent_ns": 996801657767464,
+        "sequence": 70
+      },
+      {
+        "acknowledged_ns": 996801657888447,
+        "latency_ms": 0.056802,
+        "request_id": 1071,
+        "sent_ns": 996801657831645,
+        "sequence": 71
+      },
+      {
+        "acknowledged_ns": 996801657952838,
+        "latency_ms": 0.056883,
+        "request_id": 1072,
+        "sent_ns": 996801657895955,
+        "sequence": 72
+      },
+      {
+        "acknowledged_ns": 996801658024028,
+        "latency_ms": 0.063701,
+        "request_id": 1073,
+        "sent_ns": 996801657960327,
+        "sequence": 73
+      },
+      {
+        "acknowledged_ns": 996801658090634,
+        "latency_ms": 0.058943,
+        "request_id": 1074,
+        "sent_ns": 996801658031691,
+        "sequence": 74
+      },
+      {
+        "acknowledged_ns": 996801658160278,
+        "latency_ms": 0.062004,
+        "request_id": 1075,
+        "sent_ns": 996801658098274,
+        "sequence": 75
+      },
+      {
+        "acknowledged_ns": 996801660048225,
+        "latency_ms": 1.880097,
+        "request_id": 1076,
+        "sent_ns": 996801658168128,
+        "sequence": 76
+      },
+      {
+        "acknowledged_ns": 996801660119426,
+        "latency_ms": 0.062367,
+        "request_id": 1077,
+        "sent_ns": 996801660057059,
+        "sequence": 77
+      },
+      {
+        "acknowledged_ns": 996801660185726,
+        "latency_ms": 0.058261,
+        "request_id": 1078,
+        "sent_ns": 996801660127465,
+        "sequence": 78
+      },
+      {
+        "acknowledged_ns": 996801660251666,
+        "latency_ms": 0.058182,
+        "request_id": 1079,
+        "sent_ns": 996801660193484,
+        "sequence": 79
+      },
+      {
+        "acknowledged_ns": 996801660316597,
+        "latency_ms": 0.057386,
+        "request_id": 1080,
+        "sent_ns": 996801660259211,
+        "sequence": 80
+      },
+      {
+        "acknowledged_ns": 996801660381297,
+        "latency_ms": 0.057341,
+        "request_id": 1081,
+        "sent_ns": 996801660323956,
+        "sequence": 81
+      },
+      {
+        "acknowledged_ns": 996801660451963,
+        "latency_ms": 0.058896,
+        "request_id": 1082,
+        "sent_ns": 996801660393067,
+        "sequence": 82
+      },
+      {
+        "acknowledged_ns": 996801660516138,
+        "latency_ms": 0.056515,
+        "request_id": 1083,
+        "sent_ns": 996801660459623,
+        "sequence": 83
+      },
+      {
+        "acknowledged_ns": 996801660580595,
+        "latency_ms": 0.057011,
+        "request_id": 1084,
+        "sent_ns": 996801660523584,
+        "sequence": 84
+      },
+      {
+        "acknowledged_ns": 996801660644631,
+        "latency_ms": 0.056382,
+        "request_id": 1085,
+        "sent_ns": 996801660588249,
+        "sequence": 85
+      },
+      {
+        "acknowledged_ns": 996801660726709,
+        "latency_ms": 0.074546,
+        "request_id": 1086,
+        "sent_ns": 996801660652163,
+        "sequence": 86
+      },
+      {
+        "acknowledged_ns": 996801660794308,
+        "latency_ms": 0.059514,
+        "request_id": 1087,
+        "sent_ns": 996801660734794,
+        "sequence": 87
+      },
+      {
+        "acknowledged_ns": 996801660860984,
+        "latency_ms": 0.059124,
+        "request_id": 1088,
+        "sent_ns": 996801660801860,
+        "sequence": 88
+      },
+      {
+        "acknowledged_ns": 996801660929047,
+        "latency_ms": 0.060146,
+        "request_id": 1089,
+        "sent_ns": 996801660868901,
+        "sequence": 89
+      },
+      {
+        "acknowledged_ns": 996801660995332,
+        "latency_ms": 0.05854,
+        "request_id": 1090,
+        "sent_ns": 996801660936792,
+        "sequence": 90
+      },
+      {
+        "acknowledged_ns": 996801661072506,
+        "latency_ms": 0.062652,
+        "request_id": 1091,
+        "sent_ns": 996801661009854,
+        "sequence": 91
+      },
+      {
+        "acknowledged_ns": 996801661139098,
+        "latency_ms": 0.058812,
+        "request_id": 1092,
+        "sent_ns": 996801661080286,
+        "sequence": 92
+      },
+      {
+        "acknowledged_ns": 996801661205921,
+        "latency_ms": 0.059005,
+        "request_id": 1093,
+        "sent_ns": 996801661146916,
+        "sequence": 93
+      },
+      {
+        "acknowledged_ns": 996801661272415,
+        "latency_ms": 0.058392,
+        "request_id": 1094,
+        "sent_ns": 996801661214023,
+        "sequence": 94
+      },
+      {
+        "acknowledged_ns": 996801661338431,
+        "latency_ms": 0.058421,
+        "request_id": 1095,
+        "sent_ns": 996801661280010,
+        "sequence": 95
+      },
+      {
+        "acknowledged_ns": 996801661404798,
+        "latency_ms": 0.058747,
+        "request_id": 1096,
+        "sent_ns": 996801661346051,
+        "sequence": 96
+      },
+      {
+        "acknowledged_ns": 996801661471372,
+        "latency_ms": 0.058798,
+        "request_id": 1097,
+        "sent_ns": 996801661412574,
+        "sequence": 97
+      },
+      {
+        "acknowledged_ns": 996801661537673,
+        "latency_ms": 0.058571,
+        "request_id": 1098,
+        "sent_ns": 996801661479102,
+        "sequence": 98
+      },
+      {
+        "acknowledged_ns": 996801661603812,
+        "latency_ms": 0.058451,
+        "request_id": 1099,
+        "sent_ns": 996801661545361,
+        "sequence": 99
+      },
+      {
+        "acknowledged_ns": 996801661670029,
+        "latency_ms": 0.058567,
+        "request_id": 1100,
+        "sent_ns": 996801661611462,
+        "sequence": 100
+      }
+    ],
+    "daemon_event_to_client": [
+      {
+        "daemon_sequence": 62,
+        "emitted_ns": 996801386408506,
+        "fixture_sequence": 51,
+        "latency_ms": 2.730221,
+        "received_ns": 996801389138727,
+        "sequence": 1
+      },
+      {
+        "daemon_sequence": 63,
+        "emitted_ns": 996801388512684,
+        "fixture_sequence": 52,
+        "latency_ms": 1.711801,
+        "received_ns": 996801390224485,
+        "sequence": 2
+      },
+      {
+        "daemon_sequence": 64,
+        "emitted_ns": 996801390621000,
+        "fixture_sequence": 53,
+        "latency_ms": 1.825735,
+        "received_ns": 996801392446735,
+        "sequence": 3
+      },
+      {
+        "daemon_sequence": 65,
+        "emitted_ns": 996801392732028,
+        "fixture_sequence": 54,
+        "latency_ms": 1.943018,
+        "received_ns": 996801394675046,
+        "sequence": 4
+      },
+      {
+        "daemon_sequence": 66,
+        "emitted_ns": 996801394846742,
+        "fixture_sequence": 55,
+        "latency_ms": 2.04221,
+        "received_ns": 996801396888952,
+        "sequence": 5
+      },
+      {
+        "daemon_sequence": 67,
+        "emitted_ns": 996801396951923,
+        "fixture_sequence": 56,
+        "latency_ms": 2.109552,
+        "received_ns": 996801399061475,
+        "sequence": 6
+      },
+      {
+        "daemon_sequence": 68,
+        "emitted_ns": 996801399011908,
+        "fixture_sequence": 57,
+        "latency_ms": 1.182549,
+        "received_ns": 996801400194457,
+        "sequence": 7
+      },
+      {
+        "daemon_sequence": 69,
+        "emitted_ns": 996801401120705,
+        "fixture_sequence": 58,
+        "latency_ms": 3.032147,
+        "received_ns": 996801404152852,
+        "sequence": 8
+      },
+      {
+        "daemon_sequence": 70,
+        "emitted_ns": 996801403232608,
+        "fixture_sequence": 59,
+        "latency_ms": 2.013633,
+        "received_ns": 996801405246241,
+        "sequence": 9
+      },
+      {
+        "daemon_sequence": 71,
+        "emitted_ns": 996801405339531,
+        "fixture_sequence": 60,
+        "latency_ms": 2.093555,
+        "received_ns": 996801407433086,
+        "sequence": 10
+      },
+      {
+        "daemon_sequence": 72,
+        "emitted_ns": 996801407455521,
+        "fixture_sequence": 61,
+        "latency_ms": 2.111237,
+        "received_ns": 996801409566758,
+        "sequence": 11
+      },
+      {
+        "daemon_sequence": 73,
+        "emitted_ns": 996801409579001,
+        "fixture_sequence": 62,
+        "latency_ms": 2.201384,
+        "received_ns": 996801411780385,
+        "sequence": 12
+      },
+      {
+        "daemon_sequence": 74,
+        "emitted_ns": 996801411694272,
+        "fixture_sequence": 63,
+        "latency_ms": 1.231748,
+        "received_ns": 996801412926020,
+        "sequence": 13
+      },
+      {
+        "daemon_sequence": 75,
+        "emitted_ns": 996801413804695,
+        "fixture_sequence": 64,
+        "latency_ms": 1.32989,
+        "received_ns": 996801415134585,
+        "sequence": 14
+      },
+      {
+        "daemon_sequence": 76,
+        "emitted_ns": 996801416027728,
+        "fixture_sequence": 65,
+        "latency_ms": 1.399582,
+        "received_ns": 996801417427310,
+        "sequence": 15
+      },
+      {
+        "daemon_sequence": 77,
+        "emitted_ns": 996801418138101,
+        "fixture_sequence": 66,
+        "latency_ms": 2.065439,
+        "received_ns": 996801420203540,
+        "sequence": 16
+      },
+      {
+        "daemon_sequence": 78,
+        "emitted_ns": 996801420304743,
+        "fixture_sequence": 67,
+        "latency_ms": 2.027384,
+        "received_ns": 996801422332127,
+        "sequence": 17
+      },
+      {
+        "daemon_sequence": 79,
+        "emitted_ns": 996801422443996,
+        "fixture_sequence": 68,
+        "latency_ms": 2.136028,
+        "received_ns": 996801424580024,
+        "sequence": 18
+      },
+      {
+        "daemon_sequence": 80,
+        "emitted_ns": 996801424548280,
+        "fixture_sequence": 69,
+        "latency_ms": 1.172771,
+        "received_ns": 996801425721051,
+        "sequence": 19
+      },
+      {
+        "daemon_sequence": 81,
+        "emitted_ns": 996801426651324,
+        "fixture_sequence": 70,
+        "latency_ms": 1.296186,
+        "received_ns": 996801427947510,
+        "sequence": 20
+      },
+      {
+        "daemon_sequence": 82,
+        "emitted_ns": 996801428760741,
+        "fixture_sequence": 71,
+        "latency_ms": 1.376262,
+        "received_ns": 996801430137003,
+        "sequence": 21
+      },
+      {
+        "daemon_sequence": 83,
+        "emitted_ns": 996801430868288,
+        "fixture_sequence": 72,
+        "latency_ms": 1.484439,
+        "received_ns": 996801432352727,
+        "sequence": 22
+      },
+      {
+        "daemon_sequence": 84,
+        "emitted_ns": 996801432969108,
+        "fixture_sequence": 73,
+        "latency_ms": 1.609495,
+        "received_ns": 996801434578603,
+        "sequence": 23
+      },
+      {
+        "daemon_sequence": 85,
+        "emitted_ns": 996801435078255,
+        "fixture_sequence": 74,
+        "latency_ms": 1.718546,
+        "received_ns": 996801436796801,
+        "sequence": 24
+      },
+      {
+        "daemon_sequence": 86,
+        "emitted_ns": 996801437178146,
+        "fixture_sequence": 75,
+        "latency_ms": 2.964575,
+        "received_ns": 996801440142721,
+        "sequence": 25
+      },
+      {
+        "daemon_sequence": 87,
+        "emitted_ns": 996801439280534,
+        "fixture_sequence": 76,
+        "latency_ms": 1.949442,
+        "received_ns": 996801441229976,
+        "sequence": 26
+      },
+      {
+        "daemon_sequence": 88,
+        "emitted_ns": 996801441383580,
+        "fixture_sequence": 77,
+        "latency_ms": 1.99725,
+        "received_ns": 996801443380830,
+        "sequence": 27
+      },
+      {
+        "daemon_sequence": 89,
+        "emitted_ns": 996801443483422,
+        "fixture_sequence": 78,
+        "latency_ms": 2.105284,
+        "received_ns": 996801445588706,
+        "sequence": 28
+      },
+      {
+        "daemon_sequence": 90,
+        "emitted_ns": 996801445586527,
+        "fixture_sequence": 79,
+        "latency_ms": 2.206687,
+        "received_ns": 996801447793214,
+        "sequence": 29
+      },
+      {
+        "daemon_sequence": 91,
+        "emitted_ns": 996801447686706,
+        "fixture_sequence": 80,
+        "latency_ms": 1.246478,
+        "received_ns": 996801448933184,
+        "sequence": 30
+      },
+      {
+        "daemon_sequence": 92,
+        "emitted_ns": 996801451009876,
+        "fixture_sequence": 81,
+        "latency_ms": 1.193625,
+        "received_ns": 996801452203501,
+        "sequence": 31
+      },
+      {
+        "daemon_sequence": 93,
+        "emitted_ns": 996801456008807,
+        "fixture_sequence": 82,
+        "latency_ms": 1.605875,
+        "received_ns": 996801457614682,
+        "sequence": 32
+      },
+      {
+        "daemon_sequence": 94,
+        "emitted_ns": 996801458099519,
+        "fixture_sequence": 83,
+        "latency_ms": 1.756105,
+        "received_ns": 996801459855624,
+        "sequence": 33
+      },
+      {
+        "daemon_sequence": 95,
+        "emitted_ns": 996801460205558,
+        "fixture_sequence": 84,
+        "latency_ms": 1.861714,
+        "received_ns": 996801462067272,
+        "sequence": 34
+      },
+      {
+        "daemon_sequence": 96,
+        "emitted_ns": 996801463015080,
+        "fixture_sequence": 85,
+        "latency_ms": 1.270934,
+        "received_ns": 996801464286014,
+        "sequence": 35
+      },
+      {
+        "daemon_sequence": 97,
+        "emitted_ns": 996801465104836,
+        "fixture_sequence": 86,
+        "latency_ms": 1.395676,
+        "received_ns": 996801466500512,
+        "sequence": 36
+      },
+      {
+        "daemon_sequence": 98,
+        "emitted_ns": 996801468030035,
+        "fixture_sequence": 87,
+        "latency_ms": 1.850744,
+        "received_ns": 996801469880779,
+        "sequence": 37
+      },
+      {
+        "daemon_sequence": 99,
+        "emitted_ns": 996801470163923,
+        "fixture_sequence": 88,
+        "latency_ms": 2.019185,
+        "received_ns": 996801472183108,
+        "sequence": 38
+      },
+      {
+        "daemon_sequence": 100,
+        "emitted_ns": 996801472328616,
+        "fixture_sequence": 89,
+        "latency_ms": 2.097633,
+        "received_ns": 996801474426249,
+        "sequence": 39
+      },
+      {
+        "daemon_sequence": 101,
+        "emitted_ns": 996801474459475,
+        "fixture_sequence": 90,
+        "latency_ms": 2.180955,
+        "received_ns": 996801476640430,
+        "sequence": 40
+      },
+      {
+        "daemon_sequence": 102,
+        "emitted_ns": 996801476567989,
+        "fixture_sequence": 91,
+        "latency_ms": 1.228652,
+        "received_ns": 996801477796641,
+        "sequence": 41
+      },
+      {
+        "daemon_sequence": 103,
+        "emitted_ns": 996801478673949,
+        "fixture_sequence": 92,
+        "latency_ms": 1.535339,
+        "received_ns": 996801480209288,
+        "sequence": 42
+      },
+      {
+        "daemon_sequence": 104,
+        "emitted_ns": 996801480776851,
+        "fixture_sequence": 93,
+        "latency_ms": 1.659127,
+        "received_ns": 996801482435978,
+        "sequence": 43
+      },
+      {
+        "daemon_sequence": 105,
+        "emitted_ns": 996801482877260,
+        "fixture_sequence": 94,
+        "latency_ms": 1.778031,
+        "received_ns": 996801484655291,
+        "sequence": 44
+      },
+      {
+        "daemon_sequence": 106,
+        "emitted_ns": 996801484973820,
+        "fixture_sequence": 95,
+        "latency_ms": 1.906989,
+        "received_ns": 996801486880809,
+        "sequence": 45
+      },
+      {
+        "daemon_sequence": 107,
+        "emitted_ns": 996801487080827,
+        "fixture_sequence": 96,
+        "latency_ms": 1.951973,
+        "received_ns": 996801489032800,
+        "sequence": 46
+      },
+      {
+        "daemon_sequence": 108,
+        "emitted_ns": 996801489182993,
+        "fixture_sequence": 97,
+        "latency_ms": 2.060708,
+        "received_ns": 996801491243701,
+        "sequence": 47
+      },
+      {
+        "daemon_sequence": 109,
+        "emitted_ns": 996801491290003,
+        "fixture_sequence": 98,
+        "latency_ms": 2.166565,
+        "received_ns": 996801493456568,
+        "sequence": 48
+      },
+      {
+        "daemon_sequence": 110,
+        "emitted_ns": 996801493390683,
+        "fixture_sequence": 99,
+        "latency_ms": 1.204299,
+        "received_ns": 996801494594982,
+        "sequence": 49
+      },
+      {
+        "daemon_sequence": 111,
+        "emitted_ns": 996801495492310,
+        "fixture_sequence": 100,
+        "latency_ms": 1.310175,
+        "received_ns": 996801496802485,
+        "sequence": 50
+      },
+      {
+        "daemon_sequence": 112,
+        "emitted_ns": 996801497594953,
+        "fixture_sequence": 101,
+        "latency_ms": 1.439017,
+        "received_ns": 996801499033970,
+        "sequence": 51
+      },
+      {
+        "daemon_sequence": 113,
+        "emitted_ns": 996801499699312,
+        "fixture_sequence": 102,
+        "latency_ms": 1.550798,
+        "received_ns": 996801501250110,
+        "sequence": 52
+      },
+      {
+        "daemon_sequence": 114,
+        "emitted_ns": 996801501817402,
+        "fixture_sequence": 103,
+        "latency_ms": 1.323964,
+        "received_ns": 996801503141366,
+        "sequence": 53
+      },
+      {
+        "daemon_sequence": 115,
+        "emitted_ns": 996801503917910,
+        "fixture_sequence": 104,
+        "latency_ms": 1.370782,
+        "received_ns": 996801505288692,
+        "sequence": 54
+      },
+      {
+        "daemon_sequence": 116,
+        "emitted_ns": 996801506013924,
+        "fixture_sequence": 105,
+        "latency_ms": 1.488921,
+        "received_ns": 996801507502845,
+        "sequence": 55
+      },
+      {
+        "daemon_sequence": 117,
+        "emitted_ns": 996801508118083,
+        "fixture_sequence": 106,
+        "latency_ms": 1.594533,
+        "received_ns": 996801509712616,
+        "sequence": 56
+      },
+      {
+        "daemon_sequence": 118,
+        "emitted_ns": 996801510227806,
+        "fixture_sequence": 107,
+        "latency_ms": 1.726394,
+        "received_ns": 996801511954200,
+        "sequence": 57
+      },
+      {
+        "daemon_sequence": 119,
+        "emitted_ns": 996801512342016,
+        "fixture_sequence": 108,
+        "latency_ms": 1.810405,
+        "received_ns": 996801514152421,
+        "sequence": 58
+      },
+      {
+        "daemon_sequence": 120,
+        "emitted_ns": 996801514453169,
+        "fixture_sequence": 109,
+        "latency_ms": 1.913817,
+        "received_ns": 996801516366986,
+        "sequence": 59
+      },
+      {
+        "daemon_sequence": 121,
+        "emitted_ns": 996801516561112,
+        "fixture_sequence": 110,
+        "latency_ms": 2.016919,
+        "received_ns": 996801518578031,
+        "sequence": 60
+      },
+      {
+        "daemon_sequence": 122,
+        "emitted_ns": 996801518665408,
+        "fixture_sequence": 111,
+        "latency_ms": 2.144269,
+        "received_ns": 996801520809677,
+        "sequence": 61
+      },
+      {
+        "daemon_sequence": 123,
+        "emitted_ns": 996801520772828,
+        "fixture_sequence": 112,
+        "latency_ms": 2.202219,
+        "received_ns": 996801522975047,
+        "sequence": 62
+      },
+      {
+        "daemon_sequence": 124,
+        "emitted_ns": 996801523330323,
+        "fixture_sequence": 113,
+        "latency_ms": 1.803319,
+        "received_ns": 996801525133642,
+        "sequence": 63
+      },
+      {
+        "daemon_sequence": 125,
+        "emitted_ns": 996801525454806,
+        "fixture_sequence": 114,
+        "latency_ms": 1.974136,
+        "received_ns": 996801527428942,
+        "sequence": 64
+      },
+      {
+        "daemon_sequence": 126,
+        "emitted_ns": 996801527567684,
+        "fixture_sequence": 115,
+        "latency_ms": 2.17941,
+        "received_ns": 996801529747094,
+        "sequence": 65
+      },
+      {
+        "daemon_sequence": 127,
+        "emitted_ns": 996801529739508,
+        "fixture_sequence": 116,
+        "latency_ms": 2.326935,
+        "received_ns": 996801532066443,
+        "sequence": 66
+      },
+      {
+        "daemon_sequence": 128,
+        "emitted_ns": 996801531897997,
+        "fixture_sequence": 117,
+        "latency_ms": 1.192606,
+        "received_ns": 996801533090603,
+        "sequence": 67
+      },
+      {
+        "daemon_sequence": 129,
+        "emitted_ns": 996801534022784,
+        "fixture_sequence": 118,
+        "latency_ms": 1.228664,
+        "received_ns": 996801535251448,
+        "sequence": 68
+      },
+      {
+        "daemon_sequence": 130,
+        "emitted_ns": 996801536116383,
+        "fixture_sequence": 119,
+        "latency_ms": 1.290037,
+        "received_ns": 996801537406420,
+        "sequence": 69
+      },
+      {
+        "daemon_sequence": 131,
+        "emitted_ns": 996801538224732,
+        "fixture_sequence": 120,
+        "latency_ms": 1.398069,
+        "received_ns": 996801539622801,
+        "sequence": 70
+      },
+      {
+        "daemon_sequence": 132,
+        "emitted_ns": 996801540332477,
+        "fixture_sequence": 121,
+        "latency_ms": 1.477918,
+        "received_ns": 996801541810395,
+        "sequence": 71
+      },
+      {
+        "daemon_sequence": 133,
+        "emitted_ns": 996801542444157,
+        "fixture_sequence": 122,
+        "latency_ms": 1.600316,
+        "received_ns": 996801544044473,
+        "sequence": 72
+      },
+      {
+        "daemon_sequence": 134,
+        "emitted_ns": 996801544553762,
+        "fixture_sequence": 123,
+        "latency_ms": 1.706048,
+        "received_ns": 996801546259810,
+        "sequence": 73
+      },
+      {
+        "daemon_sequence": 135,
+        "emitted_ns": 996801546661676,
+        "fixture_sequence": 124,
+        "latency_ms": 1.821138,
+        "received_ns": 996801548482814,
+        "sequence": 74
+      },
+      {
+        "daemon_sequence": 136,
+        "emitted_ns": 996801548766448,
+        "fixture_sequence": 125,
+        "latency_ms": 1.928113,
+        "received_ns": 996801550694561,
+        "sequence": 75
+      },
+      {
+        "daemon_sequence": 137,
+        "emitted_ns": 996801550865909,
+        "fixture_sequence": 126,
+        "latency_ms": 1.285668,
+        "received_ns": 996801552151577,
+        "sequence": 76
+      },
+      {
+        "daemon_sequence": 138,
+        "emitted_ns": 996801552969061,
+        "fixture_sequence": 127,
+        "latency_ms": 1.332137,
+        "received_ns": 996801554301198,
+        "sequence": 77
+      },
+      {
+        "daemon_sequence": 139,
+        "emitted_ns": 996801555074238,
+        "fixture_sequence": 128,
+        "latency_ms": 1.445125,
+        "received_ns": 996801556519363,
+        "sequence": 78
+      },
+      {
+        "daemon_sequence": 140,
+        "emitted_ns": 996801558014922,
+        "fixture_sequence": 129,
+        "latency_ms": 2.026959,
+        "received_ns": 996801560041881,
+        "sequence": 79
+      },
+      {
+        "daemon_sequence": 141,
+        "emitted_ns": 996801560105471,
+        "fixture_sequence": 130,
+        "latency_ms": 1.296056,
+        "received_ns": 996801561401527,
+        "sequence": 80
+      },
+      {
+        "daemon_sequence": 142,
+        "emitted_ns": 996801562225177,
+        "fixture_sequence": 131,
+        "latency_ms": 1.841566,
+        "received_ns": 996801564066743,
+        "sequence": 81
+      },
+      {
+        "daemon_sequence": 143,
+        "emitted_ns": 996801564343912,
+        "fixture_sequence": 132,
+        "latency_ms": 1.689207,
+        "received_ns": 996801566033119,
+        "sequence": 82
+      },
+      {
+        "daemon_sequence": 144,
+        "emitted_ns": 996801566472733,
+        "fixture_sequence": 133,
+        "latency_ms": 1.567669,
+        "received_ns": 996801568040402,
+        "sequence": 83
+      },
+      {
+        "daemon_sequence": 145,
+        "emitted_ns": 996801568578963,
+        "fixture_sequence": 134,
+        "latency_ms": 2.465854,
+        "received_ns": 996801571044817,
+        "sequence": 84
+      },
+      {
+        "daemon_sequence": 146,
+        "emitted_ns": 996801570693791,
+        "fixture_sequence": 135,
+        "latency_ms": 2.3875,
+        "received_ns": 996801573081291,
+        "sequence": 85
+      },
+      {
+        "daemon_sequence": 147,
+        "emitted_ns": 996801572848829,
+        "fixture_sequence": 136,
+        "latency_ms": 2.225718,
+        "received_ns": 996801575074547,
+        "sequence": 86
+      },
+      {
+        "daemon_sequence": 148,
+        "emitted_ns": 996801575023737,
+        "fixture_sequence": 137,
+        "latency_ms": 2.017367,
+        "received_ns": 996801577041104,
+        "sequence": 87
+      },
+      {
+        "daemon_sequence": 149,
+        "emitted_ns": 996801577173342,
+        "fixture_sequence": 138,
+        "latency_ms": 1.870407,
+        "received_ns": 996801579043749,
+        "sequence": 88
+      },
+      {
+        "daemon_sequence": 150,
+        "emitted_ns": 996801579292785,
+        "fixture_sequence": 139,
+        "latency_ms": 1.74024,
+        "received_ns": 996801581033025,
+        "sequence": 89
+      },
+      {
+        "daemon_sequence": 151,
+        "emitted_ns": 996801581402449,
+        "fixture_sequence": 140,
+        "latency_ms": 2.635059,
+        "received_ns": 996801584037508,
+        "sequence": 90
+      },
+      {
+        "daemon_sequence": 152,
+        "emitted_ns": 996801583510364,
+        "fixture_sequence": 141,
+        "latency_ms": 2.521978,
+        "received_ns": 996801586032342,
+        "sequence": 91
+      },
+      {
+        "daemon_sequence": 153,
+        "emitted_ns": 996801585614580,
+        "fixture_sequence": 142,
+        "latency_ms": 2.424112,
+        "received_ns": 996801588038692,
+        "sequence": 92
+      },
+      {
+        "daemon_sequence": 154,
+        "emitted_ns": 996801587716492,
+        "fixture_sequence": 143,
+        "latency_ms": 2.312094,
+        "received_ns": 996801590028586,
+        "sequence": 93
+      },
+      {
+        "daemon_sequence": 155,
+        "emitted_ns": 996801589824668,
+        "fixture_sequence": 144,
+        "latency_ms": 1.86199,
+        "received_ns": 996801591686658,
+        "sequence": 94
+      },
+      {
+        "daemon_sequence": 156,
+        "emitted_ns": 996801591925747,
+        "fixture_sequence": 145,
+        "latency_ms": 2.106021,
+        "received_ns": 996801594031768,
+        "sequence": 95
+      },
+      {
+        "daemon_sequence": 157,
+        "emitted_ns": 996801594012735,
+        "fixture_sequence": 146,
+        "latency_ms": 2.024026,
+        "received_ns": 996801596036761,
+        "sequence": 96
+      },
+      {
+        "daemon_sequence": 158,
+        "emitted_ns": 996801596118242,
+        "fixture_sequence": 147,
+        "latency_ms": 1.911565,
+        "received_ns": 996801598029807,
+        "sequence": 97
+      },
+      {
+        "daemon_sequence": 159,
+        "emitted_ns": 996801598220845,
+        "fixture_sequence": 148,
+        "latency_ms": 1.815353,
+        "received_ns": 996801600036198,
+        "sequence": 98
+      },
+      {
+        "daemon_sequence": 160,
+        "emitted_ns": 996801600322711,
+        "fixture_sequence": 149,
+        "latency_ms": 1.7201,
+        "received_ns": 996801602042811,
+        "sequence": 99
+      },
+      {
+        "daemon_sequence": 161,
+        "emitted_ns": 996801602429287,
+        "fixture_sequence": 150,
+        "latency_ms": 2.608401,
+        "received_ns": 996801605037688,
+        "sequence": 100
+      }
+    ]
+  },
+  "saturation": {
+    "achieved": {
+      "aggregate_worker_cpu_percent_one_logical_cpu": 746.5448177333333,
+      "host_cpu_utilization_percent": 99.46300715990454,
+      "load_average_after": [
+        3.42333984375,
+        4.20703125,
+        3.21630859375
+      ],
+      "load_average_before": [
+        3.42333984375,
+        4.20703125,
+        3.21630859375
+      ],
+      "mean_worker_cpu_percent": 93.10714726798595,
+      "minimum_worker_cpu_percent": 86.63302711794789,
+      "total_worker_cpu_seconds": 22.396344532
+    },
+    "alive_for_every_observation": true,
+    "cleanup": {
+      "children_reaped": true,
+      "worker_pids": [
+        3482897,
+        3482898,
+        3482899,
+        3482900,
+        3482901,
+        3482902,
+        3482903,
+        3482904
+      ]
+    },
+    "completed_after_measurement": true,
+    "configuration": {
+      "available_affinity_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "default_saturates_full_affinity": true,
+      "duration_seconds": 3.0,
+      "readiness_timeout_seconds": 5.0,
+      "requested_workers": 8,
+      "selected_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "warmup_seconds": 1.0,
+      "worker_cpu_assignments": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    }
+  },
+  "schema": "yoctui.performance.ipc-latency.v1",
+  "summary": {
+    "accepted_cancellation_requests": 75,
+    "cancellation_request_to_ack_ms": {
+      "maximum": 6.82511,
+      "mean": 4.13909357,
+      "p50": 2.194749,
+      "p95": 6.820188
+    },
+    "client_command_to_daemon_ms": {
+      "maximum": 3.017385,
+      "mean": 0.5568208099999999,
+      "p50": 0.067622,
+      "p95": 1.880097
+    },
+    "daemon_event_to_client_ms": {
+      "maximum": 3.032147,
+      "mean": 1.81989751,
+      "p50": 1.825735,
+      "p95": 2.521978
+    }
+  }
+}

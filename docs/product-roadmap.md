@@ -966,4 +966,10 @@ stayed near 99%. `yoctui inspect` now reports a typed, read-only
 never change build configuration. The real-PTY input audit collected 100
 post-warmup observations per path at 99.75% host CPU: keyboard-to-model,
 keyboard-to-frame, and mouse-to-selection p95 were 1.974, 4.336, and 4.440 ms.
-Saturated IPC latency is next.
+The saturated production IPC audit is also complete: 100 monotonic samples per
+path cover timestamped daemon events, correlated command results, and live
+BitBake cancellation acknowledgements while every affinity CPU is runnable.
+At 99.46% host CPU their p95 values were 2.522, 1.880, and 6.820 ms
+respectively. Exact release measurements and source/binary hashes are retained
+by the offline `--latency` continuity gate. The one-percent CPU release gate is
+next.

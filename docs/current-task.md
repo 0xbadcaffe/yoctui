@@ -2,36 +2,41 @@
 
 ## Task
 
-**ID:** PERF-IPC-LATENCY-001
-**Title:** Measure saturated IPC latency
+**ID:** PERF-CPU-GATE-001
+**Title:** Implement the one-percent steady-state CPU gate
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure daemon-event delivery, client-command receipt, and cancellation
-acknowledgement latency under deterministic full-CPU saturation.
+Implement the release-profile steady-state CPU gate for the documented daemon
+plus one attached interactive client baseline.
 
 ## Dependencies
 
-- PERF-SATURATION-HARNESS-001 — DONE
-- PERF-IPC-BACKPRESSURE-001 — DONE
-- PERF-BITBAKE-CONN-001 — DONE
+- PERF-ANIM-001 — DONE
+- PERF-TELEMETRY-001 — DONE
+- PERF-LOG-001 — DONE
+- PERF-TASKS-001 — DONE
+- PERF-TOKIO-001 — DONE
 
 ## Definition of done
 
-- At least 100 post-warmup observations exist for daemon-event to client,
-  client-command to daemon, and cancellation request to acknowledgement.
-- Measurements use monotonic timestamps while every affinity CPU is runnable.
-- Ordinary IPC reports p50 <=25 ms and p95 <=100 ms.
-- Cancellation acknowledgement reports p95 <=250 ms.
-- Evidence proves connection continuity, exact ordering, revision, host, load,
-  transport, and method.
+- The documented idle daemon plus one real attached 160x50 client scenario runs
+  from a release build of the measured source.
+- Startup and a 10-second warmup are excluded from 60 one-second steady-state
+  samples.
+- Daemon and client `/proc` CPU deltas are independently calculated as percent
+  of one logical CPU and summed.
+- The 10% trimmed-mean combined result is <=1.00%; idle daemon is <=0.20% and
+  idle attached client is <=0.50%.
+- Exact host, binary, PID continuity, raw samples, and method evidence is
+  retained and verified offline.
 
 ## Verification
 
 ```bash
-./scripts/verify-ipc-continuity.sh --latency
+./scripts/verify-low-overhead.sh
 ./scripts/verify-roadmap.sh
 ```
 
-Saturated input latency is complete in v0.1.41.
+Saturated IPC latency is complete in v0.1.42.

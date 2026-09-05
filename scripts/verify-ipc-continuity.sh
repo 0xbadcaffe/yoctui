@@ -108,6 +108,158 @@ PY
   cargo test -q -p yoctui-protocol daemon_ipc_readiness_is_nonblocking_and_observes_peer_input
 }
 
+verify_latency() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/ipc-latency")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.ipc-latency-manifest.v1":
+    raise SystemExit("IPC latency manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+if not isinstance(revision, str) or len(revision) != 40:
+    raise SystemExit("IPC latency revision must be an exact commit")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+artifact = root / manifest["artifact"]
+if hashlib.sha256(artifact.read_bytes()).hexdigest() != manifest["artifact_sha256"]:
+    raise SystemExit("IPC latency evidence digest mismatch")
+record = json.loads(artifact.read_text(encoding="utf-8"))
+if record.get("schema") != "yoctui.performance.ipc-latency.v1":
+    raise SystemExit("IPC latency evidence schema is unsupported")
+if record.get("revision") != revision:
+    raise SystemExit("IPC latency evidence source identity mismatch")
+if record.get("binary", {}).get("sha256") != manifest["binary_sha256"]:
+    raise SystemExit("IPC latency binary identity mismatch")
+if manifest.get("method") != {
+    "release_profile": True,
+    "warmup_seconds": 1,
+    "observations_per_path": 100,
+    "event_warmup_observations": 50,
+    "clock": "CLOCK_MONOTONIC",
+    "transport": "AF_UNIX SOCK_STREAM length-prefixed JSON",
+    "load": "one pinned worker per affinity CPU; no deliberately free CPU",
+}:
+    raise SystemExit("IPC latency manifest method changed")
+for source, digest in manifest["sources"].items():
+    if hashlib.sha256(Path(source).read_bytes()).hexdigest() != digest:
+        raise SystemExit(f"IPC latency source digest mismatch: {source}")
+configuration = record["configuration"]
+if configuration["clock"] != "CLOCK_MONOTONIC":
+    raise SystemExit("IPC latency evidence did not use monotonic time")
+if configuration["transport"] != "AF_UNIX SOCK_STREAM length-prefixed JSON":
+    raise SystemExit("IPC latency transport identity changed")
+if configuration["warmup_seconds"] != 1 or configuration["observations_per_path"] != 100:
+    raise SystemExit("IPC latency evidence window changed")
+if configuration["event_warmup_observations"] != 50:
+    raise SystemExit("IPC latency event warmup changed")
+if configuration["event_path"] != [
+    "fixture_bridge", "bridge_backend", "daemon_bitbake_supervisor",
+    "daemon_snapshot_journal", "unix_ipc", "attached_protocol_client",
+]:
+    raise SystemExit("IPC latency production event path is incomplete")
+samples = record["samples"]
+for name in (
+    "daemon_event_to_client",
+    "client_command_to_daemon",
+    "cancellation_request_to_ack",
+):
+    if len(samples.get(name, [])) != 100:
+        raise SystemExit(f"IPC latency path does not contain 100 samples: {name}")
+    for sequence, sample in enumerate(samples[name], 1):
+        if sample["sequence"] != sequence:
+            raise SystemExit(f"IPC latency sample order changed: {name}")
+        if name == "daemon_event_to_client":
+            if sample["fixture_sequence"] != sequence + 50:
+                raise SystemExit("fixture event sequence changed")
+            if sample["emitted_ns"] > sample["received_ns"]:
+                raise SystemExit("event latency timestamps are not monotonic")
+        elif sample["sent_ns"] > sample["acknowledged_ns"]:
+            raise SystemExit(f"command latency timestamps are not monotonic: {name}")
+summary = record["summary"]
+for metric in ("daemon_event_to_client_ms", "client_command_to_daemon_ms"):
+    observed = summary[metric]
+    if observed["p50"] < 0 or observed["p50"] > 25 or observed["p95"] > 100:
+        raise SystemExit(f"ordinary IPC latency threshold failed: {metric}")
+cancellation = summary["cancellation_request_to_ack_ms"]
+if cancellation["p50"] < 0 or cancellation["p95"] > 250:
+    raise SystemExit("cancellation acknowledgement latency threshold failed")
+if summary["accepted_cancellation_requests"] < 2:
+    raise SystemExit("IPC latency evidence did not prove live cancellation per batch")
+continuity = record["continuity"]
+if not continuity["primary_client_connected"] or not continuity["reconnect_succeeded"]:
+    raise SystemExit("IPC latency evidence lost attach/reconnect continuity")
+if continuity["backend_disconnect_events"] != 0:
+    raise SystemExit("IPC latency evidence observed a backend disconnect")
+if not continuity["protocol_sequences_strictly_increasing"]:
+    raise SystemExit("IPC latency protocol ordering failed")
+load = record["saturation"]
+host = record["host"]
+if not {"logical_cpus", "affinity_cpus", "kernel"}.issubset(host):
+    raise SystemExit("IPC latency host identity is incomplete")
+affinity = host["affinity_cpus"]
+if not load["alive_for_every_observation"] or not load["completed_after_measurement"]:
+    raise SystemExit("CPU saturation did not span every IPC observation")
+if load["configuration"]["selected_cpus"] != affinity:
+    raise SystemExit("IPC latency evidence deliberately left an affinity CPU free")
+if load["configuration"]["requested_workers"] != len(affinity):
+    raise SystemExit("IPC latency evidence did not run one worker per affinity CPU")
+if load["achieved"]["minimum_worker_cpu_percent"] < 25:
+    raise SystemExit("IPC latency evidence did not keep every CPU runnable")
+if load["achieved"]["host_cpu_utilization_percent"] < 90:
+    raise SystemExit("IPC latency host was not saturated")
+if load["cleanup"]["children_reaped"] is not True:
+    raise SystemExit("IPC latency load workers were not reaped")
+print(
+    "IPC latency valid under full-CPU load: event p95 "
+    f"{summary['daemon_event_to_client_ms']['p95']:.3f} ms, command p95 "
+    f"{summary['client_command_to_daemon_ms']['p95']:.3f} ms, cancellation p95 "
+    f"{summary['cancellation_request_to_ack_ms']['p95']:.3f} ms"
+)
+PY
+
+  python3 -m unittest scripts/test_measure_ipc_latency.py
+  cargo build -q -p yoctui
+  current="$(mktemp /tmp/yoctui-ipc-latency-current.XXXXXX.json)"
+  trap 'unlink "$current" 2>/dev/null || true' RETURN
+  ./scripts/measure-ipc-latency.py \
+    --binary target/debug/yoctui \
+    --revision "$(git rev-parse HEAD)" \
+    --warmup-seconds 0.5 \
+    --observations 100 \
+    --output "$current" >/dev/null
+  python3 - "$current" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+summary = record["summary"]
+for metric in ("daemon_event_to_client_ms", "client_command_to_daemon_ms"):
+    if summary[metric]["p50"] > 25 or summary[metric]["p95"] > 100:
+        raise SystemExit(f"current ordinary IPC latency exceeds its threshold: {metric}")
+if summary["cancellation_request_to_ack_ms"]["p95"] > 250:
+    raise SystemExit("current cancellation acknowledgement exceeds 250 ms")
+if summary["accepted_cancellation_requests"] < 2:
+    raise SystemExit("current cancellation path did not remain functional")
+load = record["saturation"]
+if (
+    not load["alive_for_every_observation"]
+    or load["achieved"]["minimum_worker_cpu_percent"] < 25
+    or load["achieved"]["host_cpu_utilization_percent"] < 90
+):
+    raise SystemExit("current IPC latency run lacked full-CPU saturation")
+print("current daemon event, command, and cancellation IPC latency remain bounded")
+PY
+  trap - RETURN
+  unlink "$current"
+}
+
 case "$mode" in
   --event-flood)
     verify_backpressure
@@ -115,6 +267,9 @@ case "$mode" in
   --backpressure)
     verify_source_and_unit_contracts
     verify_backpressure
+    ;;
+  --latency)
+    verify_latency
     ;;
   all)
     verify_source_and_unit_contracts
