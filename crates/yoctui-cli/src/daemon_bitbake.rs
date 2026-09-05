@@ -1,6 +1,10 @@
 use std::{
-    collections::{BTreeMap, HashMap},
+    collections::{BTreeMap, HashMap, VecDeque},
     path::PathBuf,
+    sync::{
+        Arc,
+        atomic::{AtomicU64, AtomicUsize, Ordering},
+    },
     time::Duration,
 };
 
@@ -10,6 +14,8 @@ use yoctui_model::{BuildRequest, DaemonCompatibilitySnapshot};
 use yoctui_protocol::daemon::JobId;
 
 const DEFAULT_CANCELLATION_TERMINAL_TIMEOUT: Duration = Duration::from_secs(3);
+const BITBAKE_RELIABLE_EVENT_CAPACITY: usize = 512;
+const BITBAKE_COSMETIC_EVENT_CAPACITY: usize = 512;
 
 #[derive(Debug, Clone)]
 pub enum DaemonBitBakeEvent {
@@ -23,13 +29,38 @@ pub enum DaemonBitBakeEvent {
     },
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct DaemonBitBakePressure {
+    pub reliable_enqueued: u64,
+    pub cosmetic_enqueued: u64,
+    pub cosmetic_dropped: u64,
+    pub reliable_waits: u64,
+    pub cancellation_stale_discarded: u64,
+    pub maximum_queue_depth: usize,
+    pub current_queue_depth: usize,
+}
+
+#[derive(Debug, Default)]
+struct DaemonBitBakePressureShared {
+    reliable_enqueued: AtomicU64,
+    cosmetic_enqueued: AtomicU64,
+    cosmetic_dropped: AtomicU64,
+    reliable_waits: AtomicU64,
+    cancellation_stale_discarded: AtomicU64,
+    maximum_queue_depth: AtomicUsize,
+}
+
 pub struct DaemonBitBakeSupervisor {
     next_job_id: u64,
     active: HashMap<JobId, mpsc::UnboundedSender<()>>,
-    tx: mpsc::UnboundedSender<DaemonBitBakeEvent>,
-    rx: mpsc::UnboundedReceiver<DaemonBitBakeEvent>,
-    cancellation_terminal_tx: mpsc::UnboundedSender<DaemonBitBakeEvent>,
-    cancellation_terminal_rx: mpsc::UnboundedReceiver<DaemonBitBakeEvent>,
+    reliable_tx: mpsc::Sender<DaemonBitBakeEvent>,
+    reliable_rx: mpsc::Receiver<DaemonBitBakeEvent>,
+    cosmetic_tx: mpsc::Sender<DaemonBitBakeEvent>,
+    cosmetic_rx: mpsc::Receiver<DaemonBitBakeEvent>,
+    cancellation_terminal_tx: mpsc::Sender<DaemonBitBakeEvent>,
+    cancellation_terminal_rx: mpsc::Receiver<DaemonBitBakeEvent>,
+    post_cancellation_diagnostics: VecDeque<DaemonBitBakeEvent>,
+    pressure: Arc<DaemonBitBakePressureShared>,
     compatibility: Option<DaemonCompatibilitySnapshot>,
     bridge_environment: Option<BTreeMap<String, String>>,
     cancellation_terminal_timeout: Duration,
@@ -37,15 +68,20 @@ pub struct DaemonBitBakeSupervisor {
 
 impl Default for DaemonBitBakeSupervisor {
     fn default() -> Self {
-        let (tx, rx) = mpsc::unbounded_channel();
-        let (cancellation_terminal_tx, cancellation_terminal_rx) = mpsc::unbounded_channel();
+        let (reliable_tx, reliable_rx) = mpsc::channel(BITBAKE_RELIABLE_EVENT_CAPACITY);
+        let (cosmetic_tx, cosmetic_rx) = mpsc::channel(BITBAKE_COSMETIC_EVENT_CAPACITY);
+        let (cancellation_terminal_tx, cancellation_terminal_rx) = mpsc::channel(1);
         Self {
             next_job_id: 1,
             active: HashMap::new(),
-            tx,
-            rx,
+            reliable_tx,
+            reliable_rx,
+            cosmetic_tx,
+            cosmetic_rx,
             cancellation_terminal_tx,
             cancellation_terminal_rx,
+            post_cancellation_diagnostics: VecDeque::new(),
+            pressure: Arc::new(DaemonBitBakePressureShared::default()),
             compatibility: None,
             bridge_environment: None,
             cancellation_terminal_timeout: DEFAULT_CANCELLATION_TERMINAL_TIMEOUT,
@@ -101,7 +137,9 @@ impl DaemonBitBakeSupervisor {
         self.next_job_id = self.next_job_id.saturating_add(1);
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(job_id, cancel_tx);
-        let tx = self.tx.clone();
+        let reliable_tx = self.reliable_tx.clone();
+        let cosmetic_tx = self.cosmetic_tx.clone();
+        let pressure = Arc::clone(&self.pressure);
         let cancellation_terminal_tx = self.cancellation_terminal_tx.clone();
         let bridge_environment = self.bridge_environment.clone();
         let cancellation_terminal_timeout = self.cancellation_terminal_timeout;
@@ -117,10 +155,16 @@ impl DaemonBitBakeSupervisor {
             {
                 Ok(backend) => backend,
                 Err(error) => {
-                    let _ = tx.send(DaemonBitBakeEvent::Failed {
-                        job_id,
-                        message: format!("BitBake bridge could not be started: {error}"),
-                    });
+                    send_bitbake_event(
+                        &reliable_tx,
+                        &cosmetic_tx,
+                        &pressure,
+                        DaemonBitBakeEvent::Failed {
+                            job_id,
+                            message: format!("BitBake bridge could not be started: {error}"),
+                        },
+                    )
+                    .await;
                     return;
                 }
             };
@@ -145,25 +189,43 @@ impl DaemonBitBakeSupervisor {
                             "daemon BitBake layer inventory is unavailable"
                         ),
                     }
-                    let _ = tx.send(DaemonBitBakeEvent::Backend {
-                        job_id,
-                        event: Box::new(BackendEvent::Workspace(workspace)),
-                    });
+                    send_bitbake_event(
+                        &reliable_tx,
+                        &cosmetic_tx,
+                        &pressure,
+                        DaemonBitBakeEvent::Backend {
+                            job_id,
+                            event: Box::new(BackendEvent::Workspace(workspace)),
+                        },
+                    )
+                    .await;
                 }
                 Err(error) => {
-                    let _ = tx.send(DaemonBitBakeEvent::Failed {
-                        job_id,
-                        message: format!("BitBake workspace could not be inspected: {error}"),
-                    });
+                    send_bitbake_event(
+                        &reliable_tx,
+                        &cosmetic_tx,
+                        &pressure,
+                        DaemonBitBakeEvent::Failed {
+                            job_id,
+                            message: format!("BitBake workspace could not be inspected: {error}"),
+                        },
+                    )
+                    .await;
                     let _ = backend.shutdown().await;
                     return;
                 }
             }
             if let Err(error) = backend.start_build(request).await {
-                let _ = tx.send(DaemonBitBakeEvent::Failed {
-                    job_id,
-                    message: format!("BitBake build could not be started: {error}"),
-                });
+                send_bitbake_event(
+                    &reliable_tx,
+                    &cosmetic_tx,
+                    &pressure,
+                    DaemonBitBakeEvent::Failed {
+                        job_id,
+                        message: format!("BitBake build could not be started: {error}"),
+                    },
+                )
+                .await;
                 let _ = backend.shutdown().await;
                 return;
             }
@@ -192,7 +254,7 @@ impl DaemonBitBakeSupervisor {
                                 success: false,
                                 exit_code: Some(130),
                             }),
-                        });
+                        }).await;
                         break;
                     }
                     cancel = cancel_rx.recv() => {
@@ -204,7 +266,7 @@ impl DaemonBitBakeSupervisor {
                                 let _ = cancellation_terminal_tx.send(DaemonBitBakeEvent::Failed {
                                     job_id,
                                     message: format!("BitBake cancellation failed: {error}"),
-                                });
+                                }).await;
                                 break;
                             }
                             cancellation_deadline
@@ -245,14 +307,26 @@ impl DaemonBitBakeSupervisor {
                                 // records already queued before the request;
                                 // try_event discards those stale records so
                                 // they cannot resurrect the cancelled job.
-                                let _ = cancellation_terminal_tx.send(event);
+                                let _ = cancellation_terminal_tx.send(event).await;
                             } else {
-                                let _ = tx.send(event);
+                                send_bitbake_event(
+                                    &reliable_tx,
+                                    &cosmetic_tx,
+                                    &pressure,
+                                    event,
+                                )
+                                .await;
                             }
                             if terminal { break; }
                         }
                         Err(error) => {
-                            let _ = tx.send(DaemonBitBakeEvent::Failed { job_id, message: error.to_string() });
+                            send_bitbake_event(
+                                &reliable_tx,
+                                &cosmetic_tx,
+                                &pressure,
+                                DaemonBitBakeEvent::Failed { job_id, message: error.to_string() },
+                            )
+                            .await;
                             break;
                         }
                     }
@@ -278,7 +352,20 @@ impl DaemonBitBakeSupervisor {
             // Only one BitBake build may be active, so every queued regular
             // record belongs to the now-cancelled job and is stale by the
             // authoritative cancellation terminal.
-            while self.rx.try_recv().is_ok() {}
+            while let Ok(stale) = self.reliable_rx.try_recv() {
+                if bitbake_event_is_diagnostic(&stale) {
+                    self.post_cancellation_diagnostics.push_back(stale);
+                } else {
+                    self.pressure
+                        .cancellation_stale_discarded
+                        .fetch_add(1, Ordering::Relaxed);
+                }
+            }
+            while self.cosmetic_rx.try_recv().is_ok() {
+                self.pressure
+                    .cancellation_stale_discarded
+                    .fetch_add(1, Ordering::Relaxed);
+            }
             let id = match event {
                 DaemonBitBakeEvent::Backend { job_id, .. }
                 | DaemonBitBakeEvent::Failed { job_id, .. } => job_id,
@@ -286,7 +373,11 @@ impl DaemonBitBakeSupervisor {
             self.active.remove(&id);
             return Some(event);
         }
-        let event = self.rx.try_recv().ok()?;
+        let event = self
+            .post_cancellation_diagnostics
+            .pop_front()
+            .or_else(|| self.reliable_rx.try_recv().ok())
+            .or_else(|| self.cosmetic_rx.try_recv().ok())?;
         let terminal = match &event {
             DaemonBitBakeEvent::Backend { event, .. } => matches!(
                 event.as_ref(),
@@ -305,6 +396,99 @@ impl DaemonBitBakeSupervisor {
         }
         Some(event)
     }
+
+    pub fn pressure(&self) -> DaemonBitBakePressure {
+        let current_queue_depth = (BITBAKE_RELIABLE_EVENT_CAPACITY - self.reliable_tx.capacity())
+            .saturating_add(BITBAKE_COSMETIC_EVENT_CAPACITY - self.cosmetic_tx.capacity())
+            .saturating_add(self.post_cancellation_diagnostics.len());
+        DaemonBitBakePressure {
+            reliable_enqueued: self.pressure.reliable_enqueued.load(Ordering::Relaxed),
+            cosmetic_enqueued: self.pressure.cosmetic_enqueued.load(Ordering::Relaxed),
+            cosmetic_dropped: self.pressure.cosmetic_dropped.load(Ordering::Relaxed),
+            reliable_waits: self.pressure.reliable_waits.load(Ordering::Relaxed),
+            cancellation_stale_discarded: self
+                .pressure
+                .cancellation_stale_discarded
+                .load(Ordering::Relaxed),
+            maximum_queue_depth: self.pressure.maximum_queue_depth.load(Ordering::Relaxed),
+            current_queue_depth,
+        }
+    }
+}
+
+async fn send_bitbake_event(
+    reliable: &mpsc::Sender<DaemonBitBakeEvent>,
+    cosmetic: &mpsc::Sender<DaemonBitBakeEvent>,
+    pressure: &DaemonBitBakePressureShared,
+    event: DaemonBitBakeEvent,
+) {
+    if bitbake_event_is_cosmetic(&event) {
+        match cosmetic.try_send(event) {
+            Ok(()) => {
+                pressure.cosmetic_enqueued.fetch_add(1, Ordering::Relaxed);
+                record_queue_depth(reliable, cosmetic, pressure);
+            }
+            Err(mpsc::error::TrySendError::Full(_)) => {
+                pressure.cosmetic_dropped.fetch_add(1, Ordering::Relaxed);
+            }
+            Err(mpsc::error::TrySendError::Closed(_)) => {}
+        }
+    } else {
+        if reliable.capacity() == 0 {
+            pressure.reliable_waits.fetch_add(1, Ordering::Relaxed);
+        }
+        if reliable.send(event).await.is_ok() {
+            pressure.reliable_enqueued.fetch_add(1, Ordering::Relaxed);
+            record_queue_depth(reliable, cosmetic, pressure);
+        }
+    }
+}
+
+fn record_queue_depth(
+    reliable: &mpsc::Sender<DaemonBitBakeEvent>,
+    cosmetic: &mpsc::Sender<DaemonBitBakeEvent>,
+    pressure: &DaemonBitBakePressureShared,
+) {
+    let depth = (reliable.max_capacity() - reliable.capacity())
+        .saturating_add(cosmetic.max_capacity() - cosmetic.capacity());
+    pressure
+        .maximum_queue_depth
+        .fetch_max(depth, Ordering::Relaxed);
+}
+
+fn bitbake_event_is_cosmetic(event: &DaemonBitBakeEvent) -> bool {
+    matches!(
+        event,
+        DaemonBitBakeEvent::Backend { event, .. }
+            if matches!(
+                event.as_ref(),
+                BackendEvent::ParseProgress { .. }
+                    | BackendEvent::TaskProgress { .. }
+                    | BackendEvent::Log(yoctui_model::LogEntry {
+                        severity: yoctui_model::Severity::Trace | yoctui_model::Severity::Info,
+                        ..
+                    })
+                    | BackendEvent::Ignored
+            )
+    )
+}
+
+fn bitbake_event_is_diagnostic(event: &DaemonBitBakeEvent) -> bool {
+    matches!(event, DaemonBitBakeEvent::Failed { .. })
+        || matches!(
+            event,
+            DaemonBitBakeEvent::Backend { event, .. }
+                if matches!(
+                    event.as_ref(),
+                    BackendEvent::CommandFailed { .. }
+                        | BackendEvent::Disconnected
+                        | BackendEvent::Log(yoctui_model::LogEntry {
+                            severity: yoctui_model::Severity::Warning
+                                | yoctui_model::Severity::Error,
+                            ..
+                        })
+                )
+        )
 }
 
 #[cfg(test)]
@@ -323,6 +507,75 @@ mod tests {
     };
 
     static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(1);
+
+    fn log_event(severity: yoctui_model::Severity, message: &str) -> DaemonBitBakeEvent {
+        DaemonBitBakeEvent::Backend {
+            job_id: JobId(1),
+            event: Box::new(BackendEvent::Log(yoctui_model::LogEntry {
+                id: 0,
+                severity,
+                message: message.into(),
+                recipe: None,
+                task: None,
+                path: None,
+                timestamp: std::time::SystemTime::UNIX_EPOCH,
+                build: None,
+                protected: false,
+                diagnostic: None,
+            })),
+        }
+    }
+
+    #[tokio::test]
+    async fn bounded_priority_ingress_drops_only_cosmetic_events() {
+        let (reliable_tx, mut reliable_rx) = mpsc::channel(2);
+        let (cosmetic_tx, cosmetic_rx) = mpsc::channel(2);
+        let pressure = DaemonBitBakePressureShared::default();
+
+        for message in ["ordinary-1", "ordinary-2", "ordinary-dropped"] {
+            send_bitbake_event(
+                &reliable_tx,
+                &cosmetic_tx,
+                &pressure,
+                log_event(yoctui_model::Severity::Info, message),
+            )
+            .await;
+        }
+        send_bitbake_event(
+            &reliable_tx,
+            &cosmetic_tx,
+            &pressure,
+            log_event(yoctui_model::Severity::Warning, "warning-retained"),
+        )
+        .await;
+        send_bitbake_event(
+            &reliable_tx,
+            &cosmetic_tx,
+            &pressure,
+            DaemonBitBakeEvent::Backend {
+                job_id: JobId(1),
+                event: Box::new(BackendEvent::BuildCompleted {
+                    success: false,
+                    exit_code: Some(1),
+                }),
+            },
+        )
+        .await;
+
+        assert_eq!(pressure.cosmetic_dropped.load(Ordering::Relaxed), 1);
+        assert_eq!(pressure.reliable_enqueued.load(Ordering::Relaxed), 2);
+        assert_eq!(pressure.cosmetic_enqueued.load(Ordering::Relaxed), 2);
+        assert_eq!(pressure.maximum_queue_depth.load(Ordering::Relaxed), 4);
+        assert!(bitbake_event_is_diagnostic(
+            &reliable_rx.try_recv().unwrap()
+        ));
+        assert!(matches!(
+            reliable_rx.try_recv().unwrap(),
+            DaemonBitBakeEvent::Backend { event, .. }
+                if matches!(event.as_ref(), BackendEvent::BuildCompleted { .. })
+        ));
+        assert_eq!(cosmetic_rx.len(), 2);
+    }
 
     fn cancellation_authority(build: &Path) -> DaemonCompatibilitySnapshot {
         let capabilities = [

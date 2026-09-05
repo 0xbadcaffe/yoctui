@@ -303,9 +303,10 @@ cannot inject a spike or synthetic zero.
 
 Daemon connection/BitBake/client/session facts come from the current typed
 replica/snapshot; uptime and the exact nonterminal job count come from the
-one-second daemon telemetry event. The legacy `queue_depth` event member is not
-an authority for queued work because the runtime currently fills it with the
-connected-client count, so renderers ignore it. Daemon resident memory remains
+one-second daemon telemetry event. The legacy `queue_depth` event member and
+the typed pressure projection now report current bounded ingress/client
+backlog, while the nested pressure counters are authoritative for the high-water
+mark and loss/wait/isolation totals. Daemon resident memory remains
 diagnostic-only because `/proc/self/statm` pages are currently multiplied by an
 assumed 4096-byte size. These limitations stay explicit until a task changes
 the sampler/protocol rather than being repaired in a widget.
@@ -3576,14 +3577,28 @@ infallible build/log reductions update the snapshot in place, while event
 variants with validation failure paths retain transactional clone-before-apply
 semantics.
 
-An attached client consumes at most four journal records per daemon service
+An attached client consumes at most 32 journal records per daemon service
 slice. Falling behind within retained history therefore continues as bounded
 incremental replay instead of repeatedly replacing the replica with a large
 snapshot. A history gap still produces one explicit resynchronization and
 current snapshot. Each sequence is encoded once per service slice and the
-immutable frame is reused for every caught-up client. This removes redundant
-serialization but does not yet constitute slow-client isolation: the following
-backpressure task owns per-client bounded outbound queues and priority policy.
+immutable frame is reused for every caught-up client. Each client's independent
+cursor backlog is bounded by the 4,096-record journal. Socket readability is
+checked without waiting; an incomplete input frame or full output socket gets a
+two-millisecond deadline. A non-reading peer is disconnected after that bound,
+so it cannot delay another client, journal reduction, or BitBake ingestion and
+can reconnect through the normal snapshot/replay path.
+
+BitBake supervisor ingress has independent 512-record reliable and cosmetic
+lanes. Build lifecycle, task transitions, warnings, errors, failures, and
+disconnects enter the reliable lane with asynchronous bounded backpressure;
+parse/task progress and ordinary info/trace logs use nonblocking cosmetic
+admission and may be discarded only when that lane is full. The daemon drains
+reliable events first. Cancellation has its one-record control lane, discards
+stale progress/lifecycle records, and retains already queued diagnostics.
+Telemetry publishes current/high-water queue depth, cosmetic coalesced/dropped,
+reliable waits, forced resyncs, and slow-client disconnects through the typed
+protocol and client model.
 
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
@@ -3607,10 +3622,11 @@ The production observer does not inject daemon state. It starts an isolated
 daemon, submits a normal typed `StartBuild`, and observes the existing
 `BridgeBackend -> DaemonBitBakeSupervisor -> DaemonSnapshotJournal -> Unix IPC`
 path with an attached protocol client and a second continuity attach. It records
-generated and received critical sets, daemon RSS, sequence monotonicity, snapshot
-replacement, declared model bounds, and the current unbounded supervisor-ingress
-failure. A harness pass means the known failure was detected; only the later
-strict IPC/backpressure gate may claim critical-event retention.
+generated and received critical sets, daemon RSS, sequence monotonicity,
+snapshot replacement, declared queue bounds, and typed pressure counters. Its
+strict mode also attaches a deliberately non-reading small-buffer peer, proves
+the healthy observer retains every sentinel without resync, and performs a new
+post-flood attach to prove reconnect recovery.
 
 The daemon's Unix listener uses kernel readiness waiting rather than a
 sleep/retry accept loop. With no client, active job, or active PTY, the outer

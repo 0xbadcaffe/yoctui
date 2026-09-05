@@ -7143,18 +7143,18 @@ notes = "The v0.1.34 production-path audit ties optimization to the captured 34.
 id = "PERF-IPC-BACKPRESSURE-001"
 milestone = "M46"
 title = "Implement bounded priority-aware IPC backpressure"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 802
 required = true
 depends_on = ["PERF-IPC-001"]
 verify = ["./scripts/verify-ipc-continuity.sh --backpressure"]
-notes = "Isolate slow clients with bounded queues and pressure counters; only cosmetic progress, telemetry, and ordinary logs may coalesce while correctness events never drop."
+notes = "The v0.1.35 BitBake supervisor uses separate fixed 512-record reliable and cosmetic lanes. Lifecycle, task transitions, warnings, errors, failures, and disconnects outrank parse/task progress and ordinary logs; only cosmetic admission can drop when full. Attached clients use readiness-driven input, 32-event bounded journal catch-up, and a two-millisecond full-socket deadline; a non-reader is isolated without stalling a healthy peer and can recover through normal attach/replay authority. Typed daemon telemetry and System Status expose queue current/high-water, cosmetic coalesced/dropped, reliable waits, forced resyncs, and slow-client disconnects. The strict 4,000-event/s production-path gate retains all sentinels in order with no healthy-client resync and proves post-flood attach; unit tests fill cosmetic ingress without losing warnings or terminal state and retain cancellation priority."
 
 [[task]]
 id = "PERF-BITBAKE-CONN-001"
 milestone = "M46"
 title = "Harden BitBake connectivity under CPU saturation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 803
 required = true
 depends_on = ["PERF-IPC-001", "PERF-EVENTLOOP-001"]

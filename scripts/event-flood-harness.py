@@ -31,8 +31,12 @@ CRITICAL_NAMES = {
 
 
 class ProtocolClient:
-    def __init__(self, socket_path: Path, client_byte: int = 9) -> None:
+    def __init__(
+        self, socket_path: Path, client_byte: int = 9, receive_buffer_bytes: int | None = None
+    ) -> None:
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        if receive_buffer_bytes is not None:
+            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, receive_buffer_bytes)
         self.socket.settimeout(0.25)
         self.socket.connect(str(socket_path))
         self.client_id = [client_byte] * 16
@@ -176,6 +180,25 @@ def classify_message(message: dict[str, object], observed: set[str]) -> None:
         classify_build(data, observed)
 
 
+def observe_pressure(
+    message: dict[str, object], observed: dict[str, int]
+) -> None:
+    if message.get("type") != "event":
+        return
+    event = message.get("event")
+    if not isinstance(event, dict) or event.get("type") != "telemetry":
+        return
+    data = event.get("data")
+    if not isinstance(data, dict):
+        return
+    pressure = data.get("pressure")
+    if not isinstance(pressure, dict):
+        return
+    for key, value in pressure.items():
+        if isinstance(value, int):
+            observed[key] = max(observed.get(key, 0), value)
+
+
 def classify_log(record: dict[str, object], observed: set[str]) -> None:
     message = record.get("message")
     if message == "PERF_CRITICAL_WARNING":
@@ -302,6 +325,7 @@ def main() -> int:
     parser.add_argument("--duration-seconds", type=float, default=1.0)
     parser.add_argument("--observation-seconds", type=float, default=1.5)
     parser.add_argument("--expect-pre-backpressure-failure", action="store_true")
+    parser.add_argument("--include-slow-client", action="store_true")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     if (
@@ -321,6 +345,7 @@ def main() -> int:
             binary, root, args.rate, args.duration_seconds
         )
         observed: set[str] = set()
+        observed_pressure: dict[str, int] = {}
         frame_count = 0
         snapshots = 0
         resyncs = 0
@@ -328,9 +353,13 @@ def main() -> int:
         rss_samples: list[int] = []
         client_continuity = False
         generated: dict[str, object] | None = None
+        slow_client: ProtocolClient | None = None
         try:
             client = ProtocolClient(socket_path)
             initial = client.attach()
+            if args.include_slow_client:
+                slow_client = ProtocolClient(socket_path, 11, receive_buffer_bytes=4_096)
+                slow_client.attach()
             initial_snapshot_bytes = len(
                 json.dumps(initial, separators=(",", ":")).encode()
             )
@@ -370,6 +399,7 @@ def main() -> int:
                     if isinstance(sequence, int):
                         sequences.append(sequence)
                     classify_message(message, observed)
+                    observe_pressure(message, observed_pressure)
                 if generator_report.exists() and report_seen_at is None:
                     report_seen_at = time.monotonic()
                 if (
@@ -405,6 +435,8 @@ def main() -> int:
                 raise RuntimeError("event generator did not publish its bounded report")
             generated = json.loads(generator_report.read_text(encoding="utf-8"))
         finally:
+            if slow_client is not None:
+                slow_client.socket.close()
             stop_daemon(daemon)
         if generated is None:
             raise RuntimeError("event generator report was not loaded")
@@ -443,6 +475,7 @@ def main() -> int:
                     "unix_ipc",
                     "attached_protocol_client",
                 ],
+                "slow_client_enabled": args.include_slow_client,
             },
             "generator": generated,
             "client": {
@@ -451,9 +484,11 @@ def main() -> int:
                 "resync_requests": resyncs,
                 "event_sequences_strictly_increasing": ordered_sequences,
                 "connection_continuity": client_continuity,
+                "reconnect_probe_succeeded": client_continuity,
                 "critical_received": critical_received,
                 "critical_missing": missing,
                 "wire_metrics": wire_metrics,
+                "pressure": observed_pressure,
             },
             "bounds": {
                 "daemon_rss_initial_bytes": rss_samples[0] if rss_samples else None,
@@ -462,7 +497,11 @@ def main() -> int:
                 "journal_retained_events": 4096,
                 "snapshot_build_events": 2048,
                 "snapshot_recent_logs": 512,
-                "supervisor_ingress": "unbounded_pre_backpressure",
+                "supervisor_ingress": "bounded_priority_lanes",
+                "supervisor_reliable_events": 512,
+                "supervisor_cosmetic_events": 512,
+                "per_client_backlog_events": 4_096,
+                "slow_client_write_deadline_milliseconds": 2,
             },
             "result": {
                 "critical_retention_passed": retention_passed,

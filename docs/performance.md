@@ -169,10 +169,11 @@ critical bridge sequences, and terminal outcome.
 bridge backend, BitBake supervisor, daemon reducer/journal, Unix IPC, and an
 attached client. It records RSS, client frames, resynchronizations, connection
 continuity, ordered received sequences, sent/received critical sets, and the
-declared journal/snapshot bounds. Until bounded priority ingress lands, the
-focused verifier requires this observer to expose terminal starvation and labels
-the supervisor queue `unbounded_pre_backpressure`; it explicitly does not claim
-that IPC backpressure passes:
+declared journal/snapshot bounds. The retained PERF-IPC audit intentionally
+records the former `unbounded_pre_backpressure` terminal starvation. Current
+strict mode adds a non-reading client, requires every sentinel at the healthy
+client, validates typed pressure counters, and proves a fresh attach after the
+flood:
 
 ```sh
 ./scripts/verify-ipc-continuity.sh --event-flood
@@ -263,6 +264,29 @@ seconds over 4.19 seconds.
 
 ```sh
 ./scripts/verify-performance.sh --ipc
+```
+
+Backpressure is enforced at both sides of daemon ownership. BitBake events use
+separate fixed 512-record reliable and cosmetic lanes; lifecycle, task
+transitions, warnings, errors, failures, and disconnects outrank parse/task
+progress and ordinary logs. Only the cosmetic lane uses nonblocking loss when
+full. A client's pending sequence range is independently bounded by the 4,096
+event journal, each service slice advances at most 32 events, and socket reads
+are readiness-driven. A full non-reading socket can delay incremental fan-out
+by at most two milliseconds before that peer is isolated; bounded handshake
+and authoritative snapshot writes retain a one-second saturation allowance.
+Healthy peers continue and a fresh client can attach from current authority.
+
+Daemon telemetry exposes `current_queue_depth`, `maximum_queue_depth`,
+`cosmetic_coalesced`, `cosmetic_dropped`, `reliable_waits`,
+`forced_resynchronizations`, and `slow_client_disconnects`. Nonzero values are
+also projected in System Status as `IPC Q current/high C/D/W/R/S`. The strict
+4,000-event/s gate requires every warning/error/task/failure/terminal sentinel,
+strict client sequence order, zero healthy-client resyncs, one isolated
+non-reader, and a successful new attach:
+
+```sh
+./scripts/verify-ipc-continuity.sh --backpressure
 ```
 
 The offline aggregate verifier is `./scripts/verify-performance.sh`.

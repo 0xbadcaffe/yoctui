@@ -556,8 +556,20 @@ pub struct ClientDaemonTelemetry {
     pub active_jobs: usize,
     pub pty_sessions: usize,
     pub queue_depth: usize,
+    pub pressure: ClientDaemonPressureCounters,
     pub memory_bytes: Option<u64>,
     pub recovery: DaemonRecoveryState,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct ClientDaemonPressureCounters {
+    pub current_queue_depth: usize,
+    pub maximum_queue_depth: usize,
+    pub cosmetic_coalesced: u64,
+    pub cosmetic_dropped: u64,
+    pub reliable_waits: u64,
+    pub forced_resynchronizations: u64,
+    pub slow_client_disconnects: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -2407,7 +2407,7 @@ fn stop_daemon() -> Result<()> {
 }
 
 #[cfg(unix)]
-const MAX_DAEMON_CLIENT_EVENTS_PER_TICK: usize = 4;
+const MAX_DAEMON_CLIENT_EVENTS_PER_TICK: usize = 32;
 
 #[cfg(unix)]
 const _: () = assert!(MAX_DAEMON_CLIENT_EVENTS_PER_TICK < client_runtime::MAX_EVENTS_PER_POLL);
@@ -2504,11 +2504,11 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     use yoctui_protocol::{
         daemon::{
             Capability, ClientId, ClientMessage, CommandOutcome, CommandResult, DaemonCommand,
-            DaemonHello, DaemonRecoveryState, DaemonSnapshotJournal, DaemonSnapshotLimits,
-            DaemonSnapshotSync, DaemonTelemetry, MAX_DAEMON_CLIENTS, MAX_DAEMON_PTY_SESSIONS,
-            MAX_FRAME_BYTES, MAX_TERMINAL_SCROLLBACK_LINES, MAX_UTILITY_OUTPUT_BYTES,
-            ProtocolLimits, ProtocolVersion, ServerMessage, SnapshotReplacementReason,
-            encode_frame,
+            DaemonHello, DaemonPressureCounters, DaemonRecoveryState, DaemonSnapshotJournal,
+            DaemonSnapshotLimits, DaemonSnapshotSync, DaemonTelemetry, MAX_DAEMON_CLIENTS,
+            MAX_DAEMON_PTY_SESSIONS, MAX_FRAME_BYTES, MAX_TERMINAL_SCROLLBACK_LINES,
+            MAX_UTILITY_OUTPUT_BYTES, ProtocolLimits, ProtocolVersion, ServerMessage,
+            SnapshotReplacementReason, encode_frame,
         },
         daemon_ipc::{DaemonConnection, DaemonListener, IpcError, runtime_paths},
         daemon_lifecycle::{
@@ -2662,6 +2662,9 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     let mut clients: Vec<(DaemonConnection, bool, bool, u64, ClientId)> = Vec::new();
     let mut shutting_down = false;
     let mut last_telemetry_ms = record.started_unix_ms;
+    let mut maximum_client_backlog = 0_usize;
+    let mut forced_client_resynchronizations = 0_u64;
+    let mut slow_client_disconnects = 0_u64;
     const MAX_SUPERVISOR_EVENTS_PER_TICK: usize = 32;
     // Keep socket production comfortably below the interactive client's
     // bounded 64-event/8-ms poll. A busy reducer may not consume all 64 before
@@ -2775,6 +2778,16 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         }
         let now_ms = unix_ms();
         let active_work = daemon_has_active_work(daemon_journal.snapshot());
+        let current_client_backlog = clients
+            .iter()
+            .filter(|(_, _, attached, _, _)| *attached)
+            .map(|(_, _, _, sequence, _)| {
+                usize::try_from(daemon_journal.snapshot().sequence.saturating_sub(*sequence))
+                    .unwrap_or(usize::MAX)
+                    .min(daemon_journal.retained_event_capacity())
+            })
+            .sum::<usize>();
+        maximum_client_backlog = maximum_client_backlog.max(current_client_backlog);
         let attached_clients = clients
             .iter()
             .filter(|(_, _, attached, _, _)| *attached)
@@ -2785,6 +2798,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 >= u64::try_from(interval.as_millis()).unwrap_or(u64::MAX)
         }) {
             let snapshot = daemon_journal.snapshot();
+            let bitbake_pressure = bitbake_supervisor.pressure();
             let active_jobs = snapshot
                 .jobs
                 .iter()
@@ -2804,7 +2818,27 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                     connected_clients: attached_clients.min(u16::MAX as usize) as u16,
                     active_jobs: active_jobs.min(u16::MAX as usize) as u16,
                     pty_sessions: snapshot.pty_sessions.len().min(u16::MAX as usize) as u16,
-                    queue_depth: clients.len().min(u16::MAX as usize) as u16,
+                    queue_depth: bitbake_pressure
+                        .current_queue_depth
+                        .saturating_add(current_client_backlog)
+                        .min(u16::MAX as usize) as u16,
+                    pressure: DaemonPressureCounters {
+                        current_queue_depth: bitbake_pressure
+                            .current_queue_depth
+                            .saturating_add(current_client_backlog)
+                            .min(u32::MAX as usize)
+                            as u32,
+                        maximum_queue_depth: bitbake_pressure
+                            .maximum_queue_depth
+                            .saturating_add(maximum_client_backlog)
+                            .min(u32::MAX as usize)
+                            as u32,
+                        cosmetic_coalesced: 0,
+                        cosmetic_dropped: bitbake_pressure.cosmetic_dropped,
+                        reliable_waits: bitbake_pressure.reliable_waits,
+                        forced_resynchronizations: forced_client_resynchronizations,
+                        slow_client_disconnects,
+                    },
                     memory_bytes: process_memory_bytes(),
                     recovery: if persisted.is_some() {
                         DaemonRecoveryState::Recovered
@@ -2821,11 +2855,13 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         let accept_timeout = daemon_accept_timeout(!clients.is_empty(), active_work);
         match listener.accept(accept_timeout) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
-                // Idle clients get short read slices so supervisor events and
-                // other clients remain responsive. Snapshot/event frames may
-                // be several MiB, so writes retain a larger bounded deadline.
-                connection.set_read_timeout(Some(Duration::from_millis(50)))?;
-                connection.set_write_timeout(Some(Duration::from_secs(5)))?;
+                // Read readiness is checked before receiving; this short
+                // deadline only bounds a peer that stalls midway through a
+                // frame. Handshake and replacement snapshots retain a
+                // saturation-tolerant bounded write deadline; only live event
+                // fan-out uses the short slow-client isolation slice below.
+                connection.set_read_timeout(Some(Duration::from_millis(2)))?;
+                connection.set_write_timeout(Some(Duration::from_secs(1)))?;
                 clients.push((
                     connection,
                     false,
@@ -2866,14 +2902,19 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                     entry.insert(encode_frame(&ServerMessage::Event(event))?)
                                 }
                             };
-                            if let Err(error) = connection.send_encoded_frame(frame) {
+                            if let Err(error) = connection
+                                .send_encoded_frame_with_timeout(frame, Duration::from_millis(2))
+                            {
                                 tracing::debug!(%error, "dropping daemon client during event fan-out");
+                                slow_client_disconnects = slow_client_disconnects.saturating_add(1);
                                 keep_client = false;
                                 break;
                             }
                         }
                     }
                     yoctui_protocol::daemon::DaemonSnapshotSync::Replace { snapshot, reason } => {
+                        forced_client_resynchronizations =
+                            forced_client_resynchronizations.saturating_add(1);
                         last_sequence = snapshot.sequence;
                         // This client is already attached. `Attached` is only
                         // valid during the handshake; after a cursor expires,
@@ -2899,6 +2940,9 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 continue;
             }
             loop {
+                if !connection.is_readable()? {
+                    break;
+                }
                 match connection.receive::<ClientMessage>() {
                 Ok(ClientMessage::Hello(hello)) => {
                     connection.send(&ServerMessage::Hello(DaemonHello {

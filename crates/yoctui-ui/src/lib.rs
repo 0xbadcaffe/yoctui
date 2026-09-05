@@ -5728,6 +5728,30 @@ fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatusLine> {
     } else {
         "unavailable".into()
     };
+    let pressure = if current {
+        app.daemon
+            .telemetry
+            .as_ref()
+            .map_or_else(String::new, |telemetry| {
+                let pressure = telemetry.pressure;
+                if pressure == yoctui_model::ClientDaemonPressureCounters::default() {
+                    String::new()
+                } else {
+                    format!(
+                        " · IPC Q {}/{} C{} D{} W{} R{} S{}",
+                        pressure.current_queue_depth,
+                        pressure.maximum_queue_depth,
+                        pressure.cosmetic_coalesced,
+                        pressure.cosmetic_dropped,
+                        pressure.reliable_waits,
+                        pressure.forced_resynchronizations,
+                        pressure.slow_client_disconnects,
+                    )
+                }
+            })
+    } else {
+        String::new()
+    };
     let bitbake = if current {
         daemon_lifecycle_label(app.daemon.bitbake).to_owned()
     } else {
@@ -5852,7 +5876,7 @@ fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatusLine> {
                 bitbake_tone,
             ),
             (
-                format!("Compat {compatibility} · PTY {sessions} · Clients {clients}"),
+                format!("Compat {compatibility} · PTY {sessions} · Clients {clients}{pressure}"),
                 compatibility_tone,
             ),
             (host, host_tone),
@@ -5869,7 +5893,7 @@ fn system_status_projection(app: &App, width: u16) -> Vec<SystemStatusLine> {
             ),
             (
                 format!(
-                    "Compat {compatibility} · Jobs {active_jobs} · PTY {sessions} · Clients {clients}"
+                    "Compat {compatibility} · Jobs {active_jobs} · PTY {sessions} · Clients {clients}{pressure}"
                 ),
                 compatibility_tone,
             ),
@@ -20257,6 +20281,7 @@ mod tests {
             active_jobs: 1,
             pty_sessions: 1,
             queue_depth: 0,
+            pressure: yoctui_model::ClientDaemonPressureCounters::default(),
             memory_bytes: Some(32 * 1024 * 1024),
             recovery: yoctui_model::DaemonRecoveryState::Recovered,
         });
@@ -22123,6 +22148,7 @@ mod tests {
             active_jobs: 2,
             pty_sessions: 1,
             queue_depth: 3,
+            pressure: yoctui_model::ClientDaemonPressureCounters::default(),
             memory_bytes: Some(8 * 1024 * 1024),
             recovery: yoctui_model::DaemonRecoveryState::Recovered,
         });
@@ -28590,6 +28616,7 @@ mod tests {
             active_jobs: 2,
             pty_sessions: 1,
             queue_depth: 3,
+            pressure: yoctui_model::ClientDaemonPressureCounters::default(),
             memory_bytes: None,
             recovery: yoctui_model::DaemonRecoveryState::CleanStart,
         });
@@ -28608,6 +28635,19 @@ mod tests {
             assert!(wide.contains(expected), "missing {expected}: {wide}");
         }
         assert!(!wide.contains("PID"), "{wide}");
+
+        app.daemon.telemetry.as_mut().unwrap().pressure =
+            yoctui_model::ClientDaemonPressureCounters {
+                current_queue_depth: 3,
+                maximum_queue_depth: 9,
+                cosmetic_coalesced: 2,
+                cosmetic_dropped: 4,
+                reliable_waits: 1,
+                forced_resynchronizations: 2,
+                slow_client_disconnects: 1,
+            };
+        let pressure = system_status_text(&app, 160);
+        assert!(pressure.contains("IPC Q 3/9 C2 D4 W1 R2 S1"), "{pressure}");
 
         app.client_access_origin = yoctui_model::ClientAccessOrigin::Ssh {
             client_ip: "192.0.2.44".into(),
@@ -28662,6 +28702,7 @@ mod tests {
             active_jobs: 1,
             pty_sessions: 0,
             queue_depth: 1,
+            pressure: yoctui_model::ClientDaemonPressureCounters::default(),
             memory_bytes: None,
             recovery: yoctui_model::DaemonRecoveryState::CleanStart,
         });

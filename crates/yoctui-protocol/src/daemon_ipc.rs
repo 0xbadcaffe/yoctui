@@ -251,6 +251,37 @@ impl DaemonConnection {
         Ok(())
     }
 
+    /// Report whether receiving can make progress without waiting for a new
+    /// peer write. Daemon client servicing uses this to avoid one blocking
+    /// read timeout per attached client on every service slice.
+    pub fn is_readable(&self) -> Result<bool, IpcError> {
+        if self
+            .expected_frame_len
+            .is_some_and(|frame_len| self.pending.len() >= frame_len)
+            || (self.expected_frame_len.is_none() && self.pending.len() >= 4)
+        {
+            return Ok(true);
+        }
+        let mut descriptor = libc::pollfd {
+            fd: self.stream.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        // SAFETY: `descriptor` points to one initialized pollfd and the stream
+        // owns the descriptor for this nonblocking readiness query.
+        let result = unsafe { libc::poll(&mut descriptor, 1, 0) };
+        if result < 0 {
+            let error = io::Error::last_os_error();
+            if error.kind() == io::ErrorKind::Interrupted {
+                return Ok(false);
+            }
+            return Err(error.into());
+        }
+        Ok(result > 0
+            && descriptor.revents & (libc::POLLIN | libc::POLLHUP | libc::POLLERR | libc::POLLNVAL)
+                != 0)
+    }
+
     pub fn send<T: Serialize>(&mut self, message: &T) -> Result<(), IpcError> {
         let frame = encode_frame(message)?;
         self.send_encoded_frame(&frame)
@@ -291,6 +322,20 @@ impl DaemonConnection {
             Err(error) => return Err(error),
         }
         Ok(())
+    }
+
+    pub fn send_encoded_frame_with_timeout(
+        &mut self,
+        frame: &[u8],
+        timeout: Duration,
+    ) -> Result<(), IpcError> {
+        let previous = self.stream.write_timeout()?;
+        self.stream.set_write_timeout(Some(timeout))?;
+        let result = self.send_encoded_frame(frame);
+        if !self.write_poisoned {
+            self.stream.set_write_timeout(previous)?;
+        }
+        result
     }
 
     pub fn receive<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
@@ -601,6 +646,22 @@ mod tests {
     }
 
     #[test]
+    fn daemon_ipc_readiness_is_nonblocking_and_observes_peer_input() {
+        let (stream, mut peer) = UnixStream::pair().unwrap();
+        let connection = DaemonConnection {
+            stream,
+            server_mode: true,
+            pending: Vec::new(),
+            expected_frame_len: None,
+            write_poisoned: false,
+        };
+        assert!(!connection.is_readable().unwrap());
+        peer.write_all(&encode_frame(&ClientMessage::Pong { nonce: 31 }).unwrap())
+            .unwrap();
+        assert!(connection.is_readable().unwrap());
+    }
+
+    #[test]
     fn listener_readiness_wakes_promptly_before_a_long_deadline() {
         let paths = test_paths("listener-readiness");
         let listener = DaemonListener::bind(&paths).unwrap();
@@ -838,5 +899,34 @@ mod tests {
         drop(client.join().unwrap());
         drop(listener);
         cleanup(&paths);
+    }
+
+    #[test]
+    fn incremental_send_restores_the_snapshot_write_deadline() {
+        let (stream, mut peer) = UnixStream::pair().unwrap();
+        let mut connection = DaemonConnection {
+            stream,
+            server_mode: true,
+            pending: Vec::new(),
+            expected_frame_len: None,
+            write_poisoned: false,
+        };
+        let snapshot_deadline = Duration::from_secs(1);
+        connection
+            .set_write_timeout(Some(snapshot_deadline))
+            .unwrap();
+        let frame = encode_frame(&ClientMessage::Pong { nonce: 37 }).unwrap();
+
+        connection
+            .send_encoded_frame_with_timeout(&frame, Duration::from_millis(2))
+            .unwrap();
+
+        assert_eq!(
+            connection.stream.write_timeout().unwrap(),
+            Some(snapshot_deadline)
+        );
+        let mut received = vec![0; frame.len()];
+        peer.read_exact(&mut received).unwrap();
+        assert_eq!(received, frame);
     }
 }

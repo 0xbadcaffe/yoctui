@@ -945,6 +945,9 @@ stable-identity progress coalescing; cached row ordering avoids repeated
 filter/sort work, and active/completed bounds retain terminal failures. IPC
 measurement found full-snapshot JSON serialization at 34.09% self CPU. A
 conservative size ledger, bounded in-place build/log reduction, incremental
-four-event catch-up, and shared fanout encoding now keep the measured client at
+32-event catch-up, and shared fanout encoding now keep the measured client at
 33.58 KiB/s with zero replacement snapshots. Bounded priority-aware client and
-supervisor queues are the current optimization boundary.
+supervisor queues are complete: a 4,000-event/s run retained every sentinel for
+the healthy client while isolating a non-reader and preserving a fresh attach.
+BitBake socket/liveness behavior under full CPU saturation is the current
+optimization boundary.

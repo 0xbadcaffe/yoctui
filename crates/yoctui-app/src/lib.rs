@@ -2485,6 +2485,15 @@ fn daemon_client_view(
             active_jobs: telemetry.active_jobs as usize,
             pty_sessions: telemetry.pty_sessions as usize,
             queue_depth: telemetry.queue_depth as usize,
+            pressure: yoctui_model::ClientDaemonPressureCounters {
+                current_queue_depth: telemetry.pressure.current_queue_depth as usize,
+                maximum_queue_depth: telemetry.pressure.maximum_queue_depth as usize,
+                cosmetic_coalesced: telemetry.pressure.cosmetic_coalesced,
+                cosmetic_dropped: telemetry.pressure.cosmetic_dropped,
+                reliable_waits: telemetry.pressure.reliable_waits,
+                forced_resynchronizations: telemetry.pressure.forced_resynchronizations,
+                slow_client_disconnects: telemetry.pressure.slow_client_disconnects,
+            },
             memory_bytes: telemetry.memory_bytes,
             recovery: match telemetry.recovery {
                 yoctui_protocol::daemon::DaemonRecoveryState::CleanStart => {
@@ -8989,13 +8998,30 @@ mod tests {
                         active_jobs: 1,
                         pty_sessions: 1,
                         queue_depth: 3,
+                        pressure: yoctui_protocol::daemon::DaemonPressureCounters {
+                            current_queue_depth: 3,
+                            maximum_queue_depth: 9,
+                            cosmetic_coalesced: 2,
+                            cosmetic_dropped: 4,
+                            reliable_waits: 1,
+                            forced_resynchronizations: 2,
+                            slow_client_disconnects: 1,
+                        },
                         memory_bytes: Some(4096),
                         recovery: yoctui_protocol::daemon::DaemonRecoveryState::Recovered,
                     },
                 ),
             })
             .unwrap();
-        assert_eq!(client.telemetry.unwrap().uptime_seconds, 7);
+        let telemetry = client.telemetry.unwrap();
+        assert_eq!(telemetry.uptime_seconds, 7);
+        assert_eq!(telemetry.pressure.current_queue_depth, 3);
+        assert_eq!(telemetry.pressure.maximum_queue_depth, 9);
+        assert_eq!(telemetry.pressure.cosmetic_coalesced, 2);
+        assert_eq!(telemetry.pressure.cosmetic_dropped, 4);
+        assert_eq!(telemetry.pressure.reliable_waits, 1);
+        assert_eq!(telemetry.pressure.forced_resynchronizations, 2);
+        assert_eq!(telemetry.pressure.slow_client_disconnects, 1);
         assert_eq!(client.snapshot.unwrap().sequence, 1);
     }
 

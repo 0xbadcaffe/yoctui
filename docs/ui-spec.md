@@ -5184,3 +5184,9 @@ small bounded batches without visible full-state replacement or focus reset.
 Only an expired or invalid cursor may trigger one explicit snapshot resync.
 IPC catch-up never changes input priority, and transport bookkeeping is not
 shown as UI activity unless the connection actually changes state.
+
+When daemon pressure is nonzero, the System Status compatibility line appends
+`IPC Q current/high Cn Dn Wn Rn Sn`: queue depth/high-water, cosmetic
+coalescing, cosmetic drops, reliable-lane waits, forced resynchronizations, and
+slow-client disconnects. Zero pressure stays hidden to avoid dashboard noise;
+the typed values remain available to automation in either case.

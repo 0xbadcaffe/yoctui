@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-IPC-BACKPRESSURE-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-BITBAKE-CONN-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -67,8 +67,15 @@ fanout. At 2,000 generated events/s the release observer delivered 74.86
 frames/s at 33.58 KiB/s with a 69,029-byte initial snapshot, 99-337-byte events,
 0.21 daemon CPU seconds over 4.19 seconds, strict order, continuity, and zero
 replacement snapshots. It deliberately retains the observed upstream terminal
-starvation for the active bounded-backpressure task. Overall required registry
-progress is 642/659 (97.4%).
+starvation as historical IPC evidence. Current BitBake ingress uses bounded
+512-record reliable/cosmetic lanes, and only cosmetic parse/task progress or
+ordinary logs can be lost under pressure. Readiness-driven clients catch up 32
+events per slice; a two-millisecond full-socket deadline isolated a deliberate
+non-reader while the healthy client received all seven sentinels, stayed in
+strict order without resync, and a new client attached afterward. Typed
+pressure counters reach both automation and System Status. BitBake saturation
+connection hardening is next. Overall required registry progress is 643/659
+(97.6%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

@@ -2252,8 +2252,21 @@ pub struct DaemonTelemetry {
     pub active_jobs: u16,
     pub pty_sessions: u16,
     pub queue_depth: u16,
+    #[serde(default)]
+    pub pressure: DaemonPressureCounters,
     pub memory_bytes: Option<u64>,
     pub recovery: DaemonRecoveryState,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonPressureCounters {
+    pub current_queue_depth: u32,
+    pub maximum_queue_depth: u32,
+    pub cosmetic_coalesced: u64,
+    pub cosmetic_dropped: u64,
+    pub reliable_waits: u64,
+    pub forced_resynchronizations: u64,
+    pub slow_client_disconnects: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -2429,6 +2442,10 @@ impl DaemonSnapshotJournal {
 
     pub fn snapshot(&self) -> &DaemonSnapshot {
         &self.snapshot
+    }
+
+    pub fn retained_event_capacity(&self) -> usize {
+        self.limits.retained_events
     }
 
     pub fn ipc_metrics(&self) -> DaemonIpcMetrics {
