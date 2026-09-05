@@ -1,0 +1,33 @@
+{
+  "schema": "yoctui.performance.baseline-manifest.v1",
+  "captured_date": "2026-09-05",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "binary_version": "yoctui 0.1.22",
+  "binary_sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5",
+  "terminal": {
+    "columns": 160,
+    "rows": 50,
+    "refresh_milliseconds": 100
+  },
+  "artifacts": {
+    "active-real-poky-build.json": "53b6344c25162eb5c4af288fdbc57a4b828da9378d7729ccb56e583ff7083c14",
+    "event-flood.json": "6ad011e77de3d1cb27de2ba7fd8112e720d762cd0a0f4118cb7d0399ef857d91",
+    "idle-attached-client.json": "e18cf90ca1f923db307e8341278c0957353be0a15459c08ef432c12bdd97c2b5",
+    "idle-daemon.json": "2626c1a5becbf8daa01158556f918b8f110088c1e7eceee325777fd6f53e2319",
+    "pty-attached-active.json": "020790d9baa1809026d697ca309a841dc9c54adb37bca6ea8298d6f6e9d1c17f",
+    "pty-attached-idle.json": "5abd243fd802dceb41d8b256d64fe8f9fd35569105cc0d4e4bab887a1a4863ac",
+    "two-attached-clients.json": "442c90f0386a54bc4b6c80bd1a2fbc71976ebcd6ec9452f0b912da95832bea9d"
+  },
+  "observations": {
+    "idle_daemon_cpu_percent": 5.4173823832923285,
+    "idle_attached_combined_cpu_percent": 2.434567006713483,
+    "active_real_poky_combined_cpu_percent": 21.615023658373232,
+    "pty_idle_combined_cpu_percent": 3.3914507419291238,
+    "pty_active_combined_cpu_percent": 3.205039348212553,
+    "event_flood_combined_cpu_percent": 55.36090597438544,
+    "two_client_combined_cpu_percent": 4.223391704660576,
+    "idle_render_invocations_per_second": 10,
+    "idle_daemon_voluntary_context_switches_per_second": 867.2355998440933,
+    "flood_terminal_outcome_starved": true
+  }
+}

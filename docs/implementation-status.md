@@ -12,14 +12,19 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-BASELINE-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-FLAMEGRAPH-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
 one-logical-CPU accounting, exact scenarios/windows, p95 interaction and IPC
 targets, render/heartbeat behavior, resource bounds, and evidence separation.
-No optimization is accepted before the pre-optimization baseline. Overall
-required registry progress is 630/659 (95.6%).
+The seven-scenario pre-optimization release baseline is now retained with exact
+raw samples and hashes. It measured 5.42% idle-daemon CPU, 2.43% attached idle,
+21.62% during a real Wrynose build, 3.39/3.21% PTY idle/active, 4.22% for two
+clients, and 55.36% during the 2,000-event/s fixture. The flood also proved that
+an unbounded supervisor queue can strand a terminal outcome behind ordinary
+events. Profiling is next; no optimization has landed. Overall required
+registry progress is 631/659 (95.8%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

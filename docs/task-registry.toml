@@ -7011,18 +7011,18 @@ notes = "docs/performance.md fixes one-logical-CPU accounting, exact host/window
 id = "PERF-BASELINE-001"
 milestone = "M46"
 title = "Capture the pre-optimization performance baseline"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 790
 required = true
 depends_on = ["PERF-SPEC-001"]
 verify = ["./scripts/verify-performance.sh --baseline"]
-notes = "Record reproducible daemon, client, combined CPU, context-switch, wakeup, render, IPC, BitBake-event, telemetry, memory, and thread metrics before optimization."
+notes = "Seven exact-v0.1.22 160x50 scenarios retain sixty raw one-second samples after warmup, process CPU/context switches/RSS/threads, render/telemetry/event rates, host identity, binary and artifact hashes. Idle daemon was 5.42%, attached idle 2.43%, active real Poky 21.62%, PTY idle/active 3.39/3.21%, two clients 4.22%, and the 2,000-event/s fixture 55.36% with its terminal outcome starved behind the unbounded supervisor queue. The offline baseline verifier passes in v0.1.23."
 
 [[task]]
 id = "PERF-FLAMEGRAPH-001"
 milestone = "M46"
 title = "Capture CPU flamegraphs for all baseline workloads"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 791
 required = true
 depends_on = ["PERF-BASELINE-001"]

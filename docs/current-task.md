@@ -2,38 +2,36 @@
 
 ## Task
 
-**ID:** PERF-BASELINE-001
-**Title:** Capture the pre-optimization performance baseline
+**ID:** PERF-FLAMEGRAPH-001
+**Title:** Capture CPU flamegraphs for all baseline workloads
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure the current unoptimized daemon and attached-client runtime under every
-contract baseline scenario and retain reproducible machine-readable artifacts
-before changing event loops, rendering, telemetry, IPC, or reducers.
+Profile the exact pre-optimization release runtime for idle daemon, idle
+client, active real build, log-heavy, task-event-heavy, PTY idle, and PTY active
+workloads. Retain concise symbolized artifacts that identify actionable hot
+paths before changing event loops, rendering, telemetry, IPC, or reducers.
 
 ## Dependencies
 
-- PERF-SPEC-001 — DONE
+- PERF-BASELINE-001 — DONE
 
 ## Definition of done
 
-- Daemon, client, and combined CPU use the contract's `/proc` and monotonic
-  accounting with warmup and a 60-second sample window.
-- Context switches, wakeups when available, render and IPC frequencies,
-  BitBake event and telemetry rates, memory, and thread counts are recorded.
-- Idle daemon, idle attached client, active build, event flood, PTY idle and
-  active, and two-client scenarios are identified separately.
-- Artifact metadata includes the exact binary/revision, host, terminal,
-  command, scenario, windows, raw samples, and checksums.
-- No optimization lands before this evidence is recorded.
+- Every required workload has a named, reproducible sampling command.
+- Profiles use production paths and preserve fixture versus real-Poky identity.
+- Reports identify sample count, resolved-frame quality, dominant stacks, exact
+  binary/revision, and artifact hashes.
+- Raw `perf.data` remains reproducible and untracked; concise reports and
+  flamegraphs follow `artifacts/performance/profiles/` policy.
+- Findings name measured hot paths without treating hypotheses as fixes.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --baseline
+./scripts/verify-performance.sh --profiles
 ./scripts/verify-roadmap.sh
 ```
 
-The normative contract is complete. Baseline capture is the only active M46
-task before optimization.
+The pre-optimization baseline is complete. No runtime optimization has landed.

@@ -76,9 +76,114 @@ print("all required performance tasks are DONE")
 PY
 }
 
+verify_baseline() {
+  python3 - <<'PY'
+from pathlib import Path
+import ast
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/baseline")
+manifest_path = root / "manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.baseline-manifest.v1":
+    raise SystemExit("baseline manifest schema is missing or unsupported")
+revision = manifest.get("revision")
+if not isinstance(revision, str) or len(revision) != 40:
+    raise SystemExit("baseline revision must be an exact commit")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True,
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+if manifest.get("terminal") != {
+    "columns": 160,
+    "rows": 50,
+    "refresh_milliseconds": 100,
+}:
+    raise SystemExit("baseline terminal configuration is not the contract configuration")
+
+expected = {
+    "active-real-poky-build.json": "active-real-poky-build",
+    "event-flood.json": "bitbake-event-flood-2000-per-second",
+    "idle-attached-client.json": "idle-attached-client",
+    "idle-daemon.json": "idle-daemon",
+    "pty-attached-active.json": "pty-attached-active-100-lines-per-second",
+    "pty-attached-idle.json": "pty-attached-idle",
+    "two-attached-clients.json": "two-attached-clients",
+}
+declared = manifest.get("artifacts")
+if not isinstance(declared, dict) or set(declared) != set(expected):
+    raise SystemExit("baseline manifest does not contain the exact scenario set")
+
+binary_hash = manifest.get("binary_sha256")
+for filename, scenario in expected.items():
+    path = root / filename
+    payload = path.read_bytes()
+    if hashlib.sha256(payload).hexdigest() != declared[filename]:
+        raise SystemExit(f"baseline artifact digest mismatch: {filename}")
+    record = json.loads(payload)
+    if record.get("schema") != "yoctui.performance.process-overhead.v1":
+        raise SystemExit(f"{filename}: unsupported process-overhead schema")
+    if record.get("scenario") != scenario:
+        raise SystemExit(f"{filename}: scenario identity mismatch")
+    if record.get("revision") != revision:
+        raise SystemExit(f"{filename}: mixed source revisions are forbidden")
+    if record.get("binary", {}).get("sha256") != binary_hash:
+        raise SystemExit(f"{filename}: mixed binary hashes are forbidden")
+    measurement = record.get("measurement", {})
+    if measurement.get("warmup_seconds") != 10:
+        raise SystemExit(f"{filename}: warmup is not 10 seconds")
+    if measurement.get("sample_window_seconds") != 60:
+        raise SystemExit(f"{filename}: window is not 60 seconds")
+    if measurement.get("sample_count") != 60:
+        raise SystemExit(f"{filename}: expected sixty raw samples")
+    if measurement.get("statistic") != "10_percent_trimmed_mean":
+        raise SystemExit(f"{filename}: robust statistic is absent")
+    if record.get("terminal") != manifest["terminal"]:
+        raise SystemExit(f"{filename}: terminal configuration mismatch")
+    host = record.get("host", {})
+    required_host = {
+        "kernel", "machine", "cpu_model", "logical_cpus", "online_cpus",
+        "memory_total_bytes", "boot_id", "filesystem",
+    }
+    if not required_host.issubset(host):
+        raise SystemExit(f"{filename}: host identity is incomplete")
+    if not record.get("samples") or not record.get("summary", {}).get("processes"):
+        raise SystemExit(f"{filename}: raw samples or process summary are absent")
+
+observations = manifest.get("observations", {})
+required_observations = {
+    "idle_daemon_cpu_percent", "idle_attached_combined_cpu_percent",
+    "active_real_poky_combined_cpu_percent", "pty_idle_combined_cpu_percent",
+    "pty_active_combined_cpu_percent", "event_flood_combined_cpu_percent",
+    "two_client_combined_cpu_percent", "idle_render_invocations_per_second",
+    "idle_daemon_voluntary_context_switches_per_second",
+    "flood_terminal_outcome_starved",
+}
+if not required_observations.issubset(observations):
+    raise SystemExit("baseline observations are incomplete")
+if observations["flood_terminal_outcome_starved"] is not True:
+    raise SystemExit("baseline must retain the observed flood terminal starvation")
+
+for source in (
+    Path("scripts/measure-process-overhead.py"),
+    Path("scripts/fixtures/bitbake-event-flood-bridge.py"),
+):
+    ast.parse(source.read_text(encoding="utf-8"), filename=str(source))
+print(f"performance baseline valid: {len(expected)} scenarios at {revision[:12]}")
+PY
+}
+
 case "$mode" in
   --contract)
     verify_contract
+    ;;
+  --baseline)
+    verify_contract
+    verify_baseline
     ;;
   all)
     verify_contract
