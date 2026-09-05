@@ -3695,6 +3695,27 @@ command-receipt, and cancellation-acknowledgement p95 values of 2.522, 1.880,
 and 6.820 ms respectively. All 100 cancellation requests were acknowledged and
 75 reached the live worker before its cancellation receiver closed.
 
+The steady-state release CPU gate uses the protocol layer's single
+`DaemonListener::wait_for_activity` boundary to block on the listener and every
+attached Unix stream together. Complete frames already buffered in a
+`DaemonConnection` count as ready; new connections, client commands, hangups,
+and errors wake the same call. Idle attachment no longer selects the daemon's
+one-millisecond active-work cadence. The daemon wakes at most on its 100 ms idle
+maintenance bound when every socket is quiet, while daemon-owned active jobs
+still select the one-millisecond supervisor-service bound. This preserves
+immediate input readiness without adding a thread, channel, snapshot, or state
+authority.
+
+The measurement driver composes the shipped release daemon and `attach` client
+inside isolated XDG directories and a real fixed 160x50 PTY. An external
+sampler reads Linux process accounting once per second after warmup; no
+instrumentation executes inside the measured processes. The retained
+release-profile evidence contains exact PID start identities and sixty raw
+samples per scenario. Its 10% trimmed means are 0.0000% for the idle daemon,
+0.0624% for the client, and 0.1456% combined of one logical CPU. The gate
+recalculates those values rather than trusting stored summaries, then repeats
+the same offline scenario against the available release executable.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

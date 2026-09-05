@@ -308,6 +308,36 @@ yoctui --build-dir "$BUILDDIR" inspect
 ./scripts/verify-performance.sh --coexistence
 ```
 
+### Steady-state release CPU gate
+
+The release CPU gate starts an isolated daemon without a build environment,
+measures it alone, then attaches one real interactive client through a fixed
+160x50 PTY whose output is continuously drained. Startup is bounded at five
+seconds and excluded. Each scenario then excludes a ten-second warmup and
+records sixty one-second `/proc/PID/stat` field 14+15 deltas. CPU is reported in
+normal process-accounting units as a 10% trimmed mean of one logical CPU; it is
+never divided by the host CPU count.
+
+The first attached-client probe exposed a one-millisecond daemon service poll:
+an otherwise idle connection caused about 863 voluntary wakeups/s and 6.25%
+daemon CPU. The daemon now makes one kernel readiness wait over its listener and
+all current client sockets. An idle attached client therefore uses the 100 ms
+idle bound while input or a new connection wakes service immediately; active
+jobs retain the one-millisecond supervisor-service bound.
+
+The reference release result records 0.0000% idle-daemon, 0.0624% idle-client,
+and 0.1456% combined trimmed-mean CPU of one logical CPU. The attached daemon
+itself recorded 0.0000%. These independently pass the 0.20%, 0.50%, and 1.00%
+limits. The retained records include all sixty raw samples, process start
+identities, host and filesystem identity, exact binary and source hashes,
+startup times, terminal geometry, and 19,501 drained PTY bytes. The offline
+validator recalculates every trimmed mean and the default gate repeats the full
+release measurement without network access:
+
+```sh
+./scripts/verify-low-overhead.sh
+```
+
 ### Saturated input latency
 
 The release input probe runs in a real fixed 160x50 PTY, enables Crossterm mouse

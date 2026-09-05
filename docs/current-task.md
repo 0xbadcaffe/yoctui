@@ -2,41 +2,41 @@
 
 ## Task
 
-**ID:** PERF-CPU-GATE-001
-**Title:** Implement the one-percent steady-state CPU gate
+**ID:** PERF-RESPONSIVENESS-GATE-001
+**Title:** Gate interactive responsiveness under saturation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement the release-profile steady-state CPU gate for the documented daemon
-plus one attached interactive client baseline.
+Implement the deterministic full-CPU saturation gate for continued keyboard,
+mouse, rendering, daemon/backend connection, cancellation, detach, and
+reconnect responsiveness.
 
 ## Dependencies
 
-- PERF-ANIM-001 — DONE
-- PERF-TELEMETRY-001 — DONE
-- PERF-LOG-001 — DONE
-- PERF-TASKS-001 — DONE
-- PERF-TOKIO-001 — DONE
+- PERF-INPUT-LATENCY-001 — DONE
+- PERF-BITBAKE-CONN-001 — DONE
 
 ## Definition of done
 
-- The documented idle daemon plus one real attached 160x50 client scenario runs
-  from a release build of the measured source.
-- Startup and a 10-second warmup are excluded from 60 one-second steady-state
-  samples.
-- Daemon and client `/proc` CPU deltas are independently calculated as percent
-  of one logical CPU and summed.
-- The 10% trimmed-mean combined result is <=1.00%; idle daemon is <=0.20% and
-  idle attached client is <=0.50%.
-- Exact host, binary, PID continuity, raw samples, and method evidence is
-  retained and verified offline.
+- Every CPU in the caller affinity remains runnable under the deterministic
+  load fixture; no core is deliberately reserved.
+- Real PTY keyboard and mouse actions remain visible with p95 <=100 ms and
+  rendering continues.
+- The daemon/client and production-path fixture backend remain connected across
+  the saturated observation window.
+- Cancellation is acknowledged and reaches a terminal result without being
+  starved by cosmetic work.
+- Detach and fresh reconnect both succeed under load without losing critical
+  ordering.
+- The offline gate retains exact host, binary/source, load, raw latency, render,
+  connection, cancellation, detach, and reconnect evidence.
 
 ## Verification
 
 ```bash
-./scripts/verify-low-overhead.sh
+./scripts/verify-saturation-responsiveness.sh
 ./scripts/verify-roadmap.sh
 ```
 
-Saturated IPC latency is complete in v0.1.42.
+The one-percent steady-state CPU gate is complete in v0.1.43.

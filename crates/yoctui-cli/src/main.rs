@@ -2499,8 +2499,8 @@ fn daemon_has_active_work(snapshot: &yoctui_protocol::daemon::DaemonSnapshot) ->
     })
 }
 
-fn daemon_accept_timeout(has_clients: bool, has_active_work: bool) -> Duration {
-    if has_clients || has_active_work {
+fn daemon_service_wait(has_active_work: bool) -> Duration {
+    if has_active_work {
         DAEMON_ACTIVE_WAIT
     } else {
         DAEMON_IDLE_WAIT
@@ -2913,8 +2913,13 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         if termination_requested(termination) {
             break;
         }
-        let accept_timeout = daemon_accept_timeout(!clients.is_empty(), active_work);
-        match listener.accept(accept_timeout) {
+        let client_connections = clients
+            .iter()
+            .map(|(connection, _, _, _, _)| connection)
+            .collect::<Vec<_>>();
+        listener.wait_for_activity(&client_connections, daemon_service_wait(active_work))?;
+        drop(client_connections);
+        match listener.accept(Duration::ZERO) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
                 // Read readiness is checked before receiving; this short
                 // deadline only bounds a peer that stalls midway through a
@@ -21767,10 +21772,9 @@ esac"#,
     }
 
     #[test]
-    fn idle_daemon_waits_without_delaying_attached_or_active_work() {
-        assert_eq!(daemon_accept_timeout(false, false), DAEMON_IDLE_WAIT);
-        assert_eq!(daemon_accept_timeout(true, false), DAEMON_ACTIVE_WAIT);
-        assert_eq!(daemon_accept_timeout(false, true), DAEMON_ACTIVE_WAIT);
+    fn idle_daemon_waits_on_socket_readiness_without_delaying_active_work() {
+        assert_eq!(daemon_service_wait(false), DAEMON_IDLE_WAIT);
+        assert_eq!(daemon_service_wait(true), DAEMON_ACTIVE_WAIT);
         assert!(DAEMON_IDLE_WAIT >= Duration::from_millis(50));
         assert!(DAEMON_ACTIVE_WAIT <= Duration::from_millis(5));
     }

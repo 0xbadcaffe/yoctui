@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-CPU-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-RESPONSIVENESS-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -108,8 +108,14 @@ events, correlated command receipt, and cancellation acknowledgement while all
 affinity CPUs remain runnable. At 99.46% host CPU, their p95 values were 2.522,
 1.880, and 6.820 ms. It verifies strict event ordering, primary and reconnect
 continuity, no backend disconnect, 100 acknowledgements, and 75 accepted live
-BitBake cancellations. The one-percent steady-state CPU release gate is next.
-Overall required registry progress is 650/659 (98.6%).
+BitBake cancellations. The release CPU gate exposed an attached-idle
+one-millisecond daemon service loop; one kernel poll now covers the listener
+and every client socket, waking immediately for input but using the 100 ms
+maintenance bound when quiet. The full release capture records 0.0000% idle
+daemon, 0.0624% idle client, and 0.1456% combined CPU of one logical CPU across
+sixty post-warmup samples, below the independent 0.20/0.50/1.00% limits. The
+offline gate reproduces the robust statistics and repeats the real process-pair
+measurement. Overall required registry progress is 651/659 (98.8%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

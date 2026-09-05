@@ -153,6 +153,61 @@ impl DaemonListener {
         }
     }
 
+    /// Block until the listener or one of the attached client streams can
+    /// make progress, or until `timeout` expires.
+    ///
+    /// A daemon can use this single readiness wait instead of repeatedly
+    /// polling every client. Buffered complete frames also count as ready so
+    /// callers never sleep while protocol work is already available.
+    pub fn wait_for_activity(
+        &self,
+        connections: &[&DaemonConnection],
+        timeout: Duration,
+    ) -> Result<bool, IpcError> {
+        if connections.iter().any(|connection| {
+            connection
+                .expected_frame_len
+                .is_some_and(|frame_len| connection.pending.len() >= frame_len)
+                || (connection.expected_frame_len.is_none() && connection.pending.len() >= 4)
+        }) {
+            return Ok(true);
+        }
+
+        let mut descriptors = Vec::with_capacity(connections.len() + 1);
+        descriptors.push(libc::pollfd {
+            fd: self.listener.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        });
+        descriptors.extend(connections.iter().map(|connection| libc::pollfd {
+            fd: connection.stream.as_raw_fd(),
+            events: libc::POLLIN,
+            revents: 0,
+        }));
+        let timeout_ms = if timeout.is_zero() {
+            0
+        } else {
+            timeout.as_millis().max(1).min(i32::MAX as u128) as i32
+        };
+        // SAFETY: `descriptors` owns initialized pollfd values and every
+        // listener/connection descriptor remains borrowed for this call.
+        let result = unsafe {
+            libc::poll(
+                descriptors.as_mut_ptr(),
+                descriptors.len() as libc::nfds_t,
+                timeout_ms,
+            )
+        };
+        if result >= 0 {
+            return Ok(result > 0);
+        }
+        let error = io::Error::last_os_error();
+        if error.kind() == io::ErrorKind::Interrupted {
+            return Ok(false);
+        }
+        Err(error.into())
+    }
+
     pub fn socket_path(&self) -> &Path {
         &self.socket
     }
@@ -896,6 +951,60 @@ mod tests {
 
         assert_eq!(server.stream.read_timeout().unwrap(), Some(read_timeout));
         assert_eq!(server.stream.write_timeout().unwrap(), Some(write_timeout));
+        drop(client.join().unwrap());
+        drop(listener);
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn daemon_listener_wait_wakes_for_attached_client_input() {
+        let paths = test_paths("activity-client");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let client_paths = paths.clone();
+        let client = thread::spawn(move || {
+            let mut connection =
+                DaemonConnection::connect(&client_paths, Duration::from_secs(1)).unwrap();
+            thread::sleep(Duration::from_millis(20));
+            connection.send(&ClientMessage::Pong { nonce: 41 }).unwrap();
+        });
+        let mut server = listener.accept(Duration::from_secs(1)).unwrap();
+        let started = Instant::now();
+
+        assert!(
+            listener
+                .wait_for_activity(&[&server], Duration::from_secs(1))
+                .unwrap()
+        );
+        assert!(started.elapsed() < Duration::from_millis(500));
+        assert_eq!(
+            server.receive::<ClientMessage>().unwrap(),
+            ClientMessage::Pong { nonce: 41 }
+        );
+
+        client.join().unwrap();
+        drop(listener);
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn daemon_listener_wait_wakes_for_new_connection() {
+        let paths = test_paths("activity-listener");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let client_paths = paths.clone();
+        let client = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(20));
+            DaemonConnection::connect(&client_paths, Duration::from_secs(1)).unwrap()
+        });
+        let started = Instant::now();
+
+        assert!(
+            listener
+                .wait_for_activity(&[], Duration::from_secs(1))
+                .unwrap()
+        );
+        assert!(started.elapsed() < Duration::from_millis(500));
+        let _server = listener.accept(Duration::ZERO).unwrap();
+
         drop(client.join().unwrap());
         drop(listener);
         cleanup(&paths);

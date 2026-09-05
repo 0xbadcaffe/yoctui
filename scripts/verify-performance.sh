@@ -340,7 +340,7 @@ print("event-loop source contracts valid")
 PY
   cargo build -q -p yoctui --bin yoctui
   cargo test -q -p yoctui-protocol daemon_ipc
-  cargo test -q -p yoctui --bin yoctui idle_daemon_waits_without_delaying_attached_or_active_work
+  cargo test -q -p yoctui --bin yoctui idle_daemon_waits_on_socket_readiness_without_delaying_active_work
   python3 scripts/test-idle-event-loops.py --binary target/debug/yoctui
 }
 

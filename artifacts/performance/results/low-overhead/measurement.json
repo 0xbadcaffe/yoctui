@@ -1,0 +1,52 @@
+{
+  "artifacts": {
+    "idle-attached-client.json": "e0c87a2e67f1165efcf559d87d58dbf99b096355a7eee653b57d2ac0cd26ddf8",
+    "idle-daemon.json": "55d2e13b3dd4e43c45c977f72d266fd8d6f6260b3261f377c634aad3482fef25"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "cd6f99182cf67d9bad54e21f99962f61895a3e0f9235a52013349bad759d0a0e",
+    "version": "yoctui 0.1.42"
+  },
+  "captured_at_unix_ms": 1788620854059,
+  "method": {
+    "clock": "CLOCK_MONOTONIC",
+    "cpu_source": "/proc/PID/stat fields 14+15",
+    "refresh_milliseconds": 100,
+    "release_profile": true,
+    "sample_interval_seconds": 1,
+    "sample_window_seconds": 60,
+    "startup_excluded": true,
+    "statistic": "10_percent_trimmed_mean",
+    "terminal": {
+      "columns": 160,
+      "rows": 50
+    },
+    "warmup_seconds": 10
+  },
+  "observations": {
+    "attached_daemon_cpu_percent_one_logical_cpu": 0.0,
+    "combined_cpu_percent_one_logical_cpu": 0.1456210736914154,
+    "idle_client_cpu_percent_one_logical_cpu": 0.062403742466128044,
+    "idle_daemon_cpu_percent_one_logical_cpu": 0.0
+  },
+  "pty_bytes_drained": 19501,
+  "revision": "0030501eb45fef5179ed36c7a81040d887ed4d40",
+  "schema": "yoctui.performance.low-overhead-suite.v1",
+  "sources": {
+    "crates/yoctui-cli/src/main.rs": "1699083a641d3ccf4495e4609f4fdf02ccd4ac8559eda6606531912205b935c5",
+    "crates/yoctui-protocol/src/daemon_ipc.rs": "5190484273bb119f7d62e8c062999df7e65afc0f6da51c402580c93bd553abd0",
+    "scripts/measure-low-overhead.py": "f211f06d3e2d704d0a1e12f62984ddd8a8d3889314e5453260d3232da06e2263",
+    "scripts/measure-process-overhead.py": "0d6b43a7d7caf3ba5c2e690e8f462b45f0cefb400bd1b90d9649bc42b52b5c70"
+  },
+  "startup": {
+    "client_first_frame_ms": 11.049607885070145,
+    "daemon_socket_ready_ms": 10.16877091024071,
+    "maximum_excluded_startup_ms": 5000
+  },
+  "thresholds": {
+    "combined_cpu_percent_one_logical_cpu": 1.0,
+    "idle_client_cpu_percent_one_logical_cpu": 0.5,
+    "idle_daemon_cpu_percent_one_logical_cpu": 0.2
+  }
+}

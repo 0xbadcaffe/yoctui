@@ -971,5 +971,10 @@ path cover timestamped daemon events, correlated command results, and live
 BitBake cancellation acknowledgements while every affinity CPU is runnable.
 At 99.46% host CPU their p95 values were 2.522, 1.880, and 6.820 ms
 respectively. Exact release measurements and source/binary hashes are retained
-by the offline `--latency` continuity gate. The one-percent CPU release gate is
-next.
+by the offline `--latency` continuity gate. The release CPU gate then exposed
+and removed a separate attached-idle one-millisecond daemon loop: one shared
+listener/client readiness wait reduced the full 60-sample reference result to
+0.0000% idle daemon, 0.0624% idle client, and 0.1456% combined CPU of one
+logical CPU. Exact process identities, raw samples, host/binary/source hashes,
+and independently recalculated thresholds are retained. The saturated
+interaction/continuity aggregate gate is next.

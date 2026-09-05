@@ -7231,18 +7231,18 @@ notes = "In v0.1.42 a release-profile production-path fixture recorded 100 post-
 id = "PERF-CPU-GATE-001"
 milestone = "M46"
 title = "Implement the one-percent steady-state CPU gate"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 810
 required = true
 depends_on = ["PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-TOKIO-001"]
 verify = ["./scripts/verify-low-overhead.sh"]
-notes = "Warm up and robustly sample the documented daemon plus one-client baseline, failing above one percent of one logical CPU rather than total host capacity."
+notes = "In v0.1.43 the release gate starts an isolated daemon and a real attached 160x50 PTY client, excludes startup plus a 10-second warmup, and retains sixty one-second /proc samples with exact host/process/binary/source identity. One shared listener/client poll removed the attached-idle 1 ms daemon loop. The reference trimmed means are 0.0000% idle daemon, 0.0624% idle client, and 0.1456% combined CPU of one logical CPU, all independently reproduced and below their 0.20/0.50/1.00% thresholds."
 
 [[task]]
 id = "PERF-RESPONSIVENESS-GATE-001"
 milestone = "M46"
 title = "Gate interactive responsiveness under saturation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 811
 required = true
 depends_on = ["PERF-INPUT-LATENCY-001", "PERF-BITBAKE-CONN-001"]

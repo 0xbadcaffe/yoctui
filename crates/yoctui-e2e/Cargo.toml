@@ -11,6 +11,6 @@ libc.workspace = true
 [dev-dependencies]
 crossterm.workspace = true
 ratatui.workspace = true
-yoctui-app = { version = "0.1.42", path = "../yoctui-app" }
-yoctui-model = { version = "0.1.42", path = "../yoctui-model" }
-yoctui-ui = { version = "0.1.42", path = "../yoctui-ui" }
+yoctui-app = { version = "0.1.43", path = "../yoctui-app" }
+yoctui-model = { version = "0.1.43", path = "../yoctui-model" }
+yoctui-ui = { version = "0.1.43", path = "../yoctui-ui" }
