@@ -932,6 +932,9 @@ Exit criteria:
 - the dedicated performance verifier and independent completion checks pass
 
 Progress: the pre-optimization evidence, deterministic saturation/event-flood
-fixtures, and idle event-loop optimization are complete. Kernel-backed daemon
-listener readiness reduced the focused idle result from roughly 867 to below
-35 voluntary context switches/s; unchanged client polls no longer redraw.
+fixtures, idle event-loop optimization, dirty-render scheduler, and bounded
+animation clock are complete. Kernel-backed daemon listener readiness reduced
+the focused idle result from roughly 867 to below 35 voluntary context
+switches/s; unchanged polls do not redraw, state bursts coalesce, and only
+visible indeterminate Dashboard/Tasks activity advances at 5 Hz. Telemetry
+collection is the current optimization boundary.

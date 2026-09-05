@@ -3528,6 +3528,14 @@ keyboard processing independent of render cadence. Fixture saturation can
 prove deterministic behavior but cannot substitute for supported real-Poky
 evidence.
 
+Client presentation scheduling separates semantic time from cosmetic motion.
+`RenderScheduler` coalesces both, but the animation phase advances at 5 Hz only
+when the foreground Dashboard or Tasks surface contains visible indeterminate
+work. Overlay, hidden, determinate, terminal, and reduced-motion states cannot
+advance it. A distinct 1 Hz elapsed-time deadline remains active during a live
+build, so accessibility mode and nonanimated workspaces retain accurate time
+without paying animation cost.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

@@ -12,7 +12,10 @@ use crossterm::{
     },
 };
 use ratatui::Terminal;
-use render_scheduler::{RenderCause, RenderScheduler};
+use render_scheduler::{
+    ANIMATION_INTERVAL, ELAPSED_REFRESH_INTERVAL, RenderCause, RenderScheduler,
+    has_live_elapsed_time, has_visible_indeterminate_activity,
+};
 use serde::{Deserialize, Serialize};
 use std::{
     cell::Cell,
@@ -11106,7 +11109,8 @@ async fn tui(
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
-    let mut next_presentation_tick = Instant::now();
+    let mut next_animation_tick = Instant::now();
+    let mut next_elapsed_refresh = Instant::now();
     let frame_interval = interactive_frame_interval(refresh);
     let mut render_scheduler = RenderScheduler::default();
     let mut prefix_state = PrefixState::default();
@@ -11256,15 +11260,23 @@ async fn tui(
             next_telemetry_sample = Instant::now() + Duration::from_secs(1);
             render_scheduler.invalidate(RenderCause::Telemetry);
         }
-        if app_has_live_presentation(&app) && Instant::now() >= next_presentation_tick {
+        let presentation_now = Instant::now();
+        let visible_animation = has_visible_indeterminate_activity(&app);
+        if visible_animation && presentation_now >= next_animation_tick {
             let _ = update(&mut app, Action::Tick);
-            next_presentation_tick = Instant::now()
-                + if app.reduced_motion {
-                    Duration::from_secs(1)
-                } else {
-                    frame_interval
-                };
+            next_animation_tick = presentation_now + ANIMATION_INTERVAL;
             render_scheduler.invalidate(RenderCause::Presentation);
+        } else if !visible_animation {
+            // Returning to an animated workspace shows activity immediately,
+            // without accumulating hidden animation phases.
+            next_animation_tick = presentation_now;
+        }
+        let live_elapsed = has_live_elapsed_time(&app);
+        if live_elapsed && presentation_now >= next_elapsed_refresh {
+            next_elapsed_refresh = presentation_now + ELAPSED_REFRESH_INTERVAL;
+            render_scheduler.invalidate(RenderCause::Presentation);
+        } else if !live_elapsed {
+            next_elapsed_refresh = presentation_now;
         }
         if guard.take_full_redraw_request() {
             terminal.clear()?;
@@ -14545,28 +14557,6 @@ fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
         Input::F10 => b"\x1b[21~".as_slice(),
     };
     Some(bytes.to_vec())
-}
-
-fn app_has_live_presentation(app: &App) -> bool {
-    matches!(
-        app.build.status,
-        yoctui_model::BuildStatus::LoadingWorkspace
-            | yoctui_model::BuildStatus::Parsing
-            | yoctui_model::BuildStatus::Running
-            | yoctui_model::BuildStatus::Cancelling
-    ) || app
-        .background_jobs
-        .jobs
-        .iter()
-        .any(|job| !job.status.is_terminal())
-        || app.daemon.jobs.iter().any(|job| {
-            matches!(
-                job.lifecycle,
-                yoctui_model::ClientDaemonLifecycle::Connecting
-                    | yoctui_model::ClientDaemonLifecycle::Running
-                    | yoctui_model::ClientDaemonLifecycle::Stopping
-            )
-        })
 }
 
 const MAX_NORMAL_RENDER_RATE: Duration = Duration::from_millis(100);
@@ -21554,18 +21544,6 @@ esac"#,
         assert_eq!(daemon_accept_timeout(false, true), DAEMON_ACTIVE_WAIT);
         assert!(DAEMON_IDLE_WAIT >= Duration::from_millis(50));
         assert!(DAEMON_ACTIVE_WAIT <= Duration::from_millis(5));
-    }
-
-    #[test]
-    fn idle_client_has_no_animation_driven_render_work() {
-        let mut app = App::new(16, 16 * 1024);
-        assert!(!app_has_live_presentation(&app));
-
-        app.build.status = yoctui_model::BuildStatus::Running;
-        assert!(app_has_live_presentation(&app));
-
-        app.build.status = yoctui_model::BuildStatus::Completed;
-        assert!(!app_has_live_presentation(&app));
     }
 
     #[test]

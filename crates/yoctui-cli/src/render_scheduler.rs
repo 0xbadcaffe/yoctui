@@ -1,5 +1,46 @@
 //! Coalesced frame invalidation for the interactive terminal client.
 
+use yoctui_model::{App, BuildStatus, Screen, TaskState};
+
+pub(crate) const ANIMATION_INTERVAL: std::time::Duration = std::time::Duration::from_millis(200);
+pub(crate) const ELAPSED_REFRESH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
+
+/// Whether the foreground workspace contains a visible indeterminate activity
+/// glyph. Hidden work must not drive animation frames.
+pub(crate) fn has_visible_indeterminate_activity(app: &App) -> bool {
+    if app.reduced_motion
+        || app.active_dialog().is_some()
+        || app.menu.is_open()
+        || app.command_palette_open
+        || !matches!(app.screen, Screen::Dashboard | Screen::Tasks)
+        || !matches!(
+            app.build.status,
+            BuildStatus::LoadingWorkspace
+                | BuildStatus::Parsing
+                | BuildStatus::Running
+                | BuildStatus::Cancelling
+        )
+    {
+        return false;
+    }
+
+    app.build.total.is_none()
+        || app
+            .tasks
+            .values()
+            .any(|task| task.state == TaskState::Active && task.progress.is_none())
+}
+
+pub(crate) fn has_live_elapsed_time(app: &App) -> bool {
+    matches!(
+        app.build.status,
+        BuildStatus::LoadingWorkspace
+            | BuildStatus::Parsing
+            | BuildStatus::Running
+            | BuildStatus::Cancelling
+    )
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RenderCause {
     Initial,
@@ -76,6 +117,7 @@ impl RenderScheduler {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use yoctui_model::{Dialog, TaskId, TaskInfo};
 
     #[test]
     fn render_requests_coalesce_and_idle_checks_do_not_create_frames() {
@@ -114,6 +156,53 @@ mod tests {
         assert!(!scheduler.take_frame());
         assert_eq!(scheduler.metrics().requests, 1);
         assert_eq!(scheduler.metrics().skipped_checks, 1);
+    }
+
+    #[test]
+    fn animation_is_visible_only_indeterminate_and_nonterminal() {
+        let mut app = App::new(16, 16 * 1024);
+        app.build.status = BuildStatus::Running;
+        assert!(has_visible_indeterminate_activity(&app));
+
+        app.screen = Screen::Recipes;
+        assert!(!has_visible_indeterminate_activity(&app));
+
+        app.screen = Screen::Tasks;
+        app.build.total = Some(100);
+        assert!(!has_visible_indeterminate_activity(&app));
+
+        let task = TaskInfo::active(TaskId("busy".into()), "busybox".into(), "do_compile".into());
+        app.tasks.insert(task.id.clone(), task);
+        assert!(has_visible_indeterminate_activity(&app));
+
+        app.build.status = BuildStatus::Completed;
+        assert!(!has_visible_indeterminate_activity(&app));
+    }
+
+    #[test]
+    fn overlays_and_reduced_motion_freeze_animation_but_not_elapsed_time() {
+        let mut app = App::new(16, 16 * 1024);
+        app.build.status = BuildStatus::Running;
+        assert!(has_live_elapsed_time(&app));
+
+        app.reduced_motion = true;
+        assert!(!has_visible_indeterminate_activity(&app));
+        assert!(has_live_elapsed_time(&app));
+
+        app.reduced_motion = false;
+        app.dialogs.push_back(Dialog::BuildCompletion);
+        assert!(!has_visible_indeterminate_activity(&app));
+
+        app.dialogs.clear();
+        app.command_palette_open = true;
+        assert!(!has_visible_indeterminate_activity(&app));
+    }
+
+    #[test]
+    fn presentation_cadences_are_explicitly_bounded() {
+        assert!(ANIMATION_INTERVAL >= std::time::Duration::from_millis(100));
+        assert!(ANIMATION_INTERVAL <= std::time::Duration::from_millis(250));
+        assert_eq!(ELAPSED_REFRESH_INTERVAL, std::time::Duration::from_secs(1));
     }
 
     #[test]

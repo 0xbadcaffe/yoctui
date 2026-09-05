@@ -371,7 +371,37 @@ print("dirty render source contracts valid")
 PY
   cargo test -q -p yoctui --bin yoctui render_scheduler
   cargo test -q -p yoctui --bin yoctui normal_render_interval_is_capped_at_ten_hertz
-  cargo test -q -p yoctui --bin yoctui idle_client_has_no_animation_driven_render_work
+}
+
+verify_animations() {
+  python3 - <<'PY'
+from pathlib import Path
+
+source = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+scheduler = Path("crates/yoctui-cli/src/render_scheduler.rs").read_text(encoding="utf-8")
+tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
+for required in (
+    "has_visible_indeterminate_activity(&app)",
+    "presentation_now + ANIMATION_INTERVAL",
+    "presentation_now + ELAPSED_REFRESH_INTERVAL",
+):
+    if required not in tui:
+        raise SystemExit(f"animation scheduler contract is missing: {required}")
+if "Action::Tick" not in tui:
+    raise SystemExit("visible animation does not advance the model phase")
+for required in (
+    "app.reduced_motion", "app.active_dialog().is_some()",
+    "Screen::Dashboard | Screen::Tasks", "TaskState::Active",
+    "task.progress.is_none()",
+):
+    if required not in scheduler:
+        raise SystemExit(f"animation visibility guard is missing: {required}")
+print("visible-only animation source contracts valid")
+PY
+  cargo test -q -p yoctui --bin yoctui render_scheduler::tests::animation_is_visible_only_indeterminate_and_nonterminal
+  cargo test -q -p yoctui --bin yoctui render_scheduler::tests::overlays_and_reduced_motion_freeze_animation_but_not_elapsed_time
+  cargo test -q -p yoctui --bin yoctui render_scheduler::tests::presentation_cadences_are_explicitly_bounded
+  cargo test -q -p yoctui-ui active_task_indicator_uses_braille_motion_and_accessible_fallbacks
 }
 
 case "$mode" in
@@ -407,6 +437,15 @@ case "$mode" in
     verify_wakeups
     verify_event_loops
     verify_render
+    ;;
+  --animations)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
     ;;
   all)
     verify_contract

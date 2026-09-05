@@ -7088,18 +7088,18 @@ notes = "The v0.1.29 CLI has one production draw site behind a typed RenderSched
 id = "PERF-ANIM-001"
 milestone = "M46"
 title = "Bound animation work and cadence"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 797
 required = true
 depends_on = ["PERF-RENDER-001"]
 verify = ["./scripts/verify-performance.sh --animations"]
-notes = "Use measured low-frequency visible-only animation ticks, freeze reduced-motion animation, and avoid application-wide cosmetic invalidation."
+notes = "The v0.1.30 presentation scheduler advances the reducer-owned animation phase at an explicit 5 Hz only while Dashboard or Tasks visibly contains active indeterminate work. Determinate, terminal, hidden, dialog/menu-obscured, and reduced-motion state cannot request animation frames. A separate 1 Hz elapsed clock preserves lifecycle time without advancing animation. Focused runtime/UI tests and the offline animation gate cover cadence, visibility, overlays, terminal state, and accessible stable fallbacks."
 
 [[task]]
 id = "PERF-TELEMETRY-001"
 milestone = "M46"
 title = "Optimize telemetry collection"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 798
 required = true
 depends_on = ["PERF-EVENTLOOP-001", "PERF-RENDER-001"]

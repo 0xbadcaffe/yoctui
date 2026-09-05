@@ -46,9 +46,11 @@ rendering now passes through one typed coalescing scheduler. It records render
 requests, frames, coalesced requests, and skipped idle checks; input, state,
 telemetry, presentation, and resize causes converge on the only production
 draw call. A 100 ms minimum interval caps normal rendering at 10 Hz, and 640
-synthetic state updates coalesce to ten scheduled frames. Visible-only
-animation cadence is next. Overall required registry progress is 637/659
-(96.7%).
+synthetic state updates coalesce to ten scheduled frames. Animation now advances
+at 5 Hz only for visible indeterminate work in Dashboard or Tasks; hidden,
+determinate, terminal, overlay-obscured, and reduced-motion state cannot drive
+it. Elapsed time refreshes separately at 1 Hz. Telemetry collection is next.
+Overall required registry progress is 638/659 (96.8%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

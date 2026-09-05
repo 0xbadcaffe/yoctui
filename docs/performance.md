@@ -199,6 +199,15 @@ interval:
 ./scripts/verify-performance.sh --render
 ```
 
+Animation scheduling has its own offline gate. Production uses an explicit 200
+ms (5 Hz) animation interval only for visible indeterminate activity and a
+separate one-second elapsed-time refresh. The tests reject hidden, determinate,
+terminal, overlay-obscured, and reduced-motion animation work:
+
+```sh
+./scripts/verify-performance.sh --animations
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

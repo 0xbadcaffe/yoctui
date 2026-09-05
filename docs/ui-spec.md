@@ -4742,6 +4742,14 @@ is itself an invalidation source and is processed independently of animation
 ticks. Runtime diagnostics retain request, rendered-frame, coalesced-request,
 and skipped-idle-check counters.
 
+Animation and elapsed time use separate clocks. The animation clock runs at 5
+Hz only when the unobscured Dashboard or Tasks workspace actually renders an
+indeterminate active marker. Determinate progress, terminal state, other
+workspaces, dialogs, menus, and the command palette do not advance it. Reduced
+motion freezes the phase completely. Active build elapsed text remains current
+through an independent one-second invalidation and therefore never depends on
+animation.
+
 The shared visual projection vocabulary is now concrete. Fractions retain the
 exact numerator and denominator and derive an overflow-safe bounded whole
 percent; a zero total is `unknown`, and a reported numerator beyond its total

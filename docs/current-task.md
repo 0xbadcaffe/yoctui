@@ -2,37 +2,40 @@
 
 ## Task
 
-**ID:** PERF-ANIM-001
-**Title:** Bound animation work and cadence
+**ID:** PERF-TELEMETRY-001
+**Title:** Optimize telemetry collection
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Make indeterminate activity animation visible-only, low-frequency, and
-independent of unrelated application state. Freeze it in reduced-motion mode
-and ensure hidden or terminal activity cannot request frames.
+Reduce host and daemon telemetry work to a low, demand-aware cadence without
+per-sample process creation. Reuse kernel sources where practical and retain
+only bounded histories.
 
 ## Dependencies
 
+- PERF-EVENTLOOP-001 — DONE
 - PERF-RENDER-001 — DONE
 
 ## Definition of done
 
-- Animation cadence is explicitly bounded between 4 and 10 Hz.
-- Only a screen/dialog containing visible indeterminate activity advances the
-  animation frame.
-- Hidden, determinate, and terminal work does not schedule animation frames.
-- Reduced-motion mode freezes the animation frame while preserving lifecycle
-  text and elapsed-time updates at no more than 1 Hz.
-- Animation state changes do not force unrelated full-app work.
-- Focused model/UI/runtime tests and `verify-performance.sh --animations`
-  reject cadence, visibility, terminal-state, and reduced-motion regressions.
+- CPU, memory, disk, network, filesystem, and daemon-health collection cadences
+  are explicit, low-frequency, and measured.
+- No telemetry sample spawns an external process.
+- Reusable procfs/sysfs handles or cached static metadata avoid repeated setup
+  where measurement shows value.
+- Invisible telemetry is paused or reduced when no attached client needs it.
+- Histories remain bounded and unchanged samples do not request redundant
+  client frames or daemon publications.
+- Focused tests and `verify-performance.sh --telemetry` reject sampling-rate,
+  process-spawn, visibility, and retention regressions.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --animations
+./scripts/verify-performance.sh --telemetry
 ./scripts/verify-roadmap.sh
 ```
 
-Dirty rendering and its exact counters are complete in v0.1.29.
+Visible-only 5 Hz animation and separate 1 Hz elapsed refresh are complete in
+v0.1.30.
