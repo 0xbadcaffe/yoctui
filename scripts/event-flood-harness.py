@@ -24,10 +24,10 @@ CRITICAL_NAMES = {
     "error_sentinel",
     "critical_task_queued",
     "critical_task_started",
-    "critical_task_progress",
     "critical_task_failed",
     "build_terminal",
 }
+COALESCIBLE_NAMES = {"critical_task_progress"}
 
 
 class ProtocolClient:
@@ -449,9 +449,11 @@ def main() -> int:
             raise RuntimeError("event generator report was not loaded")
 
         sent_names = {entry["name"] for entry in generated["critical_sent"]}
-        critical_received = sorted(sent_names & observed)
-        missing = sorted(sent_names - observed)
-        retention_passed = CRITICAL_NAMES.issubset(observed)
+        required_sent = sent_names & CRITICAL_NAMES
+        critical_received = sorted(required_sent & observed)
+        missing = sorted(required_sent - observed)
+        coalescible_missing = sorted((sent_names & COALESCIBLE_NAMES) - observed)
+        retention_passed = required_sent.issubset(observed)
         known_failure = (
             "build_terminal" in sent_names
             and "build_terminal" not in observed
@@ -491,6 +493,7 @@ def main() -> int:
                 "reconnect_probe_succeeded": client_continuity,
                 "critical_received": critical_received,
                 "critical_missing": missing,
+                "coalescible_missing": coalescible_missing,
                 "wire_metrics": wire_metrics,
                 "pressure": observed_pressure,
             },

@@ -312,7 +312,7 @@
     },
     "ipc_continuity": {
       "path": "artifacts/performance/ipc-gate/manifest.json",
-      "sha256": "071e5606c36447cf91e1a61628792b34ba5a0557578b12c633edb3e2b819c5d2"
+      "sha256": "f051a23c25fefb65923c7d6334d2dd69035015a7b06e5781069e0f066a285285"
     },
     "ipc_latency": {
       "path": "artifacts/performance/ipc-latency/host-audit.json",

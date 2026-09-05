@@ -2,35 +2,38 @@
 
 ## Task
 
-**ID:** PERF-CI-001
-**Title:** Integrate deterministic and scheduled performance CI
+**ID:** PERF-DOC-001
+**Title:** Document low-overhead architecture and tuning
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add fast deterministic performance checks to pull-request CI and keep the
-long-running CPU, memory, profiling, and real-Poky evidence paths scheduled or
-explicitly opt-in, with retained artifacts on failure.
+Complete the operator and developer documentation for expected CPU use,
+event-driven rendering, telemetry rates, backpressure, saturated-host behavior,
+optional host guidance, profiling, and every reproduction command.
 
 ## Dependencies
 
+- PERF-BITBAKE-COEXIST-001 — DONE
 - PERF-REGRESSION-001 — DONE
+- PERF-REAL-POKY-001 — DONE
 
 ## Definition of done
 
-- Pull requests run busy-loop, render invalidation, event coalescing, IPC
-  backpressure, and deterministic saturation responsiveness checks.
-- Scheduled or manually dispatched CI covers profiling, real Poky, the full
-  steady-state CPU gate, and memory endurance without making PRs impractical.
-- Failure artifacts preserve machine-readable performance results and logs.
-- CI verification is offline and proves the required workflow coverage.
+- Expected CPU consumption and exact accounting are easy to find.
+- Render, animation, telemetry, IPC/backpressure, and saturated backend behavior
+  match the implemented architecture.
+- Optional nice/cgroup/affinity and BitBake parallelism guidance remains safe,
+  unprivileged, advisory, and never automatic.
+- Profiling and all deterministic/live evidence commands are reproducible.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --ci
+./scripts/check-docs.sh
+./scripts/verify-performance.sh --docs
 ./scripts/verify-roadmap.sh
 ```
 
-The compact regression record is complete in v0.1.48 with 22 hard metrics and
-seven correctness checks regenerated from exact retained evidence.
+Performance CI is complete in v0.1.49: fast PR checks, weekly/manual endurance,
+and opt-in self-hosted real-Poky capture retain failure evidence separately.

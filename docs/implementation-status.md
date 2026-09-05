@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-CI-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-DOC-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -149,6 +149,17 @@ render cadence, queue pressure, and memory endurance. Its 22 controlled hard
 metrics and seven correctness checks pass; the verifier rebuilds it byte-for-byte
 instead of trusting copied summaries, while informational trends do not fail on
 tiny uncontrolled variance.
+Push and pull-request CI now runs the bounded idle-loop, dirty-render,
+log/task/job coalescing, all-CPU saturation, and IPC backpressure gates. The
+weekly/manual job validates retained profile and real-Poky evidence, repeats
+the release CPU gate, and captures a fresh 30-minute memory run. Fresh real
+Poky capture is isolated behind an explicit repository variable on a labeled
+self-hosted runner. Every performance job uploads its diagnostics even on
+failure, and an offline contract test prevents long live work from leaking into
+the PR path. The dynamic flood test also now matches the priority contract:
+progress may be coalesced under pressure, while failure, terminal, warning,
+error, and lifecycle sentinels remain mandatory. Overall required registry
+progress is 657/659 (99.7%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

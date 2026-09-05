@@ -73,6 +73,101 @@ jobs:
           name: yoctui-release-quality-${{ github.sha }}
           path: artifacts/release-quality/
           if-no-files-found: ignore
+  performance-fast:
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Build deterministic performance fixture binary
+        run: cargo build --locked -p yoctui
+      - name: Run fast low-overhead and saturation gates
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/performance/ci
+          ./scripts/verify-performance-ci-fast.sh 2>&1 | tee artifacts/performance/ci/fast.log
+      - name: Upload fast performance diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoctui-performance-fast-${{ github.sha }}
+          path: artifacts/performance/ci/
+          if-no-files-found: error
+  performance-scheduled:
+    if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Build release performance binary
+        run: cargo build --release --locked -p yoctui --all-features
+      - name: Validate retained profiles and real-build evidence
+        run: |
+          set -o pipefail
+          mkdir -p artifacts/performance/ci
+          ./scripts/verify-performance.sh --real-poky-evidence 2>&1 | tee artifacts/performance/ci/evidence.log
+      - name: Run controlled steady-state CPU gate
+        run: ./scripts/verify-low-overhead.sh
+      - name: Run 30-minute memory endurance
+        run: |
+          ./scripts/measure-bounded-memory.py \
+            --binary target/release/yoctui \
+            --warmup-seconds 10 \
+            --sample-seconds 1800 \
+            --rate 4000 \
+            --output artifacts/performance/ci/memory-endurance.json
+      - name: Upload scheduled performance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoctui-performance-scheduled-${{ github.sha }}
+          path: artifacts/performance/ci/
+          if-no-files-found: error
+  performance-live-poky:
+    if: ${{ (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && vars.YOCTUI_LIVE_PERFORMANCE == '1' }}
+    runs-on: [self-hosted, linux, yoctui-poky]
+    timeout-minutes: 90
+    env:
+      YOCTUI_PERF_BUILD_DIR: ${{ vars.YOCTUI_PERF_BUILD_DIR }}
+      YOCTUI_PERF_POKY_ROOT: ${{ vars.YOCTUI_PERF_POKY_ROOT }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build release performance binary
+        run: cargo build --release --locked -p yoctui --all-features
+      - name: Capture fresh real-Poky saturation evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$YOCTUI_PERF_BUILD_DIR"
+          test -n "$YOCTUI_PERF_POKY_ROOT"
+          source "$YOCTUI_PERF_POKY_ROOT/oe-init-build-env" "$YOCTUI_PERF_BUILD_DIR"
+          cd "$GITHUB_WORKSPACE"
+          mkdir -p artifacts/performance/ci
+          ./scripts/capture-real-poky-performance.py \
+            --binary target/release/yoctui \
+            --build-dir "$YOCTUI_PERF_BUILD_DIR" \
+            --poky-root "$YOCTUI_PERF_POKY_ROOT" \
+            --target linux-yocto \
+            --task compile \
+            --preclean \
+            --wait-for-task linux-yocto:do_compile \
+            --warmup-seconds 10 \
+            --seconds 120 \
+            --output artifacts/performance/ci/real-poky.json
+      - name: Upload live Poky performance evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: yoctui-performance-real-poky-${{ github.sha }}
+          path: artifacts/performance/ci/
+          if-no-files-found: error
   compatibility-live:
     if: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest

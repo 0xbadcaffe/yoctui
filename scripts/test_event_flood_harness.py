@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
 from pathlib import Path
@@ -14,6 +15,11 @@ import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "scripts/fixtures/bitbake-event-flood-bridge.py"
+HARNESS_PATH = ROOT / "scripts/event-flood-harness.py"
+HARNESS_SPEC = importlib.util.spec_from_file_location("event_flood_harness", HARNESS_PATH)
+assert HARNESS_SPEC and HARNESS_SPEC.loader
+HARNESS = importlib.util.module_from_spec(HARNESS_SPEC)
+HARNESS_SPEC.loader.exec_module(HARNESS)
 
 
 class BridgeSession:
@@ -77,6 +83,12 @@ class BridgeSession:
 
 
 class EventFloodHarnessTests(unittest.TestCase):
+    def test_progress_is_coalescible_but_terminal_and_failure_are_critical(self) -> None:
+        self.assertNotIn("critical_task_progress", HARNESS.CRITICAL_NAMES)
+        self.assertIn("critical_task_progress", HARNESS.COALESCIBLE_NAMES)
+        self.assertIn("critical_task_failed", HARNESS.CRITICAL_NAMES)
+        self.assertIn("build_terminal", HARNESS.CRITICAL_NAMES)
+
     def environment(
         self,
         directory: str,

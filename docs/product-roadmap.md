@@ -1003,4 +1003,9 @@ collects CPU, latency, wakeup, render, pressure, and memory data in one compact
 schema. Twenty-two controlled thresholds remain hard gates and seven continuity
 and ordering checks pass; exact regeneration prevents stale or hand-edited
 summaries, while diagnostic trends tolerate tiny uncontrolled variance. CI
-integration is next.
+integration is complete. Push/PR CI runs the bounded idle-loop, render,
+coalescing, full-affinity saturation, and IPC-backpressure checks. Weekly/manual
+CI repeats the release CPU and 30-minute memory paths while validating retained
+profiles and real-Poky evidence; explicitly enabled labeled self-hosted runners
+can capture fresh real-Poky evidence. All performance jobs retain diagnostics
+on failure. Final low-overhead architecture and operator documentation is next.

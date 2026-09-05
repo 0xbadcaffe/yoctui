@@ -590,6 +590,29 @@ correctness outcomes:
 ```sh
 ./scripts/verify-performance.sh --regressions
 ```
+
+## Continuous integration tiers
+
+`scripts/verify-performance-ci-fast.sh` is the bounded push and pull-request
+gate. It checks idle blocking, dirty rendering, task/log/job coalescing,
+full-affinity saturation, and production IPC backpressure. It intentionally
+does not run a full image build or a 30-minute endurance sample.
+The flood assertion follows the priority model: progress is coalescible, but
+failure, terminal, warning, error, and task-lifecycle sentinels are mandatory.
+
+Weekly and manually dispatched CI builds the release binary, validates the
+retained flamegraph and real-Poky roles, repeats the 60-second low-overhead
+measurement, and captures a fresh 30-minute memory result. Fresh real-Poky
+capture is separately opt-in through `YOCTUI_LIVE_PERFORMANCE=1` on a labeled
+self-hosted runner with `YOCTUI_PERF_BUILD_DIR` and `YOCTUI_PERF_POKY_ROOT`.
+Pull requests therefore cannot accidentally download or modify a Poky tree.
+Each performance job uploads `artifacts/performance/ci/` under `if: always()`.
+
+The complete offline CI contract and fast execution path are verified with:
+
+```sh
+./scripts/verify-performance.sh --ci
+```
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,
 `./scripts/verify-saturation-responsiveness.sh`,

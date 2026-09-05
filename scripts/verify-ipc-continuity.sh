@@ -48,7 +48,11 @@ if not client["connection_continuity"] or not client["reconnect_probe_succeeded"
     raise SystemExit("retained IPC continuity evidence disconnected")
 if not client["event_sequences_strictly_increasing"] or client["critical_missing"]:
     raise SystemExit("retained IPC continuity evidence lost order or a critical event")
-if len(client["critical_received"]) != 7 or not flood["result"]["critical_retention_passed"]:
+required = {
+    "warning_sentinel", "error_sentinel", "critical_task_queued",
+    "critical_task_started", "critical_task_failed", "build_terminal",
+}
+if not required.issubset(client["critical_received"]) or not flood["result"]["critical_retention_passed"]:
     raise SystemExit("retained IPC critical sentinel proof is incomplete")
 if client["pressure"]["slow_client_disconnects"] < 1:
     raise SystemExit("retained IPC slow-client isolation proof is absent")
@@ -104,6 +108,12 @@ if not record["result"]["critical_retention_passed"]:
     raise SystemExit("bounded backpressure lost a critical sentinel")
 if record["client"]["critical_missing"]:
     raise SystemExit("bounded backpressure omitted critical records")
+required = {
+    "warning_sentinel", "error_sentinel", "critical_task_queued",
+    "critical_task_started", "critical_task_failed", "build_terminal",
+}
+if not required.issubset(record["client"]["critical_received"]):
+    raise SystemExit("bounded backpressure omitted a required critical sentinel")
 if record["client"]["snapshot_replacements"] or record["client"]["resync_requests"]:
     raise SystemExit("healthy client required replacement under pressure")
 if not record["client"]["event_sequences_strictly_increasing"]:

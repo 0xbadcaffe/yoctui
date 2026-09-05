@@ -1190,6 +1190,12 @@ print(
 PY
 }
 
+verify_ci() {
+  bash -n scripts/verify-performance-ci-fast.sh
+  python3 -m unittest scripts/test_performance_ci_contract.py
+  ./scripts/verify-performance-ci-fast.sh
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -1377,6 +1383,10 @@ case "$mode" in
     verify_coexistence
     verify_real_poky
     verify_regressions
+    ;;
+  --ci)
+    "$0" --regressions
+    verify_ci
     ;;
   all)
     verify_contract

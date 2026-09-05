@@ -7297,18 +7297,18 @@ notes = "In v0.1.48 a deterministic compact regression record aggregates SHA-256
 id = "PERF-CI-001"
 milestone = "M46"
 title = "Integrate deterministic and scheduled performance CI"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 816
 required = true
 depends_on = ["PERF-REGRESSION-001"]
 verify = ["./scripts/verify-performance.sh --ci"]
-notes = "Run fast busy-loop, invalidation, coalescing, backpressure, and saturation tests on PRs; keep flamegraphs, real Poky, CPU endurance, and memory endurance scheduled or opt-in with artifacts."
+notes = "In v0.1.49 push/PR CI runs a bounded fast gate covering the idle loop, dirty-render scheduler, log/task/job coalescing, all-affinity CPU saturation, and production IPC backpressure. Weekly/manual CI validates retained profiles/real-Poky evidence, repeats the 60-second release CPU gate, and records a fresh 30-minute memory endurance run. An explicitly enabled self-hosted Poky runner captures a fresh 120-second real kernel compile. All three performance jobs upload diagnostics with if: always(), and an offline contract test verifies coverage and separation. The dynamic flood gate treats progress as explicitly coalescible while retaining failures, terminals, warnings, errors, and lifecycle transitions."
 
 [[task]]
 id = "PERF-DOC-001"
 milestone = "M46"
 title = "Document low-overhead architecture and tuning"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 817
 required = true
 depends_on = ["PERF-BITBAKE-COEXIST-001", "PERF-REGRESSION-001", "PERF-REAL-POKY-001"]
