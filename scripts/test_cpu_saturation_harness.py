@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import signal
 import subprocess
 import tempfile
@@ -31,6 +32,32 @@ class CpuSaturationHarnessTests(unittest.TestCase):
         result = self.run_harness("--workers", "0")
         self.assertEqual(result.returncode, 2)
         self.assertIn("workers must be within", result.stderr)
+
+    def test_oversubscribed_workers_cycle_over_selected_cpus(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="yoctui-saturation-over-") as directory:
+            output = Path(directory) / "result.json"
+            result = self.run_harness(
+                "--workers",
+                "2",
+                "--cpu-list",
+                str(next(iter(os.sched_getaffinity(0)))),
+                "--warmup-seconds",
+                "0",
+                "--duration-seconds",
+                "0.25",
+                "--minimum-worker-cpu-percent",
+                "10",
+                "--output",
+                str(output),
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            record = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(len(record["configuration"]["selected_cpus"]), 1)
+            self.assertEqual(
+                record["configuration"]["worker_cpu_assignments"],
+                record["configuration"]["selected_cpus"] * 2,
+            )
+            self.assertEqual(len(record["workers"]), 2)
 
     def test_reports_ready_saturation_bounded_exit_and_cleanup(self) -> None:
         with tempfile.TemporaryDirectory(prefix="yoctui-saturation-test-") as directory:

@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-BITBAKE-COEXIST-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-INPUT-LATENCY-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -95,8 +95,13 @@ The affinity audit measured 0.0835 ms median p95 with the inherited full set,
 omitted from load. CPU 7 still shared its physical core with saturated sibling
 CPU 3, and pinning removed migration flexibility. Yoctui therefore retains
 inherited affinity, hardcodes no CPU, and passes the required no-free-CPU gate.
-BitBake coexistence guidance is next.
-Overall required registry progress is 647/659 (98.2%).
+The coexistence audit measured 0.6223 ms median p95 wake latency with one worker
+per logical CPU and 1.0377 ms with two workers per CPU at about 99% host CPU.
+The new typed `yoctui inspect` diagnostic reports CPU count, load,
+`BB_NUMBER_THREADS`, and `PARALLEL_MAKE` as read-only evidence; it never edits
+build configuration or runtime policy. Saturated keyboard/mouse-to-model/frame
+latency is next.
+Overall required registry progress is 648/659 (98.3%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

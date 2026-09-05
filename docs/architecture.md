@@ -3648,6 +3648,25 @@ affinity, never choose a CPU number, and remain correct with every logical CPU
 busy. External administrators retain normal `taskset`/cpuset authority, but
 that host policy is not encoded in Yoctui state or startup.
 
+BitBake coexistence diagnosis is pure model logic over the already-authoritative
+`Workspace.variables` and client-owned `HostTelemetry`. The bridge continues to
+capture `BB_NUMBER_THREADS` and `PARALLEL_MAKE`; the CLI `inspect` boundary adds
+the host's cached logical-CPU count and `/proc/loadavg` sample and renders the
+typed assessment. The model parses independent numeric limits, classifies
+configured and observed pressure, and returns review text without an effect.
+No reducer, backend, daemon, or CLI mutation path is introduced. In particular,
+the diagnostic never writes `local.conf`, changes environment variables,
+multiplies BitBake and make concurrency into a false capacity claim, or changes
+scheduler/cgroup/affinity policy.
+
+The coexistence measurement remains an external fixture. It extends the CPU
+harness only by allowing multiple independently accounted workers to cycle over
+the same explicit selected CPU set; the default still starts exactly one worker
+per affinity CPU. Repeated one-worker and two-worker-per-CPU trials measure a
+10 ms monotonic wake probe and retain exact worker-to-CPU assignments. This
+models scheduler pressure and supports diagnostic guidance but is not presented
+as real-BitBake evidence.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

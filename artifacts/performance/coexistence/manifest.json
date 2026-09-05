@@ -1,0 +1,26 @@
+{
+  "schema": "yoctui.performance.bitbake-coexistence-manifest.v1",
+  "source_base_revision": "2f95f481982806ea07fc5fa07597f1c60142ca6d",
+  "artifact": "host-audit.json",
+  "artifact_sha256": "0f56509bbda7fc8325cf32fff0790b93e9ccc1268e0d9d847d91f4ee82cb07b6",
+  "method": {
+    "repetitions": 3,
+    "duration_seconds": 3,
+    "probe_interval_ms": 10,
+    "normal_workers_per_logical_cpu": 1,
+    "oversubscribed_workers_per_logical_cpu": 2
+  },
+  "observations": {
+    "normal_median_p95_wake_latency_ms": 0.6223126547411084,
+    "oversubscribed_median_p95_wake_latency_ms": 1.0377172147855163,
+    "normal_minimum_host_cpu_utilization_percent": 99.2,
+    "oversubscribed_minimum_host_cpu_utilization_percent": 99.2
+  },
+  "decision": {
+    "diagnostic": "Report configured limits and observed load as a read-only advisory; never edit local.conf or the environment.",
+    "parallelism": "Do not multiply BB_NUMBER_THREADS by PARALLEL_MAKE because BitBake task concurrency and per-task make concurrency overlap dynamically.",
+    "default": "Retain the user's build configuration, inherited scheduler, full affinity, and cgroup policy.",
+    "example": "When interaction is poor, one fewer job than available logical CPUs is an optional review example, not an automatic default.",
+    "correctness": "Yoctui remains correct without root, affinity isolation, cgroup overrides, or a deliberately free logical CPU."
+  }
+}

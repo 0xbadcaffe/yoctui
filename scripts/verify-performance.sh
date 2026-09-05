@@ -888,6 +888,110 @@ PY
   unlink "$current"
 }
 
+verify_coexistence() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/coexistence")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.bitbake-coexistence-manifest.v1":
+    raise SystemExit("BitBake coexistence manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+artifact = root / manifest["artifact"]
+if hashlib.sha256(artifact.read_bytes()).hexdigest() != manifest["artifact_sha256"]:
+    raise SystemExit("BitBake coexistence evidence digest mismatch")
+record = json.loads(artifact.read_text(encoding="utf-8"))
+if record.get("schema") != "yoctui.performance.bitbake-coexistence.v1":
+    raise SystemExit("BitBake coexistence evidence schema is unsupported")
+if record.get("revision") != revision:
+    raise SystemExit("BitBake coexistence evidence source identity mismatch")
+configuration = record["configuration"]
+if configuration.get("repetitions") != 3 or configuration.get("probe_interval_ms") != 10:
+    raise SystemExit("BitBake coexistence evidence does not use the reviewed repeated method")
+affinity = record["host"]["affinity_cpus"]
+expected = {
+    "one_worker_per_logical_cpu": len(affinity),
+    "two_workers_per_logical_cpu": len(affinity) * 2,
+}
+for name, worker_count in expected.items():
+    scenario = record["scenarios"].get(name)
+    if scenario is None or scenario["workers"] != worker_count:
+        raise SystemExit(f"BitBake coexistence scenario is incomplete: {name}")
+    if len(scenario["trials"]) != 3 or len(scenario["saturation"]) != 3:
+        raise SystemExit(f"BitBake coexistence trials are incomplete: {name}")
+    if scenario["summary"]["median_p95_wake_latency_ms"] > 100:
+        raise SystemExit(f"BitBake coexistence scenario exceeded responsiveness bound: {name}")
+    for load in scenario["saturation"]:
+        if load["status"] != "completed" or load["children_reaped"] is not True:
+            raise SystemExit(f"BitBake coexistence load did not clean up: {name}")
+        if load["selected_cpus"] != affinity:
+            raise SystemExit(f"BitBake coexistence load did not use full affinity: {name}")
+        if load["requested_workers"] != worker_count:
+            raise SystemExit(f"BitBake coexistence worker count mismatch: {name}")
+        if load["minimum_worker_cpu_percent"] < 15:
+            raise SystemExit(f"BitBake coexistence load floor was not achieved: {name}")
+for source in record["sources"].values():
+    path = Path(source["path"])
+    if hashlib.sha256(path.read_bytes()).hexdigest() != source["sha256"]:
+        raise SystemExit(f"BitBake coexistence source digest mismatch: {path}")
+policy = " ".join(record["policy"].values()).lower()
+for required in ("read-only", "do not multiply", "never automatic", "neither root"):
+    if required not in policy:
+        raise SystemExit(f"BitBake coexistence policy is incomplete: {required}")
+model = Path("crates/yoctui-model/src/lib.rs").read_text(encoding="utf-8")
+cli = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+for required in (
+    "bitbake_coexistence_diagnostic", "BB_NUMBER_THREADS", "PARALLEL_MAKE",
+    "configured build parallelism can occupy every logical CPU",
+):
+    if required not in model:
+        raise SystemExit(f"read-only coexistence diagnostic is missing: {required}")
+if "coexistence policy: read-only; Yoctui changed no BitBake configuration" not in cli:
+    raise SystemExit("inspect command does not disclose its read-only coexistence policy")
+normal = record["scenarios"]["one_worker_per_logical_cpu"]["summary"]["median_p95_wake_latency_ms"]
+over = record["scenarios"]["two_workers_per_logical_cpu"]["summary"]["median_p95_wake_latency_ms"]
+print(f"BitBake coexistence audit valid: normal median p95 {normal:.4f} ms; 2x workers {over:.4f} ms")
+PY
+
+  python3 -m unittest scripts/test_cpu_saturation_harness.py scripts/test_measure_bitbake_coexistence.py
+  cargo test -q -p yoctui-model coexistence_diagnostic
+  cargo test -q -p yoctui-model parallel_make_parser
+  cargo test -q -p yoctui --bin yoctui coexistence_output
+  current="$(mktemp /tmp/yoctui-coexistence-current.XXXXXX.json)"
+  trap 'unlink "$current" 2>/dev/null || true' RETURN
+  ./scripts/measure-bitbake-coexistence.py \
+    --revision "$(git rev-parse HEAD)" \
+    --duration-seconds 1 \
+    --repetitions 1 \
+    --output "$current" >/dev/null
+  python3 - "$current" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+affinity = record["host"]["affinity_cpus"]
+normal = record["scenarios"]["one_worker_per_logical_cpu"]
+over = record["scenarios"]["two_workers_per_logical_cpu"]
+if normal["workers"] != len(affinity) or over["workers"] != len(affinity) * 2:
+    raise SystemExit("current coexistence measurement did not exercise both load levels")
+if normal["summary"]["median_p95_wake_latency_ms"] > 100:
+    raise SystemExit("current full-affinity coexistence path exceeds 100 ms")
+if over["summary"]["median_p95_wake_latency_ms"] > 100:
+    raise SystemExit("current oversubscribed coexistence path exceeds 100 ms")
+print("current read-only coexistence diagnostic remains responsive at normal and 2x worker load")
+PY
+  trap - RETURN
+  unlink "$current"
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -1021,6 +1125,23 @@ case "$mode" in
     verify_tokio
     verify_scheduling
     verify_affinity
+    ;;
+  --coexistence)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
+    verify_tasks
+    verify_ipc
+    verify_tokio
+    verify_scheduling
+    verify_affinity
+    verify_coexistence
     ;;
   all)
     verify_contract

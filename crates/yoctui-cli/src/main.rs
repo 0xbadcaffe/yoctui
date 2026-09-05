@@ -95,12 +95,13 @@ use yoctui_bitbake::{
     WicDeviceInventoryResponse, WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
-    Action, AnimationSpeed, App, AppError, BuildRequest, BuildStatus, ClientAccessOrigin,
-    ConfigEditRequest, DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState,
-    HostTelemetry, ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry,
-    LayerInspectorMode, LayerRelationship, LayerRelationships, OnboardingProgress,
-    PackageDetailRequest, PackageInventoryRequest, PreviewKind, QaAction, QaCheckFamily, QaCheckId,
-    QaEffect, QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
+    Action, AnimationSpeed, App, AppError, BitBakeCoexistenceDiagnostic,
+    BitBakeCoexistencePressure, BuildRequest, BuildStatus, ClientAccessOrigin, ConfigEditRequest,
+    DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
+    ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
+    LayerRelationship, LayerRelationships, OnboardingProgress, PackageDetailRequest,
+    PackageInventoryRequest, PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect,
+    QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
     QaReportRequest, QaScope, QaSessionId, QaSessionStatus, QaSourceLocation, QemuCapability,
     QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity,
     RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation,
@@ -110,7 +111,8 @@ use yoctui_model::{
     TEXTAREA_MAX_BYTES, TestComparison, TestOperation, TestSessionId, TestWorkspaceView,
     TextAreaRevision, Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft,
     WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId,
-    WorkbenchPreferences, update, validate_config_edit_request, validate_raw_favorites,
+    WorkbenchPreferences, bitbake_coexistence_diagnostic, update, validate_config_edit_request,
+    validate_raw_favorites,
 };
 use yoctui_ui::render;
 
@@ -1317,10 +1319,65 @@ async fn inspect_workspace(backend: Backend, build_dir: PathBuf) -> Result<()> {
         "Yocto/OpenEmbedded release: {}",
         workspace.release.as_deref().unwrap_or("unknown")
     );
+    let coexistence = bitbake_coexistence_diagnostic(
+        &workspace,
+        &HostTelemetry {
+            logical_cpu_count: std::thread::available_parallelism()
+                .ok()
+                .and_then(|count| u16::try_from(count.get()).ok()),
+            load_average_milli: read_load_average(),
+            ..HostTelemetry::default()
+        },
+    );
+    for line in bitbake_coexistence_lines(&coexistence) {
+        println!("{line}");
+    }
     for (name, value) in workspace.variables {
         println!("{name}={value}");
     }
     Ok(())
+}
+
+fn bitbake_coexistence_lines(diagnostic: &BitBakeCoexistenceDiagnostic) -> Vec<String> {
+    let pressure = match diagnostic.pressure {
+        BitBakeCoexistencePressure::Unknown => "unknown",
+        BitBakeCoexistencePressure::Nominal => "nominal",
+        BitBakeCoexistencePressure::Busy => "busy",
+        BitBakeCoexistencePressure::Oversubscribed => "oversubscribed",
+    };
+    let value =
+        |value: Option<u16>| value.map_or_else(|| "unknown".into(), |value| value.to_string());
+    let load = diagnostic.load_one_milli.map_or_else(
+        || "unknown".into(),
+        |value| format!("{:.2}", f64::from(value) / 1_000.0),
+    );
+    let mut lines = vec![
+        format!("coexistence pressure: {pressure}"),
+        format!(
+            "coexistence host: logical CPUs={}, load1={load}",
+            value(diagnostic.logical_cpu_count)
+        ),
+        format!(
+            "coexistence config: BB_NUMBER_THREADS={}, PARALLEL_MAKE jobs={}",
+            value(diagnostic.bitbake_threads),
+            value(diagnostic.parallel_make_jobs)
+        ),
+    ];
+    lines.extend(
+        diagnostic
+            .reasons
+            .iter()
+            .map(|reason| format!("coexistence observation: {reason}")),
+    );
+    if diagnostic.pressure == BitBakeCoexistencePressure::Oversubscribed
+        && let Some(jobs) = diagnostic.review_example_jobs
+    {
+        lines.push(format!(
+            "coexistence review example: BB_NUMBER_THREADS=\"{jobs}\" and PARALLEL_MAKE=\"-j {jobs}\"; verify for this workload"
+        ));
+    }
+    lines.push("coexistence policy: read-only; Yoctui changed no BitBake configuration".into());
+    lines
 }
 
 async fn inspect_project_profile(backend_kind: Backend, build_dir: PathBuf) -> Result<()> {
@@ -16330,6 +16387,34 @@ mod tests {
         );
         assert_eq!(parse_load_average("nan 0.50 1.00"), None);
         assert_eq!(parse_load_average("1.00 -0.5 1.00"), None);
+    }
+
+    #[test]
+    fn coexistence_output_is_explicitly_advisory_and_read_only() {
+        let lines = bitbake_coexistence_lines(&BitBakeCoexistenceDiagnostic {
+            pressure: BitBakeCoexistencePressure::Oversubscribed,
+            logical_cpu_count: Some(8),
+            load_one_milli: Some(13_250),
+            bitbake_threads: Some(24),
+            parallel_make_jobs: Some(16),
+            review_example_jobs: Some(7),
+            reasons: vec!["measured host load is high".into()],
+        });
+        assert!(
+            lines
+                .iter()
+                .any(|line| line == "coexistence pressure: oversubscribed")
+        );
+        assert!(lines.iter().any(|line| line.contains("load1=13.25")));
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains("BB_NUMBER_THREADS=\"7\""))
+        );
+        assert_eq!(
+            lines.last().map(String::as_str),
+            Some("coexistence policy: read-only; Yoctui changed no BitBake configuration")
+        );
     }
 
     #[test]

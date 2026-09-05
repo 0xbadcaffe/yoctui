@@ -163,8 +163,8 @@ def main() -> int:
     if any(cpu not in allowed for cpu in selected):
         parser.error("CPU list contains a CPU outside the process affinity set")
     worker_count = args.workers if args.workers is not None else len(selected)
-    if worker_count <= 0 or worker_count > len(selected):
-        parser.error("workers must be within 1..selected CPU count")
+    if worker_count <= 0 or worker_count > len(selected) * 4:
+        parser.error("workers must be within 1..four times selected CPU count")
     if args.warmup_seconds < 0 or args.duration_seconds < 0.25:
         parser.error(
             "warmup must be nonnegative and duration must be at least 0.25 seconds"
@@ -173,7 +173,7 @@ def main() -> int:
         parser.error("readiness timeout must be positive")
     if not 0 <= args.minimum_worker_cpu_percent <= 100:
         parser.error("minimum worker CPU percent must be within 0..100")
-    selected = selected[:worker_count]
+    worker_cpus = [selected[worker % len(selected)] for worker in range(worker_count)]
 
     context = mp.get_context("spawn")
     start = context.Event()
@@ -197,7 +197,7 @@ def main() -> int:
     load_before = list(os.getloadavg())
     try:
         event(events, "starting", begun, workers=worker_count, cpus=selected)
-        for worker, cpu in enumerate(selected):
+        for worker, cpu in enumerate(worker_cpus):
             reader, writer = context.Pipe(duplex=False)
             process = context.Process(
                 target=worker_main,
@@ -291,6 +291,7 @@ def main() -> int:
             "requested_workers": worker_count,
             "available_affinity_cpus": allowed,
             "selected_cpus": selected,
+            "worker_cpu_assignments": worker_cpus,
             "default_saturates_full_affinity": args.workers is None
             and args.cpu_list is None,
             "warmup_seconds": args.warmup_seconds,

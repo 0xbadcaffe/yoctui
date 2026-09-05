@@ -959,4 +959,8 @@ required path: nice 5 was worse, unprivileged nice -5 was denied, and a user
 service at CPUWeight 200 provided no material median-p95 benefit. Optional CPU
 affinity also provided no benefit on the reference SMT host: the inherited full
 set outperformed both pinned layouts while remaining responsive with every CPU
-busy. BitBake coexistence guidance is the current measurement boundary.
+busy. The coexistence audit then measured 0.6223 ms median p95 wake latency at
+one worker per logical CPU and 1.0377 ms at two workers per CPU while host CPU
+stayed near 99%. `yoctui inspect` now reports a typed, read-only
+`BB_NUMBER_THREADS`/`PARALLEL_MAKE`/load diagnostic; examples require review and
+never change build configuration. Saturated input latency is next.

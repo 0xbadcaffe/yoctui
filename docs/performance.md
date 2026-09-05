@@ -269,6 +269,45 @@ support do not depend on it.
 
 The gate also reruns the standard saturation harness with no reserved CPU.
 
+### BitBake coexistence guidance
+
+The read-only `yoctui inspect` diagnostic reports the current logical-CPU
+count, one-minute load average, `BB_NUMBER_THREADS`, and the numeric job limit
+from common `PARALLEL_MAKE` forms. It classifies sustained load above 1.5
+runnable tasks per logical CPU, or either configured limit above twice the CPU
+count, as oversubscribed. A load or configured limit near the CPU count is
+reported as busy. These are review signals, not proof of a bad configuration:
+BitBake task concurrency and each task's make concurrency overlap dynamically,
+so Yoctui deliberately does not multiply the two values.
+
+The reference audit used every one of eight affinity CPUs at about 99% host CPU
+and repeated three three-second trials. One deterministic worker per CPU
+measured 0.6223 ms median p95 scheduler wake latency; two workers per CPU
+measured 1.0377 ms. The latter models runnable oversubscription, not BitBake's
+exact workload. The earlier scheduling audit found no benefit from a transient
+`CPUWeight=200` user service, while the affinity audit found that pinning and a
+nominal logical-CPU reservation were worse on this SMT host. Together these
+measurements retain inherited scheduling, cgroup, and affinity as the required
+path.
+
+If a real build is oversubscribed and interaction is poor, the diagnostic may
+show `available logical CPUs - 1` as a review-only example for both
+`BB_NUMBER_THREADS` and the `PARALLEL_MAKE` job count. This is not an automatic
+default and may reduce build throughput. Yoctui never edits `local.conf`,
+environment variables, or BitBake policy. It remains correct without root,
+cgroup changes, CPU isolation, or a deliberately free CPU. Administrators may
+still tune BitBake or cgroups after reviewing workload-specific evidence.
+
+```sh
+yoctui --build-dir "$BUILDDIR" inspect
+./scripts/measure-bitbake-coexistence.py \
+  --revision "$(git rev-parse HEAD)" \
+  --duration-seconds 3 \
+  --repetitions 3 \
+  --output /tmp/yoctui-coexistence.json
+./scripts/verify-performance.sh --coexistence
+```
+
 `scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
 fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
 and success/failure/disconnect terminal mode. Stable task identities plus

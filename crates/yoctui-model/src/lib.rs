@@ -1173,6 +1173,120 @@ pub struct HostTelemetry {
     pub load_average_milli: Option<[u32; 3]>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BitBakeCoexistencePressure {
+    Unknown,
+    Nominal,
+    Busy,
+    Oversubscribed,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BitBakeCoexistenceDiagnostic {
+    pub pressure: BitBakeCoexistencePressure,
+    pub logical_cpu_count: Option<u16>,
+    pub load_one_milli: Option<u32>,
+    pub bitbake_threads: Option<u16>,
+    pub parallel_make_jobs: Option<u16>,
+    pub review_example_jobs: Option<u16>,
+    pub reasons: Vec<String>,
+}
+
+fn positive_u16(value: &str) -> Option<u16> {
+    value.trim().parse::<u16>().ok().filter(|value| *value > 0)
+}
+
+pub fn parse_parallel_make_jobs(value: &str) -> Option<u16> {
+    let mut fields = value.split_whitespace().peekable();
+    let mut jobs = None;
+    while let Some(field) = fields.next() {
+        if field == "-j" || field == "--jobs" {
+            jobs = fields.next().and_then(positive_u16);
+        } else if let Some(value) = field.strip_prefix("-j") {
+            jobs = positive_u16(value);
+        } else if let Some(value) = field.strip_prefix("--jobs=") {
+            jobs = positive_u16(value);
+        }
+    }
+    jobs
+}
+
+/// Produces a read-only coexistence assessment from already collected state.
+///
+/// This diagnostic deliberately does not claim that BitBake task threads and
+/// each task's make jobs run as a simple product. It flags independently
+/// excessive configured limits and sustained host load for user review.
+pub fn bitbake_coexistence_diagnostic(
+    workspace: &Workspace,
+    telemetry: &HostTelemetry,
+) -> BitBakeCoexistenceDiagnostic {
+    let logical_cpu_count = telemetry.logical_cpu_count;
+    let load_one_milli = telemetry.load_average_milli.map(|load| load[0]);
+    let bitbake_threads = workspace
+        .variables
+        .get("BB_NUMBER_THREADS")
+        .and_then(|value| positive_u16(value));
+    let parallel_make_jobs = workspace
+        .variables
+        .get("PARALLEL_MAKE")
+        .and_then(|value| parse_parallel_make_jobs(value));
+    let review_example_jobs = logical_cpu_count.map(|cpus| cpus.saturating_sub(1).max(1));
+    let mut reasons = Vec::new();
+    let Some(cpus) = logical_cpu_count else {
+        reasons.push("logical CPU count is unavailable".into());
+        return BitBakeCoexistenceDiagnostic {
+            pressure: BitBakeCoexistencePressure::Unknown,
+            logical_cpu_count,
+            load_one_milli,
+            bitbake_threads,
+            parallel_make_jobs,
+            review_example_jobs,
+            reasons,
+        };
+    };
+    let cpus = u32::from(cpus);
+    let configured_oversubscription = bitbake_threads
+        .is_some_and(|threads| u32::from(threads) > cpus.saturating_mul(2))
+        || parallel_make_jobs.is_some_and(|jobs| u32::from(jobs) > cpus.saturating_mul(2));
+    let observed_oversubscription =
+        load_one_milli.is_some_and(|load| load > cpus.saturating_mul(1_500));
+    let configured_busy = bitbake_threads.is_some_and(|threads| u32::from(threads) >= cpus)
+        || parallel_make_jobs.is_some_and(|jobs| u32::from(jobs) >= cpus);
+    let observed_busy = load_one_milli.is_some_and(|load| load >= cpus.saturating_mul(900));
+
+    if configured_oversubscription {
+        reasons.push("a configured parallelism limit exceeds twice the logical CPU count".into());
+    }
+    if observed_oversubscription {
+        reasons
+            .push("the one-minute load average exceeds 1.5 runnable tasks per logical CPU".into());
+    }
+    let pressure = if configured_oversubscription || observed_oversubscription {
+        BitBakeCoexistencePressure::Oversubscribed
+    } else if configured_busy || observed_busy {
+        if configured_busy {
+            reasons.push("configured build parallelism can occupy every logical CPU".into());
+        }
+        if observed_busy {
+            reasons
+                .push("the one-minute load average is near or above logical CPU capacity".into());
+        }
+        BitBakeCoexistencePressure::Busy
+    } else {
+        reasons.push("no sustained or configured oversubscription was detected".into());
+        BitBakeCoexistencePressure::Nominal
+    };
+    BitBakeCoexistenceDiagnostic {
+        pressure,
+        logical_cpu_count,
+        load_one_milli,
+        bitbake_threads,
+        parallel_make_jobs,
+        review_example_jobs,
+        reasons,
+    }
+}
+
 pub const HOST_TELEMETRY_SAMPLE_PERIOD_SECONDS: u16 = 1;
 pub const HOST_TELEMETRY_HISTORY_SAMPLES: usize = 60;
 
@@ -22604,6 +22718,74 @@ mod tests {
             }),
         );
         assert_eq!(app.host_telemetry_history.memory_percent.back(), Some(&50));
+    }
+
+    #[test]
+    fn coexistence_diagnostic_parses_parallelism_without_mutating_workspace() {
+        let mut workspace = Workspace::default();
+        workspace
+            .variables
+            .insert("BB_NUMBER_THREADS".into(), "24".into());
+        workspace
+            .variables
+            .insert("PARALLEL_MAKE".into(), "-l 8 --jobs=20".into());
+        let original = workspace.clone();
+        let diagnostic = bitbake_coexistence_diagnostic(
+            &workspace,
+            &HostTelemetry {
+                logical_cpu_count: Some(8),
+                load_average_milli: Some([16_001, 8_000, 4_000]),
+                ..HostTelemetry::default()
+            },
+        );
+        assert_eq!(
+            diagnostic.pressure,
+            BitBakeCoexistencePressure::Oversubscribed
+        );
+        assert_eq!(diagnostic.bitbake_threads, Some(24));
+        assert_eq!(diagnostic.parallel_make_jobs, Some(20));
+        assert_eq!(diagnostic.review_example_jobs, Some(7));
+        assert_eq!(workspace, original);
+    }
+
+    #[test]
+    fn coexistence_diagnostic_distinguishes_nominal_busy_and_unknown() {
+        let mut workspace = Workspace::default();
+        workspace
+            .variables
+            .insert("PARALLEL_MAKE".into(), "-j 8 -l8".into());
+        let busy = bitbake_coexistence_diagnostic(
+            &workspace,
+            &HostTelemetry {
+                logical_cpu_count: Some(8),
+                load_average_milli: Some([7_200, 7_000, 6_000]),
+                ..HostTelemetry::default()
+            },
+        );
+        assert_eq!(busy.pressure, BitBakeCoexistencePressure::Busy);
+        workspace.variables.clear();
+        let nominal = bitbake_coexistence_diagnostic(
+            &workspace,
+            &HostTelemetry {
+                logical_cpu_count: Some(8),
+                load_average_milli: Some([1_000, 1_000, 1_000]),
+                ..HostTelemetry::default()
+            },
+        );
+        assert_eq!(nominal.pressure, BitBakeCoexistencePressure::Nominal);
+        let unknown = bitbake_coexistence_diagnostic(&workspace, &HostTelemetry::default());
+        assert_eq!(unknown.pressure, BitBakeCoexistencePressure::Unknown);
+    }
+
+    #[test]
+    fn parallel_make_parser_rejects_unbounded_or_dynamic_job_counts() {
+        assert_eq!(parse_parallel_make_jobs("-j12"), Some(12));
+        assert_eq!(parse_parallel_make_jobs("--jobs 6"), Some(6));
+        assert_eq!(parse_parallel_make_jobs("-j"), None);
+        assert_eq!(
+            parse_parallel_make_jobs("-j ${@oe.utils.cpu_count()}"),
+            None
+        );
     }
 
     #[test]

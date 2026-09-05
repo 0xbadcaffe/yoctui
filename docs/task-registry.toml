@@ -7198,18 +7198,18 @@ notes = "In v0.1.39 three repeated full-affinity, pinned-competing, and one-logi
 id = "PERF-BITBAKE-COEXIST-001"
 milestone = "M46"
 title = "Document measured BitBake coexistence guidance"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 807
 required = true
 depends_on = ["PERF-SCHED-001", "PERF-CPU-AFFINITY-001"]
 verify = ["./scripts/verify-performance.sh --coexistence"]
-notes = "Diagnose oversubscription and document BB_NUMBER_THREADS, PARALLEL_MAKE, load, and cgroup options without silently changing build configuration."
+notes = "In v0.1.40 the repeated full-affinity audit measured 0.6223 ms median p95 wake latency with one worker per logical CPU and 1.0377 ms with two workers per CPU at about 99% host CPU. The typed model diagnostic and `yoctui inspect` report logical CPUs, load, BB_NUMBER_THREADS, and PARALLEL_MAKE independently; review examples never edit local.conf, the environment, scheduler/cgroup policy, or affinity."
 
 [[task]]
 id = "PERF-INPUT-LATENCY-001"
 milestone = "M46"
 title = "Measure saturated UI input latency"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 808
 required = true
 depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-RENDER-001"]
