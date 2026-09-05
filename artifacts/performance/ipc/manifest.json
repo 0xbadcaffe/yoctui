@@ -1,0 +1,41 @@
+{
+  "schema": "yoctui.performance.ipc-audit.v1",
+  "captured_at_utc": "2026-09-05T10:30:30Z",
+  "source_base_revision": "e9731cfb61ac25dbcd30a5d80e32fd3b0c0044db",
+  "source_patch_sha256": "2d8bb880eedc789f8f8c48d556c3e7ce8f6b4f009d6a93c783828d6d191b8cd7",
+  "binary_sha256": "abcc1f802463e75219f9d9cf47235826fca57fad09fca42e78d0266e8ed11f87",
+  "artifact": "event-flood-incremental.json",
+  "artifact_sha256": "d982d3c494902bffbea694a65b0b6c68605990584c3069f153cd2e99274f0048",
+  "baseline_evidence": {
+    "event_flood": "artifacts/performance/baseline/event-flood.json",
+    "event_flood_sha256": "6ad011e77de3d1cb27de2ba7fd8112e720d762cd0a0f4118cb7d0399ef857d91",
+    "combined_cpu_percent_one_logical_cpu": 55.36090597438544,
+    "task_event_profile": "artifacts/performance/profiles/task-event-heavy.json",
+    "task_event_profile_sha256": "30061d75539d9cc14bc485d0d98660640e59791a2cf00e170f3b31f069507eed",
+    "json_string_serialization_self_percent": 34.09
+  },
+  "optimized_observation": {
+    "rate_events_per_second": 2000,
+    "measurement_seconds": 4.1945169100072235,
+    "initial_snapshot_json_bytes": 69029,
+    "incremental_event_frames": 312,
+    "minimum_incremental_frame_bytes": 99,
+    "maximum_incremental_frame_bytes": 337,
+    "incremental_frame_bytes": 74620,
+    "frames_per_second": 74.85963383551105,
+    "bytes_per_second": 34388.22708185282,
+    "daemon_cpu_seconds": 0.21,
+    "snapshot_replacements": 0,
+    "resync_requests": 0,
+    "strict_sequence_order": true,
+    "connection_continuity": true
+  },
+  "findings": [
+    "The captured task-event-heavy profile identified full-snapshot JSON serialization as the dominant self-CPU cost.",
+    "A conservative size ledger avoids serializing every published snapshot while preserving the exact protocol ceiling.",
+    "Safely bounded build and log records avoid a full transactional snapshot clone; validation-sensitive variants retain clone-before-apply behavior.",
+    "Attached clients catch up through bounded incremental replay instead of repeated snapshot replacement.",
+    "One encoded event frame is reused for identical attached-client fanout in a daemon service slice.",
+    "The remaining unbounded supervisor ingress and terminal starvation are explicitly deferred to PERF-IPC-BACKPRESSURE-001."
+  ]
+}

@@ -19,7 +19,7 @@ use render_scheduler::{
 use serde::{Deserialize, Serialize};
 use std::{
     cell::Cell,
-    collections::BTreeMap,
+    collections::{BTreeMap, HashMap},
     env, fs,
     fs::OpenOptions,
     io,
@@ -2508,6 +2508,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             DaemonSnapshotSync, DaemonTelemetry, MAX_DAEMON_CLIENTS, MAX_DAEMON_PTY_SESSIONS,
             MAX_FRAME_BYTES, MAX_TERMINAL_SCROLLBACK_LINES, MAX_UTILITY_OUTPUT_BYTES,
             ProtocolLimits, ProtocolVersion, ServerMessage, SnapshotReplacementReason,
+            encode_frame,
         },
         daemon_ipc::{DaemonConnection, DaemonListener, IpcError, runtime_paths},
         daemon_lifecycle::{
@@ -2841,43 +2842,34 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         }
 
         let mut remaining_clients = Vec::with_capacity(clients.len());
+        let mut encoded_event_frames = HashMap::<u64, Vec<u8>>::new();
         for (mut connection, mut negotiated, mut attached, mut last_sequence, mut client_id) in
             clients.drain(..)
         {
             let mut keep_client = true;
             if attached {
-                match daemon_journal.synchronize(Some(yoctui_protocol::daemon::ResumeCursor {
-                    daemon_instance_id: instance,
-                    last_sequence,
-                })) {
+                match daemon_journal.synchronize_bounded(
+                    yoctui_protocol::daemon::ResumeCursor {
+                        daemon_instance_id: instance,
+                        last_sequence,
+                    },
+                    MAX_DAEMON_CLIENT_EVENTS_PER_TICK,
+                ) {
                     yoctui_protocol::daemon::DaemonSnapshotSync::Replay { events, .. } => {
-                        if daemon_replay_is_bounded(events.len()) {
-                            for event in events {
-                                last_sequence = event.sequence;
-                                if let Err(error) = connection.send(&ServerMessage::Event(event)) {
-                                    tracing::debug!(%error, "dropping daemon client during event fan-out");
-                                    keep_client = false;
-                                    break;
+                        for event in events {
+                            last_sequence = event.sequence;
+                            let frame = match encoded_event_frames.entry(event.sequence) {
+                                std::collections::hash_map::Entry::Occupied(entry) => {
+                                    entry.into_mut()
                                 }
-                            }
-                        } else {
-                            // Do not repeatedly clone and trickle a large
-                            // retained journal. One current snapshot bounds
-                            // both daemon work and client recovery latency.
-                            let snapshot = daemon_journal.snapshot().clone();
-                            last_sequence = snapshot.sequence;
-                            let replacement = connection
-                                .send(&ServerMessage::ResyncRequired {
-                                    reason: format!(
-                                        "client replica is {event_count} events behind; replacing it with the current snapshot",
-                                        event_count = events.len()
-                                    ),
-                                    current_sequence: snapshot.sequence,
-                                })
-                                .and_then(|()| connection.send(&ServerMessage::Snapshot(snapshot)));
-                            if let Err(error) = replacement {
-                                tracing::debug!(%error, "dropping daemon client during replica replacement");
+                                std::collections::hash_map::Entry::Vacant(entry) => {
+                                    entry.insert(encode_frame(&ServerMessage::Event(event))?)
+                                }
+                            };
+                            if let Err(error) = connection.send_encoded_frame(frame) {
+                                tracing::debug!(%error, "dropping daemon client during event fan-out");
                                 keep_client = false;
+                                break;
                             }
                         }
                     }

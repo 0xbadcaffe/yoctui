@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -36,10 +37,17 @@ class ProtocolClient:
         self.socket.connect(str(socket_path))
         self.client_id = [client_byte] * 16
         self.pending = bytearray()
+        self.frames_sent = 0
+        self.frame_bytes_sent = 0
+        self.frames_received = 0
+        self.frame_bytes_received = 0
+        self.received_by_type: dict[str, dict[str, int]] = {}
 
     def send(self, message: dict[str, object]) -> None:
         payload = json.dumps(message, separators=(",", ":")).encode()
         self.socket.sendall(struct.pack(">I", len(payload)) + payload)
+        self.frames_sent += 1
+        self.frame_bytes_sent += len(payload) + 4
 
     def receive(self, timeout: float = 0.25) -> dict[str, object] | None:
         deadline = time.monotonic() + timeout
@@ -52,7 +60,24 @@ class ProtocolClient:
                 if len(self.pending) >= frame_length:
                     payload = bytes(self.pending[4:frame_length])
                     del self.pending[:frame_length]
-                    return json.loads(payload)
+                    message = json.loads(payload)
+                    self.frames_received += 1
+                    self.frame_bytes_received += frame_length
+                    kind = str(message.get("type", "unknown"))
+                    metrics = self.received_by_type.setdefault(
+                        kind,
+                        {"frames": 0, "frame_bytes": 0, "minimum_frame_bytes": frame_length,
+                         "maximum_frame_bytes": frame_length},
+                    )
+                    metrics["frames"] += 1
+                    metrics["frame_bytes"] += frame_length
+                    metrics["minimum_frame_bytes"] = min(
+                        metrics["minimum_frame_bytes"], frame_length
+                    )
+                    metrics["maximum_frame_bytes"] = max(
+                        metrics["maximum_frame_bytes"], frame_length
+                    )
+                    return message
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 return None
@@ -119,6 +144,15 @@ def process_rss(pid: int) -> int | None:
     try:
         fields = Path(f"/proc/{pid}/statm").read_text(encoding="utf-8").split()
         return int(fields[1]) * os.sysconf("SC_PAGE_SIZE")
+    except (FileNotFoundError, IndexError, ValueError):
+        return None
+
+
+def process_cpu_seconds(pid: int) -> float | None:
+    try:
+        fields = Path(f"/proc/{pid}/stat").read_text(encoding="utf-8").split()
+        ticks = int(fields[13]) + int(fields[14])
+        return ticks / os.sysconf("SC_CLK_TCK")
     except (FileNotFoundError, IndexError, ValueError):
         return None
 
@@ -297,8 +331,13 @@ def main() -> int:
         try:
             client = ProtocolClient(socket_path)
             initial = client.attach()
+            initial_snapshot_bytes = len(
+                json.dumps(initial, separators=(",", ":")).encode()
+            )
             classify_snapshot(initial, observed)
             generation = initial.get("generation")
+            measurement_started = time.monotonic()
+            daemon_cpu_started = process_cpu_seconds(daemon.pid)
             client.send(
                 {
                     "type": "command",
@@ -338,6 +377,24 @@ def main() -> int:
                     and time.monotonic() - report_seen_at >= args.observation_seconds
                 ):
                     break
+            measurement_elapsed = max(time.monotonic() - measurement_started, 0.000_001)
+            daemon_cpu_finished = process_cpu_seconds(daemon.pid)
+            wire_metrics = {
+                "measurement_seconds": measurement_elapsed,
+                "frames_received": client.frames_received,
+                "frame_bytes_received": client.frame_bytes_received,
+                "frames_per_second": client.frames_received / measurement_elapsed,
+                "bytes_per_second": client.frame_bytes_received / measurement_elapsed,
+                "frames_sent": client.frames_sent,
+                "frame_bytes_sent": client.frame_bytes_sent,
+                "initial_snapshot_json_bytes": initial_snapshot_bytes,
+                "received_by_type": client.received_by_type,
+                "daemon_cpu_seconds": (
+                    daemon_cpu_finished - daemon_cpu_started
+                    if daemon_cpu_started is not None and daemon_cpu_finished is not None
+                    else None
+                ),
+            }
             probe = ProtocolClient(socket_path, 10)
             probe_snapshot = probe.attach()
             classify_snapshot(probe_snapshot, observed)
@@ -367,6 +424,13 @@ def main() -> int:
         record = {
             "schema": SCHEMA,
             "status": "observed",
+            "identity": {
+                "source_base_revision": subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+                ).strip(),
+                "binary_path": str(binary),
+                "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+            },
             "configuration": {
                 "rate_events_per_second": args.rate,
                 "duration_seconds": args.duration_seconds,
@@ -389,6 +453,7 @@ def main() -> int:
                 "connection_continuity": client_continuity,
                 "critical_received": critical_received,
                 "critical_missing": missing,
+                "wire_metrics": wire_metrics,
             },
             "bounds": {
                 "daemon_rss_initial_bytes": rss_samples[0] if rss_samples else None,

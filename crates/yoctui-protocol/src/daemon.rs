@@ -2370,6 +2370,18 @@ pub struct DaemonSnapshotJournal {
     snapshot: DaemonSnapshot,
     events: VecDeque<SequencedEvent>,
     limits: DaemonSnapshotLimits,
+    snapshot_bytes_upper_bound: usize,
+    published_events: u64,
+    published_event_bytes: u64,
+    snapshot_serializations: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct DaemonIpcMetrics {
+    pub published_events: u64,
+    pub published_event_bytes: u64,
+    pub snapshot_serializations: u64,
+    pub snapshot_bytes_upper_bound: usize,
 }
 
 impl DaemonSnapshotJournal {
@@ -2397,16 +2409,35 @@ impl DaemonSnapshotJournal {
         for screen in &snapshot.pty_screens {
             validate_pty_screen(screen)?;
         }
-        ensure_snapshot_bound(&snapshot, limits.snapshot_bytes)?;
+        let snapshot_bytes = serde_json::to_vec(&snapshot)?.len();
+        if snapshot_bytes > limits.snapshot_bytes {
+            return Err(DaemonSnapshotError::SnapshotTooLarge {
+                actual: snapshot_bytes,
+                maximum: limits.snapshot_bytes,
+            });
+        }
         Ok(Self {
             snapshot,
             events: VecDeque::new(),
             limits,
+            snapshot_bytes_upper_bound: snapshot_bytes,
+            published_events: 0,
+            published_event_bytes: 0,
+            snapshot_serializations: 1,
         })
     }
 
     pub fn snapshot(&self) -> &DaemonSnapshot {
         &self.snapshot
+    }
+
+    pub fn ipc_metrics(&self) -> DaemonIpcMetrics {
+        DaemonIpcMetrics {
+            published_events: self.published_events,
+            published_event_bytes: self.published_event_bytes,
+            snapshot_serializations: self.snapshot_serializations,
+            snapshot_bytes_upper_bound: self.snapshot_bytes_upper_bound,
+        }
     }
 
     pub fn publish(&mut self, event: DaemonEvent) -> Result<SequencedEvent, DaemonSnapshotError> {
@@ -2432,23 +2463,54 @@ impl DaemonSnapshotJournal {
                 maximum: MAX_FRAME_BYTES,
             });
         }
-        let mut candidate = self.snapshot.clone();
-        apply_sequenced_event(&mut candidate, &sequenced)?;
-        while candidate.recent_logs.len() > self.limits.recent_logs {
-            candidate.recent_logs.remove(0);
-        }
-        while serde_json::to_vec(&candidate)?.len() > self.limits.snapshot_bytes
-            && !candidate.recent_logs.is_empty()
-        {
-            candidate.recent_logs.remove(0);
-        }
-        while serde_json::to_vec(&candidate)?.len() > self.limits.snapshot_bytes
-            && candidate.pty_screens.len() > 1
-        {
-            candidate.pty_screens.remove(0);
-        }
-        ensure_snapshot_bound(&candidate, self.limits.snapshot_bytes)?;
-        self.snapshot = candidate;
+        let conservative_bytes = self.snapshot_bytes_upper_bound.saturating_add(event_bytes);
+        let snapshot_bytes_upper_bound = if conservative_bytes <= self.limits.snapshot_bytes
+            && matches!(
+                &sequenced.event,
+                DaemonEvent::Build(_) | DaemonEvent::Log(_)
+            ) {
+            // Build and log reduction cannot reject a payload after the frame
+            // and sequence checks above. Apply these high-rate records in
+            // place while the conservative size ledger proves that the
+            // resulting snapshot remains bounded; validation-sensitive event
+            // variants retain the transactional clone below.
+            apply_sequenced_event(&mut self.snapshot, &sequenced)?;
+            while self.snapshot.recent_logs.len() > self.limits.recent_logs {
+                self.snapshot.recent_logs.remove(0);
+            }
+            conservative_bytes
+        } else {
+            let mut candidate = self.snapshot.clone();
+            apply_sequenced_event(&mut candidate, &sequenced)?;
+            while candidate.recent_logs.len() > self.limits.recent_logs {
+                candidate.recent_logs.remove(0);
+            }
+            let mut encoded_bytes = serde_json::to_vec(&candidate)?.len();
+            self.snapshot_serializations = self.snapshot_serializations.saturating_add(1);
+            while encoded_bytes > self.limits.snapshot_bytes && !candidate.recent_logs.is_empty() {
+                candidate.recent_logs.remove(0);
+                encoded_bytes = serde_json::to_vec(&candidate)?.len();
+                self.snapshot_serializations = self.snapshot_serializations.saturating_add(1);
+            }
+            while encoded_bytes > self.limits.snapshot_bytes && candidate.pty_screens.len() > 1 {
+                candidate.pty_screens.remove(0);
+                encoded_bytes = serde_json::to_vec(&candidate)?.len();
+                self.snapshot_serializations = self.snapshot_serializations.saturating_add(1);
+            }
+            if encoded_bytes > self.limits.snapshot_bytes {
+                return Err(DaemonSnapshotError::SnapshotTooLarge {
+                    actual: encoded_bytes,
+                    maximum: self.limits.snapshot_bytes,
+                });
+            }
+            self.snapshot = candidate;
+            encoded_bytes
+        };
+        self.snapshot_bytes_upper_bound = snapshot_bytes_upper_bound;
+        self.published_events = self.published_events.saturating_add(1);
+        self.published_event_bytes = self
+            .published_event_bytes
+            .saturating_add(u64::try_from(event_bytes).unwrap_or(u64::MAX));
         self.events.push_back(sequenced.clone());
         while self.events.len() > self.limits.retained_events {
             self.events.pop_front();
@@ -2457,6 +2519,26 @@ impl DaemonSnapshotJournal {
     }
 
     pub fn synchronize(&self, resume: Option<ResumeCursor>) -> DaemonSnapshotSync {
+        self.synchronize_with_limit(resume, None)
+    }
+
+    pub fn synchronize_bounded(
+        &self,
+        resume: ResumeCursor,
+        maximum_events: usize,
+    ) -> DaemonSnapshotSync {
+        assert!(
+            maximum_events > 0,
+            "bounded replay requires an event budget"
+        );
+        self.synchronize_with_limit(Some(resume), Some(maximum_events))
+    }
+
+    fn synchronize_with_limit(
+        &self,
+        resume: Option<ResumeCursor>,
+        maximum_events: Option<usize>,
+    ) -> DaemonSnapshotSync {
         let Some(cursor) = resume else {
             return DaemonSnapshotSync::Replace {
                 snapshot: Box::new(self.snapshot.clone()),
@@ -2486,14 +2568,19 @@ impl DaemonSnapshotJournal {
                 reason: SnapshotReplacementReason::HistoryExpired,
             };
         }
+        let events = self
+            .events
+            .iter()
+            .filter(|event| event.sequence > cursor.last_sequence)
+            .take(maximum_events.unwrap_or(usize::MAX))
+            .cloned()
+            .collect::<Vec<_>>();
+        let replayed_through = events
+            .last()
+            .map_or(cursor.last_sequence, |event| event.sequence);
         DaemonSnapshotSync::Replay {
-            events: self
-                .events
-                .iter()
-                .filter(|event| event.sequence > cursor.last_sequence)
-                .cloned()
-                .collect(),
-            replayed_through: self.snapshot.sequence,
+            events,
+            replayed_through,
         }
     }
 }
@@ -2730,20 +2817,6 @@ fn validate_pty_screen(screen: &PtyScreenSnapshot) -> Result<(), DaemonSnapshotE
         || screen.scrollback_lines as usize > MAX_TERMINAL_SCROLLBACK_LINES
     {
         return Err(DaemonSnapshotError::InvalidPtyScreen(screen.session_id));
-    }
-    Ok(())
-}
-
-fn ensure_snapshot_bound(
-    snapshot: &DaemonSnapshot,
-    maximum_bytes: usize,
-) -> Result<(), DaemonSnapshotError> {
-    let encoded = serde_json::to_vec(snapshot)?;
-    if encoded.len() > maximum_bytes {
-        return Err(DaemonSnapshotError::SnapshotTooLarge {
-            actual: encoded.len(),
-            maximum: maximum_bytes,
-        });
     }
     Ok(())
 }
@@ -3514,6 +3587,19 @@ mod tests {
             } if events.iter().map(|event| event.sequence).collect::<Vec<_>>() == vec![2, 3]
         ));
         assert!(matches!(
+            journal.synchronize_bounded(
+                ResumeCursor {
+                    daemon_instance_id: DaemonInstanceId([7; 16]),
+                    last_sequence: 1,
+                },
+                1,
+            ),
+            DaemonSnapshotSync::Replay {
+                ref events,
+                replayed_through: 2
+            } if events.len() == 1 && events[0].sequence == 2
+        ));
+        assert!(matches!(
             journal.synchronize(Some(ResumeCursor {
                 daemon_instance_id: DaemonInstanceId([7; 16]),
                 last_sequence: 0,
@@ -3662,6 +3748,46 @@ mod tests {
         ));
         let encoded = encode_frame(&ServerMessage::Snapshot(journal.snapshot().clone())).unwrap();
         assert!(encoded.len() < MAX_FRAME_BYTES);
+    }
+
+    #[test]
+    fn daemon_journal_uses_conservative_headroom_between_snapshot_serializations() {
+        let mut journal =
+            DaemonSnapshotJournal::new(daemon_snapshot_fixture(), DaemonSnapshotLimits::default())
+                .unwrap();
+        journal
+            .publish(DaemonEvent::Build(DaemonBuildEvent::TaskStarted {
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                pid: Some(42),
+                worker: None,
+                log_path: None,
+                stats: None,
+            }))
+            .unwrap();
+        for progress in (0..100).cycle().take(10_000) {
+            journal
+                .publish(DaemonEvent::Build(DaemonBuildEvent::TaskProgress {
+                    recipe: "busybox".into(),
+                    task: "do_compile".into(),
+                    progress: Some(progress),
+                }))
+                .unwrap();
+        }
+        let metrics = journal.ipc_metrics();
+        let exact = serde_json::to_vec(journal.snapshot()).unwrap().len();
+        assert_eq!(metrics.published_events, 10_001);
+        assert!(metrics.published_event_bytes > 0);
+        assert!(metrics.snapshot_serializations <= 2, "{metrics:?}");
+        assert!(exact <= metrics.snapshot_bytes_upper_bound);
+        assert!(metrics.snapshot_bytes_upper_bound <= MAX_FRAME_BYTES);
+        assert!(matches!(
+            journal.snapshot().build_events.last(),
+            Some(DaemonBuildEvent::TaskProgress {
+                progress: Some(99),
+                ..
+            })
+        ));
     }
 
     #[test]

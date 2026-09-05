@@ -3567,6 +3567,24 @@ rows are capped at 4096 and completed rows at 1024. Overflow is observable, and
 a later terminal record still creates an exact bounded outcome even when its
 active detail could not be retained.
 
+Daemon IPC publication keeps one authoritative snapshot and one ordered
+bounded event journal. Snapshot size accounting uses a conservative byte
+ledger, so high-rate build/log publication does not serialize the complete
+snapshot on every event; an exact serialization and bounded log/screen trim is
+performed only when the ledger reaches the protocol ceiling. Safely bounded,
+infallible build/log reductions update the snapshot in place, while event
+variants with validation failure paths retain transactional clone-before-apply
+semantics.
+
+An attached client consumes at most four journal records per daemon service
+slice. Falling behind within retained history therefore continues as bounded
+incremental replay instead of repeatedly replacing the replica with a large
+snapshot. A history gap still produces one explicit resynchronization and
+current snapshot. Each sequence is encoded once per service slice and the
+immutable frame is reused for every caught-up client. This removes redundant
+serialization but does not yet constitute slow-client isolation: the following
+backpressure task owns per-client bounded outbound queues and priority policy.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

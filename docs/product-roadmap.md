@@ -943,4 +943,8 @@ ordered IPC bursts reduce in bounded batches, and render metadata comes from
 one filtered pass. Task bursts now reduce with lifecycle barriers and
 stable-identity progress coalescing; cached row ordering avoids repeated
 filter/sort work, and active/completed bounds retain terminal failures. IPC
-measurement and serialization efficiency are the current optimization boundary.
+measurement found full-snapshot JSON serialization at 34.09% self CPU. A
+conservative size ledger, bounded in-place build/log reduction, incremental
+four-event catch-up, and shared fanout encoding now keep the measured client at
+33.58 KiB/s with zero replacement snapshots. Bounded priority-aware client and
+supervisor queues are the current optimization boundary.

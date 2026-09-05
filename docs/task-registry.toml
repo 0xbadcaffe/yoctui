@@ -7132,18 +7132,18 @@ notes = "The v0.1.33 client groups contiguous task events within the existing 64
 id = "PERF-IPC-001"
 milestone = "M46"
 title = "Audit and optimize daemon client IPC"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 801
 required = true
 depends_on = ["PERF-BASELINE-001", "PERF-EVENT-FLOOD-001"]
 verify = ["./scripts/verify-performance.sh --ipc"]
-notes = "Measure message and byte rates, snapshot and incremental sizes, serialization CPU, fanout duplication, ordering, batching, and redundant snapshots."
+notes = "The v0.1.34 production-path audit ties optimization to the captured 34.09%-self JSON serialization hot path and records the exact release binary, 69,029-byte initial snapshot, 99-337-byte incremental frames, 74.86 frames/s, 33.58 KiB/s, daemon CPU time, ordering, and continuity. A conservative size ledger replaces per-event full-snapshot serialization; safely bounded build/log events also avoid transactional snapshot clones while validation-sensitive variants retain them. Attached clients use four-event bounded incremental catch-up rather than repeated snapshots, and identical event frames are serialized once per service slice for fanout. The focused gate requires zero replacement snapshots and explicitly preserves the remaining unbounded-ingress terminal starvation for PERF-IPC-BACKPRESSURE-001."
 
 [[task]]
 id = "PERF-IPC-BACKPRESSURE-001"
 milestone = "M46"
 title = "Implement bounded priority-aware IPC backpressure"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 802
 required = true
 depends_on = ["PERF-IPC-001"]

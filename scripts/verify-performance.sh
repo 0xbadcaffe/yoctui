@@ -492,6 +492,88 @@ PY
   cargo test -q -p yoctui --bin yoctui client_runtime
 }
 
+verify_ipc() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/ipc")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.ipc-audit.v1":
+    raise SystemExit("IPC audit manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+artifact = root / "event-flood-incremental.json"
+if hashlib.sha256(artifact.read_bytes()).hexdigest() != manifest.get("artifact_sha256"):
+    raise SystemExit("IPC audit artifact digest mismatch")
+record = json.loads(artifact.read_text(encoding="utf-8"))
+if record.get("schema") != "yoctui.performance.event-flood-observation.v1":
+    raise SystemExit("IPC event-flood evidence schema is unsupported")
+if record.get("identity", {}).get("source_base_revision") != revision:
+    raise SystemExit("IPC evidence source identity mismatch")
+if record.get("identity", {}).get("binary_sha256") != manifest.get("binary_sha256"):
+    raise SystemExit("IPC evidence binary identity mismatch")
+configuration = record.get("configuration", {})
+if configuration.get("rate_events_per_second") != 2_000:
+    raise SystemExit("IPC audit must exercise 2,000 events/s")
+if configuration.get("duration_seconds") != 2.0:
+    raise SystemExit("IPC audit duration mismatch")
+client = record.get("client", {})
+wire = client.get("wire_metrics", {})
+if client.get("snapshot_replacements") != 0 or client.get("resync_requests") != 0:
+    raise SystemExit("attached IPC regressed to redundant snapshot replacement")
+if client.get("event_sequences_strictly_increasing") is not True:
+    raise SystemExit("incremental IPC ordering is not strict")
+if client.get("connection_continuity") is not True:
+    raise SystemExit("IPC audit client disconnected")
+if wire.get("initial_snapshot_json_bytes", 0) <= 0:
+    raise SystemExit("IPC audit omitted snapshot size")
+event_wire = wire.get("received_by_type", {}).get("event", {})
+for field in ("frames", "frame_bytes", "minimum_frame_bytes", "maximum_frame_bytes"):
+    if event_wire.get(field, 0) <= 0:
+        raise SystemExit(f"IPC audit omitted incremental event {field}")
+for field in ("frames_per_second", "bytes_per_second", "daemon_cpu_seconds"):
+    if wire.get(field) is None:
+        raise SystemExit(f"IPC audit omitted {field}")
+if wire["bytes_per_second"] >= 100_000:
+    raise SystemExit("incremental IPC traffic exceeds the audited 100 KiB/s ceiling")
+if record.get("bounds", {}).get("supervisor_ingress") != "unbounded_pre_backpressure":
+    raise SystemExit("IPC audit must identify the remaining upstream boundary")
+if record.get("result", {}).get("expected_pre_backpressure_terminal_starvation_observed") is not True:
+    raise SystemExit("IPC audit must not claim the later backpressure task already passes")
+
+profile = json.loads(Path("artifacts/performance/profiles/task-event-heavy.json").read_text(encoding="utf-8"))
+hot = profile.get("top_self_symbols", [])
+if not any("format_escaped_str" in item.get("symbol", "") and item.get("self_percent", 0) >= 30 for item in hot):
+    raise SystemExit("IPC optimization is not tied to the captured serialization hot path")
+
+protocol = Path("crates/yoctui-protocol/src/daemon.rs").read_text(encoding="utf-8")
+transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
+daemon = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+for required in (
+    "snapshot_bytes_upper_bound", "snapshot_serializations", "synchronize_bounded",
+):
+    if required not in protocol:
+        raise SystemExit(f"IPC snapshot/replay contract is missing: {required}")
+if "send_encoded_frame" not in transport or "encoded_event_frames" not in daemon:
+    raise SystemExit("shared daemon fan-out encoding contract is missing")
+print(
+    "IPC audit valid: "
+    f"{wire['frames_per_second']:.1f} frames/s, "
+    f"{wire['bytes_per_second'] / 1024:.1f} KiB/s, zero replacement snapshots"
+)
+PY
+  cargo test -q -p yoctui-protocol daemon_snapshot_is_gap_free_bounded_and_replays_only_retained_events
+  cargo test -q -p yoctui-protocol daemon_journal_uses_conservative_headroom_between_snapshot_serializations
+  cargo test -q -p yoctui-protocol daemon_ipc_sends_one_preencoded_frame_without_reserialization
+  cargo test -q -p yoctui --bin yoctui daemon_live_event_replay_is_bounded_below_client_poll_capacity
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -567,6 +649,19 @@ case "$mode" in
     verify_telemetry
     verify_logs
     verify_tasks
+    ;;
+  --ipc)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
+    verify_tasks
+    verify_ipc
     ;;
   all)
     verify_contract

@@ -1,0 +1,156 @@
+{
+  "schema": "yoctui.performance.event-flood-observation.v1",
+  "status": "observed",
+  "identity": {
+    "source_base_revision": "e9731cfb61ac25dbcd30a5d80e32fd3b0c0044db",
+    "binary_path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "binary_sha256": "abcc1f802463e75219f9d9cf47235826fca57fad09fca42e78d0266e8ed11f87"
+  },
+  "configuration": {
+    "rate_events_per_second": 2000,
+    "duration_seconds": 2.0,
+    "observation_seconds_after_generator_terminal": 2.0,
+    "production_path": [
+      "fixture_bridge",
+      "bridge_backend",
+      "daemon_bitbake_supervisor",
+      "daemon_reducer_journal",
+      "unix_ipc",
+      "attached_protocol_client"
+    ]
+  },
+  "generator": {
+    "schema": "yoctui.performance.event-flood-generator.v1",
+    "outcome": "completed",
+    "configuration": {
+      "rate_events_per_second": 2000,
+      "duration_seconds": 2.0,
+      "profile": "balanced",
+      "terminal": "success"
+    },
+    "measurement": {
+      "clock": "CLOCK_MONOTONIC",
+      "elapsed_seconds": 2.001610572100617,
+      "ordinary_events": 4002,
+      "total_build_events": 4010,
+      "actual_ordinary_events_per_second": 1999.3899191889498,
+      "event_counts": {
+        "build_started": 1,
+        "task_queued": 127,
+        "task_started": 127,
+        "task_progress": 501,
+        "log": 2875,
+        "warning": 126,
+        "error": 126,
+        "task_completed": 126,
+        "build_completed": 1
+      }
+    },
+    "critical_sent": [
+      {
+        "name": "warning_sentinel",
+        "bridge_sequence": 4008,
+        "type": "warning"
+      },
+      {
+        "name": "error_sentinel",
+        "bridge_sequence": 4009,
+        "type": "error"
+      },
+      {
+        "name": "critical_task_queued",
+        "bridge_sequence": 4010,
+        "type": "task_queued"
+      },
+      {
+        "name": "critical_task_started",
+        "bridge_sequence": 4011,
+        "type": "task_started"
+      },
+      {
+        "name": "critical_task_progress",
+        "bridge_sequence": 4012,
+        "type": "task_progress"
+      },
+      {
+        "name": "critical_task_failed",
+        "bridge_sequence": 4013,
+        "type": "task_completed"
+      },
+      {
+        "name": "build_terminal",
+        "bridge_sequence": 4014,
+        "type": "build_completed"
+      }
+    ],
+    "last_bridge_sequence": 4014
+  },
+  "client": {
+    "frames_received": 312,
+    "snapshot_replacements": 0,
+    "resync_requests": 0,
+    "event_sequences_strictly_increasing": true,
+    "connection_continuity": true,
+    "critical_received": [],
+    "critical_missing": [
+      "build_terminal",
+      "critical_task_failed",
+      "critical_task_progress",
+      "critical_task_queued",
+      "critical_task_started",
+      "error_sentinel",
+      "warning_sentinel"
+    ],
+    "wire_metrics": {
+      "measurement_seconds": 4.1945169100072235,
+      "frames_received": 314,
+      "frame_bytes_received": 144242,
+      "frames_per_second": 74.85963383551105,
+      "bytes_per_second": 34388.22708185282,
+      "frames_sent": 3,
+      "frame_bytes_sent": 577,
+      "initial_snapshot_json_bytes": 69029,
+      "received_by_type": {
+        "hello": {
+          "frames": 1,
+          "frame_bytes": 723,
+          "minimum_frame_bytes": 723,
+          "maximum_frame_bytes": 723
+        },
+        "attached": {
+          "frames": 1,
+          "frame_bytes": 69085,
+          "minimum_frame_bytes": 69085,
+          "maximum_frame_bytes": 69085
+        },
+        "event": {
+          "frames": 312,
+          "frame_bytes": 74620,
+          "minimum_frame_bytes": 99,
+          "maximum_frame_bytes": 337
+        },
+        "command_result": {
+          "frames": 1,
+          "frame_bytes": 74,
+          "minimum_frame_bytes": 74,
+          "maximum_frame_bytes": 74
+        }
+      },
+      "daemon_cpu_seconds": 0.21
+    }
+  },
+  "bounds": {
+    "daemon_rss_initial_bytes": 18268160,
+    "daemon_rss_max_bytes": 20901888,
+    "daemon_rss_final_bytes": 20901888,
+    "journal_retained_events": 4096,
+    "snapshot_build_events": 2048,
+    "snapshot_recent_logs": 512,
+    "supervisor_ingress": "unbounded_pre_backpressure"
+  },
+  "result": {
+    "critical_retention_passed": false,
+    "expected_pre_backpressure_terminal_starvation_observed": true,
+    "runtime_seconds": 4.85477475496009
+  }
+}

@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-ANIM-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-IPC-BACKPRESSURE-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -60,8 +60,15 @@ records now reduce once per receive slice, repeated stable-identity progress
 coalesces only between exact lifecycle barriers, and unchanged filtered/sorted
 task identity order is cached across unrelated frames. Active and retained
 collections are bounded with observable overflow and terminal failures remain
-recorded. IPC measurement is next. Overall required registry progress is
-641/659 (97.3%).
+recorded. The measured IPC audit removed per-event full-snapshot serialization,
+avoids bounded build/log snapshot clones, catches attached clients up through
+ordered four-event slices, and shares one encoded frame across identical client
+fanout. At 2,000 generated events/s the release observer delivered 74.86
+frames/s at 33.58 KiB/s with a 69,029-byte initial snapshot, 99-337-byte events,
+0.21 daemon CPU seconds over 4.19 seconds, strict order, continuity, and zero
+replacement snapshots. It deliberately retains the observed upstream terminal
+starvation for the active bounded-backpressure task. Overall required registry
+progress is 642/659 (97.4%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

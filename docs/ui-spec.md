@@ -5177,3 +5177,10 @@ when target and outcome match; active rebuilds never hide prior completions.
 Non-current replicas fall back to retained client-local and build records.
 While a build runs, the footer keeps the explicit build phase and active-task
 count; concurrent queued work is appended instead of replacing that status.
+
+Live daemon updates are incremental and strictly ordered. A client that is
+temporarily behind but still inside retained journal history catches up in
+small bounded batches without visible full-state replacement or focus reset.
+Only an expired or invalid cursor may trigger one explicit snapshot resync.
+IPC catch-up never changes input priority, and transport bookkeeping is not
+shown as UI activity unless the connection actually changes state.

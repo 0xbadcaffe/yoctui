@@ -240,6 +240,31 @@ and retained terminal failures:
 ./scripts/verify-performance.sh --tasks
 ```
 
+Daemon/client IPC has a measured production-path audit. The pre-optimization
+task-event-heavy flamegraph attributed 34.09% self CPU to JSON string escaping,
+with full snapshot serialization on the publication path. The optimized
+journal keeps a conservative snapshot-size ledger, applies safely bounded
+build/log records without cloning the full snapshot, and performs exact full
+serialization only when the ledger reaches the protocol limit. Live clients
+receive bounded incremental replay rather than a new snapshot whenever they
+are more than one service slice behind; identical event frames are serialized
+once and reused across attached clients.
+
+The tracked 2,000-event/s production-path observation records the exact release
+binary, initial snapshot size, incremental frame min/max/total, frames/s,
+bytes/s, daemon CPU time, ordering, and continuity. It requires zero live
+snapshot replacements and less than 100 KiB/s for the observed client. It also
+retains the honest `unbounded_pre_backpressure` label and expected terminal
+starvation: that failure belongs to the next bounded priority-aware ingress and
+per-client queue task, so this audit cannot be cited as a backpressure pass.
+The retained run measured a 69,029-byte initial snapshot, 312 incremental
+events of 99-337 bytes, 74.86 frames/s, 33.58 KiB/s, and 0.21 daemon CPU
+seconds over 4.19 seconds.
+
+```sh
+./scripts/verify-performance.sh --ipc
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

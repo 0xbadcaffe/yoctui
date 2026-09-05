@@ -252,11 +252,29 @@ impl DaemonConnection {
     }
 
     pub fn send<T: Serialize>(&mut self, message: &T) -> Result<(), IpcError> {
+        let frame = encode_frame(message)?;
+        self.send_encoded_frame(&frame)
+    }
+
+    /// Send one frame produced by [`encode_frame`] without serializing it
+    /// again. Daemon fan-out uses this to share immutable event encoding across
+    /// attached clients.
+    pub fn send_encoded_frame(&mut self, frame: &[u8]) -> Result<(), IpcError> {
         if self.write_poisoned {
             return Err(IpcError::Disconnected);
         }
-        let frame = encode_frame(message)?;
-        match self.stream.write_all(&frame).map_err(map_timeout) {
+        if frame.len() < 4 || frame.len() > MAX_FRAME_BYTES.saturating_add(4) {
+            return Err(DaemonProtocolError::InvalidLength.into());
+        }
+        let payload_len = u32::from_be_bytes(
+            frame[..4]
+                .try_into()
+                .expect("the frame length guard provides four bytes"),
+        ) as usize;
+        if payload_len != frame.len() - 4 {
+            return Err(DaemonProtocolError::InvalidLength.into());
+        }
+        match self.stream.write_all(frame).map_err(map_timeout) {
             Ok(()) => {}
             Err(error) if self.server_mode && is_peer_disconnect(&error) => {
                 self.write_poisoned = true;
@@ -555,6 +573,30 @@ mod tests {
         assert_eq!(client.join().unwrap(), effective_uid());
         drop(listener);
         assert!(!paths.socket.exists());
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn daemon_ipc_sends_one_preencoded_frame_without_reserialization() {
+        let paths = test_paths("preencoded-round-trip");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let client_paths = paths.clone();
+        let client = thread::spawn(move || {
+            let mut client =
+                DaemonConnection::connect(&client_paths, Duration::from_secs(1)).unwrap();
+            client.set_timeout(Some(Duration::from_secs(1))).unwrap();
+            client.receive::<ClientMessage>().unwrap()
+        });
+        let mut server = listener.accept(Duration::from_secs(1)).unwrap();
+        server.set_timeout(Some(Duration::from_secs(1))).unwrap();
+        let frame = encode_frame(&ClientMessage::Pong { nonce: 23 }).unwrap();
+        server.send_encoded_frame(&frame).unwrap();
+        assert_eq!(client.join().unwrap(), ClientMessage::Pong { nonce: 23 });
+        assert!(matches!(
+            server.send_encoded_frame(&[0, 0, 0, 2, b'{']),
+            Err(IpcError::Protocol(DaemonProtocolError::InvalidLength))
+        ));
+        drop(listener);
         cleanup(&paths);
     }
 
