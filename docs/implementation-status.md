@@ -11,6 +11,17 @@ Status values:
 
 ## Current phase
 
+M47 Overview insights and dependency exploration is complete on the feature
+branch. Overview now includes eight typed visualization views for build
+timeline/critical path, rebuild causes, sstate/download outcomes, rootfs image
+size, metadata provenance, runtime package topology, CVE/license/SBOM coverage,
+and disk history. Rootfs image size retains bounded same-target snapshots for
+build deltas. Security accepts SPDX, CycloneDX JSON, and package-manifest
+fallback inventories. Rootfs chart breakpoints preserve exploration, and
+process-backend task nodes are reachable from their recipe root. The prior M46
+real-Poky evidence task remains the active shared-roadmap task after this user
+priority is complete.
+
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
 `PERF-REAL-POKY-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,

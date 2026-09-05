@@ -5069,6 +5069,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
     let delta = collection_scroll_delta(key)?;
     match app.screen {
         Screen::Dashboard | Screen::Tasks => tasks_action(app.task_filter_editing, key),
+        Screen::Insights => None,
         Screen::BuildHistory => Some(Action::SelectBuildHistory { delta }),
         Screen::Dependencies => dependency_workspace_action(app.dependency_graph_searching, key),
         Screen::Signatures => signature_workspace_action(key),
@@ -5128,6 +5129,22 @@ pub fn dashboard_workspace_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('f') => Some(Action::OpenRawFavorites),
         Input::Char('t') => Some(Action::Open(Screen::TerminalSessions)),
+        _ => None,
+    }
+}
+
+pub fn overview_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Left | Input::Char('[') | Input::Char('h') => {
+            Some(Action::ShiftOverviewView { delta: -1 })
+        }
+        Input::Right | Input::Char(']') | Input::Char('l') => {
+            Some(Action::ShiftOverviewView { delta: 1 })
+        }
+        Input::Char(character @ '1'..='8') => {
+            yoctui_model::OverviewView::from_number(character as u8 - b'0')
+                .map(Action::SelectOverviewView)
+        }
         _ => None,
     }
 }
@@ -10888,12 +10905,12 @@ mod tests {
         let click_layers = MouseInput {
             kind: MouseKind::Down,
             column: 5,
-            row: 6,
+            row: 7,
         };
         let select = mouse_action_for_app(click_layers, &app, 180, 40);
-        assert_eq!(select, Some(Action::SelectNavigatorAt { index: 1 }));
+        assert_eq!(select, Some(Action::SelectNavigatorAt { index: 2 }));
         let _ = yoctui_model::update(&mut app, select.unwrap());
-        assert_eq!(app.navigator_selection, 1);
+        assert_eq!(app.navigator_selection, 2);
         assert_eq!(app.focus, FocusTarget::Navigator);
         assert_eq!(
             mouse_action_for_app(click_layers, &app, 180, 40),
@@ -10920,7 +10937,7 @@ mod tests {
         let content_heading = MouseInput {
             kind: MouseKind::Down,
             column: 5,
-            row: 5,
+            row: 6,
         };
         assert_eq!(
             mouse_action_for_app(content_heading, &app, 180, 40),
@@ -10929,7 +10946,7 @@ mod tests {
         let collapse = mouse_action_for_app(content_heading, &app, 180, 40).unwrap();
         let _ = yoctui_model::update(&mut app, collapse);
         assert!(!app.navigator_groups_expanded[1]);
-        assert_eq!(app.navigator_selection, 1);
+        assert_eq!(app.navigator_selection, 2);
         assert_eq!(
             mouse_action_for_app(content_heading, &app, 180, 40),
             Some(Action::ToggleNavigatorGroup { group: 1 })
@@ -15292,5 +15309,23 @@ mod tests {
             settings_action(Input::Char('R')),
             Some(Action::ResetPreferences)
         );
+    }
+
+    #[test]
+    fn overview_workspace_routes_tabs_and_numbered_views() {
+        assert_eq!(
+            overview_workspace_action(Input::Char('7')),
+            Some(Action::SelectOverviewView(
+                yoctui_model::OverviewView::SupplyChain
+            ))
+        );
+        assert_eq!(
+            overview_workspace_action(Input::Char(']')),
+            Some(Action::ShiftOverviewView { delta: 1 })
+        );
+        let mut app = yoctui_model::App::new(8, 1_000);
+        app.screen = Screen::Insights;
+        let _ = yoctui_model::update(&mut app, Action::ShiftOverviewView { delta: -1 });
+        assert_eq!(app.overview_view, yoctui_model::OverviewView::DiskUsage);
     }
 }

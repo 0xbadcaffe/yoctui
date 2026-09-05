@@ -461,7 +461,7 @@ fn capability_names(capabilities: &[CapabilityId]) -> String {
 /// authorized separately by `workspace_effect_requirement`.
 pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestination {
     match screen {
-        Screen::Dashboard => WorkspaceDestination::Dashboard,
+        Screen::Dashboard | Screen::Insights => WorkspaceDestination::Dashboard,
         Screen::Tasks => WorkspaceDestination::Tasks,
         Screen::BuildHistory => WorkspaceDestination::BuildHistory,
         Screen::Dependencies => WorkspaceDestination::Dependencies,
@@ -1229,6 +1229,7 @@ mod tests {
         assert_eq!(WorkspaceDestination::ALL.len(), 26);
         for screen in [
             Screen::Dashboard,
+            Screen::Insights,
             Screen::Tasks,
             Screen::BuildHistory,
             Screen::Dependencies,

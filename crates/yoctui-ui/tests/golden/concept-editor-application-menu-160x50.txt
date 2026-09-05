@@ -1,23 +1,24 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.46  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.47  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator──────────┌modal · Recipe edit┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
 │▾ OVERVIEW         │┌Workspace file tre│ Workspace  Build  Navigate  View  Tools  Help            │ol 1────────────────────┐┌Recipe Inspector────────────────┐│
 │  ▱ Dashboard      ││▶ bash_5.2.bb     │Type to jump                                              │                        ││Recipe                          ││
-│▾ CONTENT          ││  files/0001-fix-b│  Build image           B          No current environment │                        ││Name: bash                      ││
-│    Layers         ││patch             │  Build selected recipe b          No current environment │.tar.gz"                ││Layer: poky                     ││
-│    Recipes        ││                  │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
-│    Packages       ││                  │                                                          │                        ││Language: BitBake               ││
-│    Images         ││                  │                                                          │                        ││State: modified                 ││
-│    SDK            ││                  │↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu        │/bash                   ││                                ││
-│▾ BUILD            ││                  └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
-│    Tasks          ││                       ││ 9 │ BROKEN_OVERRIDE =  [validation]                                         ││[v] Validate                    ││
-│  ▱ Logs        LIV││                       ││10 │ ▏                                                                       ││[p] Preview diff                ││
-│  ▱ Errors         ││                       ││                                                                             ││[Ctrl+S] Save                   ││
-│    Configuration  ││                       ││                                                                             ││[Ctrl+B] Build recipe           ││
-│    Dependencies   ││                       ││                                                                             ││[e] External editor             ││
+│  ▱ Insights       ││  files/0001-fix-b│  Build image           B          No current environment │                        ││Name: bash                      ││
+│▾ CONTENT          ││patch             │  Build selected recipe b          No current environment │.tar.gz"                ││Layer: poky                     ││
+│    Layers         ││                  │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
+│    Recipes        ││                  │                                                          │                        ││Language: BitBake               ││
+│    Packages       ││                  │                                                          │                        ││State: modified                 ││
+│    Images         ││                  │↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu        │/bash                   ││                                ││
+│    SDK            ││                  └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
+│▾ BUILD            ││                       ││ 9 │ BROKEN_OVERRIDE =  [validation]                                         ││[v] Validate                    ││
+│    Tasks          ││                       ││10 │ ▏                                                                       ││[p] Preview diff                ││
+│  ▱ Logs        LIV││                       ││                                                                             ││[Ctrl+S] Save                   ││
+│  ▱ Errors         ││                       ││                                                                             ││[Ctrl+B] Build recipe           ││
+│    Configuration  ││                       ││                                                                             ││[e] External editor             ││
+│    Dependencies   ││                       ││                                                                             ││                                ││
 │▾ VALIDATE         ││                       ││                                                                             ││                                ││
 │    Testing        ││                       ││                                                                             ││                                ││
 │    Security       ││                       ││                                                                             ││                                ││
@@ -31,7 +32,6 @@
 │  ▱ Build environme││                       ││                                                                             ││                                ││
 │  ▱ Compatibility  ││                       ││                                                                             ││                                ││
 │  ▱ Settings       ││                       ││                                                                             ││                                ││
-│                   ││                       ││                                                                             ││                                ││
 │                   ││                       ││                                                                             ││                                ││
 │                   ││                       ││                                                                             ││                                ││
 │                   ││                       ││                                                                             ││                                ││

@@ -12,6 +12,7 @@ pub(super) fn workspace(
 ) {
     match app.screen {
         Screen::Dashboard => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
+        Screen::Insights => overview_workspace(frame, app, area, now),
         Screen::Tasks => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
         Screen::BuildHistory => build_history(frame, app, area, now),
         Screen::Dependencies => dependencies(frame, app, area),

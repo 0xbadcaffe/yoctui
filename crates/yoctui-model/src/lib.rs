@@ -19,6 +19,7 @@ mod list_tree;
 mod maintenance;
 mod menu;
 mod onboarding;
+mod overview;
 mod package;
 mod pane_layout;
 mod preferences;
@@ -66,6 +67,7 @@ pub use list_tree::*;
 pub use maintenance::*;
 pub use menu::*;
 pub use onboarding::*;
+pub use overview::*;
 pub use package::*;
 pub use pane_layout::*;
 pub use preferences::*;
@@ -131,6 +133,7 @@ impl AppError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Screen {
     Dashboard,
+    Insights,
     Tasks,
     BuildHistory,
     Dependencies,
@@ -457,8 +460,9 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 22] = [
+const NAVIGATOR_SCREENS: [Screen; 23] = [
     Screen::Dashboard,
+    Screen::Insights,
     Screen::Layers,
     Screen::Recipes,
     Screen::Packages,
@@ -481,7 +485,8 @@ const NAVIGATOR_SCREENS: [Screen; 22] = [
     Screen::Compatibility,
     Screen::Settings,
 ];
-const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 22] = [
+const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 23] = [
+    WorkspaceDestination::Dashboard,
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
@@ -517,27 +522,27 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "OVERVIEW",
         start: 0,
-        end: 1,
+        end: 2,
     },
     NavigatorGroupRange {
         label: "CONTENT",
-        start: 1,
-        end: 6,
+        start: 2,
+        end: 7,
     },
     NavigatorGroupRange {
         label: "BUILD",
-        start: 6,
-        end: 11,
+        start: 7,
+        end: 12,
     },
     NavigatorGroupRange {
         label: "VALIDATE",
-        start: 11,
-        end: 14,
+        start: 12,
+        end: 15,
     },
     NavigatorGroupRange {
         label: "TOOLS",
-        start: 14,
-        end: 22,
+        start: 15,
+        end: 23,
     },
 ];
 
@@ -4110,6 +4115,7 @@ pub struct App {
     pub onboarding: OnboardingState,
     pub preferences: WorkbenchPreferences,
     pub screen: Screen,
+    pub overview_view: OverviewView,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
     pub workspace_subfocus: WorkspaceSubfocus,
@@ -4168,6 +4174,7 @@ pub struct App {
     pub image_artifact_request_generation: u64,
     pub images_view: ImagesView,
     pub rootfs_composition: RootfsCompositionState,
+    pub overview_image_size_history: VecDeque<OverviewImageSizeSnapshot>,
     pub rootfs_request_generation: u64,
     pub rootfs_group_selection: Option<RootfsGroupIdentity>,
     pub rootfs_package_selection: Option<PackageIdentity>,
@@ -4297,6 +4304,7 @@ impl App {
             onboarding: OnboardingState::default(),
             preferences: WorkbenchPreferences::default(),
             screen: Screen::Dashboard,
+            overview_view: OverviewView::default(),
             focus: FocusTarget::Workspace,
             focus_return: None,
             workspace_subfocus: WorkspaceSubfocus::Main,
@@ -4359,6 +4367,7 @@ impl App {
             image_artifact_request_generation: 0,
             images_view: ImagesView::Artifacts,
             rootfs_composition: RootfsCompositionState::NotLoaded,
+            overview_image_size_history: VecDeque::new(),
             rootfs_request_generation: 0,
             rootfs_group_selection: None,
             rootfs_package_selection: None,
@@ -4856,7 +4865,7 @@ impl App {
             return InspectorMode::Navigator;
         }
         match self.screen {
-            Screen::Dashboard => InspectorMode::DaemonSession,
+            Screen::Dashboard | Screen::Insights => InspectorMode::DaemonSession,
             Screen::Tasks => InspectorMode::Task,
             Screen::BuildHistory => InspectorMode::Job,
             Screen::Dependencies | Screen::LayerRelationships => InspectorMode::Dependency,
@@ -5772,6 +5781,10 @@ pub enum Action {
     },
     ActivateProjectProfileItem,
     Open(Screen),
+    ShiftOverviewView {
+        delta: isize,
+    },
+    SelectOverviewView(OverviewView),
     OpenRawFavorites,
     SelectNavigator {
         delta: isize,
@@ -8443,6 +8456,7 @@ fn set_rootfs_composition(
         limitations.push("One rootfs authority is partial or unavailable.".into());
     }
     let limitations = normalize_rootfs_limitations(limitations);
+    app.record_overview_image_size(&composition);
     app.rootfs_composition = if composition.is_unavailable() {
         let mut reasons = Vec::new();
         if let RootfsAuthority::Unavailable { reason } = &composition.installed_packages {
@@ -9275,7 +9289,7 @@ fn select_package_identity(
 fn current_collection_edge_action(app: &App, to_end: bool) -> Option<Action> {
     let delta = if to_end { isize::MAX } else { isize::MIN };
     Some(match app.screen {
-        Screen::Dashboard | Screen::Tasks => Action::ScrollBuildTasks { delta },
+        Screen::Dashboard | Screen::Insights | Screen::Tasks => Action::ScrollBuildTasks { delta },
         Screen::BuildHistory => Action::SelectBuildHistory { delta },
         Screen::Dependencies => Action::SelectDependencyGraphNode { delta },
         Screen::Signatures => Action::SelectSignatureRecord { delta },
@@ -9540,6 +9554,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         Action::OpenRawFavorites => {
             let _ = update(app, Action::Open(Screen::RawMode));
             return update(app, Action::RawMode(RawModeAction::OpenFavorites));
+        }
+        Action::ShiftOverviewView { delta } => {
+            app.overview_view = app.overview_view.shifted(delta);
+        }
+        Action::SelectOverviewView(view) => {
+            app.overview_view = view;
         }
         Action::Open(s) => {
             let correlated_log_id = (s == Screen::Logs)
@@ -19482,7 +19502,7 @@ mod tests {
     #[test]
     fn navigator_screen_projects_the_bounded_selection() {
         let mut app = App::new(10, 1_000);
-        app.navigator_selection = 1;
+        app.navigator_selection = 2;
         assert_eq!(app.navigator_screen(), Screen::Layers);
         app.navigator_selection = usize::MAX;
         assert_eq!(app.navigator_screen(), Screen::Dashboard);
@@ -19494,6 +19514,7 @@ mod tests {
             NAVIGATOR_SCREENS,
             [
                 Screen::Dashboard,
+                Screen::Insights,
                 Screen::Layers,
                 Screen::Recipes,
                 Screen::Packages,
@@ -19522,25 +19543,25 @@ mod tests {
     #[test]
     fn navigator_groups_collapse_without_exposing_hidden_destinations() {
         let mut app = App::new(10, 1_000);
-        app.navigator_selection = 6;
+        app.navigator_selection = 7;
         assert_eq!(app.navigator_group_index(), 2);
-        assert_eq!(app.navigator_visual_row(), 9);
+        assert_eq!(app.navigator_visual_row(), 10);
 
         let _ = update(&mut app, Action::CollapseNavigatorGroup);
         assert!(!app.navigator_groups_expanded[2]);
-        assert_eq!(app.navigator_visual_row(), 8);
-        assert_eq!(app.navigator_group_at_visual_row(8), Some(2));
-        assert_eq!(app.navigator_selection_at_visual_row(8), None);
+        assert_eq!(app.navigator_visual_row(), 9);
+        assert_eq!(app.navigator_group_at_visual_row(9), Some(2));
+        assert_eq!(app.navigator_selection_at_visual_row(9), None);
 
         let _ = update(&mut app, Action::SelectNavigator { delta: 1 });
-        assert_eq!(app.navigator_selection, 11);
-        let _ = update(&mut app, Action::SelectNavigatorAt { index: 7 });
+        assert_eq!(app.navigator_selection, 12);
+        let _ = update(&mut app, Action::SelectNavigatorAt { index: 8 });
         assert_eq!(
-            app.navigator_selection, 11,
+            app.navigator_selection, 12,
             "hidden rows cannot be selected"
         );
 
-        app.navigator_selection = 6;
+        app.navigator_selection = 7;
         let _ = update(&mut app, Action::ActivateNavigator);
         assert!(app.navigator_groups_expanded[2]);
         assert_eq!(app.screen, Screen::Dashboard, "expansion does not navigate");
@@ -19576,7 +19597,7 @@ mod tests {
         assert_eq!(app.navigator_group_index(), 3);
         let _ = update(&mut app, Action::SelectNavigator { delta: -1 });
         assert_eq!(app.navigator_selection, NAVIGATOR_GROUPS[2].start);
-        assert_eq!(app.navigator_visual_row(), 8);
+        assert_eq!(app.navigator_visual_row(), 9);
 
         let _ = update(&mut app, Action::ExpandNavigatorGroup);
         assert!(app.navigator_groups_expanded[2]);
@@ -27830,13 +27851,13 @@ mod tests {
             .enumerate()
             .filter_map(|(index, screen)| (*screen == Screen::RawMode).then_some(index))
             .collect::<Vec<_>>();
-        assert_eq!(raw_destinations, [14]);
+        assert_eq!(raw_destinations, [15]);
         assert_eq!(
-            NAVIGATOR_COMPATIBILITY_DESTINATIONS[14],
+            NAVIGATOR_COMPATIBILITY_DESTINATIONS[15],
             WorkspaceDestination::RawMode
         );
         assert_eq!(NAVIGATOR_GROUPS[4].label, "TOOLS");
-        assert!((NAVIGATOR_GROUPS[4].start..NAVIGATOR_GROUPS[4].end).contains(&14));
+        assert!((NAVIGATOR_GROUPS[4].start..NAVIGATOR_GROUPS[4].end).contains(&15));
 
         let mut app = App::new(16, 4096);
         let raw_commands = app
@@ -27852,7 +27873,7 @@ mod tests {
         );
 
         assert_eq!(update(&mut app, Action::Open(Screen::RawMode)), None);
-        assert_eq!(app.navigator_selection, 14);
+        assert_eq!(app.navigator_selection, 15);
         assert_eq!(app.focus, FocusTarget::Workspace);
         assert_eq!(app.inspector_mode(), InspectorMode::RawCommand);
         assert_eq!(

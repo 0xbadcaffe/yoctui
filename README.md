@@ -33,11 +33,16 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
 
 - **Build cockpit** — confirmed image/recipe builds, task progress, logs,
   structured errors, CPU/memory/disk telemetry, cancellation, and history.
+- **Overview insights** — build timeline and critical path, signature rebuild
+  causes, sstate/download outcomes, image-size composition, metadata
+  provenance, runtime package topology, SPDX/CycloneDX/manifest supply-chain
+  coverage, and disk history.
 - **Metadata workbench** — layer tree, recipe browser, syntax-aware preview,
   in-TUI editing, configuration provenance, BBMASK, dependencies, and
   signatures.
 - **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
-  consoles, Wic, Testing, CVE/SPDX, QA, sstate, release, and maintenance tools.
+  consoles, Wic, Testing, CVE/SPDX/CycloneDX, QA, sstate, release, and
+  maintenance tools.
 - **Terminal-native UX** — responsive layouts, command palette, contextual
   shortcuts, themes, persisted sessions, shell escape, and external editor
   support.

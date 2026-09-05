@@ -991,3 +991,30 @@ The bounded-memory gate now passes its 30-minute release run: daemon/client RSS
 growth was 1.29 MiB/108 KiB, both final 20-minute slopes were zero, threads
 stayed 3/1, and correctness/continuity survived the full 4,000-event/s stream.
 Supported real-Poky saturation evidence is next.
+
+## M47 — Overview insights and dependency exploration
+
+Goal: place build, cache, image, provenance, package, supply-chain, and disk
+visualizations beside Dashboard without creating a second data authority.
+
+Exit criteria:
+
+- Overview contains one responsive Insights workspace with eight directly
+  selectable visualizations
+- build timeline and critical path use retained task timestamps and dependency
+  identities; rebuild causes use typed signature differences
+- sstate and downloads show observed setscene/fetch outcomes and configured
+  cache paths without guessed sizes
+- rootfs installed bytes and same-target build deltas, metadata provenance,
+  runtime package dependencies, and disk telemetry have bounded visual
+  projections and explicit empty states
+- Security imports and explores SPDX, CycloneDX JSON, and legacy Yocto image
+  manifests, with exact fallback limitations
+- the `tui-piechart` rootfs surface preserves its exact table and exploration
+  panes at every responsive breakpoint
+- process-backend `bitbake -g` task nodes are reachable from the selected recipe
+  root and retain cycle-safe reverse/path exploration
+- focused parser, model, UI, workspace, Clippy, documentation, and roadmap
+  checks pass in version 0.1.47
+
+Progress: complete on `feature/overview-visualizations`.

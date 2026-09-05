@@ -1,37 +1,37 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.46  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.47  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││Overall  build not started · 0%                                                     ││No task selected.                           │
 │  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                               ││Task facts appear as typed BitBake events   │
-│▾ CONTENT                 ││Target: core-image-minimal  Backend: bridge  Status: Idle  Exit code: none          ││arrive.                                     │
-│    Layers                ││Parse progress: not parsing  Tasks: 0/—  Warnings: 0  Errors: 0  Release: scarthgap ││                                            │
-│    Recipes               ││Task           Recipe               Status        Time      Progress                ││                                            │
+│  ▱ Insights              ││Target: core-image-minimal  Backend: bridge  Status: Idle  Exit code: none          ││arrive.                                     │
+│▾ CONTENT                 ││Parse progress: not parsing  Tasks: 0/—  Warnings: 0  Errors: 0  Release: scarthgap ││                                            │
+│    Layers                ││Task           Recipe               Status        Time      Progress                ││                                            │
+│    Recipes               ││                                                                                    ││                                            │
 │    Packages              ││                                                                                    ││                                            │
 │    Images                ││                                                                                    ││                                            │
 │    SDK                   ││                                                                                    ││                                            │
-│▾ BUILD                   ││                                                                                    ││                                            │
-│    Tasks                 ││                                                                                    │└────────────────────────────────────────────┘
-│  ▱ Logs              LIVE│└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
-│  ▱ Errors                │┌Log Viewer — no task selected · ▶ Follow────────────────────────────────────────────┐│Secondary facts, paths, and dependencies    │
-│    Configuration         ││No task-specific log is available.                                                  ││unavailable.                                │
+│▾ BUILD                   ││                                                                                    │└────────────────────────────────────────────┘
+│    Tasks                 │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│  ▱ Logs              LIVE│┌Log Viewer — no task selected · ▶ Follow────────────────────────────────────────────┐│Secondary facts, paths, and dependencies    │
+│  ▱ Errors                ││No task-specific log is available.                                                  ││unavailable.                                │
+│    Configuration         ││                                                                                    ││                                            │
 │    Dependencies          ││                                                                                    ││                                            │
 │▾ VALIDATE                ││                                                                                    ││                                            │
 │    Testing               ││                                                                                    ││                                            │
 │    Security              ││                                                                                    ││                                            │
 │    QA                    ││                                                                                    ││                                            │
 │▾ TOOLS                   ││                                                                                    ││                                            │
-│    Raw Mode              ││                                                                                    ││                                            │
-│    Terminal Sessions     ││                                                                                    │└────────────────────────────────────────────┘
-│    Devtool               ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
-│    QEMU / Wic            │└────────────────────────────────────────────────────────────────────────────────────┘│No task-specific log is available.          │
-│    Maintenance           │┌Job History · Active 0 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 0───┐│                                            │
-│  ▱ Build environment     ││Status        Operation     Type         Target / Context        Started   Elapsed  ││                                            │
-│  ▱ Compatibility         ││✓ Succeeded   core-image-mi Build        core-image-minimal      19:12:10  00:04:55 │└────────────────────────────────────────────┘
-│  ▱ Settings              ││✓ Succeeded   busybox       Build        busybox                 19:11:42  00:00:17 │┌Contextual Actions──────────────────────────┐
-│                          ││✕ Failed      core-image-mi Build        core-image-minimal      19:08:33  00:01:48 ││× Cancel active build  [c] — Disabled       │
+│    Raw Mode              ││                                                                                    │└────────────────────────────────────────────┘
+│    Terminal Sessions     ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
+│    Devtool               │└────────────────────────────────────────────────────────────────────────────────────┘│No task-specific log is available.          │
+│    QEMU / Wic            │┌Job History · Active 0 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 0───┐│                                            │
+│    Maintenance           ││Status        Operation     Type         Target / Context        Started   Elapsed  ││                                            │
+│  ▱ Build environment     ││✓ Succeeded   core-image-mi Build        core-image-minimal      19:12:10  00:04:55 │└────────────────────────────────────────────┘
+│  ▱ Compatibility         ││✓ Succeeded   busybox       Build        busybox                 19:11:42  00:00:17 │┌Contextual Actions──────────────────────────┐
+│  ▱ Settings              ││✕ Failed      core-image-mi Build        core-image-minimal      19:08:33  00:01:48 ││× Cancel active build  [c] — Disabled       │
 │                          ││✓ Succeeded   virtual/kerne Build        virtual/kernel          19:07:18  00:00:54 ││  Reason: No active build can be cancelled. │
 │                          ││                                                                                    ││  Reason: No current environment capability │
 │                          ││                                                                                    ││✓ Open Logs            [l] — Local          │

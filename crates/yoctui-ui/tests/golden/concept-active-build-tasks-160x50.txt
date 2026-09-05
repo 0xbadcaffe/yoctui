@@ -1,37 +1,37 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.46  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│yoctui v0.1.47  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: core-image-minimal · All─────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  40%  4/10▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_compile                      │
 │  ▱ Dashboard             ││Active 1  Waiting 5  Warnings 0  Errors 0  Elapsed 00:16:18                         ││Recipe      bash_5.2.21-2                   │
-│▾ CONTENT                 ││Task           Recipe               Status        Time      Progress                ││PN          bash_5.2.21-2                   │
-│    Layers                ││  do_fetch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PV          unavailable                     │
-│    Recipes               ││  do_unpack    bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PR          unavailable                     │
-│    Packages              ││  do_patch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││State       ▶ Running                       │
-│    Images                ││  do_configure bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││Progress    72%                             │
-│    SDK                   ││⣧ do_compile   bash_5.2.21-2        ▶ Running     00:09:50  ▪▪▪▪▪▪▪▪▫▫ 72%          ││                                            │
-│▾ BUILD                   ││5 waiting task unavailable          ▫ Waiting     --        metadata unavailable    ││                                            │
-│    Tasks                1││                                                                                    │└────────────────────────────────────────────┘
-│  ▱ Logs              LIVE│└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
-│  ▱ Errors                │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow──────────────────────────────────┐│Worker      worker-1                        │
-│    Configuration         │││ NOTE: Executing Tasks                                                             ││PID         35421                           │
-│    Dependencies          │││ NOTE: Started: do_compile                                                         ││Started     19:18:37                        │
-│▾ VALIDATE                │││ |  CC     builtins/histfile.o                                                     ││Elapsed     00:09:50                        │
-│    Testing               │││ |  CC     builtins/jobs.o                                                         ││Workdir     unavailable                     │
-│    Security              │││ |  CC     execute_cmd.o                                                           ││Log file                                    │
-│    QA                    │││ [ 72%] Linking bash                                                               ││/home/user/yocto/build/tmp/work/qemux86-64-p│
-│▾ TOOLS                   ││                                                                                    ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
-│    Raw Mode              ││                                                                                    ││.85873                                      │
-│    Terminal Sessions     ││                                                                                    │└────────────────────────────────────────────┘
-│    Devtool               ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
-│    QEMU / Wic            │└────────────────────────────────────────────────────────────────────────────────────┘││ |  CC     builtins/jobs.o                 │
-│    Maintenance           │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1───┐││ |  CC     execute_cmd.o                   │
-│  ▱ Build environment     ││Status        Operation     Type         Target / Context        Started   Elapsed  │││ [ 72%] Linking bash                       │
-│  ▱ Compatibility         ││▶ Running     core-image-mi Build        4/10                    --        --       │└────────────────────────────────────────────┘
-│  ▱ Settings              ││✓ Succeeded   core-image-mi Build        core-image-minimal      19:12:10  00:04:55 │┌Contextual Actions──────────────────────────┐
-│                          ││✓ Succeeded   busybox       Build        busybox                 19:11:42  00:00:17 ││? Cancel active build  [c] — Unknown        │
+│  ▱ Insights              ││Task           Recipe               Status        Time      Progress                ││PN          bash_5.2.21-2                   │
+│▾ CONTENT                 ││  do_fetch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PV          unavailable                     │
+│    Layers                ││  do_unpack    bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PR          unavailable                     │
+│    Recipes               ││  do_patch     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││State       ▶ Running                       │
+│    Packages              ││  do_configure bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││Progress    72%                             │
+│    Images                ││⣧ do_compile   bash_5.2.21-2        ▶ Running     00:09:50  ▪▪▪▪▪▪▪▪▫▫ 72%          ││                                            │
+│    SDK                   ││5 waiting task unavailable          ▫ Waiting     --        metadata unavailable    ││                                            │
+│▾ BUILD                   ││                                                                                    │└────────────────────────────────────────────┘
+│    Tasks                1│└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│  ▱ Logs              LIVE│┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow──────────────────────────────────┐│Worker      worker-1                        │
+│  ▱ Errors                │││ NOTE: Executing Tasks                                                             ││PID         35421                           │
+│    Configuration         │││ NOTE: Started: do_compile                                                         ││Started     19:18:37                        │
+│    Dependencies          │││ |  CC     builtins/histfile.o                                                     ││Elapsed     00:09:50                        │
+│▾ VALIDATE                │││ |  CC     builtins/jobs.o                                                         ││Workdir     unavailable                     │
+│    Testing               │││ |  CC     execute_cmd.o                                                           ││Log file                                    │
+│    Security              │││ [ 72%] Linking bash                                                               ││/home/user/yocto/build/tmp/work/qemux86-64-p│
+│    QA                    ││                                                                                    ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
+│▾ TOOLS                   ││                                                                                    ││.85873                                      │
+│    Raw Mode              ││                                                                                    │└────────────────────────────────────────────┘
+│    Terminal Sessions     ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
+│    Devtool               │└────────────────────────────────────────────────────────────────────────────────────┘││ |  CC     builtins/jobs.o                 │
+│    QEMU / Wic            │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1───┐││ |  CC     execute_cmd.o                   │
+│    Maintenance           ││Status        Operation     Type         Target / Context        Started   Elapsed  │││ [ 72%] Linking bash                       │
+│  ▱ Build environment     ││▶ Running     core-image-mi Build        4/10                    --        --       │└────────────────────────────────────────────┘
+│  ▱ Compatibility         ││✓ Succeeded   core-image-mi Build        core-image-minimal      19:12:10  00:04:55 │┌Contextual Actions──────────────────────────┐
+│  ▱ Settings              ││✓ Succeeded   busybox       Build        busybox                 19:11:42  00:00:17 ││? Cancel active build  [c] — Unknown        │
 │                          ││✕ Failed      core-image-mi Build        core-image-minimal      19:08:33  00:01:48 ││  Reason: No current environment capability │
 │                          ││✓ Succeeded   virtual/kerne Build        virtual/kernel          19:07:18  00:00:54 ││✓ Open Logs            [l] — Local          │
 │                          ││                                                                                    ││✓ Build History        [h] — Local          │

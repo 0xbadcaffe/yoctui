@@ -37,3 +37,5 @@ client while the build uses the available host CPUs.
 ```
 
 The bounded-memory gate is complete in v0.1.46.
+M47 Overview insights was completed independently on the feature branch; this
+file resumes the pre-existing shared-roadmap task after the user-priority work.

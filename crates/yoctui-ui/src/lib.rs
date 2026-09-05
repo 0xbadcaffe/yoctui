@@ -1,6 +1,7 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 mod dialogs;
 mod layout;
+mod overview;
 pub mod primitives;
 mod shell;
 mod telemetry;
@@ -10,6 +11,7 @@ mod workspaces;
 
 use dialogs::*;
 use layout::*;
+use overview::*;
 use shell::*;
 use telemetry::*;
 use theme::*;
@@ -1110,6 +1112,7 @@ fn footer_shortcuts(app: &App) -> String {
         Screen::Dashboard => {
             "B build | f favorites | t terminals | F2 Tasks | e errors | Ctrl+B prefix | F8 artifacts | l logs | F3 work | E environment | M sstate | Ctrl+P commands | Tab focus | c cancel | ? help | q quit"
         }
+        Screen::Insights => "1-8 view | [/] previous/next | Tab focus | Esc dashboard",
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
         }
@@ -4326,10 +4329,15 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 22] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 23] = [
         (
             "Dashboard",
             Screen::Dashboard,
+            WorkspaceDestination::Dashboard,
+        ),
+        (
+            "Insights",
+            Screen::Insights,
             WorkspaceDestination::Dashboard,
         ),
         ("Layers", Screen::Layers, WorkspaceDestination::Layers),
@@ -10050,17 +10058,23 @@ fn security_sbom_lines(
     capacity: usize,
 ) {
     if app.security.drilled {
-        let Some(SecurityReport::Spdx(document)) = app.security.selected_report() else {
+        let Some(report) = app.security.selected_report() else {
             lines.push(Line::styled(
-                "The selected SPDX document is no longer available.",
+                "The selected SBOM or package manifest is no longer available.",
                 security_warning_style(palette),
             ));
             return;
         };
+        let (identity, kind) = match report {
+            SecurityReport::Spdx(document) => (&document.identity, "SPDX"),
+            SecurityReport::CycloneDx(document) => (&document.identity, "CycloneDX"),
+            SecurityReport::PackageManifest(document) => (&document.identity, "package manifest"),
+            SecurityReport::Cve(_) => return,
+        };
         lines.push(Line::from(format!(
-            "Document: {} | fingerprint {}",
-            document.identity.path.display(),
-            document.identity.fingerprint
+            "{kind}: {} | fingerprint {}",
+            identity.path.display(),
+            identity.fingerprint
         )));
         lines.push(Line::from(
             "  Component identity        Name                    Version       Supplier / license",
@@ -10098,7 +10112,7 @@ fn security_sbom_lines(
         return;
     }
     lines.push(Line::from(
-        "  Kind     SPDX version   Document                 Components  Exact artifact",
+        "  Format       Version        Document                 Components  Exact artifact",
     ));
     let reports = app.security.visible_reports();
     let selection = reports
@@ -10106,23 +10120,47 @@ fn security_sbom_lines(
         .position(|report| app.security.report_selection.as_ref() == Some(report.identity()));
     let viewport = yoctui_model::centered_viewport_range(selection, reports.len(), capacity);
     for report in &reports[viewport] {
-        let SecurityReport::Spdx(document) = report else {
-            continue;
-        };
-        let selected = app.security.report_selection.as_ref() == Some(&document.identity);
-        lines.push(
-            Line::from(format!(
-                "{} {:<8} {:<14} {:<24} {:<11} {}",
-                if selected { "▶" } else { " " },
-                security_spdx_kind_label(document.kind),
+        let (identity, format, version, name, components, limited) = match report {
+            SecurityReport::Spdx(document) => (
+                &document.identity,
+                "SPDX",
                 document.spdx_version.as_deref().unwrap_or("unavailable"),
                 document.name.as_deref().unwrap_or("unavailable"),
                 document.components.len(),
-                document.identity.path.display(),
+                !document.limitations.is_empty(),
+            ),
+            SecurityReport::CycloneDx(document) => (
+                &document.identity,
+                "CycloneDX",
+                document.spec_version.as_deref().unwrap_or("unavailable"),
+                "software BOM",
+                document.components.len(),
+                !document.limitations.is_empty(),
+            ),
+            SecurityReport::PackageManifest(document) => (
+                &document.identity,
+                "Manifest",
+                "fallback",
+                "package inventory",
+                document.components.len(),
+                !document.limitations.is_empty(),
+            ),
+            SecurityReport::Cve(_) => continue,
+        };
+        let selected = app.security.report_selection.as_ref() == Some(identity);
+        lines.push(
+            Line::from(format!(
+                "{} {:<12} {:<14} {:<24} {:<11} {}",
+                if selected { "▶" } else { " " },
+                format,
+                version,
+                name,
+                components,
+                identity.path.display(),
             ))
             .style(if selected {
                 palette.selected()
-            } else if document.limitations.is_empty() {
+            } else if !limited {
                 Style::default()
             } else {
                 security_warning_style(palette)
@@ -10131,7 +10169,7 @@ fn security_sbom_lines(
     }
     if reports.is_empty() {
         lines.push(Line::from(
-            "No SPDX documents match the active view and search.",
+            "No SPDX, CycloneDX, or package-manifest documents match the active view and search.",
         ));
     }
 }
@@ -10285,8 +10323,50 @@ fn security_cve_inspector(app: &App) -> String {
 }
 
 fn security_sbom_inspector(app: &App) -> String {
-    let Some(SecurityReport::Spdx(document)) = app.security.selected_report() else {
-        return "Select an exact SPDX document or archive to inspect it.".into();
+    let Some(report) = app.security.selected_report() else {
+        return "Select an exact SPDX, CycloneDX, or package-manifest document to inspect it."
+            .into();
+    };
+    if let SecurityReport::CycloneDx(document) = report {
+        return format!(
+            "Exact artifact: {}\nFingerprint: {}\nBytes: {}\nModified: {}\nFormat: CycloneDX\nSpec version: {}\nSerial number: {}\nDocument version: {}\nComponents: {}\nDependencies: {}\n\nLimitations:\n{}",
+            document.identity.path.display(),
+            document.identity.fingerprint,
+            document.identity.byte_size,
+            timestamp_text(document.identity.modified_at),
+            document.spec_version.as_deref().unwrap_or("unavailable"),
+            document.serial_number.as_deref().unwrap_or("unavailable"),
+            document
+                .version
+                .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+            document.components.len(),
+            document
+                .dependency_count
+                .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+            if document.limitations.is_empty() {
+                "none".into()
+            } else {
+                document.limitations.join("\n")
+            },
+        );
+    }
+    if let SecurityReport::PackageManifest(document) = report {
+        return format!(
+            "Exact artifact: {}\nFingerprint: {}\nBytes: {}\nModified: {}\nFormat: Yocto package manifest fallback\nComponents: {}\n\nThis fallback supplies package names and versions only. License, supplier, file, and relationship claims are unavailable.\n\nLimitations:\n{}",
+            document.identity.path.display(),
+            document.identity.fingerprint,
+            document.identity.byte_size,
+            timestamp_text(document.identity.modified_at),
+            document.components.len(),
+            if document.limitations.is_empty() {
+                "none".into()
+            } else {
+                document.limitations.join("\n")
+            },
+        );
+    }
+    let SecurityReport::Spdx(document) = report else {
+        return "Select an SBOM document.".into();
     };
     let creators = if document.creators.is_empty() {
         "unavailable".into()
@@ -10359,7 +10439,9 @@ fn selected_security_finding(
                 .iter()
                 .find(|finding| &finding.identity == identity)
                 .map(|finding| (report, finding)),
-            SecurityReport::Spdx(_) => None,
+            SecurityReport::Spdx(_)
+            | SecurityReport::CycloneDx(_)
+            | SecurityReport::PackageManifest(_) => None,
         })
 }
 
@@ -13332,7 +13414,7 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let total = composition.totals().0.installed_package_bytes;
     let can_render_pie = app.color_enabled
         && body.width >= 64
-        && body.height >= 18
+        && body.height >= 36
         && app.theme != Theme::Monochrome
         && app.preferences.symbols == SymbolPreference::Unicode
         && app.preferences.charts == yoctui_model::ChartPreference::Automatic
@@ -20226,7 +20308,7 @@ mod tests {
         let mut app = App::new(512, 1024 * 1024);
         app.screen = Screen::Tasks;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 1;
+        app.navigator_selection = 2;
         app.backend = "bridge".into();
         app.workspace.build_dir = Some("/home/user/yocto/build".into());
         app.workspace.source_dir = Some("/home/user/yocto".into());
@@ -20445,7 +20527,7 @@ mod tests {
     fn concept_failed_errors_app() -> App {
         let mut app = literal_reference_app();
         app.screen = Screen::Errors;
-        app.navigator_selection = 8;
+        app.navigator_selection = 9;
         app.focus = FocusTarget::Workspace;
         app.build.status = BuildStatus::Failed;
         app.build.exit_code = Some(1);
@@ -20508,7 +20590,7 @@ mod tests {
     fn concept_rootfs_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::Images;
-        app.navigator_selection = 4;
+        app.navigator_selection = 5;
         app.focus = FocusTarget::Workspace;
         app.build.target = Some("core-image-minimal".into());
         app.workspace.recipes.push(yoctui_model::Recipe {
@@ -20670,7 +20752,7 @@ mod tests {
     fn concept_editor_menu_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::Recipes;
-        app.navigator_selection = 2;
+        app.navigator_selection = 3;
         app.focus = FocusTarget::Dialog;
         app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
             recipe: "bash".into(),
@@ -20713,7 +20795,7 @@ mod tests {
     fn concept_terminal_sessions_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::TerminalSessions;
-        app.navigator_selection = 15;
+        app.navigator_selection = 16;
         app.focus = FocusTarget::Workspace;
         app.terminal.client_id = Some([1; 16]);
         app.terminal.query = "busybox".into();
@@ -20827,7 +20909,7 @@ mod tests {
     #[test]
     fn concept_screen_contracts_render_through_production_renderer() {
         let mut active = literal_reference_app();
-        active.navigator_selection = 6;
+        active.navigator_selection = 7;
         active.focus = FocusTarget::Workspace;
         let scenes = [
             (
@@ -20977,7 +21059,7 @@ mod tests {
     #[test]
     fn concept_screens_keep_navigator_identity_aligned_with_the_visible_workspace() {
         let mut active = literal_reference_app();
-        active.navigator_selection = 6;
+        active.navigator_selection = 7;
         for app in [
             concept_idle_dashboard_app(),
             active,
@@ -21717,7 +21799,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 9;
+        app.navigator_selection = 10;
         let navigator = rendered_text(&app, 180, 42);
         for expected in [
             "~ Configuration",
@@ -21752,7 +21834,7 @@ mod tests {
         let mut app = App::new(32, 8192);
         app.screen = Screen::Logs;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 1;
+        app.navigator_selection = 2;
         let navigator = rendered_text(&app, 180, 36);
         assert!(navigator.contains("Layers"), "{navigator}");
         assert!(!navigator.contains("? Layers"), "{navigator}");
@@ -21806,7 +21888,7 @@ mod tests {
         }
 
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 16;
+        app.navigator_selection = 17;
         let devtool = rendered_text(&app, 180, 58);
         for expected in [
             "Destination: Devtool",
@@ -21856,7 +21938,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 16;
+        app.navigator_selection = 17;
         let unavailable = rendered_text(&app, 180, 56);
         assert!(unavailable.contains("Upgrade recipe"), "{unavailable}");
         assert!(unavailable.contains("[U] — Unavailable"), "{unavailable}");
@@ -21883,7 +21965,7 @@ mod tests {
             },
         );
         yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
-        assert_eq!(app.navigator_selection, 16);
+        assert_eq!(app.navigator_selection, 17);
         let available = rendered_text(&app, 180, 56);
         assert!(available.contains("Upgrade recipe"), "{available}");
         assert!(available.contains("[U] — Available"), "{available}");
@@ -21915,7 +21997,7 @@ mod tests {
             .implementations
             .remove(&yoctui_model::CapabilityId::DevtoolUpgrade);
         yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
-        assert_eq!(app.navigator_selection, 16);
+        assert_eq!(app.navigator_selection, 17);
         let replaced = rendered_text(&app, 180, 56);
         assert!(
             replaced.contains("The reconnected Devtool omits upgrade."),
@@ -22030,7 +22112,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 9;
+        app.navigator_selection = 10;
         let navigator = rendered_text(&app, 180, 42);
         assert!(navigator.contains("Compatibility: Limited"), "{navigator}");
         assert!(
@@ -22774,7 +22856,7 @@ mod tests {
     fn workbench_navigator_scrolls_the_last_destination_into_view() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 21;
+        app.navigator_selection = 22;
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("TOOLS"), "{output}");
         assert!(output.contains("Settings"), "{output}");
@@ -22801,7 +22883,7 @@ mod tests {
         assert!(expanded.contains("Errors         3"), "{expanded}");
         assert!(expanded.contains("Logs        LIVE"), "{expanded}");
 
-        app.navigator_selection = 6;
+        app.navigator_selection = 7;
         app.navigator_groups_expanded[2] = false;
         let collapsed = rendered_text(&app, 180, 40);
         assert!(collapsed.contains("▸ BUILD"), "{collapsed}");
@@ -22812,9 +22894,9 @@ mod tests {
     fn next_generation_navigator_reports_bounded_scroll_position() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 21;
+        app.navigator_selection = 22;
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Navigator · 27/27 ↑"), "{output}");
+        assert!(output.contains("Navigator · 28/28 ↑"), "{output}");
         assert!(output.contains("Settings"), "{output}");
     }
 
@@ -23571,7 +23653,7 @@ mod tests {
             "{top}"
         );
 
-        navigator_app.navigator_selection = 21;
+        navigator_app.navigator_selection = 22;
         let bottom = rendered_text(&navigator_app, 80, 24);
         assert!(
             bottom.contains(&format!(
@@ -24314,6 +24396,18 @@ mod tests {
                 .chars()
                 .any(|glyph| ('\u{2800}'..='\u{28ff}').contains(&glyph)),
             "ASCII fallback must not depend on Braille chart cells: {ascii}"
+        );
+
+        app.preferences.symbols = SymbolPreference::Unicode;
+        let short_wide = rendered_text(&app, 200, 42);
+        assert!(
+            short_wide.contains("Installed-package authority"),
+            "{short_wide}"
+        );
+        assert!(short_wide.contains("Exact bytes"), "{short_wide}");
+        assert!(
+            !short_wide.contains("Rootfs packages · installed bytes"),
+            "the pie layout must yield to the explorable table when all three panes do not fit: {short_wide}"
         );
     }
 
@@ -34435,5 +34529,75 @@ mod tests {
         let accessible = rendered_text(&app, 100, 30);
         assert!(accessible.contains("shortcuts hidden"), "{accessible}");
         assert!(!accessible.contains('�'), "{accessible}");
+    }
+
+    #[test]
+    fn overview_insights_render_all_eight_honest_responsive_states() {
+        let mut app = App::new(32, 4_096);
+        app.screen = Screen::Insights;
+        let expectations = [
+            (
+                yoctui_model::OverviewView::Timeline,
+                "Build timeline / critical path",
+            ),
+            (
+                yoctui_model::OverviewView::RebuildCauses,
+                "Rebuild-cause graph",
+            ),
+            (
+                yoctui_model::OverviewView::CacheAndDownloads,
+                "Sstate & downloads",
+            ),
+            (yoctui_model::OverviewView::ImageSize, "Image-size treemap"),
+            (
+                yoctui_model::OverviewView::MetadataProvenance,
+                "Metadata provenance graph",
+            ),
+            (
+                yoctui_model::OverviewView::PackageTopology,
+                "Runtime package dependency topology",
+            ),
+            (
+                yoctui_model::OverviewView::SupplyChain,
+                "CVE / license / SBOM overlay",
+            ),
+            (
+                yoctui_model::OverviewView::DiskUsage,
+                "Build disk-usage timeline",
+            ),
+        ];
+        for (view, expected) in expectations {
+            app.overview_view = view;
+            for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+                let output = rendered_text_at(&app, width, height, UNIX_EPOCH);
+                assert!(output.contains("Insights"), "{width}x{height}: {output}");
+                assert!(
+                    output.contains(expected),
+                    "{view:?} {width}x{height}: {output}"
+                );
+                assert!(!output.contains('�'), "{view:?} {width}x{height}: {output}");
+            }
+        }
+
+        app.overview_view = yoctui_model::OverviewView::CacheAndDownloads;
+        app.workspace
+            .variables
+            .insert("SSTATE_DIR".into(), "/cache/sstate".into());
+        app.workspace
+            .variables
+            .insert("DL_DIR".into(), "/cache/downloads".into());
+        app.tasks.insert(
+            yoctui_model::TaskId("setscene".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("setscene".into()),
+                task: "do_package_setscene".into(),
+                state: TaskState::Completed,
+                ..yoctui_model::TaskInfo::default()
+            },
+        );
+        let output = rendered_text_at(&app, 160, 50, UNIX_EPOCH);
+        assert!(output.contains("/cache/sstate"), "{output}");
+        assert!(output.contains("/cache/downloads"), "{output}");
+        assert!(output.contains("hits"), "{output}");
     }
 }

@@ -14,11 +14,11 @@ use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
 use yoctui_model::{
-    CveFinding, CveFindingIdentity, CveReport, CveStatus, MAX_SECURITY_COMPONENTS,
-    MAX_SECURITY_FINDINGS, MAX_SECURITY_LIMITATIONS, MAX_SECURITY_METADATA, MAX_SECURITY_REPORTS,
-    MAX_SECURITY_TEXT_BYTES, SecurityMetadata, SecurityReport, SecurityReportIdentity,
-    SecurityReportRequest, SpdxArtifactKind, SpdxComponent, SpdxDocument,
-    normalize_security_reports,
+    CveFinding, CveFindingIdentity, CveReport, CveStatus, CycloneDxDocument,
+    MAX_SECURITY_COMPONENTS, MAX_SECURITY_FINDINGS, MAX_SECURITY_LIMITATIONS,
+    MAX_SECURITY_METADATA, MAX_SECURITY_REPORTS, MAX_SECURITY_TEXT_BYTES, PackageManifestDocument,
+    SecurityMetadata, SecurityReport, SecurityReportIdentity, SecurityReportRequest,
+    SpdxArtifactKind, SpdxComponent, SpdxDocument, normalize_security_reports,
 };
 
 const MAX_SECURITY_DIRECTORIES: usize = 128;
@@ -374,6 +374,8 @@ fn scan_reports(
         let (path, report_limitations) = match report {
             SecurityReport::Cve(report) => (&report.identity.path, &report.limitations),
             SecurityReport::Spdx(report) => (&report.identity.path, &report.limitations),
+            SecurityReport::CycloneDx(report) => (&report.identity.path, &report.limitations),
+            SecurityReport::PackageManifest(report) => (&report.identity.path, &report.limitations),
         };
         for limitation in report_limitations {
             push_limitation(
@@ -595,6 +597,7 @@ fn is_candidate(path: &Path) -> bool {
         || name.ends_with(".spdx.tar.zst")
         || name.ends_with(".spdx.tar.gz")
         || name.ends_with(".spdx.zip")
+        || name.ends_with(".manifest")
 }
 
 enum ParseReportOutcome {
@@ -645,6 +648,9 @@ fn parse_report(
     if name.ends_with(".cve") || name.ends_with(".cve.txt") || name.ends_with(".cve.log") {
         return parse_cve_text(identity, bytes, limitations);
     }
+    if name.ends_with(".manifest") {
+        return parse_package_manifest(identity, bytes, limitations);
+    }
     let value: Value = match serde_json::from_slice(bytes) {
         Ok(value) => value,
         Err(error) => {
@@ -655,6 +661,11 @@ fn parse_report(
             return Ok(ParseReportOutcome::Malformed);
         }
     };
+    if looks_like_cyclonedx(&value) || name.contains("cyclonedx") || name.contains("cdx") {
+        return Ok(ParseReportOutcome::Report(Box::new(
+            SecurityReport::CycloneDx(parse_cyclonedx(identity, &value)),
+        )));
+    }
     if looks_like_spdx(&value) || name.contains("spdx") {
         return Ok(ParseReportOutcome::Report(Box::new(SecurityReport::Spdx(
             parse_spdx(identity, &value),
@@ -672,8 +683,198 @@ fn looks_like_spdx(value: &Value) -> bool {
     value.get("spdxVersion").is_some()
         || value.get("SPDXID").is_some()
         || value.get("documentNamespace").is_some()
-        || value.get("specVersion").is_some()
         || value.get("@context").is_some()
+}
+
+fn looks_like_cyclonedx(value: &Value) -> bool {
+    value
+        .get("bomFormat")
+        .and_then(Value::as_str)
+        .is_some_and(|value| value.eq_ignore_ascii_case("CycloneDX"))
+        || (value.get("specVersion").is_some() && value.get("components").is_some())
+}
+
+fn parse_package_manifest(
+    identity: SecurityReportIdentity,
+    bytes: &[u8],
+    limitations: &mut Vec<String>,
+) -> Result<ParseReportOutcome, SecurityReportAdapterError> {
+    let text = match std::str::from_utf8(bytes) {
+        Ok(text) => text,
+        Err(error) => {
+            push_limitation(
+                limitations,
+                format!("package manifest is not UTF-8: {error}"),
+            );
+            return Ok(ParseReportOutcome::Malformed);
+        }
+    };
+    let mut components = Vec::new();
+    let mut document_limitations = Vec::new();
+    for (index, line) in text.lines().enumerate() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        if components.len() == MAX_SECURITY_COMPONENTS {
+            push_limitation(
+                &mut document_limitations,
+                format!(
+                    "package manifest rows after {} were omitted at the component bound",
+                    index + 1
+                ),
+            );
+            break;
+        }
+        let fields = line.split_whitespace().collect::<Vec<_>>();
+        let Some(name) = fields.first().copied() else {
+            continue;
+        };
+        if name.len() > MAX_SECURITY_TEXT_BYTES || name.chars().any(char::is_control) {
+            push_limitation(
+                &mut document_limitations,
+                format!("invalid package manifest row {} was ignored", index + 1),
+            );
+            continue;
+        }
+        // Yocto image manifests commonly use `package arch version`; older
+        // outputs may contain only `package version`.
+        let version = fields
+            .get(2)
+            .or_else(|| fields.get(1))
+            .map(|value| (*value).to_owned());
+        components.push(SpdxComponent {
+            identity: name.to_owned(),
+            name: name.to_owned(),
+            version,
+            supplier: None,
+            license: None,
+        });
+    }
+    if components.is_empty() {
+        push_limitation(
+            limitations,
+            "package manifest contained no usable package rows".into(),
+        );
+        return Ok(ParseReportOutcome::Malformed);
+    }
+    Ok(ParseReportOutcome::Report(Box::new(
+        SecurityReport::PackageManifest(PackageManifestDocument {
+            identity,
+            scope: None,
+            components,
+            limitations: document_limitations,
+        }),
+    )))
+}
+
+fn parse_cyclonedx(identity: SecurityReportIdentity, value: &Value) -> CycloneDxDocument {
+    let mut limitations = Vec::new();
+    let Some(object) = value.as_object() else {
+        return CycloneDxDocument {
+            identity,
+            scope: None,
+            spec_version: None,
+            serial_number: None,
+            version: None,
+            components: Vec::new(),
+            dependency_count: None,
+            limitations: vec![
+                "unsupported CycloneDX JSON root was retained as an exact artifact".into(),
+            ],
+        };
+    };
+    let components = object
+        .get("components")
+        .and_then(Value::as_array)
+        .map(|values| cyclonedx_components(values, &mut limitations))
+        .unwrap_or_default();
+    if components.is_empty() {
+        push_limitation(
+            &mut limitations,
+            "CycloneDX document contained no supported components".into(),
+        );
+    }
+    CycloneDxDocument {
+        identity,
+        scope: None,
+        spec_version: bounded_json_string(object, &["specVersion"], &mut limitations),
+        serial_number: bounded_json_string(object, &["serialNumber"], &mut limitations),
+        version: object.get("version").and_then(Value::as_u64),
+        components,
+        dependency_count: object
+            .get("dependencies")
+            .and_then(Value::as_array)
+            .map(|values| values.len() as u64),
+        limitations,
+    }
+}
+
+fn cyclonedx_components(values: &[Value], limitations: &mut Vec<String>) -> Vec<SpdxComponent> {
+    let mut components = Vec::new();
+    for value in values.iter().take(MAX_SECURITY_COMPONENTS) {
+        let Some(object) = value.as_object() else {
+            push_limitation(
+                limitations,
+                "a malformed CycloneDX component was ignored".into(),
+            );
+            continue;
+        };
+        let Some(name) = object.get("name").and_then(Value::as_str) else {
+            push_limitation(
+                limitations,
+                "a CycloneDX component without a name was ignored".into(),
+            );
+            continue;
+        };
+        let identity = object
+            .get("bom-ref")
+            .or_else(|| object.get("purl"))
+            .and_then(Value::as_str)
+            .unwrap_or(name);
+        let supplier = object.get("supplier").and_then(|value| {
+            value
+                .as_object()
+                .and_then(|value| value.get("name"))
+                .and_then(Value::as_str)
+                .or_else(|| value.as_str())
+        });
+        let license = object
+            .get("licenses")
+            .and_then(Value::as_array)
+            .and_then(|licenses| {
+                licenses.first()?.as_object().and_then(|entry| {
+                    entry.get("expression").and_then(Value::as_str).or_else(|| {
+                        entry
+                            .get("license")?
+                            .as_object()?
+                            .get("id")
+                            .or_else(|| entry.get("license")?.as_object()?.get("name"))
+                            .and_then(Value::as_str)
+                    })
+                })
+            });
+        components.push(SpdxComponent {
+            identity: identity.to_owned(),
+            name: name.to_owned(),
+            version: object
+                .get("version")
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+            supplier: supplier.map(str::to_owned),
+            license: license.map(str::to_owned),
+        });
+    }
+    if values.len() > MAX_SECURITY_COMPONENTS {
+        push_limitation(
+            limitations,
+            format!(
+                "{} CycloneDX components were omitted at the component bound",
+                values.len() - MAX_SECURITY_COMPONENTS
+            ),
+        );
+    }
+    components
 }
 
 fn looks_like_cve(value: &Value) -> bool {
@@ -1308,6 +1509,64 @@ mod tests {
         assert_eq!(spdx.components.len(), 1);
         assert_eq!(spdx.file_count, Some(2));
         assert_eq!(spdx.relationship_count, Some(1));
+    }
+
+    #[tokio::test]
+    async fn security_report_parses_cyclonedx_and_legacy_image_manifest() {
+        let directory = TestDirectory::new();
+        fs::write(
+            directory.path().join("image.cyclonedx.json"),
+            br#"{
+              "bomFormat": "CycloneDX",
+              "specVersion": "1.6",
+              "serialNumber": "urn:uuid:1234",
+              "version": 1,
+              "components": [{
+                "type": "library",
+                "bom-ref": "pkg:generic/busybox@1.36",
+                "name": "busybox",
+                "version": "1.36",
+                "supplier": {"name": "Yocto"},
+                "licenses": [{"license": {"id": "GPL-2.0-only"}}]
+              }],
+              "dependencies": [{"ref": "pkg:generic/busybox@1.36"}]
+            }"#,
+        )
+        .unwrap();
+        fs::write(
+            directory.path().join("core-image-minimal.manifest"),
+            b"busybox core2-64 1.36.1\nbase-files core2-64 3.0\n",
+        )
+        .unwrap();
+
+        let response = SecurityReportAdapter::new()
+            .scan(request(directory.path()))
+            .await
+            .unwrap();
+        let reports = response.outcome.reports();
+        let cyclonedx = reports
+            .iter()
+            .find_map(|report| match report {
+                SecurityReport::CycloneDx(document) => Some(document),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(cyclonedx.spec_version.as_deref(), Some("1.6"));
+        assert_eq!(
+            cyclonedx.components[0].license.as_deref(),
+            Some("GPL-2.0-only")
+        );
+        assert_eq!(cyclonedx.dependency_count, Some(1));
+        let manifest = reports
+            .iter()
+            .find_map(|report| match report {
+                SecurityReport::PackageManifest(document) => Some(document),
+                _ => None,
+            })
+            .unwrap();
+        assert_eq!(manifest.components.len(), 2);
+        assert_eq!(manifest.components[0].version.as_deref(), Some("3.0"));
+        assert_eq!(manifest.components[1].version.as_deref(), Some("1.36.1"));
     }
 
     #[tokio::test]

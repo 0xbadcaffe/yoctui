@@ -5190,3 +5190,51 @@ When daemon pressure is nonzero, the System Status compatibility line appends
 coalescing, cosmetic drops, reliable-lane waits, forced resynchronizations, and
 slow-client disconnects. Zero pressure stays hidden to avoid dashboard noise;
 the typed values remain available to automation in either case.
+
+## 43. Overview Insights workspace
+
+`Overview / Insights` sits beside Dashboard and presents eight read-only,
+numbered views. `1` through `8` select a view directly; `[`/`]`, Left/Right,
+and `h`/`l` move between views. Every view consumes existing typed model
+authority and renders an explicit unavailable state when its source has not
+been loaded. No widget reads the filesystem, invokes BitBake, or parses report
+text.
+
+1. **Timeline** draws retained task start and duration evidence as a bounded
+   Gantt view. `◆` marks the longest acyclic path supported by reported task
+   dependencies. Cycles terminate safely and missing timestamps remain zero
+   duration rather than estimates.
+2. **Rebuild causes** projects `bitbake-diffsigs` categories into changed hash,
+   variable, and dependency edges.
+3. **Sstate & downloads** separates configured `SSTATE_DIR`/`DL_DIR` paths from
+   observed setscene and `do_fetch` task outcomes. Exact counts and paths
+   remain textual when the optional Braille pie is unavailable. Cache byte
+   totals say unavailable until a bounded authoritative scan reports them.
+4. **Image size** shows exact installed bytes grouped by rootfs package
+   category as a proportional terminal treemap.
+5. **Metadata provenance** displays ordered variable-to-source provenance
+   chains from workspace inspection.
+6. **Package topology** displays loaded `oe-pkgdata-util` runtime dependency
+   edges.
+7. **Supply chain** summarizes CVE findings and SPDX, CycloneDX JSON, or Yocto
+   image-manifest component inventories. A `.manifest` is a declared fallback
+   for Yocto releases without SBOM generation: it provides package names and
+   versions only; license, supplier, file, and relationship claims stay
+   unavailable.
+8. **Disk usage** draws bounded build-filesystem-use, disk-read, and disk-write
+   telemetry histories.
+
+The workspace remains useful at 80x24. Wide Unicode/color layouts may use
+Braille charts; narrow, ASCII, no-color, and accessible-chart preferences keep
+the same facts in text or tables.
+
+The Rootfs package pie requires enough height for its chart, exact composition
+table, selected-package exploration, and filesystem preview together. Below
+that threshold it uses the full-height exact table. The `tui-piechart` widget
+never replaces the table authority.
+
+The process-backend task graph bridges every recipe node to its emitted task
+nodes before normalization. This makes `bitbake -g` task edges reachable from
+the recipe-rooted explorer while retaining the original task-to-task edges,
+cycle handling, limits, reverse traversal, and responsive topology/tree/table
+modes.

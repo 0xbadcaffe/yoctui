@@ -1,37 +1,37 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.46  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.47  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐ Terminal Sessions                                                                    ┌Inspector: Daemon / session─────────────────┐
 │▾ OVERVIEW                │──────────────────────────────────────────────────────────────────────────────────────│▾ PRIMARY FACTS                             │
 │  ▱ Dashboard             │CURRENT · LIVE · WRITER · scrollback 0                                                │Session: shell (1)                          │
-│▾ CONTENT                 │┌ shell #1 Running ──────────────────────────────────────────────────────────────────┐│Identity: BuildShell                        │
-│    Layers                ││BuildShell · writer · 2 viewer(s) · 88x18 · /home/user/yocto/build                  ││Lifecycle: Running                          │
-│    Recipes               ││last search: busybox · 0 matches                                                    ││Role: Writer (keyboard/paste/resize enabled)│
-│    Packages              ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers                            ││Writer: 01010101 · epoch 4                  │
-│    Images                ││layer                 path                                                          ││Viewers: 2                                  │
-│    SDK                   ││meta                  /home/user/yocto/meta                                         ││Dimensions: 88x18                           │
-│▾ BUILD                   ││meta-poky             /home/user/yocto/meta-poky                                    ││Working directory: /home/user/yocto/build   │
-│    Tasks                 ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp                               ││Restartable: yes                            │
-│  ▱ Logs              LIVE││bspguy@builder:~/yocto/build$                                                       ││Exit code: unavailable                      │
-│  ▱ Errors                ││                                                                                    ││                                            │
-│    Configuration         ││                                                                                    ││Replica / history                           │
-│    Dependencies          ││                                                                                    ││Viewport offset: 0                          │
-│▾ VALIDATE                ││                                                                                    ││Retained scrollback: 0 lines                │
-│    Testing               ││                                                                                    ││Dropped history: none observed              │
-│    Security              ││                                                                                    ││Cursor: 35,6 (visible)                      │
-│    QA                    ││                                                                                    ││                                            │
-│▾ TOOLS                   ││                                                                                    ││▾ CONTEXTUAL ACTIONS                        │
-│    Raw Mode              ││                                                                                    ││✓ Open build shell        [n] — Local       │
-│    Terminal Sessions     │└────────────────────────────────────────────────────────────────────────────────────┘│? Open devshell           [s] — Unknown     │
-│    Devtool               │┌ devshell:busybox #2 Running ───────────────────────────────────────────────────────┐│  Reason: No current environment capability │
-│    QEMU / Wic            ││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build                 ││snapshot: devshell.                         │
-│    Maintenance           ││last search: busybox · 3 matches                                                    ││? Open menuconfig         [m] — Unknown     │
-│  ▱ Build environment     ││history 312 · dropped ≥14                                                           ││  Reason: No current environment capability │
-│  ▱ Compatibility         ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                    ││snapshot: menuconfig.                       │
-│  ▱ Settings              ││CC      coreutils/ls.o                                                              ││✓ Take writer control     [o] — Local       │
-│                          ││CC      coreutils/cp.o                                                              ││✓ Release writer control  [c] — Local       │
+│  ▱ Insights              │┌ shell #1 Running ──────────────────────────────────────────────────────────────────┐│Identity: BuildShell                        │
+│▾ CONTENT                 ││BuildShell · writer · 2 viewer(s) · 88x18 · /home/user/yocto/build                  ││Lifecycle: Running                          │
+│    Layers                ││last search: busybox · 0 matches                                                    ││Role: Writer (keyboard/paste/resize enabled)│
+│    Recipes               ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers                            ││Writer: 01010101 · epoch 4                  │
+│    Packages              ││layer                 path                                                          ││Viewers: 2                                  │
+│    Images                ││meta                  /home/user/yocto/meta                                         ││Dimensions: 88x18                           │
+│    SDK                   ││meta-poky             /home/user/yocto/meta-poky                                    ││Working directory: /home/user/yocto/build   │
+│▾ BUILD                   ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp                               ││Restartable: yes                            │
+│    Tasks                 ││bspguy@builder:~/yocto/build$                                                       ││Exit code: unavailable                      │
+│  ▱ Logs              LIVE││                                                                                    ││                                            │
+│  ▱ Errors                ││                                                                                    ││Replica / history                           │
+│    Configuration         ││                                                                                    ││Viewport offset: 0                          │
+│    Dependencies          ││                                                                                    ││Retained scrollback: 0 lines                │
+│▾ VALIDATE                ││                                                                                    ││Dropped history: none observed              │
+│    Testing               ││                                                                                    ││Cursor: 35,6 (visible)                      │
+│    Security              ││                                                                                    ││                                            │
+│    QA                    ││                                                                                    ││▾ CONTEXTUAL ACTIONS                        │
+│▾ TOOLS                   ││                                                                                    ││✓ Open build shell        [n] — Local       │
+│    Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘│? Open devshell           [s] — Unknown     │
+│    Terminal Sessions     │┌ devshell:busybox #2 Running ───────────────────────────────────────────────────────┐│  Reason: No current environment capability │
+│    Devtool               ││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build                 ││snapshot: devshell.                         │
+│    QEMU / Wic            ││last search: busybox · 3 matches                                                    ││? Open menuconfig         [m] — Unknown     │
+│    Maintenance           ││history 312 · dropped ≥14                                                           ││  Reason: No current environment capability │
+│  ▱ Build environment     ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                    ││snapshot: menuconfig.                       │
+│  ▱ Compatibility         ││CC      coreutils/ls.o                                                              ││✓ Take writer control     [o] — Local       │
+│  ▱ Settings              ││CC      coreutils/cp.o                                                              ││✓ Release writer control  [c] — Local       │
 │                          ││LD      busybox_unstripped                                                          ││                                            │
 │                          ││busybox-devshell$                                                                   ││                                            │
 │                          ││                                                                                    ││                                            │

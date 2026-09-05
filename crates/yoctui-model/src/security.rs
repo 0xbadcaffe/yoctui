@@ -405,9 +405,31 @@ pub struct SpdxDocument {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CycloneDxDocument {
+    pub identity: SecurityReportIdentity,
+    pub scope: Option<SecurityScope>,
+    pub spec_version: Option<String>,
+    pub serial_number: Option<String>,
+    pub version: Option<u64>,
+    pub components: Vec<SpdxComponent>,
+    pub dependency_count: Option<u64>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PackageManifestDocument {
+    pub identity: SecurityReportIdentity,
+    pub scope: Option<SecurityScope>,
+    pub components: Vec<SpdxComponent>,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SecurityReport {
     Cve(CveReport),
     Spdx(SpdxDocument),
+    CycloneDx(CycloneDxDocument),
+    PackageManifest(PackageManifestDocument),
 }
 
 impl SecurityReport {
@@ -415,6 +437,8 @@ impl SecurityReport {
         match self {
             Self::Cve(report) => &report.identity,
             Self::Spdx(document) => &document.identity,
+            Self::CycloneDx(document) => &document.identity,
+            Self::PackageManifest(document) => &document.identity,
         }
     }
 
@@ -476,6 +500,16 @@ pub fn normalize_security_reports(
                 document.limitations =
                     normalize_limitations(std::mem::take(&mut document.limitations));
             }
+            SecurityReport::CycloneDx(document) => {
+                normalize_sbom_components(&mut document.components, "CycloneDX", &mut limitations);
+                document.limitations =
+                    normalize_limitations(std::mem::take(&mut document.limitations));
+            }
+            SecurityReport::PackageManifest(document) => {
+                normalize_sbom_components(&mut document.components, "manifest", &mut limitations);
+                document.limitations =
+                    normalize_limitations(std::mem::take(&mut document.limitations));
+            }
         }
     }
     reports.sort_by(|left, right| left.identity().cmp(right.identity()));
@@ -488,6 +522,23 @@ pub fn normalize_security_reports(
         ));
     }
     (reports, normalize_limitations(limitations))
+}
+
+fn normalize_sbom_components(
+    components: &mut Vec<SpdxComponent>,
+    format: &str,
+    limitations: &mut Vec<String>,
+) {
+    components.retain(SpdxComponent::is_valid);
+    components.sort();
+    components.dedup();
+    if components.len() > MAX_SECURITY_COMPONENTS {
+        let dropped = components.len() - MAX_SECURITY_COMPONENTS;
+        components.truncate(MAX_SECURITY_COMPONENTS);
+        limitations.push(format!(
+            "ignored {dropped} {format} components beyond the model bound"
+        ));
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -743,7 +794,9 @@ impl SecurityState {
             .iter()
             .filter_map(|report| match report {
                 SecurityReport::Cve(report) => Some(report),
-                SecurityReport::Spdx(_) => None,
+                SecurityReport::Spdx(_)
+                | SecurityReport::CycloneDx(_)
+                | SecurityReport::PackageManifest(_) => None,
             })
             .flat_map(|report| report.findings.iter())
             .filter(|finding| self.cve_filter.matches(finding.status))
@@ -767,22 +820,26 @@ impl SecurityState {
     pub fn visible_components(&self) -> Vec<&SpdxComponent> {
         let query = self.query.to_ascii_lowercase();
         match self.selected_report() {
-            Some(SecurityReport::Spdx(document)) => document
-                .components
-                .iter()
-                .filter(|component| {
-                    query.is_empty()
-                        || [
-                            component.identity.as_str(),
-                            component.name.as_str(),
-                            component.version.as_deref().unwrap_or_default(),
-                            component.supplier.as_deref().unwrap_or_default(),
-                            component.license.as_deref().unwrap_or_default(),
-                        ]
-                        .into_iter()
-                        .any(|value| value.to_ascii_lowercase().contains(&query))
-                })
-                .collect(),
+            Some(report) => match report {
+                SecurityReport::Spdx(document) => &document.components,
+                SecurityReport::CycloneDx(document) => &document.components,
+                SecurityReport::PackageManifest(document) => &document.components,
+                SecurityReport::Cve(_) => return Vec::new(),
+            }
+            .iter()
+            .filter(|component| {
+                query.is_empty()
+                    || [
+                        component.identity.as_str(),
+                        component.name.as_str(),
+                        component.version.as_deref().unwrap_or_default(),
+                        component.supplier.as_deref().unwrap_or_default(),
+                        component.license.as_deref().unwrap_or_default(),
+                    ]
+                    .into_iter()
+                    .any(|value| value.to_ascii_lowercase().contains(&query))
+            })
+            .collect(),
             _ => Vec::new(),
         }
     }
@@ -1597,7 +1654,14 @@ pub fn update_security(state: &mut SecurityState, action: SecurityAction) -> Sec
             SecurityTransition::none()
         }
         SecurityAction::Drill => {
-            if matches!(state.selected_report(), Some(SecurityReport::Spdx(_))) {
+            if matches!(
+                state.selected_report(),
+                Some(
+                    SecurityReport::Spdx(_)
+                        | SecurityReport::CycloneDx(_)
+                        | SecurityReport::PackageManifest(_)
+                )
+            ) {
                 state.drilled = true;
                 state.component_selection = state
                     .visible_components()

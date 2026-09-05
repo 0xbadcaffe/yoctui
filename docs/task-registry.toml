@@ -7325,3 +7325,157 @@ required = true
 depends_on = ["PERF-SPEC-001", "PERF-BASELINE-001", "PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001", "PERF-EVENTLOOP-001", "PERF-RENDER-001", "PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001", "PERF-TOKIO-001", "PERF-SCHED-001", "PERF-CPU-AFFINITY-001", "PERF-BITBAKE-COEXIST-001", "PERF-INPUT-LATENCY-001", "PERF-IPC-LATENCY-001", "PERF-SATURATION-HARNESS-001", "PERF-EVENT-FLOOD-001", "PERF-REAL-POKY-001", "PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001", "PERF-REGRESSION-001", "PERF-CI-001", "PERF-DOC-001"]
 verify = ["./scripts/verify-performance.sh", "./scripts/verify-completion.sh"]
 notes = "Parent gate requires every required M46 child, the one-percent normal-operation release target, saturated responsiveness and continuity, bounded memory/backpressure, real-Poky evidence, profiling quality, CI, and matching documentation."
+
+[[task]]
+id = "OVERVIEW-SPEC-001"
+milestone = "M47"
+title = "Specify Overview insight authorities and responsive behavior"
+status = "DONE"
+priority = 819
+required = true
+depends_on = []
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Defines eight numbered views, honest missing states, manifest fallback limits, and rootfs/task-graph responsive behavior."
+
+[[task]]
+id = "OVERVIEW-MODEL-001"
+milestone = "M47"
+title = "Add bounded typed Overview projections"
+status = "DONE"
+priority = 820
+required = true
+depends_on = ["OVERVIEW-SPEC-001"]
+verify = ["cargo test -p yoctui-model overview"]
+notes = "Owns view selection and bounded projections for tasks, signatures, caches, rootfs, metadata, packages, security, and disk telemetry."
+
+[[task]]
+id = "OVERVIEW-TIMELINE-001"
+milestone = "M47"
+title = "Visualize build timeline and critical path"
+status = "DONE"
+priority = 821
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-model overview", "cargo test -p yoctui-ui overview_insights"]
+notes = "Uses retained task times and cycle-safe dependency identities without estimating missing values."
+
+[[task]]
+id = "OVERVIEW-REBUILD-001"
+milestone = "M47"
+title = "Visualize signature rebuild causes"
+status = "DONE"
+priority = 822
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-ui overview_insights"]
+notes = "Projects typed base-hash, changed-value, dependency, and unavailable signature differences."
+
+[[task]]
+id = "OVERVIEW-CACHE-001"
+milestone = "M47"
+title = "Visualize sstate and download activity"
+status = "DONE"
+priority = 823
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-model overview", "cargo test -p yoctui-ui overview_insights"]
+notes = "Separates configured SSTATE_DIR/DL_DIR from observed setscene and do_fetch outcomes; byte totals remain unavailable without authority."
+
+[[task]]
+id = "OVERVIEW-IMAGE-001"
+milestone = "M47"
+title = "Visualize rootfs image size"
+status = "DONE"
+priority = 824
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-ui overview_insights"]
+notes = "Aggregates exact rootfs installed bytes by category into a proportional terminal treemap and compares bounded consecutive snapshots for the same machine/image target."
+
+[[task]]
+id = "OVERVIEW-PROVENANCE-001"
+milestone = "M47"
+title = "Visualize metadata provenance"
+status = "DONE"
+priority = 825
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-ui overview_insights"]
+notes = "Renders bounded variable-to-source chains from typed workspace provenance."
+
+[[task]]
+id = "OVERVIEW-PACKAGES-001"
+milestone = "M47"
+title = "Visualize runtime package topology"
+status = "DONE"
+priority = 826
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-ui overview_insights"]
+notes = "Projects already loaded oe-pkgdata-util runtime dependency edges without parsing in widgets."
+
+[[task]]
+id = "OVERVIEW-SUPPLYCHAIN-001"
+milestone = "M47"
+title = "Add SPDX CycloneDX and manifest supply-chain overlay"
+status = "DONE"
+priority = 827
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-bitbake security_report_parses_cyclonedx_and_legacy_image_manifest", "cargo test -p yoctui-ui overview_insights"]
+notes = "Imports CVE, SPDX, CycloneDX JSON, and legacy Yocto image manifests with exact fallback limitations."
+
+[[task]]
+id = "OVERVIEW-DISK-001"
+milestone = "M47"
+title = "Visualize build disk usage history"
+status = "DONE"
+priority = 828
+required = true
+depends_on = ["OVERVIEW-MODEL-001"]
+verify = ["cargo test -p yoctui-ui overview_insights"]
+notes = "Uses bounded build-filesystem, read-rate, and write-rate telemetry histories."
+
+[[task]]
+id = "ROOTFS-VIZ-FIX-001"
+milestone = "M47"
+title = "Repair rootfs pie and exploration breakpoint"
+status = "DONE"
+priority = 829
+required = true
+depends_on = ["OVERVIEW-IMAGE-001"]
+verify = ["cargo test -p yoctui-ui ux_rootfs_packages_pair"]
+notes = "Keeps tui-piechart Braille output only when the chart, exact table, package explorer, and filesystem preview all fit."
+
+[[task]]
+id = "DEPENDENCY-VIZ-FIX-001"
+milestone = "M47"
+title = "Repair task dependency reachability"
+status = "DONE"
+priority = 830
+required = true
+depends_on = ["OVERVIEW-SPEC-001"]
+verify = ["cargo test -p yoctui-bitbake dependency_graph_dot_parser", "cargo test -p yoctui-ui ux_dependency_graph"]
+notes = "Adds recipe-to-task reachability bridges for process-backend task-depends.dot while retaining task edges and bounds."
+
+[[task]]
+id = "OVERVIEW-DOC-001"
+milestone = "M47"
+title = "Document Overview insights and fallback limits"
+status = "DONE"
+priority = 831
+required = true
+depends_on = ["OVERVIEW-TIMELINE-001", "OVERVIEW-REBUILD-001", "OVERVIEW-CACHE-001", "OVERVIEW-IMAGE-001", "OVERVIEW-PROVENANCE-001", "OVERVIEW-PACKAGES-001", "OVERVIEW-SUPPLYCHAIN-001", "OVERVIEW-DISK-001", "ROOTFS-VIZ-FIX-001", "DEPENDENCY-VIZ-FIX-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Updates UI, architecture, roadmap, status, testing, current task, and README documentation."
+
+[[task]]
+id = "OVERVIEW-001"
+milestone = "M47"
+title = "Complete Overview insights and exploration"
+status = "DONE"
+priority = 832
+required = true
+depends_on = ["OVERVIEW-SPEC-001", "OVERVIEW-MODEL-001", "OVERVIEW-TIMELINE-001", "OVERVIEW-REBUILD-001", "OVERVIEW-CACHE-001", "OVERVIEW-IMAGE-001", "OVERVIEW-PROVENANCE-001", "OVERVIEW-PACKAGES-001", "OVERVIEW-SUPPLYCHAIN-001", "OVERVIEW-DISK-001", "ROOTFS-VIZ-FIX-001", "DEPENDENCY-VIZ-FIX-001", "OVERVIEW-DOC-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Parent gate for all eight views, SBOM formats and fallback, rootfs usability, task graph reachability, tests, and documentation."
