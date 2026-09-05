@@ -17,6 +17,7 @@ require() {
 ./scripts/verify-product-complete.sh
 ./scripts/verify-compatibility.sh
 ./scripts/verify-next-generation-ui.sh
+./scripts/verify-performance.sh
 
 require cargo llvm-cov --version
 require cargo audit --version

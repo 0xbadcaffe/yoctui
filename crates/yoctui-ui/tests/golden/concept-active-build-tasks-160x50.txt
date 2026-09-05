@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.21  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│yoctui v0.1.22  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -27,13 +27,13 @@
 │    Terminal Sessions     ││                                                                                    │└────────────────────────────────────────────┘
 │    Devtool               ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
 │    QEMU / Wic            │└────────────────────────────────────────────────────────────────────────────────────┘││ |  CC     builtins/jobs.o                 │
-│    Maintenance           │┌Job History · Active 0 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1───┐││ |  CC     execute_cmd.o                   │
+│    Maintenance           │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 1───┐││ |  CC     execute_cmd.o                   │
 │  ▱ Build environment     ││Status        Operation     Type         Target / Context        Started   Elapsed  │││ [ 72%] Linking bash                       │
-│  ▱ Compatibility         ││✓ Succeeded   core-image-mi Build        core-image-minimal      19:12:10  00:04:55 │└────────────────────────────────────────────┘
-│  ▱ Settings              ││✓ Succeeded   busybox       Build        busybox                 19:11:42  00:00:17 │┌Contextual Actions──────────────────────────┐
-│                          ││✕ Failed      core-image-mi Build        core-image-minimal      19:08:33  00:01:48 ││? Cancel active build  [c] — Unknown        │
-│                          ││✓ Succeeded   virtual/kerne Build        virtual/kernel          19:07:18  00:00:54 ││  Reason: No current environment capability │
-│                          ││                                                                                    ││✓ Open Logs            [l] — Local          │
+│  ▱ Compatibility         ││▶ Running     core-image-mi Build        4/10                    --        --       │└────────────────────────────────────────────┘
+│  ▱ Settings              ││✓ Succeeded   core-image-mi Build        core-image-minimal      19:12:10  00:04:55 │┌Contextual Actions──────────────────────────┐
+│                          ││✓ Succeeded   busybox       Build        busybox                 19:11:42  00:00:17 ││? Cancel active build  [c] — Unknown        │
+│                          ││✕ Failed      core-image-mi Build        core-image-minimal      19:08:33  00:01:48 ││  Reason: No current environment capability │
+│                          ││✓ Succeeded   virtual/kerne Build        virtual/kernel          19:07:18  00:00:54 ││✓ Open Logs            [l] — Local          │
 │                          ││                                                                                    ││✓ Build History        [h] — Local          │
 │                          ││                                                                                    ││? Build options        [B] — Unknown        │
 │                          │└────────────────────────────────────────────────────────────────────────────────────┘│  Reason: No current environment capability │

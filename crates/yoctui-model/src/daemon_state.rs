@@ -440,11 +440,40 @@ pub enum ClientDaemonLifecycle {
     Lost,
 }
 
+impl ClientDaemonLifecycle {
+    pub fn is_terminal(self) -> bool {
+        matches!(
+            self,
+            Self::Disconnected | Self::Exited | Self::Failed | Self::Lost
+        )
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ClientDaemonJobKind {
+    BitBakeBuild,
+    Devtool,
+    Qemu,
+    Wic,
+    Sdk,
+    Testing,
+    Qa,
+    Security,
+    Maintenance,
+    Utility,
+    Raw,
+    Unknown,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClientDaemonJobSummary {
     pub id: u64,
+    pub kind: ClientDaemonJobKind,
     pub label: String,
     pub lifecycle: ClientDaemonLifecycle,
+    pub progress_current: Option<u64>,
+    pub progress_total: Option<u64>,
+    pub exit_code: Option<i32>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

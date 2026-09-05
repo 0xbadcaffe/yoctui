@@ -1029,6 +1029,30 @@ server = Server()
         self.assertIsNone(messages[11]["progress"])
         self.assertNotIn("unrecognized BitBake event", result.stdout.decode())
 
+    def test_real_logrecord_taskpid_correlates_selected_task(self) -> None:
+        spec = importlib.util.spec_from_file_location("yoctui_bridge_taskpid", BRIDGE)
+        if spec is None or spec.loader is None:
+            self.fail(f"could not load bridge module from {BRIDGE}")
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+
+        class LogRecord:
+            taskpid = 42
+            process = 999
+            message = "compiler output"
+            levelname = "INFO"
+            pathname = "/build/tmp/work/busybox/temp/log.do_compile"
+
+        normalized = bridge.normalize_event(
+            LogRecord(), {42: ("busybox", "do_compile")}
+        )
+        self.assertEqual(normalized["type"], "log")
+        self.assertEqual(normalized["recipe"], "busybox")
+        self.assertEqual(normalized["task"], "do_compile")
+        self.assertEqual(
+            normalized["path"], "/build/tmp/work/busybox/temp/log.do_compile"
+        )
+
     def test_real_build_completion_shape_infers_success_from_failures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             Path(directory, "bb.py").write_text(

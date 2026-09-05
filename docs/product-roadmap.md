@@ -894,3 +894,39 @@ Exit criteria:
 - accepted cancellation has a bounded forced-server terminal fallback
 - focused, protocol, workspace, Clippy, documentation, and roadmap checks pass
   in version 0.1.21
+
+## M45 — Live build projection correctness
+
+Goal: make the build phase, selected-task log, and shared job history reflect
+the daemon's live BitBake authority.
+
+Exit criteria:
+
+- task activity transitions Parsing to Running and prevents late parse regressions
+- real BitBake `taskpid` log records correlate with the selected recipe task
+- daemon-owned jobs populate Dashboard and Job History without duplicate rows
+- focused, workspace, Clippy, documentation, and roadmap checks pass in
+  version 0.1.22
+
+## M46 — Low-Overhead / Build-Saturation Responsiveness
+
+Goal: keep Yoctui interactive and correct while BitBake saturates the host,
+with a combined daemon plus one attached client steady-state overhead of at
+most 1% of one logical CPU in the defined normal-operation baseline.
+
+Exit criteria:
+
+- exact one-logical-CPU accounting and per-scenario CPU/latency/resource
+  thresholds are documented before optimization
+- reproducible pre-optimization baselines and workload-specific flamegraphs
+  identify actual hot paths and wakeup sources
+- idle loops block, rendering is dirty/event-driven, animations and telemetry
+  are bounded, and identical frames are not redrawn
+- high-rate logs and task progress coalesce without losing failures,
+  cancellation, disconnects, terminal outcomes, warnings, or errors
+- slow clients cannot block the daemon or BitBake connection; bounded
+  per-client pressure and reconnect behavior are observable
+- deterministic full-CPU saturation and BitBake-like event-flood fixtures gate
+  input, render, IPC, cancellation, PTY, and memory behavior without network
+- supported real-Poky saturation evidence is distinct from fixture evidence
+- the dedicated performance verifier and independent completion checks pass

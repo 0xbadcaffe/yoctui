@@ -2403,6 +2403,7 @@ pub struct BackgroundJob {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum JobHistoryRowRef<'a> {
+    Daemon(&'a ClientDaemonJobSummary),
     Background(&'a BackgroundJob),
     Build(&'a BuildRecord),
 }
@@ -4384,24 +4385,83 @@ impl App {
         }
     }
     pub fn job_history_rows(&self) -> Vec<JobHistoryRowRef<'_>> {
-        let active = self
-            .background_jobs
-            .jobs
-            .iter()
-            .rev()
-            .filter(|job| !job.status.is_terminal())
-            .map(JobHistoryRowRef::Background);
-        let terminal = self
-            .background_jobs
-            .jobs
-            .iter()
-            .rev()
-            .filter(|job| job.status.is_terminal())
-            .map(JobHistoryRowRef::Background);
-        active
-            .chain(terminal)
-            .chain(self.build_history.iter().rev().map(JobHistoryRowRef::Build))
-            .collect()
+        let daemon_current = self.daemon.status == ClientReplicaStatus::Current;
+        let mut rows = Vec::new();
+        if daemon_current {
+            rows.extend(
+                self.daemon
+                    .jobs
+                    .iter()
+                    .rev()
+                    .filter(|job| !job.lifecycle.is_terminal())
+                    .map(JobHistoryRowRef::Daemon),
+            );
+        }
+        rows.extend(
+            self.background_jobs
+                .jobs
+                .iter()
+                .rev()
+                .filter(|job| {
+                    !job.status.is_terminal()
+                        && (!daemon_current
+                            || !self.daemon.jobs.iter().any(|daemon| daemon.id == job.id.0))
+                })
+                .map(JobHistoryRowRef::Background),
+        );
+        if daemon_current {
+            rows.extend(
+                self.daemon
+                    .jobs
+                    .iter()
+                    .rev()
+                    .filter(|job| job.lifecycle.is_terminal())
+                    .map(JobHistoryRowRef::Daemon),
+            );
+        }
+        rows.extend(
+            self.background_jobs
+                .jobs
+                .iter()
+                .rev()
+                .filter(|job| {
+                    job.status.is_terminal()
+                        && (!daemon_current
+                            || !self.daemon.jobs.iter().any(|daemon| daemon.id == job.id.0))
+                })
+                .map(JobHistoryRowRef::Background),
+        );
+        let mut unmatched_daemon_builds = if daemon_current {
+            self.daemon
+                .jobs
+                .iter()
+                .filter(|job| {
+                    job.kind == ClientDaemonJobKind::BitBakeBuild && job.lifecycle.is_terminal()
+                })
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
+        for record in self.build_history.iter().rev() {
+            let duplicate = unmatched_daemon_builds.iter().position(|job| {
+                let Some(target) = record.target.as_deref() else {
+                    return false;
+                };
+                let daemon_target = job
+                    .label
+                    .strip_prefix("BitBake build ")
+                    .unwrap_or(job.label.as_str());
+                let daemon_success = job.lifecycle == ClientDaemonLifecycle::Exited
+                    && job.exit_code.is_none_or(|exit_code| exit_code == 0);
+                daemon_target == target && daemon_success == record.success
+            });
+            if let Some(index) = duplicate {
+                unmatched_daemon_builds.remove(index);
+            } else {
+                rows.push(JobHistoryRowRef::Build(record));
+            }
+        }
+        rows
     }
     pub fn job_summary(&self) -> JobSummary {
         let mut summary = JobSummary {
@@ -4409,7 +4469,27 @@ impl App {
                 .then_some(self.daemon.jobs.len()),
             ..JobSummary::default()
         };
-        for job in &self.background_jobs.jobs {
+        if self.daemon.status == ClientReplicaStatus::Current {
+            for job in &self.daemon.jobs {
+                match job.lifecycle {
+                    ClientDaemonLifecycle::Connecting => summary.queued += 1,
+                    ClientDaemonLifecycle::Running | ClientDaemonLifecycle::Stopping => {
+                        summary.active += 1
+                    }
+                    ClientDaemonLifecycle::Failed => {
+                        summary.failed += 1;
+                        summary.recent_completed += 1;
+                    }
+                    ClientDaemonLifecycle::Exited
+                    | ClientDaemonLifecycle::Lost
+                    | ClientDaemonLifecycle::Disconnected => summary.recent_completed += 1,
+                }
+            }
+        }
+        for job in self.background_jobs.jobs.iter().filter(|job| {
+            self.daemon.status != ClientReplicaStatus::Current
+                || !self.daemon.jobs.iter().any(|daemon| daemon.id == job.id.0)
+        }) {
             match job.status {
                 BackgroundJobStatus::Queued => summary.queued += 1,
                 BackgroundJobStatus::Starting
@@ -4513,34 +4593,39 @@ impl App {
             ClientReplicaStatus::Disconnected | ClientReplicaStatus::Current => {}
         }
 
-        let jobs = self.job_summary();
-        if jobs.active > 0 || jobs.queued > 0 {
-            return Some(TransientStatus {
-                kind: TransientStatusKind::Activity,
-                text: format!("{} active jobs · {} queued", jobs.active, jobs.queued),
-            });
-        }
         let text = match self.build.status {
-            BuildStatus::LoadingWorkspace => "Workspace loading".to_owned(),
-            BuildStatus::Parsing => "BitBake parsing".to_owned(),
+            BuildStatus::LoadingWorkspace => Some("Workspace loading".to_owned()),
+            BuildStatus::Parsing => Some("BitBake parsing".to_owned()),
             BuildStatus::Running => {
                 let active = self
                     .tasks
                     .values()
                     .filter(|task| task.state == TaskState::Active)
                     .count();
-                format!("Build running · {active} active")
+                let queued = self.job_summary().queued;
+                Some(if queued > 0 {
+                    format!("Build running · {active} active · {queued} queued")
+                } else {
+                    format!("Build running · {active} active")
+                })
             }
-            BuildStatus::Cancelling => "Build cancellation pending".to_owned(),
+            BuildStatus::Cancelling => Some("Build cancellation pending".to_owned()),
             BuildStatus::Idle
             | BuildStatus::Completed
             | BuildStatus::Cancelled
             | BuildStatus::Failed
-            | BuildStatus::Lost => return None,
+            | BuildStatus::Lost => None,
         };
-        Some(TransientStatus {
+        if let Some(text) = text {
+            return Some(TransientStatus {
+                kind: TransientStatusKind::Activity,
+                text,
+            });
+        }
+        let jobs = self.job_summary();
+        (jobs.active > 0 || jobs.queued > 0).then(|| TransientStatus {
             kind: TransientStatusKind::Activity,
-            text,
+            text: format!("{} active jobs · {} queued", jobs.active, jobs.queued),
         })
     }
     pub fn inspector_mode(&self) -> InspectorMode {
@@ -6614,6 +6699,17 @@ fn prepare_build(app: &mut App, target: Option<String>) {
     app.task_progress_scroll = 0;
 }
 
+fn mark_build_running_from_task_activity(app: &mut App) {
+    if matches!(
+        app.build.status,
+        BuildStatus::LoadingWorkspace | BuildStatus::Parsing | BuildStatus::Running
+    ) {
+        app.build.status = BuildStatus::Running;
+        app.build.parse_current = None;
+        app.build.parse_total = None;
+    }
+}
+
 fn clamp_task_selection(app: &mut App) {
     app.task_progress_scroll = app
         .task_progress_scroll
@@ -6801,6 +6897,7 @@ fn selected_correlated_log_id(app: &App) -> Option<u64> {
             .get(app.build_history_selection)
             .copied()
         {
+            Some(JobHistoryRowRef::Daemon(_)) => (None, None, None),
             Some(JobHistoryRowRef::Background(job)) => (
                 job.context.target.as_deref(),
                 job.context.recipe.as_deref(),
@@ -14852,11 +14949,19 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.build.parse_total = None;
         }
         Action::ParseProgress { current, total } => {
-            app.build.status = BuildStatus::Parsing;
-            app.build.parse_current = current;
-            app.build.parse_total = total;
+            if matches!(
+                app.build.status,
+                BuildStatus::LoadingWorkspace | BuildStatus::Parsing | BuildStatus::Running
+            ) && app.tasks.is_empty()
+                && app.build.completed == 0
+            {
+                app.build.status = BuildStatus::Parsing;
+                app.build.parse_current = current;
+                app.build.parse_total = total;
+            }
         }
         Action::TaskStarted(t) => {
+            mark_build_running_from_task_activity(app);
             let mut task = t;
             if let Some(stats) = task.stats {
                 app.build.completed = app.build.completed.max(stats.completed);
@@ -14868,6 +14973,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             clamp_task_selection(app);
         }
         Action::TaskQueued(t) => {
+            mark_build_running_from_task_activity(app);
             let mut task = t;
             if let Some(stats) = task.stats {
                 app.build.completed = app.build.completed.max(stats.completed);
@@ -14881,11 +14987,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             clamp_task_selection(app);
         }
         Action::TaskProgress { id, progress } => {
+            mark_build_running_from_task_activity(app);
             if let Some(t) = app.tasks.get_mut(&id) {
                 t.progress = progress.map(|value| value.min(100))
             }
         }
         Action::TaskCompleted { id, success } => {
+            mark_build_running_from_task_activity(app);
             if let Some(mut task) = app.tasks.remove(&id) {
                 task.progress = Some(100);
                 task.state = if success {
@@ -18355,6 +18463,17 @@ mod tests {
                 text: "Build running · 0 active".into(),
             })
         );
+        let _ = update(
+            &mut app,
+            Action::QueueBackgroundJob(background_job_spec(8, true)),
+        );
+        assert_eq!(
+            app.transient_status(),
+            Some(TransientStatus {
+                kind: TransientStatusKind::Activity,
+                text: "Build running · 0 active · 1 queued".into(),
+            })
+        );
     }
     fn run_background_job(app: &mut App, id: u64) {
         let id = BackgroundJobId(id);
@@ -18589,14 +18708,18 @@ mod tests {
         app.daemon.status = ClientReplicaStatus::Current;
         app.daemon.jobs.push(ClientDaemonJobSummary {
             id: 90,
+            kind: ClientDaemonJobKind::Utility,
             label: "daemon job".into(),
             lifecycle: ClientDaemonLifecycle::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
         });
 
         assert_eq!(
             app.job_summary(),
             JobSummary {
-                active: 1,
+                active: 2,
                 queued: 1,
                 failed: 1,
                 recent_completed: 2,
@@ -18605,6 +18728,41 @@ mod tests {
         );
         app.daemon.status = ClientReplicaStatus::Stale;
         assert_eq!(app.job_summary().daemon_owned, None);
+    }
+
+    #[test]
+    fn job_history_deduplicates_only_matching_terminal_daemon_builds() {
+        let mut app = App::new(10, 1_000);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.daemon.jobs.push(ClientDaemonJobSummary {
+            id: 1,
+            kind: ClientDaemonJobKind::BitBakeBuild,
+            label: "BitBake build core-image-minimal".into(),
+            lifecycle: ClientDaemonLifecycle::Exited,
+            progress_current: Some(100),
+            progress_total: Some(100),
+            exit_code: Some(0),
+        });
+        for target in ["older-image", "core-image-minimal"] {
+            app.build_history.push_back(BuildRecord {
+                target: Some(target.into()),
+                success: true,
+                exit_code: Some(0),
+                elapsed: None,
+                completed_tasks: 1,
+                warnings: 0,
+                errors: 0,
+            });
+        }
+
+        let rows = app.job_history_rows();
+        assert_eq!(rows.len(), 2);
+        assert!(matches!(rows[0], JobHistoryRowRef::Daemon(job) if job.id == 1));
+        assert!(matches!(
+            rows[1],
+            JobHistoryRowRef::Build(record)
+                if record.target.as_deref() == Some("older-image")
+        ));
     }
 
     #[test]
@@ -19341,6 +19499,7 @@ mod tests {
     #[test]
     fn parse_progress_tracks_current_and_total() {
         let mut app = App::new(10, 1_000);
+        app.build.status = BuildStatus::LoadingWorkspace;
         let _ = update(
             &mut app,
             Action::ParseProgress {
@@ -19352,6 +19511,53 @@ mod tests {
         assert_eq!(app.build.parse_current, Some(8));
         assert_eq!(app.build.parse_total, Some(20));
         let _ = update(&mut app, Action::BuildStarted);
+        assert_eq!(app.build.parse_current, None);
+        assert_eq!(app.build.parse_total, None);
+    }
+    #[test]
+    fn task_activity_transitions_parsing_to_running_without_regression() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::BuildRequested {
+                target: Some("core-image-minimal".into()),
+            },
+        );
+        let _ = update(&mut app, Action::BuildStarted);
+        let _ = update(
+            &mut app,
+            Action::ParseProgress {
+                current: Some(59),
+                total: Some(100),
+            },
+        );
+        assert_eq!(app.build.status, BuildStatus::Parsing);
+
+        let task = TaskInfo {
+            id: TaskId("glibc:do_compile".into()),
+            recipe: "glibc".into(),
+            task: "do_compile".into(),
+            stats: Some(TaskStats {
+                completed: 59,
+                total: 100,
+                active: 1,
+                failed: 0,
+            }),
+            ..TaskInfo::default()
+        };
+        let _ = update(&mut app, Action::TaskQueued(task));
+        assert_eq!(app.build.status, BuildStatus::Running);
+        assert_eq!(app.build.parse_current, None);
+        assert_eq!(app.build.parse_total, None);
+
+        let _ = update(
+            &mut app,
+            Action::ParseProgress {
+                current: Some(100),
+                total: Some(100),
+            },
+        );
+        assert_eq!(app.build.status, BuildStatus::Running);
         assert_eq!(app.build.parse_current, None);
         assert_eq!(app.build.parse_total, None);
     }

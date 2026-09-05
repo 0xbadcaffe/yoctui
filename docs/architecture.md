@@ -3490,3 +3490,40 @@ After cancellation is accepted, the BitBake supervisor owns a bounded terminal
 deadline. Missing native terminal output triggers the existing typed server
 termination path and publishes exactly one cancellation terminal before stale
 queued records can re-enter shared state.
+
+## M45 live build projection boundary
+
+Task queue, start, progress, and completion events are authoritative evidence
+that a build is executing. The reducer moves a parse-phase build to `Running`
+on that evidence, clears obsolete parse counters, and rejects later parse
+progress as a phase regression while tasks remain known.
+
+BitBake task log correlation stays at the Python bridge boundary. Real
+`logging.LogRecord` events identify their worker with `taskpid`; compatibility
+fixtures may use `pid`. The bridge resolves either identity through the bounded
+task-context map and emits typed recipe, task, path, and build fields, so the
+Dashboard log viewer never infers context from message text.
+
+The daemon snapshot is authoritative for daemon-owned job lifecycle, kind,
+progress, and exit status. The client model preserves those fields and merges
+current daemon jobs with local background jobs through stable job identity.
+Retained build records are de-duplicated one-for-one only when a terminal
+daemon build has the same target and outcome. UI history surfaces only project
+that shared model and do not maintain a second job store.
+
+## M46 low-overhead saturation boundary
+
+Performance is a correctness property across the existing ownership boundary,
+not permission for a second state path. User input, failure/cancellation/
+disconnect/terminal events, warnings/errors, and PTY updates outrank cosmetic
+progress, telemetry, ordinary logs, and animation. The client remains the only
+terminal renderer; the daemon remains the only BitBake/server, long-lived job,
+PTY-process, journal, and compatibility authority.
+
+The normal-operation release budget is combined daemon plus one attached
+interactive client CPU <=1% of one logical CPU under the exact M46 baseline.
+The implementation may coalesce only explicitly coalescible state, must retain
+bounded queues and monotonic ordering for correctness events, and must keep
+keyboard processing independent of render cadence. Fixture saturation can
+prove deterministic behavior but cannot substitute for supported real-Poky
+evidence.

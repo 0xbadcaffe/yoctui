@@ -11,6 +11,22 @@ Status values:
 
 ## Current phase
 
+M46 Low-Overhead / Build-Saturation Responsiveness is registered and
+`PERF-BASELINE-001` is active. It adds 30 required dependency-ordered tasks for an
+exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
+bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
+and independent completion verification. The normative contract now fixes
+one-logical-CPU accounting, exact scenarios/windows, p95 interaction and IPC
+targets, render/heartbeat behavior, resource bounds, and evidence separation.
+No optimization is accepted before the pre-optimization baseline. Overall
+required registry progress is 630/659 (95.6%).
+
+M45 Live Build Projection Correctness is complete. Task activity supersedes
+Parsing without late regression, real BitBake `taskpid` records correlate to
+selected task logs, daemon jobs populate shared history without duplicate
+retained builds, and the Build finished popup uses the frozen terminal elapsed
+duration. Focused and broad gates pass in release 0.1.22.
+
 M44 Live Navigation, Logs, and Cancellation is complete. Live use exposed
 three boundary regressions: collapsed group surrogates were excluded from
 keyboard traversal, daemon IPC flattened typed BitBake logs into uncorrelated

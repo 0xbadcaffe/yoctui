@@ -131,6 +131,7 @@ impl App {
             .job_history_rows()
             .into_iter()
             .filter(|row| match row {
+                JobHistoryRowRef::Daemon(_) => true,
                 JobHistoryRowRef::Background(job) => job.context != BackgroundJobContext::default(),
                 JobHistoryRowRef::Build(record) => record.target.is_some(),
             })

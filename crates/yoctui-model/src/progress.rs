@@ -135,6 +135,50 @@ fn build_terminal(status: BuildStatus) -> Option<WidgetTerminalState> {
     }
 }
 
+fn daemon_job_progress(job: &ClientDaemonJobSummary) -> GaugeProjection {
+    let current = job.progress_current.unwrap_or(0);
+    let valid_total = job
+        .progress_total
+        .filter(|total| *total > 0 && current <= *total);
+    match job.lifecycle {
+        ClientDaemonLifecycle::Running | ClientDaemonLifecycle::Connecting => valid_total
+            .map_or_else(
+                || GaugeProjection::indeterminate(job.label.clone(), "daemon job active"),
+                |total| {
+                    GaugeProjection::determinate(
+                        job.label.clone(),
+                        current,
+                        total,
+                        WidgetRole::Progress,
+                    )
+                },
+            ),
+        ClientDaemonLifecycle::Stopping => {
+            GaugeProjection::indeterminate(job.label.clone(), "daemon job cancellation pending")
+        }
+        ClientDaemonLifecycle::Exited => terminal_progress(
+            &job.label,
+            current,
+            valid_total,
+            WidgetTerminalState::Success,
+            "daemon job complete",
+        ),
+        ClientDaemonLifecycle::Failed | ClientDaemonLifecycle::Lost => terminal_progress(
+            &job.label,
+            current,
+            valid_total,
+            WidgetTerminalState::Failure,
+            "daemon job failed",
+        ),
+        ClientDaemonLifecycle::Disconnected => explicit(
+            &job.label,
+            WidgetState::Unavailable,
+            WidgetRole::Disabled,
+            "daemon job unavailable",
+        ),
+    }
+}
+
 fn utilization(total: Option<u64>, available: Option<u64>) -> Option<u64> {
     let (total, available) = (total?, available?);
     if total == 0 || available > total {
@@ -297,6 +341,7 @@ impl App {
             .get(self.build_history_selection)
             .copied()
         {
+            Some(JobHistoryRowRef::Daemon(job)) => daemon_job_progress(job),
             Some(JobHistoryRowRef::Background(job)) => job.progress_projection(),
             Some(JobHistoryRowRef::Build(record)) => terminal_progress(
                 record.target.as_deref().unwrap_or("Build record"),

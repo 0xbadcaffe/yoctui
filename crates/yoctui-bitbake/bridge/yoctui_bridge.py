@@ -1850,7 +1850,9 @@ def normalize_event(event, task_identities_by_pid=None):
         success = normalized_kind not in ("taskfailed", "taskfailedsilent") and bool(
             event_value(event, "success", default=True)
         )
-        pid = normalized_nonnegative_integer(event_value(event, "pid"))
+        pid = normalized_nonnegative_integer(
+            event_value(event, "taskpid", "pid", "process")
+        )
         if task_identities_by_pid is not None and pid is not None:
             task_identities_by_pid.pop(pid, None)
         return {
@@ -1914,7 +1916,9 @@ def normalize_event(event, task_identities_by_pid=None):
     if normalized_kind in ("log", "logrecord", *diagnostic_levels) and isinstance(
         message, str
     ):
-        pid = normalized_nonnegative_integer(event_value(event, "pid"))
+        pid = normalized_nonnegative_integer(
+            event_value(event, "taskpid", "pid", "process")
+        )
         if not all(isinstance(value, str) for value in (recipe, task)):
             identity = (
                 task_identities_by_pid.get(pid)
@@ -1935,7 +1939,7 @@ def normalize_event(event, task_identities_by_pid=None):
             "message": message,
             "recipe": recipe,
             "task": task,
-            "path": event_value(event, "path", "filename"),
+            "path": event_value(event, "path", "pathname", "filename"),
         }
     if normalized_kind in ("commandcompleted", "command_completed"):
         return None

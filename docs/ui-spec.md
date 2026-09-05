@@ -5121,3 +5121,19 @@ follow at the newest matching entry. Daemon snapshots and incremental log
 events retain optional recipe, task, source-log path, and build correlation.
 Dashboard's selected-task Log Viewer uses the same typed records and never
 depends on parsing human-readable message text.
+
+Task queue, start, progress, or completion activity is authoritative evidence
+that the build has left parsing and is Running. Once task activity exists, a
+late or retained parse-progress event cannot regress the header to Parsing.
+Native BitBake log correlation accepts the worker identity carried by real
+`logging.LogRecord.taskpid` records as well as compatibility fixtures that use
+`pid`; the normalized typed record remains the only renderer input.
+
+While the daemon replica is Current, Dashboard and Job History include its
+bounded job summaries as first-class rows, with daemon lifecycle, kind,
+progress, and exit status. A daemon row suppresses a client-local row with the
+same identity. A terminal daemon BitBake row suppresses one retained build only
+when target and outcome match; active rebuilds never hide prior completions.
+Non-current replicas fall back to retained client-local and build records.
+While a build runs, the footer keeps the explicit build phase and active-task
+count; concurrent queued work is appended instead of replacing that status.

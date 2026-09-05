@@ -6980,3 +6980,348 @@ required = true
 depends_on = ["UX-DASHBOARD-FOCUS-DENSITY-001"]
 verify = ["cargo test -p yoctui-model collapsed_navigator_root_can_be_reselected_and_reopened", "cargo test -p yoctui-app daemon_log_context_survives_snapshot_and_live_event_mapping", "cargo test -p yoctui-app logs_open_with_scrollable_workspace_focus", "cargo test -p yoctui daemon_cancellation_times_out_to_one_terminal_event", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Collapsed Navigator roots remain keyboard-reachable and reopen normally. Typed BitBake recipe/task/path/build context survives daemon snapshots and live events, snapshot resync preserves paused log navigation, and Logs opens with workspace focus. Cancellation now bounds missing native terminal events, terminates the server, and publishes one exit-130 cancellation result. Focused Python/Rust regressions, full workspace tests, Clippy, and documentation/completion gates pass in v0.1.21."
+
+# M45 — Live build projection correctness.
+
+[[task]]
+id = "UX-LIVE-BUILD-PROJECTION-001"
+milestone = "M45"
+title = "Fix live build phase, task logs, and daemon job history"
+status = "DONE"
+priority = 788
+required = true
+depends_on = ["UX-LIVE-NAV-LOG-CANCEL-001"]
+verify = ["cargo test -p yoctui-model task_activity_transitions_parsing_to_running_without_regression", "python3 -m pytest bridge/tests/test_bridge.py -k taskpid", "cargo test -p yoctui-app daemon_jobs_populate_shared_job_history", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Task activity now supersedes Parsing, real taskpid log correlation reaches the selected task, daemon jobs populate shared history without duplicate retained builds, and the completion popup freezes its retained elapsed duration. Focused and broad gates pass in v0.1.22."
+
+# M46 — Low-Overhead / Build-Saturation Responsiveness.
+
+[[task]]
+id = "PERF-SPEC-001"
+milestone = "M46"
+title = "Specify the low-overhead and responsiveness contract"
+status = "DONE"
+priority = 789
+required = true
+depends_on = ["UX-LIVE-BUILD-PROJECTION-001"]
+verify = ["./scripts/verify-performance.sh --contract"]
+notes = "docs/performance.md fixes one-logical-CPU accounting, exact host/window/scenario thresholds, input and IPC latency, render cadence, saturation-tolerant heartbeat behavior, resource bounds, and fixture-versus-live artifact policy. The offline contract verifier passes in v0.1.22."
+
+[[task]]
+id = "PERF-BASELINE-001"
+milestone = "M46"
+title = "Capture the pre-optimization performance baseline"
+status = "IN_PROGRESS"
+priority = 790
+required = true
+depends_on = ["PERF-SPEC-001"]
+verify = ["./scripts/verify-performance.sh --baseline"]
+notes = "Record reproducible daemon, client, combined CPU, context-switch, wakeup, render, IPC, BitBake-event, telemetry, memory, and thread metrics before optimization."
+
+[[task]]
+id = "PERF-FLAMEGRAPH-001"
+milestone = "M46"
+title = "Capture CPU flamegraphs for all baseline workloads"
+status = "NOT_STARTED"
+priority = 791
+required = true
+depends_on = ["PERF-BASELINE-001"]
+verify = ["./scripts/verify-performance.sh --profiles"]
+notes = "Capture idle daemon/client, active build, log-heavy, task-event-heavy, PTY-idle, and PTY-active profiles under the repository evidence convention."
+
+[[task]]
+id = "PERF-WAKEUPS-001"
+milestone = "M46"
+title = "Measure wakeups and timer behavior"
+status = "NOT_STARTED"
+priority = 792
+required = true
+depends_on = ["PERF-BASELINE-001"]
+verify = ["./scripts/verify-performance.sh --wakeups"]
+notes = "Audit UI, animation, telemetry, IPC, reconnect, PTY, log, job, and status timers and identify unchanged periodic work."
+
+[[task]]
+id = "PERF-SATURATION-HARNESS-001"
+milestone = "M46"
+title = "Create a deterministic CPU saturation harness"
+status = "NOT_STARTED"
+priority = 793
+required = true
+depends_on = ["PERF-SPEC-001"]
+verify = ["./scripts/verify-saturation-responsiveness.sh --harness"]
+notes = "Provide a bounded offline fixture that can saturate a configured number of logical CPUs without deliberately reserving a core."
+
+[[task]]
+id = "PERF-EVENT-FLOOD-001"
+milestone = "M46"
+title = "Create a BitBake-like event flood harness"
+status = "NOT_STARTED"
+priority = 794
+required = true
+depends_on = ["PERF-SPEC-001"]
+verify = ["./scripts/verify-ipc-continuity.sh --event-flood"]
+notes = "Generate realistic queued, started, progress, log, warning, failure, and completion traffic above expected build rates while checking bounds and critical-event retention."
+
+[[task]]
+id = "PERF-EVENTLOOP-001"
+milestone = "M46"
+title = "Eliminate idle busy loops"
+status = "NOT_STARTED"
+priority = 795
+required = true
+depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]
+verify = ["./scripts/verify-performance.sh --event-loops"]
+notes = "Make every long-lived loop block efficiently and remove spinning receives, zero sleeps, redundant redraws, probes, scans, and avoidable polling."
+
+[[task]]
+id = "PERF-RENDER-001"
+milestone = "M46"
+title = "Make rendering dirty and event driven"
+status = "NOT_STARTED"
+priority = 796
+required = true
+depends_on = ["PERF-WAKEUPS-001", "PERF-EVENTLOOP-001"]
+verify = ["./scripts/verify-performance.sh --render"]
+notes = "Coalesce invalidation and redraw only for input, meaningful state changes, or bounded visible timers; reject identical-frame redraw loops."
+
+[[task]]
+id = "PERF-ANIM-001"
+milestone = "M46"
+title = "Bound animation work and cadence"
+status = "NOT_STARTED"
+priority = 797
+required = true
+depends_on = ["PERF-RENDER-001"]
+verify = ["./scripts/verify-performance.sh --animations"]
+notes = "Use measured low-frequency visible-only animation ticks, freeze reduced-motion animation, and avoid application-wide cosmetic invalidation."
+
+[[task]]
+id = "PERF-TELEMETRY-001"
+milestone = "M46"
+title = "Optimize telemetry collection"
+status = "NOT_STARTED"
+priority = 798
+required = true
+depends_on = ["PERF-EVENTLOOP-001", "PERF-RENDER-001"]
+verify = ["./scripts/verify-performance.sh --telemetry"]
+notes = "Use low-rate bounded sampling without per-sample processes, reuse sources where practical, and reduce or pause invisible/unrequested collection."
+
+[[task]]
+id = "PERF-LOG-001"
+milestone = "M46"
+title = "Optimize bounded log ingestion and rendering"
+status = "NOT_STARTED"
+priority = 799
+required = true
+depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]
+verify = ["./scripts/verify-performance.sh --logs"]
+notes = "Avoid full-buffer clones and per-frame refiltering, coalesce ordinary logs, bound queues and indexes, and always retain warnings, errors, failures, and terminal outcomes."
+
+[[task]]
+id = "PERF-TASKS-001"
+milestone = "M46"
+title = "Optimize high-rate task updates"
+status = "NOT_STARTED"
+priority = 800
+required = true
+depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]
+verify = ["./scripts/verify-performance.sh --tasks"]
+notes = "Coalesce stable-identity progress, batch reducer updates, preserve terminal/failure events, and avoid full sorting and table reconstruction per event or frame."
+
+[[task]]
+id = "PERF-IPC-001"
+milestone = "M46"
+title = "Audit and optimize daemon client IPC"
+status = "NOT_STARTED"
+priority = 801
+required = true
+depends_on = ["PERF-BASELINE-001", "PERF-EVENT-FLOOD-001"]
+verify = ["./scripts/verify-performance.sh --ipc"]
+notes = "Measure message and byte rates, snapshot and incremental sizes, serialization CPU, fanout duplication, ordering, batching, and redundant snapshots."
+
+[[task]]
+id = "PERF-IPC-BACKPRESSURE-001"
+milestone = "M46"
+title = "Implement bounded priority-aware IPC backpressure"
+status = "NOT_STARTED"
+priority = 802
+required = true
+depends_on = ["PERF-IPC-001"]
+verify = ["./scripts/verify-ipc-continuity.sh --backpressure"]
+notes = "Isolate slow clients with bounded queues and pressure counters; only cosmetic progress, telemetry, and ordinary logs may coalesce while correctness events never drop."
+
+[[task]]
+id = "PERF-BITBAKE-CONN-001"
+milestone = "M46"
+title = "Harden BitBake connectivity under CPU saturation"
+status = "NOT_STARTED"
+priority = 803
+required = true
+depends_on = ["PERF-IPC-001", "PERF-EVENTLOOP-001"]
+verify = ["./scripts/verify-saturation-responsiveness.sh --bitbake-connection"]
+notes = "Audit starvation, blocking calls, heartbeat assumptions, socket deadlines, and retry timers; use monotonic tolerant liveness without masking real disconnects."
+
+[[task]]
+id = "PERF-TOKIO-001"
+milestone = "M46"
+title = "Audit Tokio runtime scheduling"
+status = "NOT_STARTED"
+priority = 804
+required = true
+depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]
+verify = ["./scripts/verify-performance.sh --tokio"]
+notes = "Measure runtime threads, blocking work, task/channel count, timer churn, and reactor starvation; move justified blocking work without blindly adding workers."
+
+[[task]]
+id = "PERF-SCHED-001"
+milestone = "M46"
+title = "Evaluate safe unprivileged scheduling recommendations"
+status = "NOT_STARTED"
+priority = 805
+required = true
+depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]
+verify = ["./scripts/verify-performance.sh --scheduling"]
+notes = "Evaluate nice and user-service CPUWeight behavior; require neither root nor realtime scheduling and expose only measured optional guidance."
+
+[[task]]
+id = "PERF-CPU-AFFINITY-001"
+milestone = "M46"
+title = "Evaluate optional CPU affinity and isolation"
+status = "NOT_STARTED"
+priority = 806
+required = true
+depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]
+verify = ["./scripts/verify-performance.sh --affinity"]
+notes = "Measure whether optional CPU reservation improves responsiveness without hardcoding affinity or making a free core necessary for correctness."
+
+[[task]]
+id = "PERF-BITBAKE-COEXIST-001"
+milestone = "M46"
+title = "Document measured BitBake coexistence guidance"
+status = "NOT_STARTED"
+priority = 807
+required = true
+depends_on = ["PERF-SCHED-001", "PERF-CPU-AFFINITY-001"]
+verify = ["./scripts/verify-performance.sh --coexistence"]
+notes = "Diagnose oversubscription and document BB_NUMBER_THREADS, PARALLEL_MAKE, load, and cgroup options without silently changing build configuration."
+
+[[task]]
+id = "PERF-INPUT-LATENCY-001"
+milestone = "M46"
+title = "Measure saturated UI input latency"
+status = "NOT_STARTED"
+priority = 808
+required = true
+depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-RENDER-001"]
+verify = ["./scripts/verify-saturation-responsiveness.sh --input-latency"]
+notes = "Measure key-to-model, key-to-visible-frame, and mouse-to-selection p50/p95 latency under saturation against the documented target."
+
+[[task]]
+id = "PERF-IPC-LATENCY-001"
+milestone = "M46"
+title = "Measure saturated IPC latency"
+status = "NOT_STARTED"
+priority = 809
+required = true
+depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001"]
+verify = ["./scripts/verify-ipc-continuity.sh --latency"]
+notes = "Measure daemon-event receipt, command receipt, and cancellation acknowledgement p50/p95 under saturation."
+
+[[task]]
+id = "PERF-CPU-GATE-001"
+milestone = "M46"
+title = "Implement the one-percent steady-state CPU gate"
+status = "NOT_STARTED"
+priority = 810
+required = true
+depends_on = ["PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-TOKIO-001"]
+verify = ["./scripts/verify-low-overhead.sh"]
+notes = "Warm up and robustly sample the documented daemon plus one-client baseline, failing above one percent of one logical CPU rather than total host capacity."
+
+[[task]]
+id = "PERF-RESPONSIVENESS-GATE-001"
+milestone = "M46"
+title = "Gate interactive responsiveness under saturation"
+status = "NOT_STARTED"
+priority = 811
+required = true
+depends_on = ["PERF-INPUT-LATENCY-001", "PERF-BITBAKE-CONN-001"]
+verify = ["./scripts/verify-saturation-responsiveness.sh"]
+notes = "Prove continued input, rendering, daemon and backend connectivity, responsive cancellation, detach, and reconnect under deterministic full-CPU load."
+
+[[task]]
+id = "PERF-IPC-GATE-001"
+milestone = "M46"
+title = "Gate IPC continuity and critical-event ordering"
+status = "NOT_STARTED"
+priority = 812
+required = true
+depends_on = ["PERF-IPC-LATENCY-001", "PERF-EVENT-FLOOD-001"]
+verify = ["./scripts/verify-ipc-continuity.sh"]
+notes = "Under saturation and flood prove connection continuity, ordered critical events, slow-client isolation, bounded pressure, and reconnect."
+
+[[task]]
+id = "PERF-MEMORY-GATE-001"
+milestone = "M46"
+title = "Gate bounded memory under sustained event load"
+status = "NOT_STARTED"
+priority = 813
+required = true
+depends_on = ["PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-BACKPRESSURE-001"]
+verify = ["./scripts/verify-bounded-memory.sh"]
+notes = "Run a meaningful bounded high-rate workload and reject monotonic growth in log, task, IPC, telemetry, and process memory retention."
+
+[[task]]
+id = "PERF-REAL-POKY-001"
+milestone = "M46"
+title = "Validate responsiveness during a real saturated Poky build"
+status = "NOT_STARTED"
+priority = 814
+required = true
+depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
+verify = ["./scripts/verify-performance.sh --real-poky-evidence"]
+notes = "Capture sustained supported-Poky execution with daemon/client/BitBake CPU, input and IPC latency, continuity, render rate, memory, and queue-pressure evidence."
+
+[[task]]
+id = "PERF-REGRESSION-001"
+milestone = "M46"
+title = "Track machine-readable performance regressions"
+status = "NOT_STARTED"
+priority = 815
+required = true
+depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
+verify = ["./scripts/verify-performance.sh --regressions"]
+notes = "Record compact CPU, latency, wakeup, render, pressure, and memory metrics with robust hard release gates and tolerance for tiny uncontrolled variance."
+
+[[task]]
+id = "PERF-CI-001"
+milestone = "M46"
+title = "Integrate deterministic and scheduled performance CI"
+status = "NOT_STARTED"
+priority = 816
+required = true
+depends_on = ["PERF-REGRESSION-001"]
+verify = ["./scripts/verify-performance.sh --ci"]
+notes = "Run fast busy-loop, invalidation, coalescing, backpressure, and saturation tests on PRs; keep flamegraphs, real Poky, CPU endurance, and memory endurance scheduled or opt-in with artifacts."
+
+[[task]]
+id = "PERF-DOC-001"
+milestone = "M46"
+title = "Document low-overhead architecture and tuning"
+status = "NOT_STARTED"
+priority = 817
+required = true
+depends_on = ["PERF-BITBAKE-COEXIST-001", "PERF-REGRESSION-001", "PERF-REAL-POKY-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-performance.sh --docs"]
+notes = "Document expected CPU, rendering, telemetry, backpressure, saturation behavior, optional host guidance, profiling, and every gate reproduction command."
+
+[[task]]
+id = "PERF-001"
+milestone = "M46"
+title = "Complete low-overhead build-saturation responsiveness"
+status = "NOT_STARTED"
+priority = 818
+required = true
+depends_on = ["PERF-SPEC-001", "PERF-BASELINE-001", "PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001", "PERF-EVENTLOOP-001", "PERF-RENDER-001", "PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001", "PERF-TOKIO-001", "PERF-SCHED-001", "PERF-CPU-AFFINITY-001", "PERF-BITBAKE-COEXIST-001", "PERF-INPUT-LATENCY-001", "PERF-IPC-LATENCY-001", "PERF-SATURATION-HARNESS-001", "PERF-EVENT-FLOOD-001", "PERF-REAL-POKY-001", "PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001", "PERF-REGRESSION-001", "PERF-CI-001", "PERF-DOC-001"]
+verify = ["./scripts/verify-performance.sh", "./scripts/verify-completion.sh"]
+notes = "Parent gate requires every required M46 child, the one-percent normal-operation release target, saturated responsiveness and continuity, bounded memory/backpressure, real-Poky evidence, profiling quality, CI, and matching documentation."

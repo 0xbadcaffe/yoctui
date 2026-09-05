@@ -2273,8 +2273,41 @@ fn daemon_client_view(
             .iter()
             .map(|job| ClientDaemonJobSummary {
                 id: job.id.0,
+                kind: match job.kind {
+                    yoctui_protocol::daemon::JobKind::BitBakeBuild => {
+                        yoctui_model::ClientDaemonJobKind::BitBakeBuild
+                    }
+                    yoctui_protocol::daemon::JobKind::Devtool => {
+                        yoctui_model::ClientDaemonJobKind::Devtool
+                    }
+                    yoctui_protocol::daemon::JobKind::Qemu => {
+                        yoctui_model::ClientDaemonJobKind::Qemu
+                    }
+                    yoctui_protocol::daemon::JobKind::Wic => yoctui_model::ClientDaemonJobKind::Wic,
+                    yoctui_protocol::daemon::JobKind::Sdk => yoctui_model::ClientDaemonJobKind::Sdk,
+                    yoctui_protocol::daemon::JobKind::Testing => {
+                        yoctui_model::ClientDaemonJobKind::Testing
+                    }
+                    yoctui_protocol::daemon::JobKind::Qa => yoctui_model::ClientDaemonJobKind::Qa,
+                    yoctui_protocol::daemon::JobKind::Security => {
+                        yoctui_model::ClientDaemonJobKind::Security
+                    }
+                    yoctui_protocol::daemon::JobKind::Maintenance => {
+                        yoctui_model::ClientDaemonJobKind::Maintenance
+                    }
+                    yoctui_protocol::daemon::JobKind::Utility => {
+                        yoctui_model::ClientDaemonJobKind::Utility
+                    }
+                    yoctui_protocol::daemon::JobKind::Raw => yoctui_model::ClientDaemonJobKind::Raw,
+                    yoctui_protocol::daemon::JobKind::Unknown => {
+                        yoctui_model::ClientDaemonJobKind::Unknown
+                    }
+                },
                 label: job.label.clone(),
                 lifecycle: client_daemon_lifecycle(job.lifecycle),
+                progress_current: job.progress_current,
+                progress_total: job.progress_total,
+                exit_code: job.exit_code,
             })
             .collect(),
         pty_sessions: snapshot
@@ -8853,6 +8886,79 @@ mod tests {
             yoctui_model::ClientReplicaStatus::Disconnected
         );
         assert_eq!(app.screen, Screen::Recipes);
+    }
+
+    #[test]
+    fn daemon_jobs_populate_shared_job_history() {
+        use yoctui_protocol::daemon::{JobId, JobKind, JobSummary, LifecycleState};
+
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([3; 16]),
+            123,
+            "job-history".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&state);
+        snapshot.jobs = vec![
+            JobSummary {
+                id: JobId(8),
+                kind: JobKind::BitBakeBuild,
+                label: "BitBake build core-image-minimal".into(),
+                lifecycle: LifecycleState::Running,
+                progress_current: Some(59),
+                progress_total: Some(100),
+                exit_code: None,
+            },
+            JobSummary {
+                id: JobId(7),
+                kind: JobKind::Raw,
+                label: "Raw bitbake -s".into(),
+                lifecycle: LifecycleState::Exited,
+                progress_current: None,
+                progress_total: None,
+                exit_code: Some(0),
+            },
+        ];
+
+        let mut app = yoctui_model::App::new(16, 4096);
+        app.build_history.push_back(yoctui_model::BuildRecord {
+            target: Some("core-image-minimal".into()),
+            success: true,
+            exit_code: Some(0),
+            elapsed: None,
+            completed_tasks: 10,
+            warnings: 0,
+            errors: 0,
+        });
+        let mut client = DaemonClientSnapshot::default();
+        client.replace_app(&mut app, snapshot);
+
+        let rows = app.job_history_rows();
+        assert_eq!(
+            rows.len(),
+            3,
+            "a running daemon build must not hide a prior retained completion"
+        );
+        assert!(matches!(
+            rows[0],
+            yoctui_model::JobHistoryRowRef::Daemon(job)
+                if job.id == 8
+                    && job.kind == yoctui_model::ClientDaemonJobKind::BitBakeBuild
+                    && job.progress_current == Some(59)
+        ));
+        assert!(matches!(
+            rows[1],
+            yoctui_model::JobHistoryRowRef::Daemon(job)
+                if job.id == 7 && job.exit_code == Some(0)
+        ));
+        assert!(matches!(
+            rows[2],
+            yoctui_model::JobHistoryRowRef::Build(record)
+                if record.target.as_deref() == Some("core-image-minimal")
+        ));
+        assert_eq!(app.job_summary().active, 1);
+        assert_eq!(app.job_summary().recent_completed, 1);
     }
 
     #[cfg(unix)]

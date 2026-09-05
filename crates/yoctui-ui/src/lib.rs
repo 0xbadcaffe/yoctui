@@ -1843,10 +1843,24 @@ fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     );
     if let Some(status) = transient.filter(|_| status_width > 0) {
         let tone = transient_status_tone(status.kind);
-        let text = bounded_status_line(
-            status.text.split_whitespace().collect::<Vec<_>>().join(" "),
-            status_width.saturating_sub(2),
-        );
+        let responsive_text = if app.build.status == BuildStatus::Running {
+            let jobs = app.job_summary();
+            if jobs.queued > 0 && status_width < 30 {
+                format!("Running · {} queued", jobs.queued)
+            } else if jobs.queued > 0 && status_width < 40 {
+                let active = app
+                    .tasks
+                    .values()
+                    .filter(|task| task.state == TaskState::Active)
+                    .count();
+                format!("Running · {active} task · {} queued", jobs.queued)
+            } else {
+                status.text.split_whitespace().collect::<Vec<_>>().join(" ")
+            }
+        } else {
+            status.text.split_whitespace().collect::<Vec<_>>().join(" ")
+        };
+        let text = bounded_status_line(responsive_text, status_width.saturating_sub(2));
         frame.render_widget(
             Paragraph::new(Line::from(status_label(
                 tone,
@@ -5999,6 +6013,7 @@ fn inspector_related_paths(app: &App) -> Vec<String> {
             .job_history_rows()
             .get(app.build_history_selection)
             .and_then(|row| match row {
+                JobHistoryRowRef::Daemon(_) => None,
                 JobHistoryRowRef::Background(job) => job.context.path.clone(),
                 JobHistoryRowRef::Build(_) => None,
             }),
@@ -6270,6 +6285,7 @@ fn inspector(
             .job_history_rows()
             .get(app.build_history_selection)
             .and_then(|row| match row {
+                JobHistoryRowRef::Daemon(_) => None,
                 JobHistoryRowRef::Background(job) => {
                     job.output.back().map(|entry| entry.message.as_str())
                 }
@@ -6562,6 +6578,7 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
     } else {
         "Press any key to return to Yoctui."
     };
+    let elapsed = app.build_summary_at(SystemTime::now()).elapsed;
     clear_popup(frame, app, popup);
     frame.render_widget(
         Paragraph::new(format!(
@@ -6572,7 +6589,7 @@ fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
             app.build.warnings,
             app.build.errors,
             app.build.exit_code.map_or_else(|| "unknown".into(), |code| code.to_string()),
-            app.elapsed().map(format_duration).unwrap_or_else(|| "unknown".into()),
+            elapsed.map(format_duration).unwrap_or_else(|| "unknown".into()),
             action,
         ))
         .style(build_status_style(app))
@@ -7915,6 +7932,11 @@ fn render_dashboard_quick_actions(frame: &mut Frame, app: &App, area: Rect) {
 #[allow(dead_code)]
 fn dashboard_recent_work_line(row: JobHistoryRowRef<'_>, now: SystemTime) -> String {
     match row {
+        JobHistoryRowRef::Daemon(job) => format!(
+            "{} {} · daemon",
+            daemon_job_status_label(job.lifecycle),
+            job.label,
+        ),
         JobHistoryRowRef::Background(job) => format!(
             "{} {} · {}",
             job_status_label(job.status),
@@ -7933,6 +7955,7 @@ fn dashboard_recent_work_line(row: JobHistoryRowRef<'_>, now: SystemTime) -> Str
 
 fn command_center_context_line(row: JobHistoryRowRef<'_>) -> String {
     match row {
+        JobHistoryRowRef::Daemon(job) => format!("Daemon · {}", job.label),
         JobHistoryRowRef::Build(record) => format!(
             "Build · {}",
             record.target.as_deref().unwrap_or("unknown target")
@@ -8768,6 +8791,43 @@ fn job_kind_label(kind: BackgroundJobKind) -> &'static str {
     }
 }
 
+fn daemon_job_status_label(lifecycle: yoctui_model::ClientDaemonLifecycle) -> &'static str {
+    match lifecycle {
+        yoctui_model::ClientDaemonLifecycle::Disconnected => "– Disconnected",
+        yoctui_model::ClientDaemonLifecycle::Connecting => "… Starting",
+        yoctui_model::ClientDaemonLifecycle::Running => "▶ Running",
+        yoctui_model::ClientDaemonLifecycle::Stopping => "! Cancelling",
+        yoctui_model::ClientDaemonLifecycle::Exited => "✓ Succeeded",
+        yoctui_model::ClientDaemonLifecycle::Failed => "✕ Failed",
+        yoctui_model::ClientDaemonLifecycle::Lost => "? Lost",
+    }
+}
+
+fn daemon_job_kind_label(kind: yoctui_model::ClientDaemonJobKind) -> &'static str {
+    match kind {
+        yoctui_model::ClientDaemonJobKind::BitBakeBuild => "Build",
+        yoctui_model::ClientDaemonJobKind::Devtool => "Devtool",
+        yoctui_model::ClientDaemonJobKind::Qemu => "QEMU",
+        yoctui_model::ClientDaemonJobKind::Wic => "Wic",
+        yoctui_model::ClientDaemonJobKind::Sdk => "SDK",
+        yoctui_model::ClientDaemonJobKind::Testing => "Test",
+        yoctui_model::ClientDaemonJobKind::Qa => "QA",
+        yoctui_model::ClientDaemonJobKind::Security => "Security",
+        yoctui_model::ClientDaemonJobKind::Maintenance => "Maintenance",
+        yoctui_model::ClientDaemonJobKind::Utility => "Utility",
+        yoctui_model::ClientDaemonJobKind::Raw => "Raw",
+        yoctui_model::ClientDaemonJobKind::Unknown => "Unknown",
+    }
+}
+
+fn job_history_row_active(row: JobHistoryRowRef<'_>) -> bool {
+    match row {
+        JobHistoryRowRef::Daemon(job) => !job.lifecycle.is_terminal(),
+        JobHistoryRowRef::Background(job) => !job.status.is_terminal(),
+        JobHistoryRowRef::Build(_) => false,
+    }
+}
+
 fn job_context(job: &yoctui_model::BackgroundJob) -> String {
     let mut values = Vec::new();
     if let Some(target) = job.context.target.as_ref() {
@@ -8873,6 +8933,7 @@ fn job_summary_label(app: &App, width: u16) -> String {
 
 fn job_elapsed(row: JobHistoryRowRef<'_>, now: SystemTime) -> Option<Duration> {
     match row {
+        JobHistoryRowRef::Daemon(_) => None,
         JobHistoryRowRef::Background(job) => job
             .started_at
             .and_then(|started| job.finished_at.unwrap_or(now).duration_since(started).ok()),
@@ -8887,10 +8948,18 @@ fn job_history_cell(
     now: SystemTime,
 ) -> Cell<'static> {
     match (row, column) {
+        (JobHistoryRowRef::Daemon(job), JobHistoryColumn::Id) => Cell::from(job.id.to_string()),
         (JobHistoryRowRef::Background(job), JobHistoryColumn::Id) => {
             Cell::from(job.id.0.to_string())
         }
         (JobHistoryRowRef::Build(_), JobHistoryColumn::Id) => Cell::from("--"),
+        (JobHistoryRowRef::Daemon(job), JobHistoryColumn::Status) => {
+            let palette = ThemePalette::for_app(app);
+            Cell::from(Span::styled(
+                daemon_job_status_label(job.lifecycle),
+                status_tone_style(&palette, daemon_lifecycle_tone(job.lifecycle)),
+            ))
+        }
         (JobHistoryRowRef::Background(job), JobHistoryColumn::Status) => Cell::from(Span::styled(
             job_status_label(job.status),
             background_job_style(app, job.status),
@@ -8907,17 +8976,33 @@ fn job_history_cell(
         (JobHistoryRowRef::Background(job), JobHistoryColumn::Operation) => {
             Cell::from(job.title.clone())
         }
+        (JobHistoryRowRef::Daemon(job), JobHistoryColumn::Operation) => {
+            Cell::from(job.label.clone())
+        }
         (JobHistoryRowRef::Build(_), JobHistoryColumn::Operation) => Cell::from("Build record"),
+        (JobHistoryRowRef::Daemon(job), JobHistoryColumn::Type) => {
+            Cell::from(daemon_job_kind_label(job.kind))
+        }
         (JobHistoryRowRef::Background(job), JobHistoryColumn::Type) => {
             Cell::from(job_kind_label(job.kind))
         }
         (JobHistoryRowRef::Build(_), JobHistoryColumn::Type) => Cell::from("Build"),
+        (JobHistoryRowRef::Daemon(job), JobHistoryColumn::Context) => {
+            let progress = match (job.progress_current, job.progress_total) {
+                (Some(current), Some(total)) if total > 0 => format!("{current}/{total}"),
+                (Some(current), _) => current.to_string(),
+                _ => "daemon".into(),
+            };
+            Cell::from(progress)
+        }
         (JobHistoryRowRef::Background(job), JobHistoryColumn::Context) => {
             Cell::from(job_context(job))
         }
         (JobHistoryRowRef::Build(record), JobHistoryColumn::Context) => {
             Cell::from(record.target.clone().unwrap_or_else(|| "unknown".into()))
         }
+        (JobHistoryRowRef::Daemon(_), JobHistoryColumn::Started)
+        | (JobHistoryRowRef::Daemon(_), JobHistoryColumn::Finished) => Cell::from("--"),
         (JobHistoryRowRef::Background(job), JobHistoryColumn::Started) => {
             Cell::from(job.started_at.map_or_else(|| "--".into(), clock_text))
         }
@@ -8938,8 +9023,12 @@ fn render_job_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime)
     let columns = job_history_columns(area.width);
     let capacity = usize::from(area.height.saturating_sub(3));
     let rows = history.iter().copied().take(capacity).map(|row| {
-        let active = matches!(row, JobHistoryRowRef::Background(job) if !job.status.is_terminal());
+        let active = job_history_row_active(row);
         let style = match row {
+            JobHistoryRowRef::Daemon(job) if active => {
+                let palette = ThemePalette::for_app(app);
+                status_tone_style(&palette, daemon_lifecycle_tone(job.lifecycle))
+            }
             JobHistoryRowRef::Background(job) if active => background_job_style(app, job.status),
             _ => Style::default(),
         };
@@ -15335,6 +15424,19 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
 
 fn job_history_detail(row: JobHistoryRowRef<'_>, now: SystemTime) -> String {
     match row {
+        JobHistoryRowRef::Daemon(job) => format!(
+            "Operation: {}\nType: {}  Status: {}\nAuthority: daemon\nProgress: {}\nStarted: unavailable  Finished: unavailable\nElapsed: --  Exit: {}",
+            job.label,
+            daemon_job_kind_label(job.kind),
+            daemon_job_status_label(job.lifecycle),
+            match (job.progress_current, job.progress_total) {
+                (Some(current), Some(total)) if total > 0 => format!("{current}/{total}"),
+                (Some(current), _) => current.to_string(),
+                _ => "unavailable".into(),
+            },
+            job.exit_code
+                .map_or_else(|| "--".into(), |code| code.to_string()),
+        ),
         JobHistoryRowRef::Background(job) => {
             let outcome = job.result.as_ref().map_or_else(
                 || {
@@ -15399,9 +15501,7 @@ fn build_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let capacity = usize::from(chunks[0].height.saturating_sub(3)).max(1);
     let active = history
         .iter()
-        .take_while(
-            |row| matches!(row, JobHistoryRowRef::Background(job) if !job.status.is_terminal()),
-        )
+        .take_while(|row| job_history_row_active(**row))
         .count();
     let pinned = active.min(capacity);
     let remaining = capacity.saturating_sub(pinned);
@@ -15422,9 +15522,16 @@ fn build_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let rows = indices.into_iter().map(|index| {
         let row = history[index];
         let selected = index == selected_index;
-        let active = matches!(row, JobHistoryRowRef::Background(job) if !job.status.is_terminal());
+        let active = job_history_row_active(row);
         let style = if selected {
             selected_style(app, true)
+        } else if let JobHistoryRowRef::Daemon(job) = row {
+            if active {
+                let palette = ThemePalette::for_app(app);
+                status_tone_style(&palette, daemon_lifecycle_tone(job.lifecycle))
+            } else {
+                Style::default()
+            }
         } else if let JobHistoryRowRef::Background(job) = row {
             if active {
                 background_job_style(app, job.status)
@@ -20147,8 +20254,12 @@ mod tests {
         });
         app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
             id: 858,
+            kind: yoctui_model::ClientDaemonJobKind::BitBakeBuild,
             label: "core-image-minimal".into(),
             lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+            progress_current: Some(4),
+            progress_total: Some(10),
+            exit_code: None,
         });
         app.daemon
             .pty_sessions
@@ -20306,6 +20417,10 @@ mod tests {
         app.build.status = BuildStatus::Failed;
         app.build.exit_code = Some(1);
         app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Failed;
+        if let Some(job) = app.daemon.jobs.first_mut() {
+            job.lifecycle = yoctui_model::ClientDaemonLifecycle::Failed;
+            job.exit_code = Some(1);
+        }
         app.logs = yoctui_model::LogState::new(512, 1024 * 1024);
         let failed_task = app
             .tasks
@@ -21951,8 +22066,12 @@ mod tests {
         app.daemon.instance_identity = Some("04040404".into());
         app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
             id: 1,
+            kind: yoctui_model::ClientDaemonJobKind::BitBakeBuild,
             label: "core-image-minimal".into(),
             lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
         });
         app.daemon
             .pty_sessions
@@ -27675,6 +27794,7 @@ mod tests {
             "Overall  40%  4/10",
             "do_compile",
             "Log Viewer",
+            "ERROR: bash:do_compile failed with exit code 1",
             "Job History",
             "core-image-minimal",
             "Resource Telemetry",
@@ -27818,7 +27938,7 @@ mod tests {
         }
 
         let compact = rendered_text_at(&app, 80, 24, literal_now());
-        for anchor in ["Navigator", "1 queued"] {
+        for anchor in ["Navigator", "Running", "1 queued"] {
             assert!(compact.contains(anchor), "missing {anchor}: {compact}");
         }
     }
@@ -28853,14 +28973,18 @@ mod tests {
         for id in 10..12 {
             app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
                 id,
+                kind: yoctui_model::ClientDaemonJobKind::Utility,
                 label: format!("daemon-{id}"),
                 lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                progress_current: None,
+                progress_total: None,
+                exit_code: None,
             });
         }
 
-        let wide = "Active 1 · Queued 1 · Failed 1 · Recent complete 2 · Daemon-owned 2";
+        let wide = "Active 3 · Queued 1 · Failed 1 · Recent complete 2 · Daemon-owned 2";
         assert_eq!(job_summary_label(&app, 100), wide);
-        assert_eq!(job_summary_label(&app, 70), "A1 Q1 F1 Done2 D2");
+        assert_eq!(job_summary_label(&app, 70), "A3 Q1 F1 Done2 D2");
 
         app.screen = Screen::Tasks;
         let embedded = rendered_text_at(&app, 180, 44, UNIX_EPOCH + Duration::from_secs(10));
@@ -28868,7 +28992,7 @@ mod tests {
 
         app.screen = Screen::BuildHistory;
         let standalone = rendered_text_at(&app, 180, 34, UNIX_EPOCH + Duration::from_secs(10));
-        assert!(standalone.contains("A1 Q1 F1 Done2 D2"), "{standalone}");
+        assert!(standalone.contains("A3 Q1 F1 Done2 D2"), "{standalone}");
 
         app.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
         assert_eq!(job_summary_label(&app, 70), "A1 Q1 F1 Done2");
@@ -30236,6 +30360,16 @@ mod tests {
         assert!(output.contains("50%"));
 
         app.build.status = yoctui_model::BuildStatus::Completed;
+        app.build.started = Some(SystemTime::UNIX_EPOCH + Duration::from_secs(1));
+        app.build_history.push_back(yoctui_model::BuildRecord {
+            target: app.build.target.clone(),
+            success: true,
+            exit_code: Some(0),
+            elapsed: Some(Duration::from_secs(5)),
+            completed_tasks: 1,
+            warnings: 0,
+            errors: 0,
+        });
         app.dialogs.push_back(Dialog::BuildCompletion);
         terminal.draw(|frame| render(frame, &app)).unwrap();
         let output = terminal
@@ -30247,6 +30381,7 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("Build finished"));
         assert!(output.contains("Press any key"));
+        assert!(output.contains("Elapsed: 00:00:05"), "{output}");
     }
     #[test]
     fn build_cancellation_completion_is_distinct_from_failure() {

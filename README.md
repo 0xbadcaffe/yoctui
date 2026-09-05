@@ -329,7 +329,7 @@ cargo install flamegraph
 - [Release compatibility matrix](docs/compatibility-matrix.md) — support classifications, exact tested revisions, and renewal policy
 - [UI specification](docs/ui-spec.md) — screens, focus, dialogs, and shortcuts
 - [Architecture](docs/architecture.md) — crate boundaries and state flow
-- [Testing](docs/testing.md) and [profiling](docs/profiling.md) — verification and performance
+- [Testing](docs/testing.md), [profiling](docs/profiling.md), and the [low-overhead performance contract](docs/performance.md) — verification and build-saturation responsiveness
 - [Implementation status](docs/implementation-status.md) — complete task evidence
 
 ## Development checks

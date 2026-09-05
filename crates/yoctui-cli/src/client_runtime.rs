@@ -1082,8 +1082,12 @@ mod tests {
         let mut app = App::new(16, 4096);
         app.daemon.jobs.push(yoctui_model::ClientDaemonJobSummary {
             id: 71,
+            kind: yoctui_model::ClientDaemonJobKind::BitBakeBuild,
             label: "core-image-minimal".into(),
             lifecycle: ClientDaemonLifecycle::Running,
+            progress_current: None,
+            progress_total: None,
+            exit_code: None,
         });
         assert_eq!(app.daemon.jobs[0].id, 71);
         assert!(matches!(Effect::PersistSettings, Effect::PersistSettings));
