@@ -404,6 +404,37 @@ PY
   cargo test -q -p yoctui-ui active_task_indicator_uses_braille_motion_and_accessible_fallbacks
 }
 
+verify_telemetry() {
+  python3 - <<'PY'
+from pathlib import Path
+
+source = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+scheduler = Path("crates/yoctui-cli/src/telemetry_scheduler.rs").read_text(encoding="utf-8")
+sampler = source.split("struct HostTelemetrySampler", 1)[1].split("impl Drop for TerminalGuard", 1)[0]
+if "ProcessCommand" in sampler or "Command::new" in sampler:
+    raise SystemExit("host telemetry must not spawn a process per sample")
+for required in (
+    "CLIENT_VISIBLE_INTERVAL", "CLIENT_BACKGROUND_INTERVAL",
+    "DAEMON_ACTIVE_INTERVAL", "DAEMON_ATTACHED_IDLE_INTERVAL",
+    "connected_clients == 0", "Screen::Dashboard | Screen::Tasks",
+):
+    if required not in scheduler:
+        raise SystemExit(f"telemetry demand/cadence guard is missing: {required}")
+for required in (
+    "build_disk_device: Option<(u64, u64)>",
+    "network_interface: Option<String>",
+    "logical_cpu_count: Option<u16>",
+    "telemetry_visible && telemetry_changed",
+):
+    if required not in source:
+        raise SystemExit(f"telemetry cache/invalidation contract is missing: {required}")
+print("demand-aware telemetry source contracts valid")
+PY
+  cargo test -q -p yoctui --bin yoctui telemetry_scheduler
+  cargo test -q -p yoctui --bin yoctui telemetry_sampling
+  cargo test -q -p yoctui-model bounded_telemetry_history_retains_only_the_latest_valid_samples
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -446,6 +477,16 @@ case "$mode" in
     verify_event_loops
     verify_render
     verify_animations
+    ;;
+  --telemetry)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
     ;;
   all)
     verify_contract

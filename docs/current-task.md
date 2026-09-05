@@ -2,40 +2,39 @@
 
 ## Task
 
-**ID:** PERF-TELEMETRY-001
-**Title:** Optimize telemetry collection
+**ID:** PERF-LOG-001
+**Title:** Optimize bounded log ingestion and rendering
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Reduce host and daemon telemetry work to a low, demand-aware cadence without
-per-sample process creation. Reuse kernel sources where practical and retain
-only bounded histories.
+Keep high-rate log ingestion bounded and responsive without cloning,
+normalizing, filtering, or redrawing the full retained history per line or per
+frame. Preserve warnings, errors, failures, and exact correlation.
 
 ## Dependencies
 
-- PERF-EVENTLOOP-001 — DONE
+- PERF-EVENT-FLOOD-001 — DONE
 - PERF-RENDER-001 — DONE
 
 ## Definition of done
 
-- CPU, memory, disk, network, filesystem, and daemon-health collection cadences
-  are explicit, low-frequency, and measured.
-- No telemetry sample spawns an external process.
-- Reusable procfs/sysfs handles or cached static metadata avoid repeated setup
-  where measurement shows value.
-- Invisible telemetry is paused or reduced when no attached client needs it.
-- Histories remain bounded and unchanged samples do not request redundant
-  client frames or daemon publications.
-- Focused tests and `verify-performance.sh --telemetry` reject sampling-rate,
-  process-spawn, visibility, and retention regressions.
+- Ordinary high-rate logs are ingested in bounded batches and can be coalesced
+  without delaying critical warnings/errors/failures.
+- Retained log entry/byte bounds hold under sustained floods.
+- Rendering does not clone or lowercase the full history every frame.
+- Search/filter work is incremental or cached and invalidated only by relevant
+  log/query changes.
+- A burst of ordinary lines requests bounded render work rather than one frame
+  per line.
+- Focused tests and `verify-performance.sh --logs` cover retention, critical
+  priority, batching, cached filtering, and render coalescing.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --telemetry
+./scripts/verify-performance.sh --logs
 ./scripts/verify-roadmap.sh
 ```
 
-Visible-only 5 Hz animation and separate 1 Hz elapsed refresh are complete in
-v0.1.30.
+Demand-aware bounded telemetry is complete in v0.1.31.

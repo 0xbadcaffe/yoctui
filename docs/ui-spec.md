@@ -4750,6 +4750,13 @@ motion freezes the phase completely. Active build elapsed text remains current
 through an independent one-second invalidation and therefore never depends on
 animation.
 
+Host telemetry is demand-aware: Dashboard and Tasks sample at 1 Hz, while
+background workspaces sample at 0.1 Hz and cannot request a telemetry frame.
+Changing into or out of a telemetry surface schedules an immediate sample.
+Unchanged samples do not request redundant frames. Daemon health telemetry is
+paused with no attached clients, sampled at 0.2 Hz while attached and idle, and
+at 1 Hz while work is active.
+
 The shared visual projection vocabulary is now concrete. Fractions retain the
 exact numerator and denominator and derive an overflow-safe bounded whole
 percent; a zero total is `unknown`, and a reported numerator beyond its total

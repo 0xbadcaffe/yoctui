@@ -208,6 +208,17 @@ terminal, overlay-obscured, and reduced-motion animation work:
 ./scripts/verify-performance.sh --animations
 ```
 
+Telemetry scheduling is checked offline as well. The client uses 1 Hz for
+visible Dashboard/Tasks metrics and 0.1 Hz elsewhere; background samples do not
+redraw. Daemon health pauses without clients, uses 0.2 Hz attached-idle, and 1
+Hz with active work. Static source identities are cached, dynamic counters stay
+current, histories remain bounded, and source inspection rejects per-sample
+process creation:
+
+```sh
+./scripts/verify-performance.sh --telemetry
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

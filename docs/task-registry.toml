@@ -7099,18 +7099,18 @@ notes = "The v0.1.30 presentation scheduler advances the reducer-owned animation
 id = "PERF-TELEMETRY-001"
 milestone = "M46"
 title = "Optimize telemetry collection"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 798
 required = true
 depends_on = ["PERF-EVENTLOOP-001", "PERF-RENDER-001"]
 verify = ["./scripts/verify-performance.sh --telemetry"]
-notes = "Use low-rate bounded sampling without per-sample processes, reuse sources where practical, and reduce or pause invisible/unrequested collection."
+notes = "The v0.1.31 client samples visible Dashboard/Tasks host telemetry at 1 Hz and background screens at 0.1 Hz, samples immediately when demand changes, and redraws only visible changed samples. Logical CPU count, build device identity, and default network interface are cached while dynamic procfs/statvfs counters remain current; no sample spawns a process and all histories retain the existing 60-point bound. Daemon health pauses with zero fully attached clients and runs at 0.2 Hz attached-idle or 1 Hz with active work; accepted but unnegotiated sockets cannot trigger publication. The dedicated offline gate covers cadence, demand, caches, process absence, parsers, deltas, and retention."
 
 [[task]]
 id = "PERF-LOG-001"
 milestone = "M46"
 title = "Optimize bounded log ingestion and rendering"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 799
 required = true
 depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]

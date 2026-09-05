@@ -49,8 +49,12 @@ draw call. A 100 ms minimum interval caps normal rendering at 10 Hz, and 640
 synthetic state updates coalesce to ten scheduled frames. Animation now advances
 at 5 Hz only for visible indeterminate work in Dashboard or Tasks; hidden,
 determinate, terminal, overlay-obscured, and reduced-motion state cannot drive
-it. Elapsed time refreshes separately at 1 Hz. Telemetry collection is next.
-Overall required registry progress is 638/659 (96.8%).
+it. Elapsed time refreshes separately at 1 Hz. Host telemetry is now 1 Hz only
+on visible Dashboard/Tasks surfaces and 0.1 Hz elsewhere, with cached static
+source identity and no child processes; background samples do not redraw.
+Daemon health pauses without clients and uses 0.2/1 Hz idle/active demand tiers.
+Log ingestion and rendering are next. Overall required registry progress is
+639/659 (97.0%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

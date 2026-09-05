@@ -33,6 +33,9 @@ use std::{
     ffi::CString,
     os::unix::{ffi::OsStrExt, fs::PermissionsExt, process::CommandExt},
 };
+use telemetry_scheduler::{
+    client_telemetry_interval, client_telemetry_visible, daemon_telemetry_interval,
+};
 #[cfg(unix)]
 use tokio::signal::unix::{SignalKind, signal};
 use tracing_subscriber::prelude::*;
@@ -151,6 +154,7 @@ mod pty_attach;
 #[cfg(test)]
 mod pty_workflow_tests;
 mod render_scheduler;
+mod telemetry_scheduler;
 
 use global_search::{
     GlobalSearchCancellation, GlobalSearchPlan, GlobalSearchScanResult, scan_global_content,
@@ -428,12 +432,31 @@ struct NetworkCounters {
     transmit_bytes: u64,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 struct HostTelemetrySampler {
     previous_cpu: Option<CpuCounters>,
     previous_disk: Option<DiskCounters>,
     previous_network: Option<NetworkCounters>,
     previous_sampled_at: Option<Instant>,
+    logical_cpu_count: Option<u16>,
+    build_disk_device: Option<(u64, u64)>,
+    network_interface: Option<String>,
+}
+
+impl Default for HostTelemetrySampler {
+    fn default() -> Self {
+        Self {
+            previous_cpu: None,
+            previous_disk: None,
+            previous_network: None,
+            previous_sampled_at: None,
+            logical_cpu_count: std::thread::available_parallelism()
+                .ok()
+                .and_then(|count| u16::try_from(count.get()).ok()),
+            build_disk_device: None,
+            network_interface: None,
+        }
+    }
 }
 
 impl HostTelemetrySampler {
@@ -465,7 +488,15 @@ impl HostTelemetrySampler {
             .map_or((None, None), |(available, total)| {
                 (Some(available), Some(total))
             });
-        let current_disk = read_build_disk_counters(build_dir);
+        if self.build_disk_device.is_none() {
+            self.build_disk_device = build_disk_device(build_dir);
+        }
+        let current_disk = self
+            .build_disk_device
+            .and_then(|(major, minor)| read_disk_counters(major, minor));
+        if current_disk.is_none() {
+            self.build_disk_device = None;
+        }
         let (disk_read_bytes_per_second, disk_write_bytes_per_second) = elapsed
             .and_then(|elapsed| {
                 disk_rates(
@@ -476,7 +507,16 @@ impl HostTelemetrySampler {
             })
             .map_or((None, None), |(read, write)| (Some(read), Some(write)));
         self.previous_disk = current_disk;
-        let current_network = read_default_network_counters();
+        if self.network_interface.is_none() {
+            self.network_interface = read_default_network_interface();
+        }
+        let current_network = self
+            .network_interface
+            .as_deref()
+            .and_then(read_network_counters);
+        if current_network.is_none() {
+            self.network_interface = None;
+        }
         let (network_receive_bytes_per_second, network_transmit_bytes_per_second) = elapsed
             .and_then(|elapsed| {
                 network_rates(
@@ -491,9 +531,7 @@ impl HostTelemetrySampler {
         self.previous_network = current_network;
         HostTelemetry {
             cpu_utilization_percent,
-            logical_cpu_count: std::thread::available_parallelism()
-                .ok()
-                .and_then(|count| u16::try_from(count.get()).ok()),
+            logical_cpu_count: self.logical_cpu_count,
             memory_total_bytes,
             memory_available_bytes,
             disk_available_bytes,
@@ -642,16 +680,27 @@ fn parse_diskstats(input: &str, major: u64, minor: u64) -> Option<DiskCounters> 
 }
 
 #[cfg(target_os = "linux")]
-fn read_build_disk_counters(path: &Path) -> Option<DiskCounters> {
+fn build_disk_device(path: &Path) -> Option<(u64, u64)> {
     use std::os::unix::fs::MetadataExt;
     let device = fs::metadata(path).ok()?.dev();
-    let major = u64::from(libc::major(device));
-    let minor = u64::from(libc::minor(device));
+    Some((
+        u64::from(libc::major(device)),
+        u64::from(libc::minor(device)),
+    ))
+}
+
+#[cfg(not(target_os = "linux"))]
+fn build_disk_device(_path: &Path) -> Option<(u64, u64)> {
+    None
+}
+
+#[cfg(target_os = "linux")]
+fn read_disk_counters(major: u64, minor: u64) -> Option<DiskCounters> {
     parse_diskstats(&fs::read_to_string("/proc/diskstats").ok()?, major, minor)
 }
 
 #[cfg(not(target_os = "linux"))]
-fn read_build_disk_counters(_path: &Path) -> Option<DiskCounters> {
+fn read_disk_counters(_major: u64, _minor: u64) -> Option<DiskCounters> {
     None
 }
 
@@ -688,13 +737,22 @@ fn parse_network_dev(input: &str, interface: &str) -> Option<NetworkCounters> {
 }
 
 #[cfg(target_os = "linux")]
-fn read_default_network_counters() -> Option<NetworkCounters> {
-    let interface = parse_default_route_interface(&fs::read_to_string("/proc/net/route").ok()?)?;
-    parse_network_dev(&fs::read_to_string("/proc/net/dev").ok()?, &interface)
+fn read_default_network_interface() -> Option<String> {
+    parse_default_route_interface(&fs::read_to_string("/proc/net/route").ok()?)
 }
 
 #[cfg(not(target_os = "linux"))]
-fn read_default_network_counters() -> Option<NetworkCounters> {
+fn read_default_network_interface() -> Option<String> {
+    None
+}
+
+#[cfg(target_os = "linux")]
+fn read_network_counters(interface: &str) -> Option<NetworkCounters> {
+    parse_network_dev(&fs::read_to_string("/proc/net/dev").ok()?, interface)
+}
+
+#[cfg(not(target_os = "linux"))]
+fn read_network_counters(_interface: &str) -> Option<NetworkCounters> {
     None
 }
 
@@ -2715,7 +2773,16 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             publish_daemon_pty_event(&mut daemon_journal, event)?;
         }
         let now_ms = unix_ms();
-        if now_ms.saturating_sub(last_telemetry_ms) >= 1_000 {
+        let active_work = daemon_has_active_work(daemon_journal.snapshot());
+        let attached_clients = clients
+            .iter()
+            .filter(|(_, _, attached, _, _)| *attached)
+            .count();
+        let telemetry_interval = daemon_telemetry_interval(attached_clients, active_work);
+        if telemetry_interval.is_some_and(|interval| {
+            now_ms.saturating_sub(last_telemetry_ms)
+                >= u64::try_from(interval.as_millis()).unwrap_or(u64::MAX)
+        }) {
             let snapshot = daemon_journal.snapshot();
             let active_jobs = snapshot
                 .jobs
@@ -2733,7 +2800,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 DaemonTelemetry {
                     uptime_seconds: now_ms.saturating_sub(record.started_unix_ms) / 1_000,
                     bitbake: snapshot.bitbake.lifecycle,
-                    connected_clients: clients.len().min(u16::MAX as usize) as u16,
+                    connected_clients: attached_clients.min(u16::MAX as usize) as u16,
                     active_jobs: active_jobs.min(u16::MAX as usize) as u16,
                     pty_sessions: snapshot.pty_sessions.len().min(u16::MAX as usize) as u16,
                     queue_depth: clients.len().min(u16::MAX as usize) as u16,
@@ -2750,10 +2817,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         if termination_requested(termination) {
             break;
         }
-        let accept_timeout = daemon_accept_timeout(
-            !clients.is_empty(),
-            daemon_has_active_work(daemon_journal.snapshot()),
-        );
+        let accept_timeout = daemon_accept_timeout(!clients.is_empty(), active_work);
         match listener.accept(accept_timeout) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
                 // Idle clients get short read slices so supervisor events and
@@ -11109,6 +11173,7 @@ async fn tui(
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
+    let mut telemetry_was_visible = client_telemetry_visible(&app);
     let mut next_animation_tick = Instant::now();
     let mut next_elapsed_refresh = Instant::now();
     let frame_interval = interactive_frame_interval(refresh);
@@ -11254,11 +11319,21 @@ async fn tui(
         qa_coordinator.poll(&mut app).await;
         maintenance_coordinator.poll(&mut app).await;
         render_scheduler.invalidate_if(local_operation_active, RenderCause::Presentation);
-        if Instant::now() >= next_telemetry_sample {
+        let telemetry_now = Instant::now();
+        let telemetry_visible = client_telemetry_visible(&app);
+        if telemetry_visible != telemetry_was_visible {
+            next_telemetry_sample = telemetry_now;
+            telemetry_was_visible = telemetry_visible;
+        }
+        if telemetry_now >= next_telemetry_sample {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
+            let telemetry_changed = telemetry != app.host_telemetry;
             let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
-            next_telemetry_sample = Instant::now() + Duration::from_secs(1);
-            render_scheduler.invalidate(RenderCause::Telemetry);
+            next_telemetry_sample = telemetry_now + client_telemetry_interval(&app);
+            render_scheduler.invalidate_if(
+                telemetry_visible && telemetry_changed,
+                RenderCause::Telemetry,
+            );
         }
         let presentation_now = Instant::now();
         let visible_animation = has_visible_indeterminate_activity(&app);

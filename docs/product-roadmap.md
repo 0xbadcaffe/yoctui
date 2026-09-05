@@ -936,5 +936,7 @@ fixtures, idle event-loop optimization, dirty-render scheduler, and bounded
 animation clock are complete. Kernel-backed daemon listener readiness reduced
 the focused idle result from roughly 867 to below 35 voluntary context
 switches/s; unchanged polls do not redraw, state bursts coalesce, and only
-visible indeterminate Dashboard/Tasks activity advances at 5 Hz. Telemetry
-collection is the current optimization boundary.
+visible indeterminate Dashboard/Tasks activity advances at 5 Hz. Client host
+telemetry now uses 1/0.1 Hz visible/background tiers, while daemon health pauses
+without clients and uses 0.2/1 Hz idle/active tiers. Log ingestion and rendering
+are the current optimization boundary.

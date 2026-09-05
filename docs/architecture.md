@@ -3536,6 +3536,16 @@ advance it. A distinct 1 Hz elapsed-time deadline remains active during a live
 build, so accessibility mode and nonanimated workspaces retain accurate time
 without paying animation cost.
 
+Host telemetry remains client-owned and uses explicit demand tiers. Visible
+Dashboard/Tasks surfaces sample at 1 Hz; other workspaces sample at 0.1 Hz and
+do not invalidate rendering. Static logical-CPU, build-device, and route
+interface identities are cached, dynamic kernel counters remain sampled, and
+no sample executes a child process. Daemon telemetry is separately owned by the
+daemon: it is absent with no fully attached clients, 0.2 Hz attached-idle, and
+1 Hz during active work. Accepted but unnegotiated sockets do not create
+telemetry journal traffic. Both paths feed the existing bounded typed
+histories/snapshot rather than a new authority.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.
