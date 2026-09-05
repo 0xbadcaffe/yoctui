@@ -4732,6 +4732,16 @@ trees, and textual fallbacks. Widgets receive typed values and presentation
 state; they do not sample the host, scan files, parse process output, or become
 a second interaction authority.
 
+The interactive shell renders through one coalesced invalidation scheduler.
+Input, meaningful daemon/backend/local state, telemetry that is due for a
+visible surface, resize/full-clear, and due live presentation can request a
+frame. Repeated requests before that frame count as coalesced and cannot cause
+duplicate rendering. An unchanged poll does not render. Normal frames are
+capped at 10 Hz even when a smaller legacy refresh value is configured; input
+is itself an invalidation source and is processed independently of animation
+ticks. Runtime diagnostics retain request, rendered-frame, coalesced-request,
+and skipped-idle-check counters.
+
 The shared visual projection vocabulary is now concrete. Fractions retain the
 exact numerator and denominator and derive an overflow-safe bounded whole
 percent; a zero total is `unknown`, and a reported numerator beyond its total

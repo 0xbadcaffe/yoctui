@@ -344,6 +344,36 @@ PY
   python3 scripts/test-idle-event-loops.py --binary target/debug/yoctui
 }
 
+verify_render() {
+  python3 - <<'PY'
+from pathlib import Path
+
+source = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+scheduler = Path("crates/yoctui-cli/src/render_scheduler.rs").read_text(encoding="utf-8")
+tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
+draw = "terminal.draw(|f| render(f, &app))?;"
+if tui.count(draw) != 1:
+    raise SystemExit("interactive runtime must have exactly one centralized render call")
+guarded = "if render_scheduler.take_frame() {\n            " + draw
+if guarded not in tui:
+    raise SystemExit("interactive render call is not guarded by coalesced invalidation")
+for required in (
+    "RenderCause::Input", "RenderCause::State", "RenderCause::Telemetry",
+    "RenderCause::Presentation", "RenderCause::Resize",
+    "interactive_frame_interval(refresh)",
+):
+    if required not in tui:
+        raise SystemExit(f"render invalidation source is missing: {required}")
+for required in ("requests", "frames", "coalesced", "skipped_checks"):
+    if required not in scheduler:
+        raise SystemExit(f"render scheduler metric is missing: {required}")
+print("dirty render source contracts valid")
+PY
+  cargo test -q -p yoctui --bin yoctui render_scheduler
+  cargo test -q -p yoctui --bin yoctui normal_render_interval_is_capped_at_ten_hertz
+  cargo test -q -p yoctui --bin yoctui idle_client_has_no_animation_driven_render_work
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -369,6 +399,14 @@ case "$mode" in
     verify_profiles
     verify_wakeups
     verify_event_loops
+    ;;
+  --render)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
     ;;
   all)
     verify_contract

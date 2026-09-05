@@ -3566,3 +3566,12 @@ poll does not render. Inactive local BitBake and devtool backends are not
 polled. The focused Linux gate bounds idle daemon CPU, context switches, and
 SIGTERM latency, while protocol tests prove readiness wakes before a long
 accept deadline.
+
+Frame invalidation is centralized in the CLI-owned `RenderScheduler`; render
+causes remain presentation metadata and never enter the model or daemon wire
+protocol. The scheduler coalesces multiple state/input/telemetry/presentation/
+resize requests into one frame, counts requests, frames, coalesced requests,
+and skipped idle checks, and exposes those counters to tracing at shutdown.
+The single production `terminal.draw` call consumes this latch. A 100 ms
+minimum normal frame interval caps ordinary rendering at 10 Hz, while an input
+event directly invalidates the next frame rather than waiting for a model tick.

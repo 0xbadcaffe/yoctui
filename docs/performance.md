@@ -189,6 +189,16 @@ backend polling:
 ./scripts/verify-performance.sh --event-loops
 ```
 
+The client render scheduler is checked independently. Its deterministic tests
+record requests, frames, coalesced requests, and idle checks; a 64-update burst
+per cadence produces one frame. The source gate requires one centralized,
+invalidation-guarded production draw call and a 100 ms minimum normal frame
+interval:
+
+```sh
+./scripts/verify-performance.sh --render
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

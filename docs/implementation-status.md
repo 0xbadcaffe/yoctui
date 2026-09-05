@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-RENDER-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-ANIM-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -42,8 +42,13 @@ leader context switches/s versus the 867.24/s baseline, 0.20-0.40% debug CPU,
 and sub-100 ms shutdown. Client redraw is now explicitly invalidated by input,
 daemon/state work, telemetry, resize, or visible live presentation; unchanged
 idle polls no longer render and inactive local BitBake is not polled. Dirty
-render coalescing and exact frame-rate instrumentation are next. Overall
-required registry progress is 636/659 (96.5%).
+rendering now passes through one typed coalescing scheduler. It records render
+requests, frames, coalesced requests, and skipped idle checks; input, state,
+telemetry, presentation, and resize causes converge on the only production
+draw call. A 100 ms minimum interval caps normal rendering at 10 Hz, and 640
+synthetic state updates coalesce to ten scheduled frames. Visible-only
+animation cadence is next. Overall required registry progress is 637/659
+(96.7%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

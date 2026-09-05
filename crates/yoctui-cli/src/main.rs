@@ -12,6 +12,7 @@ use crossterm::{
     },
 };
 use ratatui::Terminal;
+use render_scheduler::{RenderCause, RenderScheduler};
 use serde::{Deserialize, Serialize};
 use std::{
     cell::Cell,
@@ -146,6 +147,7 @@ mod maintenance_cli;
 mod pty_attach;
 #[cfg(test)]
 mod pty_workflow_tests;
+mod render_scheduler;
 
 use global_search::{
     GlobalSearchCancellation, GlobalSearchPlan, GlobalSearchScanResult, scan_global_content,
@@ -11105,7 +11107,8 @@ async fn tui(
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
     let mut next_presentation_tick = Instant::now();
-    let mut redraw_requested = true;
+    let frame_interval = interactive_frame_interval(refresh);
+    let mut render_scheduler = RenderScheduler::default();
     let mut prefix_state = PrefixState::default();
     #[cfg(unix)]
     let mut termination = termination_receiver()?;
@@ -11113,10 +11116,10 @@ async fn tui(
         let (internal_records, ingress_dropped) = internal_tracing_capture.drain(256);
         if ingress_dropped > 0 {
             let _ = update(&mut app, Action::InternalLogIngressDropped(ingress_dropped));
-            redraw_requested = true;
+            render_scheduler.invalidate(RenderCause::State);
         }
         if !internal_records.is_empty() {
-            redraw_requested = true;
+            render_scheduler.invalidate(RenderCause::State);
         }
         for record in internal_records {
             let _ = update(&mut app, Action::InternalLog(record));
@@ -11132,7 +11135,7 @@ async fn tui(
         #[cfg(unix)]
         let daemon_poll_error = match daemon_poll_result {
             Some(Ok(changed)) => {
-                redraw_requested |= changed;
+                render_scheduler.invalidate_if(changed, RenderCause::State);
                 None
             }
             Some(Err(error)) => Some(error),
@@ -11150,7 +11153,7 @@ async fn tui(
                     message: error.to_string(),
                 },
             );
-            redraw_requested = true;
+            render_scheduler.invalidate(RenderCause::State);
             next_daemon_reconnect = Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
         }
         #[cfg(unix)]
@@ -11162,7 +11165,7 @@ async fn tui(
             ) {
                 Ok(runtime) => {
                     daemon_runtime = Some(runtime);
-                    redraw_requested = true;
+                    render_scheduler.invalidate(RenderCause::State);
                 }
                 Err(error) => tracing::debug!(%error, "daemon reattach not yet available"),
             }
@@ -11175,7 +11178,7 @@ async fn tui(
                         .take()
                         .expect("daemon Devtool identity was present");
                     complete_devtool_modify(&mut app, &session_build_dir, identity).await;
-                    redraw_requested = true;
+                    render_scheduler.invalidate(RenderCause::State);
                 }
                 DaemonDevtoolModifyCompletion::Failed => {
                     let identity = pending_daemon_devtool_modify
@@ -11185,7 +11188,7 @@ async fn tui(
                         "Devtool modify {} failed in the daemon; inspect Jobs and Logs.",
                         identity.name
                     ));
-                    redraw_requested = true;
+                    render_scheduler.invalidate(RenderCause::State);
                 }
             }
         }
@@ -11246,12 +11249,12 @@ async fn tui(
         security_coordinator.poll(&mut app).await;
         qa_coordinator.poll(&mut app).await;
         maintenance_coordinator.poll(&mut app).await;
-        redraw_requested |= local_operation_active;
+        render_scheduler.invalidate_if(local_operation_active, RenderCause::Presentation);
         if Instant::now() >= next_telemetry_sample {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
             let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
             next_telemetry_sample = Instant::now() + Duration::from_secs(1);
-            redraw_requested = true;
+            render_scheduler.invalidate(RenderCause::Telemetry);
         }
         if app_has_live_presentation(&app) && Instant::now() >= next_presentation_tick {
             let _ = update(&mut app, Action::Tick);
@@ -11259,21 +11262,20 @@ async fn tui(
                 + if app.reduced_motion {
                     Duration::from_secs(1)
                 } else {
-                    refresh
+                    frame_interval
                 };
-            redraw_requested = true;
+            render_scheduler.invalidate(RenderCause::Presentation);
         }
         if guard.take_full_redraw_request() {
             terminal.clear()?;
-            redraw_requested = true;
+            render_scheduler.invalidate(RenderCause::Resize);
         }
-        if redraw_requested {
+        if render_scheduler.take_frame() {
             terminal.draw(|f| render(f, &app))?;
-            redraw_requested = false;
         }
-        if event::poll(refresh)? {
+        if event::poll(frame_interval)? {
             let terminal_event = event::read()?;
-            redraw_requested = true;
+            render_scheduler.invalidate(RenderCause::Input);
             if let Event::Paste(text) = terminal_event {
                 if app.screen == Screen::TerminalSessions
                     && app.active_dialog().is_none()
@@ -14100,7 +14102,7 @@ async fn tui(
         let devtool_was_active = devtool_runner.is_some();
         let completed_devtool =
             poll_devtool_job(&mut app, &mut devtool_jobs, &mut devtool_runner).await;
-        redraw_requested |= devtool_was_active;
+        render_scheduler.invalidate_if(devtool_was_active, RenderCause::Presentation);
         match completed_devtool {
             Some(DevtoolOperation::Modify { recipe })
                 if pending_devtool_modify
@@ -14159,7 +14161,7 @@ async fn tui(
         if build_jobs.active_job_id().is_some() {
             match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
                 Ok(Ok(event)) => {
-                    redraw_requested = true;
+                    render_scheduler.invalidate(RenderCause::State);
                     let test_terminal = matches!(
                         event,
                         BackendEvent::BuildCompleted { .. }
@@ -14209,7 +14211,7 @@ async fn tui(
                     }
                 }
                 Ok(Err(error)) => {
-                    redraw_requested = true;
+                    render_scheduler.invalidate(RenderCause::State);
                     if let Some(id) = pending_test_build.take() {
                         let _ = update(
                             &mut app,
@@ -14252,6 +14254,14 @@ async fn tui(
             break;
         }
     }
+    let render_metrics = render_scheduler.metrics();
+    tracing::debug!(
+        requests = render_metrics.requests,
+        frames = render_metrics.frames,
+        coalesced = render_metrics.coalesced,
+        skipped_checks = render_metrics.skipped_checks,
+        "interactive render scheduler stopped"
+    );
     #[cfg(unix)]
     if let Some(runtime) = daemon_runtime.take()
         && let Err(error) = runtime.detach(&mut app)
@@ -14557,6 +14567,12 @@ fn app_has_live_presentation(app: &App) -> bool {
                     | yoctui_model::ClientDaemonLifecycle::Stopping
             )
         })
+}
+
+const MAX_NORMAL_RENDER_RATE: Duration = Duration::from_millis(100);
+
+fn interactive_frame_interval(configured_refresh: Duration) -> Duration {
+    configured_refresh.max(MAX_NORMAL_RENDER_RATE)
 }
 
 #[cfg(test)]
@@ -21550,6 +21566,18 @@ esac"#,
 
         app.build.status = yoctui_model::BuildStatus::Completed;
         assert!(!app_has_live_presentation(&app));
+    }
+
+    #[test]
+    fn normal_render_interval_is_capped_at_ten_hertz() {
+        assert_eq!(
+            interactive_frame_interval(Duration::from_millis(16)),
+            Duration::from_millis(100)
+        );
+        assert_eq!(
+            interactive_frame_interval(Duration::from_millis(250)),
+            Duration::from_millis(250)
+        );
     }
 
     #[test]

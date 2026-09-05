@@ -7077,18 +7077,18 @@ notes = "The listener now blocks in kernel poll readiness and uses a 100 ms idle
 id = "PERF-RENDER-001"
 milestone = "M46"
 title = "Make rendering dirty and event driven"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 796
 required = true
 depends_on = ["PERF-WAKEUPS-001", "PERF-EVENTLOOP-001"]
 verify = ["./scripts/verify-performance.sh --render"]
-notes = "Coalesce invalidation and redraw only for input, meaningful state changes, or bounded visible timers; reject identical-frame redraw loops."
+notes = "The v0.1.29 CLI has one production draw site behind a typed RenderScheduler. Input, state, telemetry, presentation, and resize requests coalesce; idle checks render nothing; counters expose requests/frames/coalescing/skips; normal cadence is capped at 10 Hz. Deterministic tests prove 640 state requests across ten cadence slots produce ten frames after the initial frame and that input invalidation does not depend on a tick."
 
 [[task]]
 id = "PERF-ANIM-001"
 milestone = "M46"
 title = "Bound animation work and cadence"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 797
 required = true
 depends_on = ["PERF-RENDER-001"]
