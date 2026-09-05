@@ -1,0 +1,443 @@
+{
+  "capabilities": {
+    "negative_nice_observed": 0,
+    "negative_nice_stderr": "nice: warning: setpriority: Permission denied (os error 13)",
+    "negative_nice_unprivileged": false,
+    "systemd_user_cpu_weight": true,
+    "systemd_user_error": null
+  },
+  "captured_at_unix_ms": 1788610267896,
+  "configuration": {
+    "load_workers": "all affinity CPUs",
+    "probe_duration_seconds": 3.0,
+    "probe_interval_ms": 10,
+    "repetitions": 3
+  },
+  "host": {
+    "affinity_cpus": 8,
+    "cgroup_v2": true,
+    "kernel": "7.0.0-30-generic",
+    "logical_cpus": 8
+  },
+  "revision": "3edcee27b7f3334525ac8a9f7a5a6650802a01df",
+  "saturation": {
+    "cpu_weight_200": [
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.21414538310412,
+        "mean_worker_cpu_percent": 90.32736519105976,
+        "minimum_worker_cpu_percent": 81.77019695122148,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      },
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 98.69733924611974,
+        "mean_worker_cpu_percent": 92.78840575415698,
+        "minimum_worker_cpu_percent": 85.16476466057391,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      },
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.30862831858407,
+        "mean_worker_cpu_percent": 89.29991177484658,
+        "minimum_worker_cpu_percent": 74.15663470031917,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      }
+    ],
+    "deprioritized_nice_5": [
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.10213243546576,
+        "mean_worker_cpu_percent": 94.73748536845521,
+        "minimum_worker_cpu_percent": 86.68473502610408,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      },
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.02398215281652,
+        "mean_worker_cpu_percent": 94.4642777404007,
+        "minimum_worker_cpu_percent": 83.63686290227469,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      },
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.43725379853686,
+        "mean_worker_cpu_percent": 94.64273257935375,
+        "minimum_worker_cpu_percent": 88.10078350368984,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      }
+    ],
+    "inherited_nice_0": [
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.18539325842697,
+        "mean_worker_cpu_percent": 94.24740693409055,
+        "minimum_worker_cpu_percent": 86.25986597575857,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      },
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.4939555805454,
+        "mean_worker_cpu_percent": 94.32955426421091,
+        "minimum_worker_cpu_percent": 86.50169751168507,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      },
+      {
+        "children_reaped": true,
+        "default_saturates_full_affinity": true,
+        "host_cpu_utilization_percent": 99.01933314653965,
+        "mean_worker_cpu_percent": 94.09725986545078,
+        "minimum_worker_cpu_percent": 86.384596022528,
+        "selected_cpus": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "status": "completed"
+      }
+    ]
+  },
+  "scenarios": {
+    "cpu_weight_200": {
+      "summary": {
+        "median_p95_wake_latency_ms": 0.08707854431122541,
+        "worst_maximum_wake_latency_ms": 7.880807970650494,
+        "worst_p95_wake_latency_ms": 0.3179428167641163
+      },
+      "trials": [
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.990072397980839,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 2.6264257030561566,
+              "p50": 0.0660513760522008,
+              "p95": 0.08707854431122541,
+              "p99": 0.356219126842916
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/run-p3310282-i171034490.service",
+            "cpu_seconds": 0.005172153999999998,
+            "cpu_weight": 200,
+            "nice": 0
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900719630531967,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 7.880807970650494,
+              "p50": 0.06466393824666739,
+              "p95": 0.3179428167641163,
+              "p99": 3.8257368141785264
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/run-p3310402-i171019516.service",
+            "cpu_seconds": 0.004636627000000004,
+            "cpu_weight": 200,
+            "nice": 0
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.990074953995645,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 4.659970640204847,
+              "p50": 0.06843230221420527,
+              "p95": 0.0791862839832902,
+              "p99": 3.7156256148591638
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/run-p3310517-i171031337.service",
+            "cpu_seconds": 0.005734546999999993,
+            "cpu_weight": 200,
+            "nice": 0
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        }
+      ]
+    },
+    "deprioritized_nice_5": {
+      "summary": {
+        "median_p95_wake_latency_ms": 0.46961894258856773,
+        "worst_maximum_wake_latency_ms": 9.720751782879233,
+        "worst_p95_wake_latency_ms": 0.7044575177133083
+      },
+      "trials": [
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900614611105993,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 9.720751782879233,
+              "p50": 0.06382109131664038,
+              "p95": 0.7044575177133083,
+              "p99": 3.740986343473196
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.00423135899999999,
+            "cpu_weight": null,
+            "nice": 5
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900786159560084,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 5.1244000205770135,
+              "p50": 0.06536499131470919,
+              "p95": 0.09487068746238947,
+              "p99": 4.0823331801220775
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.005312826000000007,
+            "cpu_weight": null,
+            "nice": 5
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.990076367976144,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 5.221298662945628,
+              "p50": 0.06467057392001152,
+              "p95": 0.46961894258856773,
+              "p99": 1.7280412139371037
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004749279000000009,
+            "cpu_weight": null,
+            "nice": 5
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        }
+      ]
+    },
+    "inherited_nice_0": {
+      "summary": {
+        "median_p95_wake_latency_ms": 0.07811957038938999,
+        "worst_maximum_wake_latency_ms": 16.020851326175034,
+        "worst_p95_wake_latency_ms": 0.08355733007192612
+      },
+      "trials": [
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900319679873064,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 16.020851326175034,
+              "p50": 0.017593265511095524,
+              "p95": 0.07496017497032881,
+              "p99": 6.026388262398541
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004499143999999997,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.990060789976269,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 2.7863357681781054,
+              "p50": 0.06367743480950594,
+              "p95": 0.07811957038938999,
+              "p99": 1.4640828594565392
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004274602000000002,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900648839538917,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 3.307131351903081,
+              "p50": 0.06451108492910862,
+              "p95": 0.08355733007192612,
+              "p99": 2.6271985843777657
+            }
+          },
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.0045613409999999965,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        }
+      ]
+    }
+  },
+  "schema": "yoctui.performance.scheduling-audit.v1",
+  "source": {
+    "harness_sha256": "43446d0d672fb81172d548be9345f40bf1ba6409008a6bb41bd21d2976329b0d",
+    "probe_sha256": "3783ee8b819e45914aa008abfc763fc804d5a6f4aeb0f89686f193ef0582b9fe"
+  }
+}

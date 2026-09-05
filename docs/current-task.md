@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** PERF-SCHED-001
-**Title:** Evaluate safe unprivileged scheduling recommendations
+**ID:** PERF-CPU-AFFINITY-001
+**Title:** Evaluate optional CPU affinity and isolation
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure whether unprivileged nice levels or systemd user-service CPUWeight
-materially improve Yoctui responsiveness under CPU saturation. Publish only
-optional, measured guidance; require neither privilege nor real-time policy.
+Measure whether reserving or preferring a logical CPU materially improves
+Yoctui responsiveness under saturation. Keep affinity optional and prove
+correctness without a deliberately free CPU.
 
 ## Dependencies
 
@@ -19,20 +19,20 @@ optional, measured guidance; require neither privilege nor real-time policy.
 
 ## Definition of done
 
-- Baseline and adjusted nice behavior are measured with the deterministic full-
-  affinity CPU fixture using a documented, repeatable method.
-- User-service CPUWeight applicability and limitations are documented from the
-  installed system interfaces without requiring a user service manager.
-- No root, real-time policy, or mandatory priority change is introduced.
-- Any recommendation is optional, safe, and tied to recorded evidence.
-- Yoctui remains correct and responsive at its normal inherited priority.
+- Full-affinity and one-reserved-CPU scenarios use the same repeated monotonic
+  latency method and record exact CPU sets.
+- Any measured improvement is reported without presenting affinity as required.
+- Yoctui does not hardcode a CPU number or mutate process affinity by default.
+- The standard no-free-CPU saturation gate remains passing.
+- Optional commands are topology-aware, unprivileged, and documented only when
+  supported by evidence.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --scheduling
+./scripts/verify-performance.sh --affinity
 ./scripts/verify-roadmap.sh
 ```
 
-Tokio runtime and blocking-pool scheduling, stable thread bounds, and reactor
-progress under full-affinity CPU saturation are complete in v0.1.37.
+Normal inherited scheduler behavior and optional nice/CPUWeight evaluation are
+complete in v0.1.38.

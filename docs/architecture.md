@@ -3627,6 +3627,17 @@ test occupies one runtime worker for 750 ms and proves the other services a
 timer and task within 500 ms while the external saturation fixture keeps every
 affinity CPU runnable.
 
+OS scheduler policy remains outside Yoctui state and startup mutation. The
+reference scheduling audit runs a 10 ms monotonic low-duty wake probe alongside
+one saturation worker on every affinity CPU for three repeated three-second
+trials. Normal inherited `SCHED_OTHER`/nice 0 is the required path. Lowering
+Yoctui to nice 5 increased median p95 wake latency, unprivileged nice -5 was
+denied, and a separate transient systemd user unit with `CPUWeight=200` did not
+materially improve the inherited median. Yoctui therefore does not change nice,
+request real-time policy, require root, or install a CPUWeight override. The
+user-service experiment is retained as host-specific evidence rather than a
+product default.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

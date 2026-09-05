@@ -201,6 +201,43 @@ the CPU fixture keeps every CPU in the process affinity runnable:
 This is runtime-scheduling evidence, not a substitute for the 60-second release
 CPU scenarios or real-Poky saturation evidence.
 
+### OS scheduling policy
+
+The scheduler audit uses `scripts/scheduler-latency-probe.py` as a low-duty
+interactive proxy: it requests a wake every 10 ms using `CLOCK_MONOTONIC` and
+records p50/p95/p99/maximum lateness, actual nice level, cgroup, CPUWeight, and
+CPU time. `scripts/measure-scheduling.py` runs three three-second trials for
+each policy while the deterministic load fixture keeps all eight reference-host
+CPUs runnable. Hashed evidence is retained under
+`artifacts/performance/scheduling/`.
+
+The inherited nice-0 trials had 0.0781 ms median p95 wake latency. Deliberately
+deprioritizing the probe to nice 5 increased that median to 0.4696 ms. Requesting
+`nice -n -5` without privilege printed a permission warning and the child still
+ran at nice 0, so negative nice is neither portable nor recommended. A transient
+systemd user service successfully applied `CPUWeight=200`, but its 0.0871 ms
+median p95 did not materially improve the inherited result. Every trial used all
+eight affinity CPUs, reached at least 74% CPU on its least-loaded worker, reaped
+all children, and kept p95 far below the 100 ms responsiveness contract.
+
+The release policy is therefore to inherit the user's normal scheduling policy.
+Yoctui does not change nice, install a CPUWeight override, request real-time
+scheduling, or require root. Administrators may independently assign cgroup
+weights as a host policy, but the reference evidence does not justify making
+that a Yoctui recommendation or default. Reproduce the evidence offline with:
+
+```sh
+./scripts/measure-scheduling.py \
+  --revision "$(git rev-parse HEAD)" \
+  --duration-seconds 3 \
+  --repetitions 3 \
+  --output /tmp/yoctui-scheduling.json
+./scripts/verify-performance.sh --scheduling
+```
+
+The gate treats absence of a systemd user manager as supported; correctness and
+the required latency check always use inherited priority.
+
 `scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
 fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
 and success/failure/disconnect terminal mode. Stable task identities plus

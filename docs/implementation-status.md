@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-SCHED-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-CPU-AFFINITY-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -84,8 +84,14 @@ default. The hashed idle audit reduced the stable process thread set from nine
 to three with no change from its measured 0.3333% of one logical CPU, and found
 no eagerly created blocking-pool thread. A deterministic regression occupies
 one worker for 750 ms and proves the second continues reactor work within 500
-ms while all eight affinity CPUs remain runnable. Optional safe OS scheduling
-guidance is next. Overall required registry progress is 645/659 (97.9%).
+ms while all eight affinity CPUs remain runnable. The repeated full-affinity
+scheduler audit measured 0.0781 ms median p95 wake
+latency at inherited nice 0, 0.4696 ms at nice 5, and 0.0871 ms in a transient
+systemd user service with CPUWeight 200. Unprivileged negative nice was denied.
+Because normal priority already passed and neither adjustment improved it,
+Yoctui requires no priority change, root, real-time policy, or cgroup override.
+Optional affinity/isolation measurement is next. Overall required registry
+progress is 646/659 (98.0%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

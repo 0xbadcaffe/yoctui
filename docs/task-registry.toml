@@ -7176,18 +7176,18 @@ notes = "In v0.1.37 a hashed /proc task audit measured the default idle daemon a
 id = "PERF-SCHED-001"
 milestone = "M46"
 title = "Evaluate safe unprivileged scheduling recommendations"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 805
 required = true
 depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]
 verify = ["./scripts/verify-performance.sh --scheduling"]
-notes = "Evaluate nice and user-service CPUWeight behavior; require neither root nor realtime scheduling and expose only measured optional guidance."
+notes = "In v0.1.38 three repeated three-second full-affinity trials measured median p95 scheduler wake latency of 0.0781 ms at inherited nice 0, 0.4696 ms at nice 5, and 0.0871 ms in a transient systemd user unit with CPUWeight 200. Unprivileged nice -5 was denied and actually remained nice 0. Normal inherited priority passes by a wide margin, so Yoctui makes no priority/cgroup mutation and requires neither root nor realtime policy; the hashed host-specific audit and dynamic offline gate retain the evidence."
 
 [[task]]
 id = "PERF-CPU-AFFINITY-001"
 milestone = "M46"
 title = "Evaluate optional CPU affinity and isolation"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 806
 required = true
 depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]

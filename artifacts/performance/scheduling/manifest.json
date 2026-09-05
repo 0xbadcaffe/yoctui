@@ -1,0 +1,14 @@
+{
+  "schema": "yoctui.performance.scheduling-manifest.v1",
+  "source_base_revision": "3edcee27b7f3334525ac8a9f7a5a6650802a01df",
+  "artifact": "host-audit.json",
+  "artifact_sha256": "a9b33bd9d15a2ee410bd973f7181d9370453663b80501ad996d9234d7b865d1d",
+  "decision": {
+    "default": "inherit normal scheduling policy and nice level",
+    "negative_nice": "not recommended: nice -n -5 was denied without CAP_SYS_NICE and silently ran the child at nice 0",
+    "positive_nice": "not recommended for Yoctui: nice 5 increased median p95 wake latency from 0.0781 ms to 0.4696 ms",
+    "cpu_weight": "not enabled by default: a transient user-service CPUWeight=200 was available but its 0.0871 ms median p95 did not materially improve the 0.0781 ms inherited baseline",
+    "realtime": "never required or recommended",
+    "root": "never required"
+  }
+}

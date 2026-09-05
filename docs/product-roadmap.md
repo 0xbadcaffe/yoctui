@@ -954,5 +954,7 @@ not a disconnect, real EOF remains authoritative, and cancellation survives an
 all-CPU load while hung cleanup stays off the critical path. The Tokio audit
 reduced idle runtime workers from eight to two and stable process threads from
 nine to three, while a deterministic all-CPU test proves a blocked worker does
-not starve reactor work. Safe, optional OS scheduling guidance is the current
-measurement boundary.
+not starve reactor work. The scheduler audit keeps inherited nice 0 as the
+required path: nice 5 was worse, unprivileged nice -5 was denied, and a user
+service at CPUWeight 200 provided no material median-p95 benefit. Optional CPU
+affinity/isolation is the current measurement boundary.
