@@ -354,7 +354,10 @@ tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
 draw = "terminal.draw(|f| render(f, &app))?;"
 if tui.count(draw) != 1:
     raise SystemExit("interactive runtime must have exactly one centralized render call")
-guarded = "if render_scheduler.take_frame() {\n            " + draw
+guarded = (
+    "if render_scheduler.take_frame_with_interval(ordinary_frame_interval(&app)) {\n"
+    "            " + draw
+)
 if guarded not in tui:
     raise SystemExit("interactive render call is not guarded by coalesced invalidation")
 for required in (
@@ -382,7 +385,7 @@ scheduler = Path("crates/yoctui-cli/src/render_scheduler.rs").read_text(encoding
 tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
 for required in (
     "has_visible_indeterminate_activity(&app)",
-    "presentation_now + ANIMATION_INTERVAL",
+    "presentation_now + animation_interval(&app)",
     "presentation_now + ELAPSED_REFRESH_INTERVAL",
 ):
     if required not in tui:
@@ -393,6 +396,7 @@ for required in (
     "app.reduced_motion", "app.active_dialog().is_some()",
     "Screen::Dashboard | Screen::Tasks", "TaskState::Active",
     "task.progress.is_none()",
+    "SATURATED_HOST_CPU_PERCENT", "SATURATED_FRAME_INTERVAL",
 ):
     if required not in scheduler:
         raise SystemExit(f"animation visibility guard is missing: {required}")
@@ -401,6 +405,7 @@ PY
   cargo test -q -p yoctui --bin yoctui render_scheduler::tests::animation_is_visible_only_indeterminate_and_nonterminal
   cargo test -q -p yoctui --bin yoctui render_scheduler::tests::overlays_and_reduced_motion_freeze_animation_but_not_elapsed_time
   cargo test -q -p yoctui --bin yoctui render_scheduler::tests::presentation_cadences_are_explicitly_bounded
+  cargo test -q -p yoctui --bin yoctui render_scheduler::tests::saturated_live_builds_reduce_visual_freshness_without_affecting_input
   cargo test -q -p yoctui-ui active_task_indicator_uses_braille_motion_and_accessible_fallbacks
 }
 
@@ -992,6 +997,133 @@ PY
   unlink "$current"
 }
 
+verify_real_poky() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/real-poky")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.real-poky-manifest.v1":
+    raise SystemExit("real-Poky manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+if not isinstance(revision, str) or len(revision) != 40:
+    raise SystemExit("real-Poky source base must be an exact commit")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+artifact = root / manifest.get("artifact", "")
+payload = artifact.read_bytes()
+if hashlib.sha256(payload).hexdigest() != manifest.get("artifact_sha256"):
+    raise SystemExit("real-Poky artifact digest mismatch")
+record = json.loads(payload)
+if record.get("schema") != "yoctui.performance.real-poky.v1":
+    raise SystemExit("real-Poky evidence schema is unsupported")
+if record.get("evidence_role") != "real_poky_build":
+    raise SystemExit("fixture evidence cannot satisfy the real-Poky gate")
+if record.get("source_base_revision") != revision:
+    raise SystemExit("real-Poky source identity mismatch")
+if record.get("binary") != manifest.get("binary"):
+    raise SystemExit("real-Poky binary identity mismatch")
+for name, expected in manifest.get("sources", {}).items():
+    path = Path(name)
+    if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
+        raise SystemExit(f"real-Poky source digest mismatch: {name}")
+
+measurement = record.get("measurement", {})
+if measurement.get("clock") != "CLOCK_MONOTONIC":
+    raise SystemExit("real-Poky evidence does not use monotonic time")
+if measurement.get("warmup_seconds", 0) < 10 or measurement.get("window_seconds", 0) < 120:
+    raise SystemExit("real-Poky warmup/window is too short")
+if measurement.get("sustained_active_seconds") != measurement.get("window_seconds"):
+    raise SystemExit("real-Poky job was not active for the complete measurement")
+if measurement.get("sample_count", 0) < measurement.get("window_seconds", 0) - 1:
+    raise SystemExit("real-Poky sample series is incomplete")
+if measurement.get("statistic") != "10_percent_trimmed_mean":
+    raise SystemExit("real-Poky robust statistic is absent")
+if measurement.get("terminal") != {"columns": 160, "rows": 50}:
+    raise SystemExit("real-Poky terminal dimensions differ from the contract")
+trigger = measurement.get("workload_trigger", {})
+if trigger.get("recipe") != "linux-yocto" or trigger.get("task") != "do_compile":
+    raise SystemExit("real-Poky evidence did not start at the sustained kernel compile")
+
+poky = record.get("poky", {})
+if poky.get("release") != "6.0.2" or poky.get("target") != "linux-yocto":
+    raise SystemExit("real-Poky evidence does not use the supported 6.0.2 kernel workload")
+if poky.get("task") != "compile" or poky.get("force") is not False:
+    raise SystemExit("real-Poky task identity is not the reviewed compile path")
+if poky.get("preparation") != {
+    "target": "linux-yocto", "task": "cleansstate", "through_daemon": True,
+}:
+    raise SystemExit("real-Poky preparation did not use the daemon-owned clean path")
+if not poky.get("parallelism", {}).get("BB_NUMBER_THREADS") or not poky.get("parallelism", {}).get("PARALLEL_MAKE"):
+    raise SystemExit("real-Poky BitBake parallelism is absent")
+for name, repository in poky.get("repositories", {}).items():
+    if len(repository.get("revision", "")) != 40 or "yocto-6.0.2" not in repository.get("describe", ""):
+        raise SystemExit(f"real-Poky repository identity is invalid: {name}")
+    if len(repository.get("working_diff_sha256", "")) != 64:
+        raise SystemExit(f"real-Poky repository diff identity is absent: {name}")
+
+summary = record.get("summary", {})
+combined = summary.get("combined_cpu_trimmed_mean_percent_one_logical_cpu", 100.0)
+if combined > 1.0:
+    raise SystemExit(f"real-Poky combined Yoctui CPU exceeds 1.00%: {combined:.4f}%")
+if summary.get("host_cpu_trimmed_mean_percent_total_capacity", 0.0) < 75.0:
+    raise SystemExit("real-Poky workload did not saturate the reference host")
+if summary.get("bitbake_cpu_trimmed_mean_percent_one_logical_cpu", 0.0) < 100.0:
+    raise SystemExit("real-Poky BitBake process tree did not consume one logical CPU")
+for role in ("daemon", "client"):
+    process = summary.get(role, {})
+    if process.get("rss_max_bytes", 0) <= 0 or process.get("threads_max", 0) <= 0:
+        raise SystemExit(f"real-Poky {role} resource observations are absent")
+
+responsiveness = record.get("responsiveness", {})
+keys = responsiveness.get("key_to_visible_frame_samples_ms", [])
+if len(keys) < 100 or responsiveness.get("key_to_visible_frame_p95_ms", 1000.0) > 100.0:
+    raise SystemExit("real-Poky keyboard-to-frame latency exceeds the contract")
+ipc = responsiveness.get("ipc_ms", {})
+if ipc.get("build_command_to_ack_ms", 1000.0) > 100.0:
+    raise SystemExit("real-Poky build-command acknowledgement exceeds 100 ms")
+if ipc.get("cancellation_command_to_ack_ms", 1000.0) > 250.0:
+    raise SystemExit("real-Poky cancellation acknowledgement exceeds 250 ms")
+if ipc.get("fresh_attach_ms", 1000.0) > 100.0:
+    raise SystemExit("real-Poky fresh attach exceeds 100 ms")
+render = record.get("rendering", {})
+if render.get("schema") != "yoctui.performance.render.v1":
+    raise SystemExit("real-Poky render metrics are absent")
+if not 0 < render.get("frames_per_second", 0) <= 6.0:
+    raise SystemExit("real-Poky render cadence is stopped or excessive")
+if render.get("coalesced", 0) <= 0:
+    raise SystemExit("real-Poky render invalidations were not coalesced")
+
+events = record.get("events", {})
+if events.get("events", 0) <= 0 or events.get("by_type", {}).get("telemetry", 0) <= 0:
+    raise SystemExit("real-Poky live daemon events were not observed")
+if events.get("disconnects") != 0:
+    raise SystemExit("real-Poky backend disconnected")
+pressure = record.get("pressure", {})
+if pressure.get("maximum_queue_depth", 257) > 256:
+    raise SystemExit("real-Poky client queue exceeded its declared bound")
+if pressure.get("reliable_waits", 1) != 0 or pressure.get("forced_resynchronizations", 1) != 0:
+    raise SystemExit("real-Poky critical IPC delivery experienced pressure")
+continuity = record.get("continuity", {})
+if continuity.get("backend_disconnects") != 0 or continuity.get("client_reconnected") is not True:
+    raise SystemExit("real-Poky backend/client continuity failed")
+cancel = continuity.get("cancellation", {})
+if not all(cancel.get(key) is True for key in ("requested", "acknowledged", "accepted")):
+    raise SystemExit("real-Poky cancellation path is incomplete")
+print(
+    f"real-Poky performance valid: combined {combined:.4f}% of one logical CPU; "
+    f"input p95 {responsiveness['key_to_visible_frame_p95_ms']:.3f} ms"
+)
+PY
+
+  python3 -m py_compile scripts/capture-real-poky-performance.py
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -1142,6 +1274,24 @@ case "$mode" in
     verify_scheduling
     verify_affinity
     verify_coexistence
+    ;;
+  --real-poky-evidence)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
+    verify_tasks
+    verify_ipc
+    verify_tokio
+    verify_scheduling
+    verify_affinity
+    verify_coexistence
+    verify_real_poky
     ;;
   all)
     verify_contract

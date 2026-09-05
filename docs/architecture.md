@@ -3532,12 +3532,16 @@ prove deterministic behavior but cannot substitute for supported real-Poky
 evidence.
 
 Client presentation scheduling separates semantic time from cosmetic motion.
-`RenderScheduler` coalesces both, but the animation phase advances at 5 Hz only
+`RenderScheduler` coalesces both, but the animation phase advances at 4 Hz only
 when the foreground Dashboard or Tasks surface contains visible indeterminate
 work. Overlay, hidden, determinate, terminal, and reduced-motion states cannot
 advance it. A distinct 1 Hz elapsed-time deadline remains active during a live
 build, so accessibility mode and nonanimated workspaces retain accurate time
-without paying animation cost.
+without paying animation cost. When client telemetry reports at least 90% host
+CPU during live work, ordinary full-frame presentation and animation coalesce
+to 1 Hz; input and resize retain urgent invalidation and bypass that cosmetic
+limit. This preserves correctness and interaction latency while trading only
+visual freshness under measured contention.
 
 Host telemetry remains client-owned and uses explicit demand tiers. Visible
 Dashboard/Tasks surfaces sample at 1 Hz; other workspaces sample at 0.1 Hz and
@@ -3718,12 +3722,12 @@ The steady-state release CPU gate uses the protocol layer's single
 `DaemonListener::wait_for_activity` boundary to block on the listener and every
 attached Unix stream together. Complete frames already buffered in a
 `DaemonConnection` count as ready; new connections, client commands, hangups,
-and errors wake the same call. Idle attachment no longer selects the daemon's
-one-millisecond active-work cadence. The daemon wakes at most on its 100 ms idle
-maintenance bound when every socket is quiet, while daemon-owned active jobs
-still select the one-millisecond supervisor-service bound. This preserves
-immediate input readiness without adding a thread, channel, snapshot, or state
-authority.
+and errors wake the same call. Idle attachment no longer selects an active-work
+cadence. The daemon wakes at most on its 100 ms idle maintenance bound when
+every socket is quiet, while daemon-owned active jobs use a 50 ms bounded
+supervisor-service slice. Socket readiness still wakes immediately, and the
+bound remains inside the 100 ms event/command latency contract without adding
+a thread, channel, snapshot, or state authority.
 
 The measurement driver composes the shipped release daemon and `attach` client
 inside isolated XDG directories and a real fixed 160x50 PTY. An external
@@ -3780,6 +3784,8 @@ causes remain presentation metadata and never enter the model or daemon wire
 protocol. The scheduler coalesces multiple state/input/telemetry/presentation/
 resize requests into one frame, counts requests, frames, coalesced requests,
 and skipped idle checks, and exposes those counters to tracing at shutdown.
-The single production `terminal.draw` call consumes this latch. A 100 ms
-minimum normal frame interval caps ordinary rendering at 10 Hz, while an input
-event directly invalidates the next frame rather than waiting for a model tick.
+The single production `terminal.draw` call consumes this latch. A 250 ms
+minimum ordinary frame interval caps normal rendering at 4 Hz. Saturated live
+builds use the measured 1 Hz adaptive presentation interval, while an input or
+resize event directly invalidates the next frame rather than waiting for a
+model tick.

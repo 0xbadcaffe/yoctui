@@ -75,7 +75,9 @@ def main() -> int:
 
         shutdown_started = time.monotonic()
         process.send_signal(signal.SIGTERM)
-        process.wait(timeout=0.5)
+        # Keep subprocess cleanup scheduling margin distinct from the strict
+        # measured 500 ms acceptance bound checked below.
+        process.wait(timeout=1.0)
         shutdown_ms = (time.monotonic() - shutdown_started) * 1000.0
         result = {
             "schema": "yoctui.performance.idle-event-loop.v1",

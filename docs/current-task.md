@@ -2,14 +2,15 @@
 
 ## Task
 
-**ID:** PERF-REAL-POKY-001
-**Title:** Validate responsiveness during a real saturated Poky build
+**ID:** PERF-REGRESSION-001
+**Title:** Track machine-readable performance regressions
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Capture sustained supported-Poky task execution with the optimized daemon and
-client while the build uses the available host CPUs.
+Aggregate the retained M46 CPU, latency, wakeup, render, pressure, and memory
+evidence into one compact machine-readable regression record with robust hard
+release gates and explicit tolerance for tiny uncontrolled variance.
 
 ## Dependencies
 
@@ -20,20 +21,20 @@ client while the build uses the available host CPUs.
 
 ## Definition of done
 
-- Evidence names the supported Poky revision, build directory, target, machine,
-  distro, exact Yoctui binary, host, and measurement window.
-- Sustained real task execution captures daemon/client/BitBake CPU and memory,
-  render/event rates, input and IPC latency, and pressure counters.
-- Daemon/client and BitBake backend continuity hold under real host pressure;
-  input remains responsive and cancellation evidence is explicit.
-- The artifact is labeled real-Poky evidence and cannot be substituted by a
-  fixture-only run.
+- A compact record names the exact source artifacts and carries CPU, latency,
+  wakeup, render, IPC-pressure, and memory metrics.
+- Hard correctness and controlled release thresholds remain strict.
+- Small variance in explicitly uncontrolled diagnostic measurements does not
+  create a false regression failure.
+- The verifier recalculates or cross-checks retained values rather than
+  trusting an unbound summary.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-performance.sh --regressions
 ./scripts/verify-roadmap.sh
 ```
 
-The bounded-memory gate is complete in v0.1.46.
+The supported real-Poky saturation gate is complete in v0.1.47: combined
+daemon/client CPU was 0.9662% of one logical CPU at 99.6646% host utilization.

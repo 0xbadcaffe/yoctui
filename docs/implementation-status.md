@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-REAL-POKY-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-REGRESSION-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -45,11 +45,13 @@ idle polls no longer render and inactive local BitBake is not polled. Dirty
 rendering now passes through one typed coalescing scheduler. It records render
 requests, frames, coalesced requests, and skipped idle checks; input, state,
 telemetry, presentation, and resize causes converge on the only production
-draw call. A 100 ms minimum interval caps normal rendering at 10 Hz, and 640
-synthetic state updates coalesce to ten scheduled frames. Animation now advances
-at 5 Hz only for visible indeterminate work in Dashboard or Tasks; hidden,
+draw call. A 250 ms minimum interval caps ordinary rendering at 4 Hz, and 640
+synthetic state updates coalesce to ten scheduled frames. Animation also advances
+at 4 Hz only for visible indeterminate work in Dashboard or Tasks; hidden,
 determinate, terminal, overlay-obscured, and reduced-motion state cannot drive
-it. Elapsed time refreshes separately at 1 Hz. Host telemetry is now 1 Hz only
+it. Above 90% host CPU during live work, cosmetic rendering adapts to 1 Hz while
+input and resize stay immediate. Elapsed time refreshes separately at 1 Hz.
+Host telemetry is now 1 Hz only
 on visible Dashboard/Tasks surfaces and 0.1 Hz elsewhere, with cached static
 source identity and no child processes; background samples do not redraw.
 Daemon health pauses without clients and uses 0.2/1 Hz idle/active demand tiers.
@@ -134,7 +136,14 @@ RSS grew only 1,351,680/110,592 bytes, both final 20-minute slopes were zero,
 and threads remained exactly 3/1. Strict critical retention, ordering, and
 continuity pass alongside focused log, task, telemetry, PTY, and protocol
 retention tests; the default gate also repeats a one-minute offline fixture.
-Overall required registry progress is 654/659 (99.2%).
+The supported real-Poky gate now retains an exact Poky 6.0.2
+`linux-yocto:do_compile` run at 99.6646% host CPU. Generation-cached
+compatibility, incremental job publication, a 50 ms active supervisor bound,
+and adaptive 1 Hz cosmetic rendering above 90% host CPU reduced daemon/client
+CPU to 0.3998/0.5439%, or 0.9662% combined of one logical CPU. One hundred
+input probes retained 5.3843 ms p95 latency; cancellation, reconnect, bounded
+pressure, and backend continuity all passed. Overall required registry progress
+is 655/659 (99.4%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

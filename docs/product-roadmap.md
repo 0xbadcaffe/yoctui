@@ -936,7 +936,7 @@ fixtures, idle event-loop optimization, dirty-render scheduler, and bounded
 animation clock are complete. Kernel-backed daemon listener readiness reduced
 the focused idle result from roughly 867 to below 35 voluntary context
 switches/s; unchanged polls do not redraw, state bursts coalesce, and only
-visible indeterminate Dashboard/Tasks activity advances at 5 Hz. Client host
+visible indeterminate Dashboard/Tasks activity advances at 4 Hz. Client host
 telemetry now uses 1/0.1 Hz visible/background tiers, while daemon health pauses
 without clients and uses 0.2/1 Hz idle/active tiers. Logs normalize once,
 ordered IPC bursts reduce in bounded batches, and render metadata comes from
@@ -990,4 +990,12 @@ under load. Bounded-memory endurance is next.
 The bounded-memory gate now passes its 30-minute release run: daemon/client RSS
 growth was 1.29 MiB/108 KiB, both final 20-minute slopes were zero, threads
 stayed 3/1, and correctness/continuity survived the full 4,000-event/s stream.
-Supported real-Poky saturation evidence is next.
+Supported real-Poky saturation evidence now passes against Poky 6.0.2. A
+daemon-owned `linux-yocto:do_compile` kept the reference host at 99.6646% CPU
+for 120 measured seconds while the release daemon/client used
+0.3998%/0.5439%, or 0.9662% combined of one logical CPU. Adaptive saturation
+presentation reduces cosmetic full-frame work to 1 Hz above 90% host CPU while
+input remains immediate; 100 probes measured 5.3843 ms p95. Cancellation,
+fresh attach, backend continuity, and bounded IPC pressure all passed with
+exact raw and hashed evidence. Machine-readable regression aggregation is
+next.

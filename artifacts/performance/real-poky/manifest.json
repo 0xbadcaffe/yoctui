@@ -1,0 +1,34 @@
+{
+  "schema": "yoctui.performance.real-poky-manifest.v1",
+  "source_base_revision": "e481ed148420c40614f99970c87d029746ec068f",
+  "artifact": "linux-yocto-do-compile.json",
+  "artifact_sha256": "25877cda2b7df84e184b8930c08e14ae0d0e652e3fdea6f3b903b9711783ed1a",
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "e62e19f2dc183cb5b462881720f0c267d2a5577ff9fadd0999fcc6811681e340",
+    "version": "yoctui 0.1.46"
+  },
+  "sources": {
+    "crates/yoctui-app/src/lib.rs": "bfa67df8cadc1b522e68e095497915ce3e3c1be4aa55fe9c4f58445d38838ba5",
+    "crates/yoctui-cli/src/main.rs": "3db86b2225c8d16e6a1979b6595e3749b8e98044a172860d4f17db216eee4228",
+    "crates/yoctui-cli/src/render_scheduler.rs": "9cbd30b42bfd057f4a33be507f61fd4a431365d468143d0ce9a5845bc65b22fa",
+    "crates/yoctui-protocol/src/daemon.rs": "58f0a2cddd8ffe562721b9acaae75abc94581c5bfd46ffbae9be16f5a6d4c2b3",
+    "scripts/capture-real-poky-performance.py": "45b207e89372952500cfe3f492c6b60ae457fc9be081fdd0371f01f3e7646579"
+  },
+  "thresholds": {
+    "combined_cpu_percent_one_logical_cpu": 1.0,
+    "host_cpu_percent_total_capacity_minimum": 75.0,
+    "bitbake_process_tree_cpu_percent_minimum": 100.0,
+    "key_to_visible_frame_p95_ms": 100.0,
+    "build_command_to_ack_ms": 100.0,
+    "cancellation_command_to_ack_ms": 250.0,
+    "fresh_attach_ms": 100.0,
+    "render_frames_per_second_maximum": 6.0
+  },
+  "findings": [
+    "The supported Poky 6.0.2 linux-yocto do_compile workload held the eight-logical-CPU host at a 99.6646% trimmed-mean utilization for the complete 120-second sample window.",
+    "Daemon plus one interactive client consumed a 0.9662% trimmed mean of one logical CPU; input p95 was 5.3843 ms and every IPC continuity/cancellation check passed.",
+    "High-rate job progress now updates the bounded journal incrementally, compatibility decoding is generation-cached, and active daemon polling uses readiness plus a 50 ms supervisor bound.",
+    "At 90% or greater host utilization during live work, presentation coalesces to 1 Hz while input and resize stay immediate; below saturation ordinary activity remains 4 Hz."
+  ]
+}

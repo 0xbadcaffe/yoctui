@@ -1,0 +1,7351 @@
+{
+  "schema": "yoctui.performance.real-poky.v1",
+  "captured_at_utc": "2026-09-05T20:00:42.700146+00:00",
+  "source_base_revision": "e481ed148420c40614f99970c87d029746ec068f",
+  "evidence_role": "real_poky_build",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64",
+    "cpu_model": "Intel(R) Core(TM) i7-8650U CPU @ 1.90GHz",
+    "logical_cpus": 8,
+    "online_cpus": "0-7",
+    "memory_total_bytes": 16100098048,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "load_average": [
+      11.64013671875,
+      8.01025390625,
+      6.69873046875
+    ],
+    "filesystem": {
+      "path": "/home/bspguy-dev/src/build",
+      "type": "ext4",
+      "free_bytes": 59755929600,
+      "total_bytes": 489997189120
+    }
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "e62e19f2dc183cb5b462881720f0c267d2a5577ff9fadd0999fcc6811681e340",
+    "version": "yoctui 0.1.46"
+  },
+  "processes": {
+    "daemon": {
+      "pid": 3963846,
+      "start_time_ticks_since_boot": 101513981,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui daemon foreground"
+    },
+    "client": {
+      "pid": 4001368,
+      "start_time_ticks_since_boot": 101543890,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+    }
+  },
+  "daemon_runtime": {
+    "pid": 3963846,
+    "daemon_instance_id": [
+      108,
+      201,
+      178,
+      245,
+      59,
+      238,
+      227,
+      121,
+      52,
+      117,
+      145,
+      210,
+      235,
+      124,
+      119,
+      164
+    ],
+    "started_unix_ms": 1788638012884,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui"
+  },
+  "poky": {
+    "release": "6.0.2",
+    "root": "/home/bspguy-dev/src/poky",
+    "build_directory": "/home/bspguy-dev/src/build",
+    "target": "linux-yocto",
+    "task": "compile",
+    "force": false,
+    "preparation": {
+      "target": "linux-yocto",
+      "task": "cleansstate",
+      "through_daemon": true
+    },
+    "machine": "qemux86-64",
+    "distro": "poky",
+    "parallelism": {
+      "BB_NUMBER_THREADS": "8",
+      "PARALLEL_MAKE": "-j 8"
+    },
+    "repositories": {
+      "bitbake": {
+        "path": "/home/bspguy-dev/src/poky/layers/bitbake",
+        "revision": "acfe02fa38b5da9e6a36c6cedcf91d4fcbefbfbd",
+        "describe": "yocto-6.0.2",
+        "dirty": false,
+        "status": [],
+        "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "openembedded_core": {
+        "path": "/home/bspguy-dev/src/poky/layers/openembedded-core",
+        "revision": "5d1aa5c806c061a2994f4decb59016610f093213",
+        "describe": "yocto-6.0.2-dirty",
+        "dirty": true,
+        "status": [
+          " M meta/classes/copyleft_filter.bbclass"
+        ],
+        "working_diff_sha256": "8806ef5477b5912b058a7012763446a024eaa3f2aed9e1169d4510acc39f97d7"
+      },
+      "meta_yocto": {
+        "path": "/home/bspguy-dev/src/poky/layers/meta-yocto",
+        "revision": "24c24cef5d1523fefe43a3e3d34667b37ae551f3",
+        "describe": "yocto-6.0.2",
+        "dirty": false,
+        "status": [],
+        "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "measurement": {
+    "clock": "CLOCK_MONOTONIC",
+    "warmup_seconds": 10,
+    "window_seconds": 120,
+    "sustained_active_seconds": 120,
+    "sample_count": 119,
+    "statistic": "10_percent_trimmed_mean",
+    "workload_trigger": {
+      "type": "task_started",
+      "recipe": "linux-yocto",
+      "task": "do_compile",
+      "pid": 4001304,
+      "worker": null,
+      "log_path": "/home/bspguy-dev/src/build/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.4001304",
+      "stats": null
+    },
+    "terminal": {
+      "columns": 160,
+      "rows": 50
+    }
+  },
+  "events": {
+    "events": 118,
+    "logs": 0,
+    "task_started": 0,
+    "task_completed": 0,
+    "disconnects": 0,
+    "by_type": {
+      "telemetry": 118
+    },
+    "events_per_second": 0.9833333333333333
+  },
+  "pressure": {
+    "current_queue_depth": 0,
+    "maximum_queue_depth": 28,
+    "cosmetic_coalesced": 0,
+    "cosmetic_dropped": 0,
+    "reliable_waits": 0,
+    "forced_resynchronizations": 0,
+    "slow_client_disconnects": 0
+  },
+  "responsiveness": {
+    "key_to_visible_frame_samples_ms": [
+      17.494002,
+      1.025426,
+      4.581767,
+      3.915019,
+      4.101292,
+      3.507883,
+      3.723579,
+      2.901841,
+      5.384291,
+      4.300379,
+      3.869329,
+      3.633398,
+      3.349353,
+      3.029096,
+      4.906689,
+      5.584868,
+      3.773912,
+      3.719707,
+      4.37119,
+      3.024449,
+      4.906327,
+      3.514451,
+      4.173311,
+      3.83023,
+      3.399549,
+      3.008226,
+      4.694014,
+      3.793712,
+      3.191059,
+      3.763191,
+      3.568034,
+      3.340009,
+      2.99427,
+      6.013618,
+      6.319656,
+      3.610727,
+      3.347147,
+      3.261225,
+      2.82245,
+      4.009338,
+      4.457983,
+      3.063835,
+      4.645651,
+      4.432975,
+      4.034689,
+      4.493798,
+      3.028366,
+      3.770503,
+      4.149441,
+      5.15834,
+      4.630103,
+      3.710123,
+      3.482499,
+      3.760809,
+      4.560411,
+      3.238655,
+      2.62975,
+      3.413645,
+      3.090105,
+      4.450693,
+      3.28351,
+      3.201776,
+      3.968027,
+      3.649192,
+      3.328497,
+      4.181737,
+      4.803029,
+      4.383148,
+      2.80811,
+      3.674283,
+      4.124692,
+      6.186025,
+      4.464023,
+      2.757246,
+      3.783414,
+      3.162255,
+      3.946735,
+      4.904449,
+      3.429767,
+      2.729574,
+      3.422307,
+      4.097561,
+      4.969742,
+      3.361533,
+      5.170222,
+      4.795808,
+      3.610189,
+      2.585067,
+      3.433945,
+      3.247875,
+      2.791785,
+      3.263005,
+      5.061919,
+      4.79425,
+      3.289256,
+      3.843777,
+      3.612454,
+      3.288362,
+      2.773844,
+      3.516358
+    ],
+    "key_to_visible_frame_p95_ms": 5.384291,
+    "ipc_ms": {
+      "build_command_to_ack_ms": 0.875612,
+      "cancellation_command_to_ack_ms": 2.90029,
+      "fresh_attach_ms": 57.585385
+    }
+  },
+  "rendering": {
+    "coalesced": 385,
+    "elapsed_seconds": 130.652268181,
+    "frames": 262,
+    "frames_per_second": 2.0053230123570187,
+    "requests": 648,
+    "schema": "yoctui.performance.render.v1",
+    "skipped_checks": 1095
+  },
+  "continuity": {
+    "backend_disconnects": 0,
+    "client_reconnected": true,
+    "cancellation": {
+      "requested": true,
+      "acknowledged": true,
+      "accepted": true
+    }
+  },
+  "summary": {
+    "daemon": {
+      "cpu_trimmed_mean_percent_one_logical_cpu": 0.399773674042312,
+      "rss_max_bytes": 20652032,
+      "threads_max": 3
+    },
+    "client": {
+      "cpu_trimmed_mean_percent_one_logical_cpu": 0.5438897020739512,
+      "rss_max_bytes": 19111936,
+      "threads_max": 3
+    },
+    "combined_cpu_trimmed_mean_percent_one_logical_cpu": 0.9661692862823459,
+    "bitbake_cpu_trimmed_mean_percent_one_logical_cpu": 298.4316233614969,
+    "host_cpu_trimmed_mean_percent_total_capacity": 99.66455911247068
+  },
+  "samples": [
+    {
+      "elapsed_seconds": 1.04225255001802,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.9791108119970178,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 89.71499380421314,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 0.0,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4002418,
+          4002478,
+          4002480,
+          4003005,
+          4003006,
+          4003007,
+          4003010,
+          4003012,
+          4003023,
+          4003024,
+          4003040,
+          4003041,
+          4003042,
+          4003043,
+          4003047,
+          4003048,
+          4003049,
+          4003050,
+          4003117,
+          4003159,
+          4003160,
+          4003161
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 2.048019287060015,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9942663275393705,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9942663275393705,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 63.934426229508205,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 96.44383377131894,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4002418,
+          4002478,
+          4002480,
+          4003005,
+          4003006,
+          4003010,
+          4003012,
+          4003023,
+          4003024,
+          4003117,
+          4003194,
+          4003195,
+          4003196
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 3.053333774092607,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9947136074321588,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 62.151898734177216,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 107.42906960267315,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4002418,
+          4002478,
+          4002480,
+          4003005,
+          4003006,
+          4003010,
+          4003012,
+          4003023,
+          4003024,
+          4003117
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 4.059642468113452,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9937308560898568,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 53.46784363177805,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 0.0,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4002418,
+          4002478,
+          4002480
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 5.031838329043239,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0285993184990745,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0285993184990745,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 94.71649484536083,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 1.0285993184990745,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003362,
+          4003363,
+          4003365,
+          4003367,
+          4003377,
+          4003378,
+          4003379,
+          4003381,
+          4003382,
+          4003384,
+          4003385,
+          4003389,
+          4003392,
+          4003393,
+          4003396,
+          4003400,
+          4003402,
+          4003403,
+          4003405,
+          4003408,
+          4003426,
+          4003429,
+          4003430,
+          4003431,
+          4003432,
+          4003436
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 6.055393804097548,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.976986616135233,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.976986616135233,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87760097919217,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 233.4998012563207,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003362,
+          4003363,
+          4003365,
+          4003367,
+          4003377,
+          4003379,
+          4003381,
+          4003384,
+          4003396,
+          4003400,
+          4003402,
+          4003403,
+          4003405,
+          4003408,
+          4003426,
+          4003429,
+          4003432,
+          4003474,
+          4003475,
+          4003476,
+          4003481,
+          4003482,
+          4003495,
+          4003509,
+          4003510,
+          4003511
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 7.079681318020448,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9762883823215986,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.6328029375765,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 402.23081351649864,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003377,
+          4003381,
+          4003384,
+          4003396,
+          4003400,
+          4003402,
+          4003403,
+          4003405,
+          4003408,
+          4003426,
+          4003429,
+          4003432,
+          4003495,
+          4003509,
+          4003510,
+          4003511,
+          4003518,
+          4003519,
+          4003520,
+          4003547,
+          4003551,
+          4003553,
+          4003556,
+          4003561,
+          4003563,
+          4003564,
+          4003565
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 8.0457165670814,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.035158914720829,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.74160206718346,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 482.3840542599063,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003396,
+          4003400,
+          4003402,
+          4003403,
+          4003405,
+          4003408,
+          4003426,
+          4003429,
+          4003432,
+          4003495,
+          4003509,
+          4003510,
+          4003518,
+          4003519,
+          4003520,
+          4003547,
+          4003551,
+          4003553,
+          4003556,
+          4003561,
+          4003563,
+          4003564,
+          4003565
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 9.067019136040471,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9791417650297461,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.6319018404908,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 318.22107363466745,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003396,
+          4003400,
+          4003402,
+          4003403,
+          4003405,
+          4003408,
+          4003426,
+          4003429,
+          4003432,
+          4003495,
+          4003518,
+          4003519,
+          4003520,
+          4003547,
+          4003551,
+          4003553,
+          4003556,
+          4003561,
+          4003583,
+          4003584,
+          4003585,
+          4003590,
+          4003601,
+          4003602,
+          4003603,
+          4003645
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 10.033619643072598,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.6124031007752,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 338.29901559231416,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003396,
+          4003400,
+          4003403,
+          4003405,
+          4003408,
+          4003426,
+          4003429,
+          4003432,
+          4003495,
+          4003547,
+          4003551,
+          4003553,
+          4003556,
+          4003561,
+          4003583,
+          4003584,
+          4003585,
+          4003590,
+          4003601,
+          4003602,
+          4003603,
+          4003645,
+          4003743,
+          4003744,
+          4003745
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 11.053130384068936,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.980862643019071,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.980862643019071,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.38650306748467,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 340.3593371276176,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003403,
+          4003405,
+          4003408,
+          4003495,
+          4003547,
+          4003551,
+          4003553,
+          4003556,
+          4003583,
+          4003584,
+          4003585,
+          4003590,
+          4003743,
+          4003744,
+          4003745,
+          4003773,
+          4003774,
+          4003775,
+          4003790,
+          4003791,
+          4003792
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 12.06804809300229,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.63008631319359,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 245.34008797786294,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003403,
+          4003405,
+          4003408,
+          4003495,
+          4003547,
+          4003551,
+          4003553,
+          4003556,
+          4003590,
+          4003773,
+          4003774,
+          4003775,
+          4003790,
+          4003791,
+          4003792,
+          4003811,
+          4003813,
+          4003815,
+          4003867,
+          4003871,
+          4003872,
+          4003874,
+          4003878,
+          4003879,
+          4003880
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 13.081608764012344,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9866207604557694,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.2583436341162,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 332.49119627359426,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003403,
+          4003405,
+          4003408,
+          4003495,
+          4003547,
+          4003590,
+          4003773,
+          4003774,
+          4003775,
+          4003867,
+          4003871,
+          4003872,
+          4003874,
+          4003878,
+          4003879,
+          4003880,
+          4003887,
+          4003888,
+          4003889,
+          4003895,
+          4003896,
+          4003897,
+          4003900,
+          4003901,
+          4003902
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 14.06543873809278,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0164357931203283,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.36386768447836,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 281.5527146943309,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003403,
+          4003405,
+          4003408,
+          4003495,
+          4003547,
+          4003590,
+          4003773,
+          4003774,
+          4003775,
+          4003878,
+          4003879,
+          4003880,
+          4003887,
+          4003888,
+          4003889,
+          4003900,
+          4003901,
+          4003902,
+          4003916,
+          4003917,
+          4003918,
+          4003926,
+          4003927,
+          4003928
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 15.039450370008126,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0266817841112938,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.61489088575097,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 393.2191233146255,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003403,
+          4003405,
+          4003495,
+          4003547,
+          4003590,
+          4003773,
+          4003774,
+          4003775,
+          4003878,
+          4003879,
+          4003880,
+          4003900,
+          4003901,
+          4003902,
+          4003916,
+          4003917,
+          4003918,
+          4003926,
+          4003927,
+          4003928,
+          4004011,
+          4004012,
+          4004016
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 16.037770046037622,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0016831522115113,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.37264742785446,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 1.0016831522115113,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4003590,
+          4004011,
+          4004012,
+          4004032,
+          4004033,
+          4004034,
+          4004051,
+          4004052,
+          4004054,
+          4004056,
+          4004057,
+          4004059,
+          4004062,
+          4004063,
+          4004064,
+          4004068,
+          4004071,
+          4004074,
+          4004075,
+          4004076,
+          4004077,
+          4004078,
+          4004079,
+          4004082
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 17.072738800081424,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9662127441942826,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 98.67149758454107,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 314.9853546073361,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4003590,
+          4004051,
+          4004052,
+          4004054,
+          4004056,
+          4004057,
+          4004059,
+          4004068,
+          4004071,
+          4004074,
+          4004075,
+          4004076,
+          4004077,
+          4004078,
+          4004079,
+          4004082,
+          4004083,
+          4004084,
+          4004088,
+          4004089,
+          4004090,
+          4004103,
+          4004105,
+          4004106,
+          4004110,
+          4004111,
+          4004112,
+          4004113
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 18.05433468904812,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0187491728930111,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.23469387755102,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 478.8121112597152,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4003590,
+          4004051,
+          4004052,
+          4004054,
+          4004056,
+          4004057,
+          4004059,
+          4004068,
+          4004071,
+          4004074,
+          4004076,
+          4004078,
+          4004082,
+          4004083,
+          4004084,
+          4004088,
+          4004089,
+          4004090,
+          4004103,
+          4004105,
+          4004106
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 19.037778350058943,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0168350660495982,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.61734693877551,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 232.855230125358,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4003590,
+          4004051,
+          4004052,
+          4004054,
+          4004056,
+          4004057,
+          4004059,
+          4004068,
+          4004071,
+          4004088,
+          4004089,
+          4004090,
+          4004103,
+          4004105,
+          4004126,
+          4004127,
+          4004129,
+          4004155,
+          4004156,
+          4004157,
+          4004161,
+          4004162,
+          4004163,
+          4004170,
+          4004172,
+          4004173,
+          4004174
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 20.05348448001314,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.3849938499385,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 607.459167375335,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4003590,
+          4004051,
+          4004052,
+          4004054,
+          4004056,
+          4004057,
+          4004059,
+          4004068,
+          4004071,
+          4004088,
+          4004089,
+          4004090,
+          4004126,
+          4004127,
+          4004129,
+          4004155,
+          4004156,
+          4004157,
+          4004161,
+          4004162,
+          4004163,
+          4004170,
+          4004172,
+          4004173,
+          4004174,
+          4004182,
+          4004183,
+          4004184
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 21.071480335085653,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9823222707805316,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9823222707805316,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50738916256158,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 180.7472978236178,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4003590,
+          4004068,
+          4004071,
+          4004161,
+          4004162,
+          4004163,
+          4004170,
+          4004172,
+          4004173,
+          4004174,
+          4004191,
+          4004192,
+          4004195,
+          4004206,
+          4004208,
+          4004210,
+          4004229,
+          4004230,
+          4004231,
+          4004234,
+          4004235,
+          4004236,
+          4004239,
+          4004240,
+          4004241
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 22.04999992600642,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.02195194585631,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.74424552429667,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 236.07089949280763,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4003590,
+          4004068,
+          4004071,
+          4004170,
+          4004229,
+          4004230,
+          4004231,
+          4004234,
+          4004235,
+          4004236,
+          4004239,
+          4004240,
+          4004241,
+          4004244,
+          4004245,
+          4004246,
+          4004288,
+          4004289,
+          4004290
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 23.08088415907696,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.63636363636364,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 256.09083108552693,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003358,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004229,
+          4004230,
+          4004234,
+          4004235,
+          4004236,
+          4004239,
+          4004240,
+          4004241,
+          4004244,
+          4004245,
+          4004246,
+          4004297,
+          4004298,
+          4004299,
+          4004304,
+          4004305,
+          4004306,
+          4004307,
+          4004308,
+          4004309
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 24.04594274307601,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0362065231896656,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0362065231896656,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.48119325551232,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 159.5758045712085,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004244,
+          4004245,
+          4004246,
+          4004306,
+          4004308,
+          4004309,
+          4004341,
+          4004342,
+          4004343,
+          4004347,
+          4004348,
+          4004349,
+          4004359,
+          4004363,
+          4004364,
+          4004369,
+          4004370,
+          4004371
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 25.061868468998,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75339087546239,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 248.04962958419142,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003495,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004244,
+          4004245,
+          4004341,
+          4004342,
+          4004343,
+          4004359,
+          4004363,
+          4004364,
+          4004369,
+          4004370,
+          4004371,
+          4004376,
+          4004377,
+          4004378,
+          4004380,
+          4004388,
+          4004389,
+          4004390,
+          4004398,
+          4004399,
+          4004400
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 26.041379180038348,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.020917881477672,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.020917881477672,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.48914431673053,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 249.10396308055195,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004359,
+          4004363,
+          4004364,
+          4004369,
+          4004370,
+          4004371,
+          4004380,
+          4004398,
+          4004399,
+          4004400,
+          4004404,
+          4004405,
+          4004406,
+          4004411,
+          4004412,
+          4004413,
+          4004420,
+          4004421,
+          4004422,
+          4004428,
+          4004429,
+          4004430
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 27.08028128708247,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.962554597993061,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.51923076923077,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 246.4139770862236,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004369,
+          4004370,
+          4004380,
+          4004398,
+          4004399,
+          4004400,
+          4004404,
+          4004405,
+          4004406,
+          4004411,
+          4004412,
+          4004413,
+          4004420,
+          4004428,
+          4004438,
+          4004439,
+          4004440,
+          4004445,
+          4004446,
+          4004447
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 28.04235914500896,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0394169159606723,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.609375,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 274.4060658136175,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004380,
+          4004404,
+          4004405,
+          4004406,
+          4004411,
+          4004412,
+          4004413,
+          4004445,
+          4004446,
+          4004447,
+          4004457,
+          4004459,
+          4004460,
+          4004461,
+          4004462,
+          4004463,
+          4004467,
+          4004468,
+          4004470,
+          4004472,
+          4004473,
+          4004475
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 29.07424132199958,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9691028901346063,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 98.78934624697337,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 435.1271976704383,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004380,
+          4004404,
+          4004405,
+          4004406,
+          4004445,
+          4004446,
+          4004447,
+          4004457,
+          4004459,
+          4004460,
+          4004461,
+          4004462,
+          4004463,
+          4004467,
+          4004468,
+          4004470,
+          4004472,
+          4004473,
+          4004482,
+          4004483,
+          4004484,
+          4004492,
+          4004493,
+          4004494
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 30.057133774040267,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0174053101372322,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.61734693877551,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 334.7263470351494,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004380,
+          4004404,
+          4004405,
+          4004445,
+          4004446,
+          4004447,
+          4004457,
+          4004459,
+          4004461,
+          4004467,
+          4004468,
+          4004470,
+          4004482,
+          4004483,
+          4004484,
+          4004492,
+          4004493,
+          4004494,
+          4004503,
+          4004504,
+          4004505,
+          4004510
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 31.052133360062726,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0050255437768878,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.74811083123426,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 340.70365934036494,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004170,
+          4004380,
+          4004457,
+          4004459,
+          4004461,
+          4004482,
+          4004483,
+          4004484,
+          4004492,
+          4004493,
+          4004494,
+          4004503,
+          4004504,
+          4004505,
+          4004513,
+          4004514,
+          4004515,
+          4004518,
+          4004519,
+          4004520,
+          4004528,
+          4004529,
+          4004530
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 32.039119415101595,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0131855408642203,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.23954372623575,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 157.04375883395417,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004513,
+          4004514,
+          4004515,
+          4004518,
+          4004519,
+          4004528,
+          4004529,
+          4004530,
+          4004535,
+          4004537,
+          4004538,
+          4004562,
+          4004563,
+          4004564,
+          4004565,
+          4004566,
+          4004567
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 33.07123589201365,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9688828948762261,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87878787878788,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 249.00290398319012,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004513,
+          4004514,
+          4004535,
+          4004537,
+          4004538,
+          4004562,
+          4004563,
+          4004564,
+          4004565,
+          4004566,
+          4004567,
+          4004579,
+          4004580,
+          4004581,
+          4004584,
+          4004612,
+          4004613,
+          4004616,
+          4004621,
+          4004622,
+          4004623,
+          4004638,
+          4004639,
+          4004640
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 34.05550966609735,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.74619289340102,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 440.93423133622184,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003367,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004535,
+          4004537,
+          4004538,
+          4004562,
+          4004563,
+          4004564,
+          4004565,
+          4004566,
+          4004584,
+          4004612,
+          4004613,
+          4004616,
+          4004621,
+          4004622,
+          4004623,
+          4004638,
+          4004639,
+          4004640,
+          4004660,
+          4004661,
+          4004662
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 35.04084462206811,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0148833084022635,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0148833084022635,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.49109414758269,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 165.4259792695689,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004612,
+          4004613,
+          4004616,
+          4004660,
+          4004661,
+          4004662,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004687,
+          4004688,
+          4004689,
+          4004695,
+          4004696,
+          4004697,
+          4004701,
+          4004702,
+          4004703,
+          4004705,
+          4004706,
+          4004707
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 36.07313120702747,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87893462469734,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 309.99143519102927,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004695,
+          4004696,
+          4004697,
+          4004701,
+          4004702,
+          4004703,
+          4004705,
+          4004706,
+          4004707,
+          4004716,
+          4004718,
+          4004719,
+          4004720,
+          4004735,
+          4004736,
+          4004737
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 37.034981369040906,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0396629740194745,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0396629740194745,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.8699609882965,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 263.034732426927,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004701,
+          4004702,
+          4004703,
+          4004716,
+          4004718,
+          4004719,
+          4004720,
+          4004735,
+          4004736,
+          4004737,
+          4004764,
+          4004765,
+          4004766,
+          4004770,
+          4004771,
+          4004772
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 38.048883143113926,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.01234567901234,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 308.7084054924025,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004701,
+          4004702,
+          4004703,
+          4004716,
+          4004718,
+          4004735,
+          4004736,
+          4004737,
+          4004764,
+          4004765,
+          4004766,
+          4004790,
+          4004791,
+          4004792,
+          4004798,
+          4004799,
+          4004800
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 39.03754988510627,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0114631731060504,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0114631731060504,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.62121212121212,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 357.04650010643576,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004701,
+          4004702,
+          4004703,
+          4004716,
+          4004764,
+          4004765,
+          4004766,
+          4004790,
+          4004791,
+          4004792,
+          4004798,
+          4004799,
+          4004800,
+          4004808,
+          4004809,
+          4004810,
+          4004814,
+          4004815,
+          4004816,
+          4004829,
+          4004830,
+          4004831
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 40.0582510670647,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75520195838433,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 439.8936808699479,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004701,
+          4004702,
+          4004703,
+          4004716,
+          4004764,
+          4004765,
+          4004798,
+          4004799,
+          4004800,
+          4004814,
+          4004815,
+          4004816,
+          4004829,
+          4004830,
+          4004831,
+          4004848,
+          4004849,
+          4004850,
+          4004854,
+          4004855,
+          4004856
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 41.03450325410813,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0243254901466512,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.23076923076923,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 386.1707097852875,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004701,
+          4004702,
+          4004703,
+          4004716,
+          4004814,
+          4004815,
+          4004816,
+          4004848,
+          4004849,
+          4004850,
+          4004854,
+          4004855,
+          4004856,
+          4004871,
+          4004872,
+          4004873,
+          4004882,
+          4004883,
+          4004884,
+          4004887,
+          4004888,
+          4004889
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 42.04309088806622,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9914854855751254,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 498.71719924428805,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004701,
+          4004702,
+          4004703,
+          4004716,
+          4004848,
+          4004849,
+          4004850,
+          4004871,
+          4004872,
+          4004873,
+          4004882,
+          4004883,
+          4004884,
+          4004887,
+          4004888,
+          4004889,
+          4004896,
+          4004897,
+          4004898
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 43.05339057405945,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9898053160502509,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75247524752476,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 378.1056307311958,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004679,
+          4004701,
+          4004702,
+          4004703,
+          4004716,
+          4004848,
+          4004849,
+          4004850,
+          4004871,
+          4004872,
+          4004873,
+          4004882,
+          4004883,
+          4004884,
+          4004908,
+          4004909,
+          4004910,
+          4004959,
+          4004960,
+          4004961,
+          4004966,
+          4004968,
+          4004969
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 44.05253473704215,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0008565701016987,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87515605493134,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 213.18244943166184,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004677,
+          4004678,
+          4004716,
+          4004882,
+          4004883,
+          4004884,
+          4004908,
+          4004909,
+          4004910,
+          4004959,
+          4004960,
+          4004961,
+          4004966,
+          4004968,
+          4004969,
+          4004970,
+          4004979,
+          4004980,
+          4004981,
+          4004982
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 45.08147028507665,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9718781724571863,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 380.97624360321703,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004882,
+          4004883,
+          4004884,
+          4004908,
+          4004909,
+          4004910,
+          4004959,
+          4004960,
+          4004961,
+          4004966,
+          4004968,
+          4004969,
+          4004970,
+          4004979,
+          4004980,
+          4004981,
+          4004985,
+          4004986,
+          4004988,
+          4004991,
+          4004992,
+          4004993,
+          4005001,
+          4005002,
+          4005003
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 46.03597234503832,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0476666755859678,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.73787680209698,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 442.11533709727837,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004071,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004959,
+          4004960,
+          4004961,
+          4004966,
+          4004979,
+          4004980,
+          4004981,
+          4004985,
+          4004986,
+          4004988,
+          4004991,
+          4004992,
+          4004993,
+          4005001,
+          4005002,
+          4005003,
+          4005017,
+          4005019,
+          4005020,
+          4005021,
+          4005022,
+          4005023
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 47.04476221406367,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9912867195684251,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50372208436724,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 248.81296661167468,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004959,
+          4004960,
+          4004961,
+          4004991,
+          4004992,
+          4004993,
+          4005017,
+          4005019,
+          4005021,
+          4005035,
+          4005036,
+          4005038,
+          4005053,
+          4005054,
+          4005055,
+          4005060,
+          4005061,
+          4005062
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 48.059859299100935,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9851274471577126,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 221.65367561048535,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004959,
+          4004960,
+          4004961,
+          4004991,
+          4004992,
+          4004993,
+          4005035,
+          4005053,
+          4005054,
+          4005060,
+          4005061,
+          4005062,
+          4005065,
+          4005066,
+          4005067,
+          4005071,
+          4005072,
+          4005073
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 49.07326607708819,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9867705858314032,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50617283950616,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 358.19772265679933,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004959,
+          4004960,
+          4004961,
+          4004991,
+          4004992,
+          4004993,
+          4005060,
+          4005061,
+          4005062,
+          4005065,
+          4005066,
+          4005067,
+          4005084,
+          4005085,
+          4005086,
+          4005089,
+          4005091,
+          4005092,
+          4005095,
+          4005096,
+          4005097
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 50.07998119411059,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9933296749906203,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87546699875467,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 304.9522102221204,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004959,
+          4004960,
+          4004991,
+          4004992,
+          4004993,
+          4005065,
+          4005066,
+          4005067,
+          4005084,
+          4005085,
+          4005086,
+          4005089,
+          4005091,
+          4005092,
+          4005124,
+          4005125,
+          4005126
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 51.048116691061296,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.6124031007752,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 189.02312803981124,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004991,
+          4004992,
+          4004993,
+          4005065,
+          4005066,
+          4005067,
+          4005136,
+          4005137,
+          4005138,
+          4005140,
+          4005141,
+          4005142,
+          4005148,
+          4005149,
+          4005150,
+          4005157,
+          4005158,
+          4005159,
+          4005163,
+          4005164,
+          4005165,
+          4005168,
+          4005169,
+          4005170
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 52.05979266902432,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9884587771012098,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9884587771012098,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 528.8254457491472,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004991,
+          4004992,
+          4004993,
+          4005065,
+          4005136,
+          4005137,
+          4005138,
+          4005140,
+          4005141,
+          4005142,
+          4005148,
+          4005149,
+          4005150,
+          4005157,
+          4005158,
+          4005159,
+          4005163,
+          4005164,
+          4005165,
+          4005168,
+          4005169,
+          4005170
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 53.07331248000264,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.25373134328358,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 164.77230952081678,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4004991,
+          4004992,
+          4005136,
+          4005137,
+          4005138,
+          4005163,
+          4005164,
+          4005165,
+          4005168,
+          4005169,
+          4005197,
+          4005198,
+          4005199,
+          4005207,
+          4005208,
+          4005209,
+          4005214,
+          4005215,
+          4005216,
+          4005217
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 54.04505893809255,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0290750140377414,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.61389961389962,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 345.7692047166811,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005136,
+          4005137,
+          4005138,
+          4005163,
+          4005164,
+          4005165,
+          4005197,
+          4005207,
+          4005208,
+          4005209,
+          4005214,
+          4005215,
+          4005216,
+          4005220,
+          4005221,
+          4005222,
+          4005227,
+          4005229,
+          4005230,
+          4005231,
+          4005232,
+          4005233
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 55.070382435107604,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9753019441290735,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.51278928136419,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 333.5532648921431,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005136,
+          4005137,
+          4005138,
+          4005163,
+          4005164,
+          4005165,
+          4005220,
+          4005221,
+          4005222,
+          4005227,
+          4005229,
+          4005230,
+          4005231,
+          4005232,
+          4005233,
+          4005242,
+          4005243,
+          4005244,
+          4005252,
+          4005253,
+          4005254
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 56.03648587409407,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0350858506922358,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87063389391979,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 466.8237186621983,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005136,
+          4005137,
+          4005138,
+          4005163,
+          4005164,
+          4005165,
+          4005220,
+          4005221,
+          4005222,
+          4005242,
+          4005243,
+          4005244,
+          4005252,
+          4005253,
+          4005254,
+          4005258,
+          4005259,
+          4005260
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 57.05126140511129,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9854396065281448,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9854396065281448,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.8766954377312,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 272.9667710082961,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005136,
+          4005137,
+          4005138,
+          4005220,
+          4005221,
+          4005242,
+          4005243,
+          4005244,
+          4005252,
+          4005253,
+          4005254,
+          4005258,
+          4005259,
+          4005260,
+          4005268,
+          4005269,
+          4005270,
+          4005274,
+          4005275,
+          4005276
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 58.07011734705884,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75460122699387,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 57.90808844596923,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005136,
+          4005137,
+          4005268,
+          4005269,
+          4005274,
+          4005275,
+          4005276,
+          4005285,
+          4005286,
+          4005287,
+          4005297,
+          4005298,
+          4005299,
+          4005303,
+          4005304,
+          4005305,
+          4005308,
+          4005309,
+          4005310
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 59.03627793106716,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0350246289817464,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 351.90837385379376,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005274,
+          4005275,
+          4005276,
+          4005285,
+          4005286,
+          4005287,
+          4005297,
+          4005298,
+          4005299,
+          4005303,
+          4005304,
+          4005305,
+          4005308,
+          4005309,
+          4005310,
+          4005315,
+          4005316,
+          4005317,
+          4005321,
+          4005322,
+          4005323
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 60.04207305202726,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9942382689681676,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87546699875467,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 381.7874952837763,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005274,
+          4005275,
+          4005276,
+          4005297,
+          4005298,
+          4005299,
+          4005303,
+          4005304,
+          4005305,
+          4005308,
+          4005309,
+          4005310,
+          4005315,
+          4005316,
+          4005317,
+          4005480,
+          4005481,
+          4005482,
+          4005490,
+          4005491,
+          4005492
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 61.07270380004775,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9702796097639071,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.63680387409201,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 206.6695568797122,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005274,
+          4005275,
+          4005276,
+          4005297,
+          4005298,
+          4005299,
+          4005304,
+          4005315,
+          4005316,
+          4005480,
+          4005481,
+          4005482,
+          4005496,
+          4005497,
+          4005498,
+          4005512,
+          4005513,
+          4005514
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 62.03274530300405,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0416216350237495,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 432.272978534856,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005274,
+          4005275,
+          4005276,
+          4005297,
+          4005298,
+          4005304,
+          4005480,
+          4005481,
+          4005482,
+          4005496,
+          4005497,
+          4005498,
+          4005512,
+          4005513,
+          4005514,
+          4005535,
+          4005536,
+          4005537,
+          4005541,
+          4005542,
+          4005543,
+          4005550,
+          4005551,
+          4005552
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 63.05132761201821,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9817566937401958,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9817566937401958,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50920245398774,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 336.74254595288716,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005274,
+          4005275,
+          4005276,
+          4005496,
+          4005497,
+          4005498,
+          4005512,
+          4005513,
+          4005514,
+          4005550,
+          4005551,
+          4005552,
+          4005579,
+          4005580,
+          4005581,
+          4005584,
+          4005585,
+          4005586
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 64.067026124103,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9845441221996477,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75339087546239,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 254.99692764970874,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005274,
+          4005275,
+          4005276,
+          4005496,
+          4005497,
+          4005498,
+          4005579,
+          4005580,
+          4005581,
+          4005584,
+          4005585,
+          4005586,
+          4005589,
+          4005591,
+          4005592,
+          4005593,
+          4005597,
+          4005598,
+          4005599,
+          4005607,
+          4005608,
+          4005609
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 65.07427448406816,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9928038006779071,
+          "rss_bytes": 20336640,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.62825278810409,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 386.20067846370586,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005496,
+          4005497,
+          4005498,
+          4005579,
+          4005580,
+          4005581,
+          4005584,
+          4005585,
+          4005586,
+          4005589,
+          4005607,
+          4005608,
+          4005609,
+          4005613,
+          4005614,
+          4005615,
+          4005620,
+          4005621,
+          4005622,
+          4005629,
+          4005630,
+          4005631,
+          4005635,
+          4005636,
+          4005637
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 66.04539039905649,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.74160206718346,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 455.14648990724334,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005496,
+          4005497,
+          4005498,
+          4005579,
+          4005580,
+          4005581,
+          4005589,
+          4005613,
+          4005614,
+          4005615,
+          4005629,
+          4005630,
+          4005631,
+          4005635,
+          4005636,
+          4005637,
+          4005647,
+          4005649,
+          4005650,
+          4005651,
+          4005653,
+          4005654,
+          4005655
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 67.05212932208087,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9933061860724115,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9933061860724115,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50310559006212,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 402.2890053593266,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005496,
+          4005497,
+          4005498,
+          4005579,
+          4005580,
+          4005581,
+          4005589,
+          4005613,
+          4005614,
+          4005615,
+          4005629,
+          4005630,
+          4005635,
+          4005636,
+          4005637,
+          4005650,
+          4005653,
+          4005654,
+          4005655,
+          4005659,
+          4005660,
+          4005661
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 68.06512225605547,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.63008631319359,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 207.30648058524886,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005496,
+          4005497,
+          4005498,
+          4005589,
+          4005635,
+          4005636,
+          4005650,
+          4005653,
+          4005654,
+          4005655,
+          4005659,
+          4005660,
+          4005661,
+          4005669,
+          4005670,
+          4005671,
+          4005675,
+          4005676,
+          4005677,
+          4005686,
+          4005687,
+          4005688
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 69.07980907603633,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9855257605680446,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50678175092479,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 281.8603675224607,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005496,
+          4005497,
+          4005498,
+          4005589,
+          4005650,
+          4005653,
+          4005654,
+          4005655,
+          4005669,
+          4005686,
+          4005687,
+          4005688,
+          4005692,
+          4005693,
+          4005694
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 70.0535585860489,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.026958154759014,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87146529562982,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 185.87942601138155,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005496,
+          4005497,
+          4005589,
+          4005650,
+          4005653,
+          4005654,
+          4005655,
+          4005686,
+          4005687,
+          4005688,
+          4005692,
+          4005693,
+          4005694,
+          4005709,
+          4005710,
+          4005711,
+          4005716,
+          4005717,
+          4005719,
+          4005722,
+          4005723,
+          4005725,
+          4005767,
+          4005769,
+          4005773,
+          4005809
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 71.06165093299933,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9919726134466609,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87593052109182,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 356.1181682273512,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4005650,
+          4005686,
+          4005687,
+          4005688,
+          4005709,
+          4005710,
+          4005711,
+          4005716,
+          4005717,
+          4005719,
+          4005722,
+          4005723,
+          4005725,
+          4005767,
+          4005769,
+          4005773,
+          4005825,
+          4005826,
+          4005827,
+          4005853,
+          4005864,
+          4005869
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 72.07361456903163,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50617283950616,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 215.4227605002999,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4005650,
+          4005709,
+          4005710,
+          4005711,
+          4005722,
+          4005723,
+          4005725,
+          4005825,
+          4005826,
+          4005827,
+          4005923,
+          4005924,
+          4005925,
+          4005934,
+          4005935,
+          4005936
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 73.03201649803668,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0434035760321718,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 254.59047255184993,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4005650,
+          4005709,
+          4005710,
+          4005825,
+          4005826,
+          4005827,
+          4005923,
+          4005924,
+          4005925,
+          4005934,
+          4005935,
+          4005936,
+          4005942,
+          4005943,
+          4005944,
+          4005947,
+          4005948,
+          4005949,
+          4005952,
+          4005953,
+          4005954,
+          4005962,
+          4005963,
+          4005964
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 74.04572974902112,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.986472258332304,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.62962962962963,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 232.80745296642374,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4005650,
+          4005825,
+          4005826,
+          4005947,
+          4005948,
+          4005949,
+          4005952,
+          4005953,
+          4005954,
+          4005962,
+          4005963,
+          4005964,
+          4006009,
+          4006010,
+          4006011,
+          4006013,
+          4006014,
+          4006015,
+          4006019,
+          4006020,
+          4006021
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 75.05927270802204,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9866380019903004,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 379.8556307662657,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4005650,
+          4005947,
+          4005948,
+          4005949,
+          4005952,
+          4005953,
+          4005954,
+          4006009,
+          4006010,
+          4006011,
+          4006013,
+          4006014,
+          4006015,
+          4006019,
+          4006020,
+          4006021,
+          4006025,
+          4006026,
+          4006027,
+          4006036,
+          4006037,
+          4006038,
+          4006043,
+          4006044,
+          4006045
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 76.07225242408458,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9871865982539137,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87639060568603,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 267.52756812681065,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4005947,
+          4005948,
+          4006009,
+          4006013,
+          4006014,
+          4006015,
+          4006025,
+          4006026,
+          4006036,
+          4006037,
+          4006038,
+          4006043,
+          4006044,
+          4006045,
+          4006057,
+          4006061,
+          4006062,
+          4006065,
+          4006066,
+          4006067
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 77.04800679907203,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0248480822982384,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87163029525033,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 156.80175659163046,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4006043,
+          4006044,
+          4006045,
+          4006057,
+          4006061,
+          4006065,
+          4006066,
+          4006067,
+          4006073,
+          4006074,
+          4006075,
+          4006082,
+          4006084,
+          4006085,
+          4006094,
+          4006095,
+          4006096,
+          4006098,
+          4006099,
+          4006100,
+          4006103,
+          4006104,
+          4006105
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 78.0585768140154,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9895405416872961,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50556242274413,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 246.39559488013677,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4006065,
+          4006066,
+          4006073,
+          4006074,
+          4006082,
+          4006084,
+          4006085,
+          4006094,
+          4006095,
+          4006098,
+          4006099,
+          4006100,
+          4006103,
+          4006104,
+          4006105,
+          4006110,
+          4006111,
+          4006112
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 79.03575021005236,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0233598295406074,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.23076923076923,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 77.77534704508616,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4006103,
+          4006104,
+          4006105,
+          4006120,
+          4006121,
+          4006122,
+          4006130,
+          4006131,
+          4006132,
+          4006133,
+          4006134,
+          4006136,
+          4006140,
+          4006141,
+          4006143,
+          4006145,
+          4006146,
+          4006147,
+          4006154,
+          4006155,
+          4006156,
+          4006160,
+          4006161,
+          4006162
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 80.053126397077,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.982920588031989,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87730061349693,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 528.81127636121,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4004716,
+          4005589,
+          4006120,
+          4006121,
+          4006122,
+          4006130,
+          4006131,
+          4006132,
+          4006133,
+          4006134,
+          4006136,
+          4006140,
+          4006141,
+          4006143,
+          4006154,
+          4006155,
+          4006156,
+          4006160,
+          4006161,
+          4006162,
+          4006170,
+          4006171,
+          4006172
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 81.0630186770577,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9902046186738915,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.13151364764268,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 314.8850687382975,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4005589,
+          4006120,
+          4006121,
+          4006122,
+          4006132,
+          4006134,
+          4006136,
+          4006140,
+          4006141,
+          4006143,
+          4006170,
+          4006171,
+          4006176,
+          4006177,
+          4006178,
+          4006183,
+          4006184,
+          4006185,
+          4006198,
+          4006200,
+          4006201,
+          4006202
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 82.0741247710539,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9890158964898434,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87639060568603,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 425.2768354906326,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4005589,
+          4006132,
+          4006134,
+          4006136,
+          4006140,
+          4006141,
+          4006143,
+          4006176,
+          4006177,
+          4006178,
+          4006183,
+          4006184,
+          4006185,
+          4006198,
+          4006200,
+          4006201,
+          4006202,
+          4006205,
+          4006206,
+          4006207,
+          4006212,
+          4006213,
+          4006214,
+          4006222,
+          4006223,
+          4006224
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 83.03748583910055,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.038032398410742,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87029831387808,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 493.06538924510244,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4005589,
+          4006132,
+          4006134,
+          4006136,
+          4006140,
+          4006141,
+          4006143,
+          4006176,
+          4006177,
+          4006178,
+          4006198,
+          4006200,
+          4006201,
+          4006202,
+          4006205,
+          4006206,
+          4006207,
+          4006212,
+          4006213,
+          4006214,
+          4006222,
+          4006223,
+          4006224,
+          4006230,
+          4006231,
+          4006232
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 84.04944304609671,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75278121137207,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 303.37251207616094,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004068,
+          4004380,
+          4004584,
+          4004673,
+          4005589,
+          4006132,
+          4006134,
+          4006136,
+          4006176,
+          4006177,
+          4006178,
+          4006205,
+          4006222,
+          4006223,
+          4006224,
+          4006247,
+          4006251,
+          4006252,
+          4006253,
+          4006254,
+          4006255,
+          4006256,
+          4006263,
+          4006264,
+          4006265
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 85.06126100209076,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.97664015364812,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.98832007682406,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.63008631319359,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 394.3397106527999,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004380,
+          4004584,
+          4004673,
+          4006132,
+          4006134,
+          4006136,
+          4006176,
+          4006177,
+          4006178,
+          4006252,
+          4006254,
+          4006256,
+          4006263,
+          4006264,
+          4006265,
+          4006269,
+          4006270,
+          4006271,
+          4006275,
+          4006276,
+          4006277,
+          4006295,
+          4006296,
+          4006297
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 86.07480958104134,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.62871287128714,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 86.82366275044734,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004380,
+          4004584,
+          4004673,
+          4006132,
+          4006134,
+          4006275,
+          4006276,
+          4006295,
+          4006296,
+          4006297,
+          4006311,
+          4006312,
+          4006313,
+          4006320,
+          4006322,
+          4006323,
+          4006330,
+          4006331,
+          4006332
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 87.03515196510125,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0412952886369873,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0412952886369873,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.60886571056062,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 230.12625878877415,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004380,
+          4004584,
+          4004673,
+          4006311,
+          4006312,
+          4006313,
+          4006320,
+          4006322,
+          4006323,
+          4006330,
+          4006331,
+          4006332,
+          4006335,
+          4006337,
+          4006338,
+          4006345,
+          4006346,
+          4006347,
+          4006352,
+          4006353,
+          4006354,
+          4006382
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 88.05232785805129,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87760097919217,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 255.6096755753249,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4003547,
+          4004380,
+          4004584,
+          4004673,
+          4006311,
+          4006312,
+          4006313,
+          4006320,
+          4006322,
+          4006323,
+          4006335,
+          4006337,
+          4006352,
+          4006353,
+          4006354,
+          4006382,
+          4006385,
+          4006386,
+          4006387,
+          4006390,
+          4006391,
+          4006392
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 89.07505698408931,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9777760059243834,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75490196078431,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 172.08857704269147,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006311,
+          4006312,
+          4006313,
+          4006352,
+          4006353,
+          4006382,
+          4006385,
+          4006386,
+          4006387,
+          4006400,
+          4006401,
+          4006403,
+          4006406,
+          4006407,
+          4006408,
+          4006424,
+          4006435,
+          4006436,
+          4006438,
+          4006444,
+          4006446,
+          4006447,
+          4006448
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 90.062479268061,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0127379300958521,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 372.68755827527355,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006311,
+          4006312,
+          4006313,
+          4006382,
+          4006400,
+          4006401,
+          4006403,
+          4006406,
+          4006407,
+          4006408,
+          4006424,
+          4006435,
+          4006436,
+          4006438,
+          4006444,
+          4006446,
+          4006447,
+          4006448,
+          4006452,
+          4006453,
+          4006454,
+          4006462,
+          4006463,
+          4006464
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 91.07316456409171,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9894276724192193,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.50556242274413,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 157.31899991465585,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006400,
+          4006401,
+          4006403,
+          4006406,
+          4006407,
+          4006408,
+          4006424,
+          4006444,
+          4006468,
+          4006469,
+          4006470,
+          4006480,
+          4006481,
+          4006482,
+          4006486,
+          4006487,
+          4006488,
+          4006491,
+          4006492,
+          4006493,
+          4006496,
+          4006498,
+          4006499,
+          4006500
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 92.07185780711006,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0013084668298136,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87468671679198,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 385.50375972947825,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006400,
+          4006401,
+          4006403,
+          4006424,
+          4006444,
+          4006468,
+          4006469,
+          4006470,
+          4006486,
+          4006487,
+          4006488,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006505,
+          4006515,
+          4006516,
+          4006517,
+          4006521,
+          4006522,
+          4006523
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 93.07980954705272,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9921109914021207,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.62779156327544,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 340.2940700509274,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006400,
+          4006401,
+          4006403,
+          4006424,
+          4006444,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006515,
+          4006516,
+          4006517,
+          4006521,
+          4006522,
+          4006523,
+          4006528,
+          4006529,
+          4006530,
+          4006534,
+          4006535,
+          4006536,
+          4006540,
+          4006541,
+          4006542
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 94.06673282908741,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.36548223350253,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 386.04824400789244,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006400,
+          4006401,
+          4006403,
+          4006424,
+          4006444,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006515,
+          4006516,
+          4006517,
+          4006521,
+          4006522,
+          4006523,
+          4006534,
+          4006535,
+          4006536,
+          4006540,
+          4006541,
+          4006542,
+          4006599,
+          4006600,
+          4006601
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 95.03585332504008,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0318634309936652,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0318634309936652,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87113402061856,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 358.0566105548018,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006400,
+          4006401,
+          4006403,
+          4006424,
+          4006444,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006515,
+          4006516,
+          4006517,
+          4006521,
+          4006522,
+          4006523,
+          4006540,
+          4006599,
+          4006600,
+          4006601,
+          4006649,
+          4006650,
+          4006651,
+          4006659,
+          4006660,
+          4006661
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 96.06503298005555,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.39172749391727,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 218.62072273146347,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006424,
+          4006444,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006515,
+          4006516,
+          4006521,
+          4006599,
+          4006600,
+          4006601,
+          4006659,
+          4006660,
+          4006661,
+          4006666,
+          4006667,
+          4006668,
+          4006678,
+          4006679,
+          4006681,
+          4006682,
+          4006683,
+          4006684
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 97.04455957107712,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0209013304652408,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.74489795918367,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 288.91507652166314,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006424,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006599,
+          4006600,
+          4006601,
+          4006678,
+          4006679,
+          4006681,
+          4006682,
+          4006683,
+          4006689,
+          4006690,
+          4006691,
+          4006696,
+          4006697,
+          4006699,
+          4006700,
+          4006701,
+          4006702
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 98.07917179306969,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9665457054760919,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.8792270531401,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 269.6662518278296,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006424,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006678,
+          4006679,
+          4006681,
+          4006696,
+          4006697,
+          4006699,
+          4006700,
+          4006701,
+          4006702,
+          4006733,
+          4006736,
+          4006737,
+          4006738,
+          4006741,
+          4006742,
+          4006743,
+          4006751,
+          4006752,
+          4006753,
+          4006756,
+          4006757,
+          4006758
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 99.06112573703285,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0183777010599941,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.7452229299363,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 453.1780769716975,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006424,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006696,
+          4006697,
+          4006700,
+          4006733,
+          4006736,
+          4006737,
+          4006738,
+          4006751,
+          4006752,
+          4006753,
+          4006756,
+          4006757,
+          4006758,
+          4006768,
+          4006771,
+          4006772,
+          4006773,
+          4006774,
+          4006775
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 100.06486768904142,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.996271997996019,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.996271997996019,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87515605493134,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 443.34103910822853,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006498,
+          4006499,
+          4006500,
+          4006696,
+          4006697,
+          4006700,
+          4006756,
+          4006757,
+          4006758,
+          4006768,
+          4006771,
+          4006772,
+          4006773,
+          4006774,
+          4006775,
+          4006786,
+          4006790,
+          4006792,
+          4006909,
+          4006911,
+          4006912,
+          4006913
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 101.06886010605376,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.996023458997607,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87546699875467,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 233.06948940544,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006498,
+          4006499,
+          4006696,
+          4006697,
+          4006700,
+          4006786,
+          4006790,
+          4006792,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4006917,
+          4006918,
+          4006919,
+          4006926,
+          4006929,
+          4006930,
+          4006932,
+          4006934,
+          4006935,
+          4006936
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 102.05628410901409,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87341772151899,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 386.8652158087645,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006696,
+          4006697,
+          4006700,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4006917,
+          4006918,
+          4006919,
+          4006934,
+          4006935,
+          4006936,
+          4006940,
+          4006941,
+          4006942,
+          4006946,
+          4006947,
+          4006948,
+          4006955,
+          4006956,
+          4006957
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 103.06045425904449,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9958471679024934,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87562189054727,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 404.31395016841225,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006696,
+          4006697,
+          4006700,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4006917,
+          4006918,
+          4006934,
+          4006935,
+          4006936,
+          4006946,
+          4006947,
+          4006948,
+          4006955,
+          4006956,
+          4006957,
+          4006961,
+          4006962,
+          4006963
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 104.0610897630686,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9993648995847664,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.24906132665832,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 190.87869582069035,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006696,
+          4006697,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4006934,
+          4006935,
+          4006936,
+          4006972,
+          4006973,
+          4006974,
+          4006977,
+          4006978,
+          4006979,
+          4006991,
+          4006992,
+          4006996,
+          4007000,
+          4007001,
+          4007002,
+          4007007,
+          4007008,
+          4007009
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 105.03362541110255,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 2.0564798874397394,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.61439588688947,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 427.74781658746576,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4006934,
+          4006935,
+          4006936,
+          4006972,
+          4006973,
+          4006974,
+          4006991,
+          4006992,
+          4006996,
+          4007000,
+          4007001,
+          4007002,
+          4007007,
+          4007008,
+          4007009,
+          4007053,
+          4007054,
+          4007055,
+          4007058,
+          4007059
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 106.06079462205525,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9735494301591195,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.63369963369964,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 73.9897566920931,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4006934,
+          4006935,
+          4006991,
+          4006992,
+          4007058,
+          4007059,
+          4007060,
+          4007064,
+          4007065,
+          4007066,
+          4007087,
+          4007088,
+          4007089,
+          4007097,
+          4007099,
+          4007100,
+          4007102,
+          4007103,
+          4007104
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 107.04679779603612,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87341772151899,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 233.2649691901136,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4007064,
+          4007065,
+          4007066,
+          4007097,
+          4007099,
+          4007102,
+          4007103,
+          4007104,
+          4007110,
+          4007111,
+          4007112,
+          4007118,
+          4007119,
+          4007120
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 108.05594005901366,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9909405607980654,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9909405607980654,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 212.061280010786,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4006909,
+          4006911,
+          4006912,
+          4006913,
+          4007110,
+          4007111,
+          4007112,
+          4007118,
+          4007119,
+          4007120,
+          4007127,
+          4007128,
+          4007129,
+          4007130,
+          4007131,
+          4007132
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 109.05561442405451,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.625468164794,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 156.05081560096414,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007110,
+          4007111,
+          4007112,
+          4007118,
+          4007119,
+          4007129,
+          4007130,
+          4007132,
+          4007147,
+          4007148,
+          4007149,
+          4007161,
+          4007162,
+          4007164,
+          4007166,
+          4007167,
+          4007168,
+          4007177,
+          4007178,
+          4007179
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 110.06860800902359,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9871730826711231,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9871730826711231,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.13366336633663,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 310.9595210414038,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007110,
+          4007111,
+          4007112,
+          4007129,
+          4007130,
+          4007132,
+          4007147,
+          4007148,
+          4007149,
+          4007177,
+          4007178,
+          4007193,
+          4007202,
+          4007203,
+          4007204,
+          4007212,
+          4007213,
+          4007214,
+          4007217,
+          4007218,
+          4007219,
+          4007223,
+          4007224,
+          4007225
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 111.07468920701649,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 339.93280133082663,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007129,
+          4007130,
+          4007132,
+          4007147,
+          4007148,
+          4007149,
+          4007193,
+          4007202,
+          4007203,
+          4007204,
+          4007212,
+          4007217,
+          4007218,
+          4007219,
+          4007223,
+          4007224,
+          4007225,
+          4007230,
+          4007231,
+          4007232,
+          4007239,
+          4007240,
+          4007241
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 112.05019780306611,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0251062922967134,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.61587708066581,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 388.51528478045435,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007147,
+          4007148,
+          4007149,
+          4007193,
+          4007217,
+          4007218,
+          4007219,
+          4007230,
+          4007231,
+          4007232,
+          4007239,
+          4007240,
+          4007241,
+          4007245,
+          4007246,
+          4007247,
+          4007257,
+          4007258,
+          4007260,
+          4007262,
+          4007263,
+          4007265,
+          4007268,
+          4007269,
+          4007270
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 113.0342523130821,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0162038686086066,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87277353689568,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 413.5949745237029,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007147,
+          4007148,
+          4007149,
+          4007193,
+          4007217,
+          4007218,
+          4007219,
+          4007239,
+          4007240,
+          4007245,
+          4007246,
+          4007257,
+          4007258,
+          4007260,
+          4007262,
+          4007263,
+          4007265,
+          4007268,
+          4007269,
+          4007270,
+          4007278,
+          4007286,
+          4007287,
+          4007288
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 114.06008846510667,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9748145432644604,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.7563946406821,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 84.80886526400806,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007193,
+          4007278,
+          4007286,
+          4007287,
+          4007288,
+          4007314,
+          4007315,
+          4007316,
+          4007319,
+          4007320,
+          4007322,
+          4007337,
+          4007340,
+          4007341,
+          4007342
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 115.0374968610704,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.87212276214834,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 252.7091040142529,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007193,
+          4007278,
+          4007286,
+          4007287,
+          4007288,
+          4007314,
+          4007315,
+          4007316,
+          4007319,
+          4007320,
+          4007322,
+          4007337,
+          4007347,
+          4007348,
+          4007349,
+          4007353,
+          4007354,
+          4007355,
+          4007360,
+          4007361,
+          4007362,
+          4007363,
+          4007364,
+          4007365
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 116.05412823904771,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9836406997289335,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9836406997289335,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.75369458128078,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 172.13712245256337,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007193,
+          4007278,
+          4007286,
+          4007287,
+          4007288,
+          4007337,
+          4007347,
+          4007348,
+          4007353,
+          4007354,
+          4007355,
+          4007360,
+          4007380,
+          4007381,
+          4007382,
+          4007388,
+          4007391,
+          4007393,
+          4007396,
+          4007397,
+          4007398
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 117.07098004303407,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 100.0,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 334.3653408167255,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007193,
+          4007278,
+          4007286,
+          4007287,
+          4007288,
+          4007337,
+          4007353,
+          4007380,
+          4007381,
+          4007382,
+          4007388,
+          4007391,
+          4007393,
+          4007396,
+          4007397,
+          4007398,
+          4007415,
+          4007416,
+          4007417,
+          4007420,
+          4007421,
+          4007422,
+          4007433,
+          4007434,
+          4007435
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 118.0378912530141,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 1.0342211256612257,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 1.0342211256612257,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.74093264248705,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 428.1675460237474,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007193,
+          4007278,
+          4007286,
+          4007287,
+          4007288,
+          4007337,
+          4007380,
+          4007381,
+          4007382,
+          4007415,
+          4007416,
+          4007417,
+          4007420,
+          4007421,
+          4007422,
+          4007433,
+          4007434,
+          4007435,
+          4007438,
+          4007439,
+          4007440,
+          4007451,
+          4007452,
+          4007453,
+          4007454,
+          4007455,
+          4007456
+        ]
+      }
+    },
+    {
+      "elapsed_seconds": 119.04525510210078,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 20652032,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "rss_bytes": 19111936,
+          "threads": 3
+        }
+      },
+      "host_cpu_percent_total_capacity": 99.62779156327544,
+      "bitbake": {
+        "cpu_percent_one_logical_cpu": 327.5876936612229,
+        "processes": [
+          3970708,
+          3970904,
+          3973806,
+          4001304,
+          4001305,
+          4001307,
+          4001310,
+          4003357,
+          4003360,
+          4003361,
+          4003363,
+          4003365,
+          4004380,
+          4004584,
+          4006382,
+          4006496,
+          4007193,
+          4007278,
+          4007286,
+          4007287,
+          4007288,
+          4007337,
+          4007438,
+          4007451,
+          4007452,
+          4007453,
+          4007454,
+          4007455,
+          4007456,
+          4007462,
+          4007464,
+          4007465,
+          4007468,
+          4007469,
+          4007470,
+          4007473,
+          4007474,
+          4007475,
+          4007482,
+          4007483,
+          4007484
+        ]
+      }
+    }
+  ]
+}

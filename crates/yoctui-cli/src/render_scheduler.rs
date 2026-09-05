@@ -2,8 +2,11 @@
 
 use yoctui_model::{App, BuildStatus, Screen, TaskState};
 
-pub(crate) const ANIMATION_INTERVAL: std::time::Duration = std::time::Duration::from_millis(200);
+pub(crate) const ANIMATION_INTERVAL: std::time::Duration = std::time::Duration::from_millis(250);
 pub(crate) const ELAPSED_REFRESH_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
+pub(crate) const ORDINARY_FRAME_INTERVAL: std::time::Duration = ANIMATION_INTERVAL;
+pub(crate) const SATURATED_FRAME_INTERVAL: std::time::Duration = std::time::Duration::from_secs(1);
+const SATURATED_HOST_CPU_PERCENT: u8 = 90;
 
 /// Whether the foreground workspace contains a visible indeterminate activity
 /// glyph. Hidden work must not drive animation frames.
@@ -41,6 +44,23 @@ pub(crate) fn has_live_elapsed_time(app: &App) -> bool {
     )
 }
 
+pub(crate) fn ordinary_frame_interval(app: &App) -> std::time::Duration {
+    if has_live_elapsed_time(app)
+        && app
+            .host_telemetry
+            .cpu_utilization_percent
+            .is_some_and(|cpu| cpu >= SATURATED_HOST_CPU_PERCENT)
+    {
+        SATURATED_FRAME_INTERVAL
+    } else {
+        ORDINARY_FRAME_INTERVAL
+    }
+}
+
+pub(crate) fn animation_interval(app: &App) -> std::time::Duration {
+    ordinary_frame_interval(app)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum RenderCause {
     Initial,
@@ -62,16 +82,20 @@ pub(crate) struct RenderMetrics {
 #[derive(Debug)]
 pub(crate) struct RenderScheduler {
     pending: bool,
+    urgent: bool,
     metrics: RenderMetrics,
     last_cause: Option<RenderCause>,
+    last_frame: Option<std::time::Instant>,
 }
 
 impl Default for RenderScheduler {
     fn default() -> Self {
         let mut scheduler = Self {
             pending: false,
+            urgent: false,
             metrics: RenderMetrics::default(),
             last_cause: None,
+            last_frame: None,
         };
         scheduler.invalidate(RenderCause::Initial);
         scheduler
@@ -85,6 +109,10 @@ impl RenderScheduler {
             self.metrics.coalesced = self.metrics.coalesced.saturating_add(1);
         }
         self.pending = true;
+        self.urgent |= matches!(
+            cause,
+            RenderCause::Initial | RenderCause::Input | RenderCause::Resize
+        );
         self.last_cause = Some(cause);
     }
 
@@ -94,12 +122,31 @@ impl RenderScheduler {
         }
     }
 
+    #[cfg(test)]
     pub(crate) fn take_frame(&mut self) -> bool {
+        self.take_frame_with_interval(ORDINARY_FRAME_INTERVAL)
+    }
+
+    pub(crate) fn take_frame_with_interval(&mut self, interval: std::time::Duration) -> bool {
+        self.take_frame_at(std::time::Instant::now(), interval)
+    }
+
+    fn take_frame_at(&mut self, now: std::time::Instant, interval: std::time::Duration) -> bool {
         if !self.pending {
             self.metrics.skipped_checks = self.metrics.skipped_checks.saturating_add(1);
             return false;
         }
+        if !self.urgent
+            && self
+                .last_frame
+                .is_some_and(|last| now.saturating_duration_since(last) < interval)
+        {
+            self.metrics.skipped_checks = self.metrics.skipped_checks.saturating_add(1);
+            return false;
+        }
         self.pending = false;
+        self.urgent = false;
+        self.last_frame = Some(now);
         self.metrics.frames = self.metrics.frames.saturating_add(1);
         true
     }
@@ -146,6 +193,43 @@ mod tests {
         assert_eq!(scheduler.last_cause(), Some(RenderCause::Input));
         assert!(scheduler.take_frame());
         assert_eq!(scheduler.metrics().frames, 2);
+    }
+
+    #[test]
+    fn ordinary_frames_are_coalesced_to_four_hertz_but_input_bypasses_the_limit() {
+        let start = std::time::Instant::now();
+        let mut scheduler = RenderScheduler::default();
+        assert!(scheduler.take_frame_at(start, ORDINARY_FRAME_INTERVAL));
+
+        scheduler.invalidate(RenderCause::State);
+        assert!(!scheduler.take_frame_at(
+            start + std::time::Duration::from_millis(249),
+            ORDINARY_FRAME_INTERVAL
+        ));
+        scheduler.invalidate(RenderCause::Telemetry);
+        assert!(scheduler.take_frame_at(start + ORDINARY_FRAME_INTERVAL, ORDINARY_FRAME_INTERVAL));
+
+        scheduler.invalidate(RenderCause::Input);
+        assert!(scheduler.take_frame_at(
+            start + ORDINARY_FRAME_INTERVAL + std::time::Duration::from_millis(1),
+            ORDINARY_FRAME_INTERVAL
+        ));
+        assert_eq!(scheduler.metrics().frames, 3);
+    }
+
+    #[test]
+    fn saturated_live_builds_reduce_visual_freshness_without_affecting_input() {
+        let mut app = App::new(16, 16 * 1024);
+        app.build.status = BuildStatus::Running;
+        app.host_telemetry.cpu_utilization_percent = Some(99);
+        assert_eq!(ordinary_frame_interval(&app), SATURATED_FRAME_INTERVAL);
+        assert_eq!(animation_interval(&app), SATURATED_FRAME_INTERVAL);
+
+        app.build.status = BuildStatus::Completed;
+        assert_eq!(ordinary_frame_interval(&app), ORDINARY_FRAME_INTERVAL);
+        app.build.status = BuildStatus::Running;
+        app.host_telemetry.cpu_utilization_percent = Some(89);
+        assert_eq!(ordinary_frame_interval(&app), ORDINARY_FRAME_INTERVAL);
     }
 
     #[test]
@@ -202,18 +286,26 @@ mod tests {
     fn presentation_cadences_are_explicitly_bounded() {
         assert!(ANIMATION_INTERVAL >= std::time::Duration::from_millis(100));
         assert!(ANIMATION_INTERVAL <= std::time::Duration::from_millis(250));
+        assert_eq!(
+            ORDINARY_FRAME_INTERVAL,
+            std::time::Duration::from_millis(250)
+        );
         assert_eq!(ELAPSED_REFRESH_INTERVAL, std::time::Duration::from_secs(1));
     }
 
     #[test]
-    fn ten_hertz_live_budget_coalesces_many_updates_per_frame() {
+    fn four_hertz_live_budget_coalesces_many_updates_per_frame() {
+        let start = std::time::Instant::now();
         let mut scheduler = RenderScheduler::default();
-        assert!(scheduler.take_frame());
+        assert!(scheduler.take_frame_at(start, ORDINARY_FRAME_INTERVAL));
         for _ in 0..10 {
             for _ in 0..64 {
                 scheduler.invalidate(RenderCause::State);
             }
-            assert!(scheduler.take_frame());
+            assert!(scheduler.take_frame_at(
+                start + ORDINARY_FRAME_INTERVAL * (scheduler.metrics().frames as u32),
+                ORDINARY_FRAME_INTERVAL
+            ));
         }
         let metrics = scheduler.metrics();
         assert_eq!(metrics.frames, 11);

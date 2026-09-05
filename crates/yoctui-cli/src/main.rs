@@ -13,8 +13,8 @@ use crossterm::{
 };
 use ratatui::Terminal;
 use render_scheduler::{
-    ANIMATION_INTERVAL, ELAPSED_REFRESH_INTERVAL, RenderCause, RenderScheduler,
-    has_live_elapsed_time, has_visible_indeterminate_activity,
+    ELAPSED_REFRESH_INTERVAL, RenderCause, RenderScheduler, animation_interval,
+    has_live_elapsed_time, has_visible_indeterminate_activity, ordinary_frame_interval,
 };
 use serde::{Deserialize, Serialize};
 use std::{
@@ -2479,7 +2479,7 @@ fn daemon_replay_is_bounded(event_count: usize) -> bool {
 }
 
 const DAEMON_IDLE_WAIT: Duration = Duration::from_millis(100);
-const DAEMON_ACTIVE_WAIT: Duration = Duration::from_millis(1);
+const DAEMON_ACTIVE_WAIT: Duration = Duration::from_millis(50);
 
 fn daemon_has_active_work(snapshot: &yoctui_protocol::daemon::DaemonSnapshot) -> bool {
     snapshot.jobs.iter().any(|job| {
@@ -11280,6 +11280,7 @@ async fn tui(
     let mut next_elapsed_refresh = Instant::now();
     let frame_interval = interactive_frame_interval(refresh);
     let mut render_scheduler = RenderScheduler::default();
+    let render_measurement_started = Instant::now();
     let mut prefix_state = PrefixState::default();
     #[cfg(unix)]
     let mut termination = termination_receiver()?;
@@ -11441,7 +11442,7 @@ async fn tui(
         let visible_animation = has_visible_indeterminate_activity(&app);
         if visible_animation && presentation_now >= next_animation_tick {
             let _ = update(&mut app, Action::Tick);
-            next_animation_tick = presentation_now + ANIMATION_INTERVAL;
+            next_animation_tick = presentation_now + animation_interval(&app);
             render_scheduler.invalidate(RenderCause::Presentation);
         } else if !visible_animation {
             // Returning to an animated workspace shows activity immediately,
@@ -11459,7 +11460,7 @@ async fn tui(
             terminal.clear()?;
             render_scheduler.invalidate(RenderCause::Resize);
         }
-        if render_scheduler.take_frame() {
+        if render_scheduler.take_frame_with_interval(ordinary_frame_interval(&app)) {
             terminal.draw(|f| render(f, &app))?;
         }
         if event::poll(frame_interval)? {
@@ -14444,6 +14445,21 @@ async fn tui(
         }
     }
     let render_metrics = render_scheduler.metrics();
+    if let Some(path) = std::env::var_os("YOCTUI_PERFORMANCE_METRICS_PATH") {
+        let elapsed_seconds = render_measurement_started.elapsed().as_secs_f64();
+        let report = serde_json::json!({
+            "schema": "yoctui.performance.render.v1",
+            "elapsed_seconds": elapsed_seconds,
+            "requests": render_metrics.requests,
+            "frames": render_metrics.frames,
+            "coalesced": render_metrics.coalesced,
+            "skipped_checks": render_metrics.skipped_checks,
+            "frames_per_second": render_metrics.frames as f64 / elapsed_seconds.max(f64::EPSILON),
+        });
+        if let Err(error) = std::fs::write(path, format!("{report}\n")) {
+            tracing::warn!(%error, "could not write requested render performance metrics");
+        }
+    }
     tracing::debug!(
         requests = render_metrics.requests,
         frames = render_metrics.frames,
@@ -21776,7 +21792,7 @@ esac"#,
         assert_eq!(daemon_service_wait(false), DAEMON_IDLE_WAIT);
         assert_eq!(daemon_service_wait(true), DAEMON_ACTIVE_WAIT);
         assert!(DAEMON_IDLE_WAIT >= Duration::from_millis(50));
-        assert!(DAEMON_ACTIVE_WAIT <= Duration::from_millis(5));
+        assert!(DAEMON_ACTIVE_WAIT <= Duration::from_millis(50));
     }
 
     #[test]

@@ -7275,18 +7275,18 @@ notes = "In v0.1.46 the release endurance gate retained 1,800 one-second post-wa
 id = "PERF-REAL-POKY-001"
 milestone = "M46"
 title = "Validate responsiveness during a real saturated Poky build"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 814
 required = true
 depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
 verify = ["./scripts/verify-performance.sh --real-poky-evidence"]
-notes = "Capture sustained supported-Poky execution with daemon/client/BitBake CPU, input and IPC latency, continuity, render rate, memory, and queue-pressure evidence."
+notes = "In v0.1.47 an isolated production daemon and 160x50 client ran a daemon-owned Poky 6.0.2 linux-yocto do_compile for 120 sustained seconds at 99.6646% host CPU. The release binary measured 0.3998% daemon, 0.5439% client, and 0.9662% combined CPU of one logical CPU; input p95 was 5.3843 ms, cancellation acknowledgement 2.9003 ms, and fresh attach 57.5854 ms. Queue depth peaked at 28/256 with zero backend disconnects, forced resyncs, reliable waits, or cosmetic drops. Exact raw samples, repository/diff/process/binary/source hashes, adaptive 1 Hz saturation rendering, and a fixture-rejecting offline verifier are retained."
 
 [[task]]
 id = "PERF-REGRESSION-001"
 milestone = "M46"
 title = "Track machine-readable performance regressions"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 815
 required = true
 depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]

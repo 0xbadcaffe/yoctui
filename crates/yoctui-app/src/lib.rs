@@ -1863,6 +1863,8 @@ pub struct DaemonClientSnapshot {
     pub status: yoctui_model::ClientReplicaStatus,
     pub snapshot: Option<yoctui_protocol::daemon::DaemonSnapshot>,
     pub telemetry: Option<yoctui_protocol::daemon::DaemonTelemetry>,
+    compatibility_reconciled: bool,
+    reconciled_compatibility_generation: Option<u64>,
 }
 
 impl Default for DaemonClientSnapshot {
@@ -1871,6 +1873,8 @@ impl Default for DaemonClientSnapshot {
             status: yoctui_model::ClientReplicaStatus::Disconnected,
             snapshot: None,
             telemetry: None,
+            compatibility_reconciled: false,
+            reconciled_compatibility_generation: None,
         }
     }
 }
@@ -1883,6 +1887,8 @@ impl DaemonClientSnapshot {
     pub fn replace(&mut self, snapshot: yoctui_protocol::daemon::DaemonSnapshot) {
         self.snapshot = Some(snapshot);
         self.telemetry = None;
+        self.compatibility_reconciled = false;
+        self.reconciled_compatibility_generation = None;
         self.status = yoctui_model::ClientReplicaStatus::Current;
     }
 
@@ -1979,7 +1985,7 @@ impl DaemonClientSnapshot {
         Ok(())
     }
 
-    pub fn install_app(&self, app: &mut yoctui_model::App) {
+    pub fn install_app(&mut self, app: &mut yoctui_model::App) {
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
         let wire = (self.status == yoctui_model::ClientReplicaStatus::Current)
             .then(|| {
@@ -1988,27 +1994,36 @@ impl DaemonClientSnapshot {
                     .and_then(|snapshot| snapshot.compatibility.as_ref())
             })
             .flatten();
-        match wire {
-            Some(wire) => match compatibility_model_snapshot(wire) {
-                Ok(authority) => {
-                    if let Err(error) =
-                        yoctui_model::install_workspace_compatibility(app, authority)
-                    {
+        let wire_generation = wire.map(|wire| wire.generation);
+        let reconcile_compatibility = self.status != yoctui_model::ClientReplicaStatus::Current
+            || !self.compatibility_reconciled
+            || self.reconciled_compatibility_generation != wire_generation;
+        if reconcile_compatibility {
+            match wire {
+                Some(wire) => match compatibility_model_snapshot(wire) {
+                    Ok(authority) => {
+                        if let Err(error) =
+                            yoctui_model::install_workspace_compatibility(app, authority)
+                        {
+                            app.notification = Some(format!(
+                                "Compatibility authority update was rejected: {error}"
+                            ));
+                        }
+                    }
+                    Err(error) => {
+                        yoctui_model::invalidate_workspace_compatibility(app);
                         app.notification = Some(format!(
-                            "Compatibility authority update was rejected: {error}"
+                            "Compatibility authority could not be decoded and was invalidated: {error}"
                         ));
                     }
-                }
-                Err(error) => {
+                },
+                None => {
                     yoctui_model::invalidate_workspace_compatibility(app);
-                    app.notification = Some(format!(
-                        "Compatibility authority could not be decoded and was invalidated: {error}"
-                    ));
                 }
-            },
-            None => {
-                yoctui_model::invalidate_workspace_compatibility(app);
             }
+            self.compatibility_reconciled =
+                self.status == yoctui_model::ClientReplicaStatus::Current;
+            self.reconciled_compatibility_generation = wire_generation;
         }
         if self.status == yoctui_model::ClientReplicaStatus::Current {
             if let Some(snapshot) = &self.snapshot
@@ -2080,6 +2095,8 @@ impl DaemonClientSnapshot {
 
     pub fn disconnect(&mut self) {
         self.status = yoctui_model::ClientReplicaStatus::Disconnected;
+        self.compatibility_reconciled = false;
+        self.reconciled_compatibility_generation = None;
     }
 
     pub fn disconnect_app(&mut self, app: &mut yoctui_model::App) {
@@ -7701,6 +7718,51 @@ mod tests {
             2
         );
         assert!(app.notification.as_deref().unwrap().contains("stale"));
+    }
+
+    #[test]
+    fn compatibility_decode_failure_is_not_repeated_for_unrelated_events() {
+        let authority = compatibility_workspace_authority(1).normalize().unwrap();
+        let mut unknown = daemon_compatibility_protocol(&authority);
+        unknown.capabilities[0].id = "future.unregistered.capability".into();
+        let mut snapshot = compatibility_workspace_daemon_snapshot(&authority);
+        snapshot.compatibility = Some(unknown);
+        let next_sequence = snapshot.sequence + 1;
+        let next_generation = snapshot.generation + 1;
+
+        let mut app = yoctui_model::App::new(16, 4096);
+        let mut client = DaemonClientSnapshot::default();
+        client.replace_app(&mut app, snapshot);
+        assert!(
+            app.notification
+                .take()
+                .unwrap()
+                .contains("unknown capability ID")
+        );
+
+        client
+            .apply_event_to_app(
+                &mut app,
+                &yoctui_protocol::daemon::SequencedEvent {
+                    sequence: next_sequence,
+                    generation: next_generation,
+                    event: yoctui_protocol::daemon::DaemonEvent::Telemetry(
+                        yoctui_protocol::daemon::DaemonTelemetry {
+                            uptime_seconds: 1,
+                            bitbake: yoctui_protocol::daemon::LifecycleState::Running,
+                            connected_clients: 1,
+                            active_jobs: 1,
+                            pty_sessions: 0,
+                            queue_depth: 0,
+                            pressure: yoctui_protocol::daemon::DaemonPressureCounters::default(),
+                            memory_bytes: None,
+                            recovery: yoctui_protocol::daemon::DaemonRecoveryState::CleanStart,
+                        },
+                    ),
+                },
+            )
+            .unwrap();
+        assert!(app.notification.is_none());
     }
 
     #[test]
