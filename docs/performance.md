@@ -178,6 +178,17 @@ that IPC backpressure passes:
 ./scripts/verify-ipc-continuity.sh --event-flood
 ```
 
+`scripts/test-idle-event-loops.py` runs an isolated daemon with no build
+environment, clients, jobs, or PTYs. It samples process CPU and voluntary
+context switches for five seconds and bounds shutdown latency. The focused
+gate also rejects source regressions to the former one-millisecond
+sleep/retry listener, unconditional idle frame rendering, and inactive local
+backend polling:
+
+```sh
+./scripts/verify-performance.sh --event-loops
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

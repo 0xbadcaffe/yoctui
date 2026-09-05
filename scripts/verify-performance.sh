@@ -285,6 +285,7 @@ paths = {
     "idle-daemon-baseline.json": Path("artifacts/performance/baseline/idle-daemon.json"),
     "idle-attached-client-baseline.json": Path("artifacts/performance/baseline/idle-attached-client.json"),
 }
+
 if set(artifacts) != set(paths):
     raise SystemExit("wakeup audit artifact set is incomplete")
 for name, path in paths.items():
@@ -321,6 +322,28 @@ print(f"wakeup audit valid: {len(sources)} timer sources at {revision[:12]}")
 PY
 }
 
+verify_event_loops() {
+  python3 - <<'PY'
+from pathlib import Path
+
+daemon = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+ipc = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
+if "listener.accept(Duration::from_millis(1))" in daemon:
+    raise SystemExit("daemon listener regressed to one-millisecond polling")
+if "thread::sleep(CONNECT_RETRY_INTERVAL.min(timeout))" in ipc.split("impl DaemonListener", 1)[1].split("impl Drop", 1)[0]:
+    raise SystemExit("daemon listener regressed to sleep-based readiness polling")
+if "terminal.draw(|f| render(f, &app))?;\n        if event::poll" in daemon:
+    raise SystemExit("interactive client regressed to unconditional idle rendering")
+if "if build_jobs.active_job_id().is_some()" not in daemon:
+    raise SystemExit("idle client must not poll the inactive local BitBake backend")
+print("event-loop source contracts valid")
+PY
+  cargo build -q -p yoctui --bin yoctui
+  cargo test -q -p yoctui-protocol daemon_ipc
+  cargo test -q -p yoctui --bin yoctui idle_daemon_waits_without_delaying_attached_or_active_work
+  python3 scripts/test-idle-event-loops.py --binary target/debug/yoctui
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -339,6 +362,13 @@ case "$mode" in
     verify_baseline
     verify_profiles
     verify_wakeups
+    ;;
+  --event-loops)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
     ;;
   all)
     verify_contract

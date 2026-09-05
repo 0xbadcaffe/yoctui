@@ -3554,3 +3554,15 @@ generated and received critical sets, daemon RSS, sequence monotonicity, snapsho
 replacement, declared model bounds, and the current unbounded supervisor-ingress
 failure. A harness pass means the known failure was detected; only the later
 strict IPC/backpressure gate may claim critical-event retention.
+
+The daemon's Unix listener uses kernel readiness waiting rather than a
+sleep/retry accept loop. With no client, active job, or active PTY, the outer
+supervisor loop blocks for a bounded 100 ms shutdown interval; a connecting
+socket wakes it immediately. Active work retains the short servicing slice.
+The interactive client carries an explicit redraw request across loop passes:
+input, daemon events, completed local work, telemetry, resize, and visible
+time-sensitive presentation invalidate the frame, while an unchanged idle
+poll does not render. Inactive local BitBake and devtool backends are not
+polled. The focused Linux gate bounds idle daemon CPU, context switches, and
+SIGTERM latency, while protocol tests prove readiness wakes before a long
+accept deadline.

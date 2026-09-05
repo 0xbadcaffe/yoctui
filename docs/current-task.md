@@ -2,41 +2,41 @@
 
 ## Task
 
-**ID:** PERF-EVENTLOOP-001
-**Title:** Eliminate idle busy loops
+**ID:** PERF-RENDER-001
+**Title:** Make rendering dirty and event driven
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Use the captured baseline, profiles, and wakeup audit to make every long-lived
-Yoctui loop block efficiently when idle. Remove unconditional short polling,
-spinning receives, and unchanged periodic work without changing event ordering,
-input correctness, cancellation, PTY ownership, or daemon/client liveness.
+Complete the measured rendering optimization by giving every meaningful model
+mutation an explicit, coalesced invalidation path and rendering only when the
+visible frame can change. Record render attempts, rendered frames, and skipped
+identical requests without coupling keyboard processing to render cadence.
 
 ## Dependencies
 
-- PERF-FLAMEGRAPH-001 — DONE
 - PERF-WAKEUPS-001 — DONE
+- PERF-EVENTLOOP-001 — DONE
 
 ## Definition of done
 
-- The daemon listener and supervisor loop blocks when there are no clients,
-  jobs, PTYs, pending operations, or due telemetry samples.
-- Client input/IPC waiting does not spin and does not force redraw by itself.
-- Every long-lived `try_recv`, poll, reconnect, PTY, log/job/status, and timer
-  loop has an explicit blocking or bounded-notification contract.
-- No zero-duration sleep, repeated unchanged metadata/capability/filesystem
-  probing, or idle redraw remains.
-- Focused tests measure bounded idle wakeups and prove prompt notification for
-  daemon commands, backend events, input, PTY output, and shutdown.
-- The performance verifier rejects regressions to the audited busy-loop forms.
+- Input, meaningful daemon/backend/local state changes, resize, and due visible
+  timers request a frame.
+- Multiple requests before a frame are coalesced.
+- Unchanged state and hidden timers do not render identical frames.
+- Elapsed-time refresh is at most 1 Hz when reduced motion removes animation.
+- Active normal-build rendering remains at most 10 frames/s; PTY publication
+  retains its separate 30 frames/s contract.
+- Focused deterministic tests expose render request/render/skip rates and prove
+  input-to-frame remains independent of periodic ticks.
+- `verify-performance.sh --render` rejects unconditional or duplicate redraws.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --event-loops
+./scripts/verify-performance.sh --render
 ./scripts/verify-roadmap.sh
 ```
 
-Baseline/profile/wakeup evidence and both deterministic fixtures are complete.
-This is the first runtime optimization task.
+The listener and idle-loop gate are complete in v0.1.28. This task builds on
+the initial redraw latch by making its invalidation and measurements explicit.

@@ -230,9 +230,8 @@ impl MaintenanceCliCoordinator {
         })
     }
 
-    #[cfg(test)]
     pub(crate) fn operation_active(&self) -> bool {
-        self.cleanup_preview.is_some() || self.operation.is_some()
+        self.inspection.is_some() || self.cleanup_preview.is_some() || self.operation.is_some()
     }
 
     pub(crate) async fn shutdown(&mut self) {

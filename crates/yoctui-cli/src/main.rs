@@ -2354,6 +2354,35 @@ fn daemon_replay_is_bounded(event_count: usize) -> bool {
     event_count <= MAX_DAEMON_CLIENT_EVENTS_PER_TICK
 }
 
+const DAEMON_IDLE_WAIT: Duration = Duration::from_millis(100);
+const DAEMON_ACTIVE_WAIT: Duration = Duration::from_millis(1);
+
+fn daemon_has_active_work(snapshot: &yoctui_protocol::daemon::DaemonSnapshot) -> bool {
+    snapshot.jobs.iter().any(|job| {
+        matches!(
+            job.lifecycle,
+            yoctui_protocol::daemon::LifecycleState::Connecting
+                | yoctui_protocol::daemon::LifecycleState::Running
+                | yoctui_protocol::daemon::LifecycleState::Stopping
+        )
+    }) || snapshot.pty_sessions.iter().any(|session| {
+        matches!(
+            session.lifecycle,
+            yoctui_protocol::daemon::LifecycleState::Connecting
+                | yoctui_protocol::daemon::LifecycleState::Running
+                | yoctui_protocol::daemon::LifecycleState::Stopping
+        )
+    })
+}
+
+fn daemon_accept_timeout(has_clients: bool, has_active_work: bool) -> Duration {
+    if has_clients || has_active_work {
+        DAEMON_ACTIVE_WAIT
+    } else {
+        DAEMON_IDLE_WAIT
+    }
+}
+
 #[cfg(unix)]
 async fn inspect_daemon_startup_workspace(
     startup_environment: &BTreeMap<String, String>,
@@ -2716,7 +2745,11 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         if termination_requested(termination) {
             break;
         }
-        match listener.accept(Duration::from_millis(1)) {
+        let accept_timeout = daemon_accept_timeout(
+            !clients.is_empty(),
+            daemon_has_active_work(daemon_journal.snapshot()),
+        );
+        match listener.accept(accept_timeout) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
                 // Idle clients get short read slices so supervisor events and
                 // other clients remain responsive. Snapshot/event frames may
@@ -11071,6 +11104,8 @@ async fn tui(
     }
     let mut telemetry_sampler = HostTelemetrySampler::default();
     let mut next_telemetry_sample = Instant::now();
+    let mut next_presentation_tick = Instant::now();
+    let mut redraw_requested = true;
     let mut prefix_state = PrefixState::default();
     #[cfg(unix)]
     let mut termination = termination_receiver()?;
@@ -11078,6 +11113,10 @@ async fn tui(
         let (internal_records, ingress_dropped) = internal_tracing_capture.drain(256);
         if ingress_dropped > 0 {
             let _ = update(&mut app, Action::InternalLogIngressDropped(ingress_dropped));
+            redraw_requested = true;
+        }
+        if !internal_records.is_empty() {
+            redraw_requested = true;
         }
         for record in internal_records {
             let _ = update(&mut app, Action::InternalLog(record));
@@ -11087,9 +11126,18 @@ async fn tui(
             break;
         }
         #[cfg(unix)]
-        let daemon_poll_error = daemon_runtime
+        let daemon_poll_result = daemon_runtime
             .as_mut()
-            .and_then(|runtime| runtime.poll(&mut app).err());
+            .map(|runtime| runtime.poll(&mut app));
+        #[cfg(unix)]
+        let daemon_poll_error = match daemon_poll_result {
+            Some(Ok(changed)) => {
+                redraw_requested |= changed;
+                None
+            }
+            Some(Err(error)) => Some(error),
+            None => None,
+        };
         #[cfg(unix)]
         if let Some(error) = daemon_poll_error {
             eprintln!("yoctui daemon client disconnected: {error}");
@@ -11102,6 +11150,7 @@ async fn tui(
                     message: error.to_string(),
                 },
             );
+            redraw_requested = true;
             next_daemon_reconnect = Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
         }
         #[cfg(unix)]
@@ -11111,7 +11160,10 @@ async fn tui(
                 &mut app,
                 Duration::from_millis(250),
             ) {
-                Ok(runtime) => daemon_runtime = Some(runtime),
+                Ok(runtime) => {
+                    daemon_runtime = Some(runtime);
+                    redraw_requested = true;
+                }
                 Err(error) => tracing::debug!(%error, "daemon reattach not yet available"),
             }
         }
@@ -11123,6 +11175,7 @@ async fn tui(
                         .take()
                         .expect("daemon Devtool identity was present");
                     complete_devtool_modify(&mut app, &session_build_dir, identity).await;
+                    redraw_requested = true;
                 }
                 DaemonDevtoolModifyCompletion::Failed => {
                     let identity = pending_daemon_devtool_modify
@@ -11132,9 +11185,33 @@ async fn tui(
                         "Devtool modify {} failed in the daemon; inspect Jobs and Logs.",
                         identity.name
                     ));
+                    redraw_requested = true;
                 }
             }
         }
+        let local_operation_active = signature_operation.is_some()
+            || package_operation.is_some()
+            || image_artifact_operation.is_some()
+            || rootfs_composition_operation.is_some()
+            || global_content_search_operation.is_some()
+            || sdk_artifact_operation.is_some()
+            || sdk_capability_operation.is_some()
+            || sdk_operation.is_some()
+            || qemu_operation.is_some()
+            || wic_capability_operation.is_some()
+            || wic_device_operation.is_some()
+            || wic_operation.is_some()
+            || test_coordinator.session.is_some()
+            || test_coordinator.import.is_some()
+            || test_coordinator.result.is_some()
+            || security_coordinator.capability.is_some()
+            || security_coordinator.report.is_some()
+            || security_coordinator.mapper.is_some()
+            || qa_coordinator.capability.is_some()
+            || qa_coordinator.layer_capability.is_some()
+            || qa_coordinator.report.is_some()
+            || qa_coordinator.layer.is_some()
+            || maintenance_coordinator.operation_active();
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
         poll_image_artifact_operation(
@@ -11169,18 +11246,34 @@ async fn tui(
         security_coordinator.poll(&mut app).await;
         qa_coordinator.poll(&mut app).await;
         maintenance_coordinator.poll(&mut app).await;
+        redraw_requested |= local_operation_active;
         if Instant::now() >= next_telemetry_sample {
             let telemetry = telemetry_sampler.sample(&session_build_dir);
             let _ = update(&mut app, Action::HostTelemetryUpdated(telemetry));
             next_telemetry_sample = Instant::now() + Duration::from_secs(1);
+            redraw_requested = true;
         }
-        let _ = update(&mut app, Action::Tick);
+        if app_has_live_presentation(&app) && Instant::now() >= next_presentation_tick {
+            let _ = update(&mut app, Action::Tick);
+            next_presentation_tick = Instant::now()
+                + if app.reduced_motion {
+                    Duration::from_secs(1)
+                } else {
+                    refresh
+                };
+            redraw_requested = true;
+        }
         if guard.take_full_redraw_request() {
             terminal.clear()?;
+            redraw_requested = true;
         }
-        terminal.draw(|f| render(f, &app))?;
+        if redraw_requested {
+            terminal.draw(|f| render(f, &app))?;
+            redraw_requested = false;
+        }
         if event::poll(refresh)? {
             let terminal_event = event::read()?;
+            redraw_requested = true;
             if let Event::Paste(text) = terminal_event {
                 if app.screen == Screen::TerminalSessions
                     && app.active_dialog().is_none()
@@ -14004,8 +14097,10 @@ async fn tui(
                 }
             }
         }
+        let devtool_was_active = devtool_runner.is_some();
         let completed_devtool =
             poll_devtool_job(&mut app, &mut devtool_jobs, &mut devtool_runner).await;
+        redraw_requested |= devtool_was_active;
         match completed_devtool {
             Some(DevtoolOperation::Modify { recipe })
                 if pending_devtool_modify
@@ -14061,93 +14156,97 @@ async fn tui(
             }
             _ => {}
         }
-        match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
-            Ok(Ok(event)) => {
-                let test_terminal = matches!(
-                    event,
-                    BackendEvent::BuildCompleted { .. }
-                        | BackendEvent::CommandFailed { .. }
-                        | BackendEvent::Disconnected
-                );
-                let security_terminal = test_terminal;
-                let qa_terminal = test_terminal;
-                if let Some(id) = pending_test_build
-                    && let Some(action) = test_build_action_for_event(&app, id, &event)
-                {
-                    let _ = compatibility_workspace_action(&mut app, action);
-                }
-                let security_followup = pending_security_build
-                    .and_then(|id| security_build_action_for_event(&app, id, &event))
-                    .and_then(|action| compatibility_workspace_action(&mut app, action));
-                let qa_followup = pending_qa_build
-                    .and_then(|id| qa_build_action_for_event(&app, id, &event))
-                    .and_then(|action| compatibility_workspace_action(&mut app, action));
-                let sdk_refresh =
-                    sdk_refresh_after_build_event(&mut app, &mut pending_sdk_build, &event);
-                for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
-                    let _ = compatibility_workspace_action(&mut app, action);
-                }
-                if test_terminal {
-                    pending_test_build = None;
-                }
-                if security_terminal {
-                    pending_security_build = None;
-                }
-                if qa_terminal {
-                    pending_qa_build = None;
-                }
-                if let Some(effect) = security_followup {
-                    let _ = security_coordinator.handle_effect(&mut app, effect).await;
-                }
-                if let Some(effect) = qa_followup {
-                    let _ = qa_coordinator.handle_effect(&mut app, effect).await;
-                }
-                if let Some(effect) = sdk_refresh {
-                    begin_sdk_artifact_operation(
-                        &mut app,
-                        sdk_artifact_adapter.as_ref(),
-                        &mut sdk_artifact_operation,
-                        effect,
+        if build_jobs.active_job_id().is_some() {
+            match tokio::time::timeout(Duration::from_millis(1), backend.next_event()).await {
+                Ok(Ok(event)) => {
+                    redraw_requested = true;
+                    let test_terminal = matches!(
+                        event,
+                        BackendEvent::BuildCompleted { .. }
+                            | BackendEvent::CommandFailed { .. }
+                            | BackendEvent::Disconnected
                     );
+                    let security_terminal = test_terminal;
+                    let qa_terminal = test_terminal;
+                    if let Some(id) = pending_test_build
+                        && let Some(action) = test_build_action_for_event(&app, id, &event)
+                    {
+                        let _ = compatibility_workspace_action(&mut app, action);
+                    }
+                    let security_followup = pending_security_build
+                        .and_then(|id| security_build_action_for_event(&app, id, &event))
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
+                    let qa_followup = pending_qa_build
+                        .and_then(|id| qa_build_action_for_event(&app, id, &event))
+                        .and_then(|action| compatibility_workspace_action(&mut app, action));
+                    let sdk_refresh =
+                        sdk_refresh_after_build_event(&mut app, &mut pending_sdk_build, &event);
+                    for action in build_jobs.actions_for_backend_event(event, SystemTime::now()) {
+                        let _ = compatibility_workspace_action(&mut app, action);
+                    }
+                    if test_terminal {
+                        pending_test_build = None;
+                    }
+                    if security_terminal {
+                        pending_security_build = None;
+                    }
+                    if qa_terminal {
+                        pending_qa_build = None;
+                    }
+                    if let Some(effect) = security_followup {
+                        let _ = security_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                    if let Some(effect) = qa_followup {
+                        let _ = qa_coordinator.handle_effect(&mut app, effect).await;
+                    }
+                    if let Some(effect) = sdk_refresh {
+                        begin_sdk_artifact_operation(
+                            &mut app,
+                            sdk_artifact_adapter.as_ref(),
+                            &mut sdk_artifact_operation,
+                            effect,
+                        );
+                    }
                 }
+                Ok(Err(error)) => {
+                    redraw_requested = true;
+                    if let Some(id) = pending_test_build.take() {
+                        let _ = update(
+                            &mut app,
+                            Action::LoseTestSession {
+                                id,
+                                message: error.to_string(),
+                                finished_at: SystemTime::now(),
+                            },
+                        );
+                    }
+                    if let Some(id) = pending_security_build.take() {
+                        let _ = update(
+                            &mut app,
+                            Action::Security(SecurityAction::LoseSession {
+                                id,
+                                message: error.to_string(),
+                                finished_at: SystemTime::now(),
+                            }),
+                        );
+                    }
+                    if let Some(id) = pending_qa_build.take() {
+                        let _ = update(
+                            &mut app,
+                            Action::Qa(QaAction::LoseSession {
+                                session: id,
+                                message: error.to_string(),
+                                finished_at: SystemTime::now(),
+                            }),
+                        );
+                    }
+                    pending_sdk_build = None;
+                    for action in build_jobs.backend_lost(error.to_string(), SystemTime::now()) {
+                        let _ = compatibility_workspace_action(&mut app, action);
+                    }
+                }
+                Err(_) => {}
             }
-            Ok(Err(error)) => {
-                if let Some(id) = pending_test_build.take() {
-                    let _ = update(
-                        &mut app,
-                        Action::LoseTestSession {
-                            id,
-                            message: error.to_string(),
-                            finished_at: SystemTime::now(),
-                        },
-                    );
-                }
-                if let Some(id) = pending_security_build.take() {
-                    let _ = update(
-                        &mut app,
-                        Action::Security(SecurityAction::LoseSession {
-                            id,
-                            message: error.to_string(),
-                            finished_at: SystemTime::now(),
-                        }),
-                    );
-                }
-                if let Some(id) = pending_qa_build.take() {
-                    let _ = update(
-                        &mut app,
-                        Action::Qa(QaAction::LoseSession {
-                            session: id,
-                            message: error.to_string(),
-                            finished_at: SystemTime::now(),
-                        }),
-                    );
-                }
-                pending_sdk_build = None;
-                for action in build_jobs.backend_lost(error.to_string(), SystemTime::now()) {
-                    let _ = compatibility_workspace_action(&mut app, action);
-                }
-            }
-            Err(_) => {}
         }
         if app.should_quit {
             break;
@@ -14436,6 +14535,28 @@ fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
         Input::F10 => b"\x1b[21~".as_slice(),
     };
     Some(bytes.to_vec())
+}
+
+fn app_has_live_presentation(app: &App) -> bool {
+    matches!(
+        app.build.status,
+        yoctui_model::BuildStatus::LoadingWorkspace
+            | yoctui_model::BuildStatus::Parsing
+            | yoctui_model::BuildStatus::Running
+            | yoctui_model::BuildStatus::Cancelling
+    ) || app
+        .background_jobs
+        .jobs
+        .iter()
+        .any(|job| !job.status.is_terminal())
+        || app.daemon.jobs.iter().any(|job| {
+            matches!(
+                job.lifecycle,
+                yoctui_model::ClientDaemonLifecycle::Connecting
+                    | yoctui_model::ClientDaemonLifecycle::Running
+                    | yoctui_model::ClientDaemonLifecycle::Stopping
+            )
+        })
 }
 
 #[cfg(test)]
@@ -21408,6 +21529,27 @@ esac"#,
         assert!(!daemon_replay_is_bounded(
             MAX_DAEMON_CLIENT_EVENTS_PER_TICK + 1
         ));
+    }
+
+    #[test]
+    fn idle_daemon_waits_without_delaying_attached_or_active_work() {
+        assert_eq!(daemon_accept_timeout(false, false), DAEMON_IDLE_WAIT);
+        assert_eq!(daemon_accept_timeout(true, false), DAEMON_ACTIVE_WAIT);
+        assert_eq!(daemon_accept_timeout(false, true), DAEMON_ACTIVE_WAIT);
+        assert!(DAEMON_IDLE_WAIT >= Duration::from_millis(50));
+        assert!(DAEMON_ACTIVE_WAIT <= Duration::from_millis(5));
+    }
+
+    #[test]
+    fn idle_client_has_no_animation_driven_render_work() {
+        let mut app = App::new(16, 16 * 1024);
+        assert!(!app_has_live_presentation(&app));
+
+        app.build.status = yoctui_model::BuildStatus::Running;
+        assert!(app_has_live_presentation(&app));
+
+        app.build.status = yoctui_model::BuildStatus::Completed;
+        assert!(!app_has_live_presentation(&app));
     }
 
     #[test]

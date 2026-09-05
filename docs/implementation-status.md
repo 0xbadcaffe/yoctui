@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-EVENTLOOP-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-RENDER-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -35,8 +35,15 @@ records generator rate, daemon RSS, IPC frames/resyncs, critical sent/received
 sets, and a second-client continuity probe. It reproduces the known unbounded
 supervisor-ingress terminal starvation without claiming a passing backpressure
 result; direct fixtures also cover cancellation and backend disconnect.
-Idle-loop optimization is next. Overall required registry progress is 635/659
-(96.4%).
+The first runtime optimization replaced the daemon's one-millisecond
+sleep/retry accept loop with kernel readiness, bounded idle servicing at 100
+ms, and immediate connection wakeup. The focused gate measures about 20 idle
+leader context switches/s versus the 867.24/s baseline, 0.20-0.40% debug CPU,
+and sub-100 ms shutdown. Client redraw is now explicitly invalidated by input,
+daemon/state work, telemetry, resize, or visible live presentation; unchanged
+idle polls no longer render and inactive local BitBake is not polled. Dirty
+render coalescing and exact frame-rate instrumentation are next. Overall
+required registry progress is 636/659 (96.5%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

@@ -930,3 +930,8 @@ Exit criteria:
   input, render, IPC, cancellation, PTY, and memory behavior without network
 - supported real-Poky saturation evidence is distinct from fixture evidence
 - the dedicated performance verifier and independent completion checks pass
+
+Progress: the pre-optimization evidence, deterministic saturation/event-flood
+fixtures, and idle event-loop optimization are complete. Kernel-backed daemon
+listener readiness reduced the focused idle result from roughly 867 to below
+35 voluntary context switches/s; unchanged client polls no longer redraw.

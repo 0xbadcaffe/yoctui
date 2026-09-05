@@ -7066,18 +7066,18 @@ notes = "The configurable offline bridge emits stable-identity queued/started/pr
 id = "PERF-EVENTLOOP-001"
 milestone = "M46"
 title = "Eliminate idle busy loops"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 795
 required = true
 depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]
 verify = ["./scripts/verify-performance.sh --event-loops"]
-notes = "Make every long-lived loop block efficiently and remove spinning receives, zero sleeps, redundant redraws, probes, scans, and avoidable polling."
+notes = "The listener now blocks in kernel poll readiness and uses a 100 ms idle servicing/shutdown bound while connections wake immediately; active clients/jobs/PTYS retain short service slices. The client carries explicit redraw invalidation, skips unchanged idle frames, and does not poll an inactive local BitBake backend. The focused v0.1.28 gate measured 0.20-0.40% debug daemon CPU, about 20 voluntary context switches/s versus the 867.24/s pre-optimization baseline, and sub-100 ms shutdown; protocol and workspace tests preserve command, backend, input, PTY, and lifecycle behavior."
 
 [[task]]
 id = "PERF-RENDER-001"
 milestone = "M46"
 title = "Make rendering dirty and event driven"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 796
 required = true
 depends_on = ["PERF-WAKEUPS-001", "PERF-EVENTLOOP-001"]

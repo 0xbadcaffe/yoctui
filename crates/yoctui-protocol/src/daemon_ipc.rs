@@ -6,6 +6,7 @@ use std::{
     io::{self, Read, Write},
     os::unix::{
         fs::{DirBuilderExt, FileTypeExt, MetadataExt, PermissionsExt},
+        io::AsRawFd,
         net::{UnixListener, UnixStream},
     },
     path::{Path, PathBuf},
@@ -93,6 +94,7 @@ impl DaemonListener {
         prepare_runtime_directory(paths, uid)?;
         clean_stale_socket(&paths.socket, uid)?;
         let listener = UnixListener::bind(&paths.socket)?;
+        listener.set_nonblocking(true)?;
         if let Err(error) =
             fs::set_permissions(&paths.socket, fs::Permissions::from_mode(SOCKET_MODE))
         {
@@ -120,7 +122,6 @@ impl DaemonListener {
     }
 
     pub fn accept(&self, timeout: Duration) -> Result<DaemonConnection, IpcError> {
-        self.listener.set_nonblocking(true)?;
         let deadline = Instant::now() + timeout;
         loop {
             match self.listener.accept() {
@@ -141,10 +142,11 @@ impl DaemonListener {
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
-                    if Instant::now() >= deadline {
+                    let now = Instant::now();
+                    if now >= deadline {
                         return Err(IpcError::Timeout("accept"));
                     }
-                    thread::sleep(CONNECT_RETRY_INTERVAL.min(timeout));
+                    wait_until_readable(self.listener.as_raw_fd(), deadline - now)?;
                 }
                 Err(error) => return Err(error.into()),
             }
@@ -154,6 +156,26 @@ impl DaemonListener {
     pub fn socket_path(&self) -> &Path {
         &self.socket
     }
+}
+
+fn wait_until_readable(fd: std::os::fd::RawFd, timeout: Duration) -> Result<(), IpcError> {
+    let timeout_ms = timeout.as_millis().max(1).min(i32::MAX as u128) as i32;
+    let mut descriptor = libc::pollfd {
+        fd,
+        events: libc::POLLIN,
+        revents: 0,
+    };
+    // SAFETY: `descriptor` points to one initialized pollfd and the listener
+    // owns `fd` for the complete duration of this blocking call.
+    let result = unsafe { libc::poll(&mut descriptor, 1, timeout_ms) };
+    if result >= 0 {
+        return Ok(());
+    }
+    let error = io::Error::last_os_error();
+    if error.kind() == io::ErrorKind::Interrupted {
+        return Ok(());
+    }
+    Err(error.into())
 }
 
 impl Drop for DaemonListener {
@@ -533,6 +555,25 @@ mod tests {
         assert_eq!(client.join().unwrap(), effective_uid());
         drop(listener);
         assert!(!paths.socket.exists());
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn listener_readiness_wakes_promptly_before_a_long_deadline() {
+        let paths = test_paths("listener-readiness");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let client_paths = paths.clone();
+        let client = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(30));
+            DaemonConnection::connect(&client_paths, Duration::from_secs(1)).unwrap()
+        });
+
+        let started = Instant::now();
+        let _server = listener.accept(Duration::from_secs(2)).unwrap();
+        assert!(started.elapsed() < Duration::from_millis(250));
+
+        let _client = client.join().unwrap();
+        drop(listener);
         cleanup(&paths);
     }
 
