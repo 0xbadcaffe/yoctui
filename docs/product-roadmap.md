@@ -991,3 +991,9 @@ The bounded-memory gate now passes its 30-minute release run: daemon/client RSS
 growth was 1.29 MiB/108 KiB, both final 20-minute slopes were zero, threads
 stayed 3/1, and correctness/continuity survived the full 4,000-event/s stream.
 Supported real-Poky saturation evidence is next.
+
+M47 adds offline exploration of BitBake's staged image root. Images can open
+the exact `IMAGE_ROOTFS`, list and edit systemd service and system-bus
+activation files, map offline configuration relationships, and keep preview
+scrolling separate from global search. Mouse navigation now executes the same
+Packages-loading effects as keyboard navigation.

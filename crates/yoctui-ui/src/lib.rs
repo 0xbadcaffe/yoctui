@@ -1102,7 +1102,7 @@ fn footer_shortcuts(app: &App) -> String {
             WorkspaceDestination::Layers,
             with_focus_shortcuts(
                 app,
-                "↑/↓ select | PgUp/PgDn page | →/l expand | ←/h collapse | Enter open/toggle | e editor | [/] preview scroll | i info | r refresh | . hidden | / search",
+                "↑/↓ select | PgUp/PgDn page | →/l expand or focus preview | preview arrows scroll | ← tree | e editor | i info | r refresh | . hidden | / search",
             ),
         );
     }
@@ -1135,7 +1135,13 @@ fn footer_shortcuts(app: &App) -> String {
                 "h/l group | j/k package | PgUp/PgDn page | r refresh | Tab filesystem | Shift+Tab artifacts"
             }
             ImagesView::RootfsFilesystem => {
-                "j/k select path | PgUp/PgDn page | r refresh | Tab artifacts | Shift+Tab packages"
+                "j/k select path | Enter/→ explore actual IMAGE_ROOTFS | r refresh | Tab view"
+            }
+            ImagesView::SystemdServices => {
+                "j/k service | e edit unit | Enter/→ explore rootfs | r refresh | Tab view"
+            }
+            ImagesView::SystemDbus => {
+                "j/k bus name | e edit activation file | Enter/→ explore rootfs | r refresh | Tab view"
             }
         },
         Screen::Sdk => {
@@ -1229,6 +1235,8 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
                 "h/l group | j/k package | PgUp/PgDn | r refresh | Tab view".into()
             }
             ImagesView::RootfsFilesystem => "j/k path | PgUp/PgDn | r refresh | Tab view".into(),
+            ImagesView::SystemdServices => "j/k service | e edit | Enter explore | Tab view".into(),
+            ImagesView::SystemDbus => "j/k bus | e edit | Enter explore | Tab view".into(),
         }
     } else if app.screen == Screen::Sdk && width <= 90 {
         "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel".into()
@@ -13096,6 +13104,8 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ImagesView::Artifacts => image_artifacts_workspace(frame, app, area),
         ImagesView::RootfsPackages => rootfs_packages_workspace(frame, app, area),
         ImagesView::RootfsFilesystem => rootfs_filesystem_workspace(frame, app, area),
+        ImagesView::SystemdServices => rootfs_systemd_workspace(frame, app, area),
+        ImagesView::SystemDbus => rootfs_dbus_workspace(frame, app, area),
     }
 }
 
@@ -13104,15 +13114,22 @@ fn images_tabs_line(app: &App) -> Line<'static> {
         .into_iter()
         .enumerate()
         .flat_map(|(index, view)| {
+            let label = match view {
+                ImagesView::Artifacts => "Artifacts",
+                ImagesView::RootfsPackages => "Rootfs packages",
+                ImagesView::RootfsFilesystem => "Files",
+                ImagesView::SystemdServices => "systemd",
+                ImagesView::SystemDbus => "D-Bus",
+            };
             let style = if app.images_view == view {
                 selected_style(app, true)
             } else {
                 Style::default()
             };
             [
-                Span::styled(format!(" {} {} ", index + 1, view.label()), style),
+                Span::styled(format!(" {} {label} ", index + 1), style),
                 Span::raw(if index + 1 == ImagesView::ALL.len() {
-                    "  Tab/Shift-Tab switches"
+                    "  Tab switches"
                 } else {
                     " │ "
                 }),
@@ -13776,6 +13793,140 @@ fn rootfs_filesystem_workspace(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
 }
 
+fn rootfs_systemd_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let body = rootfs_workspace_shell(frame, app, area);
+    if let Some(lines) = rootfs_state_lines(app) {
+        frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
+        return;
+    }
+    let Some(composition) = app.rootfs_composition.composition() else {
+        return;
+    };
+    let Some(inventory) = composition.system_inventory() else {
+        frame.render_widget(
+            Paragraph::new("Offline systemd inventory is unavailable for this image."),
+            body,
+        );
+        return;
+    };
+    if inventory.systemd_services.is_empty() {
+        frame.render_widget(
+            Paragraph::new("No systemd .service files were found in the staged IMAGE_ROOTFS."),
+            body,
+        );
+        return;
+    }
+    let rows = inventory
+        .systemd_services
+        .iter()
+        .enumerate()
+        .map(|(index, service)| {
+            Row::new([
+                service.name.clone(),
+                service
+                    .description
+                    .as_deref()
+                    .unwrap_or("unavailable")
+                    .to_owned(),
+                service.bus_name.as_deref().unwrap_or("—").to_owned(),
+                if service.enabled_by.is_empty() {
+                    "disabled/static".into()
+                } else {
+                    service.enabled_by.join(", ")
+                },
+            ])
+            .style(selected_style(app, index == app.rootfs_systemd_selection))
+        });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(28),
+                Constraint::Min(28),
+                Constraint::Length(28),
+                Constraint::Length(24),
+            ],
+        )
+        .header(
+            Row::new(["Service", "Description", "BusName", "Enablement evidence"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::bordered()
+                .title("Offline systemd service files · e edit · Enter/→ rootfs explorer"),
+        ),
+        body,
+    );
+}
+
+fn rootfs_dbus_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let body = rootfs_workspace_shell(frame, app, area);
+    if let Some(lines) = rootfs_state_lines(app) {
+        frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
+        return;
+    }
+    let Some(composition) = app.rootfs_composition.composition() else {
+        return;
+    };
+    let Some(inventory) = composition.system_inventory() else {
+        frame.render_widget(
+            Paragraph::new("Offline system D-Bus mapping is unavailable for this image."),
+            body,
+        );
+        return;
+    };
+    if inventory.dbus_services.is_empty() {
+        frame.render_widget(
+            Paragraph::new(
+                "No system-bus activation files or systemd BusName declarations were found.",
+            ),
+            body,
+        );
+        return;
+    }
+    let rows = inventory
+        .dbus_services
+        .iter()
+        .enumerate()
+        .map(|(index, service)| {
+            Row::new([
+                service.name.clone(),
+                service.systemd_service.as_deref().unwrap_or("—").to_owned(),
+                service.user.as_deref().unwrap_or("—").to_owned(),
+                service.exec.as_deref().unwrap_or("—").to_owned(),
+                service.policy_files.len().to_string(),
+            ])
+            .style(selected_style(app, index == app.rootfs_dbus_selection))
+        });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(34),
+                Constraint::Length(28),
+                Constraint::Length(16),
+                Constraint::Min(24),
+                Constraint::Length(8),
+            ],
+        )
+        .header(
+            Row::new([
+                "System bus name",
+                "systemd unit",
+                "User",
+                "Exec",
+                "Policies",
+            ])
+            .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::bordered()
+                .title("Offline system-bus activation map · e edit · Enter/→ rootfs explorer"),
+        ),
+        body,
+    );
+}
+
 fn image_artifact_inspector_text(app: &App) -> String {
     if app.images_view != ImagesView::Artifacts {
         return rootfs_inspector_text(app);
@@ -13905,9 +14056,10 @@ fn rootfs_inspector_text(app: &App) -> String {
     };
     let (totals, overflowed) = composition.totals();
     let authority = format!(
-        "Installed packages: {}\nFilesystem tree: {}",
+        "Installed packages: {}\nFilesystem tree: {}\nOffline system map: {}",
         rootfs_authority_label(&composition.installed_packages),
-        rootfs_authority_label(&composition.filesystem_tree)
+        rootfs_authority_label(&composition.filesystem_tree),
+        rootfs_authority_label(&composition.system_inventory)
     );
     let selected = match app.images_view {
         ImagesView::Artifacts => String::new(),
@@ -13963,6 +14115,33 @@ fn rootfs_inspector_text(app: &App) -> String {
                 },
             )
         }
+        ImagesView::SystemdServices => composition
+            .system_inventory()
+            .and_then(|inventory| inventory.systemd_services.get(app.rootfs_systemd_selection))
+            .map_or_else(|| "Selected service: none".into(), |service| format!(
+                "Selected service: {}\nDescription: {}\nUnit file: {}\nBusName: {}\nEnabled by: {}\n\nUnit file preview{}\n{}\n\nEdits affect the generated IMAGE_ROOTFS and may be replaced by the next BitBake task.",
+                service.name,
+                service.description.as_deref().unwrap_or("unavailable"),
+                service.logical_path.0.display(),
+                service.bus_name.as_deref().unwrap_or("none"),
+                if service.enabled_by.is_empty() { "none (disabled, static, indirect, or generated)".into() } else { service.enabled_by.join(", ") },
+                if service.preview_truncated { " (truncated)" } else { "" },
+                service.preview
+            )),
+        ImagesView::SystemDbus => composition
+            .system_inventory()
+            .and_then(|inventory| inventory.dbus_services.get(app.rootfs_dbus_selection))
+            .map_or_else(|| "Selected system bus service: none".into(), |service| format!(
+                "Bus name: {}\nActivation file: {}\nExec: {}\nUser: {}\nSystemdService: {}\nPolicy files:\n{}\n\nActivation/unit preview{}\n{}",
+                service.name,
+                service.logical_path.0.display(),
+                service.exec.as_deref().unwrap_or("unavailable"),
+                service.user.as_deref().unwrap_or("unavailable"),
+                service.systemd_service.as_deref().unwrap_or("none"),
+                if service.policy_files.is_empty() { "none matched".into() } else { service.policy_files.iter().map(|path| path.0.display().to_string()).collect::<Vec<_>>().join("\n") },
+                if service.preview_truncated { " (truncated)" } else { "" },
+                service.preview
+            )),
     };
     let limitations = match &app.rootfs_composition {
         RootfsCompositionState::Partial { limitations, .. } => limitations
@@ -18334,7 +18513,11 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         Paragraph::new(layer_inspector_text(app, &preview_browser))
             .block(
                 Block::default()
-                    .title("File preview · [/] scroll · e edit")
+                    .title(if browser.preview_focused {
+                        "File preview focused · ↑/↓ scroll · ← tree · e edit"
+                    } else {
+                        "File preview · → focus · e edit"
+                    })
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false })
@@ -20657,6 +20840,10 @@ mod tests {
                     value: yoctui_model::RootfsFilesystemTree { entries },
                     limitations: vec!["package ownership is partial".into()],
                 },
+                system_inventory: yoctui_model::RootfsAuthority::Available(
+                    yoctui_model::RootfsSystemInventory::default(),
+                ),
+                root_directory: None,
             },
             limitations: vec!["package ownership is partial".into()],
         };
@@ -24257,6 +24444,10 @@ mod tests {
                     value: yoctui_model::RootfsFilesystemTree { entries },
                     limitations: vec!["package ownership is partial".into()],
                 },
+                system_inventory: yoctui_model::RootfsAuthority::Available(
+                    yoctui_model::RootfsSystemInventory::default(),
+                ),
+                root_directory: None,
             },
             limitations: vec!["package ownership is partial".into()],
         };
@@ -24397,6 +24588,55 @@ mod tests {
             inspector.contains("package ownership is partial"),
             "{inspector}"
         );
+    }
+
+    #[test]
+    fn ux_rootfs_system_tabs_show_offline_service_and_bus_file_evidence() {
+        let mut app = ux_rootfs_ui_app();
+        let composition = match &mut app.rootfs_composition {
+            RootfsCompositionState::Partial { composition, .. } => composition,
+            _ => unreachable!(),
+        };
+        composition.system_inventory =
+            yoctui_model::RootfsAuthority::Available(yoctui_model::RootfsSystemInventory {
+                systemd_services: vec![yoctui_model::RootfsSystemdService {
+                    name: "example.service".into(),
+                    logical_path: yoctui_model::RootfsPathIdentity(
+                        "/usr/lib/systemd/system/example.service".into(),
+                    ),
+                    host_path: "/build/rootfs/usr/lib/systemd/system/example.service".into(),
+                    description: Some("Example daemon".into()),
+                    bus_name: Some("org.example.Daemon".into()),
+                    enabled_by: vec!["multi-user.target.wants".into()],
+                    preview: "[Service]\nBusName=org.example.Daemon\n".into(),
+                    preview_truncated: false,
+                }],
+                dbus_services: vec![yoctui_model::RootfsDbusService {
+                    name: "org.example.Daemon".into(),
+                    logical_path: yoctui_model::RootfsPathIdentity(
+                        "/usr/share/dbus-1/system-services/org.example.Daemon.service".into(),
+                    ),
+                    host_path:
+                        "/build/rootfs/usr/share/dbus-1/system-services/org.example.Daemon.service"
+                            .into(),
+                    exec: Some("/usr/bin/example".into()),
+                    user: Some("root".into()),
+                    systemd_service: Some("example.service".into()),
+                    policy_files: vec![yoctui_model::RootfsPathIdentity(
+                        "/usr/share/dbus-1/system.d/example.conf".into(),
+                    )],
+                    preview: "[D-BUS Service]\nName=org.example.Daemon\n".into(),
+                    preview_truncated: false,
+                }],
+            });
+        app.images_view = ImagesView::SystemdServices;
+        let systemd = rendered_text(&app, 160, 50);
+        assert!(systemd.contains("example.service"), "{systemd}");
+        assert!(systemd.contains("Example daemon"), "{systemd}");
+        app.images_view = ImagesView::SystemDbus;
+        let dbus = rendered_text(&app, 160, 50);
+        assert!(dbus.contains("org.example.Daemon"), "{dbus}");
+        assert!(dbus.contains("example.service"), "{dbus}");
     }
 
     #[test]

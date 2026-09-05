@@ -11,6 +11,13 @@ Status values:
 
 ## Current phase
 
+M47 staged-rootfs system exploration is complete in v0.1.47. The Images
+workspace now opens the exact reported `IMAGE_ROOTFS` without booting it and
+adds typed offline systemd-service and system-bus maps with file editing. The
+shared file preview uses Right to take focus and arrow scrolling, and mouse
+activation now starts the Packages inventory operation instead of leaving it
+stuck in Loading. The existing M46 real-Poky performance task remains active.
+
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
 `PERF-REAL-POKY-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,

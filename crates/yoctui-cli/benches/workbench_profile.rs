@@ -270,6 +270,10 @@ fn scenario_workload(scenario: &str) -> App {
                         packages,
                     }),
                     filesystem_tree: RootfsAuthority::Available(RootfsFilesystemTree { entries }),
+                    system_inventory: RootfsAuthority::Unavailable {
+                        reason: "not collected for the synthetic benchmark".into(),
+                    },
+                    root_directory: None,
                 },
             };
             app

@@ -3281,6 +3281,15 @@ manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;
 and drill down; UI renders pie/bar/table/tree projections without filesystem or
 BitBake parsing.
 
+Client-local rootfs acquisition also returns the canonical contained
+`IMAGE_ROOTFS` directory and a typed offline system inventory. The BitBake
+adapter parses bounded systemd unit and D-Bus activation files, follows unit
+aliases only after canonical containment checks, and correlates enablement
+links and policy-file references. Widgets receive only typed service and bus
+records. Opening the rootfs reuses the existing lazy directory effects,
+64-KiB preview loader, and validated editor-save path; it never starts systemd,
+connects to D-Bus, or mounts a deploy artifact.
+
 Schema v1 binds a non-zero request generation to one exact machine/image/path
 artifact identity. Installed-package and logical-filesystem authorities remain
 separate typed values, each independently available, partial, or unavailable.

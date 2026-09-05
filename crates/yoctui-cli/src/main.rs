@@ -10445,20 +10445,24 @@ async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
     }
 }
 
-fn scan_layer_directory(scan: &Path) -> io::Result<Vec<LayerBrowserEntry>> {
-    let git_output = ProcessCommand::new("git")
-        .args([
-            "status",
-            "--porcelain=v1",
-            "--ignored",
-            "--untracked-files=all",
-            "--",
-            ".",
-        ])
-        .current_dir(scan)
-        .output()
-        .ok()
-        .filter(|output| output.status.success());
+fn scan_layer_directory(scan: &Path, inspect_git: bool) -> io::Result<Vec<LayerBrowserEntry>> {
+    let git_output = inspect_git
+        .then(|| {
+            ProcessCommand::new("git")
+                .args([
+                    "status",
+                    "--porcelain=v1",
+                    "--ignored",
+                    "--untracked-files=all",
+                    "--",
+                    ".",
+                ])
+                .current_dir(scan)
+                .output()
+                .ok()
+                .filter(|output| output.status.success())
+        })
+        .flatten();
     let git_lines = git_output.as_ref().map(|output| {
         String::from_utf8_lossy(&output.stdout)
             .lines()
@@ -10520,7 +10524,8 @@ async fn load_layer_browser_directory(
     directory: PathBuf,
 ) {
     let scan = directory.clone();
-    match tokio::task::spawn_blocking(move || scan_layer_directory(&scan)).await {
+    let inspect_git = !layer.starts_with("Rootfs:") && layer != "Rootfs system";
+    match tokio::task::spawn_blocking(move || scan_layer_directory(&scan, inspect_git)).await {
         Ok(Ok(entries)) => {
             if let Some(Effect::LoadLayerBrowserPreview(path)) = compatibility_workspace_action(
                 app,
@@ -11631,7 +11636,58 @@ async fn tui(
                         terminal_size.height,
                     )
                 {
-                    let _ = compatibility_workspace_action(&mut app, action);
+                    match compatibility_workspace_action(&mut app, action) {
+                        Some(
+                            effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                        ) => {
+                            begin_package_operation(
+                                &mut app,
+                                &package_adapter,
+                                &mut package_operation,
+                                effect,
+                            );
+                        }
+                        Some(effect @ Effect::GetImageArtifacts(_)) => {
+                            begin_image_artifact_operation(
+                                &mut app,
+                                image_artifact_adapter.as_ref(),
+                                &mut image_artifact_operation,
+                                effect,
+                            );
+                        }
+                        Some(effect @ Effect::GetRootfsComposition(_)) => {
+                            begin_rootfs_composition_operation(
+                                backend.as_mut(),
+                                &mut app,
+                                &session_build_dir,
+                                &mut rootfs_composition_operation,
+                                effect,
+                            )
+                            .await;
+                        }
+                        Some(Effect::LoadLayerBrowserDirectory {
+                            layer,
+                            root,
+                            directory,
+                        }) => {
+                            load_layer_browser_directory(&mut app, layer, root, directory).await;
+                        }
+                        Some(Effect::LoadLayerBrowserPreview(path)) => {
+                            load_layer_browser_preview(&mut app, path).await;
+                        }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        Some(effect @ Effect::InspectSdkTools) => {
+                            begin_sdk_capability_operation(
+                                &mut app,
+                                sdk_tool_adapter.as_ref(),
+                                &mut sdk_capability_operation,
+                                effect,
+                            );
+                        }
+                        _ => {}
+                    }
                 }
                 continue;
             }
@@ -12872,78 +12928,105 @@ async fn tui(
                     && !app.metadata_searching
                     && app.focus != yoctui_model::FocusTarget::Dialog
                 {
-                    let effect = match input {
-                        Input::Tab => compatibility_workspace_action(
+                    let preview_focused = app
+                        .layer_browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.preview_focused);
+                    let effect = match (preview_focused, input) {
+                        (true, Input::Up) => compatibility_workspace_action(
                             &mut app,
-                            Action::CycleFocus { backwards: false },
+                            Action::ScrollLayerBrowserPreview { delta: -1 },
                         ),
-                        Input::BackTab => compatibility_workspace_action(
+                        (true, Input::Down) => compatibility_workspace_action(
                             &mut app,
-                            Action::CycleFocus { backwards: true },
+                            Action::ScrollLayerBrowserPreview { delta: 1 },
                         ),
-                        Input::Up => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: -1 },
-                        ),
-                        Input::Down => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: 1 },
-                        ),
-                        Input::PageUp => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: -10 },
-                        ),
-                        Input::PageDown => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: 10 },
-                        ),
-                        Input::Enter => {
-                            compatibility_workspace_action(&mut app, Action::LayerBrowserEnter)
-                        }
-                        Input::Right | Input::Char('l') => {
-                            compatibility_workspace_action(&mut app, Action::LayerBrowserExpand)
-                        }
-                        Input::Esc => {
-                            compatibility_workspace_action(&mut app, Action::CloseLayerBrowser)
-                        }
-                        Input::Left | Input::Char('h') => {
-                            compatibility_workspace_action(&mut app, Action::LayerBrowserUp)
-                        }
-                        Input::Char('r') => {
-                            compatibility_workspace_action(&mut app, Action::RefreshLayerBrowser)
-                        }
-                        Input::Char('e') => compatibility_workspace_action(
-                            &mut app,
-                            Action::EditSelectedLayerBrowserFile,
-                        ),
-                        Input::Char('.') => compatibility_workspace_action(
-                            &mut app,
-                            Action::ToggleLayerBrowserHidden,
-                        ),
-                        Input::Char('/') => {
-                            compatibility_workspace_action(&mut app, Action::BeginMetadataSearch)
-                        }
-                        Input::Char('i') => compatibility_workspace_action(
-                            &mut app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                        ),
-                        Input::Char('[') => compatibility_workspace_action(
+                        (true, Input::PageUp) => compatibility_workspace_action(
                             &mut app,
                             Action::ScrollLayerBrowserPreview { delta: -10 },
                         ),
-                        Input::Char(']') => compatibility_workspace_action(
+                        (true, Input::PageDown) => compatibility_workspace_action(
                             &mut app,
                             Action::ScrollLayerBrowserPreview { delta: 10 },
                         ),
-                        Input::Char('m') => compatibility_workspace_action(
-                            &mut app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                        ),
-                        Input::Char('d') => compatibility_workspace_action(
-                            &mut app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
-                        ),
-                        _ => None,
+                        (true, Input::Left) => {
+                            compatibility_workspace_action(&mut app, Action::FocusLayerBrowserTree)
+                        }
+                        (_, input) => match input {
+                            Input::Tab => compatibility_workspace_action(
+                                &mut app,
+                                Action::CycleFocus { backwards: false },
+                            ),
+                            Input::BackTab => compatibility_workspace_action(
+                                &mut app,
+                                Action::CycleFocus { backwards: true },
+                            ),
+                            Input::Up => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: -1 },
+                            ),
+                            Input::Down => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: 1 },
+                            ),
+                            Input::PageUp => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: -10 },
+                            ),
+                            Input::PageDown => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: 10 },
+                            ),
+                            Input::Enter => {
+                                compatibility_workspace_action(&mut app, Action::LayerBrowserEnter)
+                            }
+                            Input::Right | Input::Char('l') => {
+                                compatibility_workspace_action(&mut app, Action::LayerBrowserExpand)
+                            }
+                            Input::Esc => {
+                                compatibility_workspace_action(&mut app, Action::CloseLayerBrowser)
+                            }
+                            Input::Left | Input::Char('h') => {
+                                compatibility_workspace_action(&mut app, Action::LayerBrowserUp)
+                            }
+                            Input::Char('r') => compatibility_workspace_action(
+                                &mut app,
+                                Action::RefreshLayerBrowser,
+                            ),
+                            Input::Char('e') => compatibility_workspace_action(
+                                &mut app,
+                                Action::EditSelectedLayerBrowserFile,
+                            ),
+                            Input::Char('.') => compatibility_workspace_action(
+                                &mut app,
+                                Action::ToggleLayerBrowserHidden,
+                            ),
+                            Input::Char('/') => compatibility_workspace_action(
+                                &mut app,
+                                Action::BeginMetadataSearch,
+                            ),
+                            Input::Char('i') => compatibility_workspace_action(
+                                &mut app,
+                                Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                            ),
+                            Input::Char('[') => compatibility_workspace_action(
+                                &mut app,
+                                Action::ScrollLayerBrowserPreview { delta: -10 },
+                            ),
+                            Input::Char(']') => compatibility_workspace_action(
+                                &mut app,
+                                Action::ScrollLayerBrowserPreview { delta: 10 },
+                            ),
+                            Input::Char('m') => compatibility_workspace_action(
+                                &mut app,
+                                Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                            ),
+                            Input::Char('d') => compatibility_workspace_action(
+                                &mut app,
+                                Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
+                            ),
+                            _ => None,
+                        },
                     };
                     match effect {
                         Some(Effect::LoadLayerBrowserDirectory {
@@ -13494,6 +13577,27 @@ async fn tui(
                         }
                         Some(Effect::OpenInEditor(path)) => {
                             open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
+                            if let Some(Effect::LoadRecipeEditorFile(path)) =
+                                compatibility_workspace_action(
+                                    &mut app,
+                                    Action::OpenRecipeEditor {
+                                        recipe: layer,
+                                        root,
+                                        files: vec![file],
+                                    },
+                                )
+                            {
+                                load_recipe_editor_file(&mut app, path).await;
+                            }
+                        }
+                        Some(Effect::LoadLayerBrowserDirectory {
+                            layer,
+                            root,
+                            directory,
+                        }) => {
+                            load_layer_browser_directory(&mut app, layer, root, directory).await;
                         }
                         _ => {}
                     }
@@ -17246,7 +17350,7 @@ mod tests {
         fs::write(directory.join("demo.bb"), "SUMMARY = \"demo\"").unwrap();
         fs::write(directory.join(".hidden"), "hidden").unwrap();
 
-        let entries = scan_layer_directory(&directory).unwrap();
+        let entries = scan_layer_directory(&directory, true).unwrap();
         assert_eq!(
             entries[0].path.file_name().unwrap().to_string_lossy(),
             "recipes-demo"
@@ -17321,7 +17425,7 @@ mod tests {
             fs::write(directory.join("tracked.bb"), "SUMMARY = \"changed\"\n").unwrap();
             fs::write(directory.join("new.bb"), "SUMMARY = \"new\"\n").unwrap();
             fs::write(directory.join("ignored.bin"), [1, 2, 3]).unwrap();
-            let entries = scan_layer_directory(&directory).unwrap();
+            let entries = scan_layer_directory(&directory, true).unwrap();
             let state = |name: &str| {
                 entries
                     .iter()
@@ -17334,7 +17438,7 @@ mod tests {
             assert_eq!(state("ignored.bin"), GitFileState::Ignored);
         } else {
             assert!(
-                scan_layer_directory(&directory)
+                scan_layer_directory(&directory, true)
                     .unwrap()
                     .iter()
                     .all(|entry| entry.git == GitFileState::Unavailable)

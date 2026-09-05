@@ -3551,6 +3551,7 @@ pub struct LayerBrowser {
     pub preview_kind: PreviewKind,
     pub preview_truncated: bool,
     pub preview_scroll: usize,
+    pub preview_focused: bool,
     pub inspector_mode: LayerInspectorMode,
     pub tree_truncated: bool,
     pub cycle_entries: usize,
@@ -3572,6 +3573,7 @@ impl LayerBrowser {
             preview_kind: PreviewKind::Unavailable,
             preview_truncated: false,
             preview_scroll: 0,
+            preview_focused: false,
             inspector_mode: LayerInspectorMode::Preview,
             tree_truncated: false,
             cycle_entries: 0,
@@ -4172,6 +4174,8 @@ pub struct App {
     pub rootfs_group_selection: Option<RootfsGroupIdentity>,
     pub rootfs_package_selection: Option<PackageIdentity>,
     pub rootfs_entry_selection: Option<RootfsPathIdentity>,
+    pub rootfs_systemd_selection: usize,
+    pub rootfs_dbus_selection: usize,
     pub sdk_artifacts: SdkArtifactInventoryState,
     pub sdk_artifact_selection: Option<SdkArtifactIdentity>,
     pub sdk_artifact_query: String,
@@ -4363,6 +4367,8 @@ impl App {
             rootfs_group_selection: None,
             rootfs_package_selection: None,
             rootfs_entry_selection: None,
+            rootfs_systemd_selection: 0,
+            rootfs_dbus_selection: 0,
             sdk_artifacts: SdkArtifactInventoryState::NotLoaded,
             sdk_artifact_selection: None,
             sdk_artifact_query: String::new(),
@@ -6019,6 +6025,14 @@ pub enum Action {
     SelectRootfsEntry {
         delta: isize,
     },
+    SelectRootfsSystemdService {
+        delta: isize,
+    },
+    SelectRootfsDbusService {
+        delta: isize,
+    },
+    BrowseRootfsFilesystem,
+    EditSelectedRootfsSystemFile,
     BeginSdkBuild(SdkBuildAction),
     ConfirmSdkBuild,
     CancelSdkBuild,
@@ -6894,6 +6908,7 @@ pub enum Action {
     ScrollLayerBrowserPreview {
         delta: isize,
     },
+    FocusLayerBrowserTree,
     LoadLayerBrowserPreview {
         path: PathBuf,
         content: String,
@@ -8451,6 +8466,9 @@ fn set_rootfs_composition(
         if let RootfsAuthority::Unavailable { reason } = &composition.filesystem_tree {
             reasons.push(reason.as_str());
         }
+        if let RootfsAuthority::Unavailable { reason } = &composition.system_inventory {
+            reasons.push(reason.as_str());
+        }
         RootfsCompositionState::Unavailable {
             request,
             reason: reasons.join("; "),
@@ -8473,6 +8491,18 @@ fn set_rootfs_composition(
         }
     };
     reconcile_rootfs_selection(app, previous_group, previous_package, previous_entry);
+    if let Some(inventory) = app
+        .rootfs_composition
+        .composition()
+        .and_then(RootfsComposition::system_inventory)
+    {
+        app.rootfs_systemd_selection = app
+            .rootfs_systemd_selection
+            .min(inventory.systemd_services.len().saturating_sub(1));
+        app.rootfs_dbus_selection = app
+            .rootfs_dbus_selection
+            .min(inventory.dbus_services.len().saturating_sub(1));
+    }
 }
 
 fn begin_sdk_artifact_inventory(app: &mut App) -> Option<Effect> {
@@ -11662,6 +11692,69 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .identity
                     .clone(),
             );
+        }
+        Action::SelectRootfsSystemdService { delta } => {
+            let len = app
+                .rootfs_composition
+                .composition()
+                .and_then(RootfsComposition::system_inventory)
+                .map_or(0, |inventory| inventory.systemd_services.len());
+            app.rootfs_systemd_selection = shifted_index(app.rootfs_systemd_selection, delta, len);
+        }
+        Action::SelectRootfsDbusService { delta } => {
+            let len = app
+                .rootfs_composition
+                .composition()
+                .and_then(RootfsComposition::system_inventory)
+                .map_or(0, |inventory| inventory.dbus_services.len());
+            app.rootfs_dbus_selection = shifted_index(app.rootfs_dbus_selection, delta, len);
+        }
+        Action::BrowseRootfsFilesystem => {
+            if let Some((root, image)) =
+                app.rootfs_composition
+                    .composition()
+                    .and_then(|composition| {
+                        composition
+                            .root_directory
+                            .clone()
+                            .map(|root| (root, composition.image.image.clone()))
+                    })
+            {
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: format!("Rootfs: {image}"),
+                    root: root.clone(),
+                    directory: root,
+                });
+            }
+            app.notification =
+                Some("The selected image has no available IMAGE_ROOTFS tree.".into());
+        }
+        Action::EditSelectedRootfsSystemFile => {
+            let composition = app.rootfs_composition.composition();
+            let root = composition.and_then(|composition| composition.root_directory.clone());
+            let path = match app.images_view {
+                ImagesView::SystemdServices => composition
+                    .and_then(RootfsComposition::system_inventory)
+                    .and_then(|inventory| {
+                        inventory.systemd_services.get(app.rootfs_systemd_selection)
+                    })
+                    .map(|service| service.host_path.clone()),
+                ImagesView::SystemDbus => composition
+                    .and_then(RootfsComposition::system_inventory)
+                    .and_then(|inventory| inventory.dbus_services.get(app.rootfs_dbus_selection))
+                    .map(|service| service.host_path.clone()),
+                _ => None,
+            };
+            if let (Some(root), Some(path)) = (root, path)
+                && let Ok(file) = path.strip_prefix(&root)
+            {
+                return Some(Effect::OpenLayerBrowserEditor {
+                    layer: "Rootfs system".into(),
+                    root,
+                    file: file.to_path_buf(),
+                });
+            }
+            app.notification = Some("No editable rootfs system file is selected.".into());
         }
         Action::BeginSdkBuild(action) => {
             let Some(image) = app.build.target.clone() else {
@@ -17787,6 +17880,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .as_ref()
                 .and_then(LayerBrowser::selected_entry)
                 .cloned();
+            let selected_is_file = selected.as_ref().is_some_and(|entry| !entry.is_dir);
             if let Some(entry) = selected.filter(|entry| entry.is_dir) {
                 let browser = app.layer_browser.as_mut().expect("browser was selected");
                 if browser.expanded.contains(&entry.path) {
@@ -17802,6 +17896,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     root: browser.root.clone(),
                     directory: entry.path,
                 });
+            } else if selected_is_file && let Some(browser) = app.layer_browser.as_mut() {
+                browser.preview_focused = true;
             }
         }
         Action::LayerBrowserEnter => {
@@ -17893,6 +17989,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         .saturating_add(delta as usize)
                         .min(maximum)
                 };
+            }
+        }
+        Action::FocusLayerBrowserTree => {
+            if let Some(browser) = app.layer_browser.as_mut() {
+                browser.preview_focused = false;
             }
         }
         Action::LoadLayerBrowserPreview {
@@ -22241,6 +22342,38 @@ mod tests {
             PathBuf::from("/layers/meta-demo/visible.bb")
         );
     }
+
+    #[test]
+    fn layer_file_right_focuses_preview_and_arrows_scroll_only_the_preview() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserDirectory {
+                layer: "rootfs".into(),
+                root: "/build/rootfs".into(),
+                directory: "/build/rootfs".into(),
+                entries: vec![LayerBrowserEntry {
+                    path: "/build/rootfs/etc/os-release".into(),
+                    ..LayerBrowserEntry::default()
+                }],
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserPreview {
+                path: "/build/rootfs/etc/os-release".into(),
+                content: "one\ntwo\nthree".into(),
+                kind: PreviewKind::Text,
+                truncated: false,
+            },
+        );
+        assert_eq!(update(&mut app, Action::LayerBrowserExpand), None);
+        assert!(app.layer_browser.as_ref().unwrap().preview_focused);
+        let _ = update(&mut app, Action::ScrollLayerBrowserPreview { delta: 1 });
+        assert_eq!(app.layer_browser.as_ref().unwrap().preview_scroll, 1);
+        let _ = update(&mut app, Action::FocusLayerBrowserTree);
+        assert!(!app.layer_browser.as_ref().unwrap().preview_focused);
+    }
     #[test]
     fn layer_tree_ignores_stale_preview_and_tracks_binary_metadata() {
         let mut app = App::new(10, 1_000);
@@ -25572,6 +25705,8 @@ mod tests {
                     },
                 ],
             }),
+            system_inventory: RootfsAuthority::Available(RootfsSystemInventory::default()),
+            root_directory: Some("/build/tmp/rootfs".into()),
         };
         let stale = RootfsCompositionRequest {
             generation: 99,
@@ -25669,6 +25804,8 @@ mod tests {
                         RootfsPackageInventory::default(),
                     ),
                     filesystem_tree: RootfsAuthority::Available(RootfsFilesystemTree::default()),
+                    system_inventory: RootfsAuthority::Available(RootfsSystemInventory::default()),
+                    root_directory: None,
                 },
             },
         );

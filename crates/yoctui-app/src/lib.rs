@@ -136,6 +136,10 @@ pub fn backend_event_from_rootfs_data(
             image,
             installed_packages,
             filesystem_tree,
+            system_inventory: yoctui_model::RootfsAuthority::Unavailable {
+                reason: "offline system inventory is client-local and was not included in this wire snapshot".into(),
+            },
+            root_directory: None,
         },
         limitations: data.limitations,
     })
@@ -6143,7 +6147,7 @@ pub fn images_workspace_action_for_view(
         });
     }
     if !(view == yoctui_model::ImagesView::Artifacts && searching)
-        && let Input::Char(key @ ('1' | '2' | '3')) = key
+        && let Input::Char(key @ ('1' | '2' | '3' | '4' | '5')) = key
     {
         let current = yoctui_model::ImagesView::ALL
             .iter()
@@ -6174,6 +6178,33 @@ pub fn images_workspace_action_for_view(
         return match key {
             Input::Up | Input::Char('k') => Some(Action::SelectRootfsEntry { delta: -1 }),
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsEntry { delta: 1 }),
+            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            _ => None,
+        };
+    }
+    if view == yoctui_model::ImagesView::SystemdServices {
+        if let Some(delta) = collection_scroll_delta(key) {
+            return Some(Action::SelectRootfsSystemdService { delta });
+        }
+        return match key {
+            Input::Up | Input::Char('k') => Some(Action::SelectRootfsSystemdService { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::SelectRootfsSystemdService { delta: 1 }),
+            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
+            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            _ => None,
+        };
+    }
+    if view == yoctui_model::ImagesView::SystemDbus {
+        if let Some(delta) = collection_scroll_delta(key) {
+            return Some(Action::SelectRootfsDbusService { delta });
+        }
+        return match key {
+            Input::Up | Input::Char('k') => Some(Action::SelectRootfsDbusService { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::SelectRootfsDbusService { delta: 1 }),
+            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
             Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
@@ -12427,6 +12458,18 @@ mod tests {
             Some(Action::SelectRootfsEntry { delta: 1 })
         );
         assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::Right),
+            Some(Action::BrowseRootfsFilesystem)
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::SystemdServices, Input::Char('e')),
+            Some(Action::EditSelectedRootfsSystemFile)
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::SystemDbus, Input::Down),
+            Some(Action::SelectRootfsDbusService { delta: 1 })
+        );
+        assert_eq!(
             images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::BackTab),
             Some(Action::ShiftImagesView { delta: -1 })
         );
@@ -12441,6 +12484,10 @@ mod tests {
         assert_eq!(
             images_workspace_action_for_view(true, ImagesView::Artifacts, Input::Char('2')),
             Some(Action::AppendImageArtifactQuery('2'))
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Char('5')),
+            Some(Action::ShiftImagesView { delta: 4 })
         );
 
         let mut app = App::new(10, 1_000);

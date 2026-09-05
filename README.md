@@ -38,6 +38,9 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
   signatures.
 - **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
   consoles, Wic, Testing, CVE/SPDX, QA, sstate, release, and maintenance tools.
+- **Offline image exploration** — browse and edit BitBake's staged
+  `IMAGE_ROOTFS`, inspect installed packages and files, list systemd services,
+  and map system-bus activation/configuration without booting the image.
 - **Terminal-native UX** — responsive layouts, command palette, contextual
   shortcuts, themes, persisted sessions, shell escape, and external editor
   support.
@@ -331,6 +334,11 @@ cargo install flamegraph
 - [Architecture](docs/architecture.md) — crate boundaries and state flow
 - [Testing](docs/testing.md), [profiling](docs/profiling.md), and the [low-overhead performance contract](docs/performance.md) — verification and build-saturation responsiveness
 - [Implementation status](docs/implementation-status.md) — complete task evidence
+
+The systemd service list/detail interaction was informed by
+[systemd-manager-tui](https://github.com/Matheus-git/systemd-manager-tui),
+created by Matheus-git and released under MIT. Yoctui implements an independent
+offline parser because an unbooted rootfs has no running systemd D-Bus manager.
 
 ## Development checks
 
