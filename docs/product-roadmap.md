@@ -949,5 +949,7 @@ conservative size ledger, bounded in-place build/log reduction, incremental
 33.58 KiB/s with zero replacement snapshots. Bounded priority-aware client and
 supervisor queues are complete: a 4,000-event/s run retained every sentinel for
 the healthy client while isolating a non-reader and preserving a fresh attach.
-BitBake socket/liveness behavior under full CPU saturation is the current
-optimization boundary.
+BitBake terminal publication now precedes cleanup, silent scheduler delay is
+not a disconnect, real EOF remains authoritative, and cancellation survives an
+all-CPU load while hung cleanup stays off the critical path. Tokio runtime
+scheduling is the current optimization boundary.

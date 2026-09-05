@@ -157,6 +157,19 @@ full affinity set with a short bound:
 ./scripts/verify-saturation-responsiveness.sh --harness
 ```
 
+The BitBake connection gate runs production `BridgeBackend` and daemon
+supervisor fixtures while one pinned computation worker keeps every available
+logical CPU runnable. A 250 ms silent native-event interval must remain
+connected, actual bridge EOF must produce exactly one typed disconnect, and a
+cancellation terminal must publish before deliberately hung server cleanup.
+Active event reads have no elapsed-time disconnect heuristic; fixed 64-record
+native batches return to command input, and cancellation fallback uses Tokio's
+monotonic clock.
+
+```sh
+./scripts/verify-saturation-responsiveness.sh --bitbake-connection
+```
+
 `scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
 fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
 and success/failure/disconnect terminal mode. Stable task identities plus

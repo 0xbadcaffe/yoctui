@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-BITBAKE-CONN-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-TOKIO-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -62,7 +62,7 @@ task identity order is cached across unrelated frames. Active and retained
 collections are bounded with observable overflow and terminal failures remain
 recorded. The measured IPC audit removed per-event full-snapshot serialization,
 avoids bounded build/log snapshot clones, catches attached clients up through
-ordered four-event slices, and shares one encoded frame across identical client
+ordered 32-event slices, and shares one encoded frame across identical client
 fanout. At 2,000 generated events/s the release observer delivered 74.86
 frames/s at 33.58 KiB/s with a 69,029-byte initial snapshot, 99-337-byte events,
 0.21 daemon CPU seconds over 4.19 seconds, strict order, continuity, and zero
@@ -73,9 +73,13 @@ ordinary logs can be lost under pressure. Readiness-driven clients catch up 32
 events per slice; a two-millisecond full-socket deadline isolated a deliberate
 non-reader while the healthy client received all seven sentinels, stayed in
 strict order without resync, and a new client attached afterward. Typed
-pressure counters reach both automation and System Status. BitBake saturation
-connection hardening is next. Overall required registry progress is 643/659
-(97.6%).
+pressure counters reach both automation and System Status. BitBake terminal
+events now publish before bounded bridge/server cleanup, active native-event
+reads cannot infer disconnect from elapsed time, and real EOF remains explicit.
+With all eight logical CPUs runnable, the deterministic gate preserved a
+250-millisecond silent backend interval, reported a real EOF exactly once, and
+acknowledged cancellation without waiting behind hung cleanup. Tokio runtime
+scheduling is next. Overall required registry progress is 644/659 (97.7%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

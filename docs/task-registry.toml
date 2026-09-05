@@ -7154,18 +7154,18 @@ notes = "The v0.1.35 BitBake supervisor uses separate fixed 512-record reliable 
 id = "PERF-BITBAKE-CONN-001"
 milestone = "M46"
 title = "Harden BitBake connectivity under CPU saturation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 803
 required = true
 depends_on = ["PERF-IPC-001", "PERF-EVENTLOOP-001"]
 verify = ["./scripts/verify-saturation-responsiveness.sh --bitbake-connection"]
-notes = "Audit starvation, blocking calls, heartbeat assumptions, socket deadlines, and retry timers; use monotonic tolerant liveness without masking real disconnects."
+notes = "In v0.1.36 terminal success/failure/disconnect/cancellation publication precedes bounded release-specific bridge/server cleanup. Active native-event reads have no elapsed-time liveness timeout, actual bridge EOF remains the disconnect authority, cancellation uses a biased monotonic deadline, and the bridge admits command input between fixed 64-event native batches. The deterministic gate keeps all eight available logical CPUs runnable while proving a 250 ms silent scheduler-delay fixture stays connected, actual bridge EOF reports exactly once, and cancellation terminal acknowledgement is not held behind a deliberately hung server cleanup."
 
 [[task]]
 id = "PERF-TOKIO-001"
 milestone = "M46"
 title = "Audit Tokio runtime scheduling"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 804
 required = true
 depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]

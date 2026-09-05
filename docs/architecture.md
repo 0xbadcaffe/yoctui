@@ -2832,12 +2832,14 @@ process signal. Some supported Tinfoil streams, including BitBake 2.18.0 on Wryn
 do not reliably deliver a later `BuildCompleted`; waiting for it can leave the
 job active indefinitely. The bridge emits exactly one failed build terminal
 with the original build correlation, clears its retained iterator and task
-identities, and stops native polling. Post-terminal bridge/server cleanup is
-bounded. A dedicated typed supervisor channel publishes cancellation terminal
-state ahead of native records queued before the request and invalidates those
-records; this prevents high-volume older BitBake streams from leaving an
-already stopped build visibly Running. Delayed native events cannot resurrect
-the job, and every attached client observes the same journal terminal. `StartBuild`
+identities, and stops native polling. A dedicated typed supervisor channel
+publishes cancellation terminal state ahead of native records queued before
+the request and invalidates those records; normal success, failure, and real
+EOF terminals likewise enter the reliable lane before post-terminal
+bridge/server cleanup begins. Cleanup remains bounded but cannot delay the
+authoritative UI state. This prevents high-volume older BitBake streams from
+leaving an already stopped build visibly Running. Delayed native events cannot
+resurrect the job, and every attached client observes the same journal terminal. `StartBuild`
 obtains its exact build directory from the daemon-owned compatibility identity,
 so a separate client-side environment variable cannot select a different
 workspace.
@@ -3599,6 +3601,16 @@ stale progress/lifecycle records, and retains already queued diagnostics.
 Telemetry publishes current/high-water queue depth, cosmetic coalesced/dropped,
 reliable waits, forced resyncs, and slow-client disconnects through the typed
 protocol and client model.
+
+BitBake liveness does not use a short silence timeout. `BridgeBackend` blocks on
+the child protocol pipe until a complete bounded frame or actual EOF/error;
+ordinary scheduler delay therefore cannot synthesize `Disconnected`. The
+Python bridge waits for command input and pumps at most 64 native records per
+batch, returning to its selector between batches so cancellation is not
+starved. The supervisor's cancellation fallback is a Tokio monotonic deadline,
+not wall time. A full-affinity deterministic load gate covers silent delayed
+events, real bridge EOF, and cancellation while server cleanup deliberately
+hangs; fixture evidence remains distinct from a real Poky connection claim.
 
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one

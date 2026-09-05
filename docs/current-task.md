@@ -2,39 +2,37 @@
 
 ## Task
 
-**ID:** PERF-BITBAKE-CONN-001
-**Title:** Harden BitBake connectivity under CPU saturation
+**ID:** PERF-TOKIO-001
+**Title:** Audit Tokio runtime scheduling
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Audit BitBake socket deadlines, heartbeat/liveness assumptions, blocking
-operations, retry timing, and read/write starvation. Keep the backend alive
-under severe scheduler delay without hiding a real disconnect.
+Measure Tokio worker/thread use, blocking work, spawned tasks, channel choices,
+and timer churn. Move only measured blocking work off reactor workers and avoid
+increasing runtime threads without evidence.
 
 ## Dependencies
 
-- PERF-IPC-001 — DONE
-- PERF-EVENTLOOP-001 — DONE
+- PERF-FLAMEGRAPH-001 — DONE
+- PERF-WAKEUPS-001 — DONE
 
 ## Definition of done
 
-- Liveness and timeout decisions use monotonic time.
-- Scheduler delay or one ordinary timeout cannot be interpreted as backend
-  death.
-- Read/write waits and post-terminal cleanup are explicitly bounded without
-  starving native events or cancellation.
-- Heartbeat and reconnect policy tolerate sustained full-CPU contention while
-  still detecting a real EOF/disconnect.
-- Deterministic full-CPU tests prove backend continuity, real disconnect
-  reporting, and cancellation acknowledgement.
+- Runtime worker and blocking-pool configuration is measured and documented.
+- Filesystem, child-process, and CPU-heavy work does not block async reactor
+  workers where measured evidence requires isolation.
+- Channel bounds and long-lived task ownership remain explicit.
+- Avoidable timer churn and unnecessary spawned tasks are removed.
+- Deterministic tests prove the reactor remains responsive under blocking work
+  and full-CPU contention without blindly increasing worker count.
 
 ## Verification
 
 ```bash
-./scripts/verify-saturation-responsiveness.sh --bitbake-connection
+./scripts/verify-performance.sh --tokio
 ./scripts/verify-roadmap.sh
 ```
 
-Bounded priority ingress, slow-client isolation, pressure counters, and strict
-flood/reconnect verification are complete in v0.1.35.
+BitBake delayed-event continuity, real EOF detection, cancellation priority,
+and terminal-before-cleanup ordering are complete in v0.1.36.

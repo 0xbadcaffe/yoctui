@@ -242,12 +242,6 @@ impl DaemonBitBakeSupervisor {
                     // the authority that guarantees command priority.
                     biased;
                     _ = &mut cancellation_deadline, if cancellation_deadline_armed => {
-                        let _ = tokio::time::timeout(
-                            Duration::from_secs(2),
-                            backend.terminate_server(),
-                        )
-                        .await;
-                        backend_closed = true;
                         let _ = cancellation_terminal_tx.send(DaemonBitBakeEvent::Backend {
                             job_id,
                             event: Box::new(BackendEvent::BuildCompleted {
@@ -255,6 +249,15 @@ impl DaemonBitBakeSupervisor {
                                 exit_code: Some(130),
                             }),
                         }).await;
+                        // Terminal publication is a correctness boundary and
+                        // must not wait behind release-specific Tinfoil/server
+                        // cleanup on a saturated host.
+                        let _ = tokio::time::timeout(
+                            Duration::from_secs(2),
+                            backend.terminate_server(),
+                        )
+                        .await;
+                        backend_closed = true;
                         break;
                     }
                     cancel = cancel_rx.recv() => {
@@ -279,6 +282,32 @@ impl DaemonBitBakeSupervisor {
                         Ok(event) => {
                             let terminal = matches!(event, BackendEvent::BuildCompleted { .. } | BackendEvent::CommandFailed { .. } | BackendEvent::Disconnected);
                             if terminal {
+                                let event = DaemonBitBakeEvent::Backend {
+                                    job_id,
+                                    event: Box::new(event),
+                                };
+                                if terminate_server {
+                                    // Cancellation is a control-plane
+                                    // boundary. Deliver its terminal ahead of
+                                    // native/log records queued before the
+                                    // request; try_event discards those stale
+                                    // records so they cannot resurrect the
+                                    // cancelled job.
+                                    let _ = cancellation_terminal_tx.send(event).await;
+                                } else {
+                                    send_bitbake_event(
+                                        &reliable_tx,
+                                        &cosmetic_tx,
+                                        &pressure,
+                                        event,
+                                    )
+                                    .await;
+                                }
+
+                                // Cleanup starts only after the critical event
+                                // is queued. It remains bounded because a
+                                // release-specific Tinfoil server can take an
+                                // unbounded time to acknowledge shutdown.
                                 if terminate_server {
                                     let _ = tokio::time::timeout(
                                         Duration::from_secs(2),
@@ -292,32 +321,19 @@ impl DaemonBitBakeSupervisor {
                                     )
                                     .await;
                                 }
-                                // A release-specific Tinfoil server can take
-                                // an unbounded amount of time to acknowledge
-                                // post-terminal cleanup.  The native terminal
-                                // event remains authoritative, but cleanup is
-                                // bounded before it is published so an older
-                                // server cannot leave the shared job Running.
                                 backend_closed = true;
+                                break;
                             }
-                            let event = DaemonBitBakeEvent::Backend { job_id, event: Box::new(event) };
-                            if terminal && terminate_server {
-                                // Cancellation is a control-plane boundary.
-                                // Deliver its terminal ahead of native/log
-                                // records already queued before the request;
-                                // try_event discards those stale records so
-                                // they cannot resurrect the cancelled job.
-                                let _ = cancellation_terminal_tx.send(event).await;
-                            } else {
-                                send_bitbake_event(
-                                    &reliable_tx,
-                                    &cosmetic_tx,
-                                    &pressure,
-                                    event,
-                                )
-                                .await;
-                            }
-                            if terminal { break; }
+                            send_bitbake_event(
+                                &reliable_tx,
+                                &cosmetic_tx,
+                                &pressure,
+                                DaemonBitBakeEvent::Backend {
+                                    job_id,
+                                    event: Box::new(event),
+                                },
+                            )
+                            .await;
                         }
                         Err(error) => {
                             send_bitbake_event(
@@ -722,6 +738,8 @@ server = Server()
 
         let deadline = Instant::now() + Duration::from_secs(10);
         let mut cancellation_sent = false;
+        let mut cancellation_started = None;
+        let mut cancellation_terminal_latency = None;
         let mut terminal_count = 0;
         let mut late_started = false;
         let mut saw_inventory = false;
@@ -739,10 +757,13 @@ server = Server()
                         BackendEvent::ParseProgress { .. } if !cancellation_sent => {
                             supervisor.cancel(job_id).unwrap();
                             cancellation_sent = true;
+                            cancellation_started = Some(Instant::now());
                         }
                         BackendEvent::BuildStarted if cancellation_sent => late_started = true,
                         BackendEvent::BuildCompleted { success, .. } => {
                             assert!(!success);
+                            cancellation_terminal_latency =
+                                cancellation_started.map(|started| started.elapsed());
                             terminal_count += 1;
                         }
                         _ => {}
@@ -756,6 +777,10 @@ server = Server()
         assert!(cancellation_sent, "event stream never became active");
         assert!(saw_inventory, "daemon workspace omitted metadata inventory");
         assert_eq!(terminal_count, 1);
+        assert!(
+            cancellation_terminal_latency.is_some_and(|latency| latency < Duration::from_secs(1)),
+            "terminal publication waited behind the two-second server cleanup"
+        );
         assert!(!late_started);
         assert!(
             supervisor.try_event().is_none(),
@@ -764,6 +789,166 @@ server = Server()
         assert_eq!(fs::read_to_string(&marker).unwrap(), "cancelled");
         assert!(supervisor.cancel(job_id).is_err());
         fs::remove_dir_all(&root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn bitbake_connection_tolerates_scheduler_delay_without_false_disconnect() {
+        let root = std::env::temp_dir().join(format!(
+            "yoctui-bitbake-delayed-events-{}-{}",
+            std::process::id(),
+            NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let build = root.join("build");
+        let python = root.join("python");
+        fs::create_dir_all(&build).unwrap();
+        fs::create_dir_all(&python).unwrap();
+        let build = build.canonicalize().unwrap();
+        fs::write(
+            python.join("bb.py"),
+            format!(
+                r#"import time
+__version__ = "2.18.0"
+class Connection:
+ native_event_stream = True
+ def __init__(self): self.poll = 0
+ def inspect_workspace(self):
+  return {{"build_dir": {build:?}, "source_dir": None, "variables": {{}}, "variable_provenance": {{}}, "variable_provenance_chain": {{}}, "bitbake_version": "2.18.0", "release": "6.0.2", "layers": [], "recipes": []}}
+ def list_recipes(self, filter_value): return []
+ def list_layers(self): return []
+ def start_build(self, targets, task, force=False): self.poll = 0
+ def drain_events(self):
+  self.poll += 1
+  if self.poll == 1: return [{{"type": "build_started"}}]
+  if self.poll == 2:
+   time.sleep(0.25)
+   return [{{"type": "task_started", "recipe": "base-files", "task": "do_compile", "pid": 41}}]
+  if self.poll == 3: return [{{"type": "build_completed", "success": True, "exit_code": 0}}]
+  return []
+ def shutdown(self): pass
+class Server:
+ def connect(self): return Connection()
+server = Server()
+"#,
+                build = build.display().to_string(),
+            ),
+        )
+        .unwrap();
+
+        let mut supervisor = DaemonBitBakeSupervisor::default().with_bridge_environment(
+            BTreeMap::from([("PYTHONPATH".into(), python.display().to_string())]),
+        );
+        supervisor
+            .replace_compatibility(Some(cancellation_authority(&build)))
+            .unwrap();
+        supervisor
+            .start(
+                build,
+                BuildRequest {
+                    targets: vec!["base-files".into()],
+                    task: None,
+                    force: false,
+                },
+            )
+            .unwrap();
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let mut saw_started = false;
+        let mut saw_task = false;
+        let mut saw_terminal = false;
+        while Instant::now() < deadline && !saw_terminal {
+            while let Some(event) = supervisor.try_event() {
+                match event {
+                    DaemonBitBakeEvent::Backend { event, .. } => match *event {
+                        BackendEvent::BuildStarted => saw_started = true,
+                        BackendEvent::TaskStarted { .. } => saw_task = true,
+                        BackendEvent::BuildCompleted { success: true, .. } => saw_terminal = true,
+                        BackendEvent::Disconnected => {
+                            panic!("scheduler delay was misclassified as a disconnect")
+                        }
+                        _ => {}
+                    },
+                    DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+
+        assert!(saw_started && saw_task && saw_terminal);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn bitbake_connection_reports_real_bridge_eof_once() {
+        let root = std::env::temp_dir().join(format!(
+            "yoctui-bitbake-real-eof-{}-{}",
+            std::process::id(),
+            NEXT_FIXTURE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let build = root.join("build");
+        let python = root.join("python");
+        fs::create_dir_all(&build).unwrap();
+        fs::create_dir_all(&python).unwrap();
+        let build = build.canonicalize().unwrap();
+        fs::write(
+            python.join("bb.py"),
+            format!(
+                r#"import os
+__version__ = "2.18.0"
+class Connection:
+ native_event_stream = True
+ def inspect_workspace(self):
+  return {{"build_dir": {build:?}, "source_dir": None, "variables": {{}}, "variable_provenance": {{}}, "variable_provenance_chain": {{}}, "bitbake_version": "2.18.0", "release": "6.0.2", "layers": [], "recipes": []}}
+ def list_recipes(self, filter_value): return []
+ def list_layers(self): return []
+ def start_build(self, targets, task, force=False): os._exit(17)
+ def drain_events(self): return []
+ def shutdown(self): pass
+class Server:
+ def connect(self): return Connection()
+server = Server()
+"#,
+                build = build.display().to_string(),
+            ),
+        )
+        .unwrap();
+
+        let mut supervisor = DaemonBitBakeSupervisor::default().with_bridge_environment(
+            BTreeMap::from([("PYTHONPATH".into(), python.display().to_string())]),
+        );
+        supervisor
+            .replace_compatibility(Some(cancellation_authority(&build)))
+            .unwrap();
+        supervisor
+            .start(
+                build,
+                BuildRequest {
+                    targets: vec!["base-files".into()],
+                    task: None,
+                    force: false,
+                },
+            )
+            .unwrap();
+
+        let deadline = Instant::now() + Duration::from_secs(5);
+        let mut disconnects = 0;
+        while Instant::now() < deadline && disconnects == 0 {
+            while let Some(event) = supervisor.try_event() {
+                match event {
+                    DaemonBitBakeEvent::Backend { event, .. }
+                        if matches!(event.as_ref(), BackendEvent::Disconnected) =>
+                    {
+                        disconnects += 1;
+                    }
+                    DaemonBitBakeEvent::Failed { message, .. } => panic!("{message}"),
+                    _ => {}
+                }
+            }
+            tokio::time::sleep(Duration::from_millis(10)).await;
+        }
+
+        assert_eq!(disconnects, 1);
+        assert!(supervisor.try_event().is_none());
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[tokio::test]
