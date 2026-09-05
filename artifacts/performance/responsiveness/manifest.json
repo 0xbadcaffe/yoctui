@@ -1,0 +1,42 @@
+{
+  "schema": "yoctui.performance.responsiveness-manifest.v1",
+  "source_base_revision": "df4dbbb2fd51f5803ecbbc5fe8a9ee19f8c0b33c",
+  "sources": {
+    "crates/yoctui-e2e/examples/input_latency_probe.rs": "78ac66134c00228fb9476d66fc4afdf3ff65e6258e68793163bb987b25924108",
+    "scripts/cpu-saturation-harness.py": "b54d207b1a79013a2357467792dfd2d48f52b4bffc65951e1523318538d0f473",
+    "scripts/measure-input-latency.py": "2cde113fc06e9e20ee08acc41e95cf46d77e2702bf6c57f73cb3c39b7a63071f",
+    "scripts/measure-ipc-latency.py": "c53fe80447a4b718e8143bdf5295c8c869af687c06165947d1ff3005551c1320"
+  },
+  "evidence": {
+    "input_and_render": {
+      "path": "artifacts/performance/input-latency/host-audit.json",
+      "sha256": "2115d41c2b84e838704aa1d3c2919097f2e670c0f9c5cc3a4911c87becd6cb54",
+      "schema": "yoctui.performance.input-latency.v1"
+    },
+    "ipc_backend_cancellation_detach_reconnect": {
+      "path": "artifacts/performance/ipc-latency/host-audit.json",
+      "sha256": "a769609bf3ed53f44c0b12328c3c7dd232bd509070392006995f7c561df60073",
+      "schema": "yoctui.performance.ipc-latency.v1"
+    }
+  },
+  "requirements": {
+    "keyboard_input": true,
+    "mouse_input": true,
+    "visible_frames": true,
+    "daemon_continuity": true,
+    "backend_continuity": true,
+    "cancellation": true,
+    "detach": true,
+    "reconnect": true,
+    "all_cpus_runnable": true
+  },
+  "observations": {
+    "keyboard_to_visible_frame_p95_ms": 4.336407,
+    "mouse_to_visible_selection_p95_ms": 4.440078,
+    "daemon_event_to_client_p95_ms": 2.285174,
+    "cancellation_request_to_ack_p95_ms": 3.790469,
+    "detach_acknowledgement_ms": 0.111422,
+    "input_host_cpu_utilization_percent": 99.74673106372953,
+    "ipc_host_cpu_utilization_percent": 99.46364719904648
+  }
+}

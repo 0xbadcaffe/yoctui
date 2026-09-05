@@ -1,11 +1,11 @@
 {
   "schema": "yoctui.performance.ipc-latency-manifest.v1",
-  "source_base_revision": "f171a0e327242233c780b8be5a184b21ce997175",
+  "source_base_revision": "df4dbbb2fd51f5803ecbbc5fe8a9ee19f8c0b33c",
   "artifact": "host-audit.json",
-  "artifact_sha256": "8657b666eb1bd63ff685aea89b494654bee261bf3933c7f2e31089594b9fd3cf",
-  "binary_sha256": "ecbb1dd4cfedbd1d884305b8744315e78d58f59560dff9a8482130ab3a7f5e66",
+  "artifact_sha256": "a769609bf3ed53f44c0b12328c3c7dd232bd509070392006995f7c561df60073",
+  "binary_sha256": "cd6f99182cf67d9bad54e21f99962f61895a3e0f9235a52013349bad759d0a0e",
   "sources": {
-    "scripts/measure-ipc-latency.py": "f3682b2e25c36da3b27e42f5c5e32269fd8b8f46506e6a98774f376e62488383",
+    "scripts/measure-ipc-latency.py": "c53fe80447a4b718e8143bdf5295c8c869af687c06165947d1ff3005551c1320",
     "scripts/fixtures/bitbake-ipc-latency-bridge.py": "c188754fbf93c6e9e5f6dfc19f49901831b720ace1a7cdfad5abc964838ce4d8",
     "scripts/cpu-saturation-harness.py": "b54d207b1a79013a2357467792dfd2d48f52b4bffc65951e1523318538d0f473"
   },
@@ -19,14 +19,17 @@
     "load": "one pinned worker per affinity CPU; no deliberately free CPU"
   },
   "observations": {
-    "daemon_event_to_client_p50_ms": 1.825735,
-    "daemon_event_to_client_p95_ms": 2.521978,
-    "client_command_to_daemon_p50_ms": 0.067622,
-    "client_command_to_daemon_p95_ms": 1.880097,
-    "cancellation_request_to_ack_p50_ms": 2.194749,
-    "cancellation_request_to_ack_p95_ms": 6.820188,
-    "accepted_cancellation_requests": 75,
-    "host_cpu_utilization_percent": 99.46300715990454,
-    "minimum_load_worker_cpu_percent": 86.63302711794789
+    "daemon_event_to_client_p50_ms": 1.601714,
+    "daemon_event_to_client_p95_ms": 2.285174,
+    "client_command_to_daemon_p50_ms": 0.08487,
+    "client_command_to_daemon_p95_ms": 0.642138,
+    "cancellation_request_to_ack_p50_ms": 1.47036,
+    "cancellation_request_to_ack_p95_ms": 3.790469,
+    "accepted_cancellation_requests": 91,
+    "detach_acknowledgement_ms": 0.111422,
+    "detach_under_saturation": true,
+    "reconnect_under_saturation": true,
+    "host_cpu_utilization_percent": 99.46364719904648,
+    "minimum_load_worker_cpu_percent": 72.44330597269138
   }
 }

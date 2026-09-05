@@ -977,4 +977,9 @@ listener/client readiness wait reduced the full 60-sample reference result to
 0.0000% idle daemon, 0.0624% idle client, and 0.1456% combined CPU of one
 logical CPU. Exact process identities, raw samples, host/binary/source hashes,
 and independently recalculated thresholds are retained. The saturated
-interaction/continuity aggregate gate is next.
+interaction aggregate now passes as well: it composes the real-PTY input probe,
+production BitBake/IPC path, and full-affinity load. Keyboard-to-frame and
+mouse-to-selection p95 remain 4.336/4.440 ms; refreshed daemon-event and
+cancellation-ack p95 are 2.285/3.790 ms. Delayed backend events, explicit EOF,
+cancellation, a 0.111 ms acknowledged detach, and a fresh attach all complete
+while saturation remains active. The default IPC continuity gate is next.

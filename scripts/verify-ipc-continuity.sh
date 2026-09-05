@@ -192,8 +192,16 @@ if cancellation["p50"] < 0 or cancellation["p95"] > 250:
 if summary["accepted_cancellation_requests"] < 2:
     raise SystemExit("IPC latency evidence did not prove live cancellation per batch")
 continuity = record["continuity"]
-if not continuity["primary_client_connected"] or not continuity["reconnect_succeeded"]:
+if (
+    not continuity["primary_client_connected_until_explicit_detach"]
+    or not continuity["detach_acknowledged"]
+    or not continuity["detach_under_saturation"]
+    or not continuity["reconnect_succeeded"]
+    or not continuity["reconnect_under_saturation"]
+):
     raise SystemExit("IPC latency evidence lost attach/reconnect continuity")
+if continuity["detach_latency_ms"] < 0 or continuity["detach_latency_ms"] > 250:
+    raise SystemExit("IPC detach acknowledgement exceeded 250 ms")
 if continuity["backend_disconnect_events"] != 0:
     raise SystemExit("IPC latency evidence observed a backend disconnect")
 if not continuity["protocol_sequences_strictly_increasing"]:
@@ -247,6 +255,14 @@ if summary["cancellation_request_to_ack_ms"]["p95"] > 250:
     raise SystemExit("current cancellation acknowledgement exceeds 250 ms")
 if summary["accepted_cancellation_requests"] < 2:
     raise SystemExit("current cancellation path did not remain functional")
+continuity = record["continuity"]
+if (
+    not continuity["detach_acknowledged"]
+    or not continuity["detach_under_saturation"]
+    or not continuity["reconnect_succeeded"]
+    or not continuity["reconnect_under_saturation"]
+):
+    raise SystemExit("current detach/reconnect path did not remain functional under saturation")
 load = record["saturation"]
 if (
     not load["alive_for_every_observation"]

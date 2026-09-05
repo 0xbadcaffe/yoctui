@@ -374,16 +374,16 @@ deliberately absent job bounds command receipt without unrelated command work.
 Two protocol-compliant batches of cancellation requests target live daemon
 BitBake jobs, with every correlated acknowledgement and outcome retained.
 
-After one second of warmup, the reference run collected 100 observations per
-path while one pinned worker ran on every one of eight affinity CPUs. Host CPU
-reached 99.46%, and the least-busy worker reached 86.63%. Daemon-event delivery
-measured 1.826 ms p50 and 2.522 ms p95; command receipt measured 0.068 ms p50
-and 1.880 ms p95; cancellation acknowledgement measured 2.195 ms p50 and 6.820
-ms p95. All 100 cancellation requests were acknowledged and 75 were accepted
-before the active worker closed its cancellation receiver. Protocol sequences
-were strictly increasing, no backend disconnect was observed, and a new client
-attached after measurement. Raw timestamps and exact binary/source identity
-live under `artifacts/performance/ipc-latency/`.
+After one second of warmup, the refreshed reference run collected 100
+observations per path while one pinned worker ran on every one of eight affinity
+CPUs. Host CPU reached 99.46%, and the least-busy worker reached 72.44%.
+Daemon-event delivery measured 1.602 ms p50 and 2.285 ms p95; command receipt
+measured 0.085 ms p50 and 0.642 ms p95; cancellation acknowledgement measured
+1.470 ms p50 and 3.790 ms p95. All 100 cancellation requests were acknowledged
+and 91 were accepted. Protocol sequences were strictly increasing, no backend
+disconnect was observed, explicit detach was acknowledged in 0.111 ms, and a
+new client attached before saturation ended. Raw timestamps and exact
+binary/source identity live under `artifacts/performance/ipc-latency/`.
 
 ```sh
 ./scripts/verify-ipc-continuity.sh --latency

@@ -6,6 +6,41 @@ cd "$repo_root"
 
 mode="${1:-all}"
 
+verify_aggregate_evidence() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/responsiveness")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.responsiveness-manifest.v1":
+    raise SystemExit("responsiveness manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+for source, digest in manifest.get("sources", {}).items():
+    if hashlib.sha256(Path(source).read_bytes()).hexdigest() != digest:
+        raise SystemExit(f"responsiveness source digest mismatch: {source}")
+for name, declaration in manifest.get("evidence", {}).items():
+    path = Path(declaration["path"])
+    if hashlib.sha256(path.read_bytes()).hexdigest() != declaration["sha256"]:
+        raise SystemExit(f"responsiveness evidence digest mismatch: {name}")
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if record.get("schema") != declaration["schema"]:
+        raise SystemExit(f"responsiveness evidence schema mismatch: {name}")
+if set(manifest.get("requirements", {})) != {
+    "keyboard_input", "mouse_input", "visible_frames", "daemon_continuity",
+    "backend_continuity", "cancellation", "detach", "reconnect", "all_cpus_runnable",
+} or not all(manifest["requirements"].values()):
+    raise SystemExit("responsiveness requirement coverage is incomplete")
+print("retained saturation responsiveness evidence covers input, frames, continuity, cancellation, detach, and reconnect")
+PY
+}
+
 verify_harness() {
   python3 -m unittest scripts/test_cpu_saturation_harness.py
   artifact="$(mktemp /tmp/yoctui-saturation-gate.XXXXXX.json)"
@@ -267,8 +302,11 @@ case "$mode" in
     verify_input_latency
     ;;
   all)
-    printf '%s\n' 'full saturation responsiveness gate is not implemented yet' >&2
-    exit 1
+    verify_aggregate_evidence
+    verify_harness
+    verify_bitbake_connection
+    verify_input_latency
+    ./scripts/verify-ipc-continuity.sh --latency
     ;;
   *)
     printf 'unknown saturation verification mode: %s\n' "$mode" >&2

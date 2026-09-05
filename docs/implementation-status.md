@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-RESPONSIVENESS-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-IPC-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -115,7 +115,13 @@ maintenance bound when quiet. The full release capture records 0.0000% idle
 daemon, 0.0624% idle client, and 0.1456% combined CPU of one logical CPU across
 sixty post-warmup samples, below the independent 0.20/0.50/1.00% limits. The
 offline gate reproduces the robust statistics and repeats the real process-pair
-measurement. Overall required registry progress is 651/659 (98.8%).
+measurement. The aggregate saturation responsiveness gate now composes the
+real-PTY input/render path with production BitBake/daemon IPC and all-affinity
+load. It keeps keyboard-to-frame and mouse-to-selection p95 at 4.336/4.440 ms,
+refreshes daemon-event and cancellation-ack p95 to 2.285/3.790 ms at 99.46%
+host CPU, preserves delayed events and explicit EOF, acknowledges detach in
+0.111 ms, and attaches a fresh client before load ends. Overall required
+registry progress is 652/659 (98.9%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

@@ -3690,10 +3690,12 @@ against live daemon-owned BitBake jobs and records every correlated result;
 each batch must contain an accepted cancellation. All paths retain 100 raw
 samples, strict daemon event ordering, reconnect proof, and evidence that one
 pinned load worker remained runnable on every affinity CPU.
-The release observation reached 99.46% host CPU and measured daemon-event,
-command-receipt, and cancellation-acknowledgement p95 values of 2.522, 1.880,
-and 6.820 ms respectively. All 100 cancellation requests were acknowledged and
-75 reached the live worker before its cancellation receiver closed.
+The refreshed release observation reached 99.46% host CPU and measured
+daemon-event, command-receipt, and cancellation-acknowledgement p95 values of
+2.285, 0.642, and 3.790 ms respectively. All 100 cancellation requests were
+acknowledged and 91 reached the live worker. The primary client then received a
+correlated detach response in 0.111 ms and closed before a new client attached,
+all while the saturation workers remained active.
 
 The steady-state release CPU gate uses the protocol layer's single
 `DaemonListener::wait_for_activity` boundary to block on the listener and every

@@ -151,6 +151,20 @@ class ProtocolClient:
             pass
         self.socket.close()
 
+    def detach(self, timeout: float = 2.0) -> tuple[int, int]:
+        sent_ns = time.clock_gettime_ns(time.CLOCK_MONOTONIC)
+        self.send({"type": "detach"})
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            received = self.receive(max(0.001, deadline - time.monotonic()))
+            if received is None:
+                break
+            message, received_ns = received
+            if message.get("type") == "detaching":
+                self.socket.close()
+                return sent_ns, received_ns
+        raise RuntimeError("daemon did not acknowledge detach")
+
 
 class Observation:
     def __init__(
@@ -260,7 +274,7 @@ def job_event(message: dict[str, object]) -> dict[str, object] | None:
 def wait_for_job(
     observation: Observation, job_id: int | None, lifecycles: set[str]
 ) -> dict[str, object]:
-    deadline = time.monotonic() + 3.0
+    deadline = time.monotonic() + 5.0
     while time.monotonic() < deadline:
         message = observation.receive(max(0.001, deadline - time.monotonic()))
         job = job_event(message)
@@ -386,6 +400,8 @@ def main() -> int:
     command_samples: list[dict[str, int | float]] = []
     cancellation_samples: list[dict[str, int | float]] = []
     reconnect_succeeded = False
+    detach_acknowledged = False
+    detach_latency_ms: float | None = None
     saturation_alive_for_all_samples = True
     try:
         daemon, socket_path = start_daemon(binary, fixture)
@@ -541,6 +557,12 @@ def main() -> int:
                 raise RuntimeError("replacement build omitted numeric job identity")
         cancellation_samples.sort(key=lambda sample: int(sample["sequence"]))
 
+        detach_sent_ns, detach_received_ns = client.detach()
+        detach_acknowledged = True
+        detach_latency_ms = (detach_received_ns - detach_sent_ns) / 1_000_000
+        client = None
+        saturation_alive_for_all_samples &= saturation.poll() is None
+
         probe = ProtocolClient(socket_path, 32)
         probe.attach()
         probe.close()
@@ -609,8 +631,12 @@ def main() -> int:
             },
             "continuity": {
                 "initial_generation": generation,
-                "primary_client_connected": True,
+                "primary_client_connected_until_explicit_detach": True,
+                "detach_acknowledged": detach_acknowledged,
+                "detach_latency_ms": detach_latency_ms,
+                "detach_under_saturation": saturation_alive_for_all_samples,
                 "reconnect_succeeded": reconnect_succeeded,
+                "reconnect_under_saturation": saturation_alive_for_all_samples,
                 "backend_disconnect_events": observation.backend_disconnects,
                 "protocol_sequences_strictly_increasing": ordered,
                 "protocol_event_count": len(observation.protocol_sequences),

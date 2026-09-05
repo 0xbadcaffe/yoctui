@@ -2,41 +2,40 @@
 
 ## Task
 
-**ID:** PERF-RESPONSIVENESS-GATE-001
-**Title:** Gate interactive responsiveness under saturation
+**ID:** PERF-IPC-GATE-001
+**Title:** Gate IPC continuity and critical-event ordering
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Implement the deterministic full-CPU saturation gate for continued keyboard,
-mouse, rendering, daemon/backend connection, cancellation, detach, and
-reconnect responsiveness.
+Complete the default IPC continuity gate across deterministic event flood and
+full-CPU saturation, including strict critical-event order, slow-client
+isolation, and reconnect.
 
 ## Dependencies
 
-- PERF-INPUT-LATENCY-001 — DONE
-- PERF-BITBAKE-CONN-001 — DONE
+- PERF-IPC-LATENCY-001 — DONE
+- PERF-EVENT-FLOOD-001 — DONE
 
 ## Definition of done
 
-- Every CPU in the caller affinity remains runnable under the deterministic
-  load fixture; no core is deliberately reserved.
-- Real PTY keyboard and mouse actions remain visible with p95 <=100 ms and
-  rendering continues.
-- The daemon/client and production-path fixture backend remain connected across
-  the saturated observation window.
-- Cancellation is acknowledged and reaches a terminal result without being
-  starved by cosmetic work.
-- Detach and fresh reconnect both succeed under load without losing critical
-  ordering.
-- The offline gate retains exact host, binary/source, load, raw latency, render,
-  connection, cancellation, detach, and reconnect evidence.
+- Full-affinity CPU saturation and a >=4,000 event/s production-path flood run
+  through the default gate without client or backend disconnect.
+- A healthy client retains strict protocol order and all warning, error,
+  failure, cancellation, terminal, disconnect, and capability-critical
+  evidence.
+- A non-reading client cannot block daemon ingestion or the healthy client and
+  is isolated through the bounded per-client policy.
+- Queue pressure counters and bounds are validated from typed runtime state.
+- Detach, reconnect, and authoritative snapshot recovery remain functional.
+- The default gate runs without network access and does not depend on a real
+  Poky workspace.
 
 ## Verification
 
 ```bash
-./scripts/verify-saturation-responsiveness.sh
+./scripts/verify-ipc-continuity.sh
 ./scripts/verify-roadmap.sh
 ```
 
-The one-percent steady-state CPU gate is complete in v0.1.43.
+The saturation responsiveness gate is complete in v0.1.44.
