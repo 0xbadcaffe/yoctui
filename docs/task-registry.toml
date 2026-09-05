@@ -7055,18 +7055,18 @@ notes = "The offline Python fixture pins deterministic workers to an explicit CP
 id = "PERF-EVENT-FLOOD-001"
 milestone = "M46"
 title = "Create a BitBake-like event flood harness"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 794
 required = true
 depends_on = ["PERF-SPEC-001"]
 verify = ["./scripts/verify-ipc-continuity.sh --event-flood"]
-notes = "Generate realistic queued, started, progress, log, warning, failure, and completion traffic above expected build rates while checking bounds and critical-event retention."
+notes = "The configurable offline bridge emits stable-identity queued/started/progress/completed tasks, ordinary logs, warnings, errors, intentional failures, cancellation, success/failure terminals, and backend EOF at 2,000+ events/s. Direct tests prove event mix, ordering, invalid input, cancellation, disconnect, and bounded exit. The production observer traverses BridgeBackend, the BitBake supervisor, daemon reducer/journal, Unix IPC, and two client attaches while recording rate, RSS, sequence, replacement, continuity, retention, and bounds. It honestly reproduces the current unbounded-ingress terminal starvation for PERF-IPC-BACKPRESSURE-001. The focused gate passes in v0.1.27."
 
 [[task]]
 id = "PERF-EVENTLOOP-001"
 milestone = "M46"
 title = "Eliminate idle busy loops"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 795
 required = true
 depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]

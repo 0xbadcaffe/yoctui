@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-EVENT-FLOOD-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-EVENTLOOP-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -29,11 +29,14 @@ and repeated full-snapshot JSON serialization as measured hot paths. A hashed
 thirteen-source wakeup audit measured 867.24 voluntary context switches/s for
 the standalone daemon and 60.4 aggregate context switches/s for an attached
 daemon/client, while distinguishing event-driven PTY and BitBake waits from
-unconditional polling. The deterministic CPU fixture now uses the entire
-caller affinity by default, pins one bounded worker per logical CPU, reports
-readiness/load/cleanup as JSON, and reaps exact children on interruption. The
-BitBake-like event flood harness is next; no runtime optimization has landed.
-Overall required registry progress is 634/659 (96.2%).
+unconditional polling. The deterministic CPU fixture uses every CPU in the
+caller affinity by default. The 4,000-event/s production-path flood observer
+records generator rate, daemon RSS, IPC frames/resyncs, critical sent/received
+sets, and a second-client continuity probe. It reproduces the known unbounded
+supervisor-ingress terminal starvation without claiming a passing backpressure
+result; direct fixtures also cover cancellation and backend disconnect.
+Idle-loop optimization is next. Overall required registry progress is 635/659
+(96.4%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

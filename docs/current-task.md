@@ -2,41 +2,41 @@
 
 ## Task
 
-**ID:** PERF-EVENT-FLOOD-001
-**Title:** Create a BitBake-like event flood harness
+**ID:** PERF-EVENTLOOP-001
+**Title:** Eliminate idle busy loops
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Create a deterministic BitBake-like event producer that drives the production
-bridge, daemon reducer/journal, IPC, and client paths above expected build
-rates. It must mix task lifecycle/progress, ordinary logs, warnings, errors,
-failure, cancellation, backend disconnect, and terminal outcomes while making
-rate, ordering, retention, memory, and connection evidence measurable.
+Use the captured baseline, profiles, and wakeup audit to make every long-lived
+Yoctui loop block efficiently when idle. Remove unconditional short polling,
+spinning receives, and unchanged periodic work without changing event ordering,
+input correctness, cancellation, PTY ownership, or daemon/client liveness.
 
 ## Dependencies
 
-- PERF-SPEC-001 — DONE
+- PERF-FLAMEGRAPH-001 — DONE
+- PERF-WAKEUPS-001 — DONE
 
 ## Definition of done
 
-- The fixture emits realistic queued, started, progress, log, warning, error,
-  completed, failed/cancelled, and backend lifecycle events with stable task IDs.
-- Configurable rates include at least the contractual 2,000 events/s and exceed
-  expected production rates without network or a Yocto checkout.
-- Critical sequence sent/received/retained evidence proves that ordinary traffic
-  cannot invent loss of terminal, failure, cancellation, or disconnect events.
-- Runtime duration, actual event rates, queue/retention bounds, memory, client
-  continuity, and terminal completion are machine-readable.
-- Tests cover event mix, deterministic ordering, invalid configuration, bounded
-  exit, and the currently failing pre-backpressure behavior honestly.
+- The daemon listener and supervisor loop blocks when there are no clients,
+  jobs, PTYs, pending operations, or due telemetry samples.
+- Client input/IPC waiting does not spin and does not force redraw by itself.
+- Every long-lived `try_recv`, poll, reconnect, PTY, log/job/status, and timer
+  loop has an explicit blocking or bounded-notification contract.
+- No zero-duration sleep, repeated unchanged metadata/capability/filesystem
+  probing, or idle redraw remains.
+- Focused tests measure bounded idle wakeups and prove prompt notification for
+  daemon commands, backend events, input, PTY output, and shutdown.
+- The performance verifier rejects regressions to the audited busy-loop forms.
 
 ## Verification
 
 ```bash
-./scripts/verify-ipc-continuity.sh --event-flood
+./scripts/verify-performance.sh --event-loops
 ./scripts/verify-roadmap.sh
 ```
 
-The pre-optimization evidence and deterministic CPU saturation fixture are
-complete. No runtime optimization has landed.
+Baseline/profile/wakeup evidence and both deterministic fixtures are complete.
+This is the first runtime optimization task.

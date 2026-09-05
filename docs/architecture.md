@@ -3537,3 +3537,20 @@ A shared stop event plus identity-scoped join/terminate/kill cleanup bounds
 normal completion and interruption. No fixture state enters the model,
 protocol, daemon journal, client, or BitBake backend; later responsiveness
 gates observe those production paths while load remains external.
+
+The event-flood fixture implements the normal versioned bridge protocol and is
+selected only through the existing explicit bridge-path test override. It emits
+stable task identities and a deterministic mix of ordinary and correctness
+events at a configured monotonic rate. A sentinel tail orders warning, error,
+task lifecycle/failure, and build terminal records; alternate direct scenarios
+exercise cancellation and backend EOF. Its atomic JSON report is generator
+evidence, never real-BitBake evidence.
+
+The production observer does not inject daemon state. It starts an isolated
+daemon, submits a normal typed `StartBuild`, and observes the existing
+`BridgeBackend -> DaemonBitBakeSupervisor -> DaemonSnapshotJournal -> Unix IPC`
+path with an attached protocol client and a second continuity attach. It records
+generated and received critical sets, daemon RSS, sequence monotonicity, snapshot
+replacement, declared model bounds, and the current unbounded supervisor-ingress
+failure. A harness pass means the known failure was detected; only the later
+strict IPC/backpressure gate may claim critical-event retention.

@@ -157,6 +157,27 @@ full affinity set with a short bound:
 ./scripts/verify-saturation-responsiveness.sh --harness
 ```
 
+`scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
+fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
+and success/failure/disconnect terminal mode. Stable task identities plus
+ordered critical sentinels cover ordinary logs, progress, warnings, errors,
+task failures, cancellation, backend EOF, and build terminals. Its atomic JSON
+report contains requested and achieved rate, counts by type, monotonic duration,
+critical bridge sequences, and terminal outcome.
+
+`scripts/event-flood-harness.py` drives that fixture through the production
+bridge backend, BitBake supervisor, daemon reducer/journal, Unix IPC, and an
+attached client. It records RSS, client frames, resynchronizations, connection
+continuity, ordered received sequences, sent/received critical sets, and the
+declared journal/snapshot bounds. Until bounded priority ingress lands, the
+focused verifier requires this observer to expose terminal starvation and labels
+the supervisor queue `unbounded_pre_backpressure`; it explicitly does not claim
+that IPC backpressure passes:
+
+```sh
+./scripts/verify-ipc-continuity.sh --event-flood
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,
