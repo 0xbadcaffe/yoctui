@@ -3611,6 +3611,14 @@ therefore satisfies the later lifecycle wait instead of becoming a harness
 race. This changes neither protocol ordering nor measured command and
 cancellation acknowledgement timestamps.
 
+Memory endurance uses the same production bridge, supervisor, daemon reducer,
+journal, Unix IPC, and attached observer. Sampling begins after warmup at 1 Hz;
+event frequency cannot increase sample retention. Sequence validation stores
+only the previous sequence, while daemon RSS history stores one value per
+second. Release evidence spans 30 minutes and calculates independent daemon and
+client least-squares slopes over the final 20 minutes. Model/protocol tests
+separately prove log, task, telemetry, PTY, snapshot, and journal hard bounds.
+
 BitBake liveness does not use a short silence timeout. `BridgeBackend` blocks on
 the child protocol pipe until a complete bounded frame or actual EOF/error;
 ordinary scheduler delay therefore cannot synthesize `Disconnected`. The

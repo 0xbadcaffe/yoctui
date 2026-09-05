@@ -1,0 +1,25 @@
+{
+  "schema": "yoctui.performance.bounded-memory-manifest.v1",
+  "source_base_revision": "429a8f67d85ba9ca7e4efe3c6079875fc05ff352",
+  "artifact": "endurance-30m.json",
+  "artifact_sha256": "51ccdf75dd0fb285aae794496935663b5b8878e5562d0d2012461d6858bc865f",
+  "binary_sha256": "15f17659b9d79e1ceef02ef005a65a71eae4e6b8676366176fd4a7ba2643a474",
+  "sources": {
+    "scripts/measure-bounded-memory.py": "5e112b08363b2b8d1843aff82b07872e059c150ca2d9188b58a5522b2d13cabe",
+    "scripts/event-flood-harness.py": "2007b4b9340b37f8f2764051bd72896ecf2c66e7fbc244733001659f9d40d0af",
+    "scripts/verify-bounded-memory.sh": "a255dc1ea48684135b69722372767d6373eb14d7a1df77a68c98211d3007028c",
+    "scripts/test_bounded_memory_harness.py": "42546d448d5e4caf5deee808b09f60a6677fe71751cc5d99f11e1ee6360d7126"
+  },
+  "observations": {
+    "sample_count": 1800,
+    "daemon_rss_growth_bytes": 1351680,
+    "client_rss_growth_bytes": 110592,
+    "daemon_final_slope_bytes_per_minute": 0.0,
+    "client_final_slope_bytes_per_minute": 0.0,
+    "daemon_threads": 3,
+    "client_threads": 1,
+    "critical_retention_passed": true,
+    "strict_event_order": true,
+    "connection_continuity": true
+  }
+}

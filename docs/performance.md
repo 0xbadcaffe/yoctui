@@ -111,6 +111,15 @@ the high-rate event mix and requires:
 The default one-minute PR fixture may prove bounds and state invariants but is
 not the endurance result used for a release claim.
 
+The v0.1.46 release observation retains 1,800 one-second samples after a
+10-second warmup while the production bridge/daemon/IPC path receives 4,000
+events/s. Daemon RSS grew 1,351,680 bytes and attached-observer RSS grew 110,592
+bytes; both least-squares slopes over the final 20 minutes were 0 bytes/minute.
+Threads stayed at three and one respectively. Critical retention, strict event
+order, and connection continuity remained true. The harness bounds its own
+sequence and RSS observations, and the default verifier separately reruns the
+one-minute fixture plus model/protocol retention tests.
+
 ## Baseline and profiling artifact policy
 
 Pre-optimization machine-readable artifacts live below

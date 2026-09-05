@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-MEMORY-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-REAL-POKY-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -128,7 +128,13 @@ client has zero forced resynchronizations, a non-reading client is isolated,
 and daemon/backend continuity plus detach/reconnect hold. The latency observer
 retains terminal job state received while it drains pipelined acknowledgements,
 eliminating a harness-only race without relaxing measured acknowledgement
-thresholds. Overall required registry progress is 653/659 (99.1%).
+thresholds. The bounded-memory release gate now retains 1,800 one-second
+post-warmup samples during a 4,000-event/s production-path flood. Daemon/client
+RSS grew only 1,351,680/110,592 bytes, both final 20-minute slopes were zero,
+and threads remained exactly 3/1. Strict critical retention, ordering, and
+continuity pass alongside focused log, task, telemetry, PTY, and protocol
+retention tests; the default gate also repeats a one-minute offline fixture.
+Overall required registry progress is 654/659 (99.2%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

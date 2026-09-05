@@ -2,39 +2,38 @@
 
 ## Task
 
-**ID:** PERF-MEMORY-GATE-001
-**Title:** Gate bounded memory under sustained event load
+**ID:** PERF-REAL-POKY-001
+**Title:** Validate responsiveness during a real saturated Poky build
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Prove that sustained high-rate logs, task updates, IPC fanout, telemetry, and
-PTY traffic remain bounded without monotonic process-memory or thread growth.
+Capture sustained supported-Poky task execution with the optimized daemon and
+client while the build uses the available host CPUs.
 
 ## Dependencies
 
-- PERF-LOG-001 — DONE
-- PERF-TASKS-001 — DONE
-- PERF-IPC-BACKPRESSURE-001 — DONE
+- PERF-CPU-GATE-001 — DONE
+- PERF-RESPONSIVENESS-GATE-001 — DONE
+- PERF-IPC-GATE-001 — DONE
+- PERF-MEMORY-GATE-001 — DONE
 
 ## Definition of done
 
-- A deterministic sustained high-rate workload exercises logs, tasks, daemon
-  journal/client queues, telemetry histories, and PTY retention.
-- All model and transport collections remain at their documented hard bounds.
-- Daemon and attached-client RSS do not grow by more than 32 MiB over the
-  bounded gate, and retained endurance evidence has a final-window slope no
-  greater than 64 KiB/min.
-- Thread counts remain stable and no correctness-critical terminal record is
-  lost under retention pressure.
-- The default verifier runs without network access and distinguishes the
-  deterministic gate from retained long-duration evidence.
+- Evidence names the supported Poky revision, build directory, target, machine,
+  distro, exact Yoctui binary, host, and measurement window.
+- Sustained real task execution captures daemon/client/BitBake CPU and memory,
+  render/event rates, input and IPC latency, and pressure counters.
+- Daemon/client and BitBake backend continuity hold under real host pressure;
+  input remains responsive and cancellation evidence is explicit.
+- The artifact is labeled real-Poky evidence and cannot be substituted by a
+  fixture-only run.
 
 ## Verification
 
 ```bash
-./scripts/verify-bounded-memory.sh
+./scripts/verify-performance.sh --real-poky-evidence
 ./scripts/verify-roadmap.sh
 ```
 
-The IPC continuity gate is complete in v0.1.45.
+The bounded-memory gate is complete in v0.1.46.

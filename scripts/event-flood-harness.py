@@ -349,7 +349,8 @@ def main() -> int:
         frame_count = 0
         snapshots = 0
         resyncs = 0
-        sequences: list[int] = []
+        last_sequence: int | None = None
+        ordered_sequences = True
         rss_samples: list[int] = []
         client_continuity = False
         generated: dict[str, object] | None = None
@@ -366,6 +367,7 @@ def main() -> int:
             classify_snapshot(initial, observed)
             generation = initial.get("generation")
             measurement_started = time.monotonic()
+            next_rss_sample = measurement_started
             daemon_cpu_started = process_cpu_seconds(daemon.pid)
             client.send(
                 {
@@ -385,9 +387,12 @@ def main() -> int:
                 time.monotonic() + args.duration_seconds + args.observation_seconds + 10
             )
             while time.monotonic() < absolute_deadline:
-                rss = process_rss(daemon.pid)
-                if rss is not None:
-                    rss_samples.append(rss)
+                now = time.monotonic()
+                if now >= next_rss_sample:
+                    rss = process_rss(daemon.pid)
+                    if rss is not None:
+                        rss_samples.append(rss)
+                    next_rss_sample += 1.0
                 message = client.receive(0.05)
                 if message is not None:
                     frame_count += 1
@@ -397,7 +402,9 @@ def main() -> int:
                         resyncs += 1
                     sequence = message.get("sequence")
                     if isinstance(sequence, int):
-                        sequences.append(sequence)
+                        if last_sequence is not None and sequence <= last_sequence:
+                            ordered_sequences = False
+                        last_sequence = sequence
                     classify_message(message, observed)
                     observe_pressure(message, observed_pressure)
                 if generator_report.exists() and report_seen_at is None:
@@ -444,9 +451,6 @@ def main() -> int:
         sent_names = {entry["name"] for entry in generated["critical_sent"]}
         critical_received = sorted(sent_names & observed)
         missing = sorted(sent_names - observed)
-        ordered_sequences = all(
-            current > previous for previous, current in zip(sequences, sequences[1:])
-        )
         retention_passed = CRITICAL_NAMES.issubset(observed)
         known_failure = (
             "build_terminal" in sent_names

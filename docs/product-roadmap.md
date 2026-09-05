@@ -987,3 +987,7 @@ hashed flood and saturation evidence and reruns the bounded production path:
 all seven critical sentinels remain ordered, the healthy client never
 resynchronizes, a non-reader is isolated, and detach/reconnect remain available
 under load. Bounded-memory endurance is next.
+The bounded-memory gate now passes its 30-minute release run: daemon/client RSS
+growth was 1.29 MiB/108 KiB, both final 20-minute slopes were zero, threads
+stayed 3/1, and correctness/continuity survived the full 4,000-event/s stream.
+Supported real-Poky saturation evidence is next.

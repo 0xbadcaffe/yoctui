@@ -7264,18 +7264,18 @@ notes = "In v0.1.45 the network-free aggregate gate independently validates hash
 id = "PERF-MEMORY-GATE-001"
 milestone = "M46"
 title = "Gate bounded memory under sustained event load"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 813
 required = true
 depends_on = ["PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-BACKPRESSURE-001"]
 verify = ["./scripts/verify-bounded-memory.sh"]
-notes = "Run a meaningful bounded high-rate workload and reject monotonic growth in log, task, IPC, telemetry, and process memory retention."
+notes = "In v0.1.46 the release endurance gate retained 1,800 one-second post-warmup samples during a 4,000-event/s production-path flood. Daemon/client RSS grew only 1,351,680/110,592 bytes, both final 20-minute slopes were 0 bytes/minute, and threads stayed 3/1. Strict critical retention, event order, and continuity pass; the default network-free gate also reruns a one-minute fixture and focused log/task/telemetry/PTY/protocol bound tests. Harness sequence and RSS observations are themselves bounded."
 
 [[task]]
 id = "PERF-REAL-POKY-001"
 milestone = "M46"
 title = "Validate responsiveness during a real saturated Poky build"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 814
 required = true
 depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
