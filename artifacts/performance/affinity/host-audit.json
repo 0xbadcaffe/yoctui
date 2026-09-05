@@ -1,0 +1,600 @@
+{
+  "captured_at_unix_ms": 1788611272454,
+  "configuration": {
+    "probe_duration_seconds": 3.0,
+    "probe_interval_ms": 10,
+    "repetitions": 3
+  },
+  "host": {
+    "affinity_cpus": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "logical_cpus": 8,
+    "reserved_cpu_thread_siblings": "3,7",
+    "reserved_logical_cpu": 7
+  },
+  "revision": "f2e1cf2b32a19effff7fde7c0c0036a38ac0b0bd",
+  "scenarios": {
+    "pinned_competing_cpu": {
+      "load_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "probe_cpus": [
+        7
+      ],
+      "saturation": [
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 99.24178601516428,
+          "minimum_worker_cpu_percent": 87.96370298255633,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "status": "completed"
+        },
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 99.2991309223437,
+          "minimum_worker_cpu_percent": 83.9432255686455,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "status": "completed"
+        },
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 99.38340807174887,
+          "minimum_worker_cpu_percent": 82.2979758559378,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "status": "completed"
+        }
+      ],
+      "summary": {
+        "median_p95_wake_latency_ms": 0.5791311850771308,
+        "worst_maximum_wake_latency_ms": 8.811737992800772,
+        "worst_p95_wake_latency_ms": 0.7979483343660831
+      },
+      "trials": [
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.990068991901353,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 8.811737992800772,
+              "p50": 0.06390491034835577,
+              "p95": 0.5791311850771308,
+              "p99": 6.625498412176967
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004383383000000005,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900739489821717,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 4.5527765760198236,
+              "p50": 0.06479036528617144,
+              "p95": 0.7979483343660831,
+              "p99": 3.0106864869594574
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004670705999999997,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900713399983943,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 3.654723521322012,
+              "p50": 0.0636016484349966,
+              "p95": 0.07423176430165768,
+              "p99": 1.849992899224162
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004528659000000004,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        }
+      ]
+    },
+    "pinned_reserved_cpu": {
+      "load_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "probe_cpus": [
+        7
+      ],
+      "saturation": [
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 95.02543810062183,
+          "minimum_worker_cpu_percent": 94.5947397426039,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "status": "completed"
+        },
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 93.88560157790927,
+          "minimum_worker_cpu_percent": 90.22987940041573,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "status": "completed"
+        },
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 92.56338028169014,
+          "minimum_worker_cpu_percent": 89.59800913295837,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "status": "completed"
+        }
+      ],
+      "summary": {
+        "median_p95_wake_latency_ms": 1.9252902129665017,
+        "worst_maximum_wake_latency_ms": 30.44460527598858,
+        "worst_p95_wake_latency_ms": 2.0408978452906013
+      },
+      "trials": [
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.990406357916072,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 30.44460527598858,
+              "p50": 0.07027422543615103,
+              "p95": 2.0408978452906013,
+              "p99": 10.451189242303371
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.006515987000000001,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900866609532386,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 3.724625799804926,
+              "p50": 0.06888341158628464,
+              "p95": 1.8255492905154824,
+              "p99": 2.818130888044834
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.006576814,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.990065243910067,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 4.553504753857851,
+              "p50": 0.0684242695569992,
+              "p95": 1.9252902129665017,
+              "p99": 2.9225937323644757
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.006573316999999995,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        }
+      ]
+    },
+    "shared_full_affinity": {
+      "load_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "probe_cpus": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "saturation": [
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 99.40878378378379,
+          "minimum_worker_cpu_percent": 86.41779044728113,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "status": "completed"
+        },
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 99.01933314653965,
+          "minimum_worker_cpu_percent": 88.99907007640732,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "status": "completed"
+        },
+        {
+          "children_reaped": true,
+          "host_cpu_utilization_percent": 99.38150126511105,
+          "minimum_worker_cpu_percent": 88.53421465767298,
+          "selected_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "status": "completed"
+        }
+      ],
+      "summary": {
+        "median_p95_wake_latency_ms": 0.08345011156052351,
+        "worst_maximum_wake_latency_ms": 10.24149265140295,
+        "worst_p95_wake_latency_ms": 1.5099316369742155
+      },
+      "trials": [
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900703199673444,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 3.503551008179784,
+              "p50": 0.06358127575367689,
+              "p95": 0.08345011156052351,
+              "p99": 2.6728195371106267
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004407865000000011,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900749620283023,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 2.3996670497581363,
+              "p50": 0.06444612517952919,
+              "p95": 0.07711234502494335,
+              "p99": 0.46546338126063347
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004464014000000002,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        },
+        {
+          "clock": "CLOCK_MONOTONIC",
+          "configuration": {
+            "duration_seconds": 3.0,
+            "interval_ms": 10.0
+          },
+          "measurement": {
+            "elapsed_seconds": 2.9900726049672812,
+            "samples": 299,
+            "wake_latency_ms": {
+              "maximum": 10.24149265140295,
+              "p50": 0.06444205064326525,
+              "p95": 1.5099316369742155,
+              "p99": 6.223365664482117
+            }
+          },
+          "parent_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "process": {
+            "cgroup": "/user.slice/user-1000.slice/user@1000.service/app.slice/vte-spawn-aacc7f80-990b-4905-8df8-22f5c969e10e.scope",
+            "cpu_seconds": 0.004490072999999997,
+            "cpu_weight": null,
+            "nice": 0
+          },
+          "requested_affinity_cpus": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7
+          ],
+          "schema": "yoctui.performance.scheduler-latency.v1"
+        }
+      ]
+    }
+  },
+  "schema": "yoctui.performance.affinity-audit.v1"
+}

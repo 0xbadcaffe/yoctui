@@ -7187,18 +7187,18 @@ notes = "In v0.1.38 three repeated three-second full-affinity trials measured me
 id = "PERF-CPU-AFFINITY-001"
 milestone = "M46"
 title = "Evaluate optional CPU affinity and isolation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 806
 required = true
 depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]
 verify = ["./scripts/verify-performance.sh --affinity"]
-notes = "Measure whether optional CPU reservation improves responsiveness without hardcoding affinity or making a free core necessary for correctness."
+notes = "In v0.1.39 three repeated full-affinity, pinned-competing, and one-logical-CPU-reserved trials measured median p95 wake latency of 0.0835, 0.5791, and 1.9253 ms respectively. Reserved CPU 7 shared a physical core with saturated sibling CPU 3, so pinning removed migration flexibility without physical isolation. Yoctui inherits affinity, hardcodes no CPU, and the offline gate independently proves the required every-CPU-busy path remains responsive; external topology-aware cpusets remain an administrator policy, not a requirement."
 
 [[task]]
 id = "PERF-BITBAKE-COEXIST-001"
 milestone = "M46"
 title = "Document measured BitBake coexistence guidance"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 807
 required = true
 depends_on = ["PERF-SCHED-001", "PERF-CPU-AFFINITY-001"]

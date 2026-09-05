@@ -3638,6 +3638,16 @@ request real-time policy, require root, or install a CPUWeight override. The
 user-service experiment is retained as host-specific evidence rather than a
 product default.
 
+Process affinity follows the same non-mutation rule. The reference audit
+compares the inherited full CPU set, pinning to a CPU that still has a load
+worker, and pinning to one logical CPU omitted from the load. On the SMT host,
+the nominally reserved CPU 7 shares a physical core with still-busy CPU 3;
+pinning removed scheduler migration flexibility and increased median p95 wake
+latency. The daemon and client therefore inherit their caller's topology-aware
+affinity, never choose a CPU number, and remain correct with every logical CPU
+busy. External administrators retain normal `taskset`/cpuset authority, but
+that host policy is not encoded in Yoctui state or startup.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

@@ -238,6 +238,37 @@ that a Yoctui recommendation or default. Reproduce the evidence offline with:
 The gate treats absence of a systemd user manager as supported; correctness and
 the required latency check always use inherited priority.
 
+### CPU affinity and isolation
+
+`scripts/measure-affinity.py` repeats the same 10 ms monotonic wake probe in
+three explicit CPU layouts: both load and probe use the full affinity set; the
+probe is pinned to a logical CPU which still has a load worker; and the probe is
+pinned to one logical CPU omitted from the load. The reference host has eight
+logical CPUs with SMT sibling pairs; selected CPU 7 shares a physical core with
+CPU 3. Each layout has three three-second trials and records the exact load and
+probe sets, sibling topology, load floor, cleanup, and latency tails.
+
+The required inherited/full-set path measured 0.0835 ms median p95. Pinning to
+the competing CPU measured 0.5791 ms. Omitting CPU 7 from load but continuing to
+load its sibling CPU 3 measured 1.9253 ms. All remain far below 100 ms, but the
+nominal logical reservation was materially worse because it removed migration
+without isolating the physical core. This evidence does not justify automatic
+or recommended affinity. Yoctui inherits the caller's affinity and never
+hardcodes a CPU. An administrator who understands the machine topology may
+still launch both BitBake and Yoctui in explicit cpusets, but correctness and
+support do not depend on it.
+
+```sh
+./scripts/measure-affinity.py \
+  --revision "$(git rev-parse HEAD)" \
+  --duration-seconds 3 \
+  --repetitions 3 \
+  --output /tmp/yoctui-affinity.json
+./scripts/verify-performance.sh --affinity
+```
+
+The gate also reruns the standard saturation harness with no reserved CPU.
+
 `scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
 fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
 and success/failure/disconnect terminal mode. Stable task identities plus

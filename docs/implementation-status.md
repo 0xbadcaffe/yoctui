@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-CPU-AFFINITY-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-BITBAKE-COEXIST-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -90,8 +90,13 @@ latency at inherited nice 0, 0.4696 ms at nice 5, and 0.0871 ms in a transient
 systemd user service with CPUWeight 200. Unprivileged negative nice was denied.
 Because normal priority already passed and neither adjustment improved it,
 Yoctui requires no priority change, root, real-time policy, or cgroup override.
-Optional affinity/isolation measurement is next. Overall required registry
-progress is 646/659 (98.0%).
+The affinity audit measured 0.0835 ms median p95 with the inherited full set,
+0.5791 ms pinned to a competing logical CPU, and 1.9253 ms with one logical CPU
+omitted from load. CPU 7 still shared its physical core with saturated sibling
+CPU 3, and pinning removed migration flexibility. Yoctui therefore retains
+inherited affinity, hardcodes no CPU, and passes the required no-free-CPU gate.
+BitBake coexistence guidance is next.
+Overall required registry progress is 647/659 (98.2%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

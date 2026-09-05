@@ -798,6 +798,96 @@ PY
   unlink "$current"
 }
 
+verify_affinity() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/affinity")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.affinity-manifest.v1":
+    raise SystemExit("affinity manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+artifact = root / manifest["artifact"]
+if hashlib.sha256(artifact.read_bytes()).hexdigest() != manifest["artifact_sha256"]:
+    raise SystemExit("affinity evidence digest mismatch")
+record = json.loads(artifact.read_text(encoding="utf-8"))
+if record.get("schema") != "yoctui.performance.affinity-audit.v1":
+    raise SystemExit("affinity evidence schema is unsupported")
+if record.get("revision") != revision:
+    raise SystemExit("affinity evidence source identity mismatch")
+if record["configuration"].get("repetitions") != 3:
+    raise SystemExit("affinity evidence must contain three repeated trials")
+allowed = record["host"]["affinity_cpus"]
+reserved = record["host"]["reserved_logical_cpu"]
+if len(allowed) < 2 or reserved not in allowed:
+    raise SystemExit("affinity host identity is incomplete")
+expected = {
+    "shared_full_affinity": (allowed, allowed),
+    "pinned_competing_cpu": (allowed, [reserved]),
+    "pinned_reserved_cpu": (allowed[:-1], [reserved]),
+}
+for name, (load_cpus, probe_cpus) in expected.items():
+    scenario = record["scenarios"].get(name)
+    if scenario is None or len(scenario["trials"]) != 3:
+        raise SystemExit(f"affinity scenario is incomplete: {name}")
+    if scenario["load_cpus"] != load_cpus or scenario["probe_cpus"] != probe_cpus:
+        raise SystemExit(f"affinity scenario CPU identity mismatch: {name}")
+    if scenario["summary"]["median_p95_wake_latency_ms"] > 100:
+        raise SystemExit(f"affinity scenario exceeded responsiveness bound: {name}")
+    for load in scenario["saturation"]:
+        if load["status"] != "completed" or load["children_reaped"] is not True:
+            raise SystemExit(f"affinity load did not clean up: {name}")
+        if load["selected_cpus"] != load_cpus:
+            raise SystemExit(f"affinity load CPU set mismatch: {name}")
+        if load["minimum_worker_cpu_percent"] < 25:
+            raise SystemExit(f"affinity load was below its declared minimum: {name}")
+decision = " ".join(manifest.get("decision", {}).values()).lower()
+if "retain the inherited full affinity set" not in decision:
+    raise SystemExit("affinity guidance no longer preserves the default path")
+if "never select a logical cpu" not in decision:
+    raise SystemExit("affinity guidance permits a hardcoded CPU")
+baseline = record["scenarios"]["shared_full_affinity"]["summary"]["median_p95_wake_latency_ms"]
+reserved_latency = record["scenarios"]["pinned_reserved_cpu"]["summary"]["median_p95_wake_latency_ms"]
+print(
+    "affinity audit valid: full set median p95 "
+    f"{baseline:.4f} ms; one logical CPU reserved {reserved_latency:.4f} ms"
+)
+PY
+
+  python3 -m unittest scripts/test_measure_affinity.py
+  ./scripts/verify-saturation-responsiveness.sh --harness
+  current="$(mktemp /tmp/yoctui-affinity-current.XXXXXX.json)"
+  trap 'unlink "$current" 2>/dev/null || true' RETURN
+  ./scripts/measure-affinity.py \
+    --revision "$(git rev-parse HEAD)" \
+    --duration-seconds 1 \
+    --repetitions 1 \
+    --output "$current" >/dev/null
+  python3 - "$current" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+allowed = record["host"]["affinity_cpus"]
+full = record["scenarios"]["shared_full_affinity"]
+if full["load_cpus"] != allowed or full["probe_cpus"] != allowed:
+    raise SystemExit("current required affinity scenario reserved a CPU")
+if full["summary"]["median_p95_wake_latency_ms"] > 100:
+    raise SystemExit("current full-affinity scheduler latency exceeds 100 ms")
+print("current full-affinity path remains responsive without a reserved CPU")
+PY
+  trap - RETURN
+  unlink "$current"
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -915,6 +1005,22 @@ case "$mode" in
     verify_ipc
     verify_tokio
     verify_scheduling
+    ;;
+  --affinity)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
+    verify_tasks
+    verify_ipc
+    verify_tokio
+    verify_scheduling
+    verify_affinity
     ;;
   all)
     verify_contract

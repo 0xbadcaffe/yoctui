@@ -1,0 +1,13 @@
+{
+  "schema": "yoctui.performance.affinity-manifest.v1",
+  "source_base_revision": "f2e1cf2b32a19effff7fde7c0c0036a38ac0b0bd",
+  "artifact": "host-audit.json",
+  "artifact_sha256": "f1097cd5de49d8f96d0d8c94f0297b0f973fbb2fc008e80b0586010596b9f1f3",
+  "decision": {
+    "default": "retain the inherited full affinity set",
+    "hardcoded_cpu": "never select a logical CPU in Yoctui",
+    "reserved_logical_cpu": "not recommended by reference evidence: median p95 wake latency increased from 0.0835 ms to 1.9253 ms",
+    "topology": "CPU 7 shared a physical core with saturated sibling CPU 3; a logical reservation is not physical isolation",
+    "correctness": "the full-affinity no-reserved-CPU path remains the required responsiveness gate"
+  }
+}

@@ -957,4 +957,6 @@ nine to three, while a deterministic all-CPU test proves a blocked worker does
 not starve reactor work. The scheduler audit keeps inherited nice 0 as the
 required path: nice 5 was worse, unprivileged nice -5 was denied, and a user
 service at CPUWeight 200 provided no material median-p95 benefit. Optional CPU
-affinity/isolation is the current measurement boundary.
+affinity also provided no benefit on the reference SMT host: the inherited full
+set outperformed both pinned layouts while remaining responsive with every CPU
+busy. BitBake coexistence guidance is the current measurement boundary.

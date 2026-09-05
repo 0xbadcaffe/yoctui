@@ -2,37 +2,36 @@
 
 ## Task
 
-**ID:** PERF-CPU-AFFINITY-001
-**Title:** Evaluate optional CPU affinity and isolation
+**ID:** PERF-BITBAKE-COEXIST-001
+**Title:** Document BitBake coexistence guidance
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure whether reserving or preferring a logical CPU materially improves
-Yoctui responsiveness under saturation. Keep affinity optional and prove
-correctness without a deliberately free CPU.
+Measure and document how BitBake thread counts, make parallelism, host load,
+and optional cgroup policy affect coexistence. Diagnose oversubscription without
+silently changing a user's Yocto configuration.
 
 ## Dependencies
 
-- PERF-BASELINE-001 — DONE
-- PERF-SATURATION-HARNESS-001 — DONE
+- PERF-SCHED-001 — DONE
+- PERF-CPU-AFFINITY-001 — DONE
 
 ## Definition of done
 
-- Full-affinity and one-reserved-CPU scenarios use the same repeated monotonic
-  latency method and record exact CPU sets.
-- Any measured improvement is reported without presenting affinity as required.
-- Yoctui does not hardcode a CPU number or mutate process affinity by default.
-- The standard no-free-CPU saturation gate remains passing.
-- Optional commands are topology-aware, unprivileged, and documented only when
-  supported by evidence.
+- `BB_NUMBER_THREADS`, `PARALLEL_MAKE`, load, and cgroup interactions are
+  described accurately and tied to measured saturation evidence.
+- Oversubscription detection has an explicit, read-only diagnostic method.
+- Yoctui never edits `local.conf`, environment variables, or BitBake policy as
+  part of performance tuning.
+- Suggested values are examples for user review, not automatic defaults.
+- Guidance preserves the no-root, no-reserved-CPU correctness contract.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --affinity
+./scripts/verify-performance.sh --coexistence
 ./scripts/verify-roadmap.sh
 ```
 
-Normal inherited scheduler behavior and optional nice/CPUWeight evaluation are
-complete in v0.1.38.
+Optional CPU affinity/isolation evaluation is complete in v0.1.39.
