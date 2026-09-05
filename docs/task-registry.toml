@@ -7022,18 +7022,18 @@ notes = "Seven exact-v0.1.22 160x50 scenarios retain sixty raw one-second sample
 id = "PERF-FLAMEGRAPH-001"
 milestone = "M46"
 title = "Capture CPU flamegraphs for all baseline workloads"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 791
 required = true
 depends_on = ["PERF-BASELINE-001"]
 verify = ["./scripts/verify-performance.sh --profiles"]
-notes = "Capture idle daemon/client, active build, log-heavy, task-event-heavy, PTY-idle, and PTY-active profiles under the repository evidence convention."
+notes = "Seven exact-v0.1.22 15-second 499 Hz cycles:u LBR profiles retain symbolized perf reports, validated flamegraphs, process identity, binary/revision hashes, and explicit fixture versus real-Poky authority. Idle client is dominated by unconditional Ratatui redraw work; idle daemon by the 1 ms accept/supervisor polling loop; high-rate and real-Poky paths by repeated full-snapshot JSON serialization, allocation, and memory movement. The offline profile verifier passes in v0.1.24."
 
 [[task]]
 id = "PERF-WAKEUPS-001"
 milestone = "M46"
 title = "Measure wakeups and timer behavior"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 792
 required = true
 depends_on = ["PERF-BASELINE-001"]

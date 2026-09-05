@@ -1,0 +1,72 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 4K of event 'cycles:u'
+# Event count (approx.): 19437305768
+#
+# Overhead  Command          Shared Object     Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+# ........  ...............  ................  ........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+    34.09%  yoctui           yoctui            [.] serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>
+    10.00%  yoctui           libc.so.6         [.] __memmove_avx_unaligned_erms
+     6.57%  yoctui           libc.so.6         [.] _int_free_chunk
+     6.29%  yoctui           libc.so.6         [.] __libc_malloc2
+     5.11%  yoctui           libc.so.6         [.] _int_malloc
+     3.11%  yoctui           yoctui            [.] <yoctui_protocol::daemon::CompatibilitySnapshotData as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>
+     3.06%  yoctui           yoctui            [.] <yoctui_protocol::daemon::DaemonBuildEvent as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>
+     2.91%  yoctui           libc.so.6         [.] _int_free_merge_chunk
+     2.74%  yoctui           yoctui            [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<str, alloc::string::String>
+     2.05%  yoctui           libc.so.6         [.] cfree@GLIBC_2.2.5
+     1.80%  yoctui           libc.so.6         [.] malloc
+     1.61%  yoctui           libc.so.6         [.] unlink_chunk.isra.0
+     1.43%  yoctui           yoctui            [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<bool>
+     1.01%  yoctui           yoctui            [.] <[yoctui_model::TaskRowRef]>::sort_unstable_by::<<yoctui_model::App>::visible_task_row_refs_at::{closure#6}>::{closure#0}
+     0.74%  yoctui           yoctui            [.] <yoctui_protocol::daemon::DaemonBuildEvent as core::clone::Clone>::clone
+     0.73%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui_protocol::daemon::DaemonBuildEvent>
+     0.65%  yoctui           libc.so.6         [.] _int_free_maybe_trim
+     0.64%  yoctui           yoctui            [.] <yoctui_model::TaskInfo as core::clone::Clone>::clone
+     0.61%  yoctui           yoctui            [.] <yoctui_protocol::daemon::CompatibilitySnapshotData as core::clone::Clone>::clone
+     0.56%  yoctui           yoctui            [.] serde_json::ser::to_vec::<yoctui_protocol::daemon::DaemonSnapshot>
+     0.52%  yoctui           libc.so.6         [.] __memcmp_avx2_movbe
+     0.50%  yoctui           yoctui            [.] core::slice::sort::unstable::quicksort::quicksort::<yoctui_model::TaskRowRef, <[yoctui_model::TaskRowRef]>::sort_unstable_by<<yoctui_model::App>::visible_task_row_refs_at::{closure#6}>::{closure#0}>
+     0.44%  yoctui           yoctui            [.] <yoctui_protocol::daemon::DaemonBuildEvent as serde_core::de::Deserialize>::deserialize::<serde::private::de::content::ContentDeserializer<serde_json::error::Error>>
+     0.42%  yoctui           yoctui            [.] core::str::converts::from_utf8
+     0.40%  yoctui           yoctui            [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>
+     0.36%  yoctui           yoctui            [.] <&mut serde_json::de::Deserializer<serde_json::read::SliceRead> as serde_core::de::Deserializer>::deserialize_any::<serde::private::de::content::ContentVisitor>
+     0.35%  yoctui           yoctui            [.] yoctui_model::compatibility::valid_text
+     0.35%  yoctui           yoctui            [.] <serde_json::read::SliceRead as serde_json::read::Read>::parse_str
+     0.34%  yoctui           yoctui            [.] <ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>
+     0.33%  yoctui           yoctui            [.] <yoctui_model::App>::visible_task_row_refs_at
+     0.33%  yoctui           yoctui            [.] serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>
+     0.32%  yoctui           libc.so.6         [.] realloc
+     0.32%  tokio-rt-worker  libc.so.6         [.] __memmove_avx_unaligned_erms
+     0.28%  yoctui           yoctui            [.] <ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq
+     0.27%  yoctui           yoctui            [.] <alloc::vec::Vec<yoctui_protocol::daemon::DaemonBuildEvent>>::retain::<yoctui_protocol::daemon::apply_build_event::{closure#2}>::{closure#0}
+     0.26%  yoctui           yoctui            [.] yoctui_model::contains_case_insensitive
+     0.22%  yoctui           [unknown]         [k] 0xffffffff91e00b90
+     0.22%  yoctui           yoctui            [.] <&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render
+     0.20%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui_model::TaskInfo>
+     0.19%  yoctui           yoctui            [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+     0.18%  tokio-rt-worker  yoctui            [.] tokio::runtime::scheduler::multi_thread::worker::run
+     0.17%  tokio-rt-worker  yoctui            [.] <yoctui_bitbake::BridgeBackend as yoctui_bitbake::BitBakeBackend>::next_event::{closure#0}
+     0.17%  yoctui           yoctui            [.] <serde_json::read::SliceRead>::skip_to_escape
+     0.16%  yoctui           yoctui            [.] core::ptr::drop_glue::<alloc::vec::Vec<yoctui_protocol::daemon::CompatibilityEvidenceData>>
+     0.15%  yoctui           yoctui            [.] core::slice::sort::shared::smallsort::sort8_stable::<yoctui_model::TaskRowRef, <[yoctui_model::TaskRowRef]>::sort_unstable_by<<yoctui_model::App>::visible_task_row_refs_at::{closure#6}>::{closure#0}>
+     0.14%  yoctui           yoctui            [.] <&mut serde::private::de::content::MapDeserializer<serde_json::error::Error> as serde_core::de::MapAccess>::next_key_seed::<serde::private::de::content::TagOrContentVisitor>
+     0.14%  yoctui           yoctui            [.] <yoctui_protocol::daemon::CompatibilitySnapshotData>::validate
+     0.14%  yoctui           yoctui            [.] yoctui_protocol::daemon::apply_sequenced_event
+     0.14%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui_protocol::daemon::CompatibilityStateData>
+     0.12%  tokio-rt-worker  yoctui            [.] <serde_json::read::StrRead as serde_json::read::Read>::parse_str
+     0.12%  tokio-rt-worker  libc.so.6         [.] malloc
+     0.12%  yoctui           yoctui            [.] <yoctui_protocol::daemon::DaemonSnapshot as core::clone::Clone>::clone
+     0.11%  yoctui           yoctui            [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<yoctui_protocol::daemon::CompatibilityReasonData>
+     0.10%  yoctui           yoctui            [.] unicode_width::tables::lookup_width
+     0.10%  yoctui           yoctui            [.] <ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next
+     0.10%  tokio-rt-worker  yoctui            [.] <core::marker::PhantomData<yoctui_protocol::Event> as serde_core::de::DeserializeSeed>::deserialize::<&mut serde_json::de::Deserializer<serde_json::read::StrRead>>
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

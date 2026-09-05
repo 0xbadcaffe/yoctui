@@ -1,0 +1,124 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-09-05T06:38:35.522425+00:00",
+  "scenario": "pty-idle",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 15,
+    "samples": 125,
+    "unresolved_stack_lines": 0,
+    "dropped_unresolved_ppm": 0,
+    "maximum_dropped_unresolved_ppm": 5000
+  },
+  "processes": [
+    {
+      "role": "daemon",
+      "pid": 2728715,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui daemon foreground"
+    },
+    {
+      "role": "client",
+      "pid": 2736551,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "92cd5967f29508a82a2649e5f7375fc6a2596e476b6cb165ddb0c00aa87cd797",
+    "flat_report_sha256": "f259cb5ce261baf55db6d644fceb512c3bc874e2a20efc5efe51ce1e628d0f28"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 9.32,
+      "symbol": "<ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>"
+    },
+    {
+      "self_percent": 8.38,
+      "symbol": "serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>"
+    },
+    {
+      "self_percent": 7.97,
+      "symbol": "<ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq"
+    },
+    {
+      "self_percent": 7.39,
+      "symbol": "<unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 6.82,
+      "symbol": "yoctui_ui::render_terminal_replica_content"
+    },
+    {
+      "self_percent": 5.78,
+      "symbol": "<ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 5.06,
+      "symbol": "yoctui_model::workspace_compatibility::capability_result"
+    },
+    {
+      "self_percent": 3.82,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_percent": 3.65,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>"
+    },
+    {
+      "self_percent": 3.14,
+      "symbol": "_int_free_chunk"
+    },
+    {
+      "self_percent": 3.1,
+      "symbol": "__libc_malloc2"
+    },
+    {
+      "self_percent": 2.98,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_percent": 2.9,
+      "symbol": "__memcmp_avx2_movbe"
+    },
+    {
+      "self_percent": 2.48,
+      "symbol": "unicode_width::tables::lookup_width"
+    },
+    {
+      "self_percent": 2.06,
+      "symbol": "_int_realloc"
+    },
+    {
+      "self_percent": 1.7,
+      "symbol": "yoctui::tui::{closure#0}"
+    },
+    {
+      "self_percent": 1.48,
+      "symbol": "malloc"
+    },
+    {
+      "self_percent": 1.46,
+      "symbol": "core::ptr::drop_glue::<yoctui_model::compatibility_ui::CompatibilityUiActionAvailability>"
+    },
+    {
+      "self_percent": 1.27,
+      "symbol": "<unicode_segmentation::grapheme::GraphemeCursor>::grapheme_category"
+    },
+    {
+      "self_percent": 1.27,
+      "symbol": "<yoctui_model::compatibility::CapabilitySnapshot>::normalize"
+    }
+  ]
+}

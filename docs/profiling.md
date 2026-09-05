@@ -65,6 +65,48 @@ so query/inventory changes cannot leave a retained cache stale. On the same
 ms/frame. No retained label, query, index, layout, or sparkline cache was
 justified after that measured fix.
 
+## M46 pre-optimization runtime profiles
+
+`scripts/capture-runtime-profile.sh` captures named production-process profiles
+without rebuilding or changing the measured runtime. The retained M46 profiles
+all use the exact pre-optimization v0.1.22 release binary from revision
+`11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2`, SHA-256
+`861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5`.
+Each capture sampled userspace cycles for 15 seconds at 499 Hz with Linux perf
+LBR call graphs. Raw `perf.data` is reproducible and deliberately untracked
+under `target/performance-profiles/`; validated flamegraphs, symbolized reports,
+and machine-readable summaries live under `artifacts/performance/profiles/`.
+
+| Scenario | Authority | Samples | Unresolved weight | Dominant measured work |
+| --- | --- | ---: | ---: | --- |
+| Idle daemon | Production runtime | 578 | 0.4205% | 1 ms listener retry and empty supervisor polling |
+| Idle client | Production runtime | 200 | 0% | Full Ratatui render and terminal-buffer diff at 10 Hz |
+| Active build | Real Poky Wrynose 6.0.2 | 653 | 1.0463% | Full snapshot JSON escaping, allocation, and memory movement |
+| Log heavy | Deterministic BitBake-like fixture | 4,288 | 0.0853% | Snapshot serialization and repeated retained-log filtering |
+| Task-event heavy | Deterministic BitBake-like fixture | 4,303 | 0.2626% | Snapshot serialization, allocation, and task sorting |
+| PTY idle | Production daemon PTY | 125 | 0% | Full redraw and terminal-replica reconstruction |
+| PTY active | Production daemon PTY at 100 lines/s | 3,504 | 0.1565% | Snapshot serialization and PTY screen serialization |
+
+The real-Poky capture includes sustained `do_compile`, `do_configure`,
+`do_install`, `do_package`, and `do_populate_sysroot` execution. Its 1.0463%
+unresolved-stack weight is retained explicitly under a declared 1.5%
+saturation-only ceiling; all other captures use the normal 0.5% ceiling.
+Fixture captures are never presented as real-build evidence.
+
+Reproduce a profile against already-running exact processes with:
+
+```bash
+./scripts/capture-runtime-profile.sh \
+  --scenario idle-client --duration 15 \
+  --revision 11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2 \
+  --pid daemon=DAEMON_PID --pid client=CLIENT_PID
+```
+
+The script records each process identity before sampling, produces the compact
+artifacts, and validates symbol resolution. `./scripts/verify-performance.sh
+--profiles` then validates all seven authorities, report hashes, sampling
+parameters, and required evidence entirely offline.
+
 ## M21 expanded-workbench matrix
 
 `scripts/test-workbench-ux-performance.sh` adds five deterministic 160x48

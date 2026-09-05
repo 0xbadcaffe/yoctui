@@ -1,0 +1,118 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-09-05T05:47:55.979883+00:00",
+  "scenario": "idle-daemon",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 15,
+    "samples": 578,
+    "unresolved_stack_lines": 2,
+    "dropped_unresolved_ppm": 4205,
+    "maximum_dropped_unresolved_ppm": 5000
+  },
+  "processes": [
+    {
+      "role": "daemon",
+      "pid": 2681607,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "./target/release/yoctui daemon foreground"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "67024f7f93c63473c77d7a74911fe5f4ad2a5f9cd461876f693eeee7cb300ebf",
+    "flat_report_sha256": "fa6281de190068c01353a08909a717464639a11726ab8cc23019d1733837f0aa"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 10.21,
+      "symbol": "yoctui::run_daemon_foreground::{closure#0}"
+    },
+    {
+      "self_percent": 6.8,
+      "symbol": "<yoctui_protocol::daemon_ipc::DaemonListener>::accept"
+    },
+    {
+      "self_percent": 5.59,
+      "symbol": "__internal_syscall_cancel"
+    },
+    {
+      "self_percent": 5.33,
+      "symbol": "<yoctui::daemon_test::DaemonTestSupervisor>::try_event"
+    },
+    {
+      "self_percent": 5.04,
+      "symbol": "<yoctui::daemon_devtool::DaemonDevtoolSupervisor>::try_event"
+    },
+    {
+      "self_percent": 4.77,
+      "symbol": "<yoctui::daemon_security::DaemonSecurityMapperSupervisor>::try_event"
+    },
+    {
+      "self_percent": 3.76,
+      "symbol": "<tokio::sync::mpsc::list::Rx<yoctui::daemon_raw::DaemonRawEvent>>::pop"
+    },
+    {
+      "self_percent": 3.76,
+      "symbol": "<yoctui::daemon_security::DaemonSecuritySupervisor>::try_event"
+    },
+    {
+      "self_percent": 3.61,
+      "symbol": "<yoctui::daemon_raw::DaemonRawSupervisor>::try_event"
+    },
+    {
+      "self_percent": 3.53,
+      "symbol": "__syscall_cancel"
+    },
+    {
+      "self_percent": 3.29,
+      "symbol": "clock_gettime@@GLIBC_2.17"
+    },
+    {
+      "self_percent": 2.98,
+      "symbol": "<yoctui::daemon_sdk::DaemonSdkSupervisor>::try_event"
+    },
+    {
+      "self_percent": 2.65,
+      "symbol": "<yoctui::daemon_wic::DaemonWicSupervisor>::try_event"
+    },
+    {
+      "self_percent": 2.54,
+      "symbol": "core::ptr::drop_glue::<alloc::vec::drain::Drain<(yoctui_protocol::daemon_ipc::DaemonConnection, bool, bool, u64, yoctui_protocol::daemon::ClientId)>>"
+    },
+    {
+      "self_percent": 2.48,
+      "symbol": "<tokio::sync::mpsc::list::Rx<yoctui::daemon_bitbake::DaemonBitBakeEvent>>::pop"
+    },
+    {
+      "self_percent": 2.26,
+      "symbol": "<std::io::error::Error>::kind"
+    },
+    {
+      "self_percent": 2.03,
+      "symbol": "core::ptr::drop_glue::<yoctui_protocol::daemon_ipc::IpcError>"
+    },
+    {
+      "self_percent": 1.98,
+      "symbol": "<tokio::sync::mpsc::list::Rx<yoctui::daemon_wic::DaemonWicEvent>>::pop"
+    },
+    {
+      "self_percent": 1.97,
+      "symbol": "<alloc::vec::Vec<(yoctui_protocol::daemon_ipc::DaemonConnection, bool, bool, u64, yoctui_protocol::daemon::ClientId)>>::with_capacity"
+    },
+    {
+      "self_percent": 1.8,
+      "symbol": "__errno_location"
+    }
+  ]
+}

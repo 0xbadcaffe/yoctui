@@ -1,0 +1,63 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 200  of event 'cycles:u'
+# Event count (approx.): 367642059
+#
+# Overhead  Command  Shared Object     Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+# ........  .......  ................  ........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+    31.04%  yoctui   yoctui            [.] <ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>
+    11.73%  yoctui   yoctui            [.] <ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq
+     6.77%  yoctui   yoctui            [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+     4.83%  yoctui   yoctui            [.] yoctui::tui::{closure#0}
+     4.81%  yoctui   yoctui            [.] <ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next
+     3.95%  yoctui   yoctui            [.] <&ratatui_widgets::block::Block as ratatui_core::widgets::widget::Widget>::render
+     2.99%  yoctui   yoctui            [.] <ratatui_core::buffer::cell::Cell as ratatui_core::buffer::cell_width::CellWidth>::cell_width
+     2.91%  yoctui   libc.so.6         [.] __memmove_avx_unaligned_erms
+     2.62%  yoctui   yoctui            [.] ratatui_widgets::paragraph::render_line
+     2.15%  yoctui   yoctui            [.] <&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render
+     2.11%  yoctui   yoctui            [.] <core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>
+     1.87%  yoctui   yoctui            [.] <ratatui_widgets::reflow::WordWrapper<core::iter::adapters::map::Map<core::slice::iter::Iter<ratatui_core::text::line::Line>, <ratatui_widgets::paragraph::Paragraph>::render_paragraph::{closure#0}>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>> as ratatui_widgets::reflow::LineComposer>::next_line
+     1.77%  yoctui   yoctui            [.] <ratatui_core::buffer::cell::Cell>::set_symbol
+     1.50%  yoctui   libc.so.6         [.] _int_free_merge_chunk
+     1.23%  yoctui   yoctui            [.] <&ratatui_widgets::paragraph::Paragraph as ratatui_core::widgets::widget::Widget>::render
+     1.14%  yoctui   yoctui            [.] unicode_width::tables::lookup_width
+     1.10%  yoctui   yoctui            [.] <core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}> as core::iter::traits::iterator::Iterator>::next
+     1.07%  yoctui   libc.so.6         [.] malloc
+     1.05%  yoctui   libc.so.6         [.] __memcmp_avx2_movbe
+     0.81%  yoctui   yoctui            [.] <alloc::raw_vec::RawVecInner>::finish_grow
+     0.66%  yoctui   yoctui            [.] alloc::fmt::format::format_inner
+     0.64%  yoctui   yoctui            [.] <alloc::string::String as core::fmt::Write>::write_char
+     0.63%  yoctui   libc.so.6         [.] cfree@GLIBC_2.2.5
+     0.61%  yoctui   libc.so.6         [.] realloc
+     0.58%  yoctui   yoctui            [.] <alloc::collections::vec_deque::VecDeque<ratatui_core::text::grapheme::StyledGrapheme>>::grow
+     0.56%  yoctui   yoctui            [.] <&ratatui_widgets::clear::Clear as ratatui_core::widgets::widget::Widget>::render
+     0.55%  yoctui   yoctui            [.] yoctui_ui::push_footer_items_that_fit
+     0.55%  yoctui   yoctui            [.] <std::sys::pal::unix::time::Timespec>::sub_timespec
+     0.55%  yoctui   libc.so.6         [.] __memset_avx2_unaligned_erms
+     0.55%  yoctui   libc.so.6         [.] clock_gettime@@GLIBC_2.17
+     0.54%  yoctui   yoctui            [.] <core::str::pattern::TwoWaySearcher>::next::<core::str::pattern::MatchOnly>
+     0.54%  yoctui   libc.so.6         [.] __libc_malloc2
+     0.54%  yoctui   libc.so.6         [.] unlink_chunk.isra.0
+     0.52%  yoctui   libc.so.6         [.] _int_free_chunk
+     0.51%  yoctui   yoctui            [.] <alloc::vec::Vec<ratatui_core::text::grapheme::StyledGrapheme>>::extend_desugared::<alloc::collections::vec_deque::drain::Drain<ratatui_core::text::grapheme::StyledGrapheme>>
+     0.48%  yoctui   libc.so.6         [.] _int_malloc
+     0.46%  yoctui   yoctui            [.] <alloc::string::String as core::fmt::Write>::write_str
+     0.45%  yoctui   libc.so.6         [.] _int_realloc
+     0.42%  yoctui   yoctui            [.] ratatui_core::text::line::render_spans
+     0.31%  yoctui   yoctui            [.] <yoctui_ui::SemanticTheme>::packrat
+     0.27%  yoctui   [vdso]            [.] 0x00000000000009ec
+     0.27%  yoctui   libc.so.6         [.] accept4
+     0.27%  yoctui   yoctui            [.] <alloc::vec::Vec<(yoctui_protocol::daemon_ipc::DaemonConnection, bool, bool, u64, yoctui_protocol::daemon::ClientId)>>::push
+     0.27%  yoctui   yoctui            [.] <tokio::sync::mpsc::list::Rx<yoctui::daemon_pty::DaemonPtyEvent>>::pop
+     0.27%  yoctui   yoctui            [.] <yoctui::daemon_wic::DaemonWicSupervisor>::try_event
+     0.27%  yoctui   yoctui            [.] yoctui::termination_requested
+     0.27%  yoctui   yoctui            [.] yoctui_ui::push_inspector_section
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

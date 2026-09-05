@@ -1,0 +1,124 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-09-05T06:38:34.913321+00:00",
+  "scenario": "log-heavy",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 15,
+    "samples": 4288,
+    "unresolved_stack_lines": 5,
+    "dropped_unresolved_ppm": 853,
+    "maximum_dropped_unresolved_ppm": 5000
+  },
+  "processes": [
+    {
+      "role": "daemon",
+      "pid": 2683223,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui daemon foreground"
+    },
+    {
+      "role": "client",
+      "pid": 2690548,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "9040a9beca6c7557c64a379a850d06ca420f5c6821e1924bd6f90b46adbce109",
+    "flat_report_sha256": "664c174445308b12f66bd15ad59286e2a7c88b8a1954a5e8d0c4bf0adf232e2b"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 33.12,
+      "symbol": "serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>"
+    },
+    {
+      "self_percent": 10.35,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_percent": 6.13,
+      "symbol": "<yoctui_model::LogState>::filtered::{closure#1}"
+    },
+    {
+      "self_percent": 4.53,
+      "symbol": "_int_free_chunk"
+    },
+    {
+      "self_percent": 4.24,
+      "symbol": "<yoctui_model::LogState>::filtered"
+    },
+    {
+      "self_percent": 3.97,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_percent": 3.94,
+      "symbol": "__libc_malloc2"
+    },
+    {
+      "self_percent": 3.36,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>"
+    },
+    {
+      "self_percent": 3.16,
+      "symbol": "<yoctui_protocol::daemon::CompatibilitySnapshotData as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>"
+    },
+    {
+      "self_percent": 2.37,
+      "symbol": "_int_free_merge_chunk"
+    },
+    {
+      "self_percent": 1.89,
+      "symbol": "cfree@GLIBC_2.2.5"
+    },
+    {
+      "self_percent": 1.74,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<str, alloc::string::String>"
+    },
+    {
+      "self_percent": 1.41,
+      "symbol": "<yoctui_protocol::daemon::LogRecord as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>"
+    },
+    {
+      "self_percent": 1.26,
+      "symbol": "<u64 as itoa::Unsigned>::fmt"
+    },
+    {
+      "self_percent": 1.18,
+      "symbol": "malloc"
+    },
+    {
+      "self_percent": 0.97,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<u64>"
+    },
+    {
+      "self_percent": 0.97,
+      "symbol": "<yoctui_model::LogState>::reconcile_selection"
+    },
+    {
+      "self_percent": 0.91,
+      "symbol": "unlink_chunk.isra.0"
+    },
+    {
+      "self_percent": 0.73,
+      "symbol": "_int_free_maybe_trim"
+    },
+    {
+      "self_percent": 0.63,
+      "symbol": "<ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>"
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "schema": "yoctui.performance.runtime-profile-manifest.v1",
+  "captured_at_utc": "2026-09-05T06:38:00+00:00",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "binary_sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5",
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 15,
+    "raw_perf_data": "reproducible and untracked under target/performance-profiles"
+  },
+  "profiles": {
+    "active-real-poky-build": {
+      "authority": "real-poky-wrynose-6.0.2",
+      "report_sha256": "435ead6e3e44c8819628ebf350525dc84a6c940753e0c3c280dac59e69647a0f"
+    },
+    "idle-client": {
+      "authority": "production-runtime",
+      "report_sha256": "4c29f32bd89471757e2ab0776d81b93e81c488c118ab3c34bf23fde21b776b1f"
+    },
+    "idle-daemon": {
+      "authority": "production-runtime",
+      "report_sha256": "6c1c59982a10eb267d57e71df49d30f2c815bccfce53d95a741b77ba8d0a2b71"
+    },
+    "log-heavy": {
+      "authority": "deterministic-bitbake-like-fixture",
+      "report_sha256": "e1c437343612eb6b14f1509a5dbcb79c53c8193673e03821b856d69a7fb723aa"
+    },
+    "pty-active": {
+      "authority": "production-daemon-pty-100-lines-per-second",
+      "report_sha256": "a67a52eaf5a0e7514c38e20fa6d18f002fc549bbbf2e092165559f262609905b"
+    },
+    "pty-idle": {
+      "authority": "production-daemon-pty",
+      "report_sha256": "a757cd5b576f12d824e17a2d710d6b51fb15038879e66a1642e8587cbd2203a9"
+    },
+    "task-event-heavy": {
+      "authority": "deterministic-bitbake-like-fixture",
+      "report_sha256": "30061d75539d9cc14bc485d0d98660640e59791a2cf00e170f3b31f069507eed"
+    }
+  },
+  "findings": [
+    "Idle daemon CPU is distributed across the 1 ms accept retry, repeated empty supervisor try_event calls, clock checks, and transient client-vector allocation.",
+    "Idle client CPU is dominated by unconditional full-frame Ratatui rendering and buffer diff work at 10 Hz.",
+    "Log-heavy, task-heavy, active PTY, and real-Poky profiles are dominated by repeated serde_json snapshot serialization, string escaping, allocation, and memory movement.",
+    "Log-heavy client work repeatedly filters retained log history during rendering.",
+    "PTY-idle rendering spends measurable CPU rebuilding terminal replica content; PTY-active snapshot serialization dominates at 100 lines per second.",
+    "The real-Poky capture contained sustained do_compile, do_configure, do_install, do_package, and do_populate_sysroot execution; its 1.0463% unresolved-stack ratio is explicitly retained under a 1.5% saturation-only quality ceiling."
+  ]
+}

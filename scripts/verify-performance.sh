@@ -114,6 +114,7 @@ expected = {
     "pty-attached-idle.json": "pty-attached-idle",
     "two-attached-clients.json": "two-attached-clients",
 }
+
 declared = manifest.get("artifacts")
 if not isinstance(declared, dict) or set(declared) != set(expected):
     raise SystemExit("baseline manifest does not contain the exact scenario set")
@@ -177,6 +178,73 @@ print(f"performance baseline valid: {len(expected)} scenarios at {revision[:12]}
 PY
 }
 
+verify_profiles() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/profiles")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.runtime-profile-manifest.v1":
+    raise SystemExit("runtime profile manifest schema is missing or unsupported")
+expected = {
+    "idle-daemon", "idle-client", "active-real-poky-build", "log-heavy",
+    "task-event-heavy", "pty-idle", "pty-active",
+}
+profiles = manifest.get("profiles")
+if not isinstance(profiles, dict) or set(profiles) != expected:
+    raise SystemExit("runtime profile manifest does not contain the exact scenario set")
+revisions = set()
+binary_hashes = set()
+for scenario in sorted(expected):
+    report_path = root / f"{scenario}.json"
+    flat_path = root / f"{scenario}.perf.txt"
+    svg_path = root / f"{scenario}.svg"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    if report.get("schema") != "yoctui.performance.runtime-profile.v1":
+        raise SystemExit(f"{scenario}: unsupported runtime profile schema")
+    if report.get("scenario") != scenario:
+        raise SystemExit(f"{scenario}: scenario identity mismatch")
+    sampling = report.get("sampling", {})
+    if sampling.get("event") != "cycles:u" or sampling.get("frequency_hz") != 499:
+        raise SystemExit(f"{scenario}: sampling configuration mismatch")
+    if sampling.get("call_graph") != "lbr" or sampling.get("duration_seconds", 0) < 15:
+        raise SystemExit(f"{scenario}: LBR capture or duration is invalid")
+    if sampling.get("samples", 0) < 50:
+        raise SystemExit(f"{scenario}: too few samples")
+    quality_limit = sampling.get("maximum_dropped_unresolved_ppm")
+    expected_limit = 15_000 if scenario == "active-real-poky-build" else 5_000
+    if quality_limit != expected_limit:
+        raise SystemExit(f"{scenario}: profile quality ceiling mismatch")
+    if sampling.get("dropped_unresolved_ppm", 1_000_000) > quality_limit:
+        raise SystemExit(f"{scenario}: unresolved stacks exceed the declared ceiling")
+    artifacts = report.get("artifacts", {})
+    if hashlib.sha256(svg_path.read_bytes()).hexdigest() != artifacts.get("svg_sha256"):
+        raise SystemExit(f"{scenario}: SVG digest mismatch")
+    if hashlib.sha256(flat_path.read_bytes()).hexdigest() != artifacts.get("flat_report_sha256"):
+        raise SystemExit(f"{scenario}: flat report digest mismatch")
+    if not report.get("top_self_symbols") or not report.get("processes"):
+        raise SystemExit(f"{scenario}: symbols or process identities are absent")
+    revision = report.get("revision")
+    subprocess.run(
+        ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+        check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    revisions.add(revision)
+    binary_hashes.add(report.get("binary", {}).get("sha256"))
+    declaration = profiles[scenario]
+    if declaration.get("report_sha256") != hashlib.sha256(report_path.read_bytes()).hexdigest():
+        raise SystemExit(f"{scenario}: report digest mismatch")
+if len(revisions) != 1 or len(binary_hashes) != 1:
+    raise SystemExit("runtime profiles mix revisions or binaries")
+if not manifest.get("findings"):
+    raise SystemExit("runtime profile findings are absent")
+print(f"performance profiles valid: {len(expected)} scenarios at {next(iter(revisions))[:12]}")
+PY
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -184,6 +252,11 @@ case "$mode" in
   --baseline)
     verify_contract
     verify_baseline
+    ;;
+  --profiles)
+    verify_contract
+    verify_baseline
+    verify_profiles
     ;;
   all)
     verify_contract

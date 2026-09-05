@@ -9,13 +9,24 @@ from pathlib import Path
 
 
 UNRESOLVED = {"[unknown]", "unknown", "null", "(null)", "??"}
-MAX_DROPPED_PPM = 5_000
+DEFAULT_MAX_DROPPED_PPM = 5_000
 
 
 def main() -> None:
     report_value = os.environ.get("YOCTUI_FLAMEGRAPH_FILTER_REPORT")
     if not report_value:
         raise SystemExit("flamegraph stack filter: report path is missing")
+
+    try:
+        maximum_dropped_ppm = int(
+            os.environ.get(
+                "YOCTUI_FLAMEGRAPH_MAX_DROPPED_PPM", str(DEFAULT_MAX_DROPPED_PPM)
+            )
+        )
+    except ValueError as error:
+        raise SystemExit("flamegraph stack filter: invalid quality ceiling") from error
+    if not 0 <= maximum_dropped_ppm <= 50_000:
+        raise SystemExit("flamegraph stack filter: quality ceiling must be 0..50000 ppm")
 
     raw_lines = 0
     accepted_lines = 0
@@ -44,10 +55,10 @@ def main() -> None:
     if raw_weight == 0 or accepted_lines == 0:
         raise SystemExit("flamegraph stack filter: no resolved samples remain")
     dropped_ppm = dropped_weight * 1_000_000 // raw_weight
-    if dropped_ppm > MAX_DROPPED_PPM:
+    if dropped_ppm > maximum_dropped_ppm:
         raise SystemExit(
             "flamegraph stack filter: unresolved call chains are "
-            f"{dropped_ppm} ppm, above the {MAX_DROPPED_PPM} ppm limit"
+            f"{dropped_ppm} ppm, above the {maximum_dropped_ppm} ppm limit"
         )
 
     Path(report_value).write_text(
@@ -60,6 +71,7 @@ def main() -> None:
                 f"raw_event_count={raw_weight}",
                 f"dropped_unresolved_event_count={dropped_weight}",
                 f"dropped_unresolved_ppm={dropped_ppm}",
+                f"maximum_dropped_unresolved_ppm={maximum_dropped_ppm}",
             ]
         )
         + "\n",

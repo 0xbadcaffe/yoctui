@@ -1,0 +1,124 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-09-05T06:37:56.431943+00:00",
+  "scenario": "active-real-poky-build",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 15,
+    "samples": 653,
+    "unresolved_stack_lines": 7,
+    "dropped_unresolved_ppm": 10463,
+    "maximum_dropped_unresolved_ppm": 15000
+  },
+  "processes": [
+    {
+      "role": "daemon",
+      "pid": 2789877,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui daemon foreground"
+    },
+    {
+      "role": "client",
+      "pid": 2797774,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "2206d20b9df78fe2c233a948a891dd53f96b65b5b369528a77b2249bfe6a2e7c",
+    "flat_report_sha256": "82613feae1e19b16020d5a8dd12fd425e844a1a2f8a1e01ab71ef74780406cff"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 30.76,
+      "symbol": "serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>"
+    },
+    {
+      "self_percent": 11.25,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_percent": 7.05,
+      "symbol": "__libc_malloc2"
+    },
+    {
+      "self_percent": 4.91,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>"
+    },
+    {
+      "self_percent": 3.31,
+      "symbol": "<yoctui_protocol::daemon::DaemonBuildEvent as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>"
+    },
+    {
+      "self_percent": 3.26,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_percent": 3.22,
+      "symbol": "_int_free_chunk"
+    },
+    {
+      "self_percent": 3.21,
+      "symbol": "_int_free_merge_chunk"
+    },
+    {
+      "self_percent": 2.2,
+      "symbol": "cfree@GLIBC_2.2.5"
+    },
+    {
+      "self_percent": 2.04,
+      "symbol": "<ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq"
+    },
+    {
+      "self_percent": 1.76,
+      "symbol": "<ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>"
+    },
+    {
+      "self_percent": 1.43,
+      "symbol": "<unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 1.31,
+      "symbol": "malloc"
+    },
+    {
+      "self_percent": 1.17,
+      "symbol": "<&ratatui_widgets::block::Block as ratatui_core::widgets::widget::Widget>::render"
+    },
+    {
+      "self_percent": 1.1,
+      "symbol": "<yoctui_protocol::daemon::CompatibilitySnapshotData as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>"
+    },
+    {
+      "self_percent": 1.1,
+      "symbol": "yoctui_model::compatibility::valid_text"
+    },
+    {
+      "self_percent": 0.99,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<str, alloc::string::String>"
+    },
+    {
+      "self_percent": 0.96,
+      "symbol": "unlink_chunk.isra.0"
+    },
+    {
+      "self_percent": 0.95,
+      "symbol": "<yoctui_protocol::daemon::DaemonBuildEvent as core::clone::Clone>::clone"
+    },
+    {
+      "self_percent": 0.86,
+      "symbol": "core::ptr::drop_glue::<alloc::vec::Vec<yoctui_protocol::RecipeData>>"
+    }
+  ]
+}

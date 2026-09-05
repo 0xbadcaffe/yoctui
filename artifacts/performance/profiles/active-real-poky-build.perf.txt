@@ -1,0 +1,89 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 653  of event 'cycles:u'
+# Event count (approx.): 3267337602
+#
+# Overhead  Command          Shared Object     Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+# ........  ...............  ................  ........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+    30.76%  yoctui           yoctui            [.] serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>
+    11.25%  yoctui           libc.so.6         [.] __memmove_avx_unaligned_erms
+     7.05%  yoctui           libc.so.6         [.] __libc_malloc2
+     4.91%  yoctui           yoctui            [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>
+     3.31%  yoctui           yoctui            [.] <yoctui_protocol::daemon::DaemonBuildEvent as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>
+     3.26%  yoctui           libc.so.6         [.] _int_malloc
+     3.22%  yoctui           libc.so.6         [.] _int_free_chunk
+     3.21%  yoctui           libc.so.6         [.] _int_free_merge_chunk
+     2.20%  yoctui           libc.so.6         [.] cfree@GLIBC_2.2.5
+     2.04%  yoctui           yoctui            [.] <ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq
+     1.76%  yoctui           yoctui            [.] <ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>
+     1.43%  yoctui           yoctui            [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+     1.31%  yoctui           libc.so.6         [.] malloc
+     1.17%  yoctui           yoctui            [.] <&ratatui_widgets::block::Block as ratatui_core::widgets::widget::Widget>::render
+     1.10%  yoctui           yoctui            [.] <yoctui_protocol::daemon::CompatibilitySnapshotData as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>
+     1.10%  yoctui           yoctui            [.] yoctui_model::compatibility::valid_text
+     0.99%  yoctui           yoctui            [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<str, alloc::string::String>
+     0.96%  yoctui           libc.so.6         [.] unlink_chunk.isra.0
+     0.95%  yoctui           yoctui            [.] <yoctui_protocol::daemon::DaemonBuildEvent as core::clone::Clone>::clone
+     0.86%  yoctui           yoctui            [.] core::ptr::drop_glue::<alloc::vec::Vec<yoctui_protocol::RecipeData>>
+     0.83%  yoctui           yoctui            [.] ratatui_widgets::paragraph::render_line
+     0.74%  yoctui           [unknown]         [k] 0xffffffff91e00b90
+     0.72%  yoctui           libc.so.6         [.] __memcmp_avx2_movbe
+     0.71%  yoctui           yoctui            [.] core::str::converts::from_utf8
+     0.68%  yoctui           yoctui            [.] serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>
+     0.63%  yoctui           yoctui            [.] <&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render
+     0.59%  yoctui           yoctui            [.] <serde_json::read::SliceRead as serde_json::read::Read>::parse_str
+     0.56%  yoctui           yoctui            [.] <u64 as itoa::Unsigned>::fmt
+     0.54%  yoctui           yoctui            [.] <core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}> as core::iter::traits::iterator::Iterator>::next
+     0.54%  yoctui           yoctui            [.] alloc::fmt::format::format_inner
+     0.53%  yoctui           yoctui            [.] <&mut serde_json::de::Deserializer<serde_json::read::SliceRead> as serde_core::de::Deserializer>::deserialize_any::<serde::private::de::content::ContentVisitor>
+     0.49%  yoctui           yoctui            [.] <ratatui_core::buffer::cell::Cell as ratatui_core::buffer::cell_width::CellWidth>::cell_width
+     0.47%  yoctui           yoctui            [.] <core::iter::adapters::filter::Filter<core::iter::adapters::filter_map::FilterMap<core::slice::iter::Iter<yoctui_model::compatibility::CapabilityRecord>, <yoctui_model::compatibility_ui::CompatibilityUiState>::filtered_rows::{closure#0}>, <yoctui_model::compatibility_ui::CompatibilityUiState>::filtered_rows::{closure#1}> as core::iter::traits::iterator::Iterator>::next
+     0.43%  yoctui           yoctui            [.] <yoctui_protocol::daemon::CompatibilitySnapshotData>::validate
+     0.39%  yoctui           yoctui            [.] <yoctui_model::compatibility::CapabilitySnapshot>::normalize
+     0.34%  yoctui           yoctui            [.] <serde_json::read::SliceRead>::skip_to_escape
+     0.34%  yoctui           yoctui            [.] <str>::trim_matches::<<char>::is_whitespace>
+     0.33%  yoctui           yoctui            [.] <yoctui_model::LogState>::filtered::{closure#1}
+     0.31%  yoctui           yoctui            [.] <core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>
+     0.30%  yoctui           yoctui            [.] <ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next
+     0.25%  yoctui           libc.so.6         [.] __GI___libc_open
+     0.24%  yoctui           yoctui            [.] yoctui_ui::render_job_history
+     0.24%  yoctui           yoctui            [.] <yoctui_model::compatibility_ui::CompatibilityUiState>::project
+     0.23%  yoctui           yoctui            [.] <alloc::raw_vec::RawVecInner<_>>::reserve::do_reserve_and_handle::<alloc::alloc::Global>
+     0.22%  yoctui           yoctui            [.] std::path::compare_components
+     0.20%  yoctui           yoctui            [.] unicode_width::tables::lookup_width
+     0.20%  yoctui           yoctui            [.] <<yoctui_protocol::RecipeData as serde_core::de::Deserialize>::deserialize::__FieldVisitor as serde_core::de::Visitor>::visit_str::<serde_json::error::Error>
+     0.20%  yoctui           libc.so.6         [.] _int_free_maybe_trim
+     0.19%  yoctui           yoctui            [.] yoctui_protocol::daemon::validate_reason
+     0.19%  yoctui           yoctui            [.] <yoctui::maintenance_cli::MaintenanceCliCoordinator>::poll::{closure#0}
+     0.19%  yoctui           libc.so.6         [.] clock_gettime@@GLIBC_2.17
+     0.19%  yoctui           yoctui            [.] core::ptr::drop_glue::<yoctui_model::pane_layout::PaneNode>
+     0.19%  yoctui           yoctui            [.] yoctui::termination_requested
+     0.19%  yoctui           yoctui            [.] <alloc::raw_vec::RawVecInner>::finish_grow
+     0.18%  yoctui           yoctui            [.] <std::io::error::Error>::kind
+     0.18%  yoctui           yoctui            [.] <hashbrown::map::HashMap<alloc::string::String, alloc::string::String, std::hash::random::RandomState> as core::clone::Clone>::clone
+     0.18%  yoctui           libc.so.6         [.] alloc_perturb
+     0.18%  yoctui           libc.so.6         [.] realloc
+     0.18%  yoctui           yoctui            [.] yoctui_ui::inspector
+     0.18%  yoctui           yoctui            [.] core::ptr::drop_glue::<serde_core::private::content::Content>
+     0.17%  yoctui           yoctui            [.] core::ptr::drop_glue::<alloc::vec::Vec<yoctui_protocol::daemon::CompatibilityCapabilityData>>
+     0.17%  yoctui           yoctui            [.] <yoctui_protocol::daemon::CompatibilitySnapshotData as core::clone::Clone>::clone
+     0.16%  yoctui           yoctui            [.] <yoctui_model::App>::host_telemetry_projection
+     0.16%  yoctui           [unknown]         [k] 0xffffffff91e00ef0
+     0.16%  yoctui           yoctui            [.] <alloc::collections::vec_deque::VecDeque<u64>>::grow
+     0.15%  yoctui           libc.so.6         [.] __memset_avx2_unaligned_erms
+     0.14%  yoctui           [unknown]         [k] 0xffffffff91e00080
+     0.14%  yoctui           yoctui            [.] <core::marker::PhantomData<alloc::vec::Vec<yoctui_protocol::RecipeData>> as serde_core::de::DeserializeSeed>::deserialize::<serde::private::de::content::ContentDeserializer<serde_json::error::Error>>
+     0.14%  yoctui           yoctui            [.] yoctui_model::workspace_compatibility::workspace_requirement_availability
+     0.13%  yoctui           yoctui            [.] <ratatui_widgets::reflow::WordWrapper<core::iter::adapters::map::Map<core::slice::iter::Iter<ratatui_core::text::line::Line>, <ratatui_widgets::paragraph::Paragraph>::render_paragraph::{closure#0}>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>> as ratatui_widgets::reflow::LineComposer>::next_line
+     0.13%  yoctui           yoctui            [.] <yoctui_model::compatibility::CapabilityId>::from_stable_name
+     0.11%  yoctui           yoctui            [.] yoctui_model::workspace_compatibility::capability_result
+     0.10%  yoctui           yoctui            [.] <&ratatui_widgets::paragraph::Paragraph as ratatui_core::widgets::widget::Widget>::render
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

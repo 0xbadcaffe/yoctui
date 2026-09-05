@@ -37,6 +37,44 @@ def event_for(index: int) -> dict[str, object]:
     task_index = index // 7
     recipe = f"fixture-recipe-{task_index % 128:03d}"
     task = f"do_fixture_{task_index % 16:02d}"
+    profile = os.environ.get("YOCTUI_PERF_EVENT_PROFILE", "balanced")
+    if profile == "log-heavy":
+        if index % 32 == 0:
+            return {"type": "warning", "message": f"fixture warning {index}"}
+        return {
+            "type": "log",
+            "level": "info",
+            "message": f"fixture ordinary log {index}",
+            "recipe": recipe,
+            "task": task,
+            "path": None,
+        }
+    if profile == "task-heavy":
+        kind = index % 4
+        if kind == 0:
+            return {"type": "task_queued", "recipe": recipe, "task": task}
+        if kind == 1:
+            return {
+                "type": "task_started",
+                "recipe": recipe,
+                "task": task,
+                "pid": 10_000 + task_index % 1_000,
+            }
+        if kind == 2:
+            return {
+                "type": "task_progress",
+                "recipe": recipe,
+                "task": task,
+                "progress": (task_index * 7) % 100,
+            }
+        return {
+            "type": "task_completed",
+            "recipe": recipe,
+            "task": task,
+            "success": True,
+        }
+    if profile != "balanced":
+        raise RuntimeError(f"unknown YOCTUI_PERF_EVENT_PROFILE {profile!r}")
     kind = index % 7
     if kind == 0:
         return {"type": "task_queued", "recipe": recipe, "task": task}

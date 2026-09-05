@@ -1,0 +1,124 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-09-05T05:48:40.406875+00:00",
+  "scenario": "idle-client",
+  "revision": "11701f9304ddef4ca1ef3926ee4dd7e6a3d7f1f2",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "sha256": "861da8bda754740e6a7a41675c5fc413223e16f7badce4edb9d9d3ef34ccc0f5"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 15,
+    "samples": 200,
+    "unresolved_stack_lines": 0,
+    "dropped_unresolved_ppm": 0,
+    "maximum_dropped_unresolved_ppm": 5000
+  },
+  "processes": [
+    {
+      "role": "daemon",
+      "pid": 2682312,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "./target/release/yoctui daemon foreground"
+    },
+    {
+      "role": "client",
+      "pid": 2682366,
+      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "82d442e36898af3199a0b71c1839bb7c9cca858ec5ceafacc99e773d1f99ee7b",
+    "flat_report_sha256": "cb36bfa41818c74fd483959cbb8ded59bc97c4d20eff970af0a353dfb9dc1056"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 31.04,
+      "symbol": "<ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>"
+    },
+    {
+      "self_percent": 11.73,
+      "symbol": "<ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq"
+    },
+    {
+      "self_percent": 6.77,
+      "symbol": "<unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 4.83,
+      "symbol": "yoctui::tui::{closure#0}"
+    },
+    {
+      "self_percent": 4.81,
+      "symbol": "<ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 3.95,
+      "symbol": "<&ratatui_widgets::block::Block as ratatui_core::widgets::widget::Widget>::render"
+    },
+    {
+      "self_percent": 2.99,
+      "symbol": "<ratatui_core::buffer::cell::Cell as ratatui_core::buffer::cell_width::CellWidth>::cell_width"
+    },
+    {
+      "self_percent": 2.91,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_percent": 2.62,
+      "symbol": "ratatui_widgets::paragraph::render_line"
+    },
+    {
+      "self_percent": 2.15,
+      "symbol": "<&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render"
+    },
+    {
+      "self_percent": 2.11,
+      "symbol": "<core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>"
+    },
+    {
+      "self_percent": 1.87,
+      "symbol": "<ratatui_widgets::reflow::WordWrapper<core::iter::adapters::map::Map<core::slice::iter::Iter<ratatui_core::text::line::Line>, <ratatui_widgets::paragraph::Paragraph>::render_paragraph::{closure#0}>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>> as ratatui_widgets::reflow::LineComposer>::next_line"
+    },
+    {
+      "self_percent": 1.77,
+      "symbol": "<ratatui_core::buffer::cell::Cell>::set_symbol"
+    },
+    {
+      "self_percent": 1.5,
+      "symbol": "_int_free_merge_chunk"
+    },
+    {
+      "self_percent": 1.23,
+      "symbol": "<&ratatui_widgets::paragraph::Paragraph as ratatui_core::widgets::widget::Widget>::render"
+    },
+    {
+      "self_percent": 1.14,
+      "symbol": "unicode_width::tables::lookup_width"
+    },
+    {
+      "self_percent": 1.1,
+      "symbol": "<core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}> as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 1.07,
+      "symbol": "malloc"
+    },
+    {
+      "self_percent": 1.05,
+      "symbol": "__memcmp_avx2_movbe"
+    },
+    {
+      "self_percent": 0.81,
+      "symbol": "<alloc::raw_vec::RawVecInner>::finish_grow"
+    }
+  ]
+}
