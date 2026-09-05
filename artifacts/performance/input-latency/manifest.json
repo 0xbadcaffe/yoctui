@@ -1,0 +1,31 @@
+{
+  "schema": "yoctui.performance.input-latency-manifest.v1",
+  "source_base_revision": "b0cb19b9e0ab736e65d6fa443b15308a75a74988",
+  "artifact": "host-audit.json",
+  "artifact_sha256": "2115d41c2b84e838704aa1d3c2919097f2e670c0f9c5cc3a4911c87becd6cb54",
+  "binary_sha256": "dbad2bf7f3b8903a813cc9231be5d91679f56c245d4ac7d46631faa679a3916a",
+  "sources": {
+    "crates/yoctui-e2e/examples/input_latency_probe.rs": "78ac66134c00228fb9476d66fc4afdf3ff65e6258e68793163bb987b25924108",
+    "scripts/measure-input-latency.py": "2cde113fc06e9e20ee08acc41e95cf46d77e2702bf6c57f73cb3c39b7a63071f",
+    "scripts/cpu-saturation-harness.py": "b54d207b1a79013a2357467792dfd2d48f52b4bffc65951e1523318538d0f473"
+  },
+  "method": {
+    "release_profile": true,
+    "terminal_columns": 160,
+    "terminal_rows": 50,
+    "warmup_seconds": 1,
+    "observations_per_path": 100,
+    "clock": "CLOCK_MONOTONIC",
+    "load": "one pinned worker per affinity CPU; no deliberately free CPU"
+  },
+  "observations": {
+    "keyboard_to_model_p50_ms": 0.965495,
+    "keyboard_to_model_p95_ms": 1.973703,
+    "keyboard_to_visible_frame_p50_ms": 2.270297,
+    "keyboard_to_visible_frame_p95_ms": 4.336407,
+    "mouse_to_visible_selection_p50_ms": 2.270185,
+    "mouse_to_visible_selection_p95_ms": 4.440078,
+    "host_cpu_utilization_percent": 99.74673106372953,
+    "minimum_load_worker_cpu_percent": 80.70220932698321
+  }
+}

@@ -963,4 +963,7 @@ busy. The coexistence audit then measured 0.6223 ms median p95 wake latency at
 one worker per logical CPU and 1.0377 ms at two workers per CPU while host CPU
 stayed near 99%. `yoctui inspect` now reports a typed, read-only
 `BB_NUMBER_THREADS`/`PARALLEL_MAKE`/load diagnostic; examples require review and
-never change build configuration. Saturated input latency is next.
+never change build configuration. The real-PTY input audit collected 100
+post-warmup observations per path at 99.75% host CPU: keyboard-to-model,
+keyboard-to-frame, and mouse-to-selection p95 were 1.974, 4.336, and 4.440 ms.
+Saturated IPC latency is next.

@@ -2,34 +2,36 @@
 
 ## Task
 
-**ID:** PERF-INPUT-LATENCY-001
-**Title:** Measure saturated UI input latency
+**ID:** PERF-IPC-LATENCY-001
+**Title:** Measure saturated IPC latency
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure keyboard input to reducer action, keyboard input to visible frame, and
-mouse input to visible selection under deterministic full-CPU saturation.
+Measure daemon-event delivery, client-command receipt, and cancellation
+acknowledgement latency under deterministic full-CPU saturation.
 
 ## Dependencies
 
 - PERF-SATURATION-HARNESS-001 — DONE
-- PERF-RENDER-001 — DONE
+- PERF-IPC-BACKPRESSURE-001 — DONE
+- PERF-BITBAKE-CONN-001 — DONE
 
 ## Definition of done
 
-- At least 100 post-warmup observations exist for keyboard-to-model,
-  keyboard-to-visible-frame, and mouse-to-visible-selection latency.
+- At least 100 post-warmup observations exist for daemon-event to client,
+  client-command to daemon, and cancellation request to acknowledgement.
 - Measurements use monotonic timestamps while every affinity CPU is runnable.
-- Each path reports p50/p95 and meets the documented p95 <=100 ms target.
-- Keyboard and mouse handling remain independent of animation/render ticks.
-- Evidence identifies the exact revision, host, terminal, load, and method.
+- Ordinary IPC reports p50 <=25 ms and p95 <=100 ms.
+- Cancellation acknowledgement reports p95 <=250 ms.
+- Evidence proves connection continuity, exact ordering, revision, host, load,
+  transport, and method.
 
 ## Verification
 
 ```bash
-./scripts/verify-saturation-responsiveness.sh --input-latency
+./scripts/verify-ipc-continuity.sh --latency
 ./scripts/verify-roadmap.sh
 ```
 
-BitBake coexistence guidance is complete in v0.1.40.
+Saturated input latency is complete in v0.1.41.

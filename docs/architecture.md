@@ -3667,6 +3667,16 @@ per affinity CPU. Repeated one-worker and two-worker-per-CPU trials measure a
 models scheduler pressure and supports diagnostic guidance but is not presented
 as real-BitBake evidence.
 
+Input-latency evidence composes existing production boundaries rather than
+adding instrumentation to the shipped client. A non-published `yoctui-e2e`
+example owns a real PTY terminal lifecycle, decodes Crossterm keyboard/mouse
+events, calls the same app routes, applies the same model reducer, and invokes
+the same UI renderer. Its measurement-only OSC record is emitted after draw
+completion and never enters the product protocol or model. The external driver
+uses the shared kernel monotonic clock to include scheduler delivery delay in
+key/mouse-to-model/frame latency, sends the next event only after the previous
+frame marker, and proves each action changes visible Navigator selection.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

@@ -7209,18 +7209,18 @@ notes = "In v0.1.40 the repeated full-affinity audit measured 0.6223 ms median p
 id = "PERF-INPUT-LATENCY-001"
 milestone = "M46"
 title = "Measure saturated UI input latency"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 808
 required = true
 depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-RENDER-001"]
 verify = ["./scripts/verify-saturation-responsiveness.sh --input-latency"]
-notes = "Measure key-to-model, key-to-visible-frame, and mouse-to-selection p50/p95 latency under saturation against the documented target."
+notes = "In v0.1.41 the release real-PTY probe collected 100 post-warmup observations per route while all eight affinity CPUs were loaded at 99.75% host CPU. Keyboard-to-model, keyboard-to-visible-frame, and mouse-to-visible-selection p95 were 1.974, 4.336, and 4.440 ms respectively. The offline gate validates raw monotonic samples, exact binary/source identity, visible state changes, load, and a fresh dynamic run."
 
 [[task]]
 id = "PERF-IPC-LATENCY-001"
 milestone = "M46"
 title = "Measure saturated IPC latency"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 809
 required = true
 depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001"]

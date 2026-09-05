@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-INPUT-LATENCY-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-IPC-LATENCY-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -99,9 +99,12 @@ The coexistence audit measured 0.6223 ms median p95 wake latency with one worker
 per logical CPU and 1.0377 ms with two workers per CPU at about 99% host CPU.
 The new typed `yoctui inspect` diagnostic reports CPU count, load,
 `BB_NUMBER_THREADS`, and `PARALLEL_MAKE` as read-only evidence; it never edits
-build configuration or runtime policy. Saturated keyboard/mouse-to-model/frame
-latency is next.
-Overall required registry progress is 648/659 (98.3%).
+build configuration or runtime policy. The release real-PTY audit then measured
+100 post-warmup samples per route at 99.75% host CPU. Keyboard-to-model,
+keyboard-to-visible-frame, and mouse-to-visible-selection p95 were 1.974,
+4.336, and 4.440 ms respectively, well below 100 ms. Saturated IPC latency is
+next.
+Overall required registry progress is 649/659 (98.5%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

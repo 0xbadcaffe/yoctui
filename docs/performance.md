@@ -308,6 +308,30 @@ yoctui --build-dir "$BUILDDIR" inspect
 ./scripts/verify-performance.sh --coexistence
 ```
 
+### Saturated input latency
+
+The release input probe runs in a real fixed 160x50 PTY, enables Crossterm mouse
+capture, and reads terminal events through `event::read`. Keyboard navigation
+uses the production focus route; mouse scrolling uses the production
+coordinate-aware route. Both apply the resulting typed action through the model
+reducer and draw with the production UI renderer. The probe emits an OSC marker
+only after the terminal draw returns. The driver timestamps each sequential PTY
+write and the probe records event receipt, reducer completion, and frame
+completion from the shared Linux `CLOCK_MONOTONIC` clock.
+
+After one second of CPU-load warmup, the reference run collected 100 distinct
+visible selection changes for each input kind while one pinned load worker ran
+on every one of eight affinity CPUs. Host CPU reached 99.75%, and the least-busy
+load worker reached 80.70%. Keyboard-to-model latency measured 0.965 ms p50 and
+1.974 ms p95; keyboard-to-visible-frame measured 2.270 ms p50 and 4.336 ms p95;
+mouse-to-visible-selection measured 2.270 ms p50 and 4.440 ms p95. All three are
+well below the 100 ms contract. Raw timestamps, exact binary identity, host,
+terminal, and load evidence live under `artifacts/performance/input-latency/`.
+
+```sh
+./scripts/verify-saturation-responsiveness.sh --input-latency
+```
+
 `scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
 fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
 and success/failure/disconnect terminal mode. Stable task identities plus
