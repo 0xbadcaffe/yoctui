@@ -565,6 +565,31 @@ non-reader, and a successful new attach:
 ```
 
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
+
+## Regression record
+
+`artifacts/performance/regression/metrics.json` is the compact, deterministic
+comparison surface for M46. It collects idle and real-Poky CPU, saturated input
+and IPC latency, idle context-switch rates, saturated render cadence, event-flood
+and live-build pressure, plus the 30-minute memory result. Every input path and
+SHA-256 digest is embedded in the record, and the manifest additionally binds
+the generator and its tests.
+
+Controlled release metrics keep their exact hard limits: in particular, the
+combined daemon/client CPU ceiling remains 1% of one logical CPU. Correctness
+booleans for critical retention, event order, continuity, cancellation, and
+reconnect are also hard failures. Measurements without a controlled comparison
+environment, such as informational wakeup and absolute RSS trends, are recorded
+but do not fail for tiny variance. A comparison is meaningful only when its
+scenario and method identity match.
+
+The offline verifier validates every source digest, regenerates the record
+byte-for-byte from the retained evidence, and then checks all hard metrics and
+correctness outcomes:
+
+```sh
+./scripts/verify-performance.sh --regressions
+```
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,
 `./scripts/verify-saturation-responsiveness.sh`,

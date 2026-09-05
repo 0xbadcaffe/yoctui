@@ -7286,18 +7286,18 @@ notes = "In v0.1.47 an isolated production daemon and 160x50 client ran a daemon
 id = "PERF-REGRESSION-001"
 milestone = "M46"
 title = "Track machine-readable performance regressions"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 815
 required = true
 depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
 verify = ["./scripts/verify-performance.sh --regressions"]
-notes = "Record compact CPU, latency, wakeup, render, pressure, and memory metrics with robust hard release gates and tolerance for tiny uncontrolled variance."
+notes = "In v0.1.48 a deterministic compact regression record aggregates SHA-256-bound idle and real-Poky CPU, input and IPC latency, idle wakeups, saturated render cadence, queue pressure, and 30-minute memory evidence. Twenty-two controlled threshold metrics and seven correctness checks pass. The offline verifier regenerates the record byte-for-byte from retained raw evidence; controlled release limits remain hard failures while informational trends explicitly tolerate tiny uncontrolled variance."
 
 [[task]]
 id = "PERF-CI-001"
 milestone = "M46"
 title = "Integrate deterministic and scheduled performance CI"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 816
 required = true
 depends_on = ["PERF-REGRESSION-001"]

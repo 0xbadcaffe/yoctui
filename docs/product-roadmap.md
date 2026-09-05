@@ -998,4 +998,9 @@ presentation reduces cosmetic full-frame work to 1 Hz above 90% host CPU while
 input remains immediate; 100 probes measured 5.3843 ms p95. Cancellation,
 fresh attach, backend continuity, and bounded IPC pressure all passed with
 exact raw and hashed evidence. Machine-readable regression aggregation is
-next.
+complete. The deterministic record binds eight retained evidence sources and
+collects CPU, latency, wakeup, render, pressure, and memory data in one compact
+schema. Twenty-two controlled thresholds remain hard gates and seven continuity
+and ordering checks pass; exact regeneration prevents stale or hand-edited
+summaries, while diagnostic trends tolerate tiny uncontrolled variance. CI
+integration is next.

@@ -2,39 +2,35 @@
 
 ## Task
 
-**ID:** PERF-REGRESSION-001
-**Title:** Track machine-readable performance regressions
+**ID:** PERF-CI-001
+**Title:** Integrate deterministic and scheduled performance CI
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Aggregate the retained M46 CPU, latency, wakeup, render, pressure, and memory
-evidence into one compact machine-readable regression record with robust hard
-release gates and explicit tolerance for tiny uncontrolled variance.
+Add fast deterministic performance checks to pull-request CI and keep the
+long-running CPU, memory, profiling, and real-Poky evidence paths scheduled or
+explicitly opt-in, with retained artifacts on failure.
 
 ## Dependencies
 
-- PERF-CPU-GATE-001 — DONE
-- PERF-RESPONSIVENESS-GATE-001 — DONE
-- PERF-IPC-GATE-001 — DONE
-- PERF-MEMORY-GATE-001 — DONE
+- PERF-REGRESSION-001 — DONE
 
 ## Definition of done
 
-- A compact record names the exact source artifacts and carries CPU, latency,
-  wakeup, render, IPC-pressure, and memory metrics.
-- Hard correctness and controlled release thresholds remain strict.
-- Small variance in explicitly uncontrolled diagnostic measurements does not
-  create a false regression failure.
-- The verifier recalculates or cross-checks retained values rather than
-  trusting an unbound summary.
+- Pull requests run busy-loop, render invalidation, event coalescing, IPC
+  backpressure, and deterministic saturation responsiveness checks.
+- Scheduled or manually dispatched CI covers profiling, real Poky, the full
+  steady-state CPU gate, and memory endurance without making PRs impractical.
+- Failure artifacts preserve machine-readable performance results and logs.
+- CI verification is offline and proves the required workflow coverage.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --regressions
+./scripts/verify-performance.sh --ci
 ./scripts/verify-roadmap.sh
 ```
 
-The supported real-Poky saturation gate is complete in v0.1.47: combined
-daemon/client CPU was 0.9662% of one logical CPU at 99.6646% host utilization.
+The compact regression record is complete in v0.1.48 with 22 hard metrics and
+seven correctness checks regenerated from exact retained evidence.

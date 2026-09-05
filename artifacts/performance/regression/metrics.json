@@ -1,0 +1,330 @@
+{
+  "correctness": {
+    "event_flood_reconnect": true,
+    "memory_connection_continuity": true,
+    "memory_critical_retention": true,
+    "memory_strict_order": true,
+    "real_poky_backend_continuity": true,
+    "real_poky_cancellation": true,
+    "real_poky_reconnect": true
+  },
+  "method_identity": {
+    "idle": {
+      "clock": "CLOCK_MONOTONIC",
+      "cpu_source": "/proc/PID/stat fields 14+15",
+      "refresh_milliseconds": 100,
+      "release_profile": true,
+      "sample_interval_seconds": 1,
+      "sample_window_seconds": 60,
+      "startup_excluded": true,
+      "statistic": "10_percent_trimmed_mean",
+      "terminal": {
+        "columns": 160,
+        "rows": 50
+      },
+      "warmup_seconds": 10
+    },
+    "input_latency": {
+      "clock": "CLOCK_MONOTONIC",
+      "load": "one pinned worker per affinity CPU; no deliberately free CPU",
+      "observations_per_path": 100,
+      "sequential_input": true,
+      "warmup_seconds": 1.0
+    },
+    "ipc_latency": {
+      "cancellation_method": "two protocol-compliant batches of 50 pipelined cancel_job requests against active BitBake jobs; every request receives an ordered correlated command_result and each batch proves at least one accepted live-supervisor cancellation",
+      "clock": "CLOCK_MONOTONIC",
+      "command_method": "client cancel_job for a deliberately absent u64 job identity through daemon dispatch to correlated not_found command_result receipt; measured round trip is a conservative upper bound on daemon receipt without command workload",
+      "event_path": [
+        "fixture_bridge",
+        "bridge_backend",
+        "daemon_bitbake_supervisor",
+        "daemon_snapshot_journal",
+        "unix_ipc",
+        "attached_protocol_client"
+      ],
+      "event_rate_per_second": 500,
+      "event_warmup_observations": 50,
+      "load": "one pinned worker per affinity CPU; no deliberately free CPU",
+      "observations_per_path": 100,
+      "transport": "AF_UNIX SOCK_STREAM length-prefixed JSON",
+      "warmup_seconds": 1.0
+    },
+    "memory": {
+      "attached_client": "bounded protocol observer",
+      "clock": "CLOCK_MONOTONIC",
+      "endurance_release_evidence": true,
+      "event_rate_per_second": 4000,
+      "production_path": [
+        "fixture_bridge",
+        "bridge_backend",
+        "daemon_bitbake_supervisor",
+        "daemon_reducer_journal",
+        "unix_ipc",
+        "attached_protocol_client"
+      ],
+      "sample_interval_seconds": 1,
+      "sample_window_seconds": 1800,
+      "warmup_seconds": 10
+    },
+    "real_poky": {
+      "clock": "CLOCK_MONOTONIC",
+      "sample_count": 119,
+      "statistic": "10_percent_trimmed_mean",
+      "sustained_active_seconds": 120,
+      "terminal": {
+        "columns": 160,
+        "rows": 50
+      },
+      "warmup_seconds": 10,
+      "window_seconds": 120,
+      "workload_trigger": {
+        "log_path": "/home/bspguy-dev/src/build/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.4001304",
+        "pid": 4001304,
+        "recipe": "linux-yocto",
+        "stats": null,
+        "task": "do_compile",
+        "type": "task_started",
+        "worker": null
+      }
+    }
+  },
+  "metrics": {
+    "cpu": {
+      "idle_client": {
+        "hard_maximum": 0.5,
+        "passed": true,
+        "unit": "% one logical CPU",
+        "value": 0.062403742466128044
+      },
+      "idle_combined": {
+        "hard_maximum": 1.0,
+        "passed": true,
+        "unit": "% one logical CPU",
+        "value": 0.1456210736914154
+      },
+      "idle_daemon": {
+        "hard_maximum": 0.2,
+        "passed": true,
+        "unit": "% one logical CPU",
+        "value": 0.0
+      },
+      "real_poky_bitbake": {
+        "unit": "% one logical CPU",
+        "value": 298.4316233614969
+      },
+      "real_poky_client": {
+        "unit": "% one logical CPU",
+        "value": 0.5438897020739512
+      },
+      "real_poky_combined": {
+        "hard_maximum": 1.0,
+        "passed": true,
+        "unit": "% one logical CPU",
+        "value": 0.9661692862823459
+      },
+      "real_poky_daemon": {
+        "unit": "% one logical CPU",
+        "value": 0.399773674042312
+      },
+      "real_poky_host": {
+        "unit": "% total host capacity",
+        "value": 99.66455911247068
+      }
+    },
+    "latency": {
+      "cancellation_to_ack_p95": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 1.35879
+      },
+      "client_command_to_daemon_p95": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 0.229018
+      },
+      "daemon_event_to_client_p95": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 3.262296
+      },
+      "key_to_frame_p95": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 4.336407
+      },
+      "key_to_model_p95": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 1.973703
+      },
+      "mouse_to_frame_p95": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 4.440078
+      },
+      "real_poky_cancel_to_ack": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 2.90029
+      },
+      "real_poky_key_to_frame_p95": {
+        "hard_maximum": 100,
+        "passed": true,
+        "unit": "ms",
+        "value": 5.384291
+      }
+    },
+    "memory": {
+      "client_final_window_slope": {
+        "hard_maximum": 65536,
+        "passed": true,
+        "unit": "bytes/min",
+        "value": 0.0
+      },
+      "client_rss_growth": {
+        "hard_maximum": 33554432,
+        "passed": true,
+        "unit": "bytes",
+        "value": 110592
+      },
+      "client_rss_max": {
+        "unit": "bytes",
+        "value": 24457216
+      },
+      "daemon_final_window_slope": {
+        "hard_maximum": 65536,
+        "passed": true,
+        "unit": "bytes/min",
+        "value": 0.0
+      },
+      "daemon_rss_growth": {
+        "hard_maximum": 33554432,
+        "passed": true,
+        "unit": "bytes",
+        "value": 1351680
+      },
+      "daemon_rss_max": {
+        "unit": "bytes",
+        "value": 22921216
+      }
+    },
+    "pressure": {
+      "event_flood_forced_resynchronizations": {
+        "hard_maximum": 0,
+        "passed": true,
+        "unit": "count",
+        "value": 0
+      },
+      "event_flood_maximum_queue_depth": {
+        "hard_maximum": 4096,
+        "passed": true,
+        "unit": "events",
+        "value": 105
+      },
+      "real_poky_backend_disconnects": {
+        "hard_maximum": 0,
+        "passed": true,
+        "unit": "count",
+        "value": 0
+      },
+      "real_poky_forced_resynchronizations": {
+        "hard_maximum": 0,
+        "passed": true,
+        "unit": "count",
+        "value": 0
+      },
+      "real_poky_maximum_queue_depth": {
+        "hard_maximum": 256,
+        "passed": true,
+        "unit": "events",
+        "value": 28
+      }
+    },
+    "render": {
+      "real_poky_coalesced_requests": {
+        "unit": "requests",
+        "value": 385
+      },
+      "real_poky_frames": {
+        "unit": "frames",
+        "value": 262
+      },
+      "real_poky_frames_per_second": {
+        "hard_maximum": 10,
+        "passed": true,
+        "unit": "frames/s",
+        "value": 2.0053230123570187
+      }
+    },
+    "wakeups": {
+      "idle_attached_daemon_voluntary_context_switches_per_second": {
+        "unit": "context switches/s",
+        "value": 9.984169040695862
+      },
+      "idle_client_voluntary_context_switches_per_second": {
+        "unit": "context switches/s",
+        "value": 19.53303255988552
+      },
+      "idle_daemon_voluntary_context_switches_per_second": {
+        "unit": "context switches/s",
+        "value": 9.9834229287611
+      }
+    }
+  },
+  "policy": {
+    "comparison": "compare exact values only after matching scenario and method identity",
+    "diagnostics": "informational trends do not fail for tiny uncontrolled variance",
+    "hard_gates": "controlled release and correctness metrics fail at their documented limits",
+    "release_goal": "daemon + one client <=1% of one logical CPU"
+  },
+  "result": {
+    "correctness_checks": 7,
+    "correctness_checks_passed": 7,
+    "hard_metrics": 22,
+    "hard_metrics_passed": 22,
+    "passed": true
+  },
+  "schema": "yoctui.performance.regression-record.v1",
+  "source_artifacts": {
+    "idle_attached": {
+      "path": "artifacts/performance/results/low-overhead/idle-attached-client.json",
+      "sha256": "e0c87a2e67f1165efcf559d87d58dbf99b096355a7eee653b57d2ac0cd26ddf8"
+    },
+    "idle_daemon": {
+      "path": "artifacts/performance/results/low-overhead/idle-daemon.json",
+      "sha256": "55d2e13b3dd4e43c45c977f72d266fd8d6f6260b3261f377c634aad3482fef25"
+    },
+    "idle_suite": {
+      "path": "artifacts/performance/results/low-overhead/measurement.json",
+      "sha256": "f404143a7bcc72c49b6b5fea58081c0d77611a20e03ca7b3bdd3ad969681699b"
+    },
+    "input_latency": {
+      "path": "artifacts/performance/input-latency/host-audit.json",
+      "sha256": "2115d41c2b84e838704aa1d3c2919097f2e670c0f9c5cc3a4911c87becd6cb54"
+    },
+    "ipc_continuity": {
+      "path": "artifacts/performance/ipc-gate/manifest.json",
+      "sha256": "071e5606c36447cf91e1a61628792b34ba5a0557578b12c633edb3e2b819c5d2"
+    },
+    "ipc_latency": {
+      "path": "artifacts/performance/ipc-latency/host-audit.json",
+      "sha256": "959e91377599d739460228e4f977b91baeccd64e33fdd71b7dca3481c7cde592"
+    },
+    "memory_endurance": {
+      "path": "artifacts/performance/memory/endurance-30m.json",
+      "sha256": "51ccdf75dd0fb285aae794496935663b5b8878e5562d0d2012461d6858bc865f"
+    },
+    "real_poky": {
+      "path": "artifacts/performance/real-poky/linux-yocto-do-compile.json",
+      "sha256": "25877cda2b7df84e184b8930c08e14ae0d0e652e3fdea6f3b903b9711783ed1a"
+    }
+  }
+}

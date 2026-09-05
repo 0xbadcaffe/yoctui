@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-REGRESSION-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-CI-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -143,7 +143,12 @@ and adaptive 1 Hz cosmetic rendering above 90% host CPU reduced daemon/client
 CPU to 0.3998/0.5439%, or 0.9662% combined of one logical CPU. One hundred
 input probes retained 5.3843 ms p95 latency; cancellation, reconnect, bounded
 pressure, and backend continuity all passed. Overall required registry progress
-is 655/659 (99.4%).
+is 656/659 (99.5%). A deterministic compact regression record now binds eight
+source artifacts and aggregates idle/real-build CPU, input/IPC latency, wakeups,
+render cadence, queue pressure, and memory endurance. Its 22 controlled hard
+metrics and seven correctness checks pass; the verifier rebuilds it byte-for-byte
+instead of trusting copied summaries, while informational trends do not fail on
+tiny uncontrolled variance.
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to
