@@ -170,6 +170,37 @@ monotonic clock.
 ./scripts/verify-saturation-responsiveness.sh --bitbake-connection
 ```
 
+### Tokio runtime audit
+
+`scripts/measure-tokio-runtime.py` launches an isolated idle daemon, samples
+every `/proc/<pid>/task` CPU counter and context-switch counter over a fixed
+three-second audit window, records the stable thread set, and inventories Tokio
+spawn, blocking-pool, and channel construction sites. The hashed evidence and
+decision record live under `artifacts/performance/tokio/`.
+
+On the eight-logical-CPU reference host, the default runtime created eight
+workers plus the main thread. All workers recorded zero CPU ticks, while the
+combined process recorded 0.3333% of one logical CPU. The explicit two-worker
+runtime retained the same measured CPU and reduced the stable process set from
+nine threads to three. No lazy blocking-pool thread existed in either idle
+sample. The source audit recorded 25 `spawn_blocking` call sites; expensive
+filesystem, process, compatibility, and inventory work stays behind that
+boundary. Two workers are required because terminal input and daemon listener
+readiness use bounded synchronous polls: one worker may be in that poll while
+the other must continue the reactor, IPC, input, and monotonic timers.
+
+The offline gate dynamically checks the current daemon still has exactly two
+runtime workers and three stable idle threads. It also occupies one worker for
+750 ms, then requires a second-worker timer/task response within 500 ms while
+the CPU fixture keeps every CPU in the process affinity runnable:
+
+```sh
+./scripts/verify-performance.sh --tokio
+```
+
+This is runtime-scheduling evidence, not a substitute for the 60-second release
+CPU scenarios or real-Poky saturation evidence.
+
 `scripts/fixtures/bitbake-event-flood-bridge.py` is the deterministic bridge
 fixture. It accepts a rate, duration, balanced/log-heavy/task-heavy profile,
 and success/failure/disconnect terminal mode. Stable task identities plus

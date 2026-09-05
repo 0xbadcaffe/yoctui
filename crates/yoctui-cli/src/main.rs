@@ -1217,7 +1217,11 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
         session_path: session_path(configured_path.as_deref()),
     })
 }
-#[tokio::main]
+// Two workers keep the reactor responsive while one worker is inside one of the
+// bounded synchronous terminal/listener polls. More workers add idle scheduler
+// threads without improving those bounded waits; expensive filesystem and
+// process work is dispatched through `spawn_blocking` at its call sites.
+#[tokio::main(worker_threads = 2)]
 async fn main() -> Result<()> {
     install_panic_hook();
     let cli = Cli::parse();
@@ -14679,6 +14683,35 @@ fn interactive_frame_interval(configured_refresh: Duration) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tokio_runtime_two_workers_isolate_a_bounded_blocking_poll() {
+        let runtime = tokio::runtime::Builder::new_multi_thread()
+            .worker_threads(2)
+            .enable_time()
+            .build()
+            .expect("two-worker Tokio runtime");
+
+        runtime.block_on(async {
+            let (poll_started_tx, poll_started_rx) = tokio::sync::oneshot::channel();
+            let bounded_poll = tokio::spawn(async move {
+                let _ = poll_started_tx.send(());
+                std::thread::sleep(Duration::from_millis(750));
+            });
+            poll_started_rx.await.expect("bounded poll started");
+
+            let (reactor_tx, reactor_rx) = tokio::sync::oneshot::channel();
+            tokio::spawn(async move {
+                tokio::time::sleep(Duration::from_millis(10)).await;
+                let _ = reactor_tx.send(());
+            });
+            tokio::time::timeout(Duration::from_millis(500), reactor_rx)
+                .await
+                .expect("second worker kept the reactor responsive")
+                .expect("reactor response sender remained alive");
+            bounded_poll.await.expect("bounded poll task joined");
+        });
+    }
 
     #[test]
     fn ssh_access_origin_uses_the_valid_remote_client_ip() {

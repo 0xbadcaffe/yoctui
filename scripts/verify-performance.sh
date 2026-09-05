@@ -574,6 +574,136 @@ PY
   cargo test -q -p yoctui --bin yoctui daemon_live_event_replay_is_bounded_below_client_poll_capacity
 }
 
+verify_tokio() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+root = Path("artifacts/performance/tokio")
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.tokio-audit.v1":
+    raise SystemExit("Tokio audit manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+for phase in ("pre_optimization", "post_optimization"):
+    expected = manifest[phase]
+    artifact = root / expected["path"]
+    if hashlib.sha256(artifact.read_bytes()).hexdigest() != expected["sha256"]:
+        raise SystemExit(f"Tokio {phase} artifact digest mismatch")
+    record = json.loads(artifact.read_text(encoding="utf-8"))
+    if record.get("schema") != "yoctui.performance.tokio-runtime.v1":
+        raise SystemExit(f"Tokio {phase} artifact schema is unsupported")
+    measurement = record["measurement"]
+    workers = sum(thread["name"] == "tokio-rt-worker" for thread in measurement["threads"])
+    if workers != expected["runtime_workers"]:
+        raise SystemExit(f"Tokio {phase} worker count mismatch")
+    if measurement["thread_count_start"] != expected["process_threads"]:
+        raise SystemExit(f"Tokio {phase} initial thread count mismatch")
+    if measurement["thread_count_end"] != expected["process_threads"]:
+        raise SystemExit(f"Tokio {phase} leaked a thread during the idle sample")
+inventory = json.loads((root / manifest["pre_optimization"]["path"]).read_text(encoding="utf-8"))["source_inventory"]
+if inventory != manifest["source_inventory_before"]:
+    raise SystemExit("Tokio source inventory evidence mismatch")
+
+main = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+if "#[tokio::main(worker_threads = 2)]" not in main:
+    raise SystemExit("Yoctui runtime is not pinned to the audited two-worker policy")
+for required in (
+    "tokio_runtime_two_workers_isolate_a_bounded_blocking_poll",
+    "spawn_blocking",
+    "MAX_NORMAL_RENDER_RATE",
+):
+    if required not in main:
+        raise SystemExit(f"Tokio scheduling contract is missing: {required}")
+print("Tokio audit valid: idle runtime reduced from 8 workers/9 threads to 2 workers/3 threads")
+PY
+
+  cargo build -q -p yoctui --bin yoctui
+  current="$(mktemp /tmp/yoctui-tokio-current.XXXXXX.json)"
+  saturation="$(mktemp /tmp/yoctui-tokio-saturation.XXXXXX.json)"
+  event_log="$(mktemp /tmp/yoctui-tokio-saturation.XXXXXX.jsonl)"
+  load_pid=""
+  cleanup_tokio_fixture() {
+    if [[ -n "$load_pid" ]] && kill -0 "$load_pid" 2>/dev/null; then
+      kill "$load_pid" 2>/dev/null || true
+      wait "$load_pid" 2>/dev/null || true
+    fi
+    unlink "$current" "$saturation" "$event_log" 2>/dev/null || true
+  }
+  trap cleanup_tokio_fixture RETURN
+
+  ./scripts/measure-tokio-runtime.py \
+    --binary target/debug/yoctui \
+    --revision "$(git rev-parse HEAD)" \
+    --sample-seconds 2 \
+    --output "$current" >/dev/null
+  python3 - "$current" <<'PY'
+from pathlib import Path
+import json
+import sys
+
+record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+measurement = record["measurement"]
+names = [thread["name"] for thread in measurement["threads"]]
+if measurement["thread_count_start"] != 3 or measurement["thread_count_end"] != 3:
+    raise SystemExit("current idle daemon does not retain the audited three-thread bound")
+if names.count("tokio-rt-worker") != 2:
+    raise SystemExit("current idle daemon does not have exactly two runtime workers")
+if any(name.startswith("tokio-blocking") for name in names):
+    raise SystemExit("idle daemon eagerly created a blocking-pool thread")
+print("current Tokio runtime valid: 2 workers, 3 stable process threads")
+PY
+
+  cargo test -q -p yoctui --bin yoctui \
+    tokio_runtime_two_workers_isolate_a_bounded_blocking_poll --no-run
+  ./scripts/cpu-saturation-harness.py \
+    --warmup-seconds 0.25 \
+    --duration-seconds 3 \
+    --minimum-worker-cpu-percent 30 \
+    --event-log "$event_log" \
+    --output "$saturation" >/dev/null &
+  load_pid="$!"
+  ready=false
+  for _ in $(seq 1 300); do
+    if rg -q '"event":"ready"' "$event_log"; then
+      ready=true
+      break
+    fi
+    sleep 0.02
+  done
+  if [[ "$ready" != true ]]; then
+    printf '%s\n' 'CPU saturation fixture did not become ready for Tokio test' >&2
+    return 1
+  fi
+  cargo test -q -p yoctui --bin yoctui \
+    tokio_runtime_two_workers_isolate_a_bounded_blocking_poll
+  wait "$load_pid"
+  load_pid=""
+  python3 - "$saturation" <<'PY'
+from pathlib import Path
+import json
+import os
+import sys
+
+record = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+available = len(os.sched_getaffinity(0)) if hasattr(os, "sched_getaffinity") else os.cpu_count()
+if record["status"] != "completed" or not record["cleanup"]["children_reaped"]:
+    raise SystemExit("Tokio saturation fixture did not complete cleanly")
+if len(record["workers"]) != available:
+    raise SystemExit("Tokio saturation fixture left an affinity CPU deliberately free")
+if record["achieved"]["minimum_worker_cpu_percent"] < 30:
+    raise SystemExit("Tokio saturation fixture did not achieve its declared load")
+print(f"Tokio reactor test passed while all {available} affinity CPUs were runnable")
+PY
+  trap - RETURN
+  cleanup_tokio_fixture
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -662,6 +792,20 @@ case "$mode" in
     verify_logs
     verify_tasks
     verify_ipc
+    ;;
+  --tokio)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
+    verify_tasks
+    verify_ipc
+    verify_tokio
     ;;
   all)
     verify_contract

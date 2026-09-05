@@ -951,5 +951,8 @@ supervisor queues are complete: a 4,000-event/s run retained every sentinel for
 the healthy client while isolating a non-reader and preserving a fresh attach.
 BitBake terminal publication now precedes cleanup, silent scheduler delay is
 not a disconnect, real EOF remains authoritative, and cancellation survives an
-all-CPU load while hung cleanup stays off the critical path. Tokio runtime
-scheduling is the current optimization boundary.
+all-CPU load while hung cleanup stays off the critical path. The Tokio audit
+reduced idle runtime workers from eight to two and stable process threads from
+nine to three, while a deterministic all-CPU test proves a blocked worker does
+not starve reactor work. Safe, optional OS scheduling guidance is the current
+measurement boundary.

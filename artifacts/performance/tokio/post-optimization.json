@@ -1,0 +1,57 @@
+{
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/debug/yoctui",
+    "sha256": "b61d1fd9324d9b1238deb487d10bba343a45e35083ea433ae88b0942e852b3fa"
+  },
+  "captured_at_unix_ms": 1788609284531,
+  "host": {
+    "affinity_cpus": 8,
+    "logical_cpus": 8
+  },
+  "measurement": {
+    "sample_seconds": 3.0,
+    "scenario": "idle-daemon-no-workspace",
+    "thread_count_end": 3,
+    "thread_count_start": 3,
+    "threads": [
+      {
+        "cpu_percent_of_one_logical_cpu": 0.3333,
+        "cpu_ticks": 1,
+        "involuntary_context_switches": 1,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "yoctui",
+        "tid": 3285510,
+        "voluntary_context_switches": 63,
+        "voluntary_context_switches_per_second": 19.666
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3285511,
+        "voluntary_context_switches": 3,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3285512,
+        "voluntary_context_switches": 3,
+        "voluntary_context_switches_per_second": 0.0
+      }
+    ]
+  },
+  "revision": "81eee5a6fba0277a9f580d8b2da34f0460733dbc",
+  "schema": "yoctui.performance.tokio-runtime.v1",
+  "source_inventory": {
+    "bounded_mpsc_channel_sites": 22,
+    "spawn_blocking_sites": 25,
+    "tokio_spawn_sites": 86,
+    "unbounded_mpsc_channel_sites": 25
+  }
+}

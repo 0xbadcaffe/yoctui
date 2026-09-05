@@ -28,7 +28,10 @@ def process_sample(pid: int) -> tuple[int, int, int]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", type=Path, default=Path("target/debug/yoctui"))
-    parser.add_argument("--sample-seconds", type=float, default=5.0)
+    # At Linux's usual 100 Hz accounting granularity, five seconds quantizes
+    # this 0.5% bound in 0.2-point steps and makes one extra tick fail the gate.
+    # Ten seconds halves that quantization without weakening the bound.
+    parser.add_argument("--sample-seconds", type=float, default=10.0)
     args = parser.parse_args()
     binary = args.binary.resolve(strict=True)
     if args.sample_seconds < 2.0:

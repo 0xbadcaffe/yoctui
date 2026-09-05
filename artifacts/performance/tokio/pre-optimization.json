@@ -1,0 +1,117 @@
+{
+  "binary": {
+    "path": "/home/bspguy-dev/projects/yoctui/target/debug/yoctui",
+    "sha256": "52f7b37f08c686021f3e37d8f0c63e83941e2558600e224ce0089955d1b1fe1f"
+  },
+  "captured_at_unix_ms": 1788609060473,
+  "host": {
+    "affinity_cpus": 8,
+    "logical_cpus": 8
+  },
+  "measurement": {
+    "sample_seconds": 3.0,
+    "scenario": "idle-daemon-no-workspace",
+    "thread_count_end": 9,
+    "thread_count_start": 9,
+    "threads": [
+      {
+        "cpu_percent_of_one_logical_cpu": 0.3333,
+        "cpu_ticks": 1,
+        "involuntary_context_switches": 4,
+        "involuntary_context_switches_per_second": 0.667,
+        "name": "yoctui",
+        "tid": 3282120,
+        "voluntary_context_switches": 62,
+        "voluntary_context_switches_per_second": 19.666
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282121,
+        "voluntary_context_switches": 5,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282122,
+        "voluntary_context_switches": 4,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282123,
+        "voluntary_context_switches": 3,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282124,
+        "voluntary_context_switches": 2,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282125,
+        "voluntary_context_switches": 2,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282126,
+        "voluntary_context_switches": 1,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282127,
+        "voluntary_context_switches": 2,
+        "voluntary_context_switches_per_second": 0.0
+      },
+      {
+        "cpu_percent_of_one_logical_cpu": 0.0,
+        "cpu_ticks": 0,
+        "involuntary_context_switches": 0,
+        "involuntary_context_switches_per_second": 0.0,
+        "name": "tokio-rt-worker",
+        "tid": 3282128,
+        "voluntary_context_switches": 7,
+        "voluntary_context_switches_per_second": 0.0
+      }
+    ]
+  },
+  "revision": "81eee5a6fba0277a9f580d8b2da34f0460733dbc",
+  "schema": "yoctui.performance.tokio-runtime.v1",
+  "source_inventory": {
+    "bounded_mpsc_channel_sites": 22,
+    "spawn_blocking_sites": 25,
+    "tokio_spawn_sites": 84,
+    "unbounded_mpsc_channel_sites": 25
+  }
+}

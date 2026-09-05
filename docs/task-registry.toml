@@ -7165,18 +7165,18 @@ notes = "In v0.1.36 terminal success/failure/disconnect/cancellation publication
 id = "PERF-TOKIO-001"
 milestone = "M46"
 title = "Audit Tokio runtime scheduling"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 804
 required = true
 depends_on = ["PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001"]
 verify = ["./scripts/verify-performance.sh --tokio"]
-notes = "Measure runtime threads, blocking work, task/channel count, timer churn, and reactor starvation; move justified blocking work without blindly adding workers."
+notes = "In v0.1.37 a hashed /proc task audit measured the default idle daemon at eight Tokio workers/nine stable process threads and 0.3333% of one logical CPU, with zero worker CPU ticks and no eagerly created blocking-pool thread. The explicit two-worker runtime reduces the stable process set to three while preserving a separate reactor path when one worker enters the bounded synchronous terminal/listener poll. Expensive filesystem/process/probe work remains on the lazy spawn_blocking pool, and the deterministic gate occupies one worker for 750 ms while proving timer/task progress within 500 ms under full-affinity CPU saturation."
 
 [[task]]
 id = "PERF-SCHED-001"
 milestone = "M46"
 title = "Evaluate safe unprivileged scheduling recommendations"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 805
 required = true
 depends_on = ["PERF-BASELINE-001", "PERF-SATURATION-HARNESS-001"]

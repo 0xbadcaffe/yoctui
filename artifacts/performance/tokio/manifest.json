@@ -1,0 +1,35 @@
+{
+  "schema": "yoctui.performance.tokio-audit.v1",
+  "source_base_revision": "81eee5a6fba0277a9f580d8b2da34f0460733dbc",
+  "scenario": "idle daemon without a configured Yocto workspace",
+  "sample_seconds": 3,
+  "pre_optimization": {
+    "path": "pre-optimization.json",
+    "sha256": "c977144c7b359d73bf201826baf3a74a2995b2365f7a34cf09e34d5a1aef3b8f",
+    "runtime_workers": 8,
+    "process_threads": 9
+  },
+  "post_optimization": {
+    "path": "post-optimization.json",
+    "sha256": "aeac18efbd1f0a5ba6e6241da0dd8fffb1a8a0b28656af5770217a419111c14c",
+    "runtime_workers": 2,
+    "process_threads": 3,
+    "cpu_percent_of_one_logical_cpu": 0.3333
+  },
+  "source_inventory_before": {
+    "tokio_spawn_sites": 84,
+    "spawn_blocking_sites": 25,
+    "bounded_mpsc_channel_sites": 22,
+    "unbounded_mpsc_channel_sites": 25
+  },
+  "decision": {
+    "runtime_workers": 2,
+    "blocking_pool": "Tokio lazy blocking pool; no blocking-pool thread existed in either idle sample",
+    "reason": "one worker may be occupied by a bounded synchronous terminal or daemon-listener poll, while the second must continue reactor, input, IPC, and timer work",
+    "non_goals": [
+      "do not increase worker count to hide blocking work",
+      "do not move measured expensive filesystem or process work back from spawn_blocking",
+      "do not create a permanent blocking-pool thread while idle"
+    ]
+  }
+}

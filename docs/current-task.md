@@ -2,37 +2,37 @@
 
 ## Task
 
-**ID:** PERF-TOKIO-001
-**Title:** Audit Tokio runtime scheduling
+**ID:** PERF-SCHED-001
+**Title:** Evaluate safe unprivileged scheduling recommendations
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Measure Tokio worker/thread use, blocking work, spawned tasks, channel choices,
-and timer churn. Move only measured blocking work off reactor workers and avoid
-increasing runtime threads without evidence.
+Measure whether unprivileged nice levels or systemd user-service CPUWeight
+materially improve Yoctui responsiveness under CPU saturation. Publish only
+optional, measured guidance; require neither privilege nor real-time policy.
 
 ## Dependencies
 
-- PERF-FLAMEGRAPH-001 — DONE
-- PERF-WAKEUPS-001 — DONE
+- PERF-BASELINE-001 — DONE
+- PERF-SATURATION-HARNESS-001 — DONE
 
 ## Definition of done
 
-- Runtime worker and blocking-pool configuration is measured and documented.
-- Filesystem, child-process, and CPU-heavy work does not block async reactor
-  workers where measured evidence requires isolation.
-- Channel bounds and long-lived task ownership remain explicit.
-- Avoidable timer churn and unnecessary spawned tasks are removed.
-- Deterministic tests prove the reactor remains responsive under blocking work
-  and full-CPU contention without blindly increasing worker count.
+- Baseline and adjusted nice behavior are measured with the deterministic full-
+  affinity CPU fixture using a documented, repeatable method.
+- User-service CPUWeight applicability and limitations are documented from the
+  installed system interfaces without requiring a user service manager.
+- No root, real-time policy, or mandatory priority change is introduced.
+- Any recommendation is optional, safe, and tied to recorded evidence.
+- Yoctui remains correct and responsive at its normal inherited priority.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --tokio
+./scripts/verify-performance.sh --scheduling
 ./scripts/verify-roadmap.sh
 ```
 
-BitBake delayed-event continuity, real EOF detection, cancellation priority,
-and terminal-before-cleanup ordering are complete in v0.1.36.
+Tokio runtime and blocking-pool scheduling, stable thread bounds, and reactor
+progress under full-affinity CPU saturation are complete in v0.1.37.

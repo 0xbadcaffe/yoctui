@@ -3612,6 +3612,21 @@ not wall time. A full-affinity deterministic load gate covers silent delayed
 events, real bridge EOF, and cancellation while server cleanup deliberately
 hangs; fixture evidence remains distinct from a real Poky connection claim.
 
+The CLI runtime has exactly two asynchronous workers. The pre-change idle
+daemon audit measured the default one-worker-per-affinity-CPU policy as eight
+runtime workers and nine process threads on the reference host; none of those
+eight workers accumulated a CPU tick during the sample. Two workers retain one
+independent reactor path while the other is inside the bounded synchronous
+terminal-event or Unix-listener poll, reducing the idle process to three stable
+threads without disguising blocking work by adding capacity. Filesystem scans,
+child processes, compatibility probes, and other measured expensive operations
+remain on Tokio's lazy `spawn_blocking` pool; the idle samples prove that pool
+does not eagerly create a thread. Long-lived jobs retain explicit owner handles
+and bounded cancellation, IPC, and BitBake ingress channels. A deterministic
+test occupies one runtime worker for 750 ms and proves the other services a
+timer and task within 500 ms while the external saturation fixture keeps every
+affinity CPU runnable.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

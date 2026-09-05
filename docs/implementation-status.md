@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-TOKIO-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-SCHED-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -79,7 +79,13 @@ reads cannot infer disconnect from elapsed time, and real EOF remains explicit.
 With all eight logical CPUs runnable, the deterministic gate preserved a
 250-millisecond silent backend interval, reported a real EOF exactly once, and
 acknowledged cancellation without waiting behind hung cleanup. Tokio runtime
-scheduling is next. Overall required registry progress is 644/659 (97.7%).
+scheduling now uses two explicit workers instead of the eight-worker host
+default. The hashed idle audit reduced the stable process thread set from nine
+to three with no change from its measured 0.3333% of one logical CPU, and found
+no eagerly created blocking-pool thread. A deterministic regression occupies
+one worker for 750 ms and proves the second continues reactor work within 500
+ms while all eight affinity CPUs remain runnable. Optional safe OS scheduling
+guidance is next. Overall required registry progress is 645/659 (97.9%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to
