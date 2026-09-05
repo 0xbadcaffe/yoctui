@@ -87,6 +87,7 @@ pub use sdk::*;
 pub use security::*;
 use serde::{Deserialize, Serialize};
 use std::{
+    cell::RefCell,
     collections::{BTreeMap, BTreeSet, HashMap, HashSet, VecDeque},
     fmt,
     path::{Component, Path, PathBuf},
@@ -869,6 +870,51 @@ pub enum TaskRowRef<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TaskProjectionKey {
+    Active(TaskId, TaskState),
+    Completed(usize, TaskState),
+    WaitingSummary(usize),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TaskProjectionCache {
+    pub generation: u64,
+    pub filters: TaskFilters,
+    pub duration_second: Option<u64>,
+    pub active_len: usize,
+    pub completed_len: usize,
+    pub waiting: usize,
+    pub rows: Vec<TaskProjectionKey>,
+    pub rebuilds: u64,
+}
+
+impl Default for TaskProjectionCache {
+    fn default() -> Self {
+        Self {
+            generation: u64::MAX,
+            filters: TaskFilters::default(),
+            duration_second: None,
+            active_len: 0,
+            completed_len: 0,
+            waiting: 0,
+            rows: Vec::new(),
+            rebuilds: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct TaskProjectionCacheCell(RefCell<TaskProjectionCache>);
+
+impl PartialEq for TaskProjectionCacheCell {
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for TaskProjectionCacheCell {}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TaskInspectorRef<'a> {
     None,
     Waiting {
@@ -1043,6 +1089,7 @@ impl From<DevtoolDeployRequest> for DevtoolOperation {
         }
     }
 }
+pub const MAX_ACTIVE_TASKS: usize = 4_096;
 const MAX_COMPLETED_TASKS: usize = 1_024;
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DiagnosticInfo {
@@ -4071,6 +4118,11 @@ pub struct App {
     pub task_filters: TaskFilters,
     pub task_filter_field: TaskFilterField,
     pub task_filter_editing: bool,
+    pub task_projection_generation: u64,
+    pub task_projection_cache: TaskProjectionCacheCell,
+    pub task_progress_events: u64,
+    pub task_progress_coalesced: u64,
+    pub task_active_overflow: u64,
     pub log_workspace_view: LogWorkspaceView,
     pub logs: LogState,
     pub internal_logs: InternalLogState,
@@ -4257,6 +4309,11 @@ impl App {
             task_filters: TaskFilters::default(),
             task_filter_field: TaskFilterField::default(),
             task_filter_editing: false,
+            task_projection_generation: 0,
+            task_projection_cache: TaskProjectionCacheCell::default(),
+            task_progress_events: 0,
+            task_progress_coalesced: 0,
+            task_active_overflow: 0,
             log_workspace_view: LogWorkspaceView::BitBake,
             logs: LogState::new(max_entries, max_bytes),
             internal_logs: InternalLogState::new(max_entries, max_bytes),
@@ -4758,7 +4815,62 @@ impl App {
             }
         }
     }
+    pub fn invalidate_task_projection(&mut self) {
+        self.task_projection_generation = self.task_projection_generation.wrapping_add(1);
+    }
+    pub fn task_projection_rebuilds(&self) -> u64 {
+        self.task_projection_cache.0.borrow().rebuilds
+    }
     pub fn visible_task_row_refs_at(&self, now: SystemTime) -> Vec<TaskRowRef<'_>> {
+        let duration_second = self.task_filters.minimum_duration.map(|_| {
+            now.duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_secs()
+        });
+        let waiting = self.waiting_task_count();
+        let cache_current = {
+            let cache = self.task_projection_cache.0.borrow();
+            cache.generation == self.task_projection_generation
+                && cache.filters == self.task_filters
+                && cache.duration_second == duration_second
+                && cache.active_len == self.tasks.len()
+                && cache.completed_len == self.completed_tasks.len()
+                && cache.waiting == waiting
+        };
+        if !cache_current {
+            self.rebuild_task_projection(now, duration_second, waiting);
+        }
+        let cache = self.task_projection_cache.0.borrow();
+        cache
+            .rows
+            .iter()
+            .filter_map(|key| match key {
+                TaskProjectionKey::Active(id, state) => {
+                    self.tasks.get(id).map(|task| TaskRowRef::Task {
+                        task,
+                        state: *state,
+                    })
+                }
+                TaskProjectionKey::Completed(index, state) => {
+                    self.completed_tasks
+                        .get(*index)
+                        .map(|completed| TaskRowRef::Task {
+                            task: &completed.task,
+                            state: *state,
+                        })
+                }
+                TaskProjectionKey::WaitingSummary(count) => {
+                    Some(TaskRowRef::WaitingSummary(*count))
+                }
+            })
+            .collect()
+    }
+    fn rebuild_task_projection(
+        &self,
+        now: SystemTime,
+        duration_second: Option<u64>,
+        waiting: usize,
+    ) {
         let state_matches = |state: TaskState| match self.task_filters.state {
             TaskStateFilter::All => true,
             TaskStateFilter::Active => state == TaskState::Active,
@@ -4783,42 +4895,46 @@ impl App {
                         .is_some_and(|elapsed| elapsed >= minimum)
                 })
         };
-        let retained = self.tasks.values().map(|task| (task, task.state)).chain(
-            self.completed_tasks.iter().map(|completed| {
-                let state = if matches!(
-                    completed.task.state,
-                    TaskState::Queued | TaskState::Active | TaskState::Waiting
-                ) {
-                    if completed.success {
-                        TaskState::Completed
-                    } else {
-                        TaskState::Failed
-                    }
-                } else {
-                    completed.task.state
-                };
-                (&completed.task, state)
-            }),
-        );
+        let retained = self
+            .tasks
+            .values()
+            .map(|task| {
+                (
+                    TaskProjectionKey::Active(task.id.clone(), task.state),
+                    task,
+                    task.state,
+                )
+            })
+            .chain(
+                self.completed_tasks
+                    .iter()
+                    .enumerate()
+                    .map(|(index, completed)| {
+                        let state = if matches!(
+                            completed.task.state,
+                            TaskState::Queued | TaskState::Active | TaskState::Waiting
+                        ) {
+                            if completed.success {
+                                TaskState::Completed
+                            } else {
+                                TaskState::Failed
+                            }
+                        } else {
+                            completed.task.state
+                        };
+                        (
+                            TaskProjectionKey::Completed(index, state),
+                            &completed.task,
+                            state,
+                        )
+                    }),
+            );
         let mut rows = retained
-            .filter(|(task, state)| state_matches(*state) && text_matches(task))
-            .map(|(task, state)| TaskRowRef::Task { task, state })
+            .filter(|(_, task, state)| state_matches(*state) && text_matches(task))
             .collect::<Vec<_>>();
         rows.sort_unstable_by(|left, right| {
-            let TaskRowRef::Task {
-                task: left,
-                state: left_state,
-            } = left
-            else {
-                return std::cmp::Ordering::Less;
-            };
-            let TaskRowRef::Task {
-                task: right,
-                state: right_state,
-            } = right
-            else {
-                return std::cmp::Ordering::Greater;
-            };
+            let (_, left, left_state) = left;
+            let (_, right, right_state) = right;
             (
                 left.started.is_none(),
                 left.started,
@@ -4836,7 +4952,6 @@ impl App {
                     right.id.0.as_str(),
                 ))
         });
-        let waiting = self.waiting_task_count();
         let waiting_filter_matches = matches!(
             self.task_filters.state,
             TaskStateFilter::All | TaskStateFilter::Waiting
@@ -4844,10 +4959,19 @@ impl App {
             && self.task_filters.task.is_empty()
             && self.task_filters.worker.is_empty()
             && self.task_filters.minimum_duration.is_none();
+        let mut projection = rows.into_iter().map(|(key, _, _)| key).collect::<Vec<_>>();
         if waiting > 0 && waiting_filter_matches {
-            rows.push(TaskRowRef::WaitingSummary(waiting));
+            projection.push(TaskProjectionKey::WaitingSummary(waiting));
         }
-        rows
+        let mut cache = self.task_projection_cache.0.borrow_mut();
+        cache.generation = self.task_projection_generation;
+        cache.filters = self.task_filters.clone();
+        cache.duration_second = duration_second;
+        cache.active_len = self.tasks.len();
+        cache.completed_len = self.completed_tasks.len();
+        cache.waiting = waiting;
+        cache.rows = projection;
+        cache.rebuilds = cache.rebuilds.saturating_add(1);
     }
     pub fn visible_task_rows(&self) -> Vec<TaskRow> {
         self.visible_task_row_refs_at(SystemTime::now())
@@ -5498,6 +5622,13 @@ fn task_state_order(state: TaskState) -> u8 {
         TaskState::Failed | TaskState::Cancelled | TaskState::Lost => 3,
         TaskState::Completed => 4,
     }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TaskEvent {
+    Started(TaskInfo),
+    Queued(TaskInfo),
+    Progress { id: TaskId, progress: Option<u8> },
+    Completed { id: TaskId, success: bool },
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -6315,6 +6446,7 @@ pub enum Action {
         id: TaskId,
         success: bool,
     },
+    TaskEvents(Vec<TaskEvent>),
     ScrollBuildTasks {
         delta: isize,
     },
@@ -6750,6 +6882,7 @@ fn prepare_build(app: &mut App, target: Option<String>) {
     app.tasks.clear();
     app.completed_tasks.clear();
     app.task_progress_scroll = 0;
+    app.invalidate_task_projection();
 }
 
 fn mark_build_running_from_task_activity(app: &mut App) {
@@ -6764,9 +6897,120 @@ fn mark_build_running_from_task_activity(app: &mut App) {
 }
 
 fn clamp_task_selection(app: &mut App) {
+    app.invalidate_task_projection();
     app.task_progress_scroll = app
         .task_progress_scroll
         .min(app.visible_task_rows().len().saturating_sub(1));
+}
+
+fn apply_task_event(app: &mut App, event: TaskEvent) {
+    mark_build_running_from_task_activity(app);
+    match event {
+        TaskEvent::Started(mut task) => {
+            if let Some(stats) = task.stats {
+                app.build.completed = app.build.completed.max(stats.completed);
+                app.build.total = (stats.total > 0).then_some(stats.total);
+            }
+            task.state = TaskState::Active;
+            task.started.get_or_insert_with(SystemTime::now);
+            if app.tasks.contains_key(&task.id) || app.tasks.len() < MAX_ACTIVE_TASKS {
+                app.tasks.insert(task.id.clone(), task);
+            } else {
+                app.task_active_overflow = app.task_active_overflow.saturating_add(1);
+            }
+        }
+        TaskEvent::Queued(mut task) => {
+            if let Some(stats) = task.stats {
+                app.build.completed = app.build.completed.max(stats.completed);
+                app.build.total = (stats.total > 0).then_some(stats.total);
+            }
+            task.state = TaskState::Queued;
+            task.started = None;
+            task.finished = None;
+            task.pid = None;
+            if app.tasks.contains_key(&task.id) || app.tasks.len() < MAX_ACTIVE_TASKS {
+                app.tasks.insert(task.id.clone(), task);
+            } else {
+                app.task_active_overflow = app.task_active_overflow.saturating_add(1);
+            }
+        }
+        TaskEvent::Progress { id, progress } => {
+            if let Some(task) = app.tasks.get_mut(&id) {
+                task.progress = progress.map(|value| value.min(100));
+            }
+        }
+        TaskEvent::Completed { id, success } => {
+            let mut task = if let Some(task) = app.tasks.remove(&id) {
+                task
+            } else {
+                if app
+                    .completed_tasks
+                    .iter()
+                    .any(|completed| completed.task.id == id)
+                {
+                    return;
+                }
+                let (recipe, task) =
+                    id.0.rsplit_once(':')
+                        .map_or((id.0.as_str(), "unknown"), |(recipe, task)| (recipe, task));
+                TaskInfo {
+                    id: id.clone(),
+                    recipe: recipe.into(),
+                    task: task.into(),
+                    ..TaskInfo::default()
+                }
+            };
+            task.progress = Some(100);
+            task.state = if success {
+                TaskState::Completed
+            } else {
+                TaskState::Failed
+            };
+            task.finished = Some(SystemTime::now());
+            app.completed_tasks
+                .push_back(CompletedTask { task, success });
+            if app.completed_tasks.len() > MAX_COMPLETED_TASKS {
+                app.completed_tasks.pop_front();
+            }
+            app.build.completed += 1;
+        }
+    }
+}
+
+fn flush_task_progress(
+    app: &mut App,
+    pending: &mut Vec<(TaskId, Option<u8>)>,
+    indices: &mut HashMap<TaskId, usize>,
+) {
+    for (id, progress) in pending.drain(..) {
+        apply_task_event(app, TaskEvent::Progress { id, progress });
+    }
+    indices.clear();
+}
+
+fn apply_task_batch(app: &mut App, events: Vec<TaskEvent>) {
+    let mut pending_progress = Vec::<(TaskId, Option<u8>)>::new();
+    let mut progress_indices = HashMap::<TaskId, usize>::new();
+    for event in events {
+        match event {
+            TaskEvent::Progress { id, progress } => {
+                app.task_progress_events = app.task_progress_events.saturating_add(1);
+                if let Some(index) = progress_indices.get(&id).copied() {
+                    pending_progress[index].1 = progress;
+                    app.task_progress_coalesced = app.task_progress_coalesced.saturating_add(1);
+                } else {
+                    progress_indices.insert(id.clone(), pending_progress.len());
+                    pending_progress.push((id, progress));
+                }
+            }
+            transition => {
+                flush_task_progress(app, &mut pending_progress, &mut progress_indices);
+                apply_task_event(app, transition);
+            }
+        }
+    }
+    flush_task_progress(app, &mut pending_progress, &mut progress_indices);
+    clamp_task_selection(app);
 }
 
 fn archive_unfinished_tasks(app: &mut App, state: TaskState, cancellation: Option<&str>) {
@@ -15046,56 +15290,22 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::TaskStarted(t) => {
-            mark_build_running_from_task_activity(app);
-            let mut task = t;
-            if let Some(stats) = task.stats {
-                app.build.completed = app.build.completed.max(stats.completed);
-                app.build.total = (stats.total > 0).then_some(stats.total);
-            }
-            task.state = TaskState::Active;
-            task.started.get_or_insert_with(SystemTime::now);
-            app.tasks.insert(task.id.clone(), task);
+            apply_task_event(app, TaskEvent::Started(t));
             clamp_task_selection(app);
         }
         Action::TaskQueued(t) => {
-            mark_build_running_from_task_activity(app);
-            let mut task = t;
-            if let Some(stats) = task.stats {
-                app.build.completed = app.build.completed.max(stats.completed);
-                app.build.total = (stats.total > 0).then_some(stats.total);
-            }
-            task.state = TaskState::Queued;
-            task.started = None;
-            task.finished = None;
-            task.pid = None;
-            app.tasks.insert(task.id.clone(), task);
+            apply_task_event(app, TaskEvent::Queued(t));
             clamp_task_selection(app);
         }
         Action::TaskProgress { id, progress } => {
-            mark_build_running_from_task_activity(app);
-            if let Some(t) = app.tasks.get_mut(&id) {
-                t.progress = progress.map(|value| value.min(100))
-            }
+            app.task_progress_events = app.task_progress_events.saturating_add(1);
+            apply_task_event(app, TaskEvent::Progress { id, progress });
         }
         Action::TaskCompleted { id, success } => {
-            mark_build_running_from_task_activity(app);
-            if let Some(mut task) = app.tasks.remove(&id) {
-                task.progress = Some(100);
-                task.state = if success {
-                    TaskState::Completed
-                } else {
-                    TaskState::Failed
-                };
-                task.finished = Some(SystemTime::now());
-                app.completed_tasks
-                    .push_back(CompletedTask { task, success });
-                if app.completed_tasks.len() > MAX_COMPLETED_TASKS {
-                    app.completed_tasks.pop_front();
-                }
-                app.build.completed += 1;
-            }
+            apply_task_event(app, TaskEvent::Completed { id, success });
             clamp_task_selection(app);
         }
+        Action::TaskEvents(events) => apply_task_batch(app, events),
         Action::ScrollBuildTasks { delta } => {
             let task_count = app.visible_task_rows().len();
             app.task_progress_scroll = shifted_index(app.task_progress_scroll, delta, task_count);
@@ -19770,6 +19980,111 @@ mod tests {
             logs.entries.iter().map(|entry| entry.message.len()).sum()
         );
         assert!(logs.dropped > 0);
+    }
+    #[test]
+    fn task_batches_coalesce_progress_and_preserve_terminal_failures() {
+        let mut app = App::new(16, 4096);
+        let failed = TaskId("busybox:do_compile".into());
+        let succeeded = TaskId("base-files:do_install".into());
+        let task = |id: &TaskId| TaskInfo {
+            id: id.clone(),
+            recipe: id.0.split(':').next().unwrap().into(),
+            task: id.0.split(':').nth(1).unwrap().into(),
+            ..TaskInfo::default()
+        };
+        let _ = update(
+            &mut app,
+            Action::TaskEvents(vec![
+                TaskEvent::Started(task(&failed)),
+                TaskEvent::Progress {
+                    id: failed.clone(),
+                    progress: Some(10),
+                },
+                TaskEvent::Progress {
+                    id: failed.clone(),
+                    progress: Some(90),
+                },
+                TaskEvent::Started(task(&succeeded)),
+                TaskEvent::Progress {
+                    id: succeeded.clone(),
+                    progress: Some(40),
+                },
+                TaskEvent::Completed {
+                    id: failed,
+                    success: false,
+                },
+                TaskEvent::Completed {
+                    id: succeeded,
+                    success: true,
+                },
+            ]),
+        );
+        assert_eq!(app.task_progress_events, 3);
+        assert_eq!(app.task_progress_coalesced, 1);
+        assert!(app.tasks.is_empty());
+        assert_eq!(app.completed_tasks.len(), 2);
+        assert!(!app.completed_tasks[0].success);
+        assert_eq!(app.completed_tasks[0].task.state, TaskState::Failed);
+        assert!(app.completed_tasks[1].success);
+        assert_eq!(app.build.completed, 2);
+    }
+    #[test]
+    fn task_event_flood_bounds_active_and_completed_state_without_losing_terminal_failure() {
+        let mut app = App::new(16, 4096);
+        let mut events = (0..MAX_ACTIVE_TASKS + 128)
+            .map(|index| {
+                let id = TaskId(format!("recipe-{index}:do_compile"));
+                TaskEvent::Started(TaskInfo {
+                    id,
+                    recipe: format!("recipe-{index}"),
+                    task: "do_compile".into(),
+                    ..TaskInfo::default()
+                })
+            })
+            .collect::<Vec<_>>();
+        let overflow_id = TaskId(format!("recipe-{}:do_compile", MAX_ACTIVE_TASKS + 127));
+        events.push(TaskEvent::Completed {
+            id: overflow_id.clone(),
+            success: false,
+        });
+        let _ = update(&mut app, Action::TaskEvents(events));
+        assert_eq!(app.tasks.len(), MAX_ACTIVE_TASKS);
+        assert_eq!(app.task_active_overflow, 128);
+        assert!(app.completed_tasks.len() <= MAX_COMPLETED_TASKS);
+        assert!(app.completed_tasks.iter().any(|completed| {
+            completed.task.id == overflow_id
+                && !completed.success
+                && completed.task.state == TaskState::Failed
+        }));
+    }
+    #[test]
+    fn unchanged_task_projection_reuses_sorted_identity_cache() {
+        let mut app = App::new(16, 4096);
+        let id = TaskId("busybox:do_compile".into());
+        let _ = update(
+            &mut app,
+            Action::TaskStarted(TaskInfo {
+                id: id.clone(),
+                recipe: "busybox".into(),
+                task: "do_compile".into(),
+                ..TaskInfo::default()
+            }),
+        );
+        let rebuilds = app.task_projection_rebuilds();
+        assert_eq!(app.visible_task_row_refs_at(SystemTime::now()).len(), 1);
+        assert_eq!(app.task_projection_rebuilds(), rebuilds);
+        let _ = update(
+            &mut app,
+            Action::TaskProgress {
+                id,
+                progress: Some(75),
+            },
+        );
+        let rows = app.visible_task_row_refs_at(SystemTime::now());
+        assert!(matches!(rows[0], TaskRowRef::Task { task, .. } if task.progress == Some(75)));
+        assert_eq!(app.task_projection_rebuilds(), rebuilds);
+        let _ = update(&mut app, Action::CycleTaskStateFilter);
+        assert!(app.task_projection_rebuilds() > rebuilds);
     }
     #[test]
     fn reducer_covers_build_lifecycle_and_log_controls() {

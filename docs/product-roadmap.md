@@ -940,4 +940,7 @@ visible indeterminate Dashboard/Tasks activity advances at 5 Hz. Client host
 telemetry now uses 1/0.1 Hz visible/background tiers, while daemon health pauses
 without clients and uses 0.2/1 Hz idle/active tiers. Logs normalize once,
 ordered IPC bursts reduce in bounded batches, and render metadata comes from
-one filtered pass. High-rate task updates are the current optimization boundary.
+one filtered pass. Task bursts now reduce with lifecycle barriers and
+stable-identity progress coalescing; cached row ordering avoids repeated
+filter/sort work, and active/completed bounds retain terminal failures. IPC
+measurement and serialization efficiency are the current optimization boundary.

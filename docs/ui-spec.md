@@ -4764,6 +4764,14 @@ still applied individually. One model-owned log-window projection computes the
 visible rows, total, clamped selection, and horizontal bound in one filtered
 traversal, and renderer context/actions/position reuse that projection.
 
+Task lifecycle records also reduce in bounded contiguous batches. Queued,
+started, completed, and failed transitions are ordering barriers; only repeated
+progress for the same stable recipe/task identity between barriers coalesces.
+The Tasks and Dashboard tables reuse cached filtered/sorted identity order on
+unrelated redraws while reading current progress directly. Active overflow is
+counted, retained history is bounded, and an overflowed task's later terminal
+failure remains visible as an exact outcome.
+
 The shared visual projection vocabulary is now concrete. Fractions retain the
 exact numerator and denominator and derive an overflow-safe bounded whole
 percent; a zero total is `unknown`, and a reported numerator beyond its total

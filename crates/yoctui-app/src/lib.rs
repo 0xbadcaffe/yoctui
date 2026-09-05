@@ -1955,6 +1955,30 @@ impl DaemonClientSnapshot {
         Ok(())
     }
 
+    pub fn apply_task_events_to_app(
+        &mut self,
+        app: &mut yoctui_model::App,
+        events: &[yoctui_protocol::daemon::SequencedEvent],
+    ) -> Result<(), DaemonClientSyncError> {
+        let mut task_events = Vec::with_capacity(events.len());
+        for event in events {
+            let yoctui_protocol::daemon::DaemonEvent::Build(build_event) = &event.event else {
+                return Err(DaemonClientSyncError::NonTaskEventInTaskBatch);
+            };
+            let Some(task_event) = model_task_event_from_daemon(build_event) else {
+                return Err(DaemonClientSyncError::NonTaskEventInTaskBatch);
+            };
+            self.apply_event(event)?;
+            task_events.push(task_event);
+        }
+        if !task_events.is_empty() {
+            let _ = yoctui_model::update(app, yoctui_model::Action::TaskEvents(task_events));
+            install_daemon_build_environment(app);
+            self.install_app(app);
+        }
+        Ok(())
+    }
+
     pub fn install_app(&self, app: &mut yoctui_model::App) {
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
         let wire = (self.status == yoctui_model::ClientReplicaStatus::Current)
@@ -2037,6 +2061,7 @@ impl DaemonClientSnapshot {
         app.build = build.build;
         app.tasks = build.tasks;
         app.completed_tasks = build.completed_tasks;
+        app.invalidate_task_projection();
         app.logs = build.logs;
         install_daemon_build_environment(app);
     }
@@ -2143,6 +2168,22 @@ fn apply_daemon_build_event(
         },
     };
     let _ = yoctui_model::update(app, action);
+}
+
+fn model_task_event_from_daemon(
+    event: &yoctui_protocol::daemon::DaemonBuildEvent,
+) -> Option<yoctui_model::TaskEvent> {
+    match model_action_from_backend_event(backend_event_from_daemon(event.clone())?)? {
+        yoctui_model::Action::TaskStarted(task) => Some(yoctui_model::TaskEvent::Started(task)),
+        yoctui_model::Action::TaskQueued(task) => Some(yoctui_model::TaskEvent::Queued(task)),
+        yoctui_model::Action::TaskProgress { id, progress } => {
+            Some(yoctui_model::TaskEvent::Progress { id, progress })
+        }
+        yoctui_model::Action::TaskCompleted { id, success } => {
+            Some(yoctui_model::TaskEvent::Completed { id, success })
+        }
+        _ => None,
+    }
 }
 
 fn backend_event_from_daemon(
@@ -2501,6 +2542,7 @@ pub enum DaemonClientSyncError {
     MissingSnapshot,
     Protocol(yoctui_protocol::daemon::DaemonSnapshotError),
     NonLogEventInLogBatch,
+    NonTaskEventInTaskBatch,
 }
 
 impl std::fmt::Display for DaemonClientSyncError {
@@ -2510,6 +2552,9 @@ impl std::fmt::Display for DaemonClientSyncError {
             Self::Protocol(error) => error.fmt(formatter),
             Self::NonLogEventInLogBatch => {
                 formatter.write_str("non-log daemon event entered a log-only batch")
+            }
+            Self::NonTaskEventInTaskBatch => {
+                formatter.write_str("non-task daemon event entered a task-only batch")
             }
         }
     }
@@ -8552,6 +8597,80 @@ mod tests {
         assert_eq!(app.logs.entries[1].message, "critical");
         assert!(app.logs.entries[1].protected);
         assert_eq!(app.build.errors, 1);
+    }
+
+    #[test]
+    fn daemon_client_batches_task_progress_without_losing_failure() {
+        use yoctui_protocol::daemon::{DaemonBuildEvent, DaemonEvent, SequencedEvent};
+
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([5; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut client = DaemonClientSnapshot::default();
+        let mut app = yoctui_model::App::new(16, 4096);
+        client.replace_app(&mut app, daemon_protocol_snapshot(&state));
+        let task = |sequence, event| SequencedEvent {
+            sequence,
+            generation: sequence,
+            event: DaemonEvent::Build(event),
+        };
+        let events = vec![
+            task(
+                1,
+                DaemonBuildEvent::TaskStarted {
+                    recipe: "busybox".into(),
+                    task: "do_compile".into(),
+                    pid: Some(42),
+                    worker: None,
+                    log_path: None,
+                    stats: None,
+                },
+            ),
+            task(
+                2,
+                DaemonBuildEvent::TaskProgress {
+                    recipe: "busybox".into(),
+                    task: "do_compile".into(),
+                    progress: Some(10),
+                },
+            ),
+            task(
+                3,
+                DaemonBuildEvent::TaskProgress {
+                    recipe: "busybox".into(),
+                    task: "do_compile".into(),
+                    progress: Some(90),
+                },
+            ),
+            task(
+                4,
+                DaemonBuildEvent::TaskCompleted {
+                    recipe: "busybox".into(),
+                    task: "do_compile".into(),
+                    success: false,
+                },
+            ),
+        ];
+
+        client.apply_task_events_to_app(&mut app, &events).unwrap();
+        assert_eq!(client.resume_cursor().unwrap().last_sequence, 4);
+        assert_eq!(app.task_progress_events, 2);
+        assert_eq!(app.task_progress_coalesced, 1);
+        assert!(app.tasks.is_empty());
+        assert_eq!(app.completed_tasks.len(), 1);
+        assert!(!app.completed_tasks[0].success);
+        assert_eq!(
+            app.completed_tasks[0].task.state,
+            yoctui_model::TaskState::Failed
+        );
+        assert!(matches!(
+            client.snapshot.as_ref().unwrap().build_events.last(),
+            Some(DaemonBuildEvent::TaskCompleted { success: false, .. })
+        ));
     }
 
     #[test]

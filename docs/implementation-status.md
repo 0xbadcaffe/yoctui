@@ -55,8 +55,13 @@ source identity and no child processes; background samples do not redraw.
 Daemon health pauses without clients and uses 0.2/1 Hz idle/active demand tiers.
 Log messages now normalize once at ingestion, contiguous daemon records reduce
 in ordered bounded batches, and a single filtered traversal supplies the
-viewport plus position metadata without full-history clones. High-rate task
-updates are next. Overall required registry progress is 640/659 (97.1%).
+viewport plus position metadata without full-history clones. Contiguous task
+records now reduce once per receive slice, repeated stable-identity progress
+coalesces only between exact lifecycle barriers, and unchanged filtered/sorted
+task identity order is cached across unrelated frames. Active and retained
+collections are bounded with observable overflow and terminal failures remain
+recorded. IPC measurement is next. Overall required registry progress is
+641/659 (97.3%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

@@ -229,6 +229,17 @@ virtualization, and renderer behavior tests:
 ./scripts/verify-performance.sh --logs
 ```
 
+Task-update performance has a separate gate. Contiguous task records batch
+within the 64-event/8-ms client budget; only repeated progress for one stable
+identity coalesces between lifecycle barriers. Filtered/sorted task identity
+order is revision-cached across unrelated frames, live values are not copied,
+and active/completed collections remain bounded with explicit overflow counts
+and retained terminal failures:
+
+```sh
+./scripts/verify-performance.sh --tasks
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

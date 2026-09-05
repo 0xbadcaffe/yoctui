@@ -7121,18 +7121,18 @@ notes = "The v0.1.32 model normalizes each message once at insertion instead of 
 id = "PERF-TASKS-001"
 milestone = "M46"
 title = "Optimize high-rate task updates"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 800
 required = true
 depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]
 verify = ["./scripts/verify-performance.sh --tasks"]
-notes = "Coalesce stable-identity progress, batch reducer updates, preserve terminal/failure events, and avoid full sorting and table reconstruction per event or frame."
+notes = "The v0.1.33 client groups contiguous task events within the existing 64-event/8-ms receive slice and installs the daemon/model projection once per batch. The reducer preserves every queued/started/completed barrier in order while coalescing only repeated progress between barriers by stable task identity; counters expose received/coalesced progress. A revisioned model cache reuses filtered/sorted task identity order across unrelated frames while live progress remains directly visible. Active rows are capped at 4096, completed rows retain the existing 1024 bound, overflow is counted, and a terminal event for an overflowed identity still creates an exact success/failure record. The dedicated offline gate covers batching, coalescing, terminal failure, cache reuse, bounds, and runtime routing."
 
 [[task]]
 id = "PERF-IPC-001"
 milestone = "M46"
 title = "Audit and optimize daemon client IPC"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 801
 required = true
 depends_on = ["PERF-BASELINE-001", "PERF-EVENT-FLOOD-001"]

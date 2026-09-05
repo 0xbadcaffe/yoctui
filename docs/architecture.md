@@ -3556,6 +3556,17 @@ entry and maintains it through coalescing/eviction; rendering consumes a
 single-pass bounded `LogWindow` rather than cloning or repeatedly filtering the
 retained deque.
 
+Task batching follows the same sequence boundary but uses stricter barriers.
+The client groups only contiguous queued, started, progress, and completed
+records within one bounded receive slice. The reducer flushes coalesced
+stable-identity progress before every queued/started/completed transition, so
+only superseded cosmetic progress is removed and every terminal failure stays
+ordered. Task row ordering is cached by model generation and filter state;
+unrelated redraws reuse it while task fields remain live references. Active
+rows are capped at 4096 and completed rows at 1024. Overflow is observable, and
+a later terminal record still creates an exact bounded outcome even when its
+active detail could not be retained.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

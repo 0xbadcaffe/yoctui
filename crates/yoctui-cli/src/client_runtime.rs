@@ -70,6 +70,7 @@ impl InteractiveDaemonRuntime {
     pub fn poll(&mut self, app: &mut App) -> Result<bool, ClientRuntimeError> {
         let mut received = false;
         let mut pending_logs = Vec::new();
+        let mut pending_tasks = Vec::new();
         let started = Instant::now();
         for _ in 0..MAX_EVENTS_PER_POLL {
             let Some(event) = self.transport.try_receive(Duration::from_millis(1))? else {
@@ -86,13 +87,37 @@ impl InteractiveDaemonRuntime {
                 let ClientServerEvent::Event(event) = event else {
                     unreachable!("the guarded event is a daemon event")
                 };
+                self.flush_task_events(app, &mut pending_tasks)?;
                 pending_logs.push(event);
                 if started.elapsed() >= MAX_POLL_DURATION {
                     break;
                 }
                 continue;
             }
+            if matches!(
+                &event,
+                ClientServerEvent::Event(yoctui_protocol::daemon::SequencedEvent {
+                    event: yoctui_protocol::daemon::DaemonEvent::Build(
+                        yoctui_protocol::daemon::DaemonBuildEvent::TaskQueued { .. }
+                            | yoctui_protocol::daemon::DaemonBuildEvent::TaskStarted { .. }
+                            | yoctui_protocol::daemon::DaemonBuildEvent::TaskProgress { .. }
+                            | yoctui_protocol::daemon::DaemonBuildEvent::TaskCompleted { .. }
+                    ),
+                    ..
+                })
+            ) {
+                let ClientServerEvent::Event(event) = event else {
+                    unreachable!("the guarded event is a daemon event")
+                };
+                self.flush_log_events(app, &mut pending_logs)?;
+                pending_tasks.push(event);
+                if started.elapsed() >= MAX_POLL_DURATION {
+                    break;
+                }
+                continue;
+            }
             self.flush_log_events(app, &mut pending_logs)?;
+            self.flush_task_events(app, &mut pending_tasks)?;
             match event {
                 ClientServerEvent::Snapshot(snapshot) => self.replica.replace_app(app, *snapshot),
                 ClientServerEvent::Event(event) => self.replica.apply_event_to_app(app, &event)?,
@@ -118,6 +143,7 @@ impl InteractiveDaemonRuntime {
             }
         }
         self.flush_log_events(app, &mut pending_logs)?;
+        self.flush_task_events(app, &mut pending_tasks)?;
         Ok(received)
     }
 
@@ -130,6 +156,20 @@ impl InteractiveDaemonRuntime {
             return Ok(());
         }
         self.replica.apply_log_events_to_app(app, pending)?;
+        pending.clear();
+        restore_local_build_dir(app, self.local_build_dir.as_ref());
+        Ok(())
+    }
+
+    fn flush_task_events(
+        &mut self,
+        app: &mut App,
+        pending: &mut Vec<yoctui_protocol::daemon::SequencedEvent>,
+    ) -> Result<(), ClientRuntimeError> {
+        if pending.is_empty() {
+            return Ok(());
+        }
+        self.replica.apply_task_events_to_app(app, pending)?;
         pending.clear();
         restore_local_build_dir(app, self.local_build_dir.as_ref());
         Ok(())

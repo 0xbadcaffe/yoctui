@@ -465,6 +465,33 @@ PY
   cargo test -q -p yoctui-ui tests::log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely -- --exact
 }
 
+verify_tasks() {
+  python3 - <<'PY'
+from pathlib import Path
+
+model = Path("crates/yoctui-model/src/lib.rs").read_text(encoding="utf-8")
+runtime = Path("crates/yoctui-cli/src/client_runtime.rs").read_text(encoding="utf-8")
+app = Path("crates/yoctui-app/src/lib.rs").read_text(encoding="utf-8")
+for required in (
+    "pub enum TaskEvent", "Action::TaskEvents", "apply_task_batch",
+    "task_progress_coalesced", "TaskProjectionCache", "MAX_ACTIVE_TASKS",
+):
+    if required not in model:
+        raise SystemExit(f"bounded task update contract is missing: {required}")
+for required in ("pending_tasks", "flush_task_events", "MAX_EVENTS_PER_POLL"):
+    if required not in runtime:
+        raise SystemExit(f"client task batching contract is missing: {required}")
+if "apply_task_events_to_app" not in app:
+    raise SystemExit("daemon replica lacks ordered batch task reduction")
+print("bounded batched task source contracts valid")
+PY
+  cargo test -q -p yoctui-model tests::task_batches_coalesce_progress_and_preserve_terminal_failures -- --exact
+  cargo test -q -p yoctui-model tests::task_event_flood_bounds_active_and_completed_state_without_losing_terminal_failure -- --exact
+  cargo test -q -p yoctui-model tests::unchanged_task_projection_reuses_sorted_identity_cache -- --exact
+  cargo test -q -p yoctui-app tests::daemon_client_batches_task_progress_without_losing_failure -- --exact
+  cargo test -q -p yoctui --bin yoctui client_runtime
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -528,6 +555,18 @@ case "$mode" in
     verify_animations
     verify_telemetry
     verify_logs
+    ;;
+  --tasks)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
+    verify_tasks
     ;;
   all)
     verify_contract
