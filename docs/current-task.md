@@ -2,15 +2,15 @@
 
 ## Task
 
-**ID:** PERF-LOG-001
-**Title:** Optimize bounded log ingestion and rendering
+**ID:** PERF-TASKS-001
+**Title:** Optimize high-rate task updates
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Keep high-rate log ingestion bounded and responsive without cloning,
-normalizing, filtering, or redrawing the full retained history per line or per
-frame. Preserve warnings, errors, failures, and exact correlation.
+Coalesce progress by stable task identity, batch reducer work, and avoid
+rebuilding or sorting complete task tables per event. Preserve every task
+transition, terminal outcome, and failure exactly.
 
 ## Dependencies
 
@@ -19,22 +19,21 @@ frame. Preserve warnings, errors, failures, and exact correlation.
 
 ## Definition of done
 
-- Ordinary high-rate logs are ingested in bounded batches and can be coalesced
-  without delaying critical warnings/errors/failures.
-- Retained log entry/byte bounds hold under sustained floods.
-- Rendering does not clone or lowercase the full history every frame.
-- Search/filter work is incremental or cached and invalidated only by relevant
-  log/query changes.
-- A burst of ordinary lines requests bounded render work rather than one frame
-  per line.
-- Focused tests and `verify-performance.sh --logs` cover retention, critical
-  priority, batching, cached filtering, and render coalescing.
+- Repeated progress for one stable task identity coalesces to the newest value.
+- Task events reduce in bounded batches without reordering starts,
+  completions, failures, cancellation, or terminal outcomes.
+- Task selection/filter projections avoid per-event full sorting and avoid
+  rebuilding an unchanged table every frame.
+- Active and retained task collections remain bounded under event floods.
+- Focused tests and `verify-performance.sh --tasks` cover identity coalescing,
+  batch ordering, terminal/failure preservation, projection reuse, and bounds.
 
 ## Verification
 
 ```bash
-./scripts/verify-performance.sh --logs
+./scripts/verify-performance.sh --tasks
 ./scripts/verify-roadmap.sh
 ```
 
-Demand-aware bounded telemetry is complete in v0.1.31.
+Bounded batched log ingestion and single-pass viewport rendering are complete
+in v0.1.32.

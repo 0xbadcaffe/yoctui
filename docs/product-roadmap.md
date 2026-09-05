@@ -938,5 +938,6 @@ the focused idle result from roughly 867 to below 35 voluntary context
 switches/s; unchanged polls do not redraw, state bursts coalesce, and only
 visible indeterminate Dashboard/Tasks activity advances at 5 Hz. Client host
 telemetry now uses 1/0.1 Hz visible/background tiers, while daemon health pauses
-without clients and uses 0.2/1 Hz idle/active tiers. Log ingestion and rendering
-are the current optimization boundary.
+without clients and uses 0.2/1 Hz idle/active tiers. Logs normalize once,
+ordered IPC bursts reduce in bounded batches, and render metadata comes from
+one filtered pass. High-rate task updates are the current optimization boundary.

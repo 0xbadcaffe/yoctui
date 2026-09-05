@@ -16129,8 +16129,8 @@ fn log_filter_chips(app: &App, width: u16) -> String {
     )
 }
 
-fn log_actions(app: &App, width: u16) -> String {
-    app.logs.selected().map_or_else(
+fn log_actions(app: &App, selected: Option<&yoctui_model::LogEntry>, width: u16) -> String {
+    selected.map_or_else(
         || "Actions unavailable — no selected entry · E Export view".into(),
         |entry| {
             let bookmark = if app.logs.is_bookmarked(entry.id) {
@@ -16224,8 +16224,8 @@ fn log_search_spans(app: &App, message: &str) -> Vec<Span<'static>> {
     spans
 }
 
-fn selected_log_context(app: &App) -> String {
-    app.logs.selected().map_or_else(
+fn selected_log_context(selected: Option<&yoctui_model::LogEntry>) -> String {
+    selected.map_or_else(
         || "no selection".into(),
         |entry| match (entry.recipe.as_deref(), entry.task.as_deref()) {
             (Some(recipe), Some(task)) => format!("{recipe}:{task}"),
@@ -16255,6 +16255,9 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     let selection = window.selection;
     let start = window.start;
     let visible = &window.entries;
+    let selected = selection
+        .checked_sub(start)
+        .and_then(|offset| visible.get(offset).copied());
     let mode = format!(
         "{}  ·  {}  ·  wrap {}  ·  severity {}",
         log_workspace_tabs(app.log_workspace_view),
@@ -16292,7 +16295,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         SearchExit::Done,
         chunks[0].width.saturating_sub(2),
     );
-    let actions = log_actions(app, content_width);
+    let actions = log_actions(app, selected, content_width);
     frame.render_widget(
         Paragraph::new(vec![
             Line::from(bounded_cell_text(&mode, content_width)),
@@ -16308,11 +16311,16 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
         )),
         chunks[0],
     );
-    let vertical = app.logs.vertical_position().map_or_else(
-        || "0/0".into(),
-        |(current, total)| format!("{current}/{total}"),
-    );
-    let (horizontal_offset, horizontal_maximum) = app.logs.horizontal_position();
+    let vertical = if window.total == 0 {
+        "0/0".into()
+    } else {
+        format!("{}/{total}", selection + 1, total = window.total)
+    };
+    let horizontal_offset = app
+        .logs
+        .horizontal_offset
+        .min(window.maximum_horizontal_offset);
+    let horizontal_maximum = window.maximum_horizontal_offset;
     let horizontal = if app.logs.wrap {
         "wrapped".into()
     } else {
@@ -16320,7 +16328,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
     };
     let title = format!(
         "Log Viewer — {} · {} · V {vertical} · H {horizontal}",
-        selected_log_context(app),
+        selected_log_context(selected),
         if app.logs.follow {
             "following"
         } else {
@@ -27831,7 +27839,7 @@ mod tests {
 
         app.build.status = BuildStatus::Completed;
         app.build.errors = 0;
-        app.logs.entries.clear();
+        app.logs.clear_entries();
         let job = app
             .background_jobs
             .jobs

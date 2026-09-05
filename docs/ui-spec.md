@@ -4757,6 +4757,13 @@ Unchanged samples do not request redundant frames. Daemon health telemetry is
 paused with no attached clients, sampled at 0.2 Hz while attached and idle, and
 at 1 Hz while work is active.
 
+BitBake logs normalize search text once at bounded ingestion. Contiguous IPC
+log records reduce as an ordered batch within the existing 64-event/8-ms
+client service slice; every warning/error counter and protected diagnostic is
+still applied individually. One model-owned log-window projection computes the
+visible rows, total, clamped selection, and horizontal bound in one filtered
+traversal, and renderer context/actions/position reuse that projection.
+
 The shared visual projection vocabulary is now concrete. Fractions retain the
 exact numerator and denominator and derive an overflow-safe bounded whole
 percent; a zero total is `unknown`, and a reported numerator beyond its total

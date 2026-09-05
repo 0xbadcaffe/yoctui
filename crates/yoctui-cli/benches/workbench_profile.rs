@@ -153,7 +153,7 @@ fn scenario_workload(scenario: &str) -> App {
             app.screen = Screen::Recipes;
             app.tasks.clear();
             app.completed_tasks.clear();
-            app.logs.entries.clear();
+            app.logs.clear_entries();
             app.build.status = BuildStatus::Idle;
             app.workspace.layers = (0..1_024)
                 .map(|index| Layer {

@@ -435,6 +435,36 @@ PY
   cargo test -q -p yoctui-model bounded_telemetry_history_retains_only_the_latest_valid_samples
 }
 
+verify_logs() {
+  python3 - <<'PY'
+from pathlib import Path
+
+model = Path("crates/yoctui-model/src/lib.rs").read_text(encoding="utf-8")
+runtime = Path("crates/yoctui-cli/src/client_runtime.rs").read_text(encoding="utf-8")
+app = Path("crates/yoctui-app/src/lib.rs").read_text(encoding="utf-8")
+filtered = model.split("pub fn filtered(&self)", 1)[1].split("pub fn diagnostics", 1)[0]
+if "e.message.to_lowercase()" in filtered:
+    raise SystemExit("log filtering regressed to lowercasing every retained message")
+for required in (
+    "normalized_messages: VecDeque<String>", "pub fn insert_batch",
+    "Action::Logs", "maximum_horizontal_offset", "for entry in self.filtered()",
+):
+    if required not in model:
+        raise SystemExit(f"bounded log projection contract is missing: {required}")
+for required in ("pending_logs", "flush_log_events", "MAX_EVENTS_PER_POLL"):
+    if required not in runtime:
+        raise SystemExit(f"client log batching contract is missing: {required}")
+if "apply_log_events_to_app" not in app:
+    raise SystemExit("daemon replica lacks ordered batch log reduction")
+print("bounded batched log source contracts valid")
+PY
+  cargo test -q -p yoctui-model tests::log_batches_preserve_critical_order_counts_and_cached_search -- --exact
+  cargo test -q -p yoctui-model tests::log_retention_prefers_important_diagnostics_and_reports_coalescing -- --exact
+  cargo test -q -p yoctui-model tests::ux_logs_virtualized_window_and_source_time_filters_stay_bounded -- --exact
+  cargo test -q -p yoctui-app tests::daemon_client_batches_contiguous_logs_with_one_model_install -- --exact
+  cargo test -q -p yoctui-ui tests::log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely -- --exact
+}
+
 case "$mode" in
   --contract)
     verify_contract
@@ -487,6 +517,17 @@ case "$mode" in
     verify_render
     verify_animations
     verify_telemetry
+    ;;
+  --logs)
+    verify_contract
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
     ;;
   all)
     verify_contract

@@ -7110,18 +7110,18 @@ notes = "The v0.1.31 client samples visible Dashboard/Tasks host telemetry at 1 
 id = "PERF-LOG-001"
 milestone = "M46"
 title = "Optimize bounded log ingestion and rendering"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 799
 required = true
 depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]
 verify = ["./scripts/verify-performance.sh --logs"]
-notes = "Avoid full-buffer clones and per-frame refiltering, coalesce ordinary logs, bound queues and indexes, and always retain warnings, errors, failures, and terminal outcomes."
+notes = "The v0.1.32 model normalizes each message once at insertion instead of lowercasing retained history on every filter pass. Contiguous daemon log events are reduced in ordered batches of at most the existing 64-event/8-ms client slice, reconciling filter/selection once while preserving per-record warning/error counts and protection. The log window computes total, viewport, selection clamp, and horizontal bound in one filtered traversal; the renderer reuses that projection instead of rescanning for context/actions/positions. Existing entry/byte bounds, ordinary duplicate coalescing, preferential diagnostic retention, and critical ordering remain covered by the dedicated gate."
 
 [[task]]
 id = "PERF-TASKS-001"
 milestone = "M46"
 title = "Optimize high-rate task updates"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 800
 required = true
 depends_on = ["PERF-EVENT-FLOOD-001", "PERF-RENDER-001"]

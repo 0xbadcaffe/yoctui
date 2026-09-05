@@ -3540,11 +3540,13 @@ pub struct LogWindow<'a> {
     pub start: usize,
     pub total: usize,
     pub selection: usize,
+    pub maximum_horizontal_offset: usize,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LogState {
     pub entries: VecDeque<LogEntry>,
+    normalized_messages: VecDeque<String>,
     pub max_entries: usize,
     pub max_bytes: usize,
     pub retained_bytes: usize,
@@ -3574,6 +3576,7 @@ impl LogState {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
             entries: VecDeque::new(),
+            normalized_messages: VecDeque::new(),
             max_entries,
             max_bytes,
             retained_bytes: 0,
@@ -3600,10 +3603,37 @@ impl LogState {
             next_id: 1,
         }
     }
-    pub fn insert(&mut self, mut entry: LogEntry) {
+    pub fn insert(&mut self, entry: LogEntry) {
+        self.insert_batch(std::iter::once(entry));
+    }
+
+    pub fn clear_entries(&mut self) {
+        self.entries.clear();
+        self.normalized_messages.clear();
+        self.retained_bytes = 0;
+        self.paused_len = None;
+        self.selection = 0;
+        self.scroll_offset = 0;
+        self.horizontal_offset = 0;
+        self.jump_target = None;
+        self.bookmarks.clear();
+    }
+
+    pub fn insert_batch(&mut self, entries: impl IntoIterator<Item = LogEntry>) {
         let selected_id = (!self.follow)
             .then(|| self.selected().map(|entry| entry.id))
             .flatten();
+        for entry in entries {
+            self.insert_unreconciled(entry);
+        }
+        self.reconcile_selection(selected_id);
+        if self.follow {
+            self.selection = self.filtered().count().saturating_sub(1);
+            self.scroll_offset = 0;
+        }
+    }
+
+    fn insert_unreconciled(&mut self, mut entry: LogEntry) {
         if entry.diagnostic.is_none()
             && matches!(entry.severity, Severity::Warning | Severity::Error)
         {
@@ -3649,8 +3679,10 @@ impl LogState {
             self.next_id = self.next_id.wrapping_add(1).max(1);
         }
         let bytes = entry.message.len();
+        let normalized = entry.message.to_lowercase();
         self.retained_bytes += bytes;
         self.entries.push_back(entry);
+        self.normalized_messages.push_back(normalized);
         while self.entries.len() > self.max_entries || self.retained_bytes > self.max_bytes {
             let ordinary = self
                 .entries
@@ -3660,17 +3692,13 @@ impl LogState {
             let Some(old) = self.entries.remove(index) else {
                 break;
             };
+            let _ = self.normalized_messages.remove(index);
             if self.paused_len.is_some_and(|visible| index < visible) {
                 self.paused_len = self.paused_len.map(|visible| visible.saturating_sub(1));
             }
             self.retained_bytes = self.retained_bytes.saturating_sub(old.message.len());
             self.bookmarks.remove(&old.id);
             self.record_drop(&old);
-        }
-        self.reconcile_selection(selected_id);
-        if self.follow {
-            self.selection = self.filtered().count().saturating_sub(1);
-            self.scroll_offset = 0;
         }
     }
     pub fn filtered(&self) -> impl Iterator<Item = &LogEntry> {
@@ -3683,32 +3711,37 @@ impl LogState {
             .map(|entry| entry.timestamp)
             .max();
         let maximum_age = self.time_range.maximum_age();
-        self.entries.iter().take(visible_len).filter(move |e| {
-            self.jump_target == Some(e.id)
-                || (self.filter.is_none_or(|s| s == e.severity)
-                    && self
-                        .recipe_filter
-                        .as_ref()
-                        .is_none_or(|recipe| e.recipe.as_ref() == Some(recipe))
-                    && self
-                        .task_filter
-                        .as_ref()
-                        .is_none_or(|task| e.task.as_ref() == Some(task))
-                    && self
-                        .build_filter
-                        .as_ref()
-                        .is_none_or(|build| e.build.as_ref() == Some(build))
-                    && self
-                        .source_filter
-                        .as_ref()
-                        .is_none_or(|source| e.path.as_ref() == Some(source))
-                    && maximum_age.is_none_or(|maximum_age| {
-                        newest_timestamp
-                            .and_then(|newest| newest.duration_since(e.timestamp).ok())
-                            .is_some_and(|age| age <= maximum_age)
-                    })
-                    && (query.is_empty() || e.message.to_lowercase().contains(&query)))
-        })
+        self.entries
+            .iter()
+            .zip(self.normalized_messages.iter())
+            .take(visible_len)
+            .filter(move |(e, normalized)| {
+                self.jump_target == Some(e.id)
+                    || (self.filter.is_none_or(|s| s == e.severity)
+                        && self
+                            .recipe_filter
+                            .as_ref()
+                            .is_none_or(|recipe| e.recipe.as_ref() == Some(recipe))
+                        && self
+                            .task_filter
+                            .as_ref()
+                            .is_none_or(|task| e.task.as_ref() == Some(task))
+                        && self
+                            .build_filter
+                            .as_ref()
+                            .is_none_or(|build| e.build.as_ref() == Some(build))
+                        && self
+                            .source_filter
+                            .as_ref()
+                            .is_none_or(|source| e.path.as_ref() == Some(source))
+                        && maximum_age.is_none_or(|maximum_age| {
+                            newest_timestamp
+                                .and_then(|newest| newest.duration_since(e.timestamp).ok())
+                                .is_some_and(|age| age <= maximum_age)
+                        })
+                        && (query.is_empty() || normalized.contains(&query)))
+            })
+            .map(|(entry, _)| entry)
     }
     pub fn diagnostics(&self) -> impl Iterator<Item = &LogEntry> {
         self.entries
@@ -3740,20 +3773,39 @@ impl LogState {
         self.vertical_position()
     }
     pub fn window(&self, viewport: usize) -> LogWindow<'_> {
-        let total = self.visible_count();
-        let selection = self.selection.min(total.saturating_sub(1));
-        let end = selection.saturating_add(1).max(viewport).min(total);
-        let start = end.saturating_sub(viewport);
-        let entries = self
-            .filtered()
-            .skip(start)
-            .take(viewport)
-            .collect::<Vec<_>>();
+        let requested_selection = self.selection;
+        let requested_end = requested_selection.saturating_add(1).max(viewport);
+        let requested_start = requested_end.saturating_sub(viewport);
+        let mut entries = Vec::with_capacity(viewport);
+        let mut trailing = VecDeque::with_capacity(viewport);
+        let mut total = 0;
+        let mut maximum_message_chars = 0;
+        for entry in self.filtered() {
+            maximum_message_chars = maximum_message_chars.max(entry.message.chars().count());
+            if (requested_start..requested_end).contains(&total) {
+                entries.push(entry);
+            }
+            if viewport > 0 {
+                if trailing.len() == viewport {
+                    trailing.pop_front();
+                }
+                trailing.push_back(entry);
+            }
+            total += 1;
+        }
+        let selection = requested_selection.min(total.saturating_sub(1));
+        let start = if requested_selection == selection {
+            requested_start.min(total)
+        } else {
+            entries = trailing.into_iter().collect();
+            total.saturating_sub(entries.len())
+        };
         LogWindow {
             entries,
             start,
             total,
             selection,
+            maximum_horizontal_offset: maximum_message_chars.saturating_sub(1),
         }
     }
     pub fn is_bookmarked(&self, id: u64) -> bool {
@@ -6274,6 +6326,7 @@ pub enum Action {
     FinishTaskFilterEdit,
     CycleTaskDurationFilter,
     Log(LogEntry),
+    Logs(Vec<LogEntry>),
     BuildCompleted {
         success: bool,
         exit_code: Option<i32>,
@@ -6731,6 +6784,38 @@ fn archive_unfinished_tasks(app: &mut App, state: TaskState, cancellation: Optio
         app.completed_tasks.pop_front();
     }
     clamp_task_selection(app);
+}
+
+fn insert_log_batch(app: &mut App, entries: impl IntoIterator<Item = LogEntry>) {
+    let build = app.build.target.clone();
+    let entries = entries
+        .into_iter()
+        .map(|entry| prepare_log_entry(app, entry, &build))
+        .collect::<Vec<_>>();
+    app.logs.insert_batch(entries);
+    app.error_selection = app
+        .error_selection
+        .min(app.logs.diagnostics().count().saturating_sub(1));
+}
+
+fn insert_log_entry(app: &mut App, entry: LogEntry) {
+    let build = app.build.target.clone();
+    let entry = prepare_log_entry(app, entry, &build);
+    app.logs.insert(entry);
+    app.error_selection = app
+        .error_selection
+        .min(app.logs.diagnostics().count().saturating_sub(1));
+}
+
+fn prepare_log_entry(app: &mut App, mut entry: LogEntry, build: &Option<String>) -> LogEntry {
+    match entry.severity {
+        Severity::Warning => app.build.warnings += 1,
+        Severity::Error => app.build.errors += 1,
+        Severity::Trace | Severity::Info => {}
+    }
+    entry.build = entry.build.or_else(|| build.clone());
+    entry.protected |= matches!(entry.severity, Severity::Warning | Severity::Error);
+    entry
 }
 
 fn insert_system_log(app: &mut App, severity: Severity, message: String) {
@@ -15061,24 +15146,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             };
             clamp_task_selection(app);
         }
-        Action::Log(l) => {
-            let mut entry = l;
-            match entry.severity {
-                Severity::Warning => app.build.warnings += 1,
-                Severity::Error => app.build.errors += 1,
-                _ => {}
-            }
-            entry.build = entry.build.or_else(|| app.build.target.clone());
-            entry.protected |= matches!(entry.severity, Severity::Warning | Severity::Error);
-            app.logs.insert(entry);
-            app.error_selection = app
-                .error_selection
-                .min(app.logs.diagnostics().count().saturating_sub(1));
-            if app.logs.follow {
-                app.logs.selection = app.logs.filtered().count().saturating_sub(1);
-                app.logs.scroll_offset = 0;
-            }
-        }
+        Action::Log(entry) => insert_log_entry(app, entry),
+        Action::Logs(entries) => insert_log_batch(app, entries),
         Action::BuildCompleted { success, exit_code } => {
             archive_unfinished_tasks(app, TaskState::Lost, Some("build ended"));
             app.build.status = if success {
@@ -22715,6 +22784,39 @@ mod tests {
         logs.insert(log("repeat"));
         assert_eq!(logs.coalesced, 1);
     }
+
+    #[test]
+    fn log_batches_preserve_critical_order_counts_and_cached_search() {
+        let mut app = App::new(8, 4_096);
+        app.build.target = Some("core-image-minimal".into());
+        let _ = update(
+            &mut app,
+            Action::Logs(vec![
+                log("ordinary Alpha"),
+                tagged_log("busybox", "do_compile", Severity::Warning, "warning Beta"),
+                tagged_log("busybox", "do_install", Severity::Error, "failure Gamma"),
+            ]),
+        );
+
+        assert_eq!(app.build.warnings, 1);
+        assert_eq!(app.build.errors, 1);
+        assert_eq!(app.logs.entries.len(), 3);
+        assert_eq!(app.logs.normalized_messages.len(), 3);
+        assert!(app.logs.entries[1].protected);
+        assert!(app.logs.entries[2].protected);
+        assert_eq!(app.logs.entries[1].message, "warning Beta");
+        assert_eq!(app.logs.entries[2].message, "failure Gamma");
+        assert!(
+            app.logs
+                .entries
+                .iter()
+                .all(|entry| entry.build.as_deref() == Some("core-image-minimal"))
+        );
+
+        app.logs.query = "GAMMA".into();
+        assert_eq!(app.logs.filtered().next().unwrap().message, "failure Gamma");
+    }
+
     #[test]
     fn log_build_filter_selection_source_and_copy_are_typed() {
         let mut app = App::new(10, 1_000);

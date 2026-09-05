@@ -3546,6 +3546,16 @@ daemon: it is absent with no fully attached clients, 0.2 Hz attached-idle, and
 telemetry journal traffic. Both paths feed the existing bounded typed
 histories/snapshot rather than a new authority.
 
+Log batching does not change protocol order or retention authority. The client
+groups only contiguous daemon log events within its existing bounded receive
+slice, applies every sequenced event to the replica in order, and then submits
+one model `Logs` action. The reducer prepares each record independently so
+warning/error counts, diagnostics, build correlation, and protected retention
+remain exact. `LogState` stores one aligned normalized message per retained
+entry and maintains it through coalescing/eviction; rendering consumes a
+single-pass bounded `LogWindow` rather than cloning or repeatedly filtering the
+retained deque.
+
 The saturation fixture is an external test-process boundary, not a Yoctui
 runtime service. Its parent discovers the caller's OS affinity and spawns one
 independently pinned deterministic computation worker per selected logical CPU.

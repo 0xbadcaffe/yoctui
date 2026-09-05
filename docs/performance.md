@@ -219,6 +219,16 @@ process creation:
 ./scripts/verify-performance.sh --telemetry
 ```
 
+Log performance is gated independently. Search normalization occurs once on
+ingestion, contiguous daemon records batch within the 64-event/8-ms receive
+budget, and one filtered traversal supplies the rendered viewport and position
+metadata. The gate retains bounded-buffer, diagnostic-priority, exact-order,
+virtualization, and renderer behavior tests:
+
+```sh
+./scripts/verify-performance.sh --logs
+```
+
 The offline aggregate verifier is `./scripts/verify-performance.sh`.
 Steady-state CPU, saturation responsiveness, IPC continuity, and endurance use
 `./scripts/verify-low-overhead.sh`,

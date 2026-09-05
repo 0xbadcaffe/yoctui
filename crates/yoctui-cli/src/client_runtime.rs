@@ -69,12 +69,30 @@ impl InteractiveDaemonRuntime {
 
     pub fn poll(&mut self, app: &mut App) -> Result<bool, ClientRuntimeError> {
         let mut received = false;
+        let mut pending_logs = Vec::new();
         let started = Instant::now();
         for _ in 0..MAX_EVENTS_PER_POLL {
             let Some(event) = self.transport.try_receive(Duration::from_millis(1))? else {
                 break;
             };
             received = true;
+            if matches!(
+                &event,
+                ClientServerEvent::Event(yoctui_protocol::daemon::SequencedEvent {
+                    event: yoctui_protocol::daemon::DaemonEvent::Log(_),
+                    ..
+                })
+            ) {
+                let ClientServerEvent::Event(event) = event else {
+                    unreachable!("the guarded event is a daemon event")
+                };
+                pending_logs.push(event);
+                if started.elapsed() >= MAX_POLL_DURATION {
+                    break;
+                }
+                continue;
+            }
+            self.flush_log_events(app, &mut pending_logs)?;
             match event {
                 ClientServerEvent::Snapshot(snapshot) => self.replica.replace_app(app, *snapshot),
                 ClientServerEvent::Event(event) => self.replica.apply_event_to_app(app, &event)?,
@@ -99,7 +117,22 @@ impl InteractiveDaemonRuntime {
                 break;
             }
         }
+        self.flush_log_events(app, &mut pending_logs)?;
         Ok(received)
+    }
+
+    fn flush_log_events(
+        &mut self,
+        app: &mut App,
+        pending: &mut Vec<yoctui_protocol::daemon::SequencedEvent>,
+    ) -> Result<(), ClientRuntimeError> {
+        if pending.is_empty() {
+            return Ok(());
+        }
+        self.replica.apply_log_events_to_app(app, pending)?;
+        pending.clear();
+        restore_local_build_dir(app, self.local_build_dir.as_ref());
+        Ok(())
     }
 
     pub fn route_effect(

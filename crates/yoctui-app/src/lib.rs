@@ -1935,6 +1935,26 @@ impl DaemonClientSnapshot {
         Ok(())
     }
 
+    pub fn apply_log_events_to_app(
+        &mut self,
+        app: &mut yoctui_model::App,
+        events: &[yoctui_protocol::daemon::SequencedEvent],
+    ) -> Result<(), DaemonClientSyncError> {
+        let mut entries = Vec::with_capacity(events.len());
+        for event in events {
+            let yoctui_protocol::daemon::DaemonEvent::Log(record) = &event.event else {
+                return Err(DaemonClientSyncError::NonLogEventInLogBatch);
+            };
+            self.apply_event(event)?;
+            entries.push(daemon_log_entry(record));
+        }
+        if !entries.is_empty() {
+            let _ = yoctui_model::update(app, yoctui_model::Action::Logs(entries));
+            self.install_app(app);
+        }
+        Ok(())
+    }
+
     pub fn install_app(&self, app: &mut yoctui_model::App) {
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
         let wire = (self.status == yoctui_model::ClientReplicaStatus::Current)
@@ -2071,6 +2091,10 @@ fn preserve_log_presentation(
 }
 
 fn daemon_log_action(record: &yoctui_protocol::daemon::LogRecord) -> yoctui_model::Action {
+    yoctui_model::Action::Log(daemon_log_entry(record))
+}
+
+fn daemon_log_entry(record: &yoctui_protocol::daemon::LogRecord) -> yoctui_model::LogEntry {
     use std::time::{Duration, SystemTime};
     let severity = match record.severity {
         yoctui_protocol::daemon::LogSeverity::Trace => yoctui_model::Severity::Trace,
@@ -2078,7 +2102,7 @@ fn daemon_log_action(record: &yoctui_protocol::daemon::LogRecord) -> yoctui_mode
         yoctui_protocol::daemon::LogSeverity::Warning => yoctui_model::Severity::Warning,
         yoctui_protocol::daemon::LogSeverity::Error => yoctui_model::Severity::Error,
     };
-    yoctui_model::Action::Log(yoctui_model::LogEntry {
+    yoctui_model::LogEntry {
         id: 0,
         severity,
         message: record.message.clone(),
@@ -2092,7 +2116,7 @@ fn daemon_log_action(record: &yoctui_protocol::daemon::LogRecord) -> yoctui_mode
             yoctui_model::Severity::Warning | yoctui_model::Severity::Error
         ),
         diagnostic: None,
-    })
+    }
 }
 
 fn apply_daemon_build_event(
@@ -2476,6 +2500,7 @@ fn client_daemon_lifecycle(
 pub enum DaemonClientSyncError {
     MissingSnapshot,
     Protocol(yoctui_protocol::daemon::DaemonSnapshotError),
+    NonLogEventInLogBatch,
 }
 
 impl std::fmt::Display for DaemonClientSyncError {
@@ -2483,6 +2508,9 @@ impl std::fmt::Display for DaemonClientSyncError {
         match self {
             Self::MissingSnapshot => formatter.write_str("daemon event arrived before a snapshot"),
             Self::Protocol(error) => error.fmt(formatter),
+            Self::NonLogEventInLogBatch => {
+                formatter.write_str("non-log daemon event entered a log-only batch")
+            }
         }
     }
 }
@@ -8474,6 +8502,56 @@ mod tests {
             yoctui_model::ClientReplicaStatus::Disconnected
         );
         assert_eq!(client.snapshot.as_ref(), Some(&initial));
+    }
+
+    #[test]
+    fn daemon_client_batches_contiguous_logs_with_one_model_install() {
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([6; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut client = DaemonClientSnapshot::default();
+        let mut app = yoctui_model::App::new(16, 4096);
+        client.replace_app(&mut app, daemon_protocol_snapshot(&state));
+        let record = |severity, message: &str| yoctui_protocol::daemon::LogRecord {
+            source: "bitbake".into(),
+            severity,
+            message: message.into(),
+            unix_ms: 42,
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: None,
+            build: Some("core-image-minimal".into()),
+        };
+        let events = vec![
+            yoctui_protocol::daemon::SequencedEvent {
+                sequence: 1,
+                generation: 1,
+                event: yoctui_protocol::daemon::DaemonEvent::Log(record(
+                    yoctui_protocol::daemon::LogSeverity::Info,
+                    "ordinary",
+                )),
+            },
+            yoctui_protocol::daemon::SequencedEvent {
+                sequence: 2,
+                generation: 2,
+                event: yoctui_protocol::daemon::DaemonEvent::Log(record(
+                    yoctui_protocol::daemon::LogSeverity::Error,
+                    "critical",
+                )),
+            },
+        ];
+
+        client.apply_log_events_to_app(&mut app, &events).unwrap();
+        assert_eq!(client.resume_cursor().unwrap().last_sequence, 2);
+        assert_eq!(app.logs.entries.len(), 2);
+        assert_eq!(app.logs.entries[0].message, "ordinary");
+        assert_eq!(app.logs.entries[1].message, "critical");
+        assert!(app.logs.entries[1].protected);
+        assert_eq!(app.build.errors, 1);
     }
 
     #[test]
