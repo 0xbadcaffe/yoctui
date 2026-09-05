@@ -1,0 +1,25 @@
+{
+  "schema": "yoctui.performance.ipc-continuity-gate.v1",
+  "source_base_revision": "b04a013fbe3fe57b614d0c7c0f4721c9da3d1c2c",
+  "event_flood_artifact": "artifacts/performance/ipc-gate/event-flood.json",
+  "event_flood_sha256": "8bb9fbdf6c6c04901932e7c783b6bb60f8d55597f2ce053b535624deb4073421",
+  "saturated_latency_artifact": "artifacts/performance/ipc-latency/host-audit.json",
+  "saturated_latency_sha256": "959e91377599d739460228e4f977b91baeccd64e33fdd71b7dca3481c7cde592",
+  "sources": {
+    "scripts/event-flood-harness.py": "add10deb629f11ae833b2e020fa38541a7627def9971546ff6dc0c919d9d7aab",
+    "scripts/fixtures/bitbake-event-flood-bridge.py": "001d0370fe32df2d21f788643cac8355d339a55d8db98f601d0d3b88567a949b",
+    "scripts/measure-ipc-latency.py": "a7681de536c4864f318ac6501e5d6bb528761a119b9722c1e19498744dba9b53"
+  },
+  "observations": {
+    "requested_event_rate_per_second": 4000,
+    "generated_ordinary_events": 4004,
+    "healthy_client_event_frames": 4021,
+    "critical_sentinels_retained": 7,
+    "maximum_queue_depth": 105,
+    "slow_client_disconnects": 1,
+    "forced_resynchronizations": 0,
+    "reconnect_succeeded": true,
+    "saturated_daemon_event_p95_ms": 3.262296,
+    "saturated_detach_acknowledgement_ms": 0.119384
+  }
+}

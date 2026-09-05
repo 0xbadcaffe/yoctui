@@ -1,11 +1,11 @@
 {
   "schema": "yoctui.performance.ipc-latency-manifest.v1",
-  "source_base_revision": "df4dbbb2fd51f5803ecbbc5fe8a9ee19f8c0b33c",
+  "source_base_revision": "b04a013fbe3fe57b614d0c7c0f4721c9da3d1c2c",
   "artifact": "host-audit.json",
-  "artifact_sha256": "a769609bf3ed53f44c0b12328c3c7dd232bd509070392006995f7c561df60073",
+  "artifact_sha256": "959e91377599d739460228e4f977b91baeccd64e33fdd71b7dca3481c7cde592",
   "binary_sha256": "cd6f99182cf67d9bad54e21f99962f61895a3e0f9235a52013349bad759d0a0e",
   "sources": {
-    "scripts/measure-ipc-latency.py": "c53fe80447a4b718e8143bdf5295c8c869af687c06165947d1ff3005551c1320",
+    "scripts/measure-ipc-latency.py": "a7681de536c4864f318ac6501e5d6bb528761a119b9722c1e19498744dba9b53",
     "scripts/fixtures/bitbake-ipc-latency-bridge.py": "c188754fbf93c6e9e5f6dfc19f49901831b720ace1a7cdfad5abc964838ce4d8",
     "scripts/cpu-saturation-harness.py": "b54d207b1a79013a2357467792dfd2d48f52b4bffc65951e1523318538d0f473"
   },
@@ -19,17 +19,17 @@
     "load": "one pinned worker per affinity CPU; no deliberately free CPU"
   },
   "observations": {
-    "daemon_event_to_client_p50_ms": 1.601714,
-    "daemon_event_to_client_p95_ms": 2.285174,
-    "client_command_to_daemon_p50_ms": 0.08487,
-    "client_command_to_daemon_p95_ms": 0.642138,
-    "cancellation_request_to_ack_p50_ms": 1.47036,
-    "cancellation_request_to_ack_p95_ms": 3.790469,
-    "accepted_cancellation_requests": 91,
-    "detach_acknowledgement_ms": 0.111422,
+    "daemon_event_to_client_p50_ms": 2.342603,
+    "daemon_event_to_client_p95_ms": 3.262296,
+    "client_command_to_daemon_p50_ms": 0.08381,
+    "client_command_to_daemon_p95_ms": 0.229018,
+    "cancellation_request_to_ack_p50_ms": 1.117616,
+    "cancellation_request_to_ack_p95_ms": 1.35879,
+    "accepted_cancellation_requests": 100,
+    "detach_acknowledgement_ms": 0.119384,
     "detach_under_saturation": true,
     "reconnect_under_saturation": true,
-    "host_cpu_utilization_percent": 99.46364719904648,
-    "minimum_load_worker_cpu_percent": 72.44330597269138
+    "host_cpu_utilization_percent": 99.25617375781017,
+    "minimum_load_worker_cpu_percent": 78.98646223748436
   }
 }

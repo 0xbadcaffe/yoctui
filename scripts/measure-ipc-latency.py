@@ -176,6 +176,7 @@ class Observation:
         self.protocol_sequences: list[int] = []
         self.event_samples: list[dict[str, int | float]] = []
         self.backend_disconnects = 0
+        self.job_states: dict[int, dict[str, object]] = {}
 
     def process(self, message: dict[str, object], received_ns: int) -> None:
         if message.get("type") != "event":
@@ -184,6 +185,9 @@ class Observation:
         if isinstance(sequence, int):
             self.protocol_sequences.append(sequence)
         event = message.get("event")
+        job = job_event(message)
+        if job is not None and isinstance(job.get("id"), int):
+            self.job_states[int(job["id"])] = job
         if isinstance(event, dict) and event.get("type") == "build":
             data = event.get("data")
             if isinstance(data, dict) and data.get("type") == "disconnected":
@@ -274,6 +278,17 @@ def job_event(message: dict[str, object]) -> dict[str, object] | None:
 def wait_for_job(
     observation: Observation, job_id: int | None, lifecycles: set[str]
 ) -> dict[str, object]:
+    retained = next(
+        (
+            job
+            for retained_id, job in observation.job_states.items()
+            if (job_id is None or retained_id == job_id)
+            and job.get("lifecycle") in lifecycles
+        ),
+        None,
+    )
+    if retained is not None:
+        return retained
     deadline = time.monotonic() + 5.0
     while time.monotonic() < deadline:
         message = observation.receive(max(0.001, deadline - time.monotonic()))

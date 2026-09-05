@@ -969,7 +969,7 @@ keyboard-to-frame, and mouse-to-selection p95 were 1.974, 4.336, and 4.440 ms.
 The saturated production IPC audit is also complete: 100 monotonic samples per
 path cover timestamped daemon events, correlated command results, and live
 BitBake cancellation acknowledgements while every affinity CPU is runnable.
-At 99.46% host CPU their p95 values were 2.522, 1.880, and 6.820 ms
+At 99.26% host CPU their p95 values were 3.262, 0.229, and 1.359 ms
 respectively. Exact release measurements and source/binary hashes are retained
 by the offline `--latency` continuity gate. The release CPU gate then exposed
 and removed a separate attached-idle one-millisecond daemon loop: one shared
@@ -980,6 +980,10 @@ and independently recalculated thresholds are retained. The saturated
 interaction aggregate now passes as well: it composes the real-PTY input probe,
 production BitBake/IPC path, and full-affinity load. Keyboard-to-frame and
 mouse-to-selection p95 remain 4.336/4.440 ms; refreshed daemon-event and
-cancellation-ack p95 are 2.285/3.790 ms. Delayed backend events, explicit EOF,
-cancellation, a 0.111 ms acknowledged detach, and a fresh attach all complete
-while saturation remains active. The default IPC continuity gate is next.
+cancellation-ack p95 are 3.262/1.359 ms. Delayed backend events, explicit EOF,
+cancellation, a 0.119 ms acknowledged detach, and a fresh attach all complete
+while saturation remains active. The default IPC continuity gate now validates
+hashed flood and saturation evidence and reruns the bounded production path:
+all seven critical sentinels remain ordered, the healthy client never
+resynchronizes, a non-reader is isolated, and detach/reconnect remain available
+under load. Bounded-memory endurance is next.

@@ -1,0 +1,177 @@
+{
+  "schema": "yoctui.performance.event-flood-observation.v1",
+  "status": "observed",
+  "identity": {
+    "source_base_revision": "b04a013fbe3fe57b614d0c7c0f4721c9da3d1c2c",
+    "binary_path": "/home/bspguy-dev/projects/yoctui/target/debug/yoctui",
+    "binary_sha256": "abe7615b84399a82037cb7dd6a0d1a91fe65f94b42ab742257f423fbb0f63b2a"
+  },
+  "configuration": {
+    "rate_events_per_second": 4000,
+    "duration_seconds": 1.0,
+    "observation_seconds_after_generator_terminal": 3.0,
+    "production_path": [
+      "fixture_bridge",
+      "bridge_backend",
+      "daemon_bitbake_supervisor",
+      "daemon_reducer_journal",
+      "unix_ipc",
+      "attached_protocol_client"
+    ],
+    "slow_client_enabled": true
+  },
+  "generator": {
+    "schema": "yoctui.performance.event-flood-generator.v1",
+    "outcome": "completed",
+    "configuration": {
+      "rate_events_per_second": 4000,
+      "duration_seconds": 1.0,
+      "profile": "balanced",
+      "terminal": "success"
+    },
+    "measurement": {
+      "clock": "CLOCK_MONOTONIC",
+      "elapsed_seconds": 1.0013363580219448,
+      "ordinary_events": 4004,
+      "total_build_events": 4012,
+      "actual_ordinary_events_per_second": 3998.6563634916474,
+      "event_counts": {
+        "build_started": 1,
+        "task_queued": 127,
+        "task_started": 127,
+        "task_progress": 503,
+        "log": 2875,
+        "warning": 126,
+        "error": 126,
+        "task_completed": 126,
+        "build_completed": 1
+      }
+    },
+    "critical_sent": [
+      {
+        "name": "warning_sentinel",
+        "bridge_sequence": 4010,
+        "type": "warning"
+      },
+      {
+        "name": "error_sentinel",
+        "bridge_sequence": 4011,
+        "type": "error"
+      },
+      {
+        "name": "critical_task_queued",
+        "bridge_sequence": 4012,
+        "type": "task_queued"
+      },
+      {
+        "name": "critical_task_started",
+        "bridge_sequence": 4013,
+        "type": "task_started"
+      },
+      {
+        "name": "critical_task_progress",
+        "bridge_sequence": 4014,
+        "type": "task_progress"
+      },
+      {
+        "name": "critical_task_failed",
+        "bridge_sequence": 4015,
+        "type": "task_completed"
+      },
+      {
+        "name": "build_terminal",
+        "bridge_sequence": 4016,
+        "type": "build_completed"
+      }
+    ],
+    "last_bridge_sequence": 4016
+  },
+  "client": {
+    "frames_received": 4022,
+    "snapshot_replacements": 0,
+    "resync_requests": 0,
+    "event_sequences_strictly_increasing": true,
+    "connection_continuity": true,
+    "reconnect_probe_succeeded": true,
+    "critical_received": [
+      "build_terminal",
+      "critical_task_failed",
+      "critical_task_progress",
+      "critical_task_queued",
+      "critical_task_started",
+      "error_sentinel",
+      "warning_sentinel"
+    ],
+    "critical_missing": [],
+    "wire_metrics": {
+      "measurement_seconds": 4.136093867942691,
+      "frames_received": 4024,
+      "frame_bytes_received": 1047736,
+      "frames_per_second": 972.898616056205,
+      "bytes_per_second": 253315.334093505,
+      "frames_sent": 3,
+      "frame_bytes_sent": 577,
+      "initial_snapshot_json_bytes": 69028,
+      "received_by_type": {
+        "hello": {
+          "frames": 1,
+          "frame_bytes": 722,
+          "minimum_frame_bytes": 722,
+          "maximum_frame_bytes": 722
+        },
+        "attached": {
+          "frames": 1,
+          "frame_bytes": 69084,
+          "minimum_frame_bytes": 69084,
+          "maximum_frame_bytes": 69084
+        },
+        "event": {
+          "frames": 4021,
+          "frame_bytes": 977856,
+          "minimum_frame_bytes": 99,
+          "maximum_frame_bytes": 435
+        },
+        "command_result": {
+          "frames": 1,
+          "frame_bytes": 74,
+          "minimum_frame_bytes": 74,
+          "maximum_frame_bytes": 74
+        },
+        "detaching": {
+          "frames": 1,
+          "frame_bytes": 24,
+          "minimum_frame_bytes": 24,
+          "maximum_frame_bytes": 24
+        }
+      },
+      "daemon_cpu_seconds": 0.67
+    },
+    "pressure": {
+      "current_queue_depth": 9,
+      "maximum_queue_depth": 105,
+      "cosmetic_coalesced": 0,
+      "cosmetic_dropped": 0,
+      "reliable_waits": 0,
+      "forced_resynchronizations": 0,
+      "slow_client_disconnects": 1
+    }
+  },
+  "bounds": {
+    "daemon_rss_initial_bytes": 42672128,
+    "daemon_rss_max_bytes": 45264896,
+    "daemon_rss_final_bytes": 45264896,
+    "journal_retained_events": 4096,
+    "snapshot_build_events": 2048,
+    "snapshot_recent_logs": 512,
+    "supervisor_ingress": "bounded_priority_lanes",
+    "supervisor_reliable_events": 512,
+    "supervisor_cosmetic_events": 512,
+    "per_client_backlog_events": 4096,
+    "slow_client_write_deadline_milliseconds": 2
+  },
+  "result": {
+    "critical_retention_passed": true,
+    "expected_pre_backpressure_terminal_starvation_observed": false,
+    "runtime_seconds": 5.598765593953431
+  }
+}

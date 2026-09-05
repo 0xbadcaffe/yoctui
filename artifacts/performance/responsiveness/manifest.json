@@ -5,7 +5,7 @@
     "crates/yoctui-e2e/examples/input_latency_probe.rs": "78ac66134c00228fb9476d66fc4afdf3ff65e6258e68793163bb987b25924108",
     "scripts/cpu-saturation-harness.py": "b54d207b1a79013a2357467792dfd2d48f52b4bffc65951e1523318538d0f473",
     "scripts/measure-input-latency.py": "2cde113fc06e9e20ee08acc41e95cf46d77e2702bf6c57f73cb3c39b7a63071f",
-    "scripts/measure-ipc-latency.py": "c53fe80447a4b718e8143bdf5295c8c869af687c06165947d1ff3005551c1320"
+    "scripts/measure-ipc-latency.py": "a7681de536c4864f318ac6501e5d6bb528761a119b9722c1e19498744dba9b53"
   },
   "evidence": {
     "input_and_render": {
@@ -15,7 +15,7 @@
     },
     "ipc_backend_cancellation_detach_reconnect": {
       "path": "artifacts/performance/ipc-latency/host-audit.json",
-      "sha256": "a769609bf3ed53f44c0b12328c3c7dd232bd509070392006995f7c561df60073",
+      "sha256": "959e91377599d739460228e4f977b91baeccd64e33fdd71b7dca3481c7cde592",
       "schema": "yoctui.performance.ipc-latency.v1"
     }
   },
@@ -33,10 +33,10 @@
   "observations": {
     "keyboard_to_visible_frame_p95_ms": 4.336407,
     "mouse_to_visible_selection_p95_ms": 4.440078,
-    "daemon_event_to_client_p95_ms": 2.285174,
-    "cancellation_request_to_ack_p95_ms": 3.790469,
-    "detach_acknowledgement_ms": 0.111422,
+    "daemon_event_to_client_p95_ms": 3.262296,
+    "cancellation_request_to_ack_p95_ms": 1.35879,
+    "detach_acknowledgement_ms": 0.119384,
     "input_host_cpu_utilization_percent": 99.74673106372953,
-    "ipc_host_cpu_utilization_percent": 99.46364719904648
+    "ipc_host_cpu_utilization_percent": 99.25617375781017
   }
 }

@@ -3602,6 +3602,15 @@ Telemetry publishes current/high-water queue depth, cosmetic coalesced/dropped,
 reliable waits, forced resyncs, and slow-client disconnects through the typed
 protocol and client model.
 
+The default continuity gate composes retained and dynamic evidence. It first
+validates exact source/artifact hashes for a 4,000-event/s production-path flood
+and the full-affinity latency run, then reruns the bounded flood locally. The
+observer retains the latest job lifecycle by stable identifier while draining
+pipelined command results; a terminal event that legitimately arrives early
+therefore satisfies the later lifecycle wait instead of becoming a harness
+race. This changes neither protocol ordering nor measured command and
+cancellation acknowledgement timestamps.
+
 BitBake liveness does not use a short silence timeout. `BridgeBackend` blocks on
 the child protocol pipe until a complete bounded frame or actual EOF/error;
 ordinary scheduler delay therefore cannot synthesize `Disconnected`. The
@@ -3690,11 +3699,11 @@ against live daemon-owned BitBake jobs and records every correlated result;
 each batch must contain an accepted cancellation. All paths retain 100 raw
 samples, strict daemon event ordering, reconnect proof, and evidence that one
 pinned load worker remained runnable on every affinity CPU.
-The refreshed release observation reached 99.46% host CPU and measured
+The refreshed release observation reached 99.26% host CPU and measured
 daemon-event, command-receipt, and cancellation-acknowledgement p95 values of
-2.285, 0.642, and 3.790 ms respectively. All 100 cancellation requests were
-acknowledged and 91 reached the live worker. The primary client then received a
-correlated detach response in 0.111 ms and closed before a new client attached,
+3.262, 0.229, and 1.359 ms respectively. All 100 cancellation requests were
+acknowledged and accepted by the live worker. The primary client then received a
+correlated detach response in 0.119 ms and closed before a new client attached,
 all while the saturation workers remained active.
 
 The steady-state release CPU gate uses the protocol layer's single

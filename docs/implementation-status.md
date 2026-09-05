@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-IPC-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
+`PERF-MEMORY-GATE-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -105,10 +105,10 @@ keyboard-to-visible-frame, and mouse-to-visible-selection p95 were 1.974,
 4.336, and 4.440 ms respectively, well below 100 ms. The production IPC
 latency harness now retains 100 monotonic samples each for timestamped daemon
 events, correlated command receipt, and cancellation acknowledgement while all
-affinity CPUs remain runnable. At 99.46% host CPU, their p95 values were 2.522,
-1.880, and 6.820 ms. It verifies strict event ordering, primary and reconnect
-continuity, no backend disconnect, 100 acknowledgements, and 75 accepted live
-BitBake cancellations. The release CPU gate exposed an attached-idle
+affinity CPUs remain runnable. At 99.26% host CPU, their p95 values were 3.262,
+0.229, and 1.359 ms. It verifies strict event ordering, acknowledged detach and
+fresh reconnect, no backend disconnect, and 100 accepted live BitBake
+cancellations. The release CPU gate exposed an attached-idle
 one-millisecond daemon service loop; one kernel poll now covers the listener
 and every client socket, waking immediately for input but using the 100 ms
 maintenance bound when quiet. The full release capture records 0.0000% idle
@@ -118,10 +118,17 @@ offline gate reproduces the robust statistics and repeats the real process-pair
 measurement. The aggregate saturation responsiveness gate now composes the
 real-PTY input/render path with production BitBake/daemon IPC and all-affinity
 load. It keeps keyboard-to-frame and mouse-to-selection p95 at 4.336/4.440 ms,
-refreshes daemon-event and cancellation-ack p95 to 2.285/3.790 ms at 99.46%
+refreshes daemon-event and cancellation-ack p95 to 3.262/1.359 ms at 99.26%
 host CPU, preserves delayed events and explicit EOF, acknowledges detach in
-0.111 ms, and attaches a fresh client before load ends. Overall required
-registry progress is 652/659 (98.9%).
+0.119 ms, and attaches a fresh client before load ends. IPC continuity is now
+an independent default gate: it validates exact hashed flood and saturation
+evidence before rerunning the bounded production path. At 4,000 generated
+events/s all seven critical sentinels remain strictly ordered, the healthy
+client has zero forced resynchronizations, a non-reading client is isolated,
+and daemon/backend continuity plus detach/reconnect hold. The latency observer
+retains terminal job state received while it drains pipelined acknowledgements,
+eliminating a harness-only race without relaxing measured acknowledgement
+thresholds. Overall required registry progress is 653/659 (99.1%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

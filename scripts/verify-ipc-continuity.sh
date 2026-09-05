@@ -7,6 +7,64 @@ cd "$repo_root"
 mode="${1:-all}"
 
 verify_backpressure() {
+  python3 - <<'PY'
+from pathlib import Path
+import hashlib
+import json
+import subprocess
+
+manifest = json.loads(Path("artifacts/performance/ipc-gate/manifest.json").read_text(encoding="utf-8"))
+if manifest.get("schema") != "yoctui.performance.ipc-continuity-gate.v1":
+    raise SystemExit("IPC continuity gate manifest schema is missing or unsupported")
+revision = manifest.get("source_base_revision")
+subprocess.run(
+    ["git", "merge-base", "--is-ancestor", revision, "HEAD"],
+    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+)
+for source, digest in manifest.get("sources", {}).items():
+    if hashlib.sha256(Path(source).read_bytes()).hexdigest() != digest:
+        raise SystemExit(f"IPC continuity source digest mismatch: {source}")
+flood_path = Path(manifest["event_flood_artifact"])
+if hashlib.sha256(flood_path.read_bytes()).hexdigest() != manifest["event_flood_sha256"]:
+    raise SystemExit("IPC continuity flood evidence digest mismatch")
+flood = json.loads(flood_path.read_text(encoding="utf-8"))
+if flood.get("schema") != "yoctui.performance.event-flood-observation.v1":
+    raise SystemExit("IPC continuity flood schema changed")
+if flood.get("identity", {}).get("source_base_revision") != revision:
+    raise SystemExit("IPC continuity flood source identity changed")
+if flood.get("configuration") != {
+    "rate_events_per_second": 4000,
+    "duration_seconds": 1.0,
+    "observation_seconds_after_generator_terminal": 3.0,
+    "production_path": [
+        "fixture_bridge", "bridge_backend", "daemon_bitbake_supervisor",
+        "daemon_reducer_journal", "unix_ipc", "attached_protocol_client",
+    ],
+    "slow_client_enabled": True,
+}:
+    raise SystemExit("IPC continuity flood method changed")
+client = flood["client"]
+if not client["connection_continuity"] or not client["reconnect_probe_succeeded"]:
+    raise SystemExit("retained IPC continuity evidence disconnected")
+if not client["event_sequences_strictly_increasing"] or client["critical_missing"]:
+    raise SystemExit("retained IPC continuity evidence lost order or a critical event")
+if len(client["critical_received"]) != 7 or not flood["result"]["critical_retention_passed"]:
+    raise SystemExit("retained IPC critical sentinel proof is incomplete")
+if client["pressure"]["slow_client_disconnects"] < 1:
+    raise SystemExit("retained IPC slow-client isolation proof is absent")
+if client["pressure"]["forced_resynchronizations"] != 0:
+    raise SystemExit("healthy retained client unexpectedly resynchronized")
+latency_path = Path(manifest["saturated_latency_artifact"])
+if hashlib.sha256(latency_path.read_bytes()).hexdigest() != manifest["saturated_latency_sha256"]:
+    raise SystemExit("IPC saturated continuity evidence digest mismatch")
+latency = json.loads(latency_path.read_text(encoding="utf-8"))
+continuity = latency["continuity"]
+if continuity["backend_disconnect_events"] != 0:
+    raise SystemExit("retained saturated IPC evidence observed backend disconnect")
+if not continuity["detach_under_saturation"] or not continuity["reconnect_under_saturation"]:
+    raise SystemExit("retained saturated IPC detach/reconnect proof is absent")
+print("retained IPC continuity evidence valid: ordered critical flood, isolated slow client, saturated detach/reconnect")
+PY
   python3 -m unittest scripts/test_event_flood_harness.py
   cargo build -p yoctui >/dev/null
   artifact="$(mktemp /tmp/yoctui-event-flood-gate.XXXXXX.json)"
@@ -290,6 +348,7 @@ case "$mode" in
   all)
     verify_source_and_unit_contracts
     verify_backpressure
+    verify_latency
     ;;
   *)
     printf 'unknown IPC continuity verification mode: %s\n' "$mode" >&2

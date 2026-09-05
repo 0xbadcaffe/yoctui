@@ -2,40 +2,39 @@
 
 ## Task
 
-**ID:** PERF-IPC-GATE-001
-**Title:** Gate IPC continuity and critical-event ordering
+**ID:** PERF-MEMORY-GATE-001
+**Title:** Gate bounded memory under sustained event load
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Complete the default IPC continuity gate across deterministic event flood and
-full-CPU saturation, including strict critical-event order, slow-client
-isolation, and reconnect.
+Prove that sustained high-rate logs, task updates, IPC fanout, telemetry, and
+PTY traffic remain bounded without monotonic process-memory or thread growth.
 
 ## Dependencies
 
-- PERF-IPC-LATENCY-001 — DONE
-- PERF-EVENT-FLOOD-001 — DONE
+- PERF-LOG-001 — DONE
+- PERF-TASKS-001 — DONE
+- PERF-IPC-BACKPRESSURE-001 — DONE
 
 ## Definition of done
 
-- Full-affinity CPU saturation and a >=4,000 event/s production-path flood run
-  through the default gate without client or backend disconnect.
-- A healthy client retains strict protocol order and all warning, error,
-  failure, cancellation, terminal, disconnect, and capability-critical
-  evidence.
-- A non-reading client cannot block daemon ingestion or the healthy client and
-  is isolated through the bounded per-client policy.
-- Queue pressure counters and bounds are validated from typed runtime state.
-- Detach, reconnect, and authoritative snapshot recovery remain functional.
-- The default gate runs without network access and does not depend on a real
-  Poky workspace.
+- A deterministic sustained high-rate workload exercises logs, tasks, daemon
+  journal/client queues, telemetry histories, and PTY retention.
+- All model and transport collections remain at their documented hard bounds.
+- Daemon and attached-client RSS do not grow by more than 32 MiB over the
+  bounded gate, and retained endurance evidence has a final-window slope no
+  greater than 64 KiB/min.
+- Thread counts remain stable and no correctness-critical terminal record is
+  lost under retention pressure.
+- The default verifier runs without network access and distinguishes the
+  deterministic gate from retained long-duration evidence.
 
 ## Verification
 
 ```bash
-./scripts/verify-ipc-continuity.sh
+./scripts/verify-bounded-memory.sh
 ./scripts/verify-roadmap.sh
 ```
 
-The saturation responsiveness gate is complete in v0.1.44.
+The IPC continuity gate is complete in v0.1.45.

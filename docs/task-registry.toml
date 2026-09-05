@@ -7225,7 +7225,7 @@ priority = 809
 required = true
 depends_on = ["PERF-SATURATION-HARNESS-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001"]
 verify = ["./scripts/verify-ipc-continuity.sh --latency"]
-notes = "The release-profile production-path fixture records 100 post-warmup monotonic observations per path above 99% host CPU. The v0.1.44 refresh measured daemon-event, command-receipt, and cancellation-ack p95 at 2.285, 0.642, and 3.790 ms; all requests were acknowledged and 91 cancellations were accepted. It also proves a 0.111 ms acknowledged detach followed by a fresh attach while saturation remains active. The offline gate verifies thresholds, exact ordering, backend continuity, binary/source identity, and raw samples."
+notes = "The release-profile production-path fixture records 100 post-warmup monotonic observations per path above 99% host CPU. The v0.1.44 refresh measured daemon-event, command-receipt, and cancellation-ack p95 at 3.262, 0.229, and 1.359 ms; all 100 cancellations were acknowledged and accepted. It also proves a 0.119 ms acknowledged detach followed by a fresh attach while saturation remains active. The offline gate verifies thresholds, exact ordering, backend continuity, binary/source identity, and raw samples."
 
 [[task]]
 id = "PERF-CPU-GATE-001"
@@ -7247,24 +7247,24 @@ priority = 811
 required = true
 depends_on = ["PERF-INPUT-LATENCY-001", "PERF-BITBAKE-CONN-001"]
 verify = ["./scripts/verify-saturation-responsiveness.sh"]
-notes = "In v0.1.44 the aggregate offline/dynamic gate composes the real-PTY input renderer, production BitBake/daemon/IPC fixture, and all-affinity CPU harness. Keyboard-to-frame and mouse-to-selection p95 remain 4.336 and 4.440 ms; daemon-event and cancellation-ack p95 are 2.285 and 3.790 ms at 99.46% IPC-host CPU. Delayed backend events, explicit EOF, cancellation, 0.111 ms acknowledged detach, and fresh reconnect all pass without reserving a CPU."
+notes = "In v0.1.44 the aggregate offline/dynamic gate composes the real-PTY input renderer, production BitBake/daemon/IPC fixture, and all-affinity CPU harness. Keyboard-to-frame and mouse-to-selection p95 remain 4.336 and 4.440 ms; daemon-event and cancellation-ack p95 are 3.262 and 1.359 ms at 99.26% IPC-host CPU. Delayed backend events, explicit EOF, cancellation, 0.119 ms acknowledged detach, and fresh reconnect all pass without reserving a CPU."
 
 [[task]]
 id = "PERF-IPC-GATE-001"
 milestone = "M46"
 title = "Gate IPC continuity and critical-event ordering"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 812
 required = true
 depends_on = ["PERF-IPC-LATENCY-001", "PERF-EVENT-FLOOD-001"]
 verify = ["./scripts/verify-ipc-continuity.sh"]
-notes = "Under saturation and flood prove connection continuity, ordered critical events, slow-client isolation, bounded pressure, and reconnect."
+notes = "In v0.1.45 the network-free aggregate gate independently validates hashed retained evidence and reruns the production-path 4,000-event/s flood. All seven critical sentinels remain strictly ordered, the healthy client has zero forced resynchronizations, one non-reader is isolated, daemon/backend continuity holds, and acknowledged detach plus fresh reconnect pass under 99.26% host CPU. The latency observer now retains terminal job states received while draining pipelined command acknowledgements, removing a test-harness race without weakening measured acknowledgement thresholds."
 
 [[task]]
 id = "PERF-MEMORY-GATE-001"
 milestone = "M46"
 title = "Gate bounded memory under sustained event load"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 813
 required = true
 depends_on = ["PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-BACKPRESSURE-001"]

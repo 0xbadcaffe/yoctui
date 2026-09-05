@@ -376,12 +376,12 @@ BitBake jobs, with every correlated acknowledgement and outcome retained.
 
 After one second of warmup, the refreshed reference run collected 100
 observations per path while one pinned worker ran on every one of eight affinity
-CPUs. Host CPU reached 99.46%, and the least-busy worker reached 72.44%.
-Daemon-event delivery measured 1.602 ms p50 and 2.285 ms p95; command receipt
-measured 0.085 ms p50 and 0.642 ms p95; cancellation acknowledgement measured
-1.470 ms p50 and 3.790 ms p95. All 100 cancellation requests were acknowledged
-and 91 were accepted. Protocol sequences were strictly increasing, no backend
-disconnect was observed, explicit detach was acknowledged in 0.111 ms, and a
+CPUs. Host CPU reached 99.26%, and the least-busy worker reached 78.99%.
+Daemon-event delivery measured 2.343 ms p50 and 3.262 ms p95; command receipt
+measured 0.084 ms p50 and 0.229 ms p95; cancellation acknowledgement measured
+1.118 ms p50 and 1.359 ms p95. All 100 cancellation requests were acknowledged
+and accepted. Protocol sequences were strictly increasing, no backend
+disconnect was observed, explicit detach was acknowledged in 0.119 ms, and a
 new client attached before saturation ended. Raw timestamps and exact
 binary/source identity live under `artifacts/performance/ipc-latency/`.
 
