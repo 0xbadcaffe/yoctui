@@ -98,9 +98,22 @@ fn receive_command_result(connection: &mut DaemonConnection) {
 
 #[test]
 fn ux_terminal_real_pty_prompt_input_viewport_resize_rename_kill_and_close() {
+    exercise_terminal_kind(PtyKind::BuildShell);
+}
+
+#[test]
+fn image_console_real_pty_qemu_and_ssh_kinds_preserve_lifecycle_and_input() {
+    // Real daemon and PTYs; deterministic shell stands in for external tools.
+    // This is not evidence of booting QEMU or connecting to a real SSH target.
+    for kind in [PtyKind::QemuConsole, PtyKind::SshConsole] {
+        exercise_terminal_kind(kind);
+    }
+}
+
+fn exercise_terminal_kind(kind: PtyKind) {
     let binary = PathBuf::from(env!("CARGO_BIN_EXE_yoctui"));
     let runtime = std::env::temp_dir().join(format!(
-        "yoctui-cli-daemon-pty-runtime-{}",
+        "yoctui-cli-daemon-pty-runtime-{kind:?}-{}",
         std::process::id()
     ));
     let _ = fs::remove_dir_all(&runtime);
@@ -130,7 +143,7 @@ fn ux_terminal_real_pty_prompt_input_viewport_resize_rename_kill_and_close() {
             expected_generation: None,
             command: DaemonCommand::CreatePty {
                 name: "test shell".into(),
-                kind: PtyKind::BuildShell,
+                kind,
                 cwd: cwd.display().to_string(),
                 command: PtyCommand {
                     program: "/bin/sh".into(),
@@ -187,6 +200,7 @@ fn ux_terminal_real_pty_prompt_input_viewport_resize_rename_kill_and_close() {
         match connection.receive::<ServerMessage>().unwrap() {
             ServerMessage::Attached { snapshot, .. } => {
                 running = snapshot.pty_sessions.iter().any(|session| {
+                    assert_eq!(session.kind, kind);
                     session.lifecycle == yoctui_protocol::daemon::LifecycleState::Running
                 });
             }

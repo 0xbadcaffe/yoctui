@@ -26875,6 +26875,34 @@ mod tests {
     }
 
     #[test]
+    fn image_console_qemu_and_ssh_panes_use_tui_term_typed_cells_not_plain_fallback() {
+        for kind in [
+            yoctui_model::ClientDaemonPtyKind::QemuConsole,
+            yoctui_model::ClientDaemonPtyKind::SshConsole,
+        ] {
+            let mut app = concept_terminal_sessions_app();
+            app.terminal.query.clear();
+            app.daemon.pty_details[0].kind = kind;
+            app.daemon.pty_sessions[0].name = format!("{kind:?}");
+            let screen = &mut app.daemon.pty_screens[0];
+            screen.rows = vec!["WRONG_PLAIN_FALLBACK".into()];
+            screen.cells = vec![
+                yoctui_model::ClientDaemonTerminalCell::default();
+                usize::from(screen.columns) * usize::from(screen.rows_count)
+            ];
+            for (index, character) in "typed-console-login:".chars().enumerate() {
+                screen.cells[index].contents = character.to_string();
+                screen.cells[index].bold = true;
+            }
+            for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+                let text = rendered_text(&app, width, height);
+                assert!(text.contains("typed-console-login:"), "{kind:?}: {text}");
+                assert!(!text.contains("WRONG_PLAIN_FALLBACK"), "{text}");
+            }
+        }
+    }
+
+    #[test]
     fn mouse_input_footer_keeps_keyboard_route_visible() {
         let app = App::new(16, 4096);
         let footer = footer_shortcuts(&app);

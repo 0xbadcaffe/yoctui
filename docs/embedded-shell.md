@@ -54,6 +54,22 @@ Select an exact deployed artifact in Images and press `T`. The Image Console
 form offers two bounded launch modes that both become daemon-owned Terminal
 Sessions rendered through the existing `tui-term` replica.
 
+Both modes use `tui-term` 0.3.4 for the actual terminal pane, not a captured
+plain-text log widget. The daemon owns the process, PTY and ANSI/VT emulation;
+the UI receives typed cells with styles and cursor state. SSH/runqemu output
+therefore stays interactive and is not routed through the Yocto log renderer.
+Regression tests exercise both session kinds through a real daemon/PTY with
+deterministic child processes and prove that panes prefer typed cells over
+plain-text fallback. Those fixtures do not claim a real image boot or SSH
+login to a physical target.
+
+The advanced Images `Q` launch preview also starts a QEMU Console PTY on
+confirmation, retaining its approved memory, networking, display, serial,
+kernel/rootfs, and extra-argument choices. Graphical output may still open its
+chosen display; serial stdio and runqemu interaction stay inside Yoctui.
+Use Terminal Sessions' confirmed `Ctrl+B K` to terminate this console. The
+older managed-job API and its retained history remain distinct from PTYs.
+
 - **Boot with QEMU** uses the current inspected `runqemu`, exact selected
   rootfs/Wic artifact, explicit networking and memory, and enforced
   `nographic`/`serialstdio` console options.

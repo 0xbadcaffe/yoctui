@@ -6418,6 +6418,7 @@ pub enum Action {
     CancelQemuLaunch,
     CancelQemuLaunchPreview,
     ConfirmQemuLaunch,
+    ConfirmQemuLaunchInTerminal,
     QemuSessionStarting {
         id: QemuSessionId,
         started_at: SystemTime,
@@ -14496,6 +14497,77 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
                 close_dialog(app);
             }
+        }
+        Action::ConfirmQemuLaunchInTerminal => {
+            let Some(Dialog::QemuLaunchConfirmation(preview)) = app.active_dialog().cloned() else {
+                app.notification = Some("No runqemu launch is awaiting confirmation.".into());
+                return None;
+            };
+            let Some(cwd) = app.workspace.build_dir.clone() else {
+                app.notification = Some("The daemon build directory is unavailable.".into());
+                return None;
+            };
+            if !app
+                .selected_image_artifact()
+                .is_some_and(|artifact| artifact.identity == preview.request.image)
+            {
+                app.notification =
+                    Some("The selected image changed; reopen the runqemu preview.".into());
+                return None;
+            }
+            let request = &preview.request;
+            let draft = QemuLaunchDraft {
+                machine: request.machine.clone(),
+                image: request.image.clone(),
+                artifact_kind: request.artifact_kind,
+                kernel: request
+                    .kernel
+                    .as_ref()
+                    .map_or_else(String::new, |path| path.to_string_lossy().into_owned()),
+                rootfs: request
+                    .rootfs
+                    .as_ref()
+                    .map_or_else(String::new, |path| path.to_string_lossy().into_owned()),
+                networking: request.networking,
+                display: request.display,
+                serial: request.serial,
+                memory_mib: request.memory_mib.to_string(),
+                extra_arguments: request.extra_arguments.join(" "),
+            };
+            let Ok(current) = draft.preview(&app.qemu_capability) else {
+                app.notification =
+                    Some("The runqemu capability changed; review the launch again.".into());
+                return None;
+            };
+            if current != preview {
+                app.notification =
+                    Some("The runqemu command changed; review the launch again.".into());
+                return None;
+            }
+            let program = preview.argv.first().cloned()?;
+            let Some(arguments) = preview
+                .argv
+                .iter()
+                .skip(1)
+                .map(|value| value.to_str().map(str::to_owned))
+                .collect::<Option<Vec<_>>>()
+            else {
+                app.notification = Some("runqemu terminal arguments must be UTF-8.".into());
+                return None;
+            };
+            close_dialog(app);
+            app.screen = Screen::TerminalSessions;
+            app.focus = FocusTarget::Workspace;
+            app.focus_return = None;
+            app.pty_selection = app.daemon.pty_sessions.len();
+            app.notification = Some("QEMU console requested; press o to take writer control. Ctrl+B K terminates the session.".into());
+            return Some(Effect::Terminal(TerminalEffect::Create {
+                name: "QEMU console".into(),
+                kind: TerminalCreationKind::QemuConsole,
+                cwd,
+                program,
+                arguments,
+            }));
         }
         Action::ConfirmQemuLaunch => {
             let Some(Dialog::QemuLaunchConfirmation(preview)) = app.active_dialog().cloned() else {
@@ -26415,6 +26487,54 @@ mod tests {
             arguments.last().map(String::as_str),
             Some("root@target.example")
         );
+    }
+
+    #[test]
+    fn image_console_advanced_qemu_preview_preserves_argv_and_rejects_stale_authority() {
+        let mut app = qemu_model_app();
+        update(&mut app, Action::BeginSelectedQemuLaunch);
+        update(&mut app, Action::PreviewQemuLaunch);
+        let Some(Dialog::QemuLaunchConfirmation(preview)) = app.active_dialog().cloned() else {
+            panic!("missing preview");
+        };
+        let expected = preview.argv.clone();
+        let mut stale = app.clone();
+        stale.qemu_capability = QemuCapability::MissingTool;
+        assert_eq!(
+            update(&mut stale, Action::ConfirmQemuLaunchInTerminal),
+            None
+        );
+        assert!(stale.active_dialog().is_some());
+        let mut changed = app.clone();
+        if let Some(Dialog::QemuLaunchConfirmation(value)) = changed.active_dialog_mut() {
+            value.argv.push("unapproved".into());
+        }
+        assert_eq!(
+            update(&mut changed, Action::ConfirmQemuLaunchInTerminal),
+            None
+        );
+        let Some(Effect::Terminal(TerminalEffect::Create {
+            kind,
+            program,
+            arguments,
+            cwd,
+            ..
+        })) = update(&mut app, Action::ConfirmQemuLaunchInTerminal)
+        else {
+            panic!("missing terminal effect");
+        };
+        assert_eq!(kind, TerminalCreationKind::QemuConsole);
+        assert_eq!(cwd, PathBuf::from("/build"));
+        assert_eq!(program, expected[0]);
+        assert_eq!(
+            arguments,
+            expected[1..]
+                .iter()
+                .map(|value| value.to_str().unwrap().to_owned())
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(app.screen, Screen::TerminalSessions);
+        assert!(app.qemu_sessions.is_empty());
     }
 
     #[test]

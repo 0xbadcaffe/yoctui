@@ -7352,7 +7352,7 @@ pub fn image_console_dialog_action(
 
 pub fn qemu_launch_confirmation_action(key: Input) -> Option<Action> {
     match key {
-        Input::Enter => Some(Action::ConfirmQemuLaunch),
+        Input::Enter => Some(Action::ConfirmQemuLaunchInTerminal),
         Input::Esc => Some(Action::CancelQemuLaunchPreview),
         _ => None,
     }
@@ -12808,7 +12808,7 @@ mod tests {
         );
         assert_eq!(
             qemu_launch_confirmation_action(Input::Enter),
-            Some(Action::ConfirmQemuLaunch)
+            Some(Action::ConfirmQemuLaunchInTerminal)
         );
         assert_eq!(
             qemu_launch_confirmation_action(Input::Esc),

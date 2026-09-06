@@ -3476,6 +3476,14 @@ screen, writer lease, scrollback, resize, termination, persistence, and journal
 replication. `tui-term` remains a stateless typed-cell renderer and gains no
 process, SSH, QEMU, or input authority.
 
+M52 also routes the advanced Images `Q` confirmation through this PTY boundary.
+The reducer reconstructs and compares the approved preview against the current
+artifact/capability before emitting native argv; advanced display/network/serial
+choices are preserved. Historical managed-output QEMU jobs remain readable,
+but a newly confirmed interactive launch is represented only as a PTY session.
+Daemon PTY lifecycle fixtures exercise both console kinds without asserting
+that a real guest booted or an SSH host was contacted.
+
 ## M42 dashboard, preview, and external-edit boundary
 
 `yoctui-model` owns focus relevance, preview scroll offsets, layer information

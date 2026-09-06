@@ -13017,6 +13017,9 @@ async fn tui(
                 } else if matches!(app.active_dialog(), Some(Dialog::QemuLaunchConfirmation(_))) {
                     let effect = qemu_launch_confirmation_action(input)
                         .and_then(|action| compatibility_workspace_action(&mut app, action));
+                    if let Some(effect @ Effect::Terminal(_)) = &effect {
+                        let _ = submit_daemon_effect(&mut daemon_runtime, &mut app, effect);
+                    }
                     if let Some(effect @ Effect::StartQemuSession { .. }) = effect {
                         if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect).is_some() {
                             continue;

@@ -17,7 +17,13 @@ is complete in v0.1.58: six Images tabs, bounded offline rule inventory,
 image-contained symlink resolution, override/mask reporting, scrollable preview,
 and narrow-terminal selection. Scanner/model/app/UI tests, the workspace suite,
 strict Clippy, documentation, and reviewed production raster checks passed.
-CONSOLE-TERM-002 is active; logger integration and final release gates remain.
+CONSOLE-TERM-002 is complete in v0.1.59: advanced `Q` launch now shares the
+daemon-owned tui-term PTY path with `T` QEMU/SSH consoles, retaining approved
+argv and rejecting stale launch authority. Both console kinds passed real-PTY
+input/resize/lifecycle fixtures and typed-cell renderer tests. Workspace,
+strict Clippy, bridge (46 tests), terminal lifecycle, and documentation checks
+passed; console fixtures are not evidence of a guest boot or live SSH login.
+YOCTO-LOGGER-ADAPTER-001 is active; final release gates remain.
 
 M51 integration is complete in v0.1.57. Kernel (M47), firmware (M48), offline
 rootfs exploration (M49), and Overview Insights (M50) coexist with the completed

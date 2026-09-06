@@ -2916,7 +2916,14 @@ missing compatible images, failed capability inspection, stale artifact
 identity, and validation failures are distinct visible states and never fall
 back to a guessed command.
 
-QEMU runs as a managed background job with an attached log/session view. Only
+Interactive confirmation from the `Q` launch preview now creates a daemon-owned
+QEMU Console PTY rendered by `tui-term`, preserving the exact approved argv,
+including graphical/serial choices and overrides. Capability and selected
+artifact identity are revalidated before launch. Terminal Sessions provides
+input, resize, detach/reconnect, and confirmed `Ctrl+B K` termination. The `T`
+Image Console remains the simplified nographic/serialstdio QEMU or SSH route.
+
+The retained noninteractive managed-QEMU API runs as a background job with an attached log/session view. Only
 one managed runqemu session may be active. Its stable session identity retains
 the exact launch request while the shared background-job state owns
 queued/starting/running/cancelling/terminal timestamps, bounded typed stdout

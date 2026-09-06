@@ -2,35 +2,36 @@
 
 ## Task
 
-**ID:** CONSOLE-TERM-002
-**Title:** Verify SSH and runqemu use the admitted tui-term terminal path
+**ID:** YOCTO-LOGGER-ADAPTER-001
+**Title:** Integrate tui-logger presentation with authoritative Yocto log records
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Verify the existing image-console launch, daemon-owned PTY and tui-term replica
-rendering paths together. Preserve exact argv, SSH host-key policy, writer
-leases, input, resize, lifecycle, and reconnect. Add regression coverage for
-both console kinds without claiming fixture results as real target execution.
+Use the upstream log widget for Yocto log/output presentation without replacing
+authoritative retention, correlation, filters, search, bookmarks, export, or
+critical-event handling. Keep diagnostics and interactive PTYs separate.
+Bound any upstream projection buffer to the visible viewport.
 
 ## Dependencies
 
-- IMAGE-UDEV-001 — DONE (v0.1.58)
+- CONSOLE-TERM-002 — DONE (v0.1.59)
 
 ## Definition of done
 
-- SSH/QEMU launches and renderer routes are covered by focused tests.
-- Real PTY integration and terminal lifecycle tests pass.
-- Documentation explains the shared tui-term path and its authority boundaries.
+- Logs and embedded Yocto output use tested tui-logger presentation.
+- Repeated rendering cannot duplicate records or leak between panes/apps.
+- Dependencies, MIT notices, compiler compatibility, and SBOM are audited.
+- Production fixtures and rendering measurements validate the adapter.
 
 ## Verification
 
 ```bash
-cargo test --workspace image_console
-cargo test -p yoctui --test daemon_pty_runtime
-./scripts/test-terminal.sh
+cargo test --workspace log
+./scripts/verify-widget-dependencies.sh
+cargo deny check
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ```
 
-Next: YOCTO-LOGGER-ADAPTER-001, LOG-CONSOLE-IMAGE-001.
+Next: LOG-CONSOLE-IMAGE-001.
