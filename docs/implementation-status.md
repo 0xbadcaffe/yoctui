@@ -1,5 +1,23 @@
 # Yoctui Implementation Status
 
+M54 README and local installation are complete in v0.1.63. The README covers
+features and operator workflows without promotional copy, with coverage checks
+and version-only fixture updates. Documentation, workspace tests, strict Clippy,
+formatting and 46 bridge tests passed. All six public crate archives compiled;
+their bundled bridge handshake/shutdown passed in private XDG directories,
+including an invalid inherited bridge-override control. The old package smoke
+test incorrectly tried an empty build directory against the user's daemon; it
+now checks the standalone diagnostic without requiring a configured build.
+
+The optimized candidate is installed and Cargo tracking agrees. Its SHA-256,
+help and real-terminal path-browser regression passed. The previous executable
+and Cargo records are backed up; the running daemon was not restarted.
+[Installation receipt](../artifacts/release-quality/cratesio/0.1.63.json).
+Crates.io publication remains BLOCKED on M52's strict upstream-cache Memcheck
+finding. No exception was approved or applied, no packages were uploaded, and
+local installation is not a release waiver. No new live-Poky performance claim
+is made for v0.1.63.
+
 M53 `ENVIRONMENT-BROWSER-001` is complete in v0.1.62: guided Source/Build/Script
 fields with plain manual editing/paste and a local directory browser. Folder
 selection, parent/child/page/wheel navigation, source-script detection and
@@ -11,7 +29,8 @@ before Attached); the fixture now waits for both before sending its next
 command. A separate transient signature-fixture ETXTBSY passed on rerun without
 changing that adapter or its assertions. Unrelated M52 release validation
 remains blocked on the documented upstream logger lifetime/strict Memcheck
-policy conflict; the candidate is not installed or published.
+policy conflict; v0.1.62 itself was not installed or published. M54 records the
+later explicitly requested local installation.
 
 The machine-readable source of truth is `docs/task-registry.toml`.
 

@@ -1,64 +1,49 @@
 # Yoctui
 
-> One terminal. Your whole Yocto workspace.
+Yoctui is a terminal application for Yocto and BitBake development. It runs
+builds, shows tasks and logs, edits recipes and sources, inspects generated
+images, and manages development terminals.
 
-[![Rust](https://img.shields.io/badge/Rust-stable-f74c00?logo=rust)](https://www.rust-lang.org/)
-[![Ratatui](https://img.shields.io/badge/UI-Ratatui-7aa2f7)](https://ratatui.rs/)
-[![Yocto](https://img.shields.io/badge/Yocto-BitBake-8cc265)](https://www.yoctoproject.org/)
-[![Roadmap](https://img.shields.io/badge/roadmap-host%20perf%20gate-orange)](docs/implementation-status.md)
+This README describes the source checkout. The crates.io release may be older;
+check `yoctui --version` and the [release status](docs/implementation-status.md).
 
-Yoctui is a Rust/Ratatui workbench for Yocto and BitBake. Browse layers and
-recipes, edit metadata, run builds and Devtool, inspect dependencies, follow
-tasks and logs, boot an image in an embedded QEMU console or connect to a
-running target over SSH, create Wic images, and handle QA or maintenance
-without losing your terminal context. BitBake remains the authority; Yoctui
-organizes and controls it.
+![Yoctui Tasks and build logs](docs/media/yoctui-live-active-tasks.svg)
 
-![Yoctui following a running real-Poky task and its log](docs/media/yoctui-live-active-tasks.svg)
+Screenshot from the recorded Poky 5.2.4 / BitBake 2.12.1 test run.
+[Capture details](artifacts/release-quality/next-generation-ui/manifest.json) ·
+[Completed build](docs/media/yoctui-live-completion.svg) ·
+[Failed build](docs/media/yoctui-live-failed-task.svg)
 
-_Real `core-image-minimal` validation on Poky `yocto-5.2.4` / BitBake 2.12.1,
-captured from the tested Yoctui binary. The image embeds the exact source,
-binary, and Poky identities from the [verified live manifest](artifacts/release-quality/next-generation-ui/manifest.json)._
+## Features
 
-### Live terminal outcomes
+| Area | Features |
+| --- | --- |
+| Build environment | Source/build directory browser, manual path editing, environment-script detection, clone preview, initialization and connection checks |
+| Dashboard and Tasks | Build/task state, progress, elapsed time, job history, cancellation, CPU/RAM/filesystem meters, disk/network histories |
+| Logs and Errors | Live follow/pause, filters, search, bookmarks, wrapping, horizontal scrolling, copy/export, task correlation and failure details; Yocto log panes use tui-logger |
+| Layers and Recipes | Expandable layer tree using tui-tree-widget, provider/appends/tasks/patch inspection, syntax-aware file previews, source editing and external editors |
+| Configuration | Effective values, overrides, provenance, scope comparison, reviewed local.conf edits and BBMASK |
+| Dependencies and signatures | Recipe/task graphs, runtime dependencies, reverse traversal, why-built paths, signature inspection and diffsigs comparison |
+| Devtool | Status, modify, source editing, recipe builds, update-recipe, finish into a layer, deploy and reset |
+| Packages and Images | Generated pkgdata, installed packages, deployed artifacts, rootfs package pie chart using tui-piechart, filesystem tree, systemd units, system D-Bus configuration and udev rules |
+| Kernel and firmware | Kernel and U-Boot/BIOS provider detection, configuration files, menuconfig, DTS/DTB/DTBO browsing and device-tree compile/decompile |
+| Overview Insights | Timeline/critical path, rebuild causes, sstate/download outcomes, image size and retained size deltas, metadata provenance, package topology, supply-chain reports and disk history |
+| Terminals | Daemon-owned shells, devshell/menuconfig, SSH and runqemu consoles using tui-term; split panes, resize, scrollback, copy/search and reconnect |
+| SDK and Wic | Standard/extensible SDK builds and tests, installer inspection/publication, native tools, Wic creation and confirmed removable-device writing |
+| Testing, Security and QA | Selftests, image/SDK tests, ptest, result comparison/JUnit export, CVE checks, SPDX/CycloneDX/manifest imports, recipe/kernel and layer checks |
+| Raw Mode and Maintenance | Structured command catalog, argument previews, favorites/history, sstate checks/cleanup, PR/hash diagnostics, locked caches, buildhistory comparison and Git archives |
+| Preferences and profiles | Color themes, reduced motion, ASCII/no-color views, keybindings, saved preferences, onboarding and optional team project profiles |
 
-The same evidence run records the successful build boundary and a deliberately
-missing target as distinct typed outcomes—no fixture backend or inferred state.
-
-![Yoctui after core-image-minimal completes](docs/media/yoctui-live-completion.svg)
-
-![Yoctui showing the intentional missing-target failure](docs/media/yoctui-live-failed-task.svg)
-
-## What is inside
-
-- **Build cockpit** — confirmed image/recipe builds, task progress, logs,
-  structured errors, CPU/memory/disk telemetry, cancellation, and history.
-- **Overview insights** — build timeline and critical path, signature rebuild
-  causes, sstate/download outcomes, image-size composition, metadata
-  provenance, runtime package topology, SPDX/CycloneDX/manifest supply-chain
-  coverage, and disk history.
-- **Metadata workbench** — layer tree, recipe browser, syntax-aware preview,
-  in-TUI editing, configuration provenance, BBMASK, dependencies, and
-  signatures.
-- **Kernel workbench** — provider-aware menuconfig, `.config` browsing, and
-  bounded DTS/DTB exploration, compilation, and decompilation.
-- **U-Boot / BIOS workbench** — image-aware boot-firmware detection with the
-  same configuration, source exploration, and device-tree workflow.
-- **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
-  consoles, Wic, Testing, CVE/SPDX/CycloneDX, QA, sstate, release, and maintenance tools.
-- **Offline image exploration** — browse and edit BitBake's staged
-  `IMAGE_ROOTFS`, inspect installed packages and files, list systemd services,
-  and map system-bus activation/configuration without booting the image.
-- **Terminal-native UX** — responsive layouts, command palette, contextual
-  shortcuts, themes, persisted sessions, shell escape, and external editor
-  support.
+Actions depend on the connected Yocto environment and generated files.
+Unavailable actions show their prerequisites; a feature listed here is not a
+promise that every Poky release provides it.
 
 ## Install
 
-Use a UTF-8 Linux terminal with Python 3 and stable Rust/Cargo. Your Poky
-release also requires its documented host packages.
+Use a Linux terminal of at least 80×24, Python 3, and a recent stable Rust/Cargo.
+Install the host packages required by your chosen Yocto release separately.
 
-Install the published release from crates.io:
+From crates.io:
 
 ```sh
 cargo install yoctui --locked
@@ -66,115 +51,271 @@ yoctui --version
 yoctui --help
 ```
 
-To build directly from the repository instead:
+From source:
 
 ```sh
 export YOCTUI_DIR="$HOME/projects/yoctui"
-
-command -v git python3 rustc cargo
 git clone https://github.com/0xbadcaffe/yoctui.git "$YOCTUI_DIR"
 cd "$YOCTUI_DIR"
-cargo install --locked --path crates/yoctui-cli
-yoctui --help
-```
-
-For development, use:
-
-```sh
-cd "$YOCTUI_DIR"
-cargo build --locked -p yoctui
-cargo build --locked --release -p yoctui
-```
-
-When testing unreleased source after installing the same version from
-crates.io, refresh Cargo's executable explicitly; `yoctui --version` alone
-cannot distinguish two builds of version 0.1.0:
-
-```sh
-cargo install --path crates/yoctui-cli --locked --force
+cargo install --locked --path crates/yoctui-cli --force
 type -a yoctui
+yoctui --version
 ```
 
-For an exact local release-artifact check, install and compare that artifact:
-
-```sh
-cargo build --locked --release -p yoctui
-install -m 755 target/release/yoctui "$HOME/.cargo/bin/yoctui"
-cmp target/release/yoctui "$HOME/.cargo/bin/yoctui"
-```
+Make sure Cargo's binary directory is on your PATH. An already-running client
+or daemon keeps its old executable until restarted. Do not restart a daemon
+with active builds or terminal sessions merely to refresh the version.
 
 ## Quickstart: Poky build environment
 
-Start from a complete Poky checkout containing `oe-init-build-env`. Set
-`BUILDDIR` before sourcing Poky's environment script: it is both the directory
-Poky creates/uses for the build and the directory Yoctui opens.
+For a complete Poky checkout with `oe-init-build-env` at its root:
 
 ```sh
 export POKY_DIR="$HOME/src/poky"
 export BUILDDIR="$POKY_DIR/build-yoctui"
-
 test -f "$POKY_DIR/oe-init-build-env" || {
-  echo "missing $POKY_DIR/oe-init-build-env; use a complete Poky release" >&2
+  echo "Missing oe-init-build-env; check the source layout."
   exit 1
 }
 source "$POKY_DIR/oe-init-build-env" "$BUILDDIR"
-
+yoctui daemon start
 yoctui --backend bridge --build-dir "$BUILDDIR"
 ```
 
-Inside Yoctui, press `B`, press `e`, enter `core-image-minimal`, select the
-build action, and confirm it. The first BitBake build starts from that explicit
-TUI confirmation.
+For a split checkout, the script may instead be at
+`$POKY_DIR/layers/openembedded-core/oe-init-build-env`. Source that script with
+the same build directory. Use a vendor-provided setup wrapper when the BSP
+requires one.
 
-## Dynamic Yocto compatibility
+Start the daemon from the initialized shell. `daemon start` does not retarget
+an existing daemon to a different build directory; check `yoctui daemon status`
+before switching workspaces.
 
-**Yoctui functionality is Yocto-feature-correlated.** The installed Yoctui
-binary defines what Yoctui knows how to do; the connected build environment
-determines which of those behaviors and implementations are available now.
-The UI is generated from the daemon-owned capability snapshot, never from the
-Yoctui version alone or an executable merely present on the host `PATH`.
+To launch a build, press `B`, edit the target with `e`, enter
+`core-image-minimal`, and confirm the build action. Opening Yoctui does not
+start a build.
 
-The same binary can therefore behave differently across workspaces. If a
-connected Devtool does not expose `upgrade`, the action remains discoverable
-but disabled with the exact reason, for example “Current Devtool does not
-expose the upgrade subcommand.” For a BitBake variable query, a positively
-probed `bitbake-getvar --value` selects the native implementation; an
-environment that lacks it may use the separately verified `bitbake -e`
-fallback. Yoctui never emits an unverified `bitbake --getvar` option.
+### Configure paths inside Yoctui
 
-Older environments keep every safely verified workflow and explain unavailable
-newer behavior. Unknown future releases are not rejected by their version:
-positive probes can enable behavior, while uncertain operations remain
-`Unknown` and cannot spawn a command. An environment outside the support
-policy still opens in diagnostic/degraded mode instead of taking down the
-whole application.
+Start `yoctui` without a configured environment and open **Build environment**:
 
-Open **Environment / Compatibility** from the Navigator or use `F10`/`Ctrl+P`
-and choose **Open Compatibility**. It shows detected identity, capability
-states, exact reasons, selected implementations, and bounded evidence. Filters
-`1`–`5` select Available, Limited, Unavailable, Unknown, and Unsupported; `/`
-searches the report. Doctor exposes the same daemon snapshot:
+1. Press `e` to open the Source/Build/Script form.
+2. Select Source or Build with Tab. Press `b` to browse or `e` to type/paste.
+3. In the browser, Enter/Right opens a folder; Left/Backspace goes up.
+   Arrow keys, mouse wheel, PageUp/PageDown and Home/End move the selection.
+   Press `s` to choose the current directory.
+4. Choosing Source detects the usual environment script. Edit Script manually
+   for a custom wrapper. The build directory must already exist.
+5. Press `s` to save the form, then `V` to initialize and verify.
+   Esc discards the current edit/browser or closes the draft.
+
+Browsing and saving do not start a daemon or execute the setup script.
+`A` opens the advanced TOML editor. Persistent daemon sessions still require
+starting the daemon from an initialized shell as shown above.
+
+## Navigation
+
+| Key | Action |
+| --- | --- |
+| `F1` / `?` | Help |
+| `F2` / `F3` / `F4` | Tasks / History / Dashboard |
+| `F5` / `F6` / `F7` / `F8` | Logs / Layers / Recipes / Images |
+| `F9` / `Ctrl+P` | Command palette |
+| `F10` / `a` | Application menu / context actions |
+| `Tab` / `Shift+Tab` | Change focus; some workspaces use Tab for their views |
+| Arrows, `PageUp`/`PageDown`, `Home`/`End` | Move within lists and trees |
+| `Right` / `Left` in Navigator or a tree | Expand / collapse or move to parent |
+| `/` | Global regex search outside editors and local search fields |
+| `B` | Image build options |
+| `q` | Request exit; confirmation required |
+
+The footer lists shortcuts for the current view. Dialogs and editors own
+their keys before global navigation. See the [keymap](docs/keymap.md) for
+terminal-prefix commands and custom bindings.
+
+## Build, logs and errors
+
+1. Use `B` for an image build, or `b` on a selected recipe.
+2. Open Tasks with `F2`; use its filters to inspect active or failed tasks.
+3. Open Logs with `F5`. `f` resumes live follow; navigation pauses follow.
+   `w` toggles wrapping. Context actions expose local search and filters.
+4. Open Errors from the Navigator to inspect failures and their source logs.
+5. Use the cancel action and confirm it to stop a build. Exiting the client is
+   separate from cancelling a daemon-owned build.
+
+Logs show output acquired by Yoctui, not every log file on the host.
+Retention is bounded. [Log controls and limits](docs/yocto-logs.md).
+
+## Search source code and generated content
+
+Press `/` and enter a case-insensitive Rust regex, for example
+`systemd|udev`. Search includes actions and available content from recipes
+(`.bb`, `.bbappend`, `.inc`), configuration, classes, layer scripts, Poky and
+BitBake sources, build logs, pkgdata and generated metadata. Retained rootfs
+trees are included, so an installed service file can match by its contents.
+
+Results show file/line and image origin where known; Enter opens the result.
+The search skips symlinks, binary/oversized files, downloads, sstate and other
+large caches, and returns at most 500 hits. It is not an exhaustive disk index.
+Editors and terminals retain literal `/`; use their own search controls.
+
+## Edit recipes and develop a patch
+
+In Layers, Enter opens a layer tree, Right/Left expands/collapses directories,
+and PageUp/PageDown moves through it. The selected text file appears beside
+the tree; `[`/`]` scrolls a long preview.
+
+In Recipes:
+
+1. Select a recipe. Enter loads its details; `e` opens the provider for editing.
+2. Use `t` to refresh Devtool status and `d` to review `devtool modify` or
+   open its existing source workspace.
+3. Edit the source and save with `Ctrl+S`. The editor provides syntax
+   highlighting, navigation, search, undo/redo and a diff view; it is not an LSP
+   or a replacement for VS Code's extension system.
+4. Press `Ctrl+B` from the saved editor to review a build of that recipe.
+5. Use `u` for `devtool update-recipe`, or commit the source changes and use
+   `F` for `devtool finish` into a selected layer. Review the destination and
+   changes before confirming.
+6. Inspect the generated patch and recipe/bbappend, then rebuild the recipe.
+
+Use `p` to inspect recipe patches and `o` for task logs. `P` previews
+deployment and `D` previews a destructive Devtool reset.
+Shell/devshell/menuconfig actions offer an embedded session or a detached
+terminal when supported. External editing restores Yoctui after the editor
+exits. [Editing and Devtool details](docs/operator-guide.md#recipes-and-devtool).
+
+## Inspect an image, its packages and rootfs
+
+Open Images with `F8`. Select a deployed artifact, press `R` to rescan if
+needed, and use the numbered views:
+
+| Key | View |
+| --- | --- |
+| `1` | Deployed artifacts |
+| `2` | Installed packages and size pie chart |
+| `3` | Rootfs filesystem |
+| `4` | Systemd services |
+| `5` | System D-Bus |
+| `6` | udev rules |
+
+Package composition needs the selected image's manifest and generated pkgdata.
+The filesystem, services, D-Bus and udev views need its retained
+`IMAGE_ROOTFS`. Yoctui does not automatically mount or extract ext4/Wic images.
+With `rm_work`, package information may remain while filesystem data is gone.
+
+The udev view lists rules, overrides and masks; `[`/`]` scrolls the preview.
+Service and D-Bus views describe installed files, not live unit/bus state.
+No rule is executed. Changes made directly to staged rootfs files can be
+overwritten by BitBake; make lasting changes in a recipe or layer.
+
+The pie chart retains an exact size table and falls back to tables in narrow
+or accessible layouts. [Rootfs details](docs/rootfs-composition.md).
+
+## Boot with QEMU or connect over SSH
+
+With an image artifact selected, press `T` in Images:
+
+- **Boot with QEMU:** review the image and options. The embedded console uses
+  `runqemu` with `nographic` and `serialstdio`.
+- **Connect over SSH:** enter the host, user, port and optional identity file.
+  This connects to a running target; it does not boot it. OpenSSH's host-key
+  checks remain enabled.
+
+Confirming creates a daemon-owned Terminal Session. `Ctrl+B`, then `o`,
+takes writer control. `Q` opens the advanced QEMU options.
+
+| Prefix sequence | Action |
+| --- | --- |
+| `Ctrl+B c` | Create a build shell |
+| `Ctrl+B n` / `Ctrl+B p` | Next / previous session |
+| `Ctrl+B %` / `Ctrl+B "` | Split panes |
+| `Ctrl+B z` | Zoom pane |
+| `Ctrl+B [` / `Ctrl+B /` | Copy / search |
+| `Ctrl+B d` | Detach client; keep the process |
+| `Ctrl+B K` | Confirm process termination |
+| `Ctrl+B ?` | Prefix help |
+
+Press the prefix and its command separately. `!` opens an inherited shell
+outside the TUI; exit that shell to return.
+[Terminal sessions](docs/embedded-shell.md).
+
+## Kernel, firmware and build analysis
+
+Open **Kernel** or **U-Boot / BIOS** in the Navigator. Tab switches Configuration
+and Device trees. Enter/`e` opens a text file; `m` opens menuconfig when the
+selected provider supports it. With `dtc` available, `c` compiles DTS and `d`
+decompiles DTB/DTBO. Output uses a `.yoctui` name and refuses overwrites.
+[Kernel and firmware guide](docs/platform-workbenches.md).
+
+Open **Overview → Insights** and choose `1`–`8` for timeline, rebuild causes,
+sstate/downloads, image size, metadata provenance, package dependencies,
+supply-chain coverage or disk history. These views use loaded data; missing
+timestamps or reports are not estimates.
+
+Use Dependencies for recipe/task graphs. In Recipes, `Z` opens signature
+history; choose two sides with `1`/`2` and compare with `c`. Configuration
+shows effective values and their source files. Reviewed edits target supported
+assignments in `conf/local.conf`, rather than rewriting arbitrary metadata.
+
+## SDK, Wic, tests, security and maintenance
+
+- **SDK:** `s`/`E` reviews standard/extensible SDK builds; `t`/`T` reviews
+  SDK tests; `R` rescans installers; `P` reviews publication; `n` opens native
+  tools. Actions use the active image, machine and distro.
+- **Wic:** `W` in Images opens creation options. `D` reviews writing an eligible
+  removable device, requiring the exact device phrase and confirmation.
+  Yoctui does not invoke sudo for device writing.
+- **Testing:** launch supported selftests, image/SDK tests or ptests; import
+  results, compare runs and export JUnit. Review the operation before starting.
+- **Security:** run supported CVE/SBOM tasks or import SPDX, CycloneDX JSON and
+  legacy image manifests. A manifest supplies package/version information,
+  not a full SBOM.
+- **QA:** run available recipe/kernel checks or layer checks, then inspect
+  findings and source locations.
+- **Raw Mode:** select a command category and command, edit structured arguments,
+  review the argv preview, then run. Keep common requests as favorites.
+- **Maintenance:** use `[`/`]` to choose Sstate, Services, Release or
+  Integrations. Cleanup requires an exact candidate preview and confirmation.
+  Service diagnostics are observational; Integrations detects tools rather
+  than automatically uploading reports or managing Toaster.
+
+See the [operator guide](docs/operator-guide.md) for per-view controls and
+prerequisites. None of these workflows silently changes BitBake parallelism.
+
+## Daemon and remote use
 
 ```sh
-yoctui --build-dir "$BUILDDIR" doctor
-yoctui --build-dir "$BUILDDIR" doctor --json
+yoctui daemon status
+yoctui attach
+yoctui sessions
+yoctui daemon build core-image-minimal
 ```
 
-The exact Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose 6.0.2 / BitBake 2.18.0
-revisions bound the current **Claimed supported** window. Capabilities are still
-probed independently; this claim does not cover an unrecorded point revision,
-fixtures, or an optional development snapshot. Live records expire after 90
-days and after relevant capability-contract changes. See the
-[compatibility contract](docs/compatibility.md) and
-[release matrix](docs/compatibility-matrix.md) for exact revisions, scope, and
-renewal policy.
+The daemon keeps jobs and PTYs alive when a client disconnects. Connect to the
+build host over SSH, then run `yoctui attach` there; the daemon uses a local
+per-user Unix socket, not a public TCP listener.
 
-## Optional project profile
+After all work has stopped, use `yoctui daemon restart` to load a newly installed
+binary, or `yoctui daemon stop` to stop it. After a host reboot, lost child
+processes are reported as Lost; saved metadata does not resurrect them.
 
-Yoctui works normally without a profile. A team may optionally commit
-`.yoctui/project.toml` at the Poky/project root to share favorites, typed build
-presets, and typed workflow intent without modifying Poky, vendor layers,
-recipes, or BitBake configuration:
+Optional systemd user-service setup:
+
+```sh
+yoctui daemon service install
+yoctui daemon service status
+```
+
+Arrange the required Yocto environment before starting the user service.
+Installing a unit alone does not initialize a build environment.
+
+## Settings and team profiles
+
+Settings controls themes, mouse input, reduced motion, ASCII/no-color rendering
+and keybindings. Preferences are local to the user.
+
+A repository may also contain `.yoctui/project.toml`:
 
 ```toml
 schema_version = 1
@@ -200,165 +341,57 @@ name = "refresh-metadata"
 type = "refresh_metadata"
 ```
 
-Logical recipe, image, and layer names are portable. File references, when a
-typed workflow supports them, must be repository-relative and cannot escape
-the project root. Host paths, credentials, environment snapshots, shell
-fragments, arbitrary commands, and executable hooks are rejected. Themes,
-recent paths, aliases, trust decisions, and other personal preferences remain
-in the user-local configuration.
+Inspect it with `yoctui --build-dir "$BUILDDIR" profile`. Loading a profile does
+not execute it. Profiles store shared names and build intent, not credentials,
+host paths or shell hooks. Select a preset and review its request before running.
 
-Loading the file is inert: it never runs a command, sources an environment,
-changes metadata, or starts a build. Yoctui resolves its team intent against
-the current BitBake inventory and visibly marks missing or ambiguous entries;
-BitBake remains authoritative. Selecting a resolved preset or workflow still
-uses the normal preview, capability checks, and confirmations.
+## Compatibility and troubleshooting
 
-After sourcing the Poky environment, inspect resolution without opening the
-full-screen client:
+Yoctui functionality is Yocto-feature-correlated: available actions depend on
+the connected environment's tools, tasks and capability checks. The same
+binary may expose different actions in different builds.
 
-```sh
-yoctui --backend bridge --build-dir "$BUILDDIR" profile
-```
-
-An absent file reports `project profile: absent (optional)`. Unknown fields,
-unsupported schema versions, symlinked profile files, and invalid portable
-references fail closed with a diagnostic.
-
-## Essential controls
-
-| Key | Action |
-|---|---|
-| `F5` | Open Logs |
-| `B` | Image build options |
-| `r` / `y` | Recipes / Layers |
-| `Ctrl+P` | Command palette |
-| `Tab` | Move focus |
-| `!` | Open an inherited Yocto shell; `exit` returns |
-| `?` | Contextual help |
-| `q` | Quit |
-
-The footer shows the highest-priority current-context shortcuts that fit;
-`F1` Help lists the complete shared function-key catalog. Destructive
-operations show an exact preview and require confirmation.
-
-## Daemon and persistent sessions
-
-Yoctui can run a persistent per-user daemon that owns BitBake jobs and terminal
-sessions while interactive clients attach, detach, and reconnect.
-
-```sh
-yoctui daemon start
-yoctui daemon status
-yoctui daemon restart
-yoctui daemon stop
-yoctui daemon build core-image-minimal
-yoctui attach
-yoctui sessions
-yoctui session attach <id>
-yoctui session kill <id> --force
-```
-
-With the daemon running for the selected workspace, Doctor reports the same
-validated compatibility authority used by attached clients. Human output keeps
-the existing environment/bridge checks; `--json` emits only the bounded typed
-compatibility report for automation:
+Open Compatibility for detected versions and reasons for disabled actions:
 
 ```sh
 yoctui --build-dir "$BUILDDIR" doctor
 yoctui --build-dir "$BUILDDIR" doctor --json
 ```
 
-If the daemon is disconnected, its snapshot is absent, or protocol values are
-invalid, Doctor reports that state explicitly and does not infer support from
-the host PATH or the requested release name.
+The recorded supported anchors are Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose
+6.0.2 / BitBake 2.18.0. Exact revisions, evidence expiry and host limits are in
+the [compatibility matrix](docs/compatibility-matrix.md). Other versions need
+their own checks; a version number alone does not establish support.
 
-On a host with a systemd user manager, install the no-root user unit and enable
-automatic startup:
+| Symptom | Check |
+| --- | --- |
+| Daemon unavailable | Start it from the initialized Yocto shell; check `yoctui daemon status` |
+| Wrong workspace or old version | Check `type -a yoctui`, `yoctui --version` and the daemon's build directory; restart only when work is stopped |
+| Packages unavailable after a build | Select the correct image and refresh; confirm its manifest and `tmp/pkgdata` still exist |
+| No rootfs tree/services/udev | Confirm the reported `IMAGE_ROOTFS` was not cleaned; deploy artifacts alone are insufficient |
+| Logs stop following | Press `f` in Logs; navigation pauses follow |
+| Disabled workflow | Read its Compatibility reason and verify the required tool/task/configuration |
+| Host overloaded or nearly full | Inspect telemetry and disk space; choose build parallelism/cleanup yourself |
 
-```sh
-yoctui daemon service install
-systemctl --user enable --now yoctui.service
-yoctui daemon service status
-```
-
-`yoctui daemon service start|stop|restart|status|uninstall` manages only the
-user unit. If `systemctl --user` is unavailable, use the direct-process
-`yoctui daemon start` fallback. `yoctui daemon foreground` is the debug/service
-entry point. Daemon persistence does not mean arbitrary processes survive a
-host reboot; recovery states and guarantees are implemented and documented by
-later milestone tasks.
-
-`yoctui attach` opens the interactive client against the local daemon.
-`yoctui sessions` lists daemon-owned PTYs. `yoctui session attach <id>` checks
-that a session is available for the interactive client, while terminating a
-session requires the explicit `--force` flag.
-
-The interactive client may be detached with the configured prefix command;
-detaching or closing the client does not stop daemon-owned jobs or PTYs. A new
-client on the same build host reconnects through the per-user Unix socket. SSH
-reconnect uses the same workflow: the daemon stays on the build host and the
-next `yoctui attach` restores the current snapshot and session list. No TCP
-daemon is exposed by default.
-
-Daemon sockets and persisted metadata are user-private. Peer UID checks,
-canonical runtime paths, bounded frames/logs/scrollback, typed commands, and
-normal destructive confirmations apply to daemon management and PTY control.
-For a controlled live Poky acceptance run, use
-`YOCTUI_LIVE_POKY_TARGET=core-image-minimal ./scripts/live-daemon-poky.sh`;
-set `YOCTUI_LIVE_CACHE=/path/to/cache` to retain downloads and sstate between
-runs. `YOCTUI_DAEMON_LOG=/path/to/daemon.log` enables daemon diagnostics when
-debugging a foreground service startup. The live harness fails closed when
-Poky's host prerequisites are unavailable.
-After a host reboot, persisted metadata is restored but arbitrary child
-processes and PTYs are reported Lost; only an explicit supported relaunch may
-restart them. Fresh official Scarthgap 5.0.19 and Wrynose 6.0.2 daemon runs are
-recorded in the compatibility evidence; their exact tested scope does not imply
-that arbitrary child processes survive a host reboot.
-
-## Performance evidence
-
-The completion gate captured the deterministic release workload with real
-`perf` samples through `cargo-flamegraph`. Open the image for the full
-interactive SVG.
-
-[![Yoctui Flamegraph](artifacts/flamegraph/yoctui.svg)](artifacts/flamegraph/yoctui.svg)
-
-Reproduce it on a host that permits perf sampling:
+## Development and license
 
 ```sh
-cargo install flamegraph
-./scripts/flamegraph.sh
-```
-
-## Learn more
-
-- [Operator guide](docs/operator-guide.md) — daily workflows and troubleshooting
-- [Keymap reference](docs/keymap.md) — menus, focus, navigation, customization, and the `Ctrl+B` terminal prefix
-- [Rootfs composition](docs/rootfs-composition.md) — package/filesystem authority and accessible chart fallbacks
-- [Kernel and firmware workbenches](docs/platform-workbenches.md) — menuconfig, configuration, and device-tree workflows
-- [Embedded shells and terminal sessions](docs/embedded-shell.md) — inherited-shell and persistent-PTY behavior
-- [Compatibility evidence](docs/compatibility.md) — live, fixture, and host validation boundaries
-- [Release compatibility matrix](docs/compatibility-matrix.md) — support classifications, exact tested revisions, and renewal policy
-- [UI specification](docs/ui-spec.md) — screens, focus, dialogs, and shortcuts
-- [Architecture](docs/architecture.md) — crate boundaries and state flow
-- [Testing](docs/testing.md), [profiling](docs/profiling.md), and the [low-overhead performance contract](docs/performance.md) — verification and build-saturation responsiveness
-- [Implementation status](docs/implementation-status.md) — complete task evidence
-
-The systemd service list/detail interaction was informed by
-[systemd-manager-tui](https://github.com/Matheus-git/systemd-manager-tui),
-created by Matheus-git and released under MIT. Yoctui implements an independent
-offline parser because an unbooted rootfs has no running systemd D-Bus manager.
-
-## Development checks
-
-```sh
+cargo build --locked -p yoctui
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
+./scripts/test-readme-quickstart.sh
 ./scripts/verify-roadmap.sh
+./scripts/verify-completion.sh
 ```
 
-Use `./scripts/verify-completion.sh` for the strict clean-checkout completion
-gate. Live BitBake support is claimed only for combinations recorded in
-[compatibility evidence](docs/compatibility.md).
+[Testing](docs/testing.md) · [Profiling](docs/profiling.md) ·
+[Performance contract](docs/performance.md) · [UI specification](docs/ui-spec.md) ·
+[Architecture](docs/architecture.md) · [Implementation status](docs/implementation-status.md)
+
+Yoctui is [MIT-licensed](LICENSE). Dependency licenses are listed in
+[third-party notices](docs/compliance/THIRD_PARTY_NOTICES.md).
+The offline systemd service view was informed by the MIT-licensed
+[systemd-manager-tui](https://github.com/Matheus-git/systemd-manager-tui) by
+Matheus-git; Yoctui uses its own parser for unbooted images.

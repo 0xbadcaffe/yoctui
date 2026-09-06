@@ -1112,3 +1112,15 @@ startup without requiring a daemon or executing Poky initialization.
 
 Progress: complete in v0.1.62, including the disconnected real-PTY startup
 regression. The independent M52 release-policy blocker remains open.
+
+## M54 — Operator README and crates.io release
+
+Document implemented features and practical workflows without promotional
+copy. Install the requested candidate locally without restarting active jobs.
+Publish the six public crates in dependency order after independent release
+and package verification; M52's memory-policy blocker still applies.
+
+Progress: README, operator-coverage tests, package verification and requested
+local installation complete in v0.1.63. Publication is a post-gate delivery
+task, not a circular prerequisite for product completion; it remains blocked
+on the independent M52 memory-policy decision. No crates were uploaded.

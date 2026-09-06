@@ -3,6 +3,39 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "RELEASE-README-001"
+milestone = "M54"
+title = "Replace README promotion with feature coverage and operator how-tos"
+status = "DONE"
+priority = 1200
+required = true
+depends_on = ["ENVIRONMENT-BROWSER-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-cratesio-package.sh"]
+notes = "v0.1.63: README covers implemented workflows, installation, setup/browser, builds/logs, search/edit/Devtool, rootfs/services/udev, kernel/firmware, consoles, SDK/testing/security/QA, Raw/maintenance, profiles and limitations. Removed promotional prose while preserving attribution and evidence links. Added operator-coverage assertions. Documentation, workspace tests, strict Clippy, formatting and 46 bridge tests pass. All 17 golden diffs contain only version digits; six production rasters refreshed. Six package archives compile and their isolated bundled bridge handshake/shutdown passes. Corrected the stale package smoke test, which previously tried an empty build directory against the user's daemon authority; it now uses private XDG directories and rejects inherited bridge overrides. No source/runtime behavior changed."
+
+[[task]]
+id = "RELEASE-INSTALL-001"
+milestone = "M54"
+title = "Install and verify the requested local Yoctui candidate"
+status = "DONE"
+priority = 1190
+required = true
+depends_on = ["RELEASE-README-001"]
+verify = ["yoctui --version", "python3 scripts/test-environment-setup.py /home/bspguy-dev/.cargo/bin/yoctui"]
+notes = "Installed optimized v0.1.63 with cargo install --frozen --path crates/yoctui-cli --force --target-dir target. Release build took 34m50s; installation reused it. Installed version/help, Cargo tracking, byte comparison and SHA-256 agree. Private real-PTY manual paste/directory browser/save test passes for both candidate and installed executable. Backed up v0.1.21 and Cargo records under /home/bspguy-dev/.local/state/yoctui-installs/before-0.1.63.tLBPt3. Existing daemon PID 3708780 retains its original executable and was not restarted. Local installation is explicitly requested, not release-gate approval. Receipt: artifacts/release-quality/cratesio/0.1.63.json."
+
+[[task]]
+id = "RELEASE-PUBLISH-001"
+milestone = "M54"
+title = "Publish verified public packages to crates.io"
+status = "BLOCKED"
+priority = 1180
+required = false
+depends_on = ["RELEASE-INSTALL-001", "LOG-CONSOLE-IMAGE-001"]
+verify = ["./scripts/verify-completion.sh", "./scripts/verify-cratesio-package.sh", "cargo owner --list yoctui"]
+notes = "Post-gate delivery task, not a product-completeness prerequisite: requiring publication before verify-completion would create a circular gate. Publication remains part of the user request and BLOCKED, not waived. User authorizes crates.io publication, but the prior strict upstream-cache Memcheck exception remains unresolved. No bypass inferred. Publish six public crates in dependency order only after gates and package verification pass; confirm registry versions and fresh install. Never publish private e2e/shell crates or print registry tokens."
+
+[[task]]
 id = "ENVIRONMENT-BROWSER-001"
 milestone = "M53"
 title = "Add guided environment paths with a local directory browser"

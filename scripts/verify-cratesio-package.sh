@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-version="0.1.62"
+version="0.1.63"
 public_crates=(
   yoctui-model
   yoctui-protocol
@@ -73,7 +73,8 @@ CARGO_TARGET_DIR="$package_target_dir" \
   cargo check --manifest-path "$work_dir/Cargo.toml" --workspace --all-features
 
 config_dir="$work_dir/config"
-mkdir -p "$config_dir" "$work_dir/build"
+mkdir -p "$config_dir" "$work_dir/build" "$work_dir/runtime" "$work_dir/state"
+chmod 700 "$work_dir/runtime"
 version_output="$(
   XDG_CONFIG_HOME="$config_dir" CARGO_TARGET_DIR="$package_target_dir" cargo run \
     --manifest-path "$work_dir/Cargo.toml" -p yoctui --quiet -- --version
@@ -92,13 +93,24 @@ if [[ "$help_output" != *"Ratatui frontend and control client for BitBake"* ]]; 
   exit 1
 fi
 
+# An empty directory cannot provide daemon-owned BitBake authority. Exercise
+# the packaged bridge handshake/shutdown instead, outside the source checkout
+# and without inheriting a user's daemon or external bridge override.
 headless_output="$(
-  XDG_CONFIG_HOME="$config_dir" CARGO_TARGET_DIR="$package_target_dir" cargo run \
-    --manifest-path "$work_dir/Cargo.toml" -p yoctui --quiet -- \
-    --headless --backend bridge --build-dir "$work_dir/build"
+  cd "$work_dir"
+  env -u YOCTUI_BRIDGE_PATH -u BUILDDIR -u BBPATH -u BBSERVER \
+    -u PYTHONPATH -u TEMPLATECONF \
+    XDG_CONFIG_HOME="$config_dir" XDG_RUNTIME_DIR="$work_dir/runtime" \
+    XDG_STATE_HOME="$work_dir/state" \
+    "$package_target_dir/debug/yoctui" --build-dir "$work_dir/build" doctor
 )"
-if [[ "$headless_output" != *"headless inspection completed"* ]]; then
+if [[ "$headless_output" != *"bridge protocol: ok (bounded handshake and shutdown)"* ]]; then
+  printf '%s\n' "$headless_output" >&2
   printf '%s\n' 'packaged binary could not run its bundled bridge' >&2
+  exit 1
+fi
+if [[ "$headless_output" != *"authority: Unavailable"* ]]; then
+  printf '%s\n' 'package diagnostic unexpectedly acquired daemon authority' >&2
   exit 1
 fi
 

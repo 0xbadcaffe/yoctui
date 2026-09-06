@@ -1,0 +1,29 @@
+{
+  "version": "0.1.63",
+  "scope": "Local installation and package verification; not public release approval or live-Poky evidence",
+  "installed_path": "/home/bspguy-dev/.cargo/bin/yoctui",
+  "installed_sha256": "00f4068de952b8b8190fac680cc9b040030be7a4dc2bfc75d3f0868d1640c330",
+  "build_profile": "release: optimized, thin LTO, codegen-units=1, debug=1",
+  "build_duration": "34m50s",
+  "install_command": "cargo install --frozen --path crates/yoctui-cli --force --target-dir /home/bspguy-dev/projects/yoctui/target",
+  "previous_executable_version": "0.1.21",
+  "previous_cargo_tracking_version": "0.1.7",
+  "backup_directory": "/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.63.tLBPt3",
+  "previous_executable_sha256": "eae7787a38c8f7e361cb2666e6855f0cdb56310489466006195e6cc8a6e77ef1",
+  "daemon_restarted": false,
+  "checks_passed": [
+    "README quickstart and operator coverage",
+    "documentation links, CLI diagnostics and production raster checks",
+    "cargo fmt --all --check",
+    "cargo test --workspace --all-features",
+    "cargo clippy --workspace --all-targets --all-features -- -D warnings",
+    "python3 -m pytest bridge/tests: 46 passed",
+    "six public crate archives compiled and ran bundled bridge handshake/shutdown",
+    "package diagnostic isolated from existing daemon and invalid inherited bridge override",
+    "candidate and installed executable real-PTY environment setup regression",
+    "installed version, help, Cargo record, byte comparison and SHA-256"
+  ],
+  "publication": "BLOCKED; no packages uploaded",
+  "release_blocker": "LOG-CONSOLE-IMAGE-001: strict Memcheck rejects 39367 fixed upstream cache bytes; no approved exception",
+  "release_evidence": "artifacts/performance/logger/README.md (explicitly bound to v0.1.61)"
+}
