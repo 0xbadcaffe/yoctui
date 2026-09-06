@@ -28,12 +28,12 @@ notes = "Installed optimized v0.1.63 with cargo install --frozen --path crates/y
 id = "RELEASE-PUBLISH-001"
 milestone = "M54"
 title = "Publish verified public packages to crates.io"
-status = "BLOCKED"
+status = "IN_PROGRESS"
 priority = 1180
 required = false
 depends_on = ["RELEASE-INSTALL-001", "LOG-CONSOLE-IMAGE-001"]
 verify = ["./scripts/verify-completion.sh", "./scripts/verify-cratesio-package.sh", "cargo owner --list yoctui"]
-notes = "Post-gate delivery task, not a product-completeness prerequisite: requiring publication before verify-completion would create a circular gate. Publication remains part of the user request and BLOCKED, not waived. User authorizes crates.io publication, but the prior strict upstream-cache Memcheck exception remains unresolved. No bypass inferred. Publish six public crates in dependency order only after gates and package verification pass; confirm registry versions and fresh install. Never publish private e2e/shell crates or print registry tokens."
+notes = "Post-gate delivery task, not a circular product-completeness prerequisite. User explicitly approved publication and the reviewed bounded upstream-cache exception on 2026-09-06. M52 focused verification passes for v0.1.64; approval does not waive unrelated failures. Publish six public crates in dependency order after completion/package checks, then verify registry versions and fresh install. Never publish private e2e/shell crates or print registry tokens."
 
 [[task]]
 id = "ENVIRONMENT-BROWSER-001"
@@ -83,12 +83,12 @@ notes = "Reevaluate tui-logger by explicit user request. Integrate Logs and embe
 id = "LOG-CONSOLE-IMAGE-001"
 milestone = "M52"
 title = "Complete Yocto log widget console and udev integration"
-status = "BLOCKED"
+status = "DONE"
 priority = 970
 required = true
 depends_on = ["IMAGE-UDEV-001", "CONSOLE-TERM-002", "YOCTO-LOGGER-ADAPTER-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-performance.sh"]
-notes = "v0.1.61 candidate integrates all children and adds a profile-guided fitting-ASCII viewport path. UI/workspace/strict-Clippy/sanitizer checks and both quiet-host rendering matrices passed; real Poky 360-second CPU is 0.9777% of one logical CPU with 5.821 ms input p95 and healthy cancellation/reconnect. BLOCKED: tui-logger 0.18.3 process-global target maps and Jiff timezone caches retain 39,367 bytes classified PossiblyLost by strict Memcheck, identically across 16/128 frames and the optimized rerun. Upstream exposes no complete cleanup API. No suppression or gate relaxation was applied. Requires upstream cleanup support or explicit reviewed bounded-cache policy approval; reproduce with ./scripts/valgrind.sh. Evidence: artifacts/performance/logger/README.md and memcheck-optimized.json. Full completion must pass before release; console fixtures are not live SSH/QEMU evidence."
+notes = "User approved the reviewed bounded upstream-cache exception on 2026-09-06. Fail-closed matching covers only the ten recorded tui-logger/Jiff allocations, capped at 39,367 bytes with 16/128-frame no-growth evidence and dependency identity checks. Preserve all other Memcheck failures and unsuppressed reports. Release audit also found RUSTSEC-2026-0253; update lru 0.18.1 to compatible patched 0.18.4 and refresh shipped notices/SBOM rather than ignoring it. Fresh v0.1.64 workspace tests, strict Clippy, formatting, sanitizers, fuzz, coverage, audit/deny, both rendering matrices, flamegraph, Memcheck and aggregate performance verifier pass. Ten policy tests pass. Fresh real Poky 360-second kernel compile: 0.9333% combined one-logical-CPU overhead at 99.8393% host CPU, input p95 4.6814 ms, cancellation and reconnect healthy. Idle CPU 0.1872%; 22 performance thresholds and seven correctness checks pass. Evidence: artifacts/release-quality/cratesio/0.1.64-validation.md. Full completion remains mandatory before crates.io publication."
 
 [[task]]
 id = "WORKBENCH-INTEGRATION-001"

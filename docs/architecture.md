@@ -632,6 +632,12 @@ RAII clears retained records after rendering, including unwinding. There is no
 or widget-owned input/timer. The original typed model remains authoritative for
 filtering, correlation, selected identity, bookmarks, exports, and retention.
 Terminal ANSI/VT output remains exclusively on the separate tui-term path.
+The explicitly approved Memcheck exception covers only the pinned upstream
+target/timezone caches, not Yoctui-owned retention. Its allocation identities,
+39,367-byte/ten-block ceiling and 16/128-frame no-growth comparison are enforced
+outside production code by `scripts/check_valgrind.py`; raw findings stay
+visible. Dependency changes invalidate the exception. Other memory safety and
+resource bounds are unchanged; see [the policy](profiling.md#approved-fixed-cache-exception).
 Word wrapping is independently implemented over typed styled graphemes and
 tested against the previous Ratatui paragraph layout; table adapters retain
 column geometry and full-row selection without parsing process text.

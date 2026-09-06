@@ -11,12 +11,31 @@ backend mode.
 `scripts/profile-workload.sh` runs the deterministic release workbench benchmark
 through the production reducer and Ratatui renderer and writes its frame count,
 cell-buffer checksum, and elapsed time to `artifacts/profile/summary.txt`.
-`scripts/valgrind.sh` runs 128 frames of the same daemon-independent production
+`scripts/valgrind.sh` runs 16 and 128 frames of the same daemon-independent production
 workbench under Memcheck and emits XML plus a human-readable summary under
 `artifacts/valgrind/`; it fails on incomplete workload execution,
 definite/indirect leaks, unexpected descriptors, or non-runtime findings while
 reporting allowlisted Tokio signal descriptors and still-reachable allocations
 separately when present.
+
+### Approved fixed-cache exception
+
+On 2026-09-06 the user approved the ten previously reviewed process-lifetime
+allocations documented in `artifacts/performance/logger/memcheck-optimized.json`.
+`scripts/check_valgrind.py` accepts only their exact sizes, block counts and
+allocation-stack identities: 34,995 bytes for tui-logger's fixed target maps and
+4,372 bytes for Jiff timezone data, at most 39,367 bytes / ten blocks total.
+The exception pins crate versions and registry checksums for tui-logger 0.18.3,
+Jiff 0.2.35 and jiff-core 0.1.0. Changes require another review.
+
+Each gate run compares independent 16- and 128-frame workloads. No accepted
+allocation category may grow. Both raw XML reports remain unsuppressed under
+`artifacts/valgrind/`, alongside workload checksums and the policy summary.
+Truncated/incomplete reports, unknown stacks, increased bytes/blocks, new
+possibly-lost allocations, definite/indirect leaks, invalid accesses and
+unexpected descriptors still fail. This is not a general upstream-leak or
+small-leak allowance. `python3 -m unittest scripts/test_valgrind_policy.py`
+exercises the negative controls independently of Valgrind.
 
 `scripts/flamegraph.sh` samples the same production workbench benchmark and
 writes a validated `artifacts/flamegraph/yoctui.svg` plus its machine-readable

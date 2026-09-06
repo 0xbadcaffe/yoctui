@@ -1,5 +1,26 @@
 # Yoctui Implementation Status
 
+Release validation resumed for v0.1.64: on 2026-09-06 the user approved the
+reviewed bounded tui-logger/Jiff cache exception and crates.io publication.
+The exception must retain exact allocation/dependency checks, a 39,367-byte
+ceiling, no-growth evidence and all unrelated memory/correctness gates.
+M52 focused verification now passes: workspace/Clippy, sanitizer/Memcheck,
+fuzz/coverage, both rendering matrices, flamegraph, and aggregate performance.
+Fresh real Poky kernel compilation measured 0.9333% combined one-logical-CPU
+overhead at 99.8393% host CPU, with input p95 4.6814 ms and healthy cancellation
+and reconnect. Fresh idle combined CPU was 0.1872%. All 22 performance thresholds
+and seven correctness checks pass. Publication remains IN_PROGRESS pending the
+registry uploads and installation verification; the independent full completion
+gate passed with exit status 0. No crates have been uploaded yet. The optional
+standalone live smoke was explicitly skipped, while required real-Poky
+performance evidence passed independently.
+[v0.1.64 validation](../artifacts/release-quality/cratesio/0.1.64-validation.md).
+
+The candidate also updates the compatible `lru` dependency from 0.18.1 to
+0.18.4, fixing RUSTSEC-2026-0253 (panic safety in cache removal). The advisory
+scan is clean, no advisory ignore was added, and shipped notices/SBOM were
+regenerated. This repair is separate from the fixed-cache Memcheck exception.
+
 M54 README and local installation are complete in v0.1.63. The README covers
 features and operator workflows without promotional copy, with coverage checks
 and version-only fixture updates. Documentation, workspace tests, strict Clippy,
@@ -13,8 +34,8 @@ The optimized candidate is installed and Cargo tracking agrees. Its SHA-256,
 help and real-terminal path-browser regression passed. The previous executable
 and Cargo records are backed up; the running daemon was not restarted.
 [Installation receipt](../artifacts/release-quality/cratesio/0.1.63.json).
-Crates.io publication remains BLOCKED on M52's strict upstream-cache Memcheck
-finding. No exception was approved or applied, no packages were uploaded, and
+At the v0.1.63 handoff, crates.io publication was BLOCKED on M52's strict
+upstream-cache Memcheck finding. No exception had been approved or applied, no packages were uploaded, and
 local installation is not a release waiver. No new live-Poky performance claim
 is made for v0.1.63.
 
@@ -43,7 +64,9 @@ Status values:
 
 ## Current phase
 
-M52 is BLOCKED on strict upstream-cache Memcheck policy: image-owned udev rules, verification of existing tui-term
+M52 is complete following the explicitly approved bounded-cache policy and
+fresh v0.1.64 verification above. M54 publication is the active task, with full
+completion required before upload. Its integration scope is image-owned udev rules, verification of existing tui-term
 SSH/runqemu consoles, and tui-logger presentation integration. IMAGE-UDEV-001
 is complete in v0.1.58: six Images tabs, bounded offline rule inventory,
 image-contained symlink resolution, override/mask reporting, scrollable preview,
@@ -61,15 +84,16 @@ and managed-operation panes/inspectors without taking ownership of history,
 input or tracing. UI/workspace/strict-Clippy suites, offline dependency and
 license checks passed; regenerated production fixtures differ only in version
 headers. The candidate graph, MIT notices and shipped SBOM were refreshed.
-LOG-CONSOLE-IMAGE-001 is blocked in the v0.1.61 candidate. A profile-guided
+Historical v0.1.61 evidence: LOG-CONSOLE-IMAGE-001 was blocked. A profile-guided
 fitting-ASCII path preserves all visual fixtures and reduces log-heavy rendering
 to 1.202 ms/frame. The final real Poky six-minute sample passes the unchanged
 CPU ceiling at 0.9777% of one logical CPU, input p95 5.821 ms, with cancellation
 and reconnect healthy. Earlier failed CPU samples are retained. Workspace,
 273 UI tests, strict Clippy, sanitizers and both rendering matrices pass.
-Strict Valgrind still rejects 39,367 fixed upstream-cache bytes as PossiblyLost;
-upstream lacks a full cleanup API, and no exception has been approved or added.
-Full completion is therefore not passed and the candidate is not released.
+Strict Valgrind rejected 39,367 fixed upstream-cache bytes as PossiblyLost;
+upstream lacks a full cleanup API, and no exception was approved at that time.
+That candidate did not pass full completion and was not released. Fresh v0.1.64
+verification is required under the approved policy described above.
 See [the source-bound integration report](../artifacts/performance/logger/README.md).
 
 M51 integration is complete in v0.1.57. Kernel (M47), firmware (M48), offline

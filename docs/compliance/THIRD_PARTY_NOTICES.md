@@ -2,7 +2,7 @@
 
 This file is generated from the exact `Cargo.lock` graph. It inventories every non-workspace package, records the byte-authoritative SHA-256 of every packaged root-level license, notice, copying, and copyright file, and displays a Markdown-safe normalization of its content (UTF-8 text directly; non-UTF-8 data as hexadecimal). Packages with no packaged notice file remain listed with their manifest SPDX expression and authorship metadata in the SBOM.
 
-- Cargo.lock SHA-256: `70b2d05ada8e59cd4af31b96e22ee344d7ae42b58a75ae2d76cbaa71a8cebc69`
+- Cargo.lock SHA-256: `72af992310ceab4a96fda66c75d0bc6a8ac4c372fa3d7df91db194872c6e4447`
 - Third-party packages: 251
 - Unique packaged notice materials: 161
 
@@ -109,7 +109,7 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `litrs 1.0.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `11d3d7f243d5c5a8b9bb5d6dd2b1602c0cb0b9db1621bafc7ed66e35ff9fe092` | [`62c7a1e35f56`](#notice-62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a), [`7dc1552e88f4`](#notice-7dc1552e88f49132cb358b1b962fc5e79fa42d70bcbb88c526d33e45b8e98036) |
 | `lock_api 0.4.14` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `224399e74b87b5f3557511d98dff8b14089b3dadafcab6bb93eab67d3aace965` | [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2), [`c9a75f18b9ab`](#notice-c9a75f18b9ab2927829a208fc6aa2cf4e63b8420887ba29cdb265d6619ae82d5) |
 | `log 0.4.33` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad` | [`6485b8ed310d`](#notice-6485b8ed310d3f0340bf1ad1f47645069ce4069dcc6bb46c7d5c6faf41de1fdb), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2) |
-| `lru 0.18.1` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `0b6180140927ee907000b0aa540091f6ea512ead4447c92b8fc35bc72788a5a6` | [`061dc50af2cd`](#notice-061dc50af2cd9340703daf61978af3200cf681b12ea67a323c33ba109a23a45e) |
+| `lru 0.18.4` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `ff9840bcc50b71349309900da0ce7279aa336ae71d73250b07998932c7d97c25` | [`061dc50af2cd`](#notice-061dc50af2cd9340703daf61978af3200cf681b12ea67a323c33ba109a23a45e) |
 | `mac_address 1.1.8` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `c0aeb26bf5e836cc1c341c8106051b573f1766dfa05aa87f0b98be5e51b02303` | [`16c5a3cc9519`](#notice-16c5a3cc951992b74de5f73206aa0005300fbe610708b76a25ca65006aab76d3), [`c93a7014a32c`](#notice-c93a7014a32c88c71551bd6fb4cae8cc9445c237d7e4a0774d4fc5e06089dbd9) |
 | `matchers 0.2.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `d1525a2a28c7f4fa0fc98bb91ae755d1e2d1505079e05539e35bc876b5d65ae9` | [`a47129d73875`](#notice-a47129d738752a6ae52247fea645b42cb320d19e9327f1eb2d1a7f99d9455ad3) |
 | `memchr 2.8.3` | `Unlicense OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98` | [`01c266bced4a`](#notice-01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f), [`0f96a83840e1`](#notice-0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f) |
@@ -796,7 +796,7 @@ SOFTWARE.
 
 Packaged filenames: `LICENSE`
 
-Used by: `lru 0.18.1`
+Used by: `lru 0.18.4`
 
 ```text
 MIT License

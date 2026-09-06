@@ -1,24 +1,24 @@
 {
   "schema": "yoctui.performance.real-poky-manifest.v1",
-  "source_base_revision": "e3e7ecbd538c928d5d820b46ac26965026f2b064",
-  "source_patch": "artifacts/performance/logger/optimized-source.patch",
-  "source_patch_sha256": "57334ee65a2b40f2ebaf3762bee02224912ae031471cc0ab49419652966d48eb",
+  "source_base_revision": "e7378022fa8a9369ebb959df5dfc1425ec0fd88c",
+  "source_patch": "artifacts/performance/real-poky/v0.1.64-source.patch",
+  "source_patch_sha256": "202dab971d7aaeb60ba953f27a49a532cba5b10468b254d413962bc41c62d266",
   "artifact": "linux-yocto-do-compile.json",
-  "artifact_sha256": "fd21aae064fd5c4045c12401e3c779049880f71c23f630fe31d3e2748ef9fec0",
+  "artifact_sha256": "a6b0be738b7f18555fce4818f27350015c0fb4b281009855cb043b7059659187",
   "binary": {
-    "path": "/tmp/yoctui-m52-optimized-release",
-    "sha256": "2b7ff3659d2867e1463dc9a1f227624a879283142b4d3cbd7b6cd630e0dc6566",
-    "version": "yoctui 0.1.61"
+    "path": "/tmp/yoctui-v64-release.oOOF10/yoctui",
+    "sha256": "8e311a902b8dd2f0b7da1a8c0ed87b6b16941c27fcdf7fbee0f065eeaa53f02d",
+    "version": "yoctui 0.1.64"
   },
   "sources": {
-    "crates/yoctui-app/src/lib.rs": "05ad8dec3422c3bb75dc6806690b9552787aebdcdf5b0b6f50d6a0e1af5f72c9",
-    "crates/yoctui-cli/src/main.rs": "1ef6c12bf6e4bdcbd92fb293af6c290c3e85a2e69b6eb2e8788af6ed582fa470",
+    "crates/yoctui-app/src/lib.rs": "a58e5820b72127ccb47f8ac0149743c73e6401bd561a71755aca98e91cc77957",
+    "crates/yoctui-cli/src/main.rs": "f8ceef7365225d2f3c4ae499b072c4d0eb14b071b70b4273b1066381ceb83c27",
     "crates/yoctui-cli/src/render_scheduler.rs": "9cbd30b42bfd057f4a33be507f61fd4a431365d468143d0ce9a5845bc65b22fa",
     "crates/yoctui-protocol/src/daemon.rs": "58f0a2cddd8ffe562721b9acaae75abc94581c5bfd46ffbae9be16f5a6d4c2b3",
     "scripts/capture-real-poky-performance.py": "45b207e89372952500cfe3f492c6b60ae457fc9be081fdd0371f01f3e7646579",
-    "crates/yoctui-ui/src/lib.rs": "a83e1f11409df21271630428bee4a0c744f8f8db9999c990b7f9a8573866c90c",
+    "crates/yoctui-ui/src/lib.rs": "a4a0be76677b24f55756a332c624b85834d65322de6638a336cc93c446053e95",
     "crates/yoctui-ui/src/yocto_logs.rs": "fe977125a094e6312a3d07cdb955b0985e45d407dbf633e921be986f86b660ea",
-    "artifacts/performance/logger/optimized-source.patch": "57334ee65a2b40f2ebaf3762bee02224912ae031471cc0ab49419652966d48eb"
+    "artifacts/performance/real-poky/v0.1.64-source.patch": "202dab971d7aaeb60ba953f27a49a532cba5b10468b254d413962bc41c62d266"
   },
   "thresholds": {
     "combined_cpu_percent_one_logical_cpu": 1,
@@ -31,9 +31,10 @@
     "render_frames_per_second_maximum": 6
   },
   "findings": [
-    "Supported Poky 6.0.2 linux-yocto do_compile held the eight-logical-CPU host at 99.8601% trimmed-mean utilization for a complete 360-second window after a ten-second warmup, in an isolated offline build directory.",
-    "The v0.1.61 ASCII-optimized daemon plus attached client consumed 0.9777% of one logical CPU; input p95 was 5.8214 ms. Cancellation acknowledgement was 0.4570 ms, fresh attach 26.5856 ms, and all continuity checks passed. Headroom remains limited.",
-    "Pre-optimization 120- and 360-second captures failed at 1.0170% and 1.0065%; both are retained under artifacts/performance/logger. The source patch preserves all performance thresholds and fixes only measured redundant ASCII segmentation.",
-    "At 90% or greater host utilization during live work, presentation coalesces to 1 Hz while input and resize stay immediate; below saturation ordinary activity remains 4 Hz."
+    "Fresh v0.1.64 capture: supported Poky 6.0.2 linux-yocto do_compile held the eight-logical-CPU host at 99.8393% trimmed-mean utilization over 360 seconds after a ten-second warmup in the isolated offline build directory.",
+    "Daemon plus one attached client consumed 0.9333% of one logical CPU. Keyboard-to-frame p95 was 4.6814 ms, cancellation acknowledgement 4.8349 ms, and fresh attach 21.9319 ms. No backend disconnect, critical delivery pressure, or resynchronization occurred.",
+    "The build-source patch contains only candidate version and compatible lru security-update changes relative to e737802. Runtime source hashes identify the actual measured application; earlier v0.1.61 records remain historical evidence in Git and the logger report.",
+    "No normal user build configuration, running daemon or active user job was changed. The private fixture uses eight build threads and make jobs, offline downloads and an isolated writable sstate cache.",
+    "All pre-existing CPU, latency, continuity and memory thresholds are unchanged."
   ]
 }

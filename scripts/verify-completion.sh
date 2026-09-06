@@ -88,6 +88,7 @@ bridge_tests="bridge/tests"
 "$python_tools/pytest" "$bridge_tests" \
   --cov="$bridge_source" --cov-report=term-missing --cov-fail-under=75
 
+python3 -m unittest scripts/test_valgrind_policy.py
 ./scripts/valgrind.sh
 ./scripts/profile-workload.sh
 ./scripts/flamegraph.sh
