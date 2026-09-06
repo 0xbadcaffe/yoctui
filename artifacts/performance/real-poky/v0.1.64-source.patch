@@ -1,0 +1,197 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 28e783a..c36575a 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -850,9 +850,9 @@ checksum = "0ceec5bc11778974d1bcb055b18002eba7f4b3518b6a0081b3af5f21666da9ad"
+ 
+ [[package]]
+ name = "lru"
+-version = "0.18.1"
++version = "0.18.4"
+ source = "registry+https://github.com/rust-lang/crates.io-index"
+-checksum = "0b6180140927ee907000b0aa540091f6ea512ead4447c92b8fc35bc72788a5a6"
++checksum = "ff9840bcc50b71349309900da0ce7279aa336ae71d73250b07998932c7d97c25"
+ dependencies = [
+  "hashbrown 0.17.1",
+ ]
+@@ -2316,7 +2316,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+ 
+ [[package]]
+ name = "yoctui"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "anyhow",
+  "async-trait",
+@@ -2341,7 +2341,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-app"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "thiserror 2.0.19",
+  "yoctui-bitbake",
+@@ -2351,7 +2351,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-bitbake"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "async-trait",
+  "libc",
+@@ -2367,7 +2367,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-e2e"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "crossterm",
+  "libc",
+@@ -2379,7 +2379,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-model"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "proptest",
+  "regex",
+@@ -2392,7 +2392,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-protocol"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "libc",
+  "proptest",
+@@ -2404,14 +2404,14 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-shell"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "libc",
+ ]
+ 
+ [[package]]
+ name = "yoctui-ui"
+-version = "0.1.63"
++version = "0.1.64"
+ dependencies = [
+  "log",
+  "ratatui",
+diff --git a/Cargo.toml b/Cargo.toml
+index da86597..4c3c57f 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -8,7 +8,7 @@ exclude = ["fuzz"]
+ resolver = "2"
+ 
+ [workspace.package]
+-version = "0.1.63"
++version = "0.1.64"
+ edition = "2024"
+ license = "MIT"
+ authors = ["Roy Cohen <roy@0xbadcaffe.dev>"]
+diff --git a/crates/yoctui-app/Cargo.toml b/crates/yoctui-app/Cargo.toml
+index c4411fc..6ab709c 100644
+--- a/crates/yoctui-app/Cargo.toml
++++ b/crates/yoctui-app/Cargo.toml
+@@ -10,7 +10,7 @@ readme.workspace = true
+ description = "Application input and effect mapping for Yoctui"
+ publish = ["crates-io"]
+ [dependencies]
+-yoctui-bitbake = { version = "0.1.63", path = "../yoctui-bitbake" }
+-yoctui-model = { version = "0.1.63", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.63", path = "../yoctui-protocol" }
++yoctui-bitbake = { version = "0.1.64", path = "../yoctui-bitbake" }
++yoctui-model = { version = "0.1.64", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.64", path = "../yoctui-protocol" }
+ thiserror.workspace = true
+diff --git a/crates/yoctui-bitbake/Cargo.toml b/crates/yoctui-bitbake/Cargo.toml
+index 3346455..b4a2ca4 100644
+--- a/crates/yoctui-bitbake/Cargo.toml
++++ b/crates/yoctui-bitbake/Cargo.toml
+@@ -13,8 +13,8 @@ publish = ["crates-io"]
+ test-fixtures = []
+ [dependencies]
+ async-trait.workspace = true
+-yoctui-model = { version = "0.1.63", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.63", path = "../yoctui-protocol" }
++yoctui-model = { version = "0.1.64", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.64", path = "../yoctui-protocol" }
+ thiserror.workspace = true
+ tokio.workspace = true
+ tracing.workspace = true
+diff --git a/crates/yoctui-cli/Cargo.toml b/crates/yoctui-cli/Cargo.toml
+index 8a0eee4..54b525c 100644
+--- a/crates/yoctui-cli/Cargo.toml
++++ b/crates/yoctui-cli/Cargo.toml
+@@ -17,11 +17,11 @@ clap.workspace = true
+ crossterm.workspace = true
+ ratatui.workspace = true
+ regex.workspace = true
+-yoctui-app = { version = "0.1.63", path = "../yoctui-app" }
+-yoctui-bitbake = { version = "0.1.63", path = "../yoctui-bitbake" }
+-yoctui-model = { version = "0.1.63", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.63", path = "../yoctui-protocol" }
+-yoctui-ui = { version = "0.1.63", path = "../yoctui-ui" }
++yoctui-app = { version = "0.1.64", path = "../yoctui-app" }
++yoctui-bitbake = { version = "0.1.64", path = "../yoctui-bitbake" }
++yoctui-model = { version = "0.1.64", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.64", path = "../yoctui-protocol" }
++yoctui-ui = { version = "0.1.64", path = "../yoctui-ui" }
+ serde.workspace = true
+ serde_json.workspace = true
+ thiserror.workspace = true
+@@ -37,4 +37,4 @@ harness = false
+ 
+ [dev-dependencies]
+ async-trait.workspace = true
+-yoctui-bitbake = { version = "0.1.63", path = "../yoctui-bitbake", features = ["test-fixtures"] }
++yoctui-bitbake = { version = "0.1.64", path = "../yoctui-bitbake", features = ["test-fixtures"] }
+diff --git a/crates/yoctui-e2e/Cargo.toml b/crates/yoctui-e2e/Cargo.toml
+index 808b33e..c392b8f 100644
+--- a/crates/yoctui-e2e/Cargo.toml
++++ b/crates/yoctui-e2e/Cargo.toml
+@@ -11,6 +11,6 @@ libc.workspace = true
+ [dev-dependencies]
+ crossterm.workspace = true
+ ratatui.workspace = true
+-yoctui-app = { version = "0.1.63", path = "../yoctui-app" }
+-yoctui-model = { version = "0.1.63", path = "../yoctui-model" }
+-yoctui-ui = { version = "0.1.63", path = "../yoctui-ui" }
++yoctui-app = { version = "0.1.64", path = "../yoctui-app" }
++yoctui-model = { version = "0.1.64", path = "../yoctui-model" }
++yoctui-ui = { version = "0.1.64", path = "../yoctui-ui" }
+diff --git a/crates/yoctui-protocol/Cargo.toml b/crates/yoctui-protocol/Cargo.toml
+index 080d570..c81ce9a 100644
+--- a/crates/yoctui-protocol/Cargo.toml
++++ b/crates/yoctui-protocol/Cargo.toml
+@@ -17,4 +17,4 @@ libc.workspace = true
+ 
+ [dev-dependencies]
+ proptest.workspace = true
+-yoctui-model = { version = "0.1.63", path = "../yoctui-model" }
++yoctui-model = { version = "0.1.64", path = "../yoctui-model" }
+diff --git a/crates/yoctui-ui/Cargo.toml b/crates/yoctui-ui/Cargo.toml
+index a942dd8..0d312d7 100644
+--- a/crates/yoctui-ui/Cargo.toml
++++ b/crates/yoctui-ui/Cargo.toml
+@@ -10,8 +10,8 @@ readme.workspace = true
+ description = "Ratatui rendering layer for Yoctui"
+ publish = ["crates-io"]
+ [dependencies]
+-yoctui-app = { version = "0.1.63", path = "../yoctui-app" }
+-yoctui-model = { version = "0.1.63", path = "../yoctui-model" }
++yoctui-app = { version = "0.1.64", path = "../yoctui-app" }
++yoctui-model = { version = "0.1.64", path = "../yoctui-model" }
+ ratatui.workspace = true
+ throbber-widgets-tui.workspace = true
+ tui-piechart.workspace = true
+

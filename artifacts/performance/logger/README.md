@@ -84,8 +84,10 @@ The initial idle suite measured 0.0623865% combined CPU using the documented
 10-second warmup and sixty one-second samples. The independent current-release
 gate then passed at 0.1663% combined. Both percentages are of **one logical
 CPU**, not total machine capacity. Those earlier observations are historical;
-the source-bound raw samples in `artifacts/performance/results/low-overhead/`
-now describe the final optimized candidate below.
+the original source-bound raw samples are retained in Git checkpoint
+`e7378022fa8a9369ebb959df5dfc1425ec0fd88c` under
+`artifacts/performance/results/low-overhead/`. The working-tree path now holds
+the separately measured v0.1.64 release candidate, not the v0.1.61 result below.
 
 The initial real-Poky 120-second sample failed the hard 1% ceiling at 1.0169743%
 combined. Host utilization was 99.742%; input p95 was 5.747 ms and all observed
@@ -123,6 +125,13 @@ with input p95 5.821 ms, cancellation acknowledgement 0.457 ms, fresh attach
 26.586 ms and no disconnects. Maximum client queue depth was 83/256, with no
 reliable waits, forced resynchronizations or slow-client disconnects.
 Headroom below the strict 1% ceiling remains limited; prior failures are retained.
+
+The v0.1.61 passing real-build record and manifest are retained at Git checkpoint
+`e7378022fa8a9369ebb959df5dfc1425ec0fd88c` under
+`artifacts/performance/real-poky/`. Those working-tree files were refreshed by
+a new v0.1.64 run; the measurements in this historical section are not claims
+about that newer binary. See the separate
+[v0.1.64 validation report](../../release-quality/cratesio/0.1.64-validation.md).
 
 Both final quiet-host matrices passed: log-heavy 1,201,514 ns/frame,
 large-graph 5,736,281 ns/frame and large-editor 8,685,776 ns/frame. The optimized

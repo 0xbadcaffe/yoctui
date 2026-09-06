@@ -1,0 +1,26 @@
+{
+  "schema": "yoctui.release.memcheck-evidence.v1",
+  "version": "0.1.64",
+  "source_base_revision": "e7378022fa8a9369ebb959df5dfc1425ec0fd88c",
+  "scope": "Fresh development-profile production workbench, not live-build performance evidence or publication approval",
+  "command": "./scripts/valgrind.sh",
+  "workload_frames": [16, 128],
+  "workload_binary": "target/debug/deps/workbench_profile-118809565a43d690",
+  "workload_binary_sha256": "795d0ee6b9500b74f68efbba7ca63836f155d1e16da0533a7830c6a653fa8bbe",
+  "raw_reports_suppressed": false,
+  "raw_reports": {
+    "artifacts/valgrind/baseline-16.xml": "af08932393dd42ffd013b573d5e762505ac49165a224ea3ca5755fce7e11dc92",
+    "artifacts/valgrind/report.xml": "f939d5bf3f863ebfea04d88c9bf68381531f5c1201f8831c805b0d1bc1f05041"
+  },
+  "policy_sha256": "723104cfb12737b89e0b7232d034a57968903ee2ebf470d7455e5e0b77b735c7",
+  "cargo_lock_sha256": "72af992310ceab4a96fda66c75d0bc6a8ac4c372fa3d7df91db194872c6e4447",
+  "accepted_process_lifetime_cache_bytes": 39367,
+  "accepted_process_lifetime_cache_blocks": 10,
+  "no_cache_growth": true,
+  "definitely_lost_bytes": 0,
+  "indirectly_lost_bytes": 0,
+  "still_reachable_bytes": 446628,
+  "unexpected_open_descriptors": 0,
+  "policy_tests_passed_including_negative_controls": 10,
+  "raw_artifact_policy": "Unsuppressed XML is retained locally in the ignored artifacts/valgrind directory. Later gate runs replace those local files; these hashes identify this specific pre-release run. The production harness and fail-closed policy reproduce the check."
+}

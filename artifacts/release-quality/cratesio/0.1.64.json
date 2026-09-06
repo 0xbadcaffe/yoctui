@@ -1,0 +1,50 @@
+{
+  "schema": "yoctui.release.receipt.v1",
+  "version": "0.1.64",
+  "verified_utc": "2026-09-06T19:20:28Z",
+  "publication": "DONE",
+  "registry": "crates.io",
+  "published_source_commit": "b1b62740f0992485120f2cf0b5267cd824a44418",
+  "release_tag": "v0.1.64",
+  "tag_policy": "Tag preserves the uploaded packages' .cargo_vcs_info.json commit. Final master folds in delivery receipts/status only; application sources and dependencies are unchanged.",
+  "publish_command": "cargo publish --locked -p yoctui-model -p yoctui-protocol -p yoctui-bitbake -p yoctui-app -p yoctui-ui -p yoctui",
+  "publish_exit_status": 0,
+  "publish_log_sha256": "e8afde7ac9233b73d4e68578c0d39785aeef0227a525e52bdb9118c639b88b8c",
+  "registry_verification": "Cargo confirmed every version available; fresh registry installation downloaded all six archives. SHA-256 matches each refreshed sparse-index checksum and all six entries have yanked=false. Separate REST endpoint returned HTTP 403 and is not evidence.",
+  "archive_checksums": {
+    "yoctui-model": "cacfa4173943ec1348548603f856900688c5f0a8b678eebaf02cdd5cf2138f53",
+    "yoctui-protocol": "4e0440d09dc5bbae84e00898975586050d193ec50de1df8143a8e65766baf44c",
+    "yoctui-bitbake": "c04f2e4f2b594989ec9be80261089dc35f3a09b19f9002f21f65c6d348b2f211",
+    "yoctui-app": "15cafa5e41b838262f1b8fb1f5b0e3b401aff295346151de1a0477d05cb545af",
+    "yoctui-ui": "55abf44229e3681952baa535ee4b9a09703ca97146c311bcea2eddded8924ab6",
+    "yoctui": "8cde5dda8af23e1eb436c9a90aa5e30ddc1d8a90e0ea665b4df83728c8973109"
+  },
+  "completion": {
+    "command": "./scripts/verify-completion.sh",
+    "exit_status": 0,
+    "tested_candidate_commit": "5c91f97a73d3e4587963cfd16bc78473e760a3ca",
+    "log_sha256": "b746a680c0f4e8c6cb284c0c9266c474dfe9d11438c56e43cb31e5931f756dc5",
+    "standalone_live_smoke": "explicit optional SKIP; independent required real-Poky performance evidence passed",
+    "final_memcheck_16_xml_sha256": "1c5f5673ac3200108dbf0b75db350749b2fe0cdd417ec5418e0240358b622534",
+    "final_memcheck_128_xml_sha256": "0e00b26ac8f8b831b1c34e3f0760d44bc157870bc24a63a05d7952d375253cf0"
+  },
+  "fresh_registry_install": {
+    "command": "cargo install yoctui --version 0.1.64 --locked --debug --root /tmp/yoctui-v64-registry-install.bZn2ce --target-dir target/cratesio-install",
+    "profile": "debug, private validation only",
+    "binary_sha256": "08b1eccf266b19cb7adb80747168d18f29e816d33f7d963bf82387ebae8cf87a",
+    "version_and_real_pty_startup": "PASS",
+    "log_sha256": "a398066ac600f8dc6bb547e003404a3340c7bf5cb539484eb6e4ee83253a65fb"
+  },
+  "local_install": {
+    "path": "/home/bspguy-dev/.cargo/bin/yoctui",
+    "version": "0.1.64",
+    "profile": "optimized release",
+    "command": "cargo install --frozen --path crates/yoctui-cli --force --target-dir /home/bspguy-dev/projects/yoctui/target",
+    "sha256": "8e311a902b8dd2f0b7da1a8c0ed87b6b16941c27fcdf7fbee0f065eeaa53f02d",
+    "matches_real_poky_measured_binary": true,
+    "version_and_real_pty_startup": "PASS",
+    "previous_version": "0.1.63",
+    "backup_directory": "/home/bspguy-dev/.local/state/yoctui-installs/before-0.1.64.DlM6oM",
+    "daemon_restarted": false
+  }
+}

@@ -1,16 +1,14 @@
 {
-  "source_patch": "artifacts/performance/logger/optimized-source.patch",
-  "source_patch_sha256": "57334ee65a2b40f2ebaf3762bee02224912ae031471cc0ab49419652966d48eb",
   "artifacts": {
-    "idle-attached-client.json": "91ce9ef0c7ea577e4fed43f60b958d8b2a82161576bf167b7452ca1006ebfdb8",
-    "idle-daemon.json": "a7f78f6cc3d469fa02c05fabc67f6a41c0c1eb0aa3e1219f4b431eae3a649f4f"
+    "idle-attached-client.json": "134954f334e76c9d0194772e288d6c4a3fc49c7d88d1d45e63b1eb951be9e000",
+    "idle-daemon.json": "c5a75363fd645d2e25a2700847d3b9b94da53b47a8dc12013059c2ca7c341cce"
   },
   "binary": {
-    "path": "/tmp/yoctui-m52-optimized-release",
-    "sha256": "2b7ff3659d2867e1463dc9a1f227624a879283142b4d3cbd7b6cd630e0dc6566",
-    "version": "yoctui 0.1.61"
+    "path": "/tmp/yoctui-v64-release.oOOF10/yoctui",
+    "sha256": "8e311a902b8dd2f0b7da1a8c0ed87b6b16941c27fcdf7fbee0f065eeaa53f02d",
+    "version": "yoctui 0.1.64"
   },
-  "captured_at_unix_ms": 1788704169340,
+  "captured_at_unix_ms": 1788719477669,
   "method": {
     "clock": "CLOCK_MONOTONIC",
     "cpu_source": "/proc/PID/stat fields 14+15",
@@ -28,22 +26,22 @@
   },
   "observations": {
     "attached_daemon_cpu_percent_one_logical_cpu": 0.0,
-    "combined_cpu_percent_one_logical_cpu": 0.08326174470197929,
-    "idle_client_cpu_percent_one_logical_cpu": 0.020809204351478507,
+    "combined_cpu_percent_one_logical_cpu": 0.18721054421705477,
+    "idle_client_cpu_percent_one_logical_cpu": 0.08320485382353776,
     "idle_daemon_cpu_percent_one_logical_cpu": 0.0
   },
-  "pty_bytes_drained": 19678,
-  "revision": "e3e7ecbd538c928d5d820b46ac26965026f2b064",
+  "pty_bytes_drained": 19626,
+  "revision": "e7378022fa8a9369ebb959df5dfc1425ec0fd88c",
   "schema": "yoctui.performance.low-overhead-suite.v1",
   "sources": {
-    "crates/yoctui-cli/src/main.rs": "1ef6c12bf6e4bdcbd92fb293af6c290c3e85a2e69b6eb2e8788af6ed582fa470",
+    "crates/yoctui-cli/src/main.rs": "f8ceef7365225d2f3c4ae499b072c4d0eb14b071b70b4273b1066381ceb83c27",
     "crates/yoctui-protocol/src/daemon_ipc.rs": "c2d348345f45061bbdbc5991ebcf2a4be109af425323f6e352fca5689cbfeb1a",
     "scripts/measure-low-overhead.py": "f211f06d3e2d704d0a1e12f62984ddd8a8d3889314e5453260d3232da06e2263",
     "scripts/measure-process-overhead.py": "0d6b43a7d7caf3ba5c2e690e8f462b45f0cefb400bd1b90d9649bc42b52b5c70"
   },
   "startup": {
-    "client_first_frame_ms": 13.131815008819103,
-    "daemon_socket_ready_ms": 10.207490995526314,
+    "client_first_frame_ms": 10.938498890027404,
+    "daemon_socket_ready_ms": 20.520691992715,
     "maximum_excluded_startup_ms": 5000
   },
   "thresholds": {

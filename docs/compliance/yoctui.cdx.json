@@ -3785,7 +3785,7 @@
           "name": "Jerome Froelich <jeromefroelic@hotmail.com>"
         }
       ],
-      "bom-ref": "pkg:cargo/lru@0.18.1",
+      "bom-ref": "pkg:cargo/lru@0.18.4",
       "externalReferences": [
         {
           "type": "vcs",
@@ -3793,13 +3793,13 @@
         },
         {
           "type": "distribution",
-          "url": "https://crates.io/crates/lru/0.18.1"
+          "url": "https://crates.io/crates/lru/0.18.4"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "0b6180140927ee907000b0aa540091f6ea512ead4447c92b8fc35bc72788a5a6"
+          "content": "ff9840bcc50b71349309900da0ce7279aa336ae71d73250b07998932c7d97c25"
         }
       ],
       "licenses": [
@@ -3814,9 +3814,9 @@
           "value": "registry+https://github.com/rust-lang/crates.io-index"
         }
       ],
-      "purl": "pkg:cargo/lru@0.18.1",
+      "purl": "pkg:cargo/lru@0.18.4",
       "type": "library",
-      "version": "0.18.1"
+      "version": "0.18.4"
     },
     {
       "authors": [
@@ -10342,7 +10342,7 @@
       "dependsOn": [
         "pkg:cargo/hashbrown@0.17.1"
       ],
-      "ref": "pkg:cargo/lru@0.18.1"
+      "ref": "pkg:cargo/lru@0.18.4"
     },
     {
       "dependsOn": [
@@ -10655,7 +10655,7 @@
         "pkg:cargo/hashbrown@0.17.1",
         "pkg:cargo/itertools@0.14.0",
         "pkg:cargo/kasuari@0.4.12",
-        "pkg:cargo/lru@0.18.1",
+        "pkg:cargo/lru@0.18.4",
         "pkg:cargo/palette@0.7.6",
         "pkg:cargo/serde@1.0.229",
         "pkg:cargo/strum@0.28.0",
@@ -11421,7 +11421,7 @@
     "properties": [
       {
         "name": "yoctui:cargo-lock-sha256",
-        "value": "70b2d05ada8e59cd4af31b96e22ee344d7ae42b58a75ae2d76cbaa71a8cebc69"
+        "value": "72af992310ceab4a96fda66c75d0bc6a8ac4c372fa3d7df91db194872c6e4447"
       }
     ],
     "tools": {
@@ -11434,7 +11434,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:929b9ca8-b88a-598f-af96-24d95ae6e54f",
+  "serialNumber": "urn:uuid:c2523990-f904-5c75-a150-f1db2ab20cb4",
   "specVersion": "1.5",
   "version": 1
 }

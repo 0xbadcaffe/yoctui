@@ -1124,3 +1124,11 @@ Progress: README, operator-coverage tests, package verification and requested
 local installation complete in v0.1.63. Publication is a post-gate delivery
 task, not a circular prerequisite for product completion; it remains blocked
 on the independent M52 memory-policy decision. No crates were uploaded.
+
+The user approved the reviewed bounded upstream-cache exception on 2026-09-06.
+M52 validation passed for v0.1.64, including fresh Memcheck, rendering,
+flamegraph, idle CPU and real-Poky saturation measurements. M54 publication is
+complete: full completion passed before upload, all six public crates are
+published as v0.1.64, and registry checksum/install/real-PTY verification passed.
+The optimized release is installed locally with a backup; the daemon was not
+restarted.
