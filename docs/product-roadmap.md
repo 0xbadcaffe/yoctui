@@ -1017,6 +1017,14 @@ dynamic release gate, profile, and recorded real-Poky artifact, while the
 repository completion script repeats the required quality and performance
 boundaries. M46 is complete in v0.1.51.
 
+## M52 — Yocto logs, image consoles, and udev inventory
+
+Integrate tui-logger presentation while preserving bounded typed Yocto log
+authority and navigation/correlation controls. Verify existing tui-term SSH and
+runqemu paths. Add image-owned udev rules with bounded offline preview and
+precedence/masking evidence. Dependency, visual, performance, and completion
+gates remain required.
+
 ## M51 — Workbench integration release
 
 Complete in v0.1.57: the M47–M50 feature histories coexist with completed M46

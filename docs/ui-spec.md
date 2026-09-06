@@ -4853,8 +4853,8 @@ composition comes from the exact image manifest plus authoritative bounded
 pkgdata. Filesystem composition is optional and comes only from the exact
 BitBake-reported `IMAGE_ROOTFS` for the selected image/build identity.
 
-The Images workspace has five tabs: artifacts, installed packages, filesystem,
-systemd services, and system D-Bus. `Enter` or `Right` in the filesystem and
+The Images workspace has six tabs: artifacts, installed packages, filesystem,
+systemd services, system D-Bus, and udev rules. `Enter` or `Right` in the filesystem and
 system views opens the exact reported `IMAGE_ROOTFS` in the lazy tree/preview
 browser. The browser does not boot or mount an image artifact. `Right` on a
 file focuses its preview, arrows scroll it, and `e` opens the selected file in
@@ -4892,6 +4892,14 @@ probing and exposes exact metadata or Rootfs composition as a textual fallback
 on direct terminals, SSH, tmux, no-color, reader-oriented modes, and
 TestBackend. A future preview requires a new typed raster authority and a fresh
 bounded transport/decode/dependency review.
+
+The udev tab lists `.rules` files from image-local `usr/lib/udev/rules.d`,
+`usr/local/lib/udev/rules.d`, legacy `lib/udev/rules.d`, `run/udev/rules.d`,
+and `etc/udev/rules.d`. Rules are ordered by basename; same-name administrative
+and runtime overrides and `/dev/null` masks are explicit. All discovered files
+remain inspectable, including overridden rules. Preview is bounded and reports
+truncation. The view never executes rules, triggers udev, or claims live device
+state. Missing/cleaned IMAGE_ROOTFS is unavailable, and scan limits are partial.
 
 ### First-class terminal sessions
 

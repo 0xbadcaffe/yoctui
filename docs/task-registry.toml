@@ -3,6 +3,50 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "IMAGE-UDEV-001"
+milestone = "M52"
+title = "List image-owned udev rules with bounded offline inspection"
+status = "IN_PROGRESS"
+priority = 1000
+required = true
+depends_on = ["WORKBENCH-INTEGRATION-001"]
+verify = ["cargo test -p yoctui-model udev", "cargo test -p yoctui-bitbake udev", "cargo test -p yoctui-ui udev", "cargo test -p yoctui-app udev", "./scripts/check-docs.sh"]
+notes = "Add sixth Images tab for exact IMAGE_ROOTFS udev rules. Scan vendor/runtime/admin rules.d directories within existing bounds, retain logical paths and masked/overridden evidence; never execute rules or inspect host rules. Cover missing sources, symlink safety, precedence, preview, bounded navigation and narrow rendering; update UI/architecture/status."
+
+[[task]]
+id = "CONSOLE-TERM-002"
+milestone = "M52"
+title = "Verify SSH and runqemu use the admitted tui-term terminal path"
+status = "NOT_STARTED"
+priority = 990
+required = true
+depends_on = ["IMAGE-UDEV-001"]
+verify = ["cargo test --workspace image_console", "cargo test -p yoctui --test daemon_pty_runtime", "./scripts/test-terminal.sh"]
+notes = "Close gaps in existing typed SSH/QEMU launch and tui-term rendering paths. Preserve daemon ownership, host-key checking, writer leases, resize, input and reconnect; add route/renderer regressions and user documentation."
+
+[[task]]
+id = "YOCTO-LOGGER-ADAPTER-001"
+milestone = "M52"
+title = "Integrate tui-logger presentation with authoritative Yocto log records"
+status = "NOT_STARTED"
+priority = 980
+required = true
+depends_on = ["CONSOLE-TERM-002"]
+verify = ["cargo test --workspace log", "./scripts/verify-widget-dependencies.sh", "./scripts/check-docs.sh"]
+notes = "Reevaluate tui-logger by explicit user request. Integrate Logs and embedded Yocto output presentation without replacing bounded authoritative records, correlation, filters, search, bookmarks, export or failure retention. Do not route domain logs through global tracing. Review API/license/features/MSRV/dependency closure, retain MIT notices and refresh SBOM. Document necessary adaptation and prove isolation and rendering cost."
+
+[[task]]
+id = "LOG-CONSOLE-IMAGE-001"
+milestone = "M52"
+title = "Complete Yocto log widget console and udev integration"
+status = "NOT_STARTED"
+priority = 970
+required = true
+depends_on = ["IMAGE-UDEV-001", "CONSOLE-TERM-002", "YOCTO-LOGGER-ADAPTER-001"]
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-performance.sh"]
+notes = "Review production visual fixtures, bump version, refresh affected evidence under repository policy, run full completion on a clean committed checkout. Never claim fixture results as live SSH/QEMU/Yocto execution."
+
+[[task]]
 id = "WORKBENCH-INTEGRATION-001"
 milestone = "M51"
 title = "Integrate kernel firmware rootfs and Overview with the performance release"

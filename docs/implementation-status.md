@@ -11,6 +11,10 @@ Status values:
 
 ## Current phase
 
+M52 is IN_PROGRESS: image-owned udev rules, verification of existing tui-term
+SSH/runqemu consoles, and tui-logger presentation integration. IMAGE-UDEV-001
+is the first active task. These requested additions are not yet complete.
+
 M51 integration is complete in v0.1.57. Kernel (M47), firmware (M48), offline
 rootfs exploration (M49), and Overview Insights (M50) coexist with the completed
 M46 performance implementation. Navigator identities and mouse effects are

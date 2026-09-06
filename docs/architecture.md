@@ -611,7 +611,8 @@ domain identity, feed Errors, or satisfy task/job correlation.
 
 The interactive CLI installs `internal_tracing::InternalTracingLayer` alongside
 the existing stderr formatting layer and the configured `EnvFilter`; the
-rejected `tui-logger` candidate does not enter the dependency graph. The layer
+historical `tui-logger` rejection is being reevaluated by M52 for domain-log
+presentation, not replacement tracing or retention authority. The layer
 uses `try_send` into a 1,024-record bounded standard-library channel, caps field
 formatting at 64 KiB on UTF-8 boundaries, and atomically counts full/disconnected
 loss without blocking a tracing call. The TUI loop drains at most 256 records
@@ -3289,6 +3290,9 @@ manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;
 `yoctui-app` maps correlated responses; model reducers normalize, select, group,
 and drill down; UI renders pie/bar/table/tree projections without filesystem or
 BitBake parsing.
+
+M52 extends the offline inventory with bounded image-local udev rules and
+explicit override/masking evidence, without evaluating or executing rules.
 
 Client-local rootfs acquisition also returns the canonical contained
 `IMAGE_ROOTFS` directory and a typed offline system inventory. The BitBake
