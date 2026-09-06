@@ -36,7 +36,7 @@ class PerformanceDocumentationTests(unittest.TestCase):
         self.assertNotIn("100 ms minimum normal frame", self.performance)
         self.assertNotIn("200\nms (5 Hz)", self.performance)
         self.assertIn("250 ms normal frame interval", self.performance)
-        self.assertIn("50 ms supervisor-service bound", self.performance)
+        self.assertIn("35 ms supervisor-service bound", self.performance)
 
     def test_backpressure_and_tuning_preserve_correctness_and_authority(self) -> None:
         for required in (

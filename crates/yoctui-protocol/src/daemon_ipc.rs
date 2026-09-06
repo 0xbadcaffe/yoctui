@@ -6,7 +6,7 @@ use std::{
     io::{self, Read, Write},
     os::unix::{
         fs::{DirBuilderExt, FileTypeExt, MetadataExt, PermissionsExt},
-        io::AsRawFd,
+        io::{AsRawFd, RawFd},
         net::{UnixListener, UnixStream},
     },
     path::{Path, PathBuf},
@@ -164,6 +164,17 @@ impl DaemonListener {
         connections: &[&DaemonConnection],
         timeout: Duration,
     ) -> Result<bool, IpcError> {
+        self.wait_for_activity_with_additional_fd(connections, None, timeout)
+    }
+
+    /// Also wake for one process-local readiness descriptor, such as a
+    /// coalesced supervisor notification pipe.
+    pub fn wait_for_activity_with_additional_fd(
+        &self,
+        connections: &[&DaemonConnection],
+        additional_fd: Option<RawFd>,
+        timeout: Duration,
+    ) -> Result<bool, IpcError> {
         if connections.iter().any(|connection| {
             connection
                 .expected_frame_len
@@ -173,7 +184,7 @@ impl DaemonListener {
             return Ok(true);
         }
 
-        let mut descriptors = Vec::with_capacity(connections.len() + 1);
+        let mut descriptors = Vec::with_capacity(connections.len() + 2);
         descriptors.push(libc::pollfd {
             fd: self.listener.as_raw_fd(),
             events: libc::POLLIN,
@@ -184,6 +195,13 @@ impl DaemonListener {
             events: libc::POLLIN,
             revents: 0,
         }));
+        if let Some(fd) = additional_fd {
+            descriptors.push(libc::pollfd {
+                fd,
+                events: libc::POLLIN,
+                revents: 0,
+            });
+        }
         let timeout_ms = if timeout.is_zero() {
             0
         } else {
@@ -1006,6 +1024,33 @@ mod tests {
         let _server = listener.accept(Duration::ZERO).unwrap();
 
         drop(client.join().unwrap());
+        drop(listener);
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn daemon_listener_wait_wakes_for_additional_readiness_fd() {
+        let paths = test_paths("activity-additional-fd");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let (mut writer, reader) = UnixStream::pair().unwrap();
+        let notifier = thread::spawn(move || {
+            thread::sleep(Duration::from_millis(20));
+            writer.write_all(&[1]).unwrap();
+        });
+        let started = Instant::now();
+
+        assert!(
+            listener
+                .wait_for_activity_with_additional_fd(
+                    &[],
+                    Some(reader.as_raw_fd()),
+                    Duration::from_secs(1),
+                )
+                .unwrap()
+        );
+        assert!(started.elapsed() < Duration::from_millis(500));
+
+        notifier.join().unwrap();
         drop(listener);
         cleanup(&paths);
     }

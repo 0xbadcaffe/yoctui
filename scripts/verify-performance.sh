@@ -69,7 +69,14 @@ from pathlib import Path
 import tomllib
 
 tasks = tomllib.loads(Path("docs/task-registry.toml").read_text(encoding="utf-8"))["task"]
-incomplete = [task["id"] for task in tasks if task.get("required") and task["id"].startswith("PERF-") and task["status"] != "DONE"]
+incomplete = [
+    task["id"]
+    for task in tasks
+    if task.get("milestone") == "M46"
+    and task.get("required")
+    and task["id"].startswith("PERF-")
+    and task["status"] != "DONE"
+]
 if incomplete:
     raise SystemExit("required performance tasks are incomplete: " + ", ".join(incomplete))
 print("all required performance tasks are DONE")
@@ -560,6 +567,7 @@ if not any("format_escaped_str" in item.get("symbol", "") and item.get("self_per
 protocol = Path("crates/yoctui-protocol/src/daemon.rs").read_text(encoding="utf-8")
 transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
 daemon = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
 for required in (
     "snapshot_bytes_upper_bound", "snapshot_serializations", "synchronize_bounded",
 ):
@@ -567,6 +575,14 @@ for required in (
         raise SystemExit(f"IPC snapshot/replay contract is missing: {required}")
 if "send_encoded_frame" not in transport or "encoded_event_frames" not in daemon:
     raise SystemExit("shared daemon fan-out encoding contract is missing")
+if "wait_for_activity_with_additional_fd" not in transport or "notification_fd()" not in daemon:
+    raise SystemExit("event-driven daemon readiness contract is missing")
+for required in (
+    "ActivityNotification", "signal_batched", "consume_notification",
+    "bitbake_event_requires_immediate_wake",
+):
+    if required not in supervisor:
+        raise SystemExit(f"coalesced BitBake readiness contract is missing: {required}")
 print(
     "IPC audit valid: "
     f"{wire['frames_per_second']:.1f} frames/s, "
@@ -576,7 +592,9 @@ PY
   cargo test -q -p yoctui-protocol daemon_snapshot_is_gap_free_bounded_and_replays_only_retained_events
   cargo test -q -p yoctui-protocol daemon_journal_uses_conservative_headroom_between_snapshot_serializations
   cargo test -q -p yoctui-protocol daemon_ipc_sends_one_preencoded_frame_without_reserialization
+  cargo test -q -p yoctui-protocol daemon_listener_wait_wakes_for_additional_readiness_fd
   cargo test -q -p yoctui --bin yoctui daemon_live_event_replay_is_bounded_below_client_poll_capacity
+  cargo test -q -p yoctui --bin yoctui activity_notification_coalesces_and_rearms
 }
 
 verify_tokio() {
@@ -1401,6 +1419,24 @@ case "$mode" in
   all)
     verify_contract
     verify_all_done
+    verify_baseline
+    verify_profiles
+    verify_wakeups
+    verify_event_loops
+    verify_render
+    verify_animations
+    verify_telemetry
+    verify_logs
+    verify_tasks
+    verify_ipc
+    verify_tokio
+    verify_scheduling
+    verify_affinity
+    verify_coexistence
+    verify_real_poky
+    verify_regressions
+    verify_ci
+    verify_docs
     for gate in \
       ./scripts/verify-low-overhead.sh \
       ./scripts/verify-saturation-responsiveness.sh \

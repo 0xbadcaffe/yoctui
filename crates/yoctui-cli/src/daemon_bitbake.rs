@@ -1,11 +1,16 @@
 use std::{
     collections::{BTreeMap, HashMap, VecDeque},
+    io::{self, Read, Write},
+    os::unix::{
+        io::{AsRawFd, RawFd},
+        net::UnixStream,
+    },
     path::PathBuf,
     sync::{
         Arc,
-        atomic::{AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
     },
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use tokio::sync::mpsc;
@@ -16,6 +21,7 @@ use yoctui_protocol::daemon::JobId;
 const DEFAULT_CANCELLATION_TERMINAL_TIMEOUT: Duration = Duration::from_secs(3);
 const BITBAKE_RELIABLE_EVENT_CAPACITY: usize = 512;
 const BITBAKE_COSMETIC_EVENT_CAPACITY: usize = 512;
+const COSMETIC_ACTIVITY_MIN_INTERVAL: Duration = Duration::from_millis(30);
 
 #[derive(Debug, Clone)]
 pub enum DaemonBitBakeEvent {
@@ -50,6 +56,90 @@ struct DaemonBitBakePressureShared {
     maximum_queue_depth: AtomicUsize,
 }
 
+#[derive(Debug, Clone)]
+struct ActivityNotificationSender {
+    writer: Arc<UnixStream>,
+    pending: Arc<AtomicBool>,
+    epoch: Arc<Instant>,
+    last_cosmetic_signal_micros: Arc<AtomicU64>,
+}
+
+impl ActivityNotificationSender {
+    fn signal(&self) {
+        if self.pending.swap(true, Ordering::AcqRel) {
+            return;
+        }
+        let mut writer = self.writer.as_ref();
+        if let Err(error) = writer.write(&[1])
+            && error.kind() != io::ErrorKind::WouldBlock
+        {
+            self.pending.store(false, Ordering::Release);
+        }
+    }
+
+    fn signal_batched(&self) {
+        let elapsed = self.epoch.elapsed().as_micros().min(u64::MAX as u128) as u64;
+        let minimum = COSMETIC_ACTIVITY_MIN_INTERVAL
+            .as_micros()
+            .min(u64::MAX as u128) as u64;
+        let mut previous = self.last_cosmetic_signal_micros.load(Ordering::Acquire);
+        loop {
+            if previous != u64::MAX && elapsed.saturating_sub(previous) < minimum {
+                return;
+            }
+            match self.last_cosmetic_signal_micros.compare_exchange_weak(
+                previous,
+                elapsed,
+                Ordering::AcqRel,
+                Ordering::Acquire,
+            ) {
+                Ok(_) => break,
+                Err(current) => previous = current,
+            }
+        }
+        self.signal();
+    }
+}
+
+#[derive(Debug)]
+struct ActivityNotification {
+    reader: UnixStream,
+    sender: ActivityNotificationSender,
+}
+
+impl ActivityNotification {
+    fn new() -> io::Result<Self> {
+        let (reader, writer) = UnixStream::pair()?;
+        reader.set_nonblocking(true)?;
+        writer.set_nonblocking(true)?;
+        Ok(Self {
+            reader,
+            sender: ActivityNotificationSender {
+                writer: Arc::new(writer),
+                pending: Arc::new(AtomicBool::new(false)),
+                epoch: Arc::new(Instant::now()),
+                last_cosmetic_signal_micros: Arc::new(AtomicU64::new(u64::MAX)),
+            },
+        })
+    }
+
+    fn raw_fd(&self) -> RawFd {
+        self.reader.as_raw_fd()
+    }
+
+    fn consume(&self) {
+        self.sender.pending.store(false, Ordering::Release);
+        let mut reader = &self.reader;
+        let mut bytes = [0_u8; 64];
+        loop {
+            match reader.read(&mut bytes) {
+                Ok(0) | Err(_) => break,
+                Ok(_) => {}
+            }
+        }
+    }
+}
+
 pub struct DaemonBitBakeSupervisor {
     next_job_id: u64,
     active: HashMap<JobId, mpsc::UnboundedSender<()>>,
@@ -64,6 +154,7 @@ pub struct DaemonBitBakeSupervisor {
     compatibility: Option<DaemonCompatibilitySnapshot>,
     bridge_environment: Option<BTreeMap<String, String>>,
     cancellation_terminal_timeout: Duration,
+    activity: Option<ActivityNotification>,
 }
 
 impl Default for DaemonBitBakeSupervisor {
@@ -85,11 +176,22 @@ impl Default for DaemonBitBakeSupervisor {
             compatibility: None,
             bridge_environment: None,
             cancellation_terminal_timeout: DEFAULT_CANCELLATION_TERMINAL_TIMEOUT,
+            activity: ActivityNotification::new().ok(),
         }
     }
 }
 
 impl DaemonBitBakeSupervisor {
+    pub fn notification_fd(&self) -> Option<RawFd> {
+        self.activity.as_ref().map(ActivityNotification::raw_fd)
+    }
+
+    pub fn consume_notification(&self) {
+        if let Some(activity) = &self.activity {
+            activity.consume();
+        }
+    }
+
     #[cfg(test)]
     fn with_bridge_environment(mut self, environment: BTreeMap<String, String>) -> Self {
         self.bridge_environment = Some(environment);
@@ -141,6 +243,10 @@ impl DaemonBitBakeSupervisor {
         let cosmetic_tx = self.cosmetic_tx.clone();
         let pressure = Arc::clone(&self.pressure);
         let cancellation_terminal_tx = self.cancellation_terminal_tx.clone();
+        let activity = self
+            .activity
+            .as_ref()
+            .map(|notification| notification.sender.clone());
         let bridge_environment = self.bridge_environment.clone();
         let cancellation_terminal_timeout = self.cancellation_terminal_timeout;
         tokio::spawn(async move {
@@ -159,6 +265,7 @@ impl DaemonBitBakeSupervisor {
                         &reliable_tx,
                         &cosmetic_tx,
                         &pressure,
+                        activity.as_ref(),
                         DaemonBitBakeEvent::Failed {
                             job_id,
                             message: format!("BitBake bridge could not be started: {error}"),
@@ -193,6 +300,7 @@ impl DaemonBitBakeSupervisor {
                         &reliable_tx,
                         &cosmetic_tx,
                         &pressure,
+                        activity.as_ref(),
                         DaemonBitBakeEvent::Backend {
                             job_id,
                             event: Box::new(BackendEvent::Workspace(workspace)),
@@ -205,6 +313,7 @@ impl DaemonBitBakeSupervisor {
                         &reliable_tx,
                         &cosmetic_tx,
                         &pressure,
+                        activity.as_ref(),
                         DaemonBitBakeEvent::Failed {
                             job_id,
                             message: format!("BitBake workspace could not be inspected: {error}"),
@@ -220,6 +329,7 @@ impl DaemonBitBakeSupervisor {
                     &reliable_tx,
                     &cosmetic_tx,
                     &pressure,
+                    activity.as_ref(),
                     DaemonBitBakeEvent::Failed {
                         job_id,
                         message: format!("BitBake build could not be started: {error}"),
@@ -242,13 +352,16 @@ impl DaemonBitBakeSupervisor {
                     // the authority that guarantees command priority.
                     biased;
                     _ = &mut cancellation_deadline, if cancellation_deadline_armed => {
-                        let _ = cancellation_terminal_tx.send(DaemonBitBakeEvent::Backend {
+                        let sent = cancellation_terminal_tx.send(DaemonBitBakeEvent::Backend {
                             job_id,
                             event: Box::new(BackendEvent::BuildCompleted {
                                 success: false,
                                 exit_code: Some(130),
                             }),
-                        }).await;
+                        }).await.is_ok();
+                        if sent && let Some(activity) = &activity {
+                            activity.signal();
+                        }
                         // Terminal publication is a correctness boundary and
                         // must not wait behind release-specific Tinfoil/server
                         // cleanup on a saturated host.
@@ -266,10 +379,13 @@ impl DaemonBitBakeSupervisor {
                             if let Err(error) = backend.cancel_build().await {
                                 let _ = backend.terminate_server().await;
                                 backend_closed = true;
-                                let _ = cancellation_terminal_tx.send(DaemonBitBakeEvent::Failed {
+                                let sent = cancellation_terminal_tx.send(DaemonBitBakeEvent::Failed {
                                     job_id,
                                     message: format!("BitBake cancellation failed: {error}"),
-                                }).await;
+                                }).await.is_ok();
+                                if sent && let Some(activity) = &activity {
+                                    activity.signal();
+                                }
                                 break;
                             }
                             cancellation_deadline
@@ -293,12 +409,16 @@ impl DaemonBitBakeSupervisor {
                                     // request; try_event discards those stale
                                     // records so they cannot resurrect the
                                     // cancelled job.
-                                    let _ = cancellation_terminal_tx.send(event).await;
+                                    let sent = cancellation_terminal_tx.send(event).await.is_ok();
+                                    if sent && let Some(activity) = &activity {
+                                        activity.signal();
+                                    }
                                 } else {
                                     send_bitbake_event(
                                         &reliable_tx,
                                         &cosmetic_tx,
                                         &pressure,
+                                        activity.as_ref(),
                                         event,
                                     )
                                     .await;
@@ -328,6 +448,7 @@ impl DaemonBitBakeSupervisor {
                                 &reliable_tx,
                                 &cosmetic_tx,
                                 &pressure,
+                                activity.as_ref(),
                                 DaemonBitBakeEvent::Backend {
                                     job_id,
                                     event: Box::new(event),
@@ -340,6 +461,7 @@ impl DaemonBitBakeSupervisor {
                                 &reliable_tx,
                                 &cosmetic_tx,
                                 &pressure,
+                                activity.as_ref(),
                                 DaemonBitBakeEvent::Failed { job_id, message: error.to_string() },
                             )
                             .await;
@@ -436,6 +558,7 @@ async fn send_bitbake_event(
     reliable: &mpsc::Sender<DaemonBitBakeEvent>,
     cosmetic: &mpsc::Sender<DaemonBitBakeEvent>,
     pressure: &DaemonBitBakePressureShared,
+    activity: Option<&ActivityNotificationSender>,
     event: DaemonBitBakeEvent,
 ) {
     if bitbake_event_is_cosmetic(&event) {
@@ -443,6 +566,9 @@ async fn send_bitbake_event(
             Ok(()) => {
                 pressure.cosmetic_enqueued.fetch_add(1, Ordering::Relaxed);
                 record_queue_depth(reliable, cosmetic, pressure);
+                if let Some(activity) = activity {
+                    activity.signal_batched();
+                }
             }
             Err(mpsc::error::TrySendError::Full(_)) => {
                 pressure.cosmetic_dropped.fetch_add(1, Ordering::Relaxed);
@@ -453,9 +579,17 @@ async fn send_bitbake_event(
         if reliable.capacity() == 0 {
             pressure.reliable_waits.fetch_add(1, Ordering::Relaxed);
         }
+        let immediate = bitbake_event_requires_immediate_wake(&event);
         if reliable.send(event).await.is_ok() {
             pressure.reliable_enqueued.fetch_add(1, Ordering::Relaxed);
             record_queue_depth(reliable, cosmetic, pressure);
+            if let Some(activity) = activity {
+                if immediate {
+                    activity.signal();
+                } else {
+                    activity.signal_batched();
+                }
+            }
         }
     }
 }
@@ -487,6 +621,28 @@ fn bitbake_event_is_cosmetic(event: &DaemonBitBakeEvent) -> bool {
                     | BackendEvent::Ignored
             )
     )
+}
+
+fn bitbake_event_requires_immediate_wake(event: &DaemonBitBakeEvent) -> bool {
+    matches!(event, DaemonBitBakeEvent::Failed { .. })
+        || matches!(
+            event,
+            DaemonBitBakeEvent::Backend { event, .. }
+                if matches!(
+                    event.as_ref(),
+                    BackendEvent::DependencyGraphFailed { .. }
+                        | BackendEvent::SignatureDumpFailed { .. }
+                        | BackendEvent::SignatureComparisonFailed { .. }
+                        | BackendEvent::PackageInventoryFailed { .. }
+                        | BackendEvent::PackageDetailFailed { .. }
+                        | BackendEvent::ImageArtifactsFailed { .. }
+                        | BackendEvent::RootfsCompositionFailed { .. }
+                        | BackendEvent::TaskCompleted { success: false, .. }
+                        | BackendEvent::BuildCompleted { .. }
+                        | BackendEvent::CommandFailed { .. }
+                        | BackendEvent::Disconnected
+                )
+        )
 }
 
 fn bitbake_event_is_diagnostic(event: &DaemonBitBakeEvent) -> bool {
@@ -542,6 +698,88 @@ mod tests {
         }
     }
 
+    #[test]
+    fn activity_notification_coalesces_and_rearms() {
+        let notification = ActivityNotification::new().unwrap();
+        let ready = |fd| {
+            let mut descriptor = libc::pollfd {
+                fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+            // SAFETY: the descriptor is initialized and borrowed only for
+            // this zero-timeout readiness check.
+            unsafe { libc::poll(&mut descriptor, 1, 0) > 0 }
+        };
+
+        notification.sender.signal();
+        notification.sender.signal();
+        assert!(ready(notification.raw_fd()));
+        notification.consume();
+        assert!(!ready(notification.raw_fd()));
+
+        notification.sender.signal();
+        assert!(ready(notification.raw_fd()));
+    }
+
+    #[test]
+    fn batched_activity_notification_is_rate_limited() {
+        let notification = ActivityNotification::new().unwrap();
+        let ready = |fd| {
+            let mut descriptor = libc::pollfd {
+                fd,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+            // SAFETY: the descriptor is initialized and borrowed only for
+            // this zero-timeout readiness check.
+            unsafe { libc::poll(&mut descriptor, 1, 0) > 0 }
+        };
+
+        notification.sender.signal_batched();
+        assert!(ready(notification.raw_fd()));
+        notification.consume();
+        notification.sender.signal_batched();
+        assert!(!ready(notification.raw_fd()));
+
+        std::thread::sleep(COSMETIC_ACTIVITY_MIN_INTERVAL + Duration::from_millis(5));
+        notification.sender.signal_batched();
+        assert!(ready(notification.raw_fd()));
+    }
+
+    #[test]
+    fn only_correctness_boundaries_require_immediate_wake() {
+        assert!(!bitbake_event_requires_immediate_wake(&log_event(
+            yoctui_model::Severity::Warning,
+            "retained but batchable warning",
+        )));
+        assert!(bitbake_event_requires_immediate_wake(
+            &DaemonBitBakeEvent::Failed {
+                job_id: JobId(1),
+                message: "bridge failed".into(),
+            }
+        ));
+        assert!(bitbake_event_requires_immediate_wake(
+            &DaemonBitBakeEvent::Backend {
+                job_id: JobId(1),
+                event: Box::new(BackendEvent::TaskCompleted {
+                    recipe: "busybox".into(),
+                    task: "do_compile".into(),
+                    success: false,
+                }),
+            }
+        ));
+        assert!(bitbake_event_requires_immediate_wake(
+            &DaemonBitBakeEvent::Backend {
+                job_id: JobId(1),
+                event: Box::new(BackendEvent::BuildCompleted {
+                    success: true,
+                    exit_code: Some(0),
+                }),
+            }
+        ));
+    }
+
     #[tokio::test]
     async fn bounded_priority_ingress_drops_only_cosmetic_events() {
         let (reliable_tx, mut reliable_rx) = mpsc::channel(2);
@@ -553,6 +791,7 @@ mod tests {
                 &reliable_tx,
                 &cosmetic_tx,
                 &pressure,
+                None,
                 log_event(yoctui_model::Severity::Info, message),
             )
             .await;
@@ -561,6 +800,7 @@ mod tests {
             &reliable_tx,
             &cosmetic_tx,
             &pressure,
+            None,
             log_event(yoctui_model::Severity::Warning, "warning-retained"),
         )
         .await;
@@ -568,6 +808,7 @@ mod tests {
             &reliable_tx,
             &cosmetic_tx,
             &pressure,
+            None,
             DaemonBitBakeEvent::Backend {
                 job_id: JobId(1),
                 event: Box::new(BackendEvent::BuildCompleted {

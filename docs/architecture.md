@@ -3724,10 +3724,16 @@ attached Unix stream together. Complete frames already buffered in a
 `DaemonConnection` count as ready; new connections, client commands, hangups,
 and errors wake the same call. Idle attachment no longer selects an active-work
 cadence. The daemon wakes at most on its 100 ms idle maintenance bound when
-every socket is quiet, while daemon-owned active jobs use a 50 ms bounded
-supervisor-service slice. Socket readiness still wakes immediately, and the
-bound remains inside the 100 ms event/command latency contract without adding
-a thread, channel, snapshot, or state authority.
+every socket is quiet, while daemon-owned active jobs use a 35 ms bounded
+supervisor-service slice. The BitBake supervisor's bounded channels share a
+coalesced nonblocking Unix readiness notification with this same wait. A
+successful queue transition signals once until the daemon consumes and rearms
+the descriptor. Failures, disconnects, cancellation, and terminal outcomes wake
+immediately. Retained nonterminal transitions and cosmetic log/progress updates
+share a 30 ms minimum notification interval; retention and ordering still use
+their distinct reliable/cosmetic channel rules. This avoids a polling thread,
+one wakeup per retained event, and producer-driven client starvation. Socket
+readiness still wakes immediately.
 
 The measurement driver composes the shipped release daemon and `attach` client
 inside isolated XDG directories and a real fixed 160x50 PTY. An external
@@ -3735,7 +3741,7 @@ sampler reads Linux process accounting once per second after warmup; no
 instrumentation executes inside the measured processes. The retained
 release-profile evidence contains exact PID start identities and sixty raw
 samples per scenario. Its 10% trimmed means are 0.0000% for the idle daemon,
-0.0624% for the client, and 0.1456% combined of one logical CPU. The gate
+0.0208% for the client, and 0.1041% combined of one logical CPU. The gate
 recalculates those values rather than trusting stored summaries, then repeats
 the same offline scenario against the available release executable.
 
@@ -3758,10 +3764,12 @@ exercise cancellation and backend EOF. Its atomic JSON report is generator
 evidence, never real-BitBake evidence.
 
 Progress in that sentinel tail is measurement-only cosmetic evidence and may
-be absent after bounded coalescing. Warning, error, queued/started lifecycle,
-failure, cancellation, disconnect, and terminal outcomes are correctness
-sentinels and remain mandatory. The verifier encodes this distinction directly
-instead of depending on whether a particular host happened to avoid pressure.
+be absent after bounded coalescing. Queued/started lifecycle transitions are
+important and measured separately, but a later failure may supersede them in a
+bounded snapshot. Warning, error, failure, cancellation, disconnect, and
+terminal outcomes are correctness sentinels and remain mandatory. The verifier
+encodes this distinction directly instead of depending on whether a particular
+host happened to avoid pressure.
 
 The production observer does not inject daemon state. It starts an isolated
 daemon, submits a normal typed `StartBuild`, and observes the existing

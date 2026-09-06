@@ -7258,7 +7258,7 @@ priority = 812
 required = true
 depends_on = ["PERF-IPC-LATENCY-001", "PERF-EVENT-FLOOD-001"]
 verify = ["./scripts/verify-ipc-continuity.sh"]
-notes = "In v0.1.45 the network-free aggregate gate independently validates hashed retained evidence and reruns the production-path 4,000-event/s flood. All seven critical sentinels remain strictly ordered, the healthy client has zero forced resynchronizations, one non-reader is isolated, daemon/backend continuity holds, and acknowledged detach plus fresh reconnect pass under 99.26% host CPU. The latency observer now retains terminal job states received while draining pipelined command acknowledgements, removing a test-harness race without weakening measured acknowledgement thresholds."
+notes = "In v0.1.45 the network-free aggregate gate independently validates hashed retained evidence and reruns the production-path 4,000-event/s flood. All correctness-critical sentinels remain strictly ordered, the healthy client has zero forced resynchronizations, one non-reader is isolated, daemon/backend continuity holds, and acknowledged detach plus fresh reconnect pass under 99.26% host CPU. The latency observer now retains terminal job states received while draining pipelined command acknowledgements, removing a test-harness race without weakening measured acknowledgement thresholds."
 
 [[task]]
 id = "PERF-MEMORY-GATE-001"
@@ -7269,7 +7269,7 @@ priority = 813
 required = true
 depends_on = ["PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-BACKPRESSURE-001"]
 verify = ["./scripts/verify-bounded-memory.sh"]
-notes = "In v0.1.46 the release endurance gate retained 1,800 one-second post-warmup samples during a 4,000-event/s production-path flood. Daemon/client RSS grew only 1,351,680/110,592 bytes, both final 20-minute slopes were 0 bytes/minute, and threads stayed 3/1. Strict critical retention, event order, and continuity pass; the default network-free gate also reruns a one-minute fixture and focused log/task/telemetry/PTY/protocol bound tests. Harness sequence and RSS observations are themselves bounded."
+notes = "Refreshed in v0.1.51, the release endurance gate retained 1,800 one-second post-warmup samples during a 4,000-event/s production-path flood. Daemon/client RSS grew only 1,318,912/262,144 bytes, final 20-minute slopes were 0/1,142 bytes per minute, and threads stayed 3/1. Strict critical retention, event order, and continuity pass; superseded queued/started transitions remain separately observable rather than being misclassified as never-droppable. The default network-free gate also reruns a one-minute fixture and focused bound tests."
 
 [[task]]
 id = "PERF-REAL-POKY-001"
@@ -7280,7 +7280,7 @@ priority = 814
 required = true
 depends_on = ["PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001"]
 verify = ["./scripts/verify-performance.sh --real-poky-evidence"]
-notes = "In v0.1.47 an isolated production daemon and 160x50 client ran a daemon-owned Poky 6.0.2 linux-yocto do_compile for 120 sustained seconds at 99.6646% host CPU. The release binary measured 0.3998% daemon, 0.5439% client, and 0.9662% combined CPU of one logical CPU; input p95 was 5.3843 ms, cancellation acknowledgement 2.9003 ms, and fresh attach 57.5854 ms. Queue depth peaked at 28/256 with zero backend disconnects, forced resyncs, reliable waits, or cosmetic drops. Exact raw samples, repository/diff/process/binary/source hashes, adaptive 1 Hz saturation rendering, and a fixture-rejecting offline verifier are retained."
+notes = "Refreshed in v0.1.51, an isolated production daemon and 160x50 client ran a daemon-owned Poky 6.0.2 linux-yocto do_compile for 120 sustained seconds at 99.6836% host CPU. The release binary measured 0.4297% daemon, 0.4496% client, and 0.9207% combined CPU of one logical CPU; input p95 was 5.4191 ms, cancellation acknowledgement 0.3061 ms, and fresh attach 35.0212 ms. Queue depth peaked at 31/256 with zero backend disconnects, forced resyncs, reliable waits, or cosmetic drops. Exact raw samples, repository/diff/process/binary/source hashes, adaptive 1 Hz saturation rendering, and a fixture-rejecting offline verifier are retained."
 
 [[task]]
 id = "PERF-REGRESSION-001"
@@ -7302,7 +7302,7 @@ priority = 816
 required = true
 depends_on = ["PERF-REGRESSION-001"]
 verify = ["./scripts/verify-performance.sh --ci"]
-notes = "In v0.1.49 push/PR CI runs a bounded fast gate covering the idle loop, dirty-render scheduler, log/task/job coalescing, all-affinity CPU saturation, and production IPC backpressure. Weekly/manual CI validates retained profiles/real-Poky evidence, repeats the 60-second release CPU gate, and records a fresh 30-minute memory endurance run. An explicitly enabled self-hosted Poky runner captures a fresh 120-second real kernel compile. All three performance jobs upload diagnostics with if: always(), and an offline contract test verifies coverage and separation. The dynamic flood gate treats progress as explicitly coalescible while retaining failures, terminals, warnings, errors, and lifecycle transitions."
+notes = "In v0.1.49 push/PR CI runs a bounded fast gate covering the idle loop, dirty-render scheduler, log/task/job coalescing, all-affinity CPU saturation, and production IPC backpressure. Weekly/manual CI validates retained profiles/real-Poky evidence, repeats the 60-second release CPU gate, and records a fresh 30-minute memory endurance run. An explicitly enabled self-hosted Poky runner captures a fresh 120-second real kernel compile. All three performance jobs upload diagnostics with if: always(), and an offline contract test verifies coverage and separation. The dynamic flood gate treats progress as coalescible, queued/started as important and supersedable, and failures, terminals, warnings, and errors as mandatory."
 
 [[task]]
 id = "PERF-DOC-001"
@@ -7319,9 +7319,9 @@ notes = "In v0.1.50 the normative performance guide and architecture/UI specific
 id = "PERF-001"
 milestone = "M46"
 title = "Complete low-overhead build-saturation responsiveness"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 818
 required = true
 depends_on = ["PERF-SPEC-001", "PERF-BASELINE-001", "PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001", "PERF-EVENTLOOP-001", "PERF-RENDER-001", "PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001", "PERF-TOKIO-001", "PERF-SCHED-001", "PERF-CPU-AFFINITY-001", "PERF-BITBAKE-COEXIST-001", "PERF-INPUT-LATENCY-001", "PERF-IPC-LATENCY-001", "PERF-SATURATION-HARNESS-001", "PERF-EVENT-FLOOD-001", "PERF-REAL-POKY-001", "PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001", "PERF-REGRESSION-001", "PERF-CI-001", "PERF-DOC-001"]
 verify = ["./scripts/verify-performance.sh", "./scripts/verify-completion.sh"]
-notes = "Parent gate requires every required M46 child, the one-percent normal-operation release target, saturated responsiveness and continuity, bounded memory/backpressure, real-Poky evidence, profiling quality, CI, and matching documentation."
+notes = "Completed in v0.1.51. The dedicated verifier independently requires all 30 PERF tasks, all retained profiling and real-Poky evidence, dynamic busy-loop/render/coalescing/backpressure/saturation gates, the 60-second <=1% release CPU measurement, IPC continuity, and bounded memory. The repository completion script repeats explicit performance child/status, format, Clippy, all-feature test, CPU, responsiveness, continuity, memory, profile, and real-Poky checks rather than trusting the parent marker."

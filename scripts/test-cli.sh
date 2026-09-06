@@ -2,11 +2,15 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
-cli_config_dir="$(mktemp -d)"
-trap 'rm -rf "$cli_config_dir"' EXIT
+cli_test_root="$(mktemp -d)"
+cli_config_dir="$cli_test_root/config"
+cli_runtime_dir="$cli_test_root/runtime"
+mkdir -m 700 "$cli_config_dir" "$cli_runtime_dir"
+trap 'rm -rf "$cli_test_root"' EXIT
 
 doctor_output="$(
   XDG_CONFIG_HOME="$cli_config_dir" \
+    XDG_RUNTIME_DIR="$cli_runtime_dir" \
     cargo run -q -p yoctui -- --backend bridge doctor
 )"
 for expected in 'bridge protocol: ok' 'compatibility report:' 'authority: Unavailable'; do
@@ -19,7 +23,11 @@ done
 assert_daemon_authority_required() {
   local output status
   set +e
-  output="$(XDG_CONFIG_HOME="$cli_config_dir" cargo run -q -p yoctui -- "$@" 2>&1)"
+  output="$(
+    XDG_CONFIG_HOME="$cli_config_dir" \
+      XDG_RUNTIME_DIR="$cli_runtime_dir" \
+      cargo run -q -p yoctui -- "$@" 2>&1
+  )"
   status="$?"
   set -e
   if ((status == 0)); then

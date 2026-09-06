@@ -1,16 +1,16 @@
 {
   "schema": "yoctui.performance.real-poky-manifest.v1",
-  "source_base_revision": "e481ed148420c40614f99970c87d029746ec068f",
+  "source_base_revision": "6d0594d56d38fb9cbd97e3545fc145755bb0ea60",
   "artifact": "linux-yocto-do-compile.json",
-  "artifact_sha256": "25877cda2b7df84e184b8930c08e14ae0d0e652e3fdea6f3b903b9711783ed1a",
+  "artifact_sha256": "527ed24507c1cde3f9d7e43c967a7e730a8ada2f81def886fcccdad63b0633dd",
   "binary": {
     "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-    "sha256": "e62e19f2dc183cb5b462881720f0c267d2a5577ff9fadd0999fcc6811681e340",
-    "version": "yoctui 0.1.46"
+    "sha256": "a63bee5996f134b98de9ab243ab22b8cb5b5aff4a66bc4d13f8a4c36bacb18b0",
+    "version": "yoctui 0.1.51"
   },
   "sources": {
     "crates/yoctui-app/src/lib.rs": "bfa67df8cadc1b522e68e095497915ce3e3c1be4aa55fe9c4f58445d38838ba5",
-    "crates/yoctui-cli/src/main.rs": "3db86b2225c8d16e6a1979b6595e3749b8e98044a172860d4f17db216eee4228",
+    "crates/yoctui-cli/src/main.rs": "9837f7ab3ea4549e9b58b859ff241be244aa4f59b97bc2f2f145208c46af843b",
     "crates/yoctui-cli/src/render_scheduler.rs": "9cbd30b42bfd057f4a33be507f61fd4a431365d468143d0ce9a5845bc65b22fa",
     "crates/yoctui-protocol/src/daemon.rs": "58f0a2cddd8ffe562721b9acaae75abc94581c5bfd46ffbae9be16f5a6d4c2b3",
     "scripts/capture-real-poky-performance.py": "45b207e89372952500cfe3f492c6b60ae457fc9be081fdd0371f01f3e7646579"
@@ -26,9 +26,9 @@
     "render_frames_per_second_maximum": 6.0
   },
   "findings": [
-    "The supported Poky 6.0.2 linux-yocto do_compile workload held the eight-logical-CPU host at a 99.6646% trimmed-mean utilization for the complete 120-second sample window.",
-    "Daemon plus one interactive client consumed a 0.9662% trimmed mean of one logical CPU; input p95 was 5.3843 ms and every IPC continuity/cancellation check passed.",
-    "High-rate job progress now updates the bounded journal incrementally, compatibility decoding is generation-cached, and active daemon polling uses readiness plus a 50 ms supervisor bound.",
+    "The supported Poky 6.0.2 linux-yocto do_compile workload held the eight-logical-CPU host at a 99.6836% trimmed-mean utilization for the complete 120-second sample window.",
+    "Daemon plus one interactive client consumed a 0.9207% trimmed mean of one logical CPU; input p95 was 5.4191 ms and every IPC continuity/cancellation check passed.",
+    "High-rate job progress updates the bounded journal incrementally, compatibility decoding is generation-cached, and a priority-aware readiness notification wakes immediately for critical work while coalescing cosmetic work.",
     "At 90% or greater host utilization during live work, presentation coalesces to 1 Hz while input and resize stay immediate; below saturation ordinary activity remains 4 Hz."
   ]
 }

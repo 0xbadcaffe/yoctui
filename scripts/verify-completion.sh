@@ -17,7 +17,37 @@ require() {
 ./scripts/verify-product-complete.sh
 ./scripts/verify-compatibility.sh
 ./scripts/verify-next-generation-ui.sh
+
+# M46 completion is checked independently here as well as by the dedicated
+# verifier. A parent DONE marker cannot substitute for incomplete children.
+python3 - <<'PY'
+from pathlib import Path
+import tomllib
+
+tasks = tomllib.loads(Path("docs/task-registry.toml").read_text(encoding="utf-8"))["task"]
+required = [
+    task
+    for task in tasks
+    if task.get("milestone") == "M46"
+    and task.get("required")
+    and task["id"].startswith("PERF-")
+]
+incomplete = [task["id"] for task in required if task.get("status") != "DONE"]
+if incomplete:
+    raise SystemExit("required performance tasks are incomplete: " + ", ".join(incomplete))
+if len(required) != 30:
+    raise SystemExit(f"expected 30 required performance tasks, found {len(required)}")
+print("completion independently confirmed all 30 required performance tasks")
+PY
 ./scripts/verify-performance.sh
+
+# Keep the release and correctness gates visible at the completion boundary.
+./scripts/verify-low-overhead.sh
+./scripts/verify-saturation-responsiveness.sh
+./scripts/verify-ipc-continuity.sh
+./scripts/verify-bounded-memory.sh
+./scripts/verify-performance.sh --profiles
+./scripts/verify-performance.sh --real-poky-evidence
 
 require cargo llvm-cov --version
 require cargo audit --version

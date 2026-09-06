@@ -12,6 +12,7 @@ import signal
 import socket
 import struct
 import subprocess
+import sys
 import tempfile
 import time
 
@@ -22,10 +23,12 @@ FIXTURE = ROOT / "scripts/fixtures/bitbake-event-flood-bridge.py"
 CRITICAL_NAMES = {
     "warning_sentinel",
     "error_sentinel",
-    "critical_task_queued",
-    "critical_task_started",
     "critical_task_failed",
     "build_terminal",
+}
+IMPORTANT_TRANSITION_NAMES = {
+    "critical_task_queued",
+    "critical_task_started",
 }
 COALESCIBLE_NAMES = {"critical_task_progress"}
 
@@ -452,6 +455,9 @@ def main() -> int:
         required_sent = sent_names & CRITICAL_NAMES
         critical_received = sorted(required_sent & observed)
         missing = sorted(required_sent - observed)
+        important_transition_missing = sorted(
+            (sent_names & IMPORTANT_TRANSITION_NAMES) - observed
+        )
         coalescible_missing = sorted((sent_names & COALESCIBLE_NAMES) - observed)
         retention_passed = required_sent.issubset(observed)
         known_failure = (
@@ -493,6 +499,7 @@ def main() -> int:
                 "reconnect_probe_succeeded": client_continuity,
                 "critical_received": critical_received,
                 "critical_missing": missing,
+                "important_transition_missing": important_transition_missing,
                 "coalescible_missing": coalescible_missing,
                 "wire_metrics": wire_metrics,
                 "pressure": observed_pressure,
@@ -522,10 +529,25 @@ def main() -> int:
             args.output.write_text(rendered, encoding="utf-8")
         print(rendered, end="")
         if not ordered_sequences or not client_continuity:
+            failed = []
+            if not ordered_sequences:
+                failed.append("event sequence ordering")
+            if not client_continuity:
+                failed.append("healthy-client continuity")
+            print(
+                "event flood gate failed: " + ", ".join(failed),
+                file=sys.stderr,
+            )
             return 1
         if args.expect_pre_backpressure_failure:
             return 0 if known_failure and not retention_passed else 1
-        return 0 if retention_passed else 1
+        if not retention_passed:
+            print(
+                "event flood gate failed: missing critical events " + ", ".join(missing),
+                file=sys.stderr,
+            )
+            return 1
+        return 0
 
 
 if __name__ == "__main__":

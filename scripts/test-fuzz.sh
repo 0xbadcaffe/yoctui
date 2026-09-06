@@ -3,6 +3,7 @@ set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
+export CARGO_NET_OFFLINE=true
 
 if ! rustup toolchain list | grep -q '^nightly'; then
   printf '%s\n' 'nightly Rust is required; install it with rustup toolchain install nightly' >&2

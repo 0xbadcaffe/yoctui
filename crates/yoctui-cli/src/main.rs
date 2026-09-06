@@ -2479,7 +2479,7 @@ fn daemon_replay_is_bounded(event_count: usize) -> bool {
 }
 
 const DAEMON_IDLE_WAIT: Duration = Duration::from_millis(100);
-const DAEMON_ACTIVE_WAIT: Duration = Duration::from_millis(50);
+const DAEMON_ACTIVE_WAIT: Duration = Duration::from_millis(35);
 
 fn daemon_has_active_work(snapshot: &yoctui_protocol::daemon::DaemonSnapshot) -> bool {
     snapshot.jobs.iter().any(|job| {
@@ -2732,6 +2732,18 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     // its time bound, so matching the 32-event supervisor ingress can still
     // fill the socket. Cursor expiry is recovered by a replacement Snapshot.
     while !shutting_down {
+        let client_connections = clients
+            .iter()
+            .map(|(connection, _, _, _, _)| connection)
+            .collect::<Vec<_>>();
+        listener.wait_for_activity_with_additional_fd(
+            &client_connections,
+            bitbake_supervisor.notification_fd(),
+            daemon_service_wait(daemon_has_active_work(daemon_journal.snapshot())),
+        )?;
+        drop(client_connections);
+        bitbake_supervisor.consume_notification();
+
         for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
             let Some(event) = devtool_supervisor.try_event() else {
                 break;
@@ -2913,12 +2925,6 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         if termination_requested(termination) {
             break;
         }
-        let client_connections = clients
-            .iter()
-            .map(|(connection, _, _, _, _)| connection)
-            .collect::<Vec<_>>();
-        listener.wait_for_activity(&client_connections, daemon_service_wait(active_work))?;
-        drop(client_connections);
         match listener.accept(Duration::ZERO) {
             Ok(connection) if clients.len() < MAX_DAEMON_CLIENTS => {
                 // Read readiness is checked before receiving; this short
@@ -21792,7 +21798,7 @@ esac"#,
         assert_eq!(daemon_service_wait(false), DAEMON_IDLE_WAIT);
         assert_eq!(daemon_service_wait(true), DAEMON_ACTIVE_WAIT);
         assert!(DAEMON_IDLE_WAIT >= Duration::from_millis(50));
-        assert!(DAEMON_ACTIVE_WAIT <= Duration::from_millis(50));
+        assert_eq!(DAEMON_ACTIVE_WAIT, Duration::from_millis(35));
     }
 
     #[test]

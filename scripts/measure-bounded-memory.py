@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -161,7 +162,23 @@ def main() -> int:
             raise RuntimeError("event flood did not terminate after the measurement")
         if child.returncode != 0:
             stderr = child.stderr.read() if child.stderr else ""
-            raise RuntimeError(f"event flood failed: {stderr}")
+            preserved = None
+            details = ""
+            if flood_output.is_file():
+                preserved = args.output.with_name(
+                    f"{args.output.stem}-flood-failure.json"
+                )
+                preserved.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(flood_output, preserved)
+                failed_flood = json.loads(flood_output.read_text(encoding="utf-8"))
+                details = (
+                    "; "
+                    f"ordered={failed_flood['client']['event_sequences_strictly_increasing']}, "
+                    f"continuity={failed_flood['client']['connection_continuity']}, "
+                    f"critical_missing={failed_flood['client']['critical_missing']}"
+                )
+            retained = f"; report={preserved}" if preserved is not None else ""
+            raise RuntimeError(f"event flood failed: {stderr.strip()}{details}{retained}")
         flood = json.loads(flood_output.read_text(encoding="utf-8"))
     if len(samples) < args.sample_seconds - 1:
         raise RuntimeError("memory sample window is incomplete")

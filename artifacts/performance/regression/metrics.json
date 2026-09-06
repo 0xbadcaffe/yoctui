@@ -79,8 +79,8 @@
       "warmup_seconds": 10,
       "window_seconds": 120,
       "workload_trigger": {
-        "log_path": "/home/bspguy-dev/src/build/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.4001304",
-        "pid": 4001304,
+        "log_path": "/home/bspguy-dev/src/build/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.389137",
+        "pid": 389137,
         "recipe": "linux-yocto",
         "stats": null,
         "task": "do_compile",
@@ -95,13 +95,13 @@
         "hard_maximum": 0.5,
         "passed": true,
         "unit": "% one logical CPU",
-        "value": 0.062403742466128044
+        "value": 0.020807921055656934
       },
       "idle_combined": {
         "hard_maximum": 1.0,
         "passed": true,
         "unit": "% one logical CPU",
-        "value": 0.1456210736914154
+        "value": 0.10406287263395347
       },
       "idle_daemon": {
         "hard_maximum": 0.2,
@@ -111,25 +111,25 @@
       },
       "real_poky_bitbake": {
         "unit": "% one logical CPU",
-        "value": 298.4316233614969
+        "value": 301.61936162561693
       },
       "real_poky_client": {
         "unit": "% one logical CPU",
-        "value": 0.5438897020739512
+        "value": 0.4495607366559295
       },
       "real_poky_combined": {
         "hard_maximum": 1.0,
         "passed": true,
         "unit": "% one logical CPU",
-        "value": 0.9661692862823459
+        "value": 0.9207339820636299
       },
       "real_poky_daemon": {
         "unit": "% one logical CPU",
-        "value": 0.399773674042312
+        "value": 0.429653951764446
       },
       "real_poky_host": {
         "unit": "% total host capacity",
-        "value": 99.66455911247068
+        "value": 99.68364414537902
       }
     },
     "latency": {
@@ -173,13 +173,13 @@
         "hard_maximum": 100,
         "passed": true,
         "unit": "ms",
-        "value": 2.90029
+        "value": 0.306105
       },
       "real_poky_key_to_frame_p95": {
         "hard_maximum": 100,
         "passed": true,
         "unit": "ms",
-        "value": 5.384291
+        "value": 5.419118
       }
     },
     "memory": {
@@ -187,17 +187,17 @@
         "hard_maximum": 65536,
         "passed": true,
         "unit": "bytes/min",
-        "value": 0.0
+        "value": 1141.8265001465898
       },
       "client_rss_growth": {
         "hard_maximum": 33554432,
         "passed": true,
         "unit": "bytes",
-        "value": 110592
+        "value": 262144
       },
       "client_rss_max": {
         "unit": "bytes",
-        "value": 24457216
+        "value": 24383488
       },
       "daemon_final_window_slope": {
         "hard_maximum": 65536,
@@ -209,11 +209,11 @@
         "hard_maximum": 33554432,
         "passed": true,
         "unit": "bytes",
-        "value": 1351680
+        "value": 1318912
       },
       "daemon_rss_max": {
         "unit": "bytes",
-        "value": 22921216
+        "value": 22671360
       }
     },
     "pressure": {
@@ -227,7 +227,7 @@
         "hard_maximum": 4096,
         "passed": true,
         "unit": "events",
-        "value": 105
+        "value": 599
       },
       "real_poky_backend_disconnects": {
         "hard_maximum": 0,
@@ -245,7 +245,7 @@
         "hard_maximum": 256,
         "passed": true,
         "unit": "events",
-        "value": 28
+        "value": 31
       }
     },
     "render": {
@@ -255,27 +255,27 @@
       },
       "real_poky_frames": {
         "unit": "frames",
-        "value": 262
+        "value": 246
       },
       "real_poky_frames_per_second": {
         "hard_maximum": 10,
         "passed": true,
         "unit": "frames/s",
-        "value": 2.0053230123570187
+        "value": 1.8838753076633767
       }
     },
     "wakeups": {
       "idle_attached_daemon_voluntary_context_switches_per_second": {
         "unit": "context switches/s",
-        "value": 9.984169040695862
+        "value": 9.983847686929789
       },
       "idle_client_voluntary_context_switches_per_second": {
         "unit": "context switches/s",
-        "value": 19.53303255988552
+        "value": 19.566156380034194
       },
       "idle_daemon_voluntary_context_switches_per_second": {
         "unit": "context switches/s",
-        "value": 9.9834229287611
+        "value": 9.983557051951419
       }
     }
   },
@@ -296,15 +296,15 @@
   "source_artifacts": {
     "idle_attached": {
       "path": "artifacts/performance/results/low-overhead/idle-attached-client.json",
-      "sha256": "e0c87a2e67f1165efcf559d87d58dbf99b096355a7eee653b57d2ac0cd26ddf8"
+      "sha256": "52752d7a34904d4962c19f2bef5b157bbdadda1db3db3145622c08541d57d545"
     },
     "idle_daemon": {
       "path": "artifacts/performance/results/low-overhead/idle-daemon.json",
-      "sha256": "55d2e13b3dd4e43c45c977f72d266fd8d6f6260b3261f377c634aad3482fef25"
+      "sha256": "1c718cd4f853ba16fcf50e6b6dc59ebc4ad165a098239fc32462eabc816236b8"
     },
     "idle_suite": {
       "path": "artifacts/performance/results/low-overhead/measurement.json",
-      "sha256": "f404143a7bcc72c49b6b5fea58081c0d77611a20e03ca7b3bdd3ad969681699b"
+      "sha256": "43854de2642de065e28e400d7b629c952641b66f75971cd7a487d350d0464e89"
     },
     "input_latency": {
       "path": "artifacts/performance/input-latency/host-audit.json",
@@ -312,7 +312,7 @@
     },
     "ipc_continuity": {
       "path": "artifacts/performance/ipc-gate/manifest.json",
-      "sha256": "f051a23c25fefb65923c7d6334d2dd69035015a7b06e5781069e0f066a285285"
+      "sha256": "86cfdc027e16612d7a45d80ac8cdf0398a044a9d138413fb0b39c0b6bf44b78e"
     },
     "ipc_latency": {
       "path": "artifacts/performance/ipc-latency/host-audit.json",
@@ -320,11 +320,11 @@
     },
     "memory_endurance": {
       "path": "artifacts/performance/memory/endurance-30m.json",
-      "sha256": "51ccdf75dd0fb285aae794496935663b5b8878e5562d0d2012461d6858bc865f"
+      "sha256": "1d03b41673f3e0681838eb062e70c8d561919682ce6c1b80ddb48dcc2f166976"
     },
     "real_poky": {
       "path": "artifacts/performance/real-poky/linux-yocto-do-compile.json",
-      "sha256": "25877cda2b7df84e184b8930c08e14ae0d0e652e3fdea6f3b903b9711783ed1a"
+      "sha256": "527ed24507c1cde3f9d7e43c967a7e730a8ada2f81def886fcccdad63b0633dd"
     }
   }
 }

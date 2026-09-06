@@ -115,10 +115,11 @@ the high-rate event mix and requires:
 The default one-minute PR fixture may prove bounds and state invariants but is
 not the endurance result used for a release claim.
 
-The v0.1.46 release observation retains 1,800 one-second samples after a
+The refreshed v0.1.51 release observation retains 1,800 one-second samples after a
 10-second warmup while the production bridge/daemon/IPC path receives 4,000
-events/s. Daemon RSS grew 1,351,680 bytes and attached-observer RSS grew 110,592
-bytes; both least-squares slopes over the final 20 minutes were 0 bytes/minute.
+events/s. Daemon RSS grew 1,318,912 bytes and attached-observer RSS grew 262,144
+bytes; least-squares slopes over the final 20 minutes were 0 and 1,142
+bytes/minute respectively.
 Threads stayed at three and one respectively. Critical retention, strict event
 order, and connection continuity remained true. The harness bounds its own
 sequence and RSS observations, and the default verifier separately reruns the
@@ -160,14 +161,14 @@ warms for 10 seconds, and then records 119 one-second samples across a
 they demonstrate saturated responsiveness without redefining steady-state
 normal operation.
 
-The v0.1.46 measured binary
-(`e62e19f2dc183cb5b462881720f0c267d2a5577ff9fadd0999fcc6811681e340`)
-held the host at a 99.6646% trimmed-mean utilization. Captured BitBake/server,
-worker, and descendant compiler CPU was 298.4316% of one logical CPU. Yoctui
-used 0.3998% daemon CPU and 0.5439% client CPU; the independently calculated
-combined trimmed mean was **0.9662% of one logical CPU**. Input-to-frame p95
-was 5.3843 ms, build/cancellation acknowledgement was 0.8756/2.9003 ms, and a
-fresh attach took 57.5854 ms. Queue depth peaked at 28 of 256, with zero
+The v0.1.51 measured binary
+(`a63bee5996f134b98de9ab243ab22b8cb5b5aff4a66bc4d13f8a4c36bacb18b0`)
+held the host at a 99.6836% trimmed-mean utilization. Captured BitBake/server,
+worker, and descendant compiler CPU was 301.6194% of one logical CPU. Yoctui
+used 0.4297% daemon CPU and 0.4496% client CPU; the independently calculated
+combined trimmed mean was **0.9207% of one logical CPU**. Input-to-frame p95
+was 5.4191 ms, build/cancellation acknowledgement was 0.8045/0.3061 ms, and a
+fresh attach took 35.0212 ms. Queue depth peaked at 31 of 256, with zero
 backend disconnects, forced resynchronizations, reliable waits, or cosmetic
 drops. Cancellation was acknowledged and accepted after the full window.
 
@@ -366,14 +367,21 @@ an otherwise idle connection caused about 863 voluntary wakeups/s and 6.25%
 daemon CPU. The daemon now makes one kernel readiness wait over its listener and
 all current client sockets. An idle attached client therefore uses the 100 ms
 idle bound while input or a new connection wakes service immediately; active
-jobs retain a 50 ms supervisor-service bound.
+jobs retain a 35 ms supervisor-service bound. BitBake publication also writes
+one coalesced byte to a nonblocking process-local readiness pair. The same
+kernel wait therefore wakes immediately for backend work, and draining the
+notification rearms it without one wakeup per queued event. Failures,
+disconnects, cancellation, and terminal outcomes signal immediately. Retained
+nonterminal transitions plus cosmetic log/progress publication coalesce
+readiness to at most once per 30 ms so a fast producer cannot overrun a healthy
+decoder; batching never changes retention or order.
 
-The reference release result records 0.0000% idle-daemon, 0.0624% idle-client,
-and 0.1456% combined trimmed-mean CPU of one logical CPU. The attached daemon
+The v0.1.51 release result records 0.0000% idle-daemon, 0.0208% idle-client,
+and 0.1041% combined trimmed-mean CPU of one logical CPU. The attached daemon
 itself recorded 0.0000%. These independently pass the 0.20%, 0.50%, and 1.00%
 limits. The retained records include all sixty raw samples, process start
 identities, host and filesystem identity, exact binary and source hashes,
-startup times, terminal geometry, and 19,501 drained PTY bytes. The offline
+startup times, terminal geometry, and drained PTY output. The offline
 validator recalculates every trimmed mean and the default gate repeats the full
 release measurement without network access:
 

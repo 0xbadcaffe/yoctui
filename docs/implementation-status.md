@@ -12,7 +12,7 @@ Status values:
 ## Current phase
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
-`PERF-001` is active. It adds 30 required dependency-ordered tasks for an
+M46 Low-Overhead / Build-Saturation Responsiveness is complete. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
 and independent completion verification. The normative contract now fixes
@@ -125,25 +125,25 @@ host CPU, preserves delayed events and explicit EOF, acknowledges detach in
 0.119 ms, and attaches a fresh client before load ends. IPC continuity is now
 an independent default gate: it validates exact hashed flood and saturation
 evidence before rerunning the bounded production path. At 4,000 generated
-events/s all seven critical sentinels remain strictly ordered, the healthy
+events/s all correctness-critical sentinels remain strictly ordered, the healthy
 client has zero forced resynchronizations, a non-reading client is isolated,
 and daemon/backend continuity plus detach/reconnect hold. The latency observer
 retains terminal job state received while it drains pipelined acknowledgements,
 eliminating a harness-only race without relaxing measured acknowledgement
 thresholds. The bounded-memory release gate now retains 1,800 one-second
 post-warmup samples during a 4,000-event/s production-path flood. Daemon/client
-RSS grew only 1,351,680/110,592 bytes, both final 20-minute slopes were zero,
-and threads remained exactly 3/1. Strict critical retention, ordering, and
+RSS grew only 1,318,912/262,144 bytes, final 20-minute slopes were 0/1,142
+bytes per minute, and threads remained exactly 3/1. Strict critical retention, ordering, and
 continuity pass alongside focused log, task, telemetry, PTY, and protocol
 retention tests; the default gate also repeats a one-minute offline fixture.
 The supported real-Poky gate now retains an exact Poky 6.0.2
-`linux-yocto:do_compile` run at 99.6646% host CPU. Generation-cached
-compatibility, incremental job publication, a 50 ms active supervisor bound,
+`linux-yocto:do_compile` run at 99.6836% host CPU. Generation-cached
+compatibility, incremental job publication, a 35 ms active supervisor bound,
 and adaptive 1 Hz cosmetic rendering above 90% host CPU reduced daemon/client
-CPU to 0.3998/0.5439%, or 0.9662% combined of one logical CPU. One hundred
-input probes retained 5.3843 ms p95 latency; cancellation, reconnect, bounded
+CPU to 0.4297/0.4496%, or 0.9207% combined of one logical CPU. One hundred
+input probes retained 5.4191 ms p95 latency; cancellation, reconnect, bounded
 pressure, and backend continuity all passed. Overall required registry progress
-is 656/659 (99.5%). A deterministic compact regression record now binds eight
+is 659/659 (100%). A deterministic compact regression record now binds eight
 source artifacts and aggregates idle/real-build CPU, input/IPC latency, wakeups,
 render cadence, queue pressure, and memory endurance. Its 22 controlled hard
 metrics and seven correctness checks pass; the verifier rebuilds it byte-for-byte
@@ -167,6 +167,12 @@ The operator quick reference covers every gate plus profile and real-Poky
 capture; nice, cgroup, affinity, and BitBake settings remain advisory and
 unmodified. An offline documentation test rejects stale cadence and service
 bounds. Overall required registry progress is 658/659 (99.8%).
+The parent verifier independently requires every performance task and executes
+the retained evidence checks plus dynamic idle, render, coalescing, saturation,
+IPC, CPU, and memory gates. The repository completion boundary explicitly
+repeats format, Clippy, all-feature tests, CPU, responsiveness, IPC continuity,
+bounded memory, profiling, and real-Poky evidence validation. Overall required
+registry progress is 659/659 (100%).
 
 M45 Live Build Projection Correctness is complete. Task activity supersedes
 Parsing without late regression, real BitBake `taskpid` records correlate to

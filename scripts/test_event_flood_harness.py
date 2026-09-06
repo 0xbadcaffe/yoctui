@@ -86,6 +86,10 @@ class EventFloodHarnessTests(unittest.TestCase):
     def test_progress_is_coalescible_but_terminal_and_failure_are_critical(self) -> None:
         self.assertNotIn("critical_task_progress", HARNESS.CRITICAL_NAMES)
         self.assertIn("critical_task_progress", HARNESS.COALESCIBLE_NAMES)
+        for transition in ("critical_task_queued", "critical_task_started"):
+            self.assertNotIn(transition, HARNESS.CRITICAL_NAMES)
+            self.assertNotIn(transition, HARNESS.COALESCIBLE_NAMES)
+            self.assertIn(transition, HARNESS.IMPORTANT_TRANSITION_NAMES)
         self.assertIn("critical_task_failed", HARNESS.CRITICAL_NAMES)
         self.assertIn("build_terminal", HARNESS.CRITICAL_NAMES)
 

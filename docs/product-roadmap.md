@@ -984,18 +984,19 @@ cancellation-ack p95 are 3.262/1.359 ms. Delayed backend events, explicit EOF,
 cancellation, a 0.119 ms acknowledged detach, and a fresh attach all complete
 while saturation remains active. The default IPC continuity gate now validates
 hashed flood and saturation evidence and reruns the bounded production path:
-all seven critical sentinels remain ordered, the healthy client never
+all correctness-critical sentinels remain ordered, the healthy client never
 resynchronizes, a non-reader is isolated, and detach/reconnect remain available
 under load. Bounded-memory endurance is next.
 The bounded-memory gate now passes its 30-minute release run: daemon/client RSS
-growth was 1.29 MiB/108 KiB, both final 20-minute slopes were zero, threads
-stayed 3/1, and correctness/continuity survived the full 4,000-event/s stream.
+growth was 1.26 MiB/256 KiB, final 20-minute slopes were 0/1.1 KiB per minute,
+threads stayed 3/1, and correctness/continuity survived the full 4,000-event/s
+stream.
 Supported real-Poky saturation evidence now passes against Poky 6.0.2. A
-daemon-owned `linux-yocto:do_compile` kept the reference host at 99.6646% CPU
+daemon-owned `linux-yocto:do_compile` kept the reference host at 99.6836% CPU
 for 120 measured seconds while the release daemon/client used
-0.3998%/0.5439%, or 0.9662% combined of one logical CPU. Adaptive saturation
+0.4297%/0.4496%, or 0.9207% combined of one logical CPU. Adaptive saturation
 presentation reduces cosmetic full-frame work to 1 Hz above 90% host CPU while
-input remains immediate; 100 probes measured 5.3843 ms p95. Cancellation,
+input remains immediate; 100 probes measured 5.4191 ms p95. Cancellation,
 fresh attach, backend continuity, and bounded IPC pressure all passed with
 exact raw and hashed evidence. Machine-readable regression aggregation is
 complete. The deterministic record binds eight retained evidence sources and
@@ -1011,4 +1012,7 @@ can capture fresh real-Poky evidence. All performance jobs retain diagnostics
 on failure. Low-overhead architecture and operator documentation is complete:
 the performance guide, architecture, and UI specification share the exact
 accounting, cadence, telemetry, backpressure, liveness, safe tuning, profiling,
-and evidence rules. The independent M46 parent completion gate is next.
+and evidence rules. The independent M46 parent gate now checks every child,
+dynamic release gate, profile, and recorded real-Poky artifact, while the
+repository completion script repeats the required quality and performance
+boundaries. M46 is complete in v0.1.51.

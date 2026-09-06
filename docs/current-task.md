@@ -4,7 +4,7 @@
 
 **ID:** PERF-001
 **Title:** Complete low-overhead build-saturation responsiveness
-**Status:** IN_PROGRESS
+**Status:** DONE
 
 ## Objective
 
@@ -33,5 +33,5 @@ evidence.
 ./scripts/verify-roadmap.sh
 ```
 
-Low-overhead documentation is complete in v0.1.50. The parent independent
-completion gate is the only remaining M46 task.
+M46 is complete in v0.1.51. The independent repository completion gate passes
+all product, quality, performance, profiling, and recorded real-Poky checks.

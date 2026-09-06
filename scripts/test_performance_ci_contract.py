@@ -44,6 +44,29 @@ class PerformanceCiContractTests(unittest.TestCase):
         self.assertGreaterEqual(performance.count("if: always()"), 3)
         self.assertIn("artifacts/performance/ci/", performance)
 
+    def test_saturation_gate_uses_aggregate_load_not_a_per_worker_floor(self) -> None:
+        source = (ROOT / "scripts/verify-saturation-responsiveness.sh").read_text(
+            encoding="utf-8"
+        )
+        harness = source.split("verify_harness() {", 1)[1].split(
+            "verify_bitbake_connection() {", 1
+        )[0]
+        self.assertIn("--minimum-worker-cpu-percent 0", harness)
+        self.assertIn('mean_worker_cpu_percent"] < 25', harness)
+        self.assertNotIn('minimum_worker_cpu_percent"] < 60', harness)
+
+    def test_completion_counts_only_required_m46_performance_tasks(self) -> None:
+        completion = (ROOT / "scripts/verify-completion.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('task.get("milestone") == "M46"', completion)
+        self.assertIn('task["id"].startswith("PERF-")', completion)
+        self.assertIn("expected 30 required performance tasks", completion)
+
+    def test_completion_fuzzing_is_network_independent(self) -> None:
+        fuzz = (ROOT / "scripts/test-fuzz.sh").read_text(encoding="utf-8")
+        self.assertIn("export CARGO_NET_OFFLINE=true", fuzz)
+
 
 if __name__ == "__main__":
     unittest.main()
