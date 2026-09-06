@@ -21,6 +21,7 @@ mod maintenance_release;
 mod maintenance_service;
 mod maintenance_sstate;
 mod package;
+mod platform;
 #[cfg(unix)]
 mod pty_runner;
 mod qa_layer;
@@ -167,6 +168,7 @@ pub use package::{
     PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
     PackageDetailResponse, PackageInventoryResponse,
 };
+pub use platform::{PlatformArtifactAdapter, PlatformArtifactAdapterError, PlatformArtifactScan};
 #[cfg(unix)]
 pub use pty_runner::{PtyRunner, PtyRunnerError, PtyRunnerEvent};
 pub use qa_layer::{

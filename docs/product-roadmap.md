@@ -1016,3 +1016,16 @@ and evidence rules. The independent M46 parent gate now checks every child,
 dynamic release gate, profile, and recorded real-Poky artifact, while the
 repository completion script repeats the required quality and performance
 boundaries. M46 is complete in v0.1.51.
+
+## M47 — Kernel configuration and device trees
+
+Goal: make the active kernel provider directly inspectable and configurable
+without leaving Yoctui.
+
+Exit criteria:
+
+- Kernel is a dedicated Content destination resolved through `virtual/kernel`
+- provider-reported menuconfig runs in the persistent PTY
+- `.config`, DTS/DTSI, and DTB/DTBO artifacts are browsable from authoritative roots
+- exact confirmed `dtc` compile/decompile operations refuse overwrites
+- bounded scanning, focused tests, workspace checks, and documentation pass in version 0.1.47

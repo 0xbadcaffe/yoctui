@@ -7325,3 +7325,14 @@ required = true
 depends_on = ["PERF-SPEC-001", "PERF-BASELINE-001", "PERF-FLAMEGRAPH-001", "PERF-WAKEUPS-001", "PERF-EVENTLOOP-001", "PERF-RENDER-001", "PERF-ANIM-001", "PERF-TELEMETRY-001", "PERF-LOG-001", "PERF-TASKS-001", "PERF-IPC-001", "PERF-IPC-BACKPRESSURE-001", "PERF-BITBAKE-CONN-001", "PERF-TOKIO-001", "PERF-SCHED-001", "PERF-CPU-AFFINITY-001", "PERF-BITBAKE-COEXIST-001", "PERF-INPUT-LATENCY-001", "PERF-IPC-LATENCY-001", "PERF-SATURATION-HARNESS-001", "PERF-EVENT-FLOOD-001", "PERF-REAL-POKY-001", "PERF-CPU-GATE-001", "PERF-RESPONSIVENESS-GATE-001", "PERF-IPC-GATE-001", "PERF-MEMORY-GATE-001", "PERF-REGRESSION-001", "PERF-CI-001", "PERF-DOC-001"]
 verify = ["./scripts/verify-performance.sh", "./scripts/verify-completion.sh"]
 notes = "Completed in v0.1.51. The dedicated verifier independently requires all 30 PERF tasks, all retained profiling and real-Poky evidence, dynamic busy-loop/render/coalescing/backpressure/saturation gates, the 60-second <=1% release CPU measurement, IPC continuity, and bounded memory. The repository completion script repeats explicit performance child/status, format, Clippy, all-feature test, CPU, responsiveness, continuity, memory, profile, and real-Poky checks rather than trusting the parent marker."
+
+[[task]]
+id = "KERNEL-WORKBENCH-001"
+milestone = "M47"
+title = "Add kernel configuration and device-tree workbench"
+status = "DONE"
+priority = 819
+required = true
+depends_on = []
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Version 0.1.47 adds a virtual/kernel-backed destination, authoritative config/device-tree inventory, persistent-PTY menuconfig, in-app source exploration, and collision-safe confirmed dtc compile/decompile commands."

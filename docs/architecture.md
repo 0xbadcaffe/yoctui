@@ -3781,6 +3781,13 @@ strict mode also attaches a deliberately non-reading small-buffer peer, proves
 the healthy observer retains every sentinel without resync, and performs a new
 post-flood attach to prove reconnect recovery.
 
+Platform workbenches keep provider identity and artifact paths typed in the
+model. The CLI asks BitBake for recipe-scoped variables, then the bitbake crate
+performs a bounded, non-symlink-following filesystem scan. Rendering never
+touches the filesystem. Menuconfig and `dtc` execution reuse the confirmed
+daemon PTY boundary; source viewing and exploration reuse the in-app recipe
+editor boundary.
+
 The daemon's Unix listener uses kernel readiness waiting rather than a
 sleep/retry accept loop. With no client, active job, or active PTY, the outer
 supervisor loop blocks for a bounded 100 ms shutdown interval; a connecting
