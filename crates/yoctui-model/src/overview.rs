@@ -511,6 +511,10 @@ mod tests {
     fn image_size_delta_compares_consecutive_snapshots_for_the_same_target() {
         let mut app = App::new(16, 4096);
         let composition = |path: &str, installed_size_bytes| RootfsComposition {
+            root_directory: None,
+            system_inventory: RootfsAuthority::Unavailable {
+                reason: "not loaded".into(),
+            },
             image: ImageArtifactIdentity {
                 machine: "qemux86-64".into(),
                 image: "core-image-minimal".into(),

@@ -2375,6 +2375,5 @@ size, metadata provenance, runtime package topology, CVE/license/SBOM coverage,
 and disk history. Rootfs image size retains bounded same-target snapshots for
 build deltas. Security accepts SPDX, CycloneDX JSON, and package-manifest
 fallback inventories. Rootfs chart breakpoints preserve exploration, and
-process-backend task nodes are reachable from their recipe root. The prior M46
-real-Poky evidence task remains the active shared-roadmap task after this user
-priority is complete.
+process-backend task nodes are reachable from their recipe root. M46 remains
+complete; M51 validates these features against its performance implementation.
