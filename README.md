@@ -33,6 +33,10 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
 
 - **Build cockpit** — confirmed image/recipe builds, task progress, logs,
   structured errors, CPU/memory/disk telemetry, cancellation, and history.
+- **Overview insights** — build timeline and critical path, signature rebuild
+  causes, sstate/download outcomes, image-size composition, metadata
+  provenance, runtime package topology, SPDX/CycloneDX/manifest supply-chain
+  coverage, and disk history.
 - **Metadata workbench** — layer tree, recipe browser, syntax-aware preview,
   in-TUI editing, configuration provenance, BBMASK, dependencies, and
   signatures.
@@ -41,7 +45,7 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
 - **U-Boot / BIOS workbench** — image-aware boot-firmware detection with the
   same configuration, source exploration, and device-tree workflow.
 - **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
-  consoles, Wic, Testing, CVE/SPDX, QA, sstate, release, and maintenance tools.
+  consoles, Wic, Testing, CVE/SPDX/CycloneDX, QA, sstate, release, and maintenance tools.
 - **Offline image exploration** — browse and edit BitBake's staged
   `IMAGE_ROOTFS`, inspect installed packages and files, list systemd services,
   and map system-bus activation/configuration without booting the image.

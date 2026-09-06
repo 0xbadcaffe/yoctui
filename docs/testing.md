@@ -1,5 +1,20 @@
 # Testing
 
+## Overview visualization regressions
+
+The focused suite covers all eight responsive Insights empty/data states,
+CycloneDX and legacy manifest parsing, rootfs pie/table breakpoints, and
+recipe-root reachability for process-backend task graphs:
+
+```bash
+cargo test -p yoctui-model overview
+cargo test -p yoctui-bitbake security_report_parses_cyclonedx_and_legacy_image_manifest
+cargo test -p yoctui-bitbake dependency_graph_dot_parser
+cargo test -p yoctui-ui overview_insights
+cargo test -p yoctui-ui ux_rootfs_packages_pair
+cargo test -p yoctui-ui ux_dependency_graph
+```
+
 `cargo test --workspace --all-features` tests reducers, bounded retention, protocol validation, ANSI classification, input mapping, and structural Ratatui rendering. `python3 -m pytest bridge/tests` covers bridge framing, mocked adapter shapes, event normalization, and deterministic live-harness preflight failures; those tests do not claim live compatibility.
 
 Real Yocto validation is explicitly opt-in and runs through the production bridge:

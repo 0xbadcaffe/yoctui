@@ -11,6 +11,12 @@ Status values:
 
 ## Current phase
 
+M51 integration is IN_PROGRESS. Kernel (M47), firmware (M48), offline rootfs
+exploration (M49), and Overview Insights (M50) are being validated together
+against the completed M46 performance implementation. Branch-local release
+numbers below describe their historical implementation; the combined release
+uses a new workspace version and regenerated production visual evidence.
+
 M48 is complete in v0.1.48. U-Boot / BIOS is a separate Content destination
 that resolves the active image's boot firmware from authoritative BitBake
 variables and recipe metadata. It labels detected U-Boot and BIOS/UEFI
@@ -2361,3 +2367,14 @@ parent. `Enter` opens a configured layer and toggles directories or edits files
 inside the tree. Passive notifications no longer consume `Enter`; actionable
 failure notifications and dismissal remain explicit. Focused tests cover the
 router, list entry, notification gate, and tree reducer in v0.1.18.
+
+M50 Overview insights and dependency exploration is complete on the feature
+branch. Overview now includes eight typed visualization views for build
+timeline/critical path, rebuild causes, sstate/download outcomes, rootfs image
+size, metadata provenance, runtime package topology, CVE/license/SBOM coverage,
+and disk history. Rootfs image size retains bounded same-target snapshots for
+build deltas. Security accepts SPDX, CycloneDX JSON, and package-manifest
+fallback inventories. Rootfs chart breakpoints preserve exploration, and
+process-backend task nodes are reachable from their recipe root. The prior M46
+real-Poky evidence task remains the active shared-roadmap task after this user
+priority is complete.

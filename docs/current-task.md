@@ -2,36 +2,37 @@
 
 ## Task
 
-**ID:** PERF-001
-**Title:** Complete low-overhead build-saturation responsiveness
-**Status:** DONE
+**ID:** WORKBENCH-INTEGRATION-001
+**Title:** Integrate kernel firmware rootfs and Overview with the performance release
+**Status:** IN_PROGRESS
 
 ## Objective
 
-Run and enforce the independent parent completion gate for all required M46
-tasks, formatting, Clippy, workspace tests, steady-state CPU, saturated
-responsiveness, IPC continuity, bounded memory, profiling, and real-Poky
-evidence.
+Integrate all four feature branches with the completed M46 performance release.
+Preserve provider authority, typed effects, bounded data, scheduling, and IPC.
+Reconcile Navigator identities, mouse dispatch, release version, and visual fixtures.
 
 ## Dependencies
 
-- All 29 required PERF-* child tasks — DONE
+- PERF-001, KERNEL-WORKBENCH-001, FIRMWARE-WORKBENCH-001,
+  ROOTFS-SYSTEM-EXPLORER-001, OVERVIEW-001 — DONE on their source branches.
 
 ## Definition of done
 
-- Every required PERF-* child is independently checked as DONE.
-- Formatting, Clippy with warnings denied, and all-feature workspace tests pass.
-- CPU, saturation responsiveness, IPC continuity, and bounded-memory gates pass.
-- Profiling and real-Poky evidence satisfy the repository evidence policy.
-- `./scripts/verify-completion.sh` passes without network access.
+- All four feature tips are ancestors of the integrated release.
+- All destinations and inputs coexist and reviewed production fixtures match.
+- Workspace, bridge, Clippy, roadmap, documentation, and performance gates pass.
+- The full completion verifier passes before master is pushed.
 
 ## Verification
 
 ```bash
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/check-docs.sh
+./scripts/verify-roadmap.sh
 ./scripts/verify-performance.sh
 ./scripts/verify-completion.sh
-./scripts/verify-roadmap.sh
 ```
-
-M46 is complete in v0.1.51. The independent repository completion gate passes
-all product, quality, performance, profiling, and recorded real-Poky checks.

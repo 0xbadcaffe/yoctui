@@ -1017,6 +1017,13 @@ dynamic release gate, profile, and recorded real-Poky artifact, while the
 repository completion script repeats the required quality and performance
 boundaries. M46 is complete in v0.1.51.
 
+## M51 — Workbench integration release
+
+Integrate the M47–M50 feature histories with completed M46 scheduling, IPC,
+and performance gates. Reconcile Navigator identity, mouse effects, milestone
+numbers, and visual evidence. Workspace and full completion verification must
+pass before the combined release advances master.
+
 ## M47 — Kernel configuration and device trees
 
 Goal: make the active kernel provider directly inspectable and configurable
@@ -1050,3 +1057,30 @@ the exact `IMAGE_ROOTFS`, list and edit systemd service and system-bus
 activation files, map offline configuration relationships, and keep preview
 scrolling separate from global search. Mouse navigation now executes the same
 Packages-loading effects as keyboard navigation.
+
+## M50 — Overview insights and dependency exploration
+
+Goal: place build, cache, image, provenance, package, supply-chain, and disk
+visualizations beside Dashboard without creating a second data authority.
+
+Exit criteria:
+
+- Overview contains one responsive Insights workspace with eight directly
+  selectable visualizations
+- build timeline and critical path use retained task timestamps and dependency
+  identities; rebuild causes use typed signature differences
+- sstate and downloads show observed setscene/fetch outcomes and configured
+  cache paths without guessed sizes
+- rootfs installed bytes and same-target build deltas, metadata provenance,
+  runtime package dependencies, and disk telemetry have bounded visual
+  projections and explicit empty states
+- Security imports and explores SPDX, CycloneDX JSON, and legacy Yocto image
+  manifests, with exact fallback limitations
+- the `tui-piechart` rootfs surface preserves its exact table and exploration
+  panes at every responsive breakpoint
+- process-backend `bitbake -g` task nodes are reachable from the selected recipe
+  root and retain cycle-safe reverse/path exploration
+- focused parser, model, UI, workspace, Clippy, documentation, and roadmap
+  checks pass in version 0.1.47
+
+Progress: complete on `feature/overview-visualizations`.

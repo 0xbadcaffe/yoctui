@@ -3838,3 +3838,36 @@ minimum ordinary frame interval caps normal rendering at 4 Hz. Saturated live
 builds use the measured 1 Hz adaptive presentation interval, while an input or
 resize event directly invalidates the next frame rather than waiting for a
 model tick.
+
+## M50 Overview visualization boundary
+
+Overview Insights is a projection layer over existing authorities. The model
+owns view selection, row bounds, critical-path calculation, signature-category
+mapping, sstate/fetch task classification, rootfs size aggregation, metadata
+provenance, runtime-package edges, supply-chain counts, and telemetry history.
+The UI only lays out those typed projections. Missing authority is rendered as
+missing; it is never reconstructed from log prose.
+
+Each successful rootfs package load records a bounded installed-byte snapshot.
+The image-size view compares consecutive snapshots for the same machine and
+image target, even when deploy artifact paths change between builds. Repeated
+loads of an identical artifact and byte total are coalesced; the first snapshot
+states that no prior build delta is available.
+
+Security report acquisition recognizes four typed formats: CVE reports, SPDX
+JSON/archive artifacts, CycloneDX JSON, and deployed Yocto `.manifest` package
+lists. All use the existing canonical-path, symlink, size, time, cancellation,
+fingerprint, and collection bounds. SPDX and CycloneDX retain their distinct
+document metadata. The manifest fallback exposes only package identity and
+version and carries explicit limitations for SBOM fields it cannot prove.
+
+The process backend parses `task-depends.dot` inside the BitBake adapter. Since
+the workspace root is a recipe while the DOT authority is task-to-task, the
+adapter inserts typed recipe-to-task reachability edges before bounded graph
+normalization. Rendering, filtering, reverse traversal, and path finding still
+operate only on the normalized `DependencyGraph`.
+
+Rootfs package composition continues to use `tui-piechart` 1.0.2 with Braille
+resolution only when color, Unicode, automatic charts, width, and the complete
+three-pane height are available. Otherwise the exact installed-byte table is
+the production fallback, preserving package navigation and selection.
