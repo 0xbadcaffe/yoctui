@@ -1042,3 +1042,11 @@ Exit criteria:
 - the detected target's advertised menuconfig task runs in the persistent PTY
 - `.config`, DTS/DTSI, and DTB/DTBO artifacts use the shared bounded explorer
 - focused tests, workspace checks, and documentation pass in version 0.1.48
+
+## M49 — Offline rootfs system explorer
+
+M49 adds offline exploration of BitBake's staged image root. Images can open
+the exact `IMAGE_ROOTFS`, list and edit systemd service and system-bus
+activation files, map offline configuration relationships, and keep preview
+scrolling separate from global search. Mouse navigation now executes the same
+Packages-loading effects as keyboard navigation.

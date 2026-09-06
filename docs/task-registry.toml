@@ -7272,6 +7272,17 @@ verify = ["./scripts/verify-bounded-memory.sh"]
 notes = "Refreshed in v0.1.51, the release endurance gate retained 1,800 one-second post-warmup samples during a 4,000-event/s production-path flood. Daemon/client RSS grew only 1,318,912/262,144 bytes, final 20-minute slopes were 0/1,142 bytes per minute, and threads stayed 3/1. Strict critical retention, event order, and continuity pass; superseded queued/started transitions remain separately observable rather than being misclassified as never-droppable. The default network-free gate also reruns a one-minute fixture and focused bound tests."
 
 [[task]]
+id = "ROOTFS-SYSTEM-EXPLORER-001"
+milestone = "M49"
+title = "Explore staged rootfs system configuration offline"
+status = "DONE"
+priority = 819
+required = true
+depends_on = []
+verify = ["cargo test -p yoctui-bitbake rootfs", "cargo test -p yoctui-model layer_file_right_focuses_preview", "cargo test -p yoctui-app ux_rootfs_images_tabs", "cargo test -p yoctui-ui rootfs", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.47 fixes mouse-opened Packages inventory execution, opens the exact BitBake-reported IMAGE_ROOTFS in the lazy preview/editor, adds offline systemd service and system D-Bus mappings, and replaces the conflicting slash preview-scroll hint with explicit Right focus plus arrow scrolling."
+
+[[task]]
 id = "PERF-REAL-POKY-001"
 milestone = "M46"
 title = "Validate responsiveness during a real saturated Poky build"

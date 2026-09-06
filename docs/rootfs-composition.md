@@ -1,5 +1,16 @@
 # Rootfs Composition Evidence
 
+Yoctui can open the exact BitBake-reported `IMAGE_ROOTFS` as a lazy file tree,
+preview bounded text files, and edit a selected file without booting the image.
+This requires the staged work directory to still exist; a deploy-only ext4,
+Wic, or compressed artifact is not mounted or extracted implicitly.
+
+The Images systemd view lists service units and enablement-link evidence. The
+system D-Bus view combines activation descriptors, `BusName=` declarations,
+`SystemdService=` links, and policy-file references. These views describe the
+files in the staged image. They cannot report live unit state, current bus-name
+owners, or activation results before boot.
+
 Rootfs composition is an Images subview correlated to one exact image,
 machine, build, and artifact identity. It presents two independent evidence
 sources and never combines their totals.

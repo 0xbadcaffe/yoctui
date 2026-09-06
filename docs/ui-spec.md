@@ -960,13 +960,15 @@ From the configured-layer inventory:
 
 Inside the layer browser/editor:
 
-- `Right` / `l`: expand
+- `Right` / `l`: expand a directory; on a file, move focus to its preview
 - `Left` / `h`: collapse or move to parent
+- with preview focus, `Up` / `Down` scroll one line, `PageUp` / `PageDown`
+  scroll one page, and `Left` returns focus to the tree
 - `Enter`: edit a file or toggle a directory
 - `e`: edit the selected file
 - `r`: refresh
 - `.`: toggle hidden files
-- `/`: search
+- `/`: search; it never scrolls the preview
 - `i`: Git details
 - `m`: metadata view
 - `d`: dependencies view
@@ -4850,6 +4852,24 @@ Images gains an image-correlated Rootfs composition subview. Installed-package
 composition comes from the exact image manifest plus authoritative bounded
 pkgdata. Filesystem composition is optional and comes only from the exact
 BitBake-reported `IMAGE_ROOTFS` for the selected image/build identity.
+
+The Images workspace has five tabs: artifacts, installed packages, filesystem,
+systemd services, and system D-Bus. `Enter` or `Right` in the filesystem and
+system views opens the exact reported `IMAGE_ROOTFS` in the lazy tree/preview
+browser. The browser does not boot or mount an image artifact. `Right` on a
+file focuses its preview, arrows scroll it, and `e` opens the selected file in
+the in-TUI editor. Generated-rootfs edits are explicit and the Inspector warns
+that a later BitBake task can replace them.
+
+The systemd tab lists `.service` unit files in the standard system and local
+unit search directories, reports `Description=` and `BusName=`, and derives
+enablement evidence from `.wants` and `.requires` links. The system D-Bus tab
+maps activation descriptors under `usr/share/dbus-1/system-services`, their
+`Name`, `Exec`, `User`, and `SystemdService` values, systemd `BusName=` units,
+and policy files that mention the exact bus name. This is an offline
+configuration map; live ownership, activation state, jobs, and the running
+bus cannot exist until the image boots. `e` edits the selected unit or
+activation descriptor.
 
 The adapter requires canonical build containment, never follows symlinks,
 deduplicates hard links, identifies special files, and enforces entry, depth,

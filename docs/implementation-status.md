@@ -25,7 +25,12 @@ persistent PTY, in-app `.config` and DTS/DTSI viewing and exploration, and
 confirmed `dtc` compilation/decompilation with collision refusal. Artifact
 discovery is bounded and does not follow directory symlinks.
 
-The unrelated M46 real-Poky performance evidence remains active.
+M49 staged-rootfs system exploration was implemented on its feature branch. The Images
+workspace now opens the exact reported `IMAGE_ROOTFS` without booting it and
+adds typed offline systemd-service and system-bus maps with file editing. The
+shared file preview uses Right to take focus and arrow scrolling, and mouse
+activation now starts the Packages inventory operation instead of leaving it
+stuck in Loading. Combined release verification is pending.
 
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
 M46 Low-Overhead / Build-Saturation Responsiveness is complete. It adds 30 required dependency-ordered tasks for an

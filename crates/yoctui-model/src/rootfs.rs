@@ -11,6 +11,7 @@ pub const MAX_ROOTFS_DEPTH: usize = 64;
 pub const MAX_ROOTFS_LIMITATIONS: usize = 64;
 pub const MAX_ROOTFS_TEXT_BYTES: usize = 512;
 pub const MAX_ROOTFS_PATH_BYTES: usize = 4_096;
+pub const MAX_ROOTFS_SYSTEM_PREVIEW_BYTES: usize = 8 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ImagesView {
@@ -18,13 +19,17 @@ pub enum ImagesView {
     Artifacts,
     RootfsPackages,
     RootfsFilesystem,
+    SystemdServices,
+    SystemDbus,
 }
 
 impl ImagesView {
-    pub const ALL: [Self; 3] = [
+    pub const ALL: [Self; 5] = [
         Self::Artifacts,
         Self::RootfsPackages,
         Self::RootfsFilesystem,
+        Self::SystemdServices,
+        Self::SystemDbus,
     ];
 
     pub const fn label(self) -> &'static str {
@@ -32,6 +37,8 @@ impl ImagesView {
             Self::Artifacts => "Artifacts",
             Self::RootfsPackages => "Rootfs packages",
             Self::RootfsFilesystem => "Rootfs filesystem",
+            Self::SystemdServices => "systemd services",
+            Self::SystemDbus => "System D-Bus",
         }
     }
 
@@ -112,6 +119,37 @@ pub struct RootfsFilesystemTree {
     pub entries: Vec<RootfsEntry>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RootfsSystemdService {
+    pub name: String,
+    pub logical_path: RootfsPathIdentity,
+    pub host_path: PathBuf,
+    pub description: Option<String>,
+    pub bus_name: Option<String>,
+    pub enabled_by: Vec<String>,
+    pub preview: String,
+    pub preview_truncated: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RootfsDbusService {
+    pub name: String,
+    pub logical_path: RootfsPathIdentity,
+    pub host_path: PathBuf,
+    pub exec: Option<String>,
+    pub user: Option<String>,
+    pub systemd_service: Option<String>,
+    pub policy_files: Vec<RootfsPathIdentity>,
+    pub preview: String,
+    pub preview_truncated: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct RootfsSystemInventory {
+    pub systemd_services: Vec<RootfsSystemdService>,
+    pub dbus_services: Vec<RootfsDbusService>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum RootfsAuthority<T> {
     Available(T),
@@ -141,6 +179,8 @@ pub struct RootfsComposition {
     pub image: ImageArtifactIdentity,
     pub installed_packages: RootfsAuthority<RootfsPackageInventory>,
     pub filesystem_tree: RootfsAuthority<RootfsFilesystemTree>,
+    pub system_inventory: RootfsAuthority<RootfsSystemInventory>,
+    pub root_directory: Option<PathBuf>,
 }
 
 impl RootfsComposition {
@@ -152,22 +192,38 @@ impl RootfsComposition {
         self.filesystem_tree.value()
     }
 
+    pub fn system_inventory(&self) -> Option<&RootfsSystemInventory> {
+        self.system_inventory.value()
+    }
+
     pub fn is_empty(&self) -> bool {
         self.package_inventory()
             .is_none_or(|inventory| inventory.packages.is_empty())
             && self
                 .filesystem_tree()
                 .is_none_or(|tree| tree.entries.is_empty())
+            && self.system_inventory().is_none_or(|inventory| {
+                inventory.systemd_services.is_empty() && inventory.dbus_services.is_empty()
+            })
     }
 
     pub fn is_unavailable(&self) -> bool {
-        self.installed_packages.is_unavailable() && self.filesystem_tree.is_unavailable()
+        self.installed_packages.is_unavailable()
+            && self.filesystem_tree.is_unavailable()
+            && self.system_inventory.is_unavailable()
     }
 
     pub fn is_partial(&self) -> bool {
         self.installed_packages.is_partial()
             || self.filesystem_tree.is_partial()
-            || self.installed_packages.is_unavailable() != self.filesystem_tree.is_unavailable()
+            || self.system_inventory.is_partial()
+            || [
+                self.installed_packages.is_unavailable(),
+                self.filesystem_tree.is_unavailable(),
+                self.system_inventory.is_unavailable(),
+            ]
+            .windows(2)
+            .any(|pair| pair[0] != pair[1])
     }
 }
 
@@ -206,7 +262,55 @@ pub fn normalize_rootfs_composition(
     }
     normalize_package_authority(&mut composition.installed_packages, &mut report);
     normalize_filesystem_authority(&mut composition.filesystem_tree, &mut report);
+    normalize_system_authority(&mut composition.system_inventory, &mut report);
     (Some(composition), report)
+}
+
+fn normalize_system_authority(
+    authority: &mut RootfsAuthority<RootfsSystemInventory>,
+    report: &mut RootfsNormalizationReport,
+) {
+    let normalize = |inventory: &mut RootfsSystemInventory,
+                     report: &mut RootfsNormalizationReport| {
+        inventory.systemd_services.retain(|service| {
+            let valid = !service.name.is_empty()
+                && rootfs_text_is_valid(&service.name)
+                && service.logical_path.validate().is_ok()
+                && service.host_path.is_absolute()
+                && service.preview.len() <= MAX_ROOTFS_SYSTEM_PREVIEW_BYTES;
+            if !valid {
+                report.invalid_entries += 1;
+            }
+            valid
+        });
+        inventory.systemd_services.sort();
+        inventory
+            .systemd_services
+            .dedup_by(|left, right| left.name == right.name);
+        inventory.dbus_services.retain(|service| {
+            let valid = !service.name.is_empty()
+                && rootfs_text_is_valid(&service.name)
+                && service.logical_path.validate().is_ok()
+                && service.host_path.is_absolute()
+                && service.preview.len() <= MAX_ROOTFS_SYSTEM_PREVIEW_BYTES;
+            if !valid {
+                report.invalid_entries += 1;
+            }
+            valid
+        });
+        inventory.dbus_services.sort();
+        inventory
+            .dbus_services
+            .dedup_by(|left, right| left.name == right.name);
+    };
+    match authority {
+        RootfsAuthority::Available(value) => normalize(value, report),
+        RootfsAuthority::Partial { value, limitations } => {
+            normalize(value, report);
+            normalize_limitations(limitations, report);
+        }
+        RootfsAuthority::Unavailable { reason } => normalize_reason(reason, report),
+    }
 }
 
 fn normalize_package_authority(
@@ -627,6 +731,8 @@ mod tests {
                     },
                 ],
             }),
+            system_inventory: RootfsAuthority::Available(RootfsSystemInventory::default()),
+            root_directory: None,
         };
         let (normalized, report) = normalize_rootfs_composition(&request, composition);
         let normalized = normalized.unwrap();
@@ -695,6 +801,10 @@ mod tests {
             filesystem_tree: RootfsAuthority::Unavailable {
                 reason: "IMAGE_ROOTFS not reported".into(),
             },
+            system_inventory: RootfsAuthority::Unavailable {
+                reason: "IMAGE_ROOTFS not reported".into(),
+            },
+            root_directory: None,
         };
         let (totals, overflowed) = composition.totals();
         assert_eq!(totals.installed_package_bytes, u64::MAX);
