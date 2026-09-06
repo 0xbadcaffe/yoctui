@@ -2,7 +2,7 @@
 set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
-profile_target_dir="${YOCTUI_PROFILE_TARGET_DIR:-$repo_root/target/ui-performance}"
+profile_target_dir="${YOCTUI_FLAMEGRAPH_BUILD_TARGET_DIR:-${YOCTUI_PROFILE_TARGET_DIR:-$repo_root/target/ui-performance}}"
 command -v cargo-flamegraph >/dev/null || { printf '%s\n' 'cargo-flamegraph is required; install it with cargo install flamegraph' >&2; exit 2; }
 command -v perf >/dev/null || { printf '%s\n' 'Linux perf is required; install the matching linux-perf package' >&2; exit 2; }
 perf_probe="$(mktemp)"

@@ -21,6 +21,7 @@ mod maintenance_release;
 mod maintenance_service;
 mod maintenance_sstate;
 mod package;
+mod platform;
 #[cfg(unix)]
 mod pty_runner;
 mod qa_layer;
@@ -167,6 +168,7 @@ pub use package::{
     PackageDataAdapterError, PackageDataCancellation, PackageDataCommandSpec,
     PackageDetailResponse, PackageInventoryResponse,
 };
+pub use platform::{PlatformArtifactAdapter, PlatformArtifactAdapterError, PlatformArtifactScan};
 #[cfg(unix)]
 pub use pty_runner::{PtyRunner, PtyRunnerError, PtyRunnerEvent};
 pub use qa_layer::{
@@ -2776,6 +2778,18 @@ fn parse_task_dependency_dot(
         let to = dependency_task_identity(destination)?;
         nodes.push(DependencyNode::identity(from.clone()));
         nodes.push(DependencyNode::identity(to.clone()));
+        for task in [&from, &to] {
+            let recipe_node = DependencyNodeId::recipe(task.recipe_name());
+            nodes.push(DependencyNode::identity(recipe_node.clone()));
+            // `bitbake -g` emits task-to-task edges but the workspace root is
+            // a recipe node. Preserve an explicit recipe-to-task bridge so
+            // task dependencies are reachable instead of becoming orphans.
+            edges.push(DependencyEdge {
+                from: recipe_node,
+                to: task.clone(),
+                kind: DependencyEdgeKind::Task,
+            });
+        }
         edges.push(DependencyEdge {
             from: from.clone(),
             to: to.clone(),
@@ -4149,6 +4163,11 @@ mod tests {
             from: DependencyNodeId::recipe("image"),
             to: DependencyNodeId::recipe("busybox"),
             kind: DependencyEdgeKind::Build,
+        }));
+        assert!(response.graph.edges.contains(&DependencyEdge {
+            from: DependencyNodeId::recipe("image"),
+            to: DependencyNodeId::task("image", "do_build"),
+            kind: DependencyEdgeKind::Task,
         }));
         assert!(response.graph.edges.contains(&DependencyEdge {
             from: DependencyNodeId::task("image", "do_build"),

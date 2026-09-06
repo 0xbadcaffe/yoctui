@@ -960,13 +960,15 @@ From the configured-layer inventory:
 
 Inside the layer browser/editor:
 
-- `Right` / `l`: expand
+- `Right` / `l`: expand a directory; on a file, move focus to its preview
 - `Left` / `h`: collapse or move to parent
+- with preview focus, `Up` / `Down` scroll one line, `PageUp` / `PageDown`
+  scroll one page, and `Left` returns focus to the tree
 - `Enter`: edit a file or toggle a directory
 - `e`: edit the selected file
 - `r`: refresh
 - `.`: toggle hidden files
-- `/`: search
+- `/`: search; it never scrolls the preview
 - `i`: Git details
 - `m`: metadata view
 - `d`: dependencies view
@@ -4851,6 +4853,24 @@ composition comes from the exact image manifest plus authoritative bounded
 pkgdata. Filesystem composition is optional and comes only from the exact
 BitBake-reported `IMAGE_ROOTFS` for the selected image/build identity.
 
+The Images workspace has five tabs: artifacts, installed packages, filesystem,
+systemd services, and system D-Bus. `Enter` or `Right` in the filesystem and
+system views opens the exact reported `IMAGE_ROOTFS` in the lazy tree/preview
+browser. The browser does not boot or mount an image artifact. `Right` on a
+file focuses its preview, arrows scroll it, and `e` opens the selected file in
+the in-TUI editor. Generated-rootfs edits are explicit and the Inspector warns
+that a later BitBake task can replace them.
+
+The systemd tab lists `.service` unit files in the standard system and local
+unit search directories, reports `Description=` and `BusName=`, and derives
+enablement evidence from `.wants` and `.requires` links. The system D-Bus tab
+maps activation descriptors under `usr/share/dbus-1/system-services`, their
+`Name`, `Exec`, `User`, and `SystemdService` values, systemd `BusName=` units,
+and policy files that mention the exact bus name. This is an offline
+configuration map; live ownership, activation state, jobs, and the running
+bus cannot exist until the image boots. `e` edits the selected unit or
+activation descriptor.
+
 The adapter requires canonical build containment, never follows symlinks,
 deduplicates hard links, identifies special files, and enforces entry, depth,
 byte, time, and cancellation bounds. Missing or cleaned work state is
@@ -5156,6 +5176,21 @@ primary visual area and retains the exact installed-byte table as independent
 authority. Narrow, no-color, and ASCII layouts retain their existing
 accessible table fallback.
 
+Kernel is a dedicated Content destination with Configuration and Device trees
+tabs. Up/Down selects an authoritative artifact, `Tab` switches tabs, `m`
+opens provider-verified menuconfig in a persistent PTY, `Enter`/`e` opens text
+in the in-app explorer/editor, `o` explores the selected root, `c` compiles a
+DTS, `d` decompiles a DTB/DTBO, and `r` refreshes the inventory. Binary device
+trees do not enter the text viewer. Compile/decompile actions preview exact
+argv and refuse to overwrite an existing `.yoctui` output.
+
+U-Boot / BIOS is the adjacent Content destination. It selects the active
+image's boot provider from authoritative BitBake variables and recipe metadata,
+then labels the workspace U-Boot or BIOS / UEFI. It uses the same tabs and
+keys as Kernel. Menuconfig launches the detected provider only when its task
+inventory advertises `menuconfig`; configuration and device-tree exploration
+remain available when a BIOS provider has no Kconfig task.
+
 Logs opens with Workspace focus. Up/Down, PageUp/PageDown, Home/End, and mouse
 wheel input pause live follow and move the retained selection; `f` resumes
 follow at the newest matching entry. Daemon snapshots and incremental log
@@ -5191,3 +5226,58 @@ When daemon pressure is nonzero, the System Status compatibility line appends
 coalescing, cosmetic drops, reliable-lane waits, forced resynchronizations, and
 slow-client disconnects. Zero pressure stays hidden to avoid dashboard noise;
 the typed values remain available to automation in either case.
+
+## 43. Overview Insights workspace
+
+The integrated Navigator has 25 destinations: Overview contains Dashboard and
+Insights; Content contains Layers, Recipes, Packages, Images, Kernel, U-Boot /
+BIOS, and SDK. Build, Validate, and Tools keep their existing destinations.
+Selection, group collapse/expand, and mouse activation use the same ordering.
+The literal reference fixture retains its dedicated historical scene; the
+production concept and target-design fixtures reflect the combined Navigator.
+
+`Overview / Insights` sits beside Dashboard and presents eight read-only,
+numbered views. `1` through `8` select a view directly; `[`/`]`, Left/Right,
+and `h`/`l` move between views. Every view consumes existing typed model
+authority and renders an explicit unavailable state when its source has not
+been loaded. No widget reads the filesystem, invokes BitBake, or parses report
+text.
+
+1. **Timeline** draws retained task start and duration evidence as a bounded
+   Gantt view. `◆` marks the longest acyclic path supported by reported task
+   dependencies. Cycles terminate safely and missing timestamps remain zero
+   duration rather than estimates.
+2. **Rebuild causes** projects `bitbake-diffsigs` categories into changed hash,
+   variable, and dependency edges.
+3. **Sstate & downloads** separates configured `SSTATE_DIR`/`DL_DIR` paths from
+   observed setscene and `do_fetch` task outcomes. Exact counts and paths
+   remain textual when the optional Braille pie is unavailable. Cache byte
+   totals say unavailable until a bounded authoritative scan reports them.
+4. **Image size** shows exact installed bytes grouped by rootfs package
+   category as a proportional terminal treemap.
+5. **Metadata provenance** displays ordered variable-to-source provenance
+   chains from workspace inspection.
+6. **Package topology** displays loaded `oe-pkgdata-util` runtime dependency
+   edges.
+7. **Supply chain** summarizes CVE findings and SPDX, CycloneDX JSON, or Yocto
+   image-manifest component inventories. A `.manifest` is a declared fallback
+   for Yocto releases without SBOM generation: it provides package names and
+   versions only; license, supplier, file, and relationship claims stay
+   unavailable.
+8. **Disk usage** draws bounded build-filesystem-use, disk-read, and disk-write
+   telemetry histories.
+
+The workspace remains useful at 80x24. Wide Unicode/color layouts may use
+Braille charts; narrow, ASCII, no-color, and accessible-chart preferences keep
+the same facts in text or tables.
+
+The Rootfs package pie requires enough height for its chart, exact composition
+table, selected-package exploration, and filesystem preview together. Below
+that threshold it uses the full-height exact table. The `tui-piechart` widget
+never replaces the table authority.
+
+The process-backend task graph bridges every recipe node to its emitted task
+nodes before normalization. This makes `bitbake -g` task edges reachable from
+the recipe-rooted explorer while retaining the original task-to-task edges,
+cycle handling, limits, reverse traversal, and responsive topology/tree/table
+modes.

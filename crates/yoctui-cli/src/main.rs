@@ -49,17 +49,18 @@ use yoctui_app::{
     dependency_workspace_action, devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
-    devtool_update_confirmation_action, errors_action, focus_action_for_app, global_search_action,
-    image_console_dialog_action, images_workspace_action_for_view, keymap_action_for_app,
-    keymap_preferences_action, log_workspace_action, maintenance_dialog_action,
-    maintenance_workspace_action, menu_action, model_action_from_backend_event,
-    mouse_action_for_app, notification_popup_action, onboarding_action, package_workspace_action,
-    popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
-    qa_report_error_action, qa_report_response_action, qa_task_capability_action,
-    qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
-    qemu_launch_confirmation_action, qemu_launch_dialog_action, quit_confirmation_action,
-    raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
-    sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    devtool_update_confirmation_action, errors_action, firmware_workspace_action,
+    focus_action_for_app, global_search_action, image_console_dialog_action,
+    images_workspace_action_for_view, keymap_action_for_app, keymap_preferences_action,
+    log_workspace_action, maintenance_dialog_action, maintenance_workspace_action, menu_action,
+    model_action_from_backend_event, mouse_action_for_app, notification_popup_action,
+    onboarding_action, overview_workspace_action, package_workspace_action,
+    platform_workspace_action, popup_editor_action, qa_dialog_action, qa_layer_capability_action,
+    qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
+    qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
+    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
+    qemu_launch_dialog_action, quit_confirmation_action, raw_mode_input, recipe_editor_action,
+    recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
@@ -77,22 +78,23 @@ use yoctui_app::{
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, BuildEnvironmentAdapter, DevtoolCommandSpec,
     DevtoolInspector, DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter,
-    ImageArtifactCancellation, PackageDataAdapter, PackageDataCancellation, ProcessBackend,
-    QaConfiguredLayerInput, QaFamilyTaskBinding, QaLayerCapabilityInput,
-    QaLayerCapabilityInspector, QaLayerCommandSpec, QaLayerJobRunner, QaLayerRunnerEvent,
-    QaReportAdapter, QaReportAdapterError, QaReportCancellation, QaReportCandidate, QaReportOrigin,
-    QaReportRootInput, QaReportScanInput, QaTaskCapabilityInput, QaTaskCapabilityInspector,
-    QaTaskScopeInput, QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner,
-    QemuRunnerEvent, RootfsCompositionAdapter, RootfsCompositionCancellation,
-    RootfsCompositionSources, SdkArtifactAdapter, SdkArtifactCancellation, SdkArtifactScanOutcome,
-    SdkToolAdapter, SdkToolAdapterError, SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent,
-    SecurityCapabilityInput, SecurityCapabilityInspector, SecurityMapperCommandSpec,
-    SecurityMapperJobRunner, SecurityMapperRunnerEvent, SecurityReportAdapter,
-    SecurityReportAdapterError, SecurityReportCancellation, SecurityReportScanOutcome,
-    SignatureAdapter, SignatureCancellation, TestResultAdapter, TestResultJob, TestResultOperation,
-    TestResultRunnerEvent, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue,
-    WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
-    WicDeviceInventoryResponse, WicJobRunner, WicRunnerEvent,
+    ImageArtifactCancellation, PackageDataAdapter, PackageDataCancellation,
+    PlatformArtifactAdapter, ProcessBackend, QaConfiguredLayerInput, QaFamilyTaskBinding,
+    QaLayerCapabilityInput, QaLayerCapabilityInspector, QaLayerCommandSpec, QaLayerJobRunner,
+    QaLayerRunnerEvent, QaReportAdapter, QaReportAdapterError, QaReportCancellation,
+    QaReportCandidate, QaReportOrigin, QaReportRootInput, QaReportScanInput, QaTaskCapabilityInput,
+    QaTaskCapabilityInspector, QaTaskScopeInput, QemuAdapterError, QemuCapabilityInspector,
+    QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, RootfsCompositionAdapter,
+    RootfsCompositionCancellation, RootfsCompositionSources, SdkArtifactAdapter,
+    SdkArtifactCancellation, SdkArtifactScanOutcome, SdkToolAdapter, SdkToolAdapterError,
+    SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SecurityCapabilityInput,
+    SecurityCapabilityInspector, SecurityMapperCommandSpec, SecurityMapperJobRunner,
+    SecurityMapperRunnerEvent, SecurityReportAdapter, SecurityReportAdapterError,
+    SecurityReportCancellation, SecurityReportScanOutcome, SignatureAdapter, SignatureCancellation,
+    TestResultAdapter, TestResultJob, TestResultOperation, TestResultRunnerEvent,
+    TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue, WicAdapterError,
+    WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector, WicDeviceInventoryResponse,
+    WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BitBakeCoexistenceDiagnostic,
@@ -100,19 +102,19 @@ use yoctui_model::{
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
     ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
     LayerRelationship, LayerRelationships, OnboardingProgress, PackageDetailRequest,
-    PackageInventoryRequest, PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect,
-    QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
-    QaReportRequest, QaScope, QaSessionId, QaSessionStatus, QaSourceLocation, QemuCapability,
-    QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity,
-    RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation,
-    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityAction, SecurityEffect,
-    SecurityOperation, SecurityReportRequest, SecurityScope, SecuritySessionId,
-    SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget,
-    TEXTAREA_MAX_BYTES, TestComparison, TestOperation, TestSessionId, TestWorkspaceView,
-    TextAreaRevision, Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft,
-    WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId,
-    WorkbenchPreferences, bitbake_coexistence_diagnostic, update, validate_config_edit_request,
-    validate_raw_favorites,
+    PackageInventoryRequest, PlatformComponent, PlatformInventory, PreviewKind, QaAction,
+    QaCheckFamily, QaCheckId, QaEffect, QaFindingScope, QaLayerIdentity, QaLayerSessionId,
+    QaReportFormat, QaReportIdentity, QaReportRequest, QaScope, QaSessionId, QaSessionStatus,
+    QaSourceLocation, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
+    QemuSessionId, RecipeIdentity, RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest,
+    SdkNativePreview, SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability,
+    SecurityAction, SecurityEffect, SecurityOperation, SecurityReportRequest, SecurityScope,
+    SecuritySessionId, SecuritySessionStatus, Severity, SignatureComparisonRequest,
+    SignatureTarget, TEXTAREA_MAX_BYTES, TestComparison, TestOperation, TestSessionId,
+    TestWorkspaceView, TextAreaRevision, Theme, VariableDetail, VariableIdentity, WicCapability,
+    WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation,
+    WicSessionId, WorkbenchPreferences, bitbake_coexistence_diagnostic, update,
+    validate_config_edit_request, validate_raw_favorites,
 };
 use yoctui_ui::render;
 
@@ -10451,20 +10453,331 @@ async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
     }
 }
 
-fn scan_layer_directory(scan: &Path) -> io::Result<Vec<LayerBrowserEntry>> {
-    let git_output = ProcessCommand::new("git")
-        .args([
-            "status",
-            "--porcelain=v1",
-            "--ignored",
-            "--untracked-files=all",
-            "--",
-            ".",
-        ])
-        .current_dir(scan)
-        .output()
+async fn inspect_kernel_workbench(app: &mut App, backend: &mut dyn BitBakeBackend) {
+    let target = "virtual/kernel".to_owned();
+    let metadata = match backend.get_recipe_metadata(target.clone()).await {
+        Ok(metadata) => metadata,
+        Err(error) => {
+            let _ = compatibility_workspace_action(app, Action::KernelFailed(error.to_string()));
+            return;
+        }
+    };
+    let mut roots = Vec::new();
+    let mut limitations = Vec::new();
+    let mut provider = None;
+    for variable in ["FILE", "S", "B", "WORKDIR"] {
+        match backend
+            .get_variable(variable.into(), Some(target.clone()))
+            .await
+        {
+            Ok(value) => {
+                let Some(value) = value.value.filter(|value| !value.trim().is_empty()) else {
+                    limitations.push(format!("{variable} was not reported for {target}."));
+                    continue;
+                };
+                let path = PathBuf::from(value);
+                if variable == "FILE" {
+                    if path.is_absolute() {
+                        provider = Some(path);
+                    } else {
+                        limitations.push("Kernel provider FILE was not absolute.".into());
+                    }
+                } else if path.is_absolute() {
+                    roots.push(path);
+                } else {
+                    limitations.push(format!("Kernel {variable} was not absolute."));
+                }
+            }
+            Err(error) => limitations.push(format!("Could not query kernel {variable}: {error}")),
+        }
+    }
+    if let Some(deploy) = app.workspace.variables.get("DEPLOY_DIR_IMAGE") {
+        roots.push(PathBuf::from(deploy));
+    }
+    let scan = tokio::task::spawn_blocking(move || PlatformArtifactAdapter.scan(roots)).await;
+    match scan {
+        Ok(Ok(scan)) => {
+            limitations.extend(scan.limitations);
+            let _ = compatibility_workspace_action(
+                app,
+                Action::KernelLoaded(PlatformInventory {
+                    component: PlatformComponent::Kernel,
+                    target,
+                    provider,
+                    tasks: metadata.tasks.unwrap_or_default(),
+                    roots: scan.roots,
+                    files: scan.files,
+                    dtc: scan.dtc,
+                    limitations,
+                }),
+            );
+        }
+        Ok(Err(error)) => {
+            let _ = compatibility_workspace_action(app, Action::KernelFailed(error.to_string()));
+        }
+        Err(error) => {
+            let _ = compatibility_workspace_action(
+                app,
+                Action::KernelFailed(format!("artifact scanner did not complete: {error}")),
+            );
+        }
+    }
+}
+
+async fn firmware_variable_hint(
+    backend: &mut dyn BitBakeBackend,
+    name: &str,
+    image: Option<&str>,
+) -> Option<String> {
+    if let Some(image) = image
+        && let Ok(value) = backend
+            .get_variable(name.into(), Some(image.to_owned()))
+            .await
+        && let Some(value) = value.value
+        && !value.trim().is_empty()
+    {
+        return Some(value.trim().to_owned());
+    }
+    backend
+        .get_variable(name.into(), None)
+        .await
         .ok()
-        .filter(|output| output.status.success());
+        .and_then(|value| value.value)
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+}
+
+fn push_firmware_candidate(candidates: &mut Vec<String>, candidate: &str) {
+    let candidate = candidate.trim();
+    if candidate.is_empty()
+        || !candidate
+            .chars()
+            .all(|value| value.is_ascii_alphanumeric() || "+._-/".contains(value))
+        || candidates.iter().any(|existing| existing == candidate)
+    {
+        return;
+    }
+    candidates.push(candidate.to_owned());
+}
+
+fn classify_firmware_component(
+    target: &str,
+    provider: Option<&Path>,
+    uboot_machine: Option<&str>,
+    efi_provider: Option<&str>,
+) -> PlatformComponent {
+    let identity = format!(
+        "{} {}",
+        target.to_ascii_lowercase(),
+        provider
+            .map(|path| path.display().to_string().to_ascii_lowercase())
+            .unwrap_or_default()
+    );
+    if identity.contains("u-boot") || uboot_machine.is_some() {
+        PlatformComponent::UBoot
+    } else if identity.contains("ovmf")
+        || identity.contains("edk2")
+        || identity.contains("uefi")
+        || identity.contains("efi")
+        || identity.contains("seabios")
+        || identity.contains("coreboot")
+        || efi_provider.is_some()
+    {
+        PlatformComponent::BiosUefi
+    } else {
+        PlatformComponent::BootFirmware
+    }
+}
+
+async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn BitBakeBackend) {
+    let image = app.build.target.as_deref();
+    let preferred =
+        firmware_variable_hint(backend, "PREFERRED_PROVIDER_virtual/bootloader", image).await;
+    let runtime = firmware_variable_hint(backend, "VIRTUAL-RUNTIME_bootloader", image).await;
+    let uboot_machine = firmware_variable_hint(backend, "UBOOT_MACHINE", image).await;
+    let efi_provider = firmware_variable_hint(backend, "EFI_PROVIDER", image).await;
+
+    let mut candidates = Vec::new();
+    if let Some(candidate) = preferred.as_deref() {
+        push_firmware_candidate(&mut candidates, candidate);
+    }
+    if uboot_machine.is_some() {
+        push_firmware_candidate(&mut candidates, "virtual/bootloader");
+    }
+    if let Some(candidate) = efi_provider.as_deref() {
+        push_firmware_candidate(&mut candidates, candidate);
+    }
+    if let Some(candidate) = runtime.as_deref() {
+        push_firmware_candidate(&mut candidates, candidate);
+    }
+    push_firmware_candidate(&mut candidates, "virtual/bootloader");
+    for recipe in &app.workspace.recipes {
+        let name = recipe.name.to_ascii_lowercase();
+        if [
+            "u-boot",
+            "uboot",
+            "ovmf",
+            "edk2",
+            "uefi",
+            "seabios",
+            "coreboot",
+            "grub-efi",
+            "systemd-boot",
+        ]
+        .iter()
+        .any(|needle| name.contains(needle))
+        {
+            push_firmware_candidate(&mut candidates, &recipe.name);
+        }
+    }
+
+    let mut selected = None;
+    let mut failures = Vec::new();
+    for candidate in candidates {
+        match backend.get_recipe_metadata(candidate.clone()).await {
+            Ok(metadata) => {
+                selected = Some((candidate, metadata));
+                break;
+            }
+            Err(error) => failures.push(format!("{candidate}: {error}")),
+        }
+    }
+    let Some((target, metadata)) = selected else {
+        let detail = failures.first().map_or(
+            "no boot firmware candidate was reported".to_owned(),
+            Clone::clone,
+        );
+        let _ = compatibility_workspace_action(
+            app,
+            Action::FirmwareFailed(format!(
+                "could not resolve U-Boot or BIOS/UEFI for the active image ({detail})"
+            )),
+        );
+        return;
+    };
+
+    let mut roots = Vec::new();
+    let mut limitations = Vec::new();
+    let mut provider = None;
+    for variable in ["FILE", "S", "B", "WORKDIR"] {
+        match backend
+            .get_variable(variable.into(), Some(target.clone()))
+            .await
+        {
+            Ok(value) => {
+                let Some(value) = value.value.filter(|value| !value.trim().is_empty()) else {
+                    limitations.push(format!("{variable} was not reported for {target}."));
+                    continue;
+                };
+                let path = PathBuf::from(value);
+                if variable == "FILE" {
+                    if path.is_absolute() {
+                        provider = Some(path);
+                    } else {
+                        limitations.push("Firmware provider FILE was not absolute.".into());
+                    }
+                } else if path.is_absolute() {
+                    roots.push(path);
+                } else {
+                    limitations.push(format!("Firmware {variable} was not absolute."));
+                }
+            }
+            Err(error) => limitations.push(format!("Could not query firmware {variable}: {error}")),
+        }
+    }
+    if let Some(deploy) = app.workspace.variables.get("DEPLOY_DIR_IMAGE") {
+        roots.push(PathBuf::from(deploy));
+    }
+    let component = classify_firmware_component(
+        &target,
+        provider.as_deref(),
+        uboot_machine.as_deref(),
+        efi_provider.as_deref(),
+    );
+    let scan = tokio::task::spawn_blocking(move || PlatformArtifactAdapter.scan(roots)).await;
+    match scan {
+        Ok(Ok(scan)) => {
+            limitations.extend(scan.limitations);
+            let _ = compatibility_workspace_action(
+                app,
+                Action::FirmwareLoaded(PlatformInventory {
+                    component,
+                    target,
+                    provider,
+                    tasks: metadata.tasks.unwrap_or_default(),
+                    roots: scan.roots,
+                    files: scan.files,
+                    dtc: scan.dtc,
+                    limitations,
+                }),
+            );
+        }
+        Ok(Err(error)) => {
+            let _ = compatibility_workspace_action(app, Action::FirmwareFailed(error.to_string()));
+        }
+        Err(error) => {
+            let _ = compatibility_workspace_action(
+                app,
+                Action::FirmwareFailed(format!("artifact scanner did not complete: {error}")),
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod firmware_workbench_tests {
+    use super::*;
+
+    #[test]
+    fn firmware_detection_classifies_provider_identity_without_guessing_unknowns() {
+        assert_eq!(
+            classify_firmware_component(
+                "virtual/bootloader",
+                Some(Path::new("/layers/u-boot/u-boot_2026.bb")),
+                None,
+                None,
+            ),
+            PlatformComponent::UBoot
+        );
+        assert_eq!(
+            classify_firmware_component("ovmf", None, None, Some("ovmf")),
+            PlatformComponent::BiosUefi
+        );
+        assert_eq!(
+            classify_firmware_component("virtual/bootloader", None, None, None),
+            PlatformComponent::BootFirmware
+        );
+    }
+
+    #[test]
+    fn firmware_candidates_are_bounded_to_single_native_targets() {
+        let mut candidates = Vec::new();
+        push_firmware_candidate(&mut candidates, "u-boot-fslc");
+        push_firmware_candidate(&mut candidates, "u-boot-fslc");
+        push_firmware_candidate(&mut candidates, "u-boot; rm -rf / ");
+        push_firmware_candidate(&mut candidates, "${BOOTLOADER}");
+        assert_eq!(candidates, vec!["u-boot-fslc"]);
+    }
+}
+
+fn scan_layer_directory(scan: &Path, inspect_git: bool) -> io::Result<Vec<LayerBrowserEntry>> {
+    let git_output = inspect_git
+        .then(|| {
+            ProcessCommand::new("git")
+                .args([
+                    "status",
+                    "--porcelain=v1",
+                    "--ignored",
+                    "--untracked-files=all",
+                    "--",
+                    ".",
+                ])
+                .current_dir(scan)
+                .output()
+                .ok()
+                .filter(|output| output.status.success())
+        })
+        .flatten();
     let git_lines = git_output.as_ref().map(|output| {
         String::from_utf8_lossy(&output.stdout)
             .lines()
@@ -10526,7 +10839,8 @@ async fn load_layer_browser_directory(
     directory: PathBuf,
 ) {
     let scan = directory.clone();
-    match tokio::task::spawn_blocking(move || scan_layer_directory(&scan)).await {
+    let inspect_git = !layer.starts_with("Rootfs:") && layer != "Rootfs system";
+    match tokio::task::spawn_blocking(move || scan_layer_directory(&scan, inspect_git)).await {
         Ok(Ok(entries)) => {
             if let Some(Effect::LoadLayerBrowserPreview(path)) = compatibility_workspace_action(
                 app,
@@ -11249,6 +11563,18 @@ async fn tui(
             effect,
         );
     }
+    if app.screen == Screen::Kernel
+        && let Some(Effect::InspectKernel) =
+            compatibility_workspace_action(&mut app, Action::InspectKernel)
+    {
+        inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+    }
+    if app.screen == Screen::Firmware
+        && let Some(Effect::InspectFirmware) =
+            compatibility_workspace_action(&mut app, Action::InspectFirmware)
+    {
+        inspect_firmware_workbench(&mut app, backend.as_mut()).await;
+    }
     if app.screen == Screen::Testing
         && let Some(effect) =
             compatibility_workspace_action(&mut app, Action::InspectTestCapability)
@@ -11638,7 +11964,64 @@ async fn tui(
                         terminal_size.height,
                     )
                 {
-                    let _ = compatibility_workspace_action(&mut app, action);
+                    match compatibility_workspace_action(&mut app, action) {
+                        Some(Effect::InspectKernel) => {
+                            inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                        }
+                        Some(Effect::InspectFirmware) => {
+                            inspect_firmware_workbench(&mut app, backend.as_mut()).await;
+                        }
+                        Some(
+                            effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_)),
+                        ) => {
+                            begin_package_operation(
+                                &mut app,
+                                &package_adapter,
+                                &mut package_operation,
+                                effect,
+                            );
+                        }
+                        Some(effect @ Effect::GetImageArtifacts(_)) => {
+                            begin_image_artifact_operation(
+                                &mut app,
+                                image_artifact_adapter.as_ref(),
+                                &mut image_artifact_operation,
+                                effect,
+                            );
+                        }
+                        Some(effect @ Effect::GetRootfsComposition(_)) => {
+                            begin_rootfs_composition_operation(
+                                backend.as_mut(),
+                                &mut app,
+                                &session_build_dir,
+                                &mut rootfs_composition_operation,
+                                effect,
+                            )
+                            .await;
+                        }
+                        Some(Effect::LoadLayerBrowserDirectory {
+                            layer,
+                            root,
+                            directory,
+                        }) => {
+                            load_layer_browser_directory(&mut app, layer, root, directory).await;
+                        }
+                        Some(Effect::LoadLayerBrowserPreview(path)) => {
+                            load_layer_browser_preview(&mut app, path).await;
+                        }
+                        Some(Effect::OpenInEditor(path)) => {
+                            open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        Some(effect @ Effect::InspectSdkTools) => {
+                            begin_sdk_capability_operation(
+                                &mut app,
+                                sdk_tool_adapter.as_ref(),
+                                &mut sdk_capability_operation,
+                                effect,
+                            );
+                        }
+                        _ => {}
+                    }
                 }
                 continue;
             }
@@ -12847,6 +13230,10 @@ async fn tui(
                             &mut sdk_capability_operation,
                             effect,
                         );
+                    } else if let Some(Effect::InspectKernel) = effect {
+                        inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                    } else if let Some(Effect::InspectFirmware) = effect {
+                        inspect_firmware_workbench(&mut app, backend.as_mut()).await;
                     } else if let Some(effect @ Effect::Security(_)) = effect {
                         let _ = route_independent_security_effect(
                             &guard,
@@ -12879,78 +13266,105 @@ async fn tui(
                     && !app.metadata_searching
                     && app.focus != yoctui_model::FocusTarget::Dialog
                 {
-                    let effect = match input {
-                        Input::Tab => compatibility_workspace_action(
+                    let preview_focused = app
+                        .layer_browser
+                        .as_ref()
+                        .is_some_and(|browser| browser.preview_focused);
+                    let effect = match (preview_focused, input) {
+                        (true, Input::Up) => compatibility_workspace_action(
                             &mut app,
-                            Action::CycleFocus { backwards: false },
+                            Action::ScrollLayerBrowserPreview { delta: -1 },
                         ),
-                        Input::BackTab => compatibility_workspace_action(
+                        (true, Input::Down) => compatibility_workspace_action(
                             &mut app,
-                            Action::CycleFocus { backwards: true },
+                            Action::ScrollLayerBrowserPreview { delta: 1 },
                         ),
-                        Input::Up => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: -1 },
-                        ),
-                        Input::Down => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: 1 },
-                        ),
-                        Input::PageUp => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: -10 },
-                        ),
-                        Input::PageDown => compatibility_workspace_action(
-                            &mut app,
-                            Action::SelectLayerBrowserEntry { delta: 10 },
-                        ),
-                        Input::Enter => {
-                            compatibility_workspace_action(&mut app, Action::LayerBrowserEnter)
-                        }
-                        Input::Right | Input::Char('l') => {
-                            compatibility_workspace_action(&mut app, Action::LayerBrowserExpand)
-                        }
-                        Input::Esc => {
-                            compatibility_workspace_action(&mut app, Action::CloseLayerBrowser)
-                        }
-                        Input::Left | Input::Char('h') => {
-                            compatibility_workspace_action(&mut app, Action::LayerBrowserUp)
-                        }
-                        Input::Char('r') => {
-                            compatibility_workspace_action(&mut app, Action::RefreshLayerBrowser)
-                        }
-                        Input::Char('e') => compatibility_workspace_action(
-                            &mut app,
-                            Action::EditSelectedLayerBrowserFile,
-                        ),
-                        Input::Char('.') => compatibility_workspace_action(
-                            &mut app,
-                            Action::ToggleLayerBrowserHidden,
-                        ),
-                        Input::Char('/') => {
-                            compatibility_workspace_action(&mut app, Action::BeginMetadataSearch)
-                        }
-                        Input::Char('i') => compatibility_workspace_action(
-                            &mut app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                        ),
-                        Input::Char('[') => compatibility_workspace_action(
+                        (true, Input::PageUp) => compatibility_workspace_action(
                             &mut app,
                             Action::ScrollLayerBrowserPreview { delta: -10 },
                         ),
-                        Input::Char(']') => compatibility_workspace_action(
+                        (true, Input::PageDown) => compatibility_workspace_action(
                             &mut app,
                             Action::ScrollLayerBrowserPreview { delta: 10 },
                         ),
-                        Input::Char('m') => compatibility_workspace_action(
-                            &mut app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
-                        ),
-                        Input::Char('d') => compatibility_workspace_action(
-                            &mut app,
-                            Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
-                        ),
-                        _ => None,
+                        (true, Input::Left) => {
+                            compatibility_workspace_action(&mut app, Action::FocusLayerBrowserTree)
+                        }
+                        (_, input) => match input {
+                            Input::Tab => compatibility_workspace_action(
+                                &mut app,
+                                Action::CycleFocus { backwards: false },
+                            ),
+                            Input::BackTab => compatibility_workspace_action(
+                                &mut app,
+                                Action::CycleFocus { backwards: true },
+                            ),
+                            Input::Up => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: -1 },
+                            ),
+                            Input::Down => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: 1 },
+                            ),
+                            Input::PageUp => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: -10 },
+                            ),
+                            Input::PageDown => compatibility_workspace_action(
+                                &mut app,
+                                Action::SelectLayerBrowserEntry { delta: 10 },
+                            ),
+                            Input::Enter => {
+                                compatibility_workspace_action(&mut app, Action::LayerBrowserEnter)
+                            }
+                            Input::Right | Input::Char('l') => {
+                                compatibility_workspace_action(&mut app, Action::LayerBrowserExpand)
+                            }
+                            Input::Esc => {
+                                compatibility_workspace_action(&mut app, Action::CloseLayerBrowser)
+                            }
+                            Input::Left | Input::Char('h') => {
+                                compatibility_workspace_action(&mut app, Action::LayerBrowserUp)
+                            }
+                            Input::Char('r') => compatibility_workspace_action(
+                                &mut app,
+                                Action::RefreshLayerBrowser,
+                            ),
+                            Input::Char('e') => compatibility_workspace_action(
+                                &mut app,
+                                Action::EditSelectedLayerBrowserFile,
+                            ),
+                            Input::Char('.') => compatibility_workspace_action(
+                                &mut app,
+                                Action::ToggleLayerBrowserHidden,
+                            ),
+                            Input::Char('/') => compatibility_workspace_action(
+                                &mut app,
+                                Action::BeginMetadataSearch,
+                            ),
+                            Input::Char('i') => compatibility_workspace_action(
+                                &mut app,
+                                Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                            ),
+                            Input::Char('[') => compatibility_workspace_action(
+                                &mut app,
+                                Action::ScrollLayerBrowserPreview { delta: -10 },
+                            ),
+                            Input::Char(']') => compatibility_workspace_action(
+                                &mut app,
+                                Action::ScrollLayerBrowserPreview { delta: 10 },
+                            ),
+                            Input::Char('m') => compatibility_workspace_action(
+                                &mut app,
+                                Action::SetLayerInspectorMode(LayerInspectorMode::Metadata),
+                            ),
+                            Input::Char('d') => compatibility_workspace_action(
+                                &mut app,
+                                Action::SetLayerInspectorMode(LayerInspectorMode::Dependencies),
+                            ),
+                            _ => None,
+                        },
                     };
                     match effect {
                         Some(Effect::LoadLayerBrowserDirectory {
@@ -13416,6 +13830,43 @@ async fn tui(
                     input,
                 ) {
                     let _ = compatibility_workspace_action(&mut app, action);
+                } else if matches!(app.screen, Screen::Kernel | Screen::Firmware)
+                    && let Some(action) = match app.screen {
+                        Screen::Kernel => platform_workspace_action(input),
+                        Screen::Firmware => firmware_workspace_action(input),
+                        _ => None,
+                    }
+                {
+                    match compatibility_workspace_action(&mut app, action) {
+                        Some(Effect::InspectKernel) => {
+                            inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                        }
+                        Some(Effect::InspectFirmware) => {
+                            inspect_firmware_workbench(&mut app, backend.as_mut()).await;
+                        }
+                        Some(Effect::OpenWorkspaceEditor { label, root }) => {
+                            open_workspace_editor(&mut app, label, root).await;
+                        }
+                        Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
+                            if let Some(Effect::LoadRecipeEditorFile(path)) =
+                                compatibility_workspace_action(
+                                    &mut app,
+                                    Action::OpenRecipeEditor {
+                                        recipe: layer,
+                                        root,
+                                        files: vec![file],
+                                    },
+                                )
+                            {
+                                load_recipe_editor_file(&mut app, path).await;
+                            }
+                        }
+                        _ => {}
+                    }
+                } else if app.screen == Screen::Insights
+                    && let Some(action) = overview_workspace_action(input)
+                {
+                    let _ = compatibility_workspace_action(&mut app, action);
                 } else if collection_scroll_delta(input).is_some()
                     && let Some(action) = workspace_collection_action(&app, input)
                 {
@@ -13501,6 +13952,27 @@ async fn tui(
                         }
                         Some(Effect::OpenInEditor(path)) => {
                             open_in_editor(&guard, &mut app, path, editor.as_deref()).await;
+                        }
+                        Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
+                            if let Some(Effect::LoadRecipeEditorFile(path)) =
+                                compatibility_workspace_action(
+                                    &mut app,
+                                    Action::OpenRecipeEditor {
+                                        recipe: layer,
+                                        root,
+                                        files: vec![file],
+                                    },
+                                )
+                            {
+                                load_recipe_editor_file(&mut app, path).await;
+                            }
+                        }
+                        Some(Effect::LoadLayerBrowserDirectory {
+                            layer,
+                            root,
+                            directory,
+                        }) => {
+                            load_layer_browser_directory(&mut app, layer, root, directory).await;
                         }
                         _ => {}
                     }
@@ -17268,7 +17740,7 @@ mod tests {
         fs::write(directory.join("demo.bb"), "SUMMARY = \"demo\"").unwrap();
         fs::write(directory.join(".hidden"), "hidden").unwrap();
 
-        let entries = scan_layer_directory(&directory).unwrap();
+        let entries = scan_layer_directory(&directory, true).unwrap();
         assert_eq!(
             entries[0].path.file_name().unwrap().to_string_lossy(),
             "recipes-demo"
@@ -17343,7 +17815,7 @@ mod tests {
             fs::write(directory.join("tracked.bb"), "SUMMARY = \"changed\"\n").unwrap();
             fs::write(directory.join("new.bb"), "SUMMARY = \"new\"\n").unwrap();
             fs::write(directory.join("ignored.bin"), [1, 2, 3]).unwrap();
-            let entries = scan_layer_directory(&directory).unwrap();
+            let entries = scan_layer_directory(&directory, true).unwrap();
             let state = |name: &str| {
                 entries
                     .iter()
@@ -17356,7 +17828,7 @@ mod tests {
             assert_eq!(state("ignored.bin"), GitFileState::Ignored);
         } else {
             assert!(
-                scan_layer_directory(&directory)
+                scan_layer_directory(&directory, true)
                     .unwrap()
                     .iter()
                     .all(|entry| entry.git == GitFileState::Unavailable)

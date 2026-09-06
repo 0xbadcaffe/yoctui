@@ -136,6 +136,10 @@ pub fn backend_event_from_rootfs_data(
             image,
             installed_packages,
             filesystem_tree,
+            system_inventory: yoctui_model::RootfsAuthority::Unavailable {
+                reason: "offline system inventory is client-local and was not included in this wire snapshot".into(),
+            },
+            root_directory: None,
         },
         limitations: data.limitations,
     })
@@ -4524,6 +4528,18 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "images.artifacts" | "sdk.artifacts" => Input::Char('R'),
         "images.rootfs" => Input::Char('p'),
         "images.cancel" | "qemu_wic.cancel" => Input::Char('x'),
+        "kernel.refresh" => Input::Char('r'),
+        "kernel.menuconfig" => Input::Char('m'),
+        "kernel.view" => Input::Enter,
+        "kernel.explore" => Input::Char('o'),
+        "kernel.compile" => Input::Char('c'),
+        "kernel.decompile" => Input::Char('d'),
+        "firmware.refresh" => Input::Char('r'),
+        "firmware.menuconfig" => Input::Char('m'),
+        "firmware.view" => Input::Enter,
+        "firmware.explore" => Input::Char('o'),
+        "firmware.compile" => Input::Char('c'),
+        "firmware.decompile" => Input::Char('d'),
         "sdk.standard" => Input::Char('s'),
         "sdk.extensible" => Input::Char('E'),
         "sdk.testsdk" => Input::Char('t'),
@@ -5086,6 +5102,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
     let delta = collection_scroll_delta(key)?;
     match app.screen {
         Screen::Dashboard | Screen::Tasks => tasks_action(app.task_filter_editing, key),
+        Screen::Insights => None,
         Screen::BuildHistory => Some(Action::SelectBuildHistory { delta }),
         Screen::Dependencies => dependency_workspace_action(app.dependency_graph_searching, key),
         Screen::Signatures => signature_workspace_action(key),
@@ -5094,6 +5111,8 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Images => {
             images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)
         }
+        Screen::Kernel => platform_workspace_action(key),
+        Screen::Firmware => firmware_workspace_action(key),
         Screen::Sdk => sdk_workspace_action(app.sdk_artifact_searching, key),
         Screen::Testing => match app.test_view {
             TestWorkspaceView::Launches => testing_workspace_action(key),
@@ -5141,10 +5160,60 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
     }
 }
 
+pub fn platform_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectKernelFile { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectKernelFile { delta: 1 }),
+        Input::PageUp => Some(Action::SelectKernelFile { delta: -10 }),
+        Input::PageDown => Some(Action::SelectKernelFile { delta: 10 }),
+        Input::Tab | Input::BackTab => Some(Action::CycleKernelView),
+        Input::Char('m') => Some(Action::LaunchKernelMenuconfig),
+        Input::Enter | Input::Char('e') => Some(Action::OpenSelectedKernelFile),
+        Input::Char('o') => Some(Action::ExploreSelectedKernelRoot),
+        Input::Char('c') => Some(Action::CompileSelectedKernelDts),
+        Input::Char('d') => Some(Action::DecompileSelectedKernelDtb),
+        Input::Char('r') => Some(Action::InspectKernel),
+        _ => None,
+    }
+}
+
+pub fn firmware_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectFirmwareFile { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectFirmwareFile { delta: 1 }),
+        Input::PageUp => Some(Action::SelectFirmwareFile { delta: -10 }),
+        Input::PageDown => Some(Action::SelectFirmwareFile { delta: 10 }),
+        Input::Tab | Input::BackTab => Some(Action::CycleFirmwareView),
+        Input::Char('m') => Some(Action::LaunchFirmwareMenuconfig),
+        Input::Enter | Input::Char('e') => Some(Action::OpenSelectedFirmwareFile),
+        Input::Char('o') => Some(Action::ExploreSelectedFirmwareRoot),
+        Input::Char('c') => Some(Action::CompileSelectedFirmwareDts),
+        Input::Char('d') => Some(Action::DecompileSelectedFirmwareDtb),
+        Input::Char('r') => Some(Action::InspectFirmware),
+        _ => None,
+    }
+}
+
 pub fn dashboard_workspace_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('f') => Some(Action::OpenRawFavorites),
         Input::Char('t') => Some(Action::Open(Screen::TerminalSessions)),
+        _ => None,
+    }
+}
+
+pub fn overview_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Left | Input::Char('[') | Input::Char('h') => {
+            Some(Action::ShiftOverviewView { delta: -1 })
+        }
+        Input::Right | Input::Char(']') | Input::Char('l') => {
+            Some(Action::ShiftOverviewView { delta: 1 })
+        }
+        Input::Char(character @ '1'..='8') => {
+            yoctui_model::OverviewView::from_number(character as u8 - b'0')
+                .map(Action::SelectOverviewView)
+        }
         _ => None,
     }
 }
@@ -6160,7 +6229,7 @@ pub fn images_workspace_action_for_view(
         });
     }
     if !(view == yoctui_model::ImagesView::Artifacts && searching)
-        && let Input::Char(key @ ('1' | '2' | '3')) = key
+        && let Input::Char(key @ ('1' | '2' | '3' | '4' | '5')) = key
     {
         let current = yoctui_model::ImagesView::ALL
             .iter()
@@ -6191,6 +6260,33 @@ pub fn images_workspace_action_for_view(
         return match key {
             Input::Up | Input::Char('k') => Some(Action::SelectRootfsEntry { delta: -1 }),
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsEntry { delta: 1 }),
+            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            _ => None,
+        };
+    }
+    if view == yoctui_model::ImagesView::SystemdServices {
+        if let Some(delta) = collection_scroll_delta(key) {
+            return Some(Action::SelectRootfsSystemdService { delta });
+        }
+        return match key {
+            Input::Up | Input::Char('k') => Some(Action::SelectRootfsSystemdService { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::SelectRootfsSystemdService { delta: 1 }),
+            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
+            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            _ => None,
+        };
+    }
+    if view == yoctui_model::ImagesView::SystemDbus {
+        if let Some(delta) = collection_scroll_delta(key) {
+            return Some(Action::SelectRootfsDbusService { delta });
+        }
+        return match key {
+            Input::Up | Input::Char('k') => Some(Action::SelectRootfsDbusService { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::SelectRootfsDbusService { delta: 1 }),
+            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Char('e') => Some(Action::EditSelectedRootfsSystemFile),
             Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
         };
@@ -10950,12 +11046,12 @@ mod tests {
         let click_layers = MouseInput {
             kind: MouseKind::Down,
             column: 5,
-            row: 6,
+            row: 7,
         };
         let select = mouse_action_for_app(click_layers, &app, 180, 40);
-        assert_eq!(select, Some(Action::SelectNavigatorAt { index: 1 }));
+        assert_eq!(select, Some(Action::SelectNavigatorAt { index: 2 }));
         let _ = yoctui_model::update(&mut app, select.unwrap());
-        assert_eq!(app.navigator_selection, 1);
+        assert_eq!(app.navigator_selection, 2);
         assert_eq!(app.focus, FocusTarget::Navigator);
         assert_eq!(
             mouse_action_for_app(click_layers, &app, 180, 40),
@@ -10982,7 +11078,7 @@ mod tests {
         let content_heading = MouseInput {
             kind: MouseKind::Down,
             column: 5,
-            row: 5,
+            row: 6,
         };
         assert_eq!(
             mouse_action_for_app(content_heading, &app, 180, 40),
@@ -10991,7 +11087,7 @@ mod tests {
         let collapse = mouse_action_for_app(content_heading, &app, 180, 40).unwrap();
         let _ = yoctui_model::update(&mut app, collapse);
         assert!(!app.navigator_groups_expanded[1]);
-        assert_eq!(app.navigator_selection, 1);
+        assert_eq!(app.navigator_selection, 2);
         assert_eq!(
             mouse_action_for_app(content_heading, &app, 180, 40),
             Some(Action::ToggleNavigatorGroup { group: 1 })
@@ -12489,6 +12585,18 @@ mod tests {
             Some(Action::SelectRootfsEntry { delta: 1 })
         );
         assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::Right),
+            Some(Action::BrowseRootfsFilesystem)
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::SystemdServices, Input::Char('e')),
+            Some(Action::EditSelectedRootfsSystemFile)
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::SystemDbus, Input::Down),
+            Some(Action::SelectRootfsDbusService { delta: 1 })
+        );
+        assert_eq!(
             images_workspace_action_for_view(false, ImagesView::RootfsFilesystem, Input::BackTab),
             Some(Action::ShiftImagesView { delta: -1 })
         );
@@ -12503,6 +12611,10 @@ mod tests {
         assert_eq!(
             images_workspace_action_for_view(true, ImagesView::Artifacts, Input::Char('2')),
             Some(Action::AppendImageArtifactQuery('2'))
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Char('5')),
+            Some(Action::ShiftImagesView { delta: 4 })
         );
 
         let mut app = App::new(10, 1_000);
@@ -15354,5 +15466,63 @@ mod tests {
             settings_action(Input::Char('R')),
             Some(Action::ResetPreferences)
         );
+    }
+
+    #[test]
+    fn kernel_workbench_keys_route_to_typed_actions() {
+        assert_eq!(
+            platform_workspace_action(Input::Tab),
+            Some(Action::CycleKernelView)
+        );
+        assert_eq!(
+            platform_workspace_action(Input::Char('m')),
+            Some(Action::LaunchKernelMenuconfig)
+        );
+        assert_eq!(
+            platform_workspace_action(Input::Char('c')),
+            Some(Action::CompileSelectedKernelDts)
+        );
+        assert_eq!(
+            platform_workspace_action(Input::Char('d')),
+            Some(Action::DecompileSelectedKernelDtb)
+        );
+    }
+
+    #[test]
+    fn firmware_workbench_keys_route_to_typed_actions() {
+        assert_eq!(
+            firmware_workspace_action(Input::Tab),
+            Some(Action::CycleFirmwareView)
+        );
+        assert_eq!(
+            firmware_workspace_action(Input::Char('m')),
+            Some(Action::LaunchFirmwareMenuconfig)
+        );
+        assert_eq!(
+            firmware_workspace_action(Input::Char('c')),
+            Some(Action::CompileSelectedFirmwareDts)
+        );
+        assert_eq!(
+            firmware_workspace_action(Input::Char('d')),
+            Some(Action::DecompileSelectedFirmwareDtb)
+        );
+    }
+
+    #[test]
+    fn overview_workspace_routes_tabs_and_numbered_views() {
+        assert_eq!(
+            overview_workspace_action(Input::Char('7')),
+            Some(Action::SelectOverviewView(
+                yoctui_model::OverviewView::SupplyChain
+            ))
+        );
+        assert_eq!(
+            overview_workspace_action(Input::Char(']')),
+            Some(Action::ShiftOverviewView { delta: 1 })
+        );
+        let mut app = yoctui_model::App::new(8, 1_000);
+        app.screen = Screen::Insights;
+        let _ = yoctui_model::update(&mut app, Action::ShiftOverviewView { delta: -1 });
+        assert_eq!(app.overview_view, yoctui_model::OverviewView::DiskUsage);
     }
 }

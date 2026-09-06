@@ -24,6 +24,8 @@ pub enum WorkspaceDestination {
     Signatures,
     Packages,
     Images,
+    Kernel,
+    Firmware,
     Sdk,
     Testing,
     Security,
@@ -41,7 +43,7 @@ pub enum WorkspaceDestination {
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 26] = [
+    pub const ALL: [Self; 28] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
@@ -54,6 +56,8 @@ impl WorkspaceDestination {
         Self::Signatures,
         Self::Packages,
         Self::Images,
+        Self::Kernel,
+        Self::Firmware,
         Self::Sdk,
         Self::Testing,
         Self::Security,
@@ -461,7 +465,7 @@ fn capability_names(capabilities: &[CapabilityId]) -> String {
 /// authorized separately by `workspace_effect_requirement`.
 pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestination {
     match screen {
-        Screen::Dashboard => WorkspaceDestination::Dashboard,
+        Screen::Dashboard | Screen::Insights => WorkspaceDestination::Dashboard,
         Screen::Tasks => WorkspaceDestination::Tasks,
         Screen::BuildHistory => WorkspaceDestination::BuildHistory,
         Screen::Dependencies => WorkspaceDestination::Dependencies,
@@ -470,6 +474,8 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Recipes => WorkspaceDestination::Recipes,
         Screen::Packages => WorkspaceDestination::Packages,
         Screen::Images => WorkspaceDestination::Images,
+        Screen::Kernel => WorkspaceDestination::Kernel,
+        Screen::Firmware => WorkspaceDestination::Firmware,
         Screen::Sdk => WorkspaceDestination::Sdk,
         Screen::Testing => WorkspaceDestination::Testing,
         Screen::Security => WorkspaceDestination::Security,
@@ -528,6 +534,12 @@ pub fn workspace_destination_requirement(
             &[],
             &[Id::BitBakeBuild, Id::RunQemu, Id::WicCreate],
         ),
+        WorkspaceDestination::Kernel | WorkspaceDestination::Firmware => {
+            WorkspaceEffectRequirement::all_and_any(
+                &[Id::BitBakeGetVar],
+                &[Id::MenuConfig, Id::BitBakeRecipeInventory],
+            )
+        }
         WorkspaceDestination::Sdk => WorkspaceEffectRequirement::all_and_any(
             &[],
             &[
@@ -628,6 +640,9 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::WriteBbmask(_) => Requirement::ClientLocal,
 
         Effect::Start(request) => build_request_requirement(request),
+        Effect::InspectKernel | Effect::InspectFirmware => {
+            Requirement::all(&[Id::BitBakeGetVar, Id::BitBakeRecipeMetadata])
+        }
         Effect::Cancel => Requirement::one(Id::BitBakeCancellation),
         Effect::StartRaw(request) => builtin_raw_catalog()
             .command(&request.command)
@@ -1226,9 +1241,10 @@ mod tests {
 
     #[test]
     fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
-        assert_eq!(WorkspaceDestination::ALL.len(), 26);
+        assert_eq!(WorkspaceDestination::ALL.len(), 28);
         for screen in [
             Screen::Dashboard,
+            Screen::Insights,
             Screen::Tasks,
             Screen::BuildHistory,
             Screen::Dependencies,
@@ -1237,6 +1253,8 @@ mod tests {
             Screen::Recipes,
             Screen::Packages,
             Screen::Images,
+            Screen::Kernel,
+            Screen::Firmware,
             Screen::Sdk,
             Screen::Testing,
             Screen::Security,

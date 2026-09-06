@@ -2,9 +2,9 @@
   "schema": "yoctui.performance.event-flood-observation.v1",
   "status": "observed",
   "identity": {
-    "source_base_revision": "6d0594d56d38fb9cbd97e3545fc145755bb0ea60",
-    "binary_path": "/home/bspguy-dev/projects/yoctui/target/debug/yoctui",
-    "binary_sha256": "d1429dc3ea2858c4ce42efb336452722fd381caecd587189853a359dc331ae90"
+    "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
+    "binary_path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
+    "binary_sha256": "ee4be85588ce923b0910f71866a9bed5d8e0687f8fad4d29b0b07cb98ab27e8a"
   },
   "configuration": {
     "rate_events_per_second": 4000,
@@ -31,15 +31,15 @@
     },
     "measurement": {
       "clock": "CLOCK_MONOTONIC",
-      "elapsed_seconds": 1.0005194200202823,
-      "ordinary_events": 4001,
-      "total_build_events": 4009,
-      "actual_ordinary_events_per_second": 3998.9228793968764,
+      "elapsed_seconds": 1.0011260008905083,
+      "ordinary_events": 4003,
+      "total_build_events": 4011,
+      "actual_ordinary_events_per_second": 3998.497688042569,
       "event_counts": {
         "build_started": 1,
         "task_queued": 127,
-        "task_started": 126,
-        "task_progress": 501,
+        "task_started": 127,
+        "task_progress": 502,
         "log": 2875,
         "warning": 126,
         "error": 126,
@@ -50,44 +50,44 @@
     "critical_sent": [
       {
         "name": "warning_sentinel",
-        "bridge_sequence": 4007,
+        "bridge_sequence": 4009,
         "type": "warning"
       },
       {
         "name": "error_sentinel",
-        "bridge_sequence": 4008,
+        "bridge_sequence": 4010,
         "type": "error"
       },
       {
         "name": "critical_task_queued",
-        "bridge_sequence": 4009,
+        "bridge_sequence": 4011,
         "type": "task_queued"
       },
       {
         "name": "critical_task_started",
-        "bridge_sequence": 4010,
+        "bridge_sequence": 4012,
         "type": "task_started"
       },
       {
         "name": "critical_task_progress",
-        "bridge_sequence": 4011,
+        "bridge_sequence": 4013,
         "type": "task_progress"
       },
       {
         "name": "critical_task_failed",
-        "bridge_sequence": 4012,
+        "bridge_sequence": 4014,
         "type": "task_completed"
       },
       {
         "name": "build_terminal",
-        "bridge_sequence": 4013,
+        "bridge_sequence": 4015,
         "type": "build_completed"
       }
     ],
-    "last_bridge_sequence": 4013
+    "last_bridge_sequence": 4015
   },
   "client": {
-    "frames_received": 1652,
+    "frames_received": 1653,
     "snapshot_replacements": 0,
     "resync_requests": 0,
     "event_sequences_strictly_increasing": true,
@@ -105,30 +105,30 @@
       "critical_task_progress"
     ],
     "wire_metrics": {
-      "measurement_seconds": 4.173836888978258,
-      "frames_received": 1654,
-      "frame_bytes_received": 450621,
-      "frames_per_second": 396.2780635648879,
-      "bytes_per_second": 107963.25107719065,
+      "measurement_seconds": 4.175926909781992,
+      "frames_received": 1655,
+      "frame_bytes_received": 449900,
+      "frames_per_second": 396.3191970920776,
+      "bytes_per_second": 107736.55998291583,
       "frames_sent": 3,
       "frame_bytes_sent": 577,
-      "initial_snapshot_json_bytes": 69028,
+      "initial_snapshot_json_bytes": 69027,
       "received_by_type": {
         "hello": {
           "frames": 1,
-          "frame_bytes": 722,
-          "minimum_frame_bytes": 722,
-          "maximum_frame_bytes": 722
+          "frame_bytes": 721,
+          "minimum_frame_bytes": 721,
+          "maximum_frame_bytes": 721
         },
         "attached": {
           "frames": 1,
-          "frame_bytes": 69084,
-          "minimum_frame_bytes": 69084,
-          "maximum_frame_bytes": 69084
+          "frame_bytes": 69083,
+          "minimum_frame_bytes": 69083,
+          "maximum_frame_bytes": 69083
         },
         "event": {
-          "frames": 1651,
-          "frame_bytes": 380741,
+          "frames": 1652,
+          "frame_bytes": 380022,
           "minimum_frame_bytes": 99,
           "maximum_frame_bytes": 440
         },
@@ -145,22 +145,22 @@
           "maximum_frame_bytes": 24
         }
       },
-      "daemon_cpu_seconds": 0.52
+      "daemon_cpu_seconds": 0.09
     },
     "pressure": {
-      "current_queue_depth": 533,
-      "maximum_queue_depth": 599,
+      "current_queue_depth": 535,
+      "maximum_queue_depth": 602,
       "cosmetic_coalesced": 0,
-      "cosmetic_dropped": 1327,
+      "cosmetic_dropped": 1325,
       "reliable_waits": 0,
       "forced_resynchronizations": 0,
       "slow_client_disconnects": 1
     }
   },
   "bounds": {
-    "daemon_rss_initial_bytes": 41930752,
-    "daemon_rss_max_bytes": 43790336,
-    "daemon_rss_final_bytes": 43790336,
+    "daemon_rss_initial_bytes": 17481728,
+    "daemon_rss_max_bytes": 18726912,
+    "daemon_rss_final_bytes": 18726912,
     "journal_retained_events": 4096,
     "snapshot_build_events": 2048,
     "snapshot_recent_logs": 512,
@@ -173,6 +173,6 @@
   "result": {
     "critical_retention_passed": true,
     "expected_pre_backpressure_terminal_starvation_observed": false,
-    "runtime_seconds": 5.513443300966173
+    "runtime_seconds": 5.03037403896451
   }
 }

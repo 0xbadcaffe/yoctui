@@ -33,11 +33,22 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
 
 - **Build cockpit** — confirmed image/recipe builds, task progress, logs,
   structured errors, CPU/memory/disk telemetry, cancellation, and history.
+- **Overview insights** — build timeline and critical path, signature rebuild
+  causes, sstate/download outcomes, image-size composition, metadata
+  provenance, runtime package topology, SPDX/CycloneDX/manifest supply-chain
+  coverage, and disk history.
 - **Metadata workbench** — layer tree, recipe browser, syntax-aware preview,
   in-TUI editing, configuration provenance, BBMASK, dependencies, and
   signatures.
+- **Kernel workbench** — provider-aware menuconfig, `.config` browsing, and
+  bounded DTS/DTB exploration, compilation, and decompilation.
+- **U-Boot / BIOS workbench** — image-aware boot-firmware detection with the
+  same configuration, source exploration, and device-tree workflow.
 - **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
-  consoles, Wic, Testing, CVE/SPDX, QA, sstate, release, and maintenance tools.
+  consoles, Wic, Testing, CVE/SPDX/CycloneDX, QA, sstate, release, and maintenance tools.
+- **Offline image exploration** — browse and edit BitBake's staged
+  `IMAGE_ROOTFS`, inspect installed packages and files, list systemd services,
+  and map system-bus activation/configuration without booting the image.
 - **Terminal-native UX** — responsive layouts, command palette, contextual
   shortcuts, themes, persisted sessions, shell escape, and external editor
   support.
@@ -324,6 +335,7 @@ cargo install flamegraph
 - [Operator guide](docs/operator-guide.md) — daily workflows and troubleshooting
 - [Keymap reference](docs/keymap.md) — menus, focus, navigation, customization, and the `Ctrl+B` terminal prefix
 - [Rootfs composition](docs/rootfs-composition.md) — package/filesystem authority and accessible chart fallbacks
+- [Kernel and firmware workbenches](docs/platform-workbenches.md) — menuconfig, configuration, and device-tree workflows
 - [Embedded shells and terminal sessions](docs/embedded-shell.md) — inherited-shell and persistent-PTY behavior
 - [Compatibility evidence](docs/compatibility.md) — live, fixture, and host validation boundaries
 - [Release compatibility matrix](docs/compatibility-matrix.md) — support classifications, exact tested revisions, and renewal policy
@@ -331,6 +343,11 @@ cargo install flamegraph
 - [Architecture](docs/architecture.md) — crate boundaries and state flow
 - [Testing](docs/testing.md), [profiling](docs/profiling.md), and the [low-overhead performance contract](docs/performance.md) — verification and build-saturation responsiveness
 - [Implementation status](docs/implementation-status.md) — complete task evidence
+
+The systemd service list/detail interaction was informed by
+[systemd-manager-tui](https://github.com/Matheus-git/systemd-manager-tui),
+created by Matheus-git and released under MIT. Yoctui implements an independent
+offline parser because an unbooted rootfs has no running systemd D-Bus manager.
 
 ## Development checks
 

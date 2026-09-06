@@ -2109,6 +2109,15 @@ exact recipe file identity and advertised task, then emits only
 environment. There is no free-form task/argument field and the client remains
 attached to Yoctui while the daemon-owned PTY runs the terminal application.
 
+The dedicated boot-firmware workbench resolves an image-scoped provider before
+launch. It combines preferred/runtime bootloader, U-Boot machine, and EFI
+provider variables with the workspace's authoritative recipe inventory, then
+accepts the first candidate for which recipe metadata is returned. U-Boot and
+BIOS/UEFI classification comes from that target and provider path; unresolved
+identity stays explicitly generic. The selected target, its advertised tasks,
+and its recipe-scoped `FILE`, `S`, `B`, and `WORKDIR` values drive the shared
+bounded platform scanner and exact terminal argv.
+
 SDK shell initialization is split across the adapter and typed context
 authority. `SdkShellAdapter` inspects one canonical, direct-child
 `environment-setup-*` file under an explicitly selected SDK root, records its
@@ -3281,6 +3290,15 @@ manifests, pkgdata, `IMAGE_ROOTFS`, and bounded filesystem traversal;
 and drill down; UI renders pie/bar/table/tree projections without filesystem or
 BitBake parsing.
 
+Client-local rootfs acquisition also returns the canonical contained
+`IMAGE_ROOTFS` directory and a typed offline system inventory. The BitBake
+adapter parses bounded systemd unit and D-Bus activation files, follows unit
+aliases only after canonical containment checks, and correlates enablement
+links and policy-file references. Widgets receive only typed service and bus
+records. Opening the rootfs reuses the existing lazy directory effects,
+64-KiB preview loader, and validated editor-save path; it never starts systemd,
+connects to D-Bus, or mounts a deploy artifact.
+
 Schema v1 binds a non-zero request generation to one exact machine/image/path
 artifact identity. Installed-package and logical-filesystem authorities remain
 separate typed values, each independently available, partial, or unavailable.
@@ -3456,6 +3474,12 @@ pre-edit comparison. `yoctui-app` maps keys to typed actions. `yoctui-ui`
 projects Dashboard through the existing task cockpit, derives transient
 `tui-tree-widget`/`tui-piechart` state, and never performs filesystem or daemon
 I/O.
+
+Editor dirty and visual-diff predicates compare their respective baseline
+strings exactly with the current buffer. They do not hash either buffer during
+rendering. Cryptographic revisions remain unchanged for explicit save/conflict
+checks and diff records; direct buffer mutations and independent baselines
+therefore retain their existing semantics without an invalidation cache.
 
 The CLI alone starts and polls the daemon and owns terminal suspension around
 Vim. On return it reloads the selected file through the containment-checked
@@ -3781,6 +3805,13 @@ strict mode also attaches a deliberately non-reading small-buffer peer, proves
 the healthy observer retains every sentinel without resync, and performs a new
 post-flood attach to prove reconnect recovery.
 
+Platform workbenches keep provider identity and artifact paths typed in the
+model. The CLI asks BitBake for recipe-scoped variables, then the bitbake crate
+performs a bounded, non-symlink-following filesystem scan. Rendering never
+touches the filesystem. Menuconfig and `dtc` execution reuse the confirmed
+daemon PTY boundary; source viewing and exploration reuse the in-app recipe
+editor boundary.
+
 The daemon's Unix listener uses kernel readiness waiting rather than a
 sleep/retry accept loop. With no client, active job, or active PTY, the outer
 supervisor loop blocks for a bounded 100 ms shutdown interval; a connecting
@@ -3813,3 +3844,36 @@ minimum ordinary frame interval caps normal rendering at 4 Hz. Saturated live
 builds use the measured 1 Hz adaptive presentation interval, while an input or
 resize event directly invalidates the next frame rather than waiting for a
 model tick.
+
+## M50 Overview visualization boundary
+
+Overview Insights is a projection layer over existing authorities. The model
+owns view selection, row bounds, critical-path calculation, signature-category
+mapping, sstate/fetch task classification, rootfs size aggregation, metadata
+provenance, runtime-package edges, supply-chain counts, and telemetry history.
+The UI only lays out those typed projections. Missing authority is rendered as
+missing; it is never reconstructed from log prose.
+
+Each successful rootfs package load records a bounded installed-byte snapshot.
+The image-size view compares consecutive snapshots for the same machine and
+image target, even when deploy artifact paths change between builds. Repeated
+loads of an identical artifact and byte total are coalesced; the first snapshot
+states that no prior build delta is available.
+
+Security report acquisition recognizes four typed formats: CVE reports, SPDX
+JSON/archive artifacts, CycloneDX JSON, and deployed Yocto `.manifest` package
+lists. All use the existing canonical-path, symlink, size, time, cancellation,
+fingerprint, and collection bounds. SPDX and CycloneDX retain their distinct
+document metadata. The manifest fallback exposes only package identity and
+version and carries explicit limitations for SBOM fields it cannot prove.
+
+The process backend parses `task-depends.dot` inside the BitBake adapter. Since
+the workspace root is a recipe while the DOT authority is task-to-task, the
+adapter inserts typed recipe-to-task reachability edges before bounded graph
+normalization. Rendering, filtering, reverse traversal, and path finding still
+operate only on the normalized `DependencyGraph`.
+
+Rootfs package composition continues to use `tui-piechart` 1.0.2 with Braille
+resolution only when color, Unicode, automatic charts, width, and the complete
+three-pane height are available. Otherwise the exact installed-byte table is
+the production fallback, preserving package navigation and selection.

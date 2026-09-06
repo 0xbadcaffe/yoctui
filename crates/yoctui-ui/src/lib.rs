@@ -1,6 +1,7 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 mod dialogs;
 mod layout;
+mod overview;
 pub mod primitives;
 mod shell;
 mod telemetry;
@@ -10,6 +11,7 @@ mod workspaces;
 
 use dialogs::*;
 use layout::*;
+use overview::*;
 use shell::*;
 use telemetry::*;
 use theme::*;
@@ -50,12 +52,12 @@ use yoctui_model::{
     MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
     MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, NAVIGATOR_GROUPS,
     PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
-    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
-    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
-    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
-    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
-    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity,
-    RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
+    PlatformInventoryState, PlatformWorkbench, PreviewKind, QaCapability, QaCheckAvailability,
+    QaCheckFamily, QaDialog, QaFindingStatus, QaLayerCapability, QaLayerRunCapability,
+    QaOutputStream, QaReportFailureKind, QaReportInventoryState, QaSessionStatus, QaStatusFilter,
+    QaView, QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
+    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
+    RecipeIdentity, RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
     SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
     SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
@@ -1102,7 +1104,7 @@ fn footer_shortcuts(app: &App) -> String {
             WorkspaceDestination::Layers,
             with_focus_shortcuts(
                 app,
-                "↑/↓ select | PgUp/PgDn page | →/l expand | ←/h collapse | Enter open/toggle | e editor | [/] preview scroll | i info | r refresh | . hidden | / search",
+                "↑/↓ select | PgUp/PgDn page | →/l expand or focus preview | preview arrows scroll | ← tree | e editor | i info | r refresh | . hidden | / search",
             ),
         );
     }
@@ -1110,6 +1112,7 @@ fn footer_shortcuts(app: &App) -> String {
         Screen::Dashboard => {
             "B build | f favorites | t terminals | F2 Tasks | e errors | Ctrl+B prefix | F8 artifacts | l logs | F3 work | E environment | M sstate | Ctrl+P commands | Tab focus | c cancel | ? help | q quit"
         }
+        Screen::Insights => "1-8 view | [/] previous/next | Tab focus | Esc dashboard",
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
         }
@@ -1135,9 +1138,21 @@ fn footer_shortcuts(app: &App) -> String {
                 "h/l group | j/k package | PgUp/PgDn page | r refresh | Tab filesystem | Shift+Tab artifacts"
             }
             ImagesView::RootfsFilesystem => {
-                "j/k select path | PgUp/PgDn page | r refresh | Tab artifacts | Shift+Tab packages"
+                "j/k select path | Enter/→ explore actual IMAGE_ROOTFS | r refresh | Tab view"
+            }
+            ImagesView::SystemdServices => {
+                "j/k service | e edit unit | Enter/→ explore rootfs | r refresh | Tab view"
+            }
+            ImagesView::SystemDbus => {
+                "j/k bus name | e edit activation file | Enter/→ explore rootfs | r refresh | Tab view"
             }
         },
+        Screen::Kernel => {
+            "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
+        }
+        Screen::Firmware => {
+            "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
+        }
         Screen::Sdk => {
             "↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel"
         }
@@ -1229,6 +1244,8 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
                 "h/l group | j/k package | PgUp/PgDn | r refresh | Tab view".into()
             }
             ImagesView::RootfsFilesystem => "j/k path | PgUp/PgDn | r refresh | Tab view".into(),
+            ImagesView::SystemdServices => "j/k service | e edit | Enter explore | Tab view".into(),
+            ImagesView::SystemDbus => "j/k bus | e edit | Enter explore | Tab view".into(),
         }
     } else if app.screen == Screen::Sdk && width <= 90 {
         "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel".into()
@@ -4326,16 +4343,27 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 22] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 25] = [
         (
             "Dashboard",
             Screen::Dashboard,
+            WorkspaceDestination::Dashboard,
+        ),
+        (
+            "Insights",
+            Screen::Insights,
             WorkspaceDestination::Dashboard,
         ),
         ("Layers", Screen::Layers, WorkspaceDestination::Layers),
         ("Recipes", Screen::Recipes, WorkspaceDestination::Recipes),
         ("Packages", Screen::Packages, WorkspaceDestination::Packages),
         ("Images", Screen::Images, WorkspaceDestination::Images),
+        ("Kernel", Screen::Kernel, WorkspaceDestination::Kernel),
+        (
+            "U-Boot / BIOS",
+            Screen::Firmware,
+            WorkspaceDestination::Firmware,
+        ),
         ("SDK", Screen::Sdk, WorkspaceDestination::Sdk),
         ("Tasks", Screen::Tasks, WorkspaceDestination::Tasks),
         ("Logs", Screen::Logs, WorkspaceDestination::Logs),
@@ -6030,6 +6058,8 @@ fn inspector_related_paths(app: &App) -> Vec<String> {
         Screen::Images => app
             .selected_image_artifact()
             .map(|artifact| artifact.identity.path.clone()),
+        Screen::Kernel => app.kernel.selected_file().map(|file| file.path.clone()),
+        Screen::Firmware => app.firmware.selected_file().map(|file| file.path.clone()),
         Screen::Sdk => app
             .selected_sdk_artifact()
             .map(|artifact| artifact.identity.path.clone()),
@@ -6278,6 +6308,8 @@ fn inspector(
             ),
         Screen::Packages => package_inspector_text(app),
         Screen::Images => image_artifact_inspector_text(app),
+        Screen::Kernel => platform_inspector_text(&app.kernel, "Kernel"),
+        Screen::Firmware => platform_inspector_text(&app.firmware, "U-Boot / BIOS"),
         Screen::Sdk => sdk_inspector_text(app),
         Screen::Testing => testing_inspector_text(app),
         Screen::Security => security_inspector_text(app),
@@ -10050,17 +10082,23 @@ fn security_sbom_lines(
     capacity: usize,
 ) {
     if app.security.drilled {
-        let Some(SecurityReport::Spdx(document)) = app.security.selected_report() else {
+        let Some(report) = app.security.selected_report() else {
             lines.push(Line::styled(
-                "The selected SPDX document is no longer available.",
+                "The selected SBOM or package manifest is no longer available.",
                 security_warning_style(palette),
             ));
             return;
         };
+        let (identity, kind) = match report {
+            SecurityReport::Spdx(document) => (&document.identity, "SPDX"),
+            SecurityReport::CycloneDx(document) => (&document.identity, "CycloneDX"),
+            SecurityReport::PackageManifest(document) => (&document.identity, "package manifest"),
+            SecurityReport::Cve(_) => return,
+        };
         lines.push(Line::from(format!(
-            "Document: {} | fingerprint {}",
-            document.identity.path.display(),
-            document.identity.fingerprint
+            "{kind}: {} | fingerprint {}",
+            identity.path.display(),
+            identity.fingerprint
         )));
         lines.push(Line::from(
             "  Component identity        Name                    Version       Supplier / license",
@@ -10098,7 +10136,7 @@ fn security_sbom_lines(
         return;
     }
     lines.push(Line::from(
-        "  Kind     SPDX version   Document                 Components  Exact artifact",
+        "  Format       Version        Document                 Components  Exact artifact",
     ));
     let reports = app.security.visible_reports();
     let selection = reports
@@ -10106,23 +10144,47 @@ fn security_sbom_lines(
         .position(|report| app.security.report_selection.as_ref() == Some(report.identity()));
     let viewport = yoctui_model::centered_viewport_range(selection, reports.len(), capacity);
     for report in &reports[viewport] {
-        let SecurityReport::Spdx(document) = report else {
-            continue;
-        };
-        let selected = app.security.report_selection.as_ref() == Some(&document.identity);
-        lines.push(
-            Line::from(format!(
-                "{} {:<8} {:<14} {:<24} {:<11} {}",
-                if selected { "▶" } else { " " },
-                security_spdx_kind_label(document.kind),
+        let (identity, format, version, name, components, limited) = match report {
+            SecurityReport::Spdx(document) => (
+                &document.identity,
+                "SPDX",
                 document.spdx_version.as_deref().unwrap_or("unavailable"),
                 document.name.as_deref().unwrap_or("unavailable"),
                 document.components.len(),
-                document.identity.path.display(),
+                !document.limitations.is_empty(),
+            ),
+            SecurityReport::CycloneDx(document) => (
+                &document.identity,
+                "CycloneDX",
+                document.spec_version.as_deref().unwrap_or("unavailable"),
+                "software BOM",
+                document.components.len(),
+                !document.limitations.is_empty(),
+            ),
+            SecurityReport::PackageManifest(document) => (
+                &document.identity,
+                "Manifest",
+                "fallback",
+                "package inventory",
+                document.components.len(),
+                !document.limitations.is_empty(),
+            ),
+            SecurityReport::Cve(_) => continue,
+        };
+        let selected = app.security.report_selection.as_ref() == Some(identity);
+        lines.push(
+            Line::from(format!(
+                "{} {:<12} {:<14} {:<24} {:<11} {}",
+                if selected { "▶" } else { " " },
+                format,
+                version,
+                name,
+                components,
+                identity.path.display(),
             ))
             .style(if selected {
                 palette.selected()
-            } else if document.limitations.is_empty() {
+            } else if !limited {
                 Style::default()
             } else {
                 security_warning_style(palette)
@@ -10131,7 +10193,7 @@ fn security_sbom_lines(
     }
     if reports.is_empty() {
         lines.push(Line::from(
-            "No SPDX documents match the active view and search.",
+            "No SPDX, CycloneDX, or package-manifest documents match the active view and search.",
         ));
     }
 }
@@ -10285,8 +10347,50 @@ fn security_cve_inspector(app: &App) -> String {
 }
 
 fn security_sbom_inspector(app: &App) -> String {
-    let Some(SecurityReport::Spdx(document)) = app.security.selected_report() else {
-        return "Select an exact SPDX document or archive to inspect it.".into();
+    let Some(report) = app.security.selected_report() else {
+        return "Select an exact SPDX, CycloneDX, or package-manifest document to inspect it."
+            .into();
+    };
+    if let SecurityReport::CycloneDx(document) = report {
+        return format!(
+            "Exact artifact: {}\nFingerprint: {}\nBytes: {}\nModified: {}\nFormat: CycloneDX\nSpec version: {}\nSerial number: {}\nDocument version: {}\nComponents: {}\nDependencies: {}\n\nLimitations:\n{}",
+            document.identity.path.display(),
+            document.identity.fingerprint,
+            document.identity.byte_size,
+            timestamp_text(document.identity.modified_at),
+            document.spec_version.as_deref().unwrap_or("unavailable"),
+            document.serial_number.as_deref().unwrap_or("unavailable"),
+            document
+                .version
+                .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+            document.components.len(),
+            document
+                .dependency_count
+                .map_or_else(|| "unavailable".into(), |value| value.to_string()),
+            if document.limitations.is_empty() {
+                "none".into()
+            } else {
+                document.limitations.join("\n")
+            },
+        );
+    }
+    if let SecurityReport::PackageManifest(document) = report {
+        return format!(
+            "Exact artifact: {}\nFingerprint: {}\nBytes: {}\nModified: {}\nFormat: Yocto package manifest fallback\nComponents: {}\n\nThis fallback supplies package names and versions only. License, supplier, file, and relationship claims are unavailable.\n\nLimitations:\n{}",
+            document.identity.path.display(),
+            document.identity.fingerprint,
+            document.identity.byte_size,
+            timestamp_text(document.identity.modified_at),
+            document.components.len(),
+            if document.limitations.is_empty() {
+                "none".into()
+            } else {
+                document.limitations.join("\n")
+            },
+        );
+    }
+    let SecurityReport::Spdx(document) = report else {
+        return "Select an SBOM document.".into();
     };
     let creators = if document.creators.is_empty() {
         "unavailable".into()
@@ -10359,7 +10463,9 @@ fn selected_security_finding(
                 .iter()
                 .find(|finding| &finding.identity == identity)
                 .map(|finding| (report, finding)),
-            SecurityReport::Spdx(_) => None,
+            SecurityReport::Spdx(_)
+            | SecurityReport::CycloneDx(_)
+            | SecurityReport::PackageManifest(_) => None,
         })
 }
 
@@ -13091,11 +13197,163 @@ fn wic_cancellation_confirmation(
     );
 }
 
+fn platform_workspace(
+    frame: &mut Frame,
+    app: &App,
+    workbench: &PlatformWorkbench,
+    area: Rect,
+    fallback_title: &str,
+) {
+    let title = workbench
+        .inventory()
+        .map_or(fallback_title, |inventory| inventory.component.label());
+    let block = pane_block(app, title, app.focus == FocusTarget::Workspace);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let selection = match workbench.view {
+        yoctui_model::PlatformView::Configuration => workbench.config_selection,
+        yoctui_model::PlatformView::DeviceTrees => workbench.device_tree_selection,
+    };
+    let tabs = Line::from(vec![
+        Span::styled(
+            " 1 Configuration ",
+            if workbench.view == yoctui_model::PlatformView::Configuration {
+                selected_style(app, true)
+            } else {
+                Style::default()
+            },
+        ),
+        Span::raw(" │ "),
+        Span::styled(
+            " 2 Device trees ",
+            if workbench.view == yoctui_model::PlatformView::DeviceTrees {
+                selected_style(app, true)
+            } else {
+                Style::default()
+            },
+        ),
+        Span::raw("  Tab switches"),
+    ]);
+    let mut lines = vec![tabs];
+    match &workbench.inventory {
+        PlatformInventoryState::NotLoaded => {
+            lines.push(Line::from("Not inspected. Press r to scan."))
+        }
+        PlatformInventoryState::Loading => lines.push(Line::from(
+            "Inspecting provider, configuration, and device trees…",
+        )),
+        PlatformInventoryState::Failed(message) => {
+            lines.push(Line::from(format!("Inspection failed: {message}")))
+        }
+        PlatformInventoryState::Available(inventory) => {
+            lines.push(Line::from(format!(
+                "Target {} | provider {} | menuconfig {} | dtc {}",
+                inventory.target,
+                inventory
+                    .provider
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                if inventory
+                    .tasks
+                    .iter()
+                    .any(|task| task == "menuconfig" || task == "do_menuconfig")
+                {
+                    "available"
+                } else {
+                    "unavailable"
+                },
+                inventory
+                    .dtc
+                    .as_ref()
+                    .map_or("unavailable", |_| "available"),
+            )));
+            lines.push(Line::from("Kind         Size       File"));
+            let files = workbench.visible_files().collect::<Vec<_>>();
+            if files.is_empty() {
+                lines.push(Line::from(match workbench.view {
+                    yoctui_model::PlatformView::Configuration => {
+                        "No .config file was found in the reported source/build roots."
+                    }
+                    yoctui_model::PlatformView::DeviceTrees => {
+                        "No DTS, DTSI, DTB, or DTBO artifact was found."
+                    }
+                }));
+            }
+            let capacity = usize::from(inner.height.saturating_sub(4)).max(1);
+            let viewport =
+                yoctui_model::centered_viewport_range(Some(selection), files.len(), capacity);
+            for (offset, file) in files[viewport.clone()].iter().enumerate() {
+                let index = viewport.start + offset;
+                lines.push(Line::styled(
+                    format!(
+                        "{:<12} {:>9}  {}",
+                        file.kind.label(),
+                        file.size_bytes,
+                        file.path.display()
+                    ),
+                    selected_style(app, index == selection),
+                ));
+            }
+            if let Some(limitation) = inventory.limitations.first() {
+                lines.push(Line::styled(
+                    format!("Limited: {limitation}"),
+                    ThemePalette::for_app(app)
+                        .role(ThemePalette::for_app(app).warning, Modifier::empty()),
+                ));
+            }
+        }
+    }
+    frame.render_widget(Paragraph::new(Text::from(lines)), inner);
+}
+
+fn platform_inspector_text(workbench: &PlatformWorkbench, title: &str) -> String {
+    match &workbench.inventory {
+        PlatformInventoryState::NotLoaded => format!("{title} has not been inspected."),
+        PlatformInventoryState::Loading => format!("{title} inspection is loading."),
+        PlatformInventoryState::Failed(message) => format!("{title} inspection failed: {message}"),
+        PlatformInventoryState::Available(inventory) => {
+            let selected = workbench.selected_file();
+            format!(
+                "Target: {}\nProvider: {}\nView: {}\nRoots: {}\nFiles: {}\nmenuconfig: {}\ndtc: {}\n\nSelected: {}\nKind: {}\nSize: {} bytes\n\nText sources open in the in-app explorer/editor. DTB and DTBO files are binary and can be decompiled to a new .yoctui.dts file.",
+                inventory.target,
+                inventory
+                    .provider
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                workbench.view.label(),
+                inventory.roots.len(),
+                inventory.files.len(),
+                if inventory
+                    .tasks
+                    .iter()
+                    .any(|task| task == "menuconfig" || task == "do_menuconfig")
+                {
+                    "available"
+                } else {
+                    "unavailable"
+                },
+                inventory
+                    .dtc
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                selected.map_or_else(|| "none".into(), |file| file.path.display().to_string()),
+                selected.map_or("unavailable", |file| file.kind.label()),
+                selected.map_or(0, |file| file.size_bytes),
+            )
+        }
+    }
+}
+
 fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
     match app.images_view {
         ImagesView::Artifacts => image_artifacts_workspace(frame, app, area),
         ImagesView::RootfsPackages => rootfs_packages_workspace(frame, app, area),
         ImagesView::RootfsFilesystem => rootfs_filesystem_workspace(frame, app, area),
+        ImagesView::SystemdServices => rootfs_systemd_workspace(frame, app, area),
+        ImagesView::SystemDbus => rootfs_dbus_workspace(frame, app, area),
     }
 }
 
@@ -13104,15 +13362,22 @@ fn images_tabs_line(app: &App) -> Line<'static> {
         .into_iter()
         .enumerate()
         .flat_map(|(index, view)| {
+            let label = match view {
+                ImagesView::Artifacts => "Artifacts",
+                ImagesView::RootfsPackages => "Rootfs packages",
+                ImagesView::RootfsFilesystem => "Files",
+                ImagesView::SystemdServices => "systemd",
+                ImagesView::SystemDbus => "D-Bus",
+            };
             let style = if app.images_view == view {
                 selected_style(app, true)
             } else {
                 Style::default()
             };
             [
-                Span::styled(format!(" {} {} ", index + 1, view.label()), style),
+                Span::styled(format!(" {} {label} ", index + 1), style),
                 Span::raw(if index + 1 == ImagesView::ALL.len() {
-                    "  Tab/Shift-Tab switches"
+                    "  Tab switches"
                 } else {
                     " │ "
                 }),
@@ -13332,7 +13597,7 @@ fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let total = composition.totals().0.installed_package_bytes;
     let can_render_pie = app.color_enabled
         && body.width >= 64
-        && body.height >= 18
+        && body.height >= 36
         && app.theme != Theme::Monochrome
         && app.preferences.symbols == SymbolPreference::Unicode
         && app.preferences.charts == yoctui_model::ChartPreference::Automatic
@@ -13776,6 +14041,140 @@ fn rootfs_filesystem_workspace(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
 }
 
+fn rootfs_systemd_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let body = rootfs_workspace_shell(frame, app, area);
+    if let Some(lines) = rootfs_state_lines(app) {
+        frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
+        return;
+    }
+    let Some(composition) = app.rootfs_composition.composition() else {
+        return;
+    };
+    let Some(inventory) = composition.system_inventory() else {
+        frame.render_widget(
+            Paragraph::new("Offline systemd inventory is unavailable for this image."),
+            body,
+        );
+        return;
+    };
+    if inventory.systemd_services.is_empty() {
+        frame.render_widget(
+            Paragraph::new("No systemd .service files were found in the staged IMAGE_ROOTFS."),
+            body,
+        );
+        return;
+    }
+    let rows = inventory
+        .systemd_services
+        .iter()
+        .enumerate()
+        .map(|(index, service)| {
+            Row::new([
+                service.name.clone(),
+                service
+                    .description
+                    .as_deref()
+                    .unwrap_or("unavailable")
+                    .to_owned(),
+                service.bus_name.as_deref().unwrap_or("—").to_owned(),
+                if service.enabled_by.is_empty() {
+                    "disabled/static".into()
+                } else {
+                    service.enabled_by.join(", ")
+                },
+            ])
+            .style(selected_style(app, index == app.rootfs_systemd_selection))
+        });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(28),
+                Constraint::Min(28),
+                Constraint::Length(28),
+                Constraint::Length(24),
+            ],
+        )
+        .header(
+            Row::new(["Service", "Description", "BusName", "Enablement evidence"])
+                .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::bordered()
+                .title("Offline systemd service files · e edit · Enter/→ rootfs explorer"),
+        ),
+        body,
+    );
+}
+
+fn rootfs_dbus_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let body = rootfs_workspace_shell(frame, app, area);
+    if let Some(lines) = rootfs_state_lines(app) {
+        frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
+        return;
+    }
+    let Some(composition) = app.rootfs_composition.composition() else {
+        return;
+    };
+    let Some(inventory) = composition.system_inventory() else {
+        frame.render_widget(
+            Paragraph::new("Offline system D-Bus mapping is unavailable for this image."),
+            body,
+        );
+        return;
+    };
+    if inventory.dbus_services.is_empty() {
+        frame.render_widget(
+            Paragraph::new(
+                "No system-bus activation files or systemd BusName declarations were found.",
+            ),
+            body,
+        );
+        return;
+    }
+    let rows = inventory
+        .dbus_services
+        .iter()
+        .enumerate()
+        .map(|(index, service)| {
+            Row::new([
+                service.name.clone(),
+                service.systemd_service.as_deref().unwrap_or("—").to_owned(),
+                service.user.as_deref().unwrap_or("—").to_owned(),
+                service.exec.as_deref().unwrap_or("—").to_owned(),
+                service.policy_files.len().to_string(),
+            ])
+            .style(selected_style(app, index == app.rootfs_dbus_selection))
+        });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(34),
+                Constraint::Length(28),
+                Constraint::Length(16),
+                Constraint::Min(24),
+                Constraint::Length(8),
+            ],
+        )
+        .header(
+            Row::new([
+                "System bus name",
+                "systemd unit",
+                "User",
+                "Exec",
+                "Policies",
+            ])
+            .style(Style::default().add_modifier(Modifier::BOLD)),
+        )
+        .block(
+            Block::bordered()
+                .title("Offline system-bus activation map · e edit · Enter/→ rootfs explorer"),
+        ),
+        body,
+    );
+}
+
 fn image_artifact_inspector_text(app: &App) -> String {
     if app.images_view != ImagesView::Artifacts {
         return rootfs_inspector_text(app);
@@ -13905,9 +14304,10 @@ fn rootfs_inspector_text(app: &App) -> String {
     };
     let (totals, overflowed) = composition.totals();
     let authority = format!(
-        "Installed packages: {}\nFilesystem tree: {}",
+        "Installed packages: {}\nFilesystem tree: {}\nOffline system map: {}",
         rootfs_authority_label(&composition.installed_packages),
-        rootfs_authority_label(&composition.filesystem_tree)
+        rootfs_authority_label(&composition.filesystem_tree),
+        rootfs_authority_label(&composition.system_inventory)
     );
     let selected = match app.images_view {
         ImagesView::Artifacts => String::new(),
@@ -13963,6 +14363,33 @@ fn rootfs_inspector_text(app: &App) -> String {
                 },
             )
         }
+        ImagesView::SystemdServices => composition
+            .system_inventory()
+            .and_then(|inventory| inventory.systemd_services.get(app.rootfs_systemd_selection))
+            .map_or_else(|| "Selected service: none".into(), |service| format!(
+                "Selected service: {}\nDescription: {}\nUnit file: {}\nBusName: {}\nEnabled by: {}\n\nUnit file preview{}\n{}\n\nEdits affect the generated IMAGE_ROOTFS and may be replaced by the next BitBake task.",
+                service.name,
+                service.description.as_deref().unwrap_or("unavailable"),
+                service.logical_path.0.display(),
+                service.bus_name.as_deref().unwrap_or("none"),
+                if service.enabled_by.is_empty() { "none (disabled, static, indirect, or generated)".into() } else { service.enabled_by.join(", ") },
+                if service.preview_truncated { " (truncated)" } else { "" },
+                service.preview
+            )),
+        ImagesView::SystemDbus => composition
+            .system_inventory()
+            .and_then(|inventory| inventory.dbus_services.get(app.rootfs_dbus_selection))
+            .map_or_else(|| "Selected system bus service: none".into(), |service| format!(
+                "Bus name: {}\nActivation file: {}\nExec: {}\nUser: {}\nSystemdService: {}\nPolicy files:\n{}\n\nActivation/unit preview{}\n{}",
+                service.name,
+                service.logical_path.0.display(),
+                service.exec.as_deref().unwrap_or("unavailable"),
+                service.user.as_deref().unwrap_or("unavailable"),
+                service.systemd_service.as_deref().unwrap_or("none"),
+                if service.policy_files.is_empty() { "none matched".into() } else { service.policy_files.iter().map(|path| path.0.display().to_string()).collect::<Vec<_>>().join("\n") },
+                if service.preview_truncated { " (truncated)" } else { "" },
+                service.preview
+            )),
     };
     let limitations = match &app.rootfs_composition {
         RootfsCompositionState::Partial { limitations, .. } => limitations
@@ -18334,7 +18761,11 @@ fn layer_browser(frame: &mut Frame, app: &App, browser: &LayerBrowser, area: Rec
         Paragraph::new(layer_inspector_text(app, &preview_browser))
             .block(
                 Block::default()
-                    .title("File preview · [/] scroll · e edit")
+                    .title(if browser.preview_focused {
+                        "File preview focused · ↑/↓ scroll · ← tree · e edit"
+                    } else {
+                        "File preview · → focus · e edit"
+                    })
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false })
@@ -20226,7 +20657,7 @@ mod tests {
         let mut app = App::new(512, 1024 * 1024);
         app.screen = Screen::Tasks;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 1;
+        app.navigator_selection = 2;
         app.backend = "bridge".into();
         app.workspace.build_dir = Some("/home/user/yocto/build".into());
         app.workspace.source_dir = Some("/home/user/yocto".into());
@@ -20445,7 +20876,7 @@ mod tests {
     fn concept_failed_errors_app() -> App {
         let mut app = literal_reference_app();
         app.screen = Screen::Errors;
-        app.navigator_selection = 8;
+        app.navigator_selection = 11;
         app.focus = FocusTarget::Workspace;
         app.build.status = BuildStatus::Failed;
         app.build.exit_code = Some(1);
@@ -20508,7 +20939,7 @@ mod tests {
     fn concept_rootfs_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::Images;
-        app.navigator_selection = 4;
+        app.navigator_selection = 5;
         app.focus = FocusTarget::Workspace;
         app.build.target = Some("core-image-minimal".into());
         app.workspace.recipes.push(yoctui_model::Recipe {
@@ -20657,6 +21088,10 @@ mod tests {
                     value: yoctui_model::RootfsFilesystemTree { entries },
                     limitations: vec!["package ownership is partial".into()],
                 },
+                system_inventory: yoctui_model::RootfsAuthority::Available(
+                    yoctui_model::RootfsSystemInventory::default(),
+                ),
+                root_directory: None,
             },
             limitations: vec!["package ownership is partial".into()],
         };
@@ -20670,7 +21105,7 @@ mod tests {
     fn concept_editor_menu_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::Recipes;
-        app.navigator_selection = 2;
+        app.navigator_selection = 3;
         app.focus = FocusTarget::Dialog;
         app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
             recipe: "bash".into(),
@@ -20713,7 +21148,7 @@ mod tests {
     fn concept_terminal_sessions_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::TerminalSessions;
-        app.navigator_selection = 15;
+        app.navigator_selection = 18;
         app.focus = FocusTarget::Workspace;
         app.terminal.client_id = Some([1; 16]);
         app.terminal.query = "busybox".into();
@@ -20827,7 +21262,7 @@ mod tests {
     #[test]
     fn concept_screen_contracts_render_through_production_renderer() {
         let mut active = literal_reference_app();
-        active.navigator_selection = 6;
+        active.navigator_selection = 9;
         active.focus = FocusTarget::Workspace;
         let scenes = [
             (
@@ -20977,7 +21412,7 @@ mod tests {
     #[test]
     fn concept_screens_keep_navigator_identity_aligned_with_the_visible_workspace() {
         let mut active = literal_reference_app();
-        active.navigator_selection = 6;
+        active.navigator_selection = 9;
         for app in [
             concept_idle_dashboard_app(),
             active,
@@ -21717,7 +22152,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 9;
+        app.navigator_selection = 12;
         let navigator = rendered_text(&app, 180, 42);
         for expected in [
             "~ Configuration",
@@ -21752,7 +22187,7 @@ mod tests {
         let mut app = App::new(32, 8192);
         app.screen = Screen::Logs;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 1;
+        app.navigator_selection = 2;
         let navigator = rendered_text(&app, 180, 36);
         assert!(navigator.contains("Layers"), "{navigator}");
         assert!(!navigator.contains("? Layers"), "{navigator}");
@@ -21806,7 +22241,7 @@ mod tests {
         }
 
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 16;
+        app.navigator_selection = 19;
         let devtool = rendered_text(&app, 180, 58);
         for expected in [
             "Destination: Devtool",
@@ -21856,7 +22291,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 16;
+        app.navigator_selection = 19;
         let unavailable = rendered_text(&app, 180, 56);
         assert!(unavailable.contains("Upgrade recipe"), "{unavailable}");
         assert!(unavailable.contains("[U] — Unavailable"), "{unavailable}");
@@ -21883,7 +22318,7 @@ mod tests {
             },
         );
         yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
-        assert_eq!(app.navigator_selection, 16);
+        assert_eq!(app.navigator_selection, 19);
         let available = rendered_text(&app, 180, 56);
         assert!(available.contains("Upgrade recipe"), "{available}");
         assert!(available.contains("[U] — Available"), "{available}");
@@ -21915,7 +22350,7 @@ mod tests {
             .implementations
             .remove(&yoctui_model::CapabilityId::DevtoolUpgrade);
         yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
-        assert_eq!(app.navigator_selection, 16);
+        assert_eq!(app.navigator_selection, 19);
         let replaced = rendered_text(&app, 180, 56);
         assert!(
             replaced.contains("The reconnected Devtool omits upgrade."),
@@ -22030,7 +22465,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 9;
+        app.navigator_selection = 12;
         let navigator = rendered_text(&app, 180, 42);
         assert!(navigator.contains("Compatibility: Limited"), "{navigator}");
         assert!(
@@ -22774,7 +23209,7 @@ mod tests {
     fn workbench_navigator_scrolls_the_last_destination_into_view() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 21;
+        app.navigator_selection = 24;
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("TOOLS"), "{output}");
         assert!(output.contains("Settings"), "{output}");
@@ -22801,7 +23236,7 @@ mod tests {
         assert!(expanded.contains("Errors         3"), "{expanded}");
         assert!(expanded.contains("Logs        LIVE"), "{expanded}");
 
-        app.navigator_selection = 6;
+        app.navigator_selection = 9;
         app.navigator_groups_expanded[2] = false;
         let collapsed = rendered_text(&app, 180, 40);
         assert!(collapsed.contains("▸ BUILD"), "{collapsed}");
@@ -22812,9 +23247,9 @@ mod tests {
     fn next_generation_navigator_reports_bounded_scroll_position() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 21;
+        app.navigator_selection = 24;
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Navigator · 27/27 ↑"), "{output}");
+        assert!(output.contains("Navigator · 30/30 ↑"), "{output}");
         assert!(output.contains("Settings"), "{output}");
     }
 
@@ -23571,7 +24006,7 @@ mod tests {
             "{top}"
         );
 
-        navigator_app.navigator_selection = 21;
+        navigator_app.navigator_selection = 24;
         let bottom = rendered_text(&navigator_app, 80, 24);
         assert!(
             bottom.contains(&format!(
@@ -24257,6 +24692,10 @@ mod tests {
                     value: yoctui_model::RootfsFilesystemTree { entries },
                     limitations: vec!["package ownership is partial".into()],
                 },
+                system_inventory: yoctui_model::RootfsAuthority::Available(
+                    yoctui_model::RootfsSystemInventory::default(),
+                ),
+                root_directory: None,
             },
             limitations: vec!["package ownership is partial".into()],
         };
@@ -24314,6 +24753,18 @@ mod tests {
                 .chars()
                 .any(|glyph| ('\u{2800}'..='\u{28ff}').contains(&glyph)),
             "ASCII fallback must not depend on Braille chart cells: {ascii}"
+        );
+
+        app.preferences.symbols = SymbolPreference::Unicode;
+        let short_wide = rendered_text(&app, 200, 42);
+        assert!(
+            short_wide.contains("Installed-package authority"),
+            "{short_wide}"
+        );
+        assert!(short_wide.contains("Exact bytes"), "{short_wide}");
+        assert!(
+            !short_wide.contains("Rootfs packages · installed bytes"),
+            "the pie layout must yield to the explorable table when all three panes do not fit: {short_wide}"
         );
     }
 
@@ -24397,6 +24848,55 @@ mod tests {
             inspector.contains("package ownership is partial"),
             "{inspector}"
         );
+    }
+
+    #[test]
+    fn ux_rootfs_system_tabs_show_offline_service_and_bus_file_evidence() {
+        let mut app = ux_rootfs_ui_app();
+        let composition = match &mut app.rootfs_composition {
+            RootfsCompositionState::Partial { composition, .. } => composition,
+            _ => unreachable!(),
+        };
+        composition.system_inventory =
+            yoctui_model::RootfsAuthority::Available(yoctui_model::RootfsSystemInventory {
+                systemd_services: vec![yoctui_model::RootfsSystemdService {
+                    name: "example.service".into(),
+                    logical_path: yoctui_model::RootfsPathIdentity(
+                        "/usr/lib/systemd/system/example.service".into(),
+                    ),
+                    host_path: "/build/rootfs/usr/lib/systemd/system/example.service".into(),
+                    description: Some("Example daemon".into()),
+                    bus_name: Some("org.example.Daemon".into()),
+                    enabled_by: vec!["multi-user.target.wants".into()],
+                    preview: "[Service]\nBusName=org.example.Daemon\n".into(),
+                    preview_truncated: false,
+                }],
+                dbus_services: vec![yoctui_model::RootfsDbusService {
+                    name: "org.example.Daemon".into(),
+                    logical_path: yoctui_model::RootfsPathIdentity(
+                        "/usr/share/dbus-1/system-services/org.example.Daemon.service".into(),
+                    ),
+                    host_path:
+                        "/build/rootfs/usr/share/dbus-1/system-services/org.example.Daemon.service"
+                            .into(),
+                    exec: Some("/usr/bin/example".into()),
+                    user: Some("root".into()),
+                    systemd_service: Some("example.service".into()),
+                    policy_files: vec![yoctui_model::RootfsPathIdentity(
+                        "/usr/share/dbus-1/system.d/example.conf".into(),
+                    )],
+                    preview: "[D-BUS Service]\nName=org.example.Daemon\n".into(),
+                    preview_truncated: false,
+                }],
+            });
+        app.images_view = ImagesView::SystemdServices;
+        let systemd = rendered_text(&app, 160, 50);
+        assert!(systemd.contains("example.service"), "{systemd}");
+        assert!(systemd.contains("Example daemon"), "{systemd}");
+        app.images_view = ImagesView::SystemDbus;
+        let dbus = rendered_text(&app, 160, 50);
+        assert!(dbus.contains("org.example.Daemon"), "{dbus}");
+        assert!(dbus.contains("example.service"), "{dbus}");
     }
 
     #[test]
@@ -34435,5 +34935,135 @@ mod tests {
         let accessible = rendered_text(&app, 100, 30);
         assert!(accessible.contains("shortcuts hidden"), "{accessible}");
         assert!(!accessible.contains('�'), "{accessible}");
+    }
+
+    #[test]
+    fn kernel_workspace_renders_configuration_and_device_tree_inventory() {
+        let mut app = App::new(32, 4096);
+        app.screen = Screen::Kernel;
+        app.kernel.inventory = PlatformInventoryState::Available(yoctui_model::PlatformInventory {
+            component: yoctui_model::PlatformComponent::Kernel,
+            target: "virtual/kernel".into(),
+            provider: Some("/layers/linux-yocto.bb".into()),
+            tasks: vec!["do_menuconfig".into()],
+            roots: vec!["/work/kernel".into()],
+            files: vec![yoctui_model::PlatformFile {
+                path: "/work/kernel/.config".into(),
+                root: "/work/kernel".into(),
+                kind: yoctui_model::PlatformFileKind::DotConfig,
+                size_bytes: 42,
+            }],
+            dtc: Some("/usr/bin/dtc".into()),
+            limitations: vec![],
+        });
+        let output = rendered_text(&app, 120, 30);
+        for expected in [
+            "Kernel",
+            "Configuration",
+            "virtual/kernel",
+            "linux-yocto.bb",
+            ".config",
+            "menuconfig available",
+            "dtc available",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+    }
+
+    #[test]
+    fn firmware_workspace_labels_detected_uboot_and_renders_device_trees() {
+        let mut app = App::new(32, 4096);
+        app.screen = Screen::Firmware;
+        app.firmware.view = yoctui_model::PlatformView::DeviceTrees;
+        app.firmware.inventory =
+            PlatformInventoryState::Available(yoctui_model::PlatformInventory {
+                component: yoctui_model::PlatformComponent::UBoot,
+                target: "u-boot-fslc".into(),
+                provider: Some("/layers/u-boot-fslc.bb".into()),
+                tasks: vec!["do_menuconfig".into()],
+                roots: vec!["/work/u-boot".into()],
+                files: vec![yoctui_model::PlatformFile {
+                    path: "/work/u-boot/board.dts".into(),
+                    root: "/work/u-boot".into(),
+                    kind: yoctui_model::PlatformFileKind::Dts,
+                    size_bytes: 84,
+                }],
+                dtc: Some("/usr/bin/dtc".into()),
+                limitations: vec![],
+            });
+        let output = rendered_text(&app, 120, 30);
+        for expected in ["U-Boot", "u-boot-fslc", "board.dts", "Device trees"] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
+    }
+
+    #[test]
+    fn overview_insights_render_all_eight_honest_responsive_states() {
+        let mut app = App::new(32, 4_096);
+        app.screen = Screen::Insights;
+        let expectations = [
+            (
+                yoctui_model::OverviewView::Timeline,
+                "Build timeline / critical path",
+            ),
+            (
+                yoctui_model::OverviewView::RebuildCauses,
+                "Rebuild-cause graph",
+            ),
+            (
+                yoctui_model::OverviewView::CacheAndDownloads,
+                "Sstate & downloads",
+            ),
+            (yoctui_model::OverviewView::ImageSize, "Image-size treemap"),
+            (
+                yoctui_model::OverviewView::MetadataProvenance,
+                "Metadata provenance graph",
+            ),
+            (
+                yoctui_model::OverviewView::PackageTopology,
+                "Runtime package dependency topology",
+            ),
+            (
+                yoctui_model::OverviewView::SupplyChain,
+                "CVE / license / SBOM overlay",
+            ),
+            (
+                yoctui_model::OverviewView::DiskUsage,
+                "Build disk-usage timeline",
+            ),
+        ];
+        for (view, expected) in expectations {
+            app.overview_view = view;
+            for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+                let output = rendered_text_at(&app, width, height, UNIX_EPOCH);
+                assert!(output.contains("Insights"), "{width}x{height}: {output}");
+                assert!(
+                    output.contains(expected),
+                    "{view:?} {width}x{height}: {output}"
+                );
+                assert!(!output.contains('�'), "{view:?} {width}x{height}: {output}");
+            }
+        }
+
+        app.overview_view = yoctui_model::OverviewView::CacheAndDownloads;
+        app.workspace
+            .variables
+            .insert("SSTATE_DIR".into(), "/cache/sstate".into());
+        app.workspace
+            .variables
+            .insert("DL_DIR".into(), "/cache/downloads".into());
+        app.tasks.insert(
+            yoctui_model::TaskId("setscene".into()),
+            yoctui_model::TaskInfo {
+                id: yoctui_model::TaskId("setscene".into()),
+                task: "do_package_setscene".into(),
+                state: TaskState::Completed,
+                ..yoctui_model::TaskInfo::default()
+            },
+        );
+        let output = rendered_text_at(&app, 160, 50, UNIX_EPOCH);
+        assert!(output.contains("/cache/sstate"), "{output}");
+        assert!(output.contains("/cache/downloads"), "{output}");
+        assert!(output.contains("hits"), "{output}");
     }
 }

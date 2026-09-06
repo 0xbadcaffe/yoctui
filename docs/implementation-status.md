@@ -11,7 +11,44 @@ Status values:
 
 ## Current phase
 
-M46 Low-Overhead / Build-Saturation Responsiveness is registered and
+M51 integration is complete in v0.1.57. Kernel (M47), firmware (M48), offline
+rootfs exploration (M49), and Overview Insights (M50) coexist with the completed
+M46 performance implementation. Navigator identities and mouse effects are
+reconciled, production visual evidence is regenerated and reviewed, and all
+task-specific checks passed, including aggregate performance and both rendering
+matrices. The independent full completion gate is still mandatory before the
+release advances master. Branch-local versions below are historical.
+
+Profiling identified repeated SHA-256 dirty/diff checks as the large-editor
+rendering regression. Exact text comparison preserves save/conflict hashes and
+reduces the full-matrix editor result to 7.195 ms/frame (unchanged 10 ms limit).
+Fresh v0.1.57 combined idle CPU is 0.1664% of one logical CPU. The real-Poky,
+saturated input/IPC, and 30-minute endurance evidence is explicitly retained
+from checkpoint `7dab483` (v0.1.56), before the editor-only optimization;
+validators enforce unchanged relevant source boundaries. The real-build record
+measures 0.9858% combined CPU and 8.009 ms input p95, not a fresh v0.1.57 run.
+
+M48 is complete in v0.1.48. U-Boot / BIOS is a separate Content destination
+that resolves the active image's boot firmware from authoritative BitBake
+variables and recipe metadata. It labels detected U-Boot and BIOS/UEFI
+providers, invokes menuconfig only when the selected provider advertises the
+task, and exposes the shared bounded `.config`, DTS/DTSI, and DTB/DTBO viewer,
+explorer, compiler, and decompiler.
+
+M47 is complete in v0.1.47. Kernel is a dedicated Content destination backed
+by `virtual/kernel` metadata and recipe-scoped `FILE`, `S`, `B`, and `WORKDIR`
+values plus `DEPLOY_DIR_IMAGE`. It provides provider-verified menuconfig in a
+persistent PTY, in-app `.config` and DTS/DTSI viewing and exploration, and
+confirmed `dtc` compilation/decompilation with collision refusal. Artifact
+discovery is bounded and does not follow directory symlinks.
+
+M49 staged-rootfs system exploration was implemented on its feature branch. The Images
+workspace now opens the exact reported `IMAGE_ROOTFS` without booting it and
+adds typed offline systemd-service and system-bus maps with file editing. The
+shared file preview uses Right to take focus and arrow scrolling, and mouse
+activation now starts the Packages inventory operation instead of leaving it
+stuck in Loading. These paths are included in the combined release checks.
+
 M46 Low-Overhead / Build-Saturation Responsiveness is complete. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,
@@ -2340,3 +2377,13 @@ parent. `Enter` opens a configured layer and toggles directories or edits files
 inside the tree. Passive notifications no longer consume `Enter`; actionable
 failure notifications and dismissal remain explicit. Focused tests cover the
 router, list entry, notification gate, and tree reducer in v0.1.18.
+
+M50 Overview insights and dependency exploration is complete on the feature
+branch. Overview now includes eight typed visualization views for build
+timeline/critical path, rebuild causes, sstate/download outcomes, rootfs image
+size, metadata provenance, runtime package topology, CVE/license/SBOM coverage,
+and disk history. Rootfs image size retains bounded same-target snapshots for
+build deltas. Security accepts SPDX, CycloneDX JSON, and package-manifest
+fallback inventories. Rootfs chart breakpoints preserve exploration, and
+process-backend task nodes are reachable from their recipe root. M46 remains
+complete; M51 validates these features against its performance implementation.

@@ -1,0 +1,29 @@
+{
+  "schema": "yoctui.performance.editor-render-baseline.v1",
+  "evidence_role": "deterministic_render_fixture_not_real_bitbake",
+  "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
+  "version": "0.1.56",
+  "scenario": "large-editor",
+  "terminal": {"columns": 160, "rows": 48},
+  "document_lines": 4096,
+  "workspace_files": 1024,
+  "maximum_nanoseconds_per_frame": 10000000,
+  "repeat_frames": 300,
+  "repeat_nanoseconds_per_frame": [11864225, 10157286, 10148504],
+  "profile": {
+    "frames": 1000,
+    "elapsed_milliseconds": 10734,
+    "nanoseconds_per_frame": 10734995,
+    "frequency_hz": 199,
+    "event": "cycles:u",
+    "call_graph": "fp",
+    "samples": 2144,
+    "lost_samples": 0,
+    "binary_sha256": "4044edb86c6d6d69ea0aae64ef9780d3d072cee57301762ad3232d591b3dac9b",
+    "raw_perf_sha256": "f001ee91f34ee5e36e565e213ed35beda63e7e70d2f58b06e1d319a6b33814c4",
+    "sha256_compression_self_percent": 43.38,
+    "generic_source_preview_self_percent": 9.02,
+    "popup_editor_text_self_percent": 5.82
+  },
+  "finding": "Repeated boolean dirty and visual-diff predicates hash entire buffers during rendering. Exact string comparisons preserve these predicates while explicit save/conflict revisions remain cryptographic."
+}

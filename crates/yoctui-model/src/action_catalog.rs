@@ -834,6 +834,8 @@ impl WorkspaceDestination {
             Self::Signatures => "Signatures",
             Self::Packages => "Packages",
             Self::Images => "Images",
+            Self::Kernel => "Kernel",
+            Self::Firmware => "U-Boot / BIOS",
             Self::Sdk => "SDK",
             Self::Testing => "Testing",
             Self::Security => "Security",
@@ -860,7 +862,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 146, "35 global plus 111 workspace actions");
+        assert_eq!(catalog.len(), 158, "35 global plus 123 workspace actions");
         assert!(
             catalog
                 .iter()

@@ -12,6 +12,7 @@ pub(super) fn workspace(
 ) {
     match app.screen {
         Screen::Dashboard => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
+        Screen::Insights => overview_workspace(frame, app, area, now),
         Screen::Tasks => tasks_workspace(frame, app, area, now, task_rows.unwrap_or_default()),
         Screen::BuildHistory => build_history(frame, app, area, now),
         Screen::Dependencies => dependencies(frame, app, area),
@@ -22,6 +23,8 @@ pub(super) fn workspace(
         Screen::Recipes => recipes(frame, app, area),
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
+        Screen::Kernel => platform_workspace(frame, app, &app.kernel, area, "Kernel"),
+        Screen::Firmware => platform_workspace(frame, app, &app.firmware, area, "U-Boot / BIOS"),
         Screen::Sdk => sdk_workspace(frame, app, area),
         Screen::Testing => testing_workspace(frame, app, area),
         Screen::Security => security_workspace(frame, app, area),

@@ -1,0 +1,35 @@
+{
+  "schema": "yoctui.performance.editor-render-result.v1",
+  "evidence_role": "deterministic_render_fixture_not_real_bitbake",
+  "source_base_revision": "78eb9bfc4e581210e88b05dae403c0f87447b602",
+  "version": "0.1.57",
+  "baseline": "baseline.json",
+  "binary_sha256": "74362975a8d5c8d47a1a4c6d43a52e1de61f4d4daeebc765c7e47ea48856b6d5",
+  "scenario": "large-editor",
+  "terminal": {
+    "columns": 160,
+    "rows": 48
+  },
+  "frames_per_run": 300,
+  "maximum_nanoseconds_per_frame": 10000000,
+  "quiet_repeat_nanoseconds_per_frame": [
+    8663477,
+    8056273,
+    7224060
+  ],
+  "full_matrix_nanoseconds_per_frame": 7195352,
+  "checksum": "fd1224e04e24cb30",
+  "concurrent_profiling_run": {
+    "nanoseconds_per_frame": 10560971,
+    "accepted": false,
+    "large_graph_nanoseconds_per_frame": 7398297
+  },
+  "quiet_full_matrix_large_graph_nanoseconds_per_frame": 5251123,
+  "passed": true,
+  "notes": [
+    "The initial post-fix matrix overlapped CPU profiling and missed the unchanged editor threshold. It was not accepted.",
+    "After the concurrent profiler exited, all three editor repeats and the complete five-scenario workbench matrix passed without changing limits, dimensions, data, or frame counts.",
+    "Boolean dirty/diff checks now compare exact text; cryptographic save/conflict revisions are preserved.",
+    "Cache-location environment variables only select existing release artifacts; optimization and sampling settings are unchanged."
+  ]
+}

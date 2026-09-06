@@ -19,8 +19,10 @@ mod list_tree;
 mod maintenance;
 mod menu;
 mod onboarding;
+mod overview;
 mod package;
 mod pane_layout;
+mod platform;
 mod preferences;
 mod progress;
 mod project_profile;
@@ -66,8 +68,10 @@ pub use list_tree::*;
 pub use maintenance::*;
 pub use menu::*;
 pub use onboarding::*;
+pub use overview::*;
 pub use package::*;
 pub use pane_layout::*;
+pub use platform::*;
 pub use preferences::*;
 pub use progress::*;
 pub use project_profile::*;
@@ -131,6 +135,7 @@ impl AppError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Screen {
     Dashboard,
+    Insights,
     Tasks,
     BuildHistory,
     Dependencies,
@@ -139,6 +144,8 @@ pub enum Screen {
     Recipes,
     Packages,
     Images,
+    Kernel,
+    Firmware,
     Sdk,
     Testing,
     Security,
@@ -457,12 +464,15 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-const NAVIGATOR_SCREENS: [Screen; 22] = [
+const NAVIGATOR_SCREENS: [Screen; 25] = [
     Screen::Dashboard,
+    Screen::Insights,
     Screen::Layers,
     Screen::Recipes,
     Screen::Packages,
     Screen::Images,
+    Screen::Kernel,
+    Screen::Firmware,
     Screen::Sdk,
     Screen::Tasks,
     Screen::Logs,
@@ -481,12 +491,15 @@ const NAVIGATOR_SCREENS: [Screen; 22] = [
     Screen::Compatibility,
     Screen::Settings,
 ];
-const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 22] = [
+const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 25] = [
+    WorkspaceDestination::Dashboard,
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
     WorkspaceDestination::Packages,
     WorkspaceDestination::Images,
+    WorkspaceDestination::Kernel,
+    WorkspaceDestination::Firmware,
     WorkspaceDestination::Sdk,
     WorkspaceDestination::Tasks,
     WorkspaceDestination::Logs,
@@ -517,27 +530,27 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "OVERVIEW",
         start: 0,
-        end: 1,
+        end: 2,
     },
     NavigatorGroupRange {
         label: "CONTENT",
-        start: 1,
-        end: 6,
+        start: 2,
+        end: 9,
     },
     NavigatorGroupRange {
         label: "BUILD",
-        start: 6,
-        end: 11,
-    },
-    NavigatorGroupRange {
-        label: "VALIDATE",
-        start: 11,
+        start: 9,
         end: 14,
     },
     NavigatorGroupRange {
-        label: "TOOLS",
+        label: "VALIDATE",
         start: 14,
-        end: 22,
+        end: 17,
+    },
+    NavigatorGroupRange {
+        label: "TOOLS",
+        start: 17,
+        end: 25,
     },
 ];
 
@@ -3551,6 +3564,7 @@ pub struct LayerBrowser {
     pub preview_kind: PreviewKind,
     pub preview_truncated: bool,
     pub preview_scroll: usize,
+    pub preview_focused: bool,
     pub inspector_mode: LayerInspectorMode,
     pub tree_truncated: bool,
     pub cycle_entries: usize,
@@ -3572,6 +3586,7 @@ impl LayerBrowser {
             preview_kind: PreviewKind::Unavailable,
             preview_truncated: false,
             preview_scroll: 0,
+            preview_focused: false,
             inspector_mode: LayerInspectorMode::Preview,
             tree_truncated: false,
             cycle_entries: 0,
@@ -4110,6 +4125,7 @@ pub struct App {
     pub onboarding: OnboardingState,
     pub preferences: WorkbenchPreferences,
     pub screen: Screen,
+    pub overview_view: OverviewView,
     pub focus: FocusTarget,
     pub focus_return: Option<FocusTarget>,
     pub workspace_subfocus: WorkspaceSubfocus,
@@ -4167,11 +4183,16 @@ pub struct App {
     pub image_artifact_searching: bool,
     pub image_artifact_request_generation: u64,
     pub images_view: ImagesView,
+    pub kernel: PlatformWorkbench,
+    pub firmware: PlatformWorkbench,
     pub rootfs_composition: RootfsCompositionState,
+    pub overview_image_size_history: VecDeque<OverviewImageSizeSnapshot>,
     pub rootfs_request_generation: u64,
     pub rootfs_group_selection: Option<RootfsGroupIdentity>,
     pub rootfs_package_selection: Option<PackageIdentity>,
     pub rootfs_entry_selection: Option<RootfsPathIdentity>,
+    pub rootfs_systemd_selection: usize,
+    pub rootfs_dbus_selection: usize,
     pub sdk_artifacts: SdkArtifactInventoryState,
     pub sdk_artifact_selection: Option<SdkArtifactIdentity>,
     pub sdk_artifact_query: String,
@@ -4297,6 +4318,7 @@ impl App {
             onboarding: OnboardingState::default(),
             preferences: WorkbenchPreferences::default(),
             screen: Screen::Dashboard,
+            overview_view: OverviewView::default(),
             focus: FocusTarget::Workspace,
             focus_return: None,
             workspace_subfocus: WorkspaceSubfocus::Main,
@@ -4358,11 +4380,16 @@ impl App {
             image_artifact_searching: false,
             image_artifact_request_generation: 0,
             images_view: ImagesView::Artifacts,
+            kernel: PlatformWorkbench::default(),
+            firmware: PlatformWorkbench::default(),
             rootfs_composition: RootfsCompositionState::NotLoaded,
+            overview_image_size_history: VecDeque::new(),
             rootfs_request_generation: 0,
             rootfs_group_selection: None,
             rootfs_package_selection: None,
             rootfs_entry_selection: None,
+            rootfs_systemd_selection: 0,
+            rootfs_dbus_selection: 0,
             sdk_artifacts: SdkArtifactInventoryState::NotLoaded,
             sdk_artifact_selection: None,
             sdk_artifact_query: String::new(),
@@ -4856,14 +4883,16 @@ impl App {
             return InspectorMode::Navigator;
         }
         match self.screen {
-            Screen::Dashboard => InspectorMode::DaemonSession,
+            Screen::Dashboard | Screen::Insights => InspectorMode::DaemonSession,
             Screen::Tasks => InspectorMode::Task,
             Screen::BuildHistory => InspectorMode::Job,
             Screen::Dependencies | Screen::LayerRelationships => InspectorMode::Dependency,
             Screen::Signatures => InspectorMode::Signature,
             Screen::Recipes => InspectorMode::Recipe,
             Screen::Packages => InspectorMode::Package,
-            Screen::Images | Screen::Sdk => InspectorMode::Artifact,
+            Screen::Images | Screen::Kernel | Screen::Firmware | Screen::Sdk => {
+                InspectorMode::Artifact
+            }
             Screen::Testing => InspectorMode::Test,
             Screen::Security => InspectorMode::Security,
             Screen::Qa => InspectorMode::Qa,
@@ -5772,6 +5801,34 @@ pub enum Action {
     },
     ActivateProjectProfileItem,
     Open(Screen),
+    InspectKernel,
+    KernelLoaded(PlatformInventory),
+    KernelFailed(String),
+    CycleKernelView,
+    SelectKernelFile {
+        delta: isize,
+    },
+    LaunchKernelMenuconfig,
+    OpenSelectedKernelFile,
+    ExploreSelectedKernelRoot,
+    CompileSelectedKernelDts,
+    DecompileSelectedKernelDtb,
+    InspectFirmware,
+    FirmwareLoaded(PlatformInventory),
+    FirmwareFailed(String),
+    CycleFirmwareView,
+    SelectFirmwareFile {
+        delta: isize,
+    },
+    LaunchFirmwareMenuconfig,
+    OpenSelectedFirmwareFile,
+    ExploreSelectedFirmwareRoot,
+    CompileSelectedFirmwareDts,
+    DecompileSelectedFirmwareDtb,
+    ShiftOverviewView {
+        delta: isize,
+    },
+    SelectOverviewView(OverviewView),
     OpenRawFavorites,
     SelectNavigator {
         delta: isize,
@@ -6019,6 +6076,14 @@ pub enum Action {
     SelectRootfsEntry {
         delta: isize,
     },
+    SelectRootfsSystemdService {
+        delta: isize,
+    },
+    SelectRootfsDbusService {
+        delta: isize,
+    },
+    BrowseRootfsFilesystem,
+    EditSelectedRootfsSystemFile,
     BeginSdkBuild(SdkBuildAction),
     ConfirmSdkBuild,
     CancelSdkBuild,
@@ -6894,6 +6959,7 @@ pub enum Action {
     ScrollLayerBrowserPreview {
         delta: isize,
     },
+    FocusLayerBrowserTree,
     LoadLayerBrowserPreview {
         path: PathBuf,
         content: String,
@@ -8443,12 +8509,16 @@ fn set_rootfs_composition(
         limitations.push("One rootfs authority is partial or unavailable.".into());
     }
     let limitations = normalize_rootfs_limitations(limitations);
+    app.record_overview_image_size(&composition);
     app.rootfs_composition = if composition.is_unavailable() {
         let mut reasons = Vec::new();
         if let RootfsAuthority::Unavailable { reason } = &composition.installed_packages {
             reasons.push(reason.as_str());
         }
         if let RootfsAuthority::Unavailable { reason } = &composition.filesystem_tree {
+            reasons.push(reason.as_str());
+        }
+        if let RootfsAuthority::Unavailable { reason } = &composition.system_inventory {
             reasons.push(reason.as_str());
         }
         RootfsCompositionState::Unavailable {
@@ -8473,6 +8543,18 @@ fn set_rootfs_composition(
         }
     };
     reconcile_rootfs_selection(app, previous_group, previous_package, previous_entry);
+    if let Some(inventory) = app
+        .rootfs_composition
+        .composition()
+        .and_then(RootfsComposition::system_inventory)
+    {
+        app.rootfs_systemd_selection = app
+            .rootfs_systemd_selection
+            .min(inventory.systemd_services.len().saturating_sub(1));
+        app.rootfs_dbus_selection = app
+            .rootfs_dbus_selection
+            .min(inventory.dbus_services.len().saturating_sub(1));
+    }
 }
 
 fn begin_sdk_artifact_inventory(app: &mut App) -> Option<Effect> {
@@ -9275,13 +9357,15 @@ fn select_package_identity(
 fn current_collection_edge_action(app: &App, to_end: bool) -> Option<Action> {
     let delta = if to_end { isize::MAX } else { isize::MIN };
     Some(match app.screen {
-        Screen::Dashboard | Screen::Tasks => Action::ScrollBuildTasks { delta },
+        Screen::Dashboard | Screen::Insights | Screen::Tasks => Action::ScrollBuildTasks { delta },
         Screen::BuildHistory => Action::SelectBuildHistory { delta },
         Screen::Dependencies => Action::SelectDependencyGraphNode { delta },
         Screen::Signatures => Action::SelectSignatureRecord { delta },
         Screen::Recipes => Action::SelectRecipe { delta },
         Screen::Packages => Action::SelectPackage { delta },
         Screen::Images => Action::SelectImageArtifact { delta },
+        Screen::Kernel => Action::SelectKernelFile { delta },
+        Screen::Firmware => Action::SelectFirmwareFile { delta },
         Screen::Sdk => Action::SelectSdkArtifact { delta },
         Screen::Testing => match app.test_view {
             TestWorkspaceView::Launches => Action::SelectTestFamily { delta },
@@ -9541,6 +9625,311 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             let _ = update(app, Action::Open(Screen::RawMode));
             return update(app, Action::RawMode(RawModeAction::OpenFavorites));
         }
+        Action::InspectKernel => {
+            app.kernel.inventory = PlatformInventoryState::Loading;
+            return Some(Effect::InspectKernel);
+        }
+        Action::KernelLoaded(mut inventory) => {
+            inventory
+                .files
+                .sort_by(|left, right| left.path.cmp(&right.path));
+            app.kernel.inventory = PlatformInventoryState::Available(inventory);
+            app.kernel.config_selection = 0;
+            app.kernel.device_tree_selection = 0;
+        }
+        Action::KernelFailed(message) => {
+            app.kernel.inventory = PlatformInventoryState::Failed(message.clone());
+            app.notification = Some(format!("Kernel inspection failed: {message}"));
+        }
+        Action::CycleKernelView => app.kernel.cycle_view(),
+        Action::SelectKernelFile { delta } => app.kernel.select(delta),
+        Action::LaunchKernelMenuconfig => {
+            if app.daemon.status != ClientReplicaStatus::Current {
+                app.notification =
+                    Some("Reconnect to a current daemon before opening kernel menuconfig.".into());
+            } else if !app.build_environment.connected() {
+                app.notification = Some("Verify the build environment first.".into());
+            } else if !app.kernel.inventory().is_some_and(|inventory| {
+                inventory
+                    .tasks
+                    .iter()
+                    .any(|task| task == "menuconfig" || task == "do_menuconfig")
+            }) {
+                app.notification = Some(
+                    "The kernel provider did not report an authoritative menuconfig task.".into(),
+                );
+            } else if let Some(cwd) = app.workspace.build_dir.clone() {
+                open_terminal_launch(
+                    app,
+                    TerminalLaunchRequest {
+                        name: "kernel menuconfig".into(),
+                        kind: TerminalCreationKind::Menuconfig,
+                        cwd,
+                        program: PathBuf::from("/usr/bin/env"),
+                        arguments: vec![
+                            "bitbake".into(),
+                            "virtual/kernel".into(),
+                            "-c".into(),
+                            "menuconfig".into(),
+                        ],
+                    },
+                );
+            } else {
+                app.notification = Some("No authoritative build directory is available.".into());
+            }
+        }
+        Action::OpenSelectedKernelFile => {
+            let Some(file) = app.kernel.selected_file().cloned() else {
+                app.notification = Some("Select a kernel file first.".into());
+                return None;
+            };
+            if !file.kind.is_text() {
+                app.notification = Some("A DTB is binary; press d to decompile it to DTS.".into());
+                return None;
+            }
+            let Ok(relative) = file.path.strip_prefix(&file.root) else {
+                app.notification =
+                    Some("The selected file is outside its authoritative root.".into());
+                return None;
+            };
+            return Some(Effect::OpenLayerBrowserEditor {
+                layer: "Kernel".into(),
+                root: file.root,
+                file: relative.to_path_buf(),
+            });
+        }
+        Action::ExploreSelectedKernelRoot => {
+            let Some(file) = app.kernel.selected_file() else {
+                app.notification = Some("Select a kernel file first.".into());
+                return None;
+            };
+            return Some(Effect::OpenWorkspaceEditor {
+                label: "Kernel".into(),
+                root: file.root.clone(),
+            });
+        }
+        Action::CompileSelectedKernelDts | Action::DecompileSelectedKernelDtb => {
+            let compile = matches!(action, Action::CompileSelectedKernelDts);
+            let Some(file) = app.kernel.selected_file().cloned() else {
+                app.notification = Some("Select a device-tree file first.".into());
+                return None;
+            };
+            let valid = if compile {
+                file.kind == PlatformFileKind::Dts
+            } else {
+                matches!(file.kind, PlatformFileKind::Dtb | PlatformFileKind::Dtbo)
+            };
+            if !valid {
+                app.notification = Some(if compile {
+                    "Select a DTS source before compiling.".into()
+                } else {
+                    "Select a DTB or DTBO before decompiling.".into()
+                });
+                return None;
+            }
+            let Some(dtc) = app
+                .kernel
+                .inventory()
+                .and_then(|inventory| inventory.dtc.clone())
+            else {
+                app.notification =
+                    Some("No authoritative dtc executable was found in PATH.".into());
+                return None;
+            };
+            let suffix = if compile { "yoctui.dtb" } else { "yoctui.dts" };
+            let stem = file
+                .path
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .unwrap_or("device-tree");
+            let output = file.path.with_file_name(format!("{stem}.{suffix}"));
+            if output.exists() {
+                app.notification = Some(format!(
+                    "Refusing to overwrite {}; move or remove it first.",
+                    output.display()
+                ));
+                return None;
+            }
+            open_terminal_launch(
+                app,
+                TerminalLaunchRequest {
+                    name: if compile {
+                        "compile device tree"
+                    } else {
+                        "decompile device tree"
+                    }
+                    .into(),
+                    kind: TerminalCreationKind::Utility,
+                    cwd: file.root,
+                    program: dtc,
+                    arguments: vec![
+                        "-I".into(),
+                        if compile { "dts" } else { "dtb" }.into(),
+                        "-O".into(),
+                        if compile { "dtb" } else { "dts" }.into(),
+                        "-o".into(),
+                        output.display().to_string(),
+                        file.path.display().to_string(),
+                    ],
+                },
+            );
+        }
+        Action::InspectFirmware => {
+            app.firmware.inventory = PlatformInventoryState::Loading;
+            return Some(Effect::InspectFirmware);
+        }
+        Action::FirmwareLoaded(mut inventory) => {
+            inventory
+                .files
+                .sort_by(|left, right| left.path.cmp(&right.path));
+            app.firmware.inventory = PlatformInventoryState::Available(inventory);
+            app.firmware.config_selection = 0;
+            app.firmware.device_tree_selection = 0;
+        }
+        Action::FirmwareFailed(message) => {
+            app.firmware.inventory = PlatformInventoryState::Failed(message.clone());
+            app.notification = Some(format!("Firmware inspection failed: {message}"));
+        }
+        Action::CycleFirmwareView => app.firmware.cycle_view(),
+        Action::SelectFirmwareFile { delta } => app.firmware.select(delta),
+        Action::LaunchFirmwareMenuconfig => {
+            if app.daemon.status != ClientReplicaStatus::Current {
+                app.notification = Some(
+                    "Reconnect to a current daemon before opening firmware menuconfig.".into(),
+                );
+            } else if !app.build_environment.connected() {
+                app.notification = Some("Verify the build environment first.".into());
+            } else if !app.firmware.inventory().is_some_and(|inventory| {
+                inventory
+                    .tasks
+                    .iter()
+                    .any(|task| task == "menuconfig" || task == "do_menuconfig")
+            }) {
+                app.notification = Some(
+                    "The detected firmware provider did not report an authoritative menuconfig task."
+                        .into(),
+                );
+            } else if let (Some(cwd), Some(inventory)) =
+                (app.workspace.build_dir.clone(), app.firmware.inventory())
+            {
+                let target = inventory.target.clone();
+                let component = inventory.component.label().to_lowercase();
+                open_terminal_launch(
+                    app,
+                    TerminalLaunchRequest {
+                        name: format!("{component} menuconfig"),
+                        kind: TerminalCreationKind::Menuconfig,
+                        cwd,
+                        program: PathBuf::from("/usr/bin/env"),
+                        arguments: vec!["bitbake".into(), target, "-c".into(), "menuconfig".into()],
+                    },
+                );
+            } else {
+                app.notification = Some("No authoritative build directory is available.".into());
+            }
+        }
+        Action::OpenSelectedFirmwareFile => {
+            let Some(file) = app.firmware.selected_file().cloned() else {
+                app.notification = Some("Select a firmware file first.".into());
+                return None;
+            };
+            if !file.kind.is_text() {
+                app.notification = Some("A DTB is binary; press d to decompile it to DTS.".into());
+                return None;
+            }
+            let Ok(relative) = file.path.strip_prefix(&file.root) else {
+                app.notification =
+                    Some("The selected file is outside its authoritative root.".into());
+                return None;
+            };
+            return Some(Effect::OpenLayerBrowserEditor {
+                layer: "Firmware".into(),
+                root: file.root,
+                file: relative.to_path_buf(),
+            });
+        }
+        Action::ExploreSelectedFirmwareRoot => {
+            let Some(file) = app.firmware.selected_file() else {
+                app.notification = Some("Select a firmware file first.".into());
+                return None;
+            };
+            return Some(Effect::OpenWorkspaceEditor {
+                label: "Firmware".into(),
+                root: file.root.clone(),
+            });
+        }
+        Action::CompileSelectedFirmwareDts | Action::DecompileSelectedFirmwareDtb => {
+            let compile = matches!(action, Action::CompileSelectedFirmwareDts);
+            let Some(file) = app.firmware.selected_file().cloned() else {
+                app.notification = Some("Select a device-tree file first.".into());
+                return None;
+            };
+            let valid = if compile {
+                file.kind == PlatformFileKind::Dts
+            } else {
+                matches!(file.kind, PlatformFileKind::Dtb | PlatformFileKind::Dtbo)
+            };
+            if !valid {
+                app.notification = Some(if compile {
+                    "Select a DTS source before compiling.".into()
+                } else {
+                    "Select a DTB or DTBO before decompiling.".into()
+                });
+                return None;
+            }
+            let Some(dtc) = app
+                .firmware
+                .inventory()
+                .and_then(|inventory| inventory.dtc.clone())
+            else {
+                app.notification =
+                    Some("No authoritative dtc executable was found in PATH.".into());
+                return None;
+            };
+            let suffix = if compile { "yoctui.dtb" } else { "yoctui.dts" };
+            let stem = file
+                .path
+                .file_stem()
+                .and_then(|value| value.to_str())
+                .unwrap_or("device-tree");
+            let output = file.path.with_file_name(format!("{stem}.{suffix}"));
+            if output.exists() {
+                app.notification = Some(format!(
+                    "Refusing to overwrite {}; move or remove it first.",
+                    output.display()
+                ));
+                return None;
+            }
+            open_terminal_launch(
+                app,
+                TerminalLaunchRequest {
+                    name: if compile {
+                        "compile firmware device tree"
+                    } else {
+                        "decompile firmware device tree"
+                    }
+                    .into(),
+                    kind: TerminalCreationKind::Utility,
+                    cwd: file.root,
+                    program: dtc,
+                    arguments: vec![
+                        "-I".into(),
+                        if compile { "dts" } else { "dtb" }.into(),
+                        "-O".into(),
+                        if compile { "dtb" } else { "dts" }.into(),
+                        "-o".into(),
+                        output.display().to_string(),
+                        file.path.display().to_string(),
+                    ],
+                },
+            );
+        }
+        Action::ShiftOverviewView { delta } => {
+            app.overview_view = app.overview_view.shifted(delta);
+        }
+        Action::SelectOverviewView(view) => {
+            app.overview_view = view;
+        }
         Action::Open(s) => {
             let correlated_log_id = (s == Screen::Logs)
                 .then(|| selected_correlated_log_id(app))
@@ -9569,6 +9958,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
             {
                 return Some(begin_package_inventory(app));
+            }
+            if s == Screen::Kernel
+                && matches!(app.kernel.inventory, PlatformInventoryState::NotLoaded)
+            {
+                app.kernel.inventory = PlatformInventoryState::Loading;
+                return Some(Effect::InspectKernel);
+            }
+            if s == Screen::Firmware
+                && matches!(app.firmware.inventory, PlatformInventoryState::NotLoaded)
+            {
+                app.firmware.inventory = PlatformInventoryState::Loading;
+                return Some(Effect::InspectFirmware);
             }
             if s == Screen::Images
                 && matches!(app.image_artifacts, ImageArtifactInventoryState::NotLoaded)
@@ -9976,6 +10377,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
             {
                 return Some(begin_package_inventory(app));
+            }
+            if app.screen == Screen::Kernel
+                && matches!(app.kernel.inventory, PlatformInventoryState::NotLoaded)
+            {
+                app.kernel.inventory = PlatformInventoryState::Loading;
+                return Some(Effect::InspectKernel);
+            }
+            if app.screen == Screen::Firmware
+                && matches!(app.firmware.inventory, PlatformInventoryState::NotLoaded)
+            {
+                app.firmware.inventory = PlatformInventoryState::Loading;
+                return Some(Effect::InspectFirmware);
             }
             if app.screen == Screen::Images
                 && matches!(app.image_artifacts, ImageArtifactInventoryState::NotLoaded)
@@ -11662,6 +12075,69 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     .identity
                     .clone(),
             );
+        }
+        Action::SelectRootfsSystemdService { delta } => {
+            let len = app
+                .rootfs_composition
+                .composition()
+                .and_then(RootfsComposition::system_inventory)
+                .map_or(0, |inventory| inventory.systemd_services.len());
+            app.rootfs_systemd_selection = shifted_index(app.rootfs_systemd_selection, delta, len);
+        }
+        Action::SelectRootfsDbusService { delta } => {
+            let len = app
+                .rootfs_composition
+                .composition()
+                .and_then(RootfsComposition::system_inventory)
+                .map_or(0, |inventory| inventory.dbus_services.len());
+            app.rootfs_dbus_selection = shifted_index(app.rootfs_dbus_selection, delta, len);
+        }
+        Action::BrowseRootfsFilesystem => {
+            if let Some((root, image)) =
+                app.rootfs_composition
+                    .composition()
+                    .and_then(|composition| {
+                        composition
+                            .root_directory
+                            .clone()
+                            .map(|root| (root, composition.image.image.clone()))
+                    })
+            {
+                return Some(Effect::LoadLayerBrowserDirectory {
+                    layer: format!("Rootfs: {image}"),
+                    root: root.clone(),
+                    directory: root,
+                });
+            }
+            app.notification =
+                Some("The selected image has no available IMAGE_ROOTFS tree.".into());
+        }
+        Action::EditSelectedRootfsSystemFile => {
+            let composition = app.rootfs_composition.composition();
+            let root = composition.and_then(|composition| composition.root_directory.clone());
+            let path = match app.images_view {
+                ImagesView::SystemdServices => composition
+                    .and_then(RootfsComposition::system_inventory)
+                    .and_then(|inventory| {
+                        inventory.systemd_services.get(app.rootfs_systemd_selection)
+                    })
+                    .map(|service| service.host_path.clone()),
+                ImagesView::SystemDbus => composition
+                    .and_then(RootfsComposition::system_inventory)
+                    .and_then(|inventory| inventory.dbus_services.get(app.rootfs_dbus_selection))
+                    .map(|service| service.host_path.clone()),
+                _ => None,
+            };
+            if let (Some(root), Some(path)) = (root, path)
+                && let Ok(file) = path.strip_prefix(&root)
+            {
+                return Some(Effect::OpenLayerBrowserEditor {
+                    layer: "Rootfs system".into(),
+                    root,
+                    file: file.to_path_buf(),
+                });
+            }
+            app.notification = Some("No editable rootfs system file is selected.".into());
         }
         Action::BeginSdkBuild(action) => {
             let Some(image) = app.build.target.clone() else {
@@ -17787,6 +18263,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .as_ref()
                 .and_then(LayerBrowser::selected_entry)
                 .cloned();
+            let selected_is_file = selected.as_ref().is_some_and(|entry| !entry.is_dir);
             if let Some(entry) = selected.filter(|entry| entry.is_dir) {
                 let browser = app.layer_browser.as_mut().expect("browser was selected");
                 if browser.expanded.contains(&entry.path) {
@@ -17802,6 +18279,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     root: browser.root.clone(),
                     directory: entry.path,
                 });
+            } else if selected_is_file && let Some(browser) = app.layer_browser.as_mut() {
+                browser.preview_focused = true;
             }
         }
         Action::LayerBrowserEnter => {
@@ -17893,6 +18372,11 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                         .saturating_add(delta as usize)
                         .min(maximum)
                 };
+            }
+        }
+        Action::FocusLayerBrowserTree => {
+            if let Some(browser) = app.layer_browser.as_mut() {
+                browser.preview_focused = false;
             }
         }
         Action::LoadLayerBrowserPreview {
@@ -18526,6 +19010,8 @@ pub enum Effect {
         generation: u64,
     },
     CloneBuildEnvironment(BuildEnvironmentClonePlan),
+    InspectKernel,
+    InspectFirmware,
     Start(BuildRequest),
     Cancel,
     StartRaw(RawConfirmedExecutionRequest),
@@ -19482,7 +19968,7 @@ mod tests {
     #[test]
     fn navigator_screen_projects_the_bounded_selection() {
         let mut app = App::new(10, 1_000);
-        app.navigator_selection = 1;
+        app.navigator_selection = 2;
         assert_eq!(app.navigator_screen(), Screen::Layers);
         app.navigator_selection = usize::MAX;
         assert_eq!(app.navigator_screen(), Screen::Dashboard);
@@ -19494,10 +19980,13 @@ mod tests {
             NAVIGATOR_SCREENS,
             [
                 Screen::Dashboard,
+                Screen::Insights,
                 Screen::Layers,
                 Screen::Recipes,
                 Screen::Packages,
                 Screen::Images,
+                Screen::Kernel,
+                Screen::Firmware,
                 Screen::Sdk,
                 Screen::Tasks,
                 Screen::Logs,
@@ -19522,25 +20011,25 @@ mod tests {
     #[test]
     fn navigator_groups_collapse_without_exposing_hidden_destinations() {
         let mut app = App::new(10, 1_000);
-        app.navigator_selection = 6;
+        app.navigator_selection = 9;
         assert_eq!(app.navigator_group_index(), 2);
-        assert_eq!(app.navigator_visual_row(), 9);
+        assert_eq!(app.navigator_visual_row(), 12);
 
         let _ = update(&mut app, Action::CollapseNavigatorGroup);
         assert!(!app.navigator_groups_expanded[2]);
-        assert_eq!(app.navigator_visual_row(), 8);
-        assert_eq!(app.navigator_group_at_visual_row(8), Some(2));
-        assert_eq!(app.navigator_selection_at_visual_row(8), None);
+        assert_eq!(app.navigator_visual_row(), 11);
+        assert_eq!(app.navigator_group_at_visual_row(11), Some(2));
+        assert_eq!(app.navigator_selection_at_visual_row(11), None);
 
         let _ = update(&mut app, Action::SelectNavigator { delta: 1 });
-        assert_eq!(app.navigator_selection, 11);
-        let _ = update(&mut app, Action::SelectNavigatorAt { index: 7 });
+        assert_eq!(app.navigator_selection, 14);
+        let _ = update(&mut app, Action::SelectNavigatorAt { index: 10 });
         assert_eq!(
-            app.navigator_selection, 11,
+            app.navigator_selection, 14,
             "hidden rows cannot be selected"
         );
 
-        app.navigator_selection = 6;
+        app.navigator_selection = 9;
         let _ = update(&mut app, Action::ActivateNavigator);
         assert!(app.navigator_groups_expanded[2]);
         assert_eq!(app.screen, Screen::Dashboard, "expansion does not navigate");
@@ -19576,7 +20065,7 @@ mod tests {
         assert_eq!(app.navigator_group_index(), 3);
         let _ = update(&mut app, Action::SelectNavigator { delta: -1 });
         assert_eq!(app.navigator_selection, NAVIGATOR_GROUPS[2].start);
-        assert_eq!(app.navigator_visual_row(), 8);
+        assert_eq!(app.navigator_visual_row(), 11);
 
         let _ = update(&mut app, Action::ExpandNavigatorGroup);
         assert!(app.navigator_groups_expanded[2]);
@@ -20832,6 +21321,54 @@ mod tests {
                 },
                 destination: TerminalLaunchDestination::Embedded,
             })) if name == "menuconfig:busybox"
+        ));
+    }
+    #[test]
+    fn kernel_menuconfig_uses_virtual_provider_and_requires_reported_task() {
+        let mut app = App::new(10, 1_000);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.workspace.build_dir = Some("/work/build".into());
+        app.kernel.inventory = PlatformInventoryState::Available(PlatformInventory {
+            component: PlatformComponent::Kernel,
+            target: "virtual/kernel".into(),
+            provider: Some("/layers/linux.bb".into()),
+            tasks: vec!["do_menuconfig".into()],
+            roots: vec![],
+            files: vec![],
+            dtc: None,
+            limitations: vec![],
+        });
+        let _ = update(&mut app, Action::LaunchKernelMenuconfig);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
+                request: TerminalLaunchRequest { arguments, .. },
+                destination: TerminalLaunchDestination::Embedded,
+            })) if arguments == &vec!["bitbake", "virtual/kernel", "-c", "menuconfig"]
+        ));
+    }
+    #[test]
+    fn firmware_menuconfig_uses_detected_provider_and_requires_reported_task() {
+        let mut app = App::new(10, 1_000);
+        app.daemon.status = ClientReplicaStatus::Current;
+        app.workspace.build_dir = Some("/work/build".into());
+        app.firmware.inventory = PlatformInventoryState::Available(PlatformInventory {
+            component: PlatformComponent::UBoot,
+            target: "u-boot-fslc".into(),
+            provider: Some("/layers/u-boot-fslc.bb".into()),
+            tasks: vec!["do_menuconfig".into()],
+            roots: vec![],
+            files: vec![],
+            dtc: None,
+            limitations: vec![],
+        });
+        let _ = update(&mut app, Action::LaunchFirmwareMenuconfig);
+        assert!(matches!(
+            app.active_dialog(),
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
+                request: TerminalLaunchRequest { arguments, .. },
+                destination: TerminalLaunchDestination::Embedded,
+            })) if arguments == &vec!["bitbake", "u-boot-fslc", "-c", "menuconfig"]
         ));
     }
     #[test]
@@ -22240,6 +22777,38 @@ mod tests {
                 .path,
             PathBuf::from("/layers/meta-demo/visible.bb")
         );
+    }
+
+    #[test]
+    fn layer_file_right_focuses_preview_and_arrows_scroll_only_the_preview() {
+        let mut app = App::new(10, 1_000);
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserDirectory {
+                layer: "rootfs".into(),
+                root: "/build/rootfs".into(),
+                directory: "/build/rootfs".into(),
+                entries: vec![LayerBrowserEntry {
+                    path: "/build/rootfs/etc/os-release".into(),
+                    ..LayerBrowserEntry::default()
+                }],
+            },
+        );
+        let _ = update(
+            &mut app,
+            Action::LoadLayerBrowserPreview {
+                path: "/build/rootfs/etc/os-release".into(),
+                content: "one\ntwo\nthree".into(),
+                kind: PreviewKind::Text,
+                truncated: false,
+            },
+        );
+        assert_eq!(update(&mut app, Action::LayerBrowserExpand), None);
+        assert!(app.layer_browser.as_ref().unwrap().preview_focused);
+        let _ = update(&mut app, Action::ScrollLayerBrowserPreview { delta: 1 });
+        assert_eq!(app.layer_browser.as_ref().unwrap().preview_scroll, 1);
+        let _ = update(&mut app, Action::FocusLayerBrowserTree);
+        assert!(!app.layer_browser.as_ref().unwrap().preview_focused);
     }
     #[test]
     fn layer_tree_ignores_stale_preview_and_tracks_binary_metadata() {
@@ -25572,6 +26141,8 @@ mod tests {
                     },
                 ],
             }),
+            system_inventory: RootfsAuthority::Available(RootfsSystemInventory::default()),
+            root_directory: Some("/build/tmp/rootfs".into()),
         };
         let stale = RootfsCompositionRequest {
             generation: 99,
@@ -25669,6 +26240,8 @@ mod tests {
                         RootfsPackageInventory::default(),
                     ),
                     filesystem_tree: RootfsAuthority::Available(RootfsFilesystemTree::default()),
+                    system_inventory: RootfsAuthority::Available(RootfsSystemInventory::default()),
+                    root_directory: None,
                 },
             },
         );
@@ -27830,13 +28403,13 @@ mod tests {
             .enumerate()
             .filter_map(|(index, screen)| (*screen == Screen::RawMode).then_some(index))
             .collect::<Vec<_>>();
-        assert_eq!(raw_destinations, [14]);
+        assert_eq!(raw_destinations, [17]);
         assert_eq!(
-            NAVIGATOR_COMPATIBILITY_DESTINATIONS[14],
+            NAVIGATOR_COMPATIBILITY_DESTINATIONS[17],
             WorkspaceDestination::RawMode
         );
         assert_eq!(NAVIGATOR_GROUPS[4].label, "TOOLS");
-        assert!((NAVIGATOR_GROUPS[4].start..NAVIGATOR_GROUPS[4].end).contains(&14));
+        assert!((NAVIGATOR_GROUPS[4].start..NAVIGATOR_GROUPS[4].end).contains(&17));
 
         let mut app = App::new(16, 4096);
         let raw_commands = app
@@ -27852,7 +28425,7 @@ mod tests {
         );
 
         assert_eq!(update(&mut app, Action::Open(Screen::RawMode)), None);
-        assert_eq!(app.navigator_selection, 14);
+        assert_eq!(app.navigator_selection, 17);
         assert_eq!(app.focus, FocusTarget::Workspace);
         assert_eq!(app.inspector_mode(), InspectorMode::RawCommand);
         assert_eq!(

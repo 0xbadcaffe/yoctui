@@ -1,14 +1,14 @@
 {
   "artifacts": {
-    "idle-attached-client.json": "52752d7a34904d4962c19f2bef5b157bbdadda1db3db3145622c08541d57d545",
-    "idle-daemon.json": "1c718cd4f853ba16fcf50e6b6dc59ebc4ad165a098239fc32462eabc816236b8"
+    "idle-attached-client.json": "6ec988833b91c65a4dba79826828e8903bc81fa0e6036ca0d9bc5864add74a5f",
+    "idle-daemon.json": "7d3299e9d52ac5ad8a38df64cdff5d91b8f9f48384860e5dbc84cdfd18119170"
   },
   "binary": {
     "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-    "sha256": "a63bee5996f134b98de9ab243ab22b8cb5b5aff4a66bc4d13f8a4c36bacb18b0",
-    "version": "yoctui 0.1.51"
+    "sha256": "c83df9cbab3f91565573c63387a2fa0b81d0b0bd3d29df14faaa425da2f912cf",
+    "version": "yoctui 0.1.57"
   },
-  "captured_at_unix_ms": 1788655787924,
+  "captured_at_unix_ms": 1788688828198,
   "method": {
     "clock": "CLOCK_MONOTONIC",
     "cpu_source": "/proc/PID/stat fields 14+15",
@@ -25,23 +25,23 @@
     "warmup_seconds": 10
   },
   "observations": {
-    "attached_daemon_cpu_percent_one_logical_cpu": 0.0,
-    "combined_cpu_percent_one_logical_cpu": 0.10406287263395347,
-    "idle_client_cpu_percent_one_logical_cpu": 0.020807921055656934,
+    "attached_daemon_cpu_percent_one_logical_cpu": 0.020789546536207296,
+    "combined_cpu_percent_one_logical_cpu": 0.16642717540751498,
+    "idle_client_cpu_percent_one_logical_cpu": 0.08319157560334776,
     "idle_daemon_cpu_percent_one_logical_cpu": 0.0
   },
-  "pty_bytes_drained": 19501,
-  "revision": "6d0594d56d38fb9cbd97e3545fc145755bb0ea60",
+  "pty_bytes_drained": 19638,
+  "revision": "78eb9bfc4e581210e88b05dae403c0f87447b602",
   "schema": "yoctui.performance.low-overhead-suite.v1",
   "sources": {
-    "crates/yoctui-cli/src/main.rs": "9837f7ab3ea4549e9b58b859ff241be244aa4f59b97bc2f2f145208c46af843b",
+    "crates/yoctui-cli/src/main.rs": "8ecd7e02618a9c7542c0d2fb059481068207b51a23656fb95bb78d70864eac18",
     "crates/yoctui-protocol/src/daemon_ipc.rs": "c2d348345f45061bbdbc5991ebcf2a4be109af425323f6e352fca5689cbfeb1a",
     "scripts/measure-low-overhead.py": "f211f06d3e2d704d0a1e12f62984ddd8a8d3889314e5453260d3232da06e2263",
     "scripts/measure-process-overhead.py": "0d6b43a7d7caf3ba5c2e690e8f462b45f0cefb400bd1b90d9649bc42b52b5c70"
   },
   "startup": {
-    "client_first_frame_ms": 11.106995982117951,
-    "daemon_socket_ready_ms": 10.119989048689604,
+    "client_first_frame_ms": 11.158259818330407,
+    "daemon_socket_ready_ms": 10.4421298019588,
     "maximum_excluded_startup_ms": 5000
   },
   "thresholds": {
