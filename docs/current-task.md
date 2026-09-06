@@ -2,37 +2,35 @@
 
 ## Task
 
-**ID:** IMAGE-UDEV-001
-**Title:** List image-owned udev rules with bounded offline inspection
+**ID:** CONSOLE-TERM-002
+**Title:** Verify SSH and runqemu use the admitted tui-term terminal path
 **Status:** IN_PROGRESS
 
 ## Objective
 
-Add a sixth Images/rootfs tab for the exact reported IMAGE_ROOTFS udev rules,
-including logical paths, precedence/masking evidence, and bounded preview.
-Never inspect host rules, execute rules, or infer live device state.
+Verify the existing image-console launch, daemon-owned PTY and tui-term replica
+rendering paths together. Preserve exact argv, SSH host-key policy, writer
+leases, input, resize, lifecycle, and reconnect. Add regression coverage for
+both console kinds without claiming fixture results as real target execution.
 
 ## Dependencies
 
-- WORKBENCH-INTEGRATION-001 — DONE
+- IMAGE-UDEV-001 — DONE (v0.1.58)
 
 ## Definition of done
 
-- Vendor, runtime, and administrative rules are visible, including shadowed
-  and masked entries, with explicit partial/unavailable states.
-- Selection, preview, scrolling, safety, and narrow rendering have tests.
-- UI specification, architecture, registry, and status agree.
+- SSH/QEMU launches and renderer routes are covered by focused tests.
+- Real PTY integration and terminal lifecycle tests pass.
+- Documentation explains the shared tui-term path and its authority boundaries.
 
 ## Verification
 
 ```bash
-cargo test -p yoctui-model udev
-cargo test -p yoctui-bitbake udev
-cargo test -p yoctui-ui udev
-cargo test -p yoctui-app udev
+cargo test --workspace image_console
+cargo test -p yoctui --test daemon_pty_runtime
+./scripts/test-terminal.sh
 ./scripts/check-docs.sh
 ./scripts/verify-roadmap.sh
 ```
 
-Next: CONSOLE-TERM-002, YOCTO-LOGGER-ADAPTER-001, LOG-CONSOLE-IMAGE-001.
-The independent completion gate remains mandatory at the final boundary.
+Next: YOCTO-LOGGER-ADAPTER-001, LOG-CONSOLE-IMAGE-001.

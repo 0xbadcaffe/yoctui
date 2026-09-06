@@ -12,6 +12,7 @@ pub const MAX_ROOTFS_LIMITATIONS: usize = 64;
 pub const MAX_ROOTFS_TEXT_BYTES: usize = 512;
 pub const MAX_ROOTFS_PATH_BYTES: usize = 4_096;
 pub const MAX_ROOTFS_SYSTEM_PREVIEW_BYTES: usize = 8 * 1024;
+pub const MAX_ROOTFS_UDEV_RULES: usize = 4096;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ImagesView {
@@ -21,15 +22,17 @@ pub enum ImagesView {
     RootfsFilesystem,
     SystemdServices,
     SystemDbus,
+    UdevRules,
 }
 
 impl ImagesView {
-    pub const ALL: [Self; 5] = [
+    pub const ALL: [Self; 6] = [
         Self::Artifacts,
         Self::RootfsPackages,
         Self::RootfsFilesystem,
         Self::SystemdServices,
         Self::SystemDbus,
+        Self::UdevRules,
     ];
 
     pub const fn label(self) -> &'static str {
@@ -39,6 +42,7 @@ impl ImagesView {
             Self::RootfsFilesystem => "Rootfs filesystem",
             Self::SystemdServices => "systemd services",
             Self::SystemDbus => "System D-Bus",
+            Self::UdevRules => "udev rules",
         }
     }
 
@@ -148,6 +152,32 @@ pub struct RootfsDbusService {
 pub struct RootfsSystemInventory {
     pub systemd_services: Vec<RootfsSystemdService>,
     pub dbus_services: Vec<RootfsDbusService>,
+    pub udev_rules: Vec<RootfsUdevRule>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct RootfsUdevRule {
+    pub name: String,
+    pub logical_path: RootfsPathIdentity,
+    pub masked: bool,
+    pub overridden_by: Option<RootfsPathIdentity>,
+    pub limitation: Option<String>,
+    pub preview: String,
+    pub preview_truncated: bool,
+}
+
+impl RootfsUdevRule {
+    pub fn status(&self) -> &'static str {
+        if self.overridden_by.is_some() {
+            "Overridden"
+        } else if self.limitation.is_some() {
+            "Unresolved"
+        } else if self.masked {
+            "Masked"
+        } else {
+            "Selected file"
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -203,7 +233,9 @@ impl RootfsComposition {
                 .filesystem_tree()
                 .is_none_or(|tree| tree.entries.is_empty())
             && self.system_inventory().is_none_or(|inventory| {
-                inventory.systemd_services.is_empty() && inventory.dbus_services.is_empty()
+                inventory.systemd_services.is_empty()
+                    && inventory.dbus_services.is_empty()
+                    && inventory.udev_rules.is_empty()
             })
     }
 
@@ -272,6 +304,29 @@ fn normalize_system_authority(
 ) {
     let normalize = |inventory: &mut RootfsSystemInventory,
                      report: &mut RootfsNormalizationReport| {
+        inventory.udev_rules.retain(|rule| {
+            let valid = rule.name.ends_with(".rules")
+                && rootfs_text_is_valid(&rule.name)
+                && rule.logical_path.validate().is_ok()
+                && rule
+                    .overridden_by
+                    .as_ref()
+                    .is_none_or(|path| path.validate().is_ok())
+                && rule.preview.len() <= MAX_ROOTFS_SYSTEM_PREVIEW_BYTES
+                && rule.limitation.as_deref().is_none_or(rootfs_text_is_valid);
+            if !valid {
+                report.invalid_entries += 1;
+            }
+            valid
+        });
+        inventory.udev_rules.sort();
+        inventory
+            .udev_rules
+            .dedup_by(|left, right| left.logical_path == right.logical_path);
+        if inventory.udev_rules.len() > MAX_ROOTFS_UDEV_RULES {
+            report.invalid_entries += inventory.udev_rules.len() - MAX_ROOTFS_UDEV_RULES;
+            inventory.udev_rules.truncate(MAX_ROOTFS_UDEV_RULES);
+        }
         inventory.systemd_services.retain(|service| {
             let valid = !service.name.is_empty()
                 && rootfs_text_is_valid(&service.name)
@@ -761,6 +816,35 @@ mod tests {
                 .0
                 .is_none()
         );
+    }
+
+    #[test]
+    fn udev_normalization_preserves_distinct_paths_and_rejects_unsafe_records() {
+        let rule = RootfsUdevRule {
+            name: "10-test.rules".into(),
+            logical_path: RootfsPathIdentity("/etc/udev/rules.d/10-test.rules".into()),
+            masked: true,
+            overridden_by: None,
+            limitation: None,
+            preview: String::new(),
+            preview_truncated: false,
+        };
+        let mut vendor = rule.clone();
+        vendor.logical_path = RootfsPathIdentity("/usr/lib/udev/rules.d/10-test.rules".into());
+        vendor.overridden_by = Some(rule.logical_path.clone());
+        assert_eq!(vendor.status(), "Overridden");
+        let mut unsafe_rule = rule.clone();
+        unsafe_rule.logical_path = RootfsPathIdentity("/../outside".into());
+        let mut authority = RootfsAuthority::Available(RootfsSystemInventory {
+            udev_rules: vec![rule.clone(), rule, vendor, unsafe_rule],
+            ..Default::default()
+        });
+        let mut report = RootfsNormalizationReport::default();
+        normalize_system_authority(&mut authority, &mut report);
+        assert_eq!(authority.value().unwrap().udev_rules.len(), 2);
+        assert_eq!(report.invalid_entries, 1);
+        assert_eq!(ImagesView::UdevRules.shifted(1), ImagesView::Artifacts);
+        assert_eq!(ImagesView::Artifacts.shifted(-1), ImagesView::UdevRules);
     }
 
     #[test]

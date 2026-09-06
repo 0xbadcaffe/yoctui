@@ -13,7 +13,11 @@ Status values:
 
 M52 is IN_PROGRESS: image-owned udev rules, verification of existing tui-term
 SSH/runqemu consoles, and tui-logger presentation integration. IMAGE-UDEV-001
-is the first active task. These requested additions are not yet complete.
+is complete in v0.1.58: six Images tabs, bounded offline rule inventory,
+image-contained symlink resolution, override/mask reporting, scrollable preview,
+and narrow-terminal selection. Scanner/model/app/UI tests, the workspace suite,
+strict Clippy, documentation, and reviewed production raster checks passed.
+CONSOLE-TERM-002 is active; logger integration and final release gates remain.
 
 M51 integration is complete in v0.1.57. Kernel (M47), firmware (M48), offline
 rootfs exploration (M49), and Overview Insights (M50) coexist with the completed

@@ -1,5 +1,28 @@
 # Rootfs Composition Evidence
 
+## Offline udev rules
+
+In Images, select an artifact and load rootfs composition, then press `6` or
+cycle Tab to **udev rules**. The selected image's reported `IMAGE_ROOTFS` is
+the only authority. Up/Down, Page Up/Down, Home/End select rules; `[`/`]`
+scroll the preview, `r` refreshes, and Enter opens the rootfs explorer.
+
+The inventory retains vendor, runtime, and administrative `.rules` files,
+including files overridden by a higher-priority same-name file and `/dev/null`
+masks. Image-absolute symlinks resolve inside IMAGE_ROOTFS; host files and
+devices are never substituted. File selection does not mean any rule matched
+a live device. Rules and their `RUN`/`IMPORT` commands are never executed.
+
+The scan allows at most 4,096 rules and 65,536 visited directory entries, with
+8 KiB previews and the shared cancellation/deadline. Unreadable/broken entries
+remain explicit; scan limits report Partial, and a cleaned rootfs is Unavailable.
+Preview truncation is labeled independently. These are generated image files;
+changes made through the explorer may be overwritten by a later BitBake task.
+
+Search directories and precedence follow the upstream
+[udev rules documentation](https://github.com/systemd/systemd/blob/main/man/udev.xml),
+including the legacy `/lib/udev/rules.d` vendor location used by older images.
+
 Yoctui can open the exact BitBake-reported `IMAGE_ROOTFS` as a lazy file tree,
 preview bounded text files, and edit a selected file without booting the image.
 This requires the staged work directory to still exist; a deploy-only ext4,

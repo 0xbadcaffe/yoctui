@@ -3293,6 +3293,12 @@ BitBake parsing.
 
 M52 extends the offline inventory with bounded image-local udev rules and
 explicit override/masking evidence, without evaluating or executing rules.
+The adapter resolves image-absolute links beneath IMAGE_ROOTFS, caps link
+resolution at 32 steps, retains at most 4,096 rules/65,536 visited entries,
+and reads at most 8 KiB plus a truncation sentinel per preview. Mask targets
+are recognized without opening /dev/null; nonregular files are not read.
+The model owns rule selection and preview offset, and the UI renders only
+the selected viewport with explicit file-selection (not live-device) state.
 
 Client-local rootfs acquisition also returns the canonical contained
 `IMAGE_ROOTFS` directory and a typed offline system inventory. The BitBake

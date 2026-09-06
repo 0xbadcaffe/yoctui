@@ -6229,7 +6229,7 @@ pub fn images_workspace_action_for_view(
         });
     }
     if !(view == yoctui_model::ImagesView::Artifacts && searching)
-        && let Input::Char(key @ ('1' | '2' | '3' | '4' | '5')) = key
+        && let Input::Char(key @ ('1' | '2' | '3' | '4' | '5' | '6')) = key
     {
         let current = yoctui_model::ImagesView::ALL
             .iter()
@@ -6260,6 +6260,18 @@ pub fn images_workspace_action_for_view(
         return match key {
             Input::Up | Input::Char('k') => Some(Action::SelectRootfsEntry { delta: -1 }),
             Input::Down | Input::Char('j') => Some(Action::SelectRootfsEntry { delta: 1 }),
+            Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
+            Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
+            _ => None,
+        };
+    }
+    if view == yoctui_model::ImagesView::UdevRules {
+        if let Some(delta) = collection_scroll_delta(key) {
+            return Some(Action::SelectRootfsUdevRule { delta });
+        }
+        return match key {
+            Input::Char('[') => Some(Action::ScrollRootfsUdevPreview { delta: -1 }),
+            Input::Char(']') => Some(Action::ScrollRootfsUdevPreview { delta: 1 }),
             Input::Enter | Input::Right => Some(Action::BrowseRootfsFilesystem),
             Input::Char('r') | Input::Char('R') => Some(Action::RefreshRootfsComposition),
             _ => None,
@@ -12623,6 +12635,31 @@ mod tests {
         assert_eq!(
             workspace_collection_action(&app, Input::PageUp),
             Some(Action::SelectRootfsEntry { delta: -10 })
+        );
+    }
+
+    #[test]
+    fn udev_keys_select_sixth_tab_and_scroll_without_spawning() {
+        use yoctui_model::ImagesView;
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::Artifacts, Input::Char('6')),
+            Some(Action::ShiftImagesView { delta: 5 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::UdevRules, Input::End),
+            Some(Action::SelectRootfsUdevRule { delta: isize::MAX })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::UdevRules, Input::PageDown),
+            Some(Action::SelectRootfsUdevRule { delta: 10 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::UdevRules, Input::Char(']')),
+            Some(Action::ScrollRootfsUdevPreview { delta: 1 })
+        );
+        assert_eq!(
+            images_workspace_action_for_view(false, ImagesView::UdevRules, Input::Char('e')),
+            None
         );
     }
     #[test]

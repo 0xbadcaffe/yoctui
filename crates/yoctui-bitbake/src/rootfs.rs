@@ -33,6 +33,8 @@ const MAX_LIMITATIONS: usize = 64;
 const MAX_SYSTEM_RECORDS: usize = 4_096;
 const MAX_SYSTEM_FILE_BYTES: u64 = 1024 * 1024;
 
+mod udev;
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RootfsCompositionSources {
     pub image: ImageArtifactIdentity,
@@ -397,10 +399,12 @@ fn scan_system_inventory(
     }
     systemd_services.sort_by(|left, right| left.name.cmp(&right.name));
     dbus_services.sort_by(|left, right| left.name.cmp(&right.name));
+    let udev_rules = udev::scan(root, cancellation, deadline, &mut local_limitations)?;
     limitations.extend(local_limitations.iter().cloned());
     let inventory = RootfsSystemInventory {
         systemd_services,
         dbus_services,
+        udev_rules,
     };
     if local_limitations.is_empty() {
         Ok(RootfsAuthority::Available(inventory))

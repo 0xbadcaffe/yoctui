@@ -1146,6 +1146,9 @@ fn footer_shortcuts(app: &App) -> String {
             ImagesView::SystemDbus => {
                 "j/k bus name | e edit activation file | Enter/→ explore rootfs | r refresh | Tab view"
             }
+            ImagesView::UdevRules => {
+                "↑/↓ rule | PgUp/PgDn | [/] preview | Enter explore rootfs | r refresh | Tab view"
+            }
         },
         Screen::Kernel => {
             "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
@@ -1246,6 +1249,9 @@ fn responsive_footer_shortcuts(app: &App, width: u16) -> String {
             ImagesView::RootfsFilesystem => "j/k path | PgUp/PgDn | r refresh | Tab view".into(),
             ImagesView::SystemdServices => "j/k service | e edit | Enter explore | Tab view".into(),
             ImagesView::SystemDbus => "j/k bus | e edit | Enter explore | Tab view".into(),
+            ImagesView::UdevRules => {
+                "↑↓ rule | [/] preview | Enter explore | r refresh | Tab view".into()
+            }
         }
     } else if app.screen == Screen::Sdk && width <= 90 {
         "↑↓ i:image s/E:SDK t/T:test R:scan P:publish n:native o:open c:cancel".into()
@@ -13354,10 +13360,11 @@ fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
         ImagesView::RootfsFilesystem => rootfs_filesystem_workspace(frame, app, area),
         ImagesView::SystemdServices => rootfs_systemd_workspace(frame, app, area),
         ImagesView::SystemDbus => rootfs_dbus_workspace(frame, app, area),
+        ImagesView::UdevRules => rootfs_udev_workspace(frame, app, area),
     }
 }
 
-fn images_tabs_line(app: &App) -> Line<'static> {
+fn images_tabs_line(app: &App, width: u16) -> Line<'static> {
     let tabs = ImagesView::ALL
         .into_iter()
         .enumerate()
@@ -13368,6 +13375,12 @@ fn images_tabs_line(app: &App) -> Line<'static> {
                 ImagesView::RootfsFilesystem => "Files",
                 ImagesView::SystemdServices => "systemd",
                 ImagesView::SystemDbus => "D-Bus",
+                ImagesView::UdevRules => "udev",
+            };
+            let label = if width < 90 && view != app.images_view {
+                ""
+            } else {
+                label
             };
             let style = if app.images_view == view {
                 selected_style(app, true)
@@ -13403,7 +13416,7 @@ fn image_artifacts_workspace(frame: &mut Frame, app: &App, area: Rect) {
         .iter()
         .position(|artifact| app.image_artifact_selection.as_ref() == Some(&artifact.identity));
     let mut lines = vec![
-        images_tabs_line(app),
+        images_tabs_line(app, area.width),
         Line::from(format!(
             "MACHINE {machine} | build target {} | {recipe_count} image recipe target(s)",
             app.build.target.as_deref().unwrap_or("not selected")
@@ -13558,7 +13571,7 @@ fn rootfs_workspace_shell(frame: &mut Frame, app: &App, area: Rect) -> Rect {
         return inner;
     }
     let tabs = Rect::new(inner.x, inner.y, inner.width, 1);
-    frame.render_widget(Paragraph::new(images_tabs_line(app)), tabs);
+    frame.render_widget(Paragraph::new(images_tabs_line(app, tabs.width)), tabs);
     Rect::new(
         inner.x,
         inner.y.saturating_add(1),
@@ -14041,6 +14054,85 @@ fn rootfs_filesystem_workspace(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), body);
 }
 
+fn rootfs_udev_workspace(frame: &mut Frame, app: &App, area: Rect) {
+    let body = rootfs_workspace_shell(frame, app, area);
+    let Some(inventory) = app
+        .rootfs_composition
+        .composition()
+        .and_then(yoctui_model::RootfsComposition::system_inventory)
+    else {
+        frame.render_widget(
+            Paragraph::new(
+                "udev inventory unavailable: inspect the selected image's IMAGE_ROOTFS.",
+            ),
+            body,
+        );
+        return;
+    };
+    if inventory.udev_rules.is_empty() {
+        frame.render_widget(Paragraph::new("No .rules files found in the image's udev search directories. Offline inventory only."), body);
+        return;
+    }
+    let panes =
+        Layout::vertical([Constraint::Percentage(45), Constraint::Percentage(55)]).split(body);
+    let capacity = usize::from(panes[0].height.saturating_sub(3));
+    let selected = app
+        .rootfs_udev_selection
+        .min(inventory.udev_rules.len() - 1);
+    let start = selected.saturating_sub(capacity.saturating_sub(1));
+    let rows = inventory
+        .udev_rules
+        .iter()
+        .enumerate()
+        .skip(start)
+        .take(capacity)
+        .map(|(index, rule)| {
+            Row::new([
+                rule.logical_path.0.display().to_string(),
+                rule.status().into(),
+            ])
+            .style(selected_style(app, index == selected))
+        });
+    frame.render_widget(
+        Table::new(rows, [Constraint::Min(12), Constraint::Length(14)])
+            .header(Row::new(["Image rule path", "File selection"]))
+            .block(Block::bordered().title(format!(
+                "udev rules · {}/{} · offline",
+                selected + 1,
+                inventory.udev_rules.len()
+            ))),
+        panes[0],
+    );
+    let rule = &inventory.udev_rules[selected];
+    let lines = rule
+        .preview
+        .lines()
+        .skip(app.rootfs_udev_preview_offset)
+        .take(usize::from(panes[1].height.saturating_sub(2)))
+        .map(Line::from)
+        .collect::<Vec<_>>();
+    let preview = if lines.is_empty() {
+        vec![Line::from(if rule.masked {
+            "Masked by image /dev/null; no rules executed."
+        } else {
+            rule.limitation.as_deref().unwrap_or("Empty rule file")
+        })]
+    } else {
+        lines
+    };
+    frame.render_widget(
+        Paragraph::new(preview).block(Block::bordered().title(format!(
+            "Rule preview · [/] scroll{}",
+            if rule.preview_truncated {
+                " · truncated"
+            } else {
+                ""
+            }
+        ))),
+        panes[1],
+    );
+}
+
 fn rootfs_systemd_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let body = rootfs_workspace_shell(frame, app, area);
     if let Some(lines) = rootfs_state_lines(app) {
@@ -14375,6 +14467,14 @@ fn rootfs_inspector_text(app: &App) -> String {
                 if service.enabled_by.is_empty() { "none (disabled, static, indirect, or generated)".into() } else { service.enabled_by.join(", ") },
                 if service.preview_truncated { " (truncated)" } else { "" },
                 service.preview
+            )),
+        ImagesView::UdevRules => composition.system_inventory()
+            .and_then(|inventory| inventory.udev_rules.get(app.rootfs_udev_selection))
+            .map_or_else(|| "Selected rule: none".into(), |rule| format!(
+                "Rule: {}\nImage path: {}\nFile selection: {}\nOverridden by: {}\nLimitation: {}\nOffline files only; rules are not executed and live device state is unknown.",
+                rule.name, rule.logical_path.0.display(), rule.status(),
+                rule.overridden_by.as_ref().map_or_else(|| "none".into(), |path| path.0.display().to_string()),
+                rule.limitation.as_deref().unwrap_or("none")
             )),
         ImagesView::SystemDbus => composition
             .system_inventory()
@@ -24621,6 +24721,42 @@ mod tests {
         assert!(rendered_text(&app, 100, 25).contains("Artifact scan failed"));
     }
 
+    #[test]
+    fn udev_last_rule_and_preview_remain_visible_at_all_sizes() {
+        let mut app = ux_rootfs_ui_app();
+        let RootfsCompositionState::Partial { composition, .. } = &mut app.rootfs_composition
+        else {
+            unreachable!()
+        };
+        composition.system_inventory =
+            yoctui_model::RootfsAuthority::Available(yoctui_model::RootfsSystemInventory {
+                udev_rules: (0..100)
+                    .map(|index| yoctui_model::RootfsUdevRule {
+                        name: format!("{index:03}-test.rules"),
+                        logical_path: yoctui_model::RootfsPathIdentity(
+                            format!("/etc/udev/rules.d/{index:03}-test.rules").into(),
+                        ),
+                        masked: false,
+                        overridden_by: None,
+                        limitation: None,
+                        preview: "# first\nSUBSYSTEM==\"tty\"\n".into(),
+                        preview_truncated: false,
+                    })
+                    .collect(),
+                ..Default::default()
+            });
+        app.images_view = ImagesView::UdevRules;
+        yoctui_model::update(&mut app, Action::SelectRootfsUdevRule { delta: isize::MAX });
+        assert_eq!(app.rootfs_udev_selection, 99);
+        yoctui_model::update(&mut app, Action::ScrollRootfsUdevPreview { delta: 1 });
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let text = rendered_text(&app, width, height);
+            assert!(text.contains("099-test.rules"), "{text}");
+            assert!(text.contains("SUBSYSTEM"), "{text}");
+            assert!(text.contains("6 udev"), "{text}");
+        }
+    }
+
     fn ux_rootfs_ui_app() -> App {
         let mut app = App::new(20, 20_000);
         app.screen = Screen::Images;
@@ -24859,6 +24995,7 @@ mod tests {
         };
         composition.system_inventory =
             yoctui_model::RootfsAuthority::Available(yoctui_model::RootfsSystemInventory {
+                udev_rules: Vec::new(),
                 systemd_services: vec![yoctui_model::RootfsSystemdService {
                     name: "example.service".into(),
                     logical_path: yoctui_model::RootfsPathIdentity(

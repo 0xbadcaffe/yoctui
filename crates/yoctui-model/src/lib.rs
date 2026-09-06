@@ -4193,6 +4193,8 @@ pub struct App {
     pub rootfs_entry_selection: Option<RootfsPathIdentity>,
     pub rootfs_systemd_selection: usize,
     pub rootfs_dbus_selection: usize,
+    pub rootfs_udev_selection: usize,
+    pub rootfs_udev_preview_offset: usize,
     pub sdk_artifacts: SdkArtifactInventoryState,
     pub sdk_artifact_selection: Option<SdkArtifactIdentity>,
     pub sdk_artifact_query: String,
@@ -4390,6 +4392,8 @@ impl App {
             rootfs_entry_selection: None,
             rootfs_systemd_selection: 0,
             rootfs_dbus_selection: 0,
+            rootfs_udev_selection: 0,
+            rootfs_udev_preview_offset: 0,
             sdk_artifacts: SdkArtifactInventoryState::NotLoaded,
             sdk_artifact_selection: None,
             sdk_artifact_query: String::new(),
@@ -6080,6 +6084,12 @@ pub enum Action {
         delta: isize,
     },
     SelectRootfsDbusService {
+        delta: isize,
+    },
+    SelectRootfsUdevRule {
+        delta: isize,
+    },
+    ScrollRootfsUdevPreview {
         delta: isize,
     },
     BrowseRootfsFilesystem,
@@ -8554,6 +8564,10 @@ fn set_rootfs_composition(
         app.rootfs_dbus_selection = app
             .rootfs_dbus_selection
             .min(inventory.dbus_services.len().saturating_sub(1));
+        app.rootfs_udev_selection = app
+            .rootfs_udev_selection
+            .min(inventory.udev_rules.len().saturating_sub(1));
+        app.rootfs_udev_preview_offset = 0;
     }
 }
 
@@ -12091,6 +12105,25 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 .and_then(RootfsComposition::system_inventory)
                 .map_or(0, |inventory| inventory.dbus_services.len());
             app.rootfs_dbus_selection = shifted_index(app.rootfs_dbus_selection, delta, len);
+        }
+        Action::SelectRootfsUdevRule { delta } => {
+            let len = app
+                .rootfs_composition
+                .composition()
+                .and_then(RootfsComposition::system_inventory)
+                .map_or(0, |inventory| inventory.udev_rules.len());
+            app.rootfs_udev_selection = shifted_index(app.rootfs_udev_selection, delta, len);
+            app.rootfs_udev_preview_offset = 0;
+        }
+        Action::ScrollRootfsUdevPreview { delta } => {
+            let len = app
+                .rootfs_composition
+                .composition()
+                .and_then(RootfsComposition::system_inventory)
+                .and_then(|inventory| inventory.udev_rules.get(app.rootfs_udev_selection))
+                .map_or(0, |rule| rule.preview.lines().count());
+            app.rootfs_udev_preview_offset =
+                shifted_index(app.rootfs_udev_preview_offset, delta, len);
         }
         Action::BrowseRootfsFilesystem => {
             if let Some((root, image)) =

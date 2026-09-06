@@ -1,10 +1,10 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.57  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.58  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
-│▾ OVERVIEW                ││ 1 Artifacts  │  2 Rootfs packages  │  3 Files  │  4 systemd  │  5 D-Bus   Tab switc││▾ PRIMARY FACTS                             │
+│▾ OVERVIEW                ││ 1 Artifacts  │  2 Rootfs packages  │  3 Files  │  4 systemd  │  5 D-Bus  │  6 udev ││▾ PRIMARY FACTS                             │
 │  ▱ Dashboard             ││┌Rootfs packages · installed bytes───────────┐┌Exact composition table · 126400000 ┐││Rootfs composition                          │
 │  ▱ Insights              │││                                            ││Category   Pkgs  Exact bytes %      │││View: Rootfs packages                       │
 │▾ CONTENT                 │││                        ■ base system 37.0% ││base syste 90    46800000    37.02% │││State: partial · 1 limitation(s)            │
