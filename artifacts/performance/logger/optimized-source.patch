@@ -1,0 +1,335 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index 20080b2..e27714c 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2316,7 +2316,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
+ 
+ [[package]]
+ name = "yoctui"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "anyhow",
+  "async-trait",
+@@ -2341,7 +2341,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-app"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "thiserror 2.0.19",
+  "yoctui-bitbake",
+@@ -2351,7 +2351,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-bitbake"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "async-trait",
+  "libc",
+@@ -2367,7 +2367,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-e2e"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "crossterm",
+  "libc",
+@@ -2379,7 +2379,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-model"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "proptest",
+  "regex",
+@@ -2392,7 +2392,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-protocol"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "libc",
+  "proptest",
+@@ -2404,14 +2404,14 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-shell"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "libc",
+ ]
+ 
+ [[package]]
+ name = "yoctui-ui"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "log",
+  "ratatui",
+diff --git a/Cargo.toml b/Cargo.toml
+index d1b96b9..db1843e 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -8,7 +8,7 @@ exclude = ["fuzz"]
+ resolver = "2"
+ 
+ [workspace.package]
+-version = "0.1.60"
++version = "0.1.61"
+ edition = "2024"
+ license = "MIT"
+ authors = ["Roy Cohen <roy@0xbadcaffe.dev>"]
+diff --git a/crates/yoctui-app/Cargo.toml b/crates/yoctui-app/Cargo.toml
+index a6d3e81..d13f36b 100644
+--- a/crates/yoctui-app/Cargo.toml
++++ b/crates/yoctui-app/Cargo.toml
+@@ -10,7 +10,7 @@ readme.workspace = true
+ description = "Application input and effect mapping for Yoctui"
+ publish = ["crates-io"]
+ [dependencies]
+-yoctui-bitbake = { version = "0.1.60", path = "../yoctui-bitbake" }
+-yoctui-model = { version = "0.1.60", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.60", path = "../yoctui-protocol" }
++yoctui-bitbake = { version = "0.1.61", path = "../yoctui-bitbake" }
++yoctui-model = { version = "0.1.61", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.61", path = "../yoctui-protocol" }
+ thiserror.workspace = true
+diff --git a/crates/yoctui-bitbake/Cargo.toml b/crates/yoctui-bitbake/Cargo.toml
+index e0c6d26..d380814 100644
+--- a/crates/yoctui-bitbake/Cargo.toml
++++ b/crates/yoctui-bitbake/Cargo.toml
+@@ -13,8 +13,8 @@ publish = ["crates-io"]
+ test-fixtures = []
+ [dependencies]
+ async-trait.workspace = true
+-yoctui-model = { version = "0.1.60", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.60", path = "../yoctui-protocol" }
++yoctui-model = { version = "0.1.61", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.61", path = "../yoctui-protocol" }
+ thiserror.workspace = true
+ tokio.workspace = true
+ tracing.workspace = true
+diff --git a/crates/yoctui-cli/Cargo.toml b/crates/yoctui-cli/Cargo.toml
+index 556117f..a6f699d 100644
+--- a/crates/yoctui-cli/Cargo.toml
++++ b/crates/yoctui-cli/Cargo.toml
+@@ -17,11 +17,11 @@ clap.workspace = true
+ crossterm.workspace = true
+ ratatui.workspace = true
+ regex.workspace = true
+-yoctui-app = { version = "0.1.60", path = "../yoctui-app" }
+-yoctui-bitbake = { version = "0.1.60", path = "../yoctui-bitbake" }
+-yoctui-model = { version = "0.1.60", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.60", path = "../yoctui-protocol" }
+-yoctui-ui = { version = "0.1.60", path = "../yoctui-ui" }
++yoctui-app = { version = "0.1.61", path = "../yoctui-app" }
++yoctui-bitbake = { version = "0.1.61", path = "../yoctui-bitbake" }
++yoctui-model = { version = "0.1.61", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.61", path = "../yoctui-protocol" }
++yoctui-ui = { version = "0.1.61", path = "../yoctui-ui" }
+ serde.workspace = true
+ serde_json.workspace = true
+ thiserror.workspace = true
+@@ -37,4 +37,4 @@ harness = false
+ 
+ [dev-dependencies]
+ async-trait.workspace = true
+-yoctui-bitbake = { version = "0.1.60", path = "../yoctui-bitbake", features = ["test-fixtures"] }
++yoctui-bitbake = { version = "0.1.61", path = "../yoctui-bitbake", features = ["test-fixtures"] }
+diff --git a/crates/yoctui-e2e/Cargo.toml b/crates/yoctui-e2e/Cargo.toml
+index 8d97f07..0557774 100644
+--- a/crates/yoctui-e2e/Cargo.toml
++++ b/crates/yoctui-e2e/Cargo.toml
+@@ -11,6 +11,6 @@ libc.workspace = true
+ [dev-dependencies]
+ crossterm.workspace = true
+ ratatui.workspace = true
+-yoctui-app = { version = "0.1.60", path = "../yoctui-app" }
+-yoctui-model = { version = "0.1.60", path = "../yoctui-model" }
+-yoctui-ui = { version = "0.1.60", path = "../yoctui-ui" }
++yoctui-app = { version = "0.1.61", path = "../yoctui-app" }
++yoctui-model = { version = "0.1.61", path = "../yoctui-model" }
++yoctui-ui = { version = "0.1.61", path = "../yoctui-ui" }
+diff --git a/crates/yoctui-protocol/Cargo.toml b/crates/yoctui-protocol/Cargo.toml
+index d19d84e..d3b3bc7 100644
+--- a/crates/yoctui-protocol/Cargo.toml
++++ b/crates/yoctui-protocol/Cargo.toml
+@@ -17,4 +17,4 @@ libc.workspace = true
+ 
+ [dev-dependencies]
+ proptest.workspace = true
+-yoctui-model = { version = "0.1.60", path = "../yoctui-model" }
++yoctui-model = { version = "0.1.61", path = "../yoctui-model" }
+diff --git a/crates/yoctui-ui/Cargo.toml b/crates/yoctui-ui/Cargo.toml
+index ab112cf..f85fc52 100644
+--- a/crates/yoctui-ui/Cargo.toml
++++ b/crates/yoctui-ui/Cargo.toml
+@@ -10,8 +10,8 @@ readme.workspace = true
+ description = "Ratatui rendering layer for Yoctui"
+ publish = ["crates-io"]
+ [dependencies]
+-yoctui-app = { version = "0.1.60", path = "../yoctui-app" }
+-yoctui-model = { version = "0.1.60", path = "../yoctui-model" }
++yoctui-app = { version = "0.1.61", path = "../yoctui-app" }
++yoctui-model = { version = "0.1.61", path = "../yoctui-model" }
+ ratatui.workspace = true
+ throbber-widgets-tui.workspace = true
+ tui-piechart.workspace = true
+diff --git a/crates/yoctui-ui/src/yocto_logs.rs b/crates/yoctui-ui/src/yocto_logs.rs
+index 68a12d2..194381a 100644
+--- a/crates/yoctui-ui/src/yocto_logs.rs
++++ b/crates/yoctui-ui/src/yocto_logs.rs
+@@ -89,6 +89,19 @@ fn carry_word(spans: &mut Vec<Span<'static>>, available: usize) -> Option<Vec<Sp
+     Some(tail)
+ }
+ 
++fn ascii_line_bytes(line: &Line<'_>, width: usize, remaining: usize) -> Option<usize> {
++    line.spans.iter().try_fold(0usize, |used, span| {
++        let bytes = used.checked_add(span.content.len())?;
++        (bytes <= width
++            && bytes <= remaining
++            && span
++                .content
++                .bytes()
++                .all(|byte| (b' '..=b'~').contains(&byte)))
++        .then_some(bytes)
++    })
++}
++
+ /// Project at most width × height cells, preserving graphemes and span styles.
+ /// Wrapping never cuts a wide or combining grapheme and never scans later rows.
+ fn viewport(text: Text<'_>, area: Rect, wrap: bool) -> Vec<Line<'static>> {
+@@ -101,6 +114,28 @@ fn viewport(text: Text<'_>, area: Rect, wrap: bool) -> Vec<Line<'static>> {
+     let mut bytes = 0;
+     for line in text.lines {
+         let style = text.style.patch(line.style);
++        // Profiled hot path: an already fitting printable ASCII row needs no
++        // grapheme segmentation, per-character allocation, or wrapping pass.
++        // Unicode, controls, long rows and exhausted byte budgets retain the
++        // exact bounded grapheme path below.
++        if let Some(length) = ascii_line_bytes(&line, width, MAX_PROJECTION_BYTES - bytes) {
++            bytes += length;
++            rows.push(
++                Line::from(
++                    line.spans
++                        .into_iter()
++                        .map(|span| {
++                            Span::styled(span.content.into_owned(), style.patch(span.style))
++                        })
++                        .collect::<Vec<_>>(),
++                )
++                .style(text.style),
++            );
++            if rows.len() == height {
++                break;
++            }
++            continue;
++        }
+         let mut spans = Vec::new();
+         let mut used = 0;
+         for grapheme in line.styled_graphemes(style) {
+@@ -244,6 +279,47 @@ mod tests {
+         style::{Color, Modifier},
+     };
+ 
++    #[test]
++    fn yocto_logger_ascii_fast_path_requires_complete_printable_bounded_lines() {
++        let line = Line::from(vec![Span::raw("task: "), Span::raw("done")]);
++        assert_eq!(ascii_line_bytes(&line, 10, 10), Some(10));
++        assert_eq!(ascii_line_bytes(&line, 9, 10), None);
++        assert_eq!(ascii_line_bytes(&line, 10, 9), None);
++        for source in ["café", "界", "e\u{301}", "a\tb", "a\nb", "a\rb", "\u{7f}"] {
++            assert_eq!(
++                ascii_line_bytes(&Line::from(Span::raw(source)), 80, 80),
++                None
++            );
++        }
++        let mut terminal = Terminal::new(TestBackend::new(20, 2)).unwrap();
++        terminal
++            .draw(|frame| {
++                render(
++                    frame,
++                    frame.area(),
++                    Text::from(
++                        Line::from(vec![
++                            Span::styled("task: ", Style::default().fg(Color::Red)),
++                            Span::styled(
++                                "done",
++                                Style::default().add_modifier(Modifier::UNDERLINED),
++                            ),
++                        ])
++                        .style(Style::default().bg(Color::Blue)),
++                    )
++                    .style(Style::default().fg(Color::Green)),
++                    Block::default(),
++                    true,
++                );
++            })
++            .unwrap();
++        let buffer = terminal.backend().buffer();
++        assert_eq!(buffer[(0, 0)].fg, Color::Red);
++        assert_eq!(buffer[(6, 0)].fg, Color::Green);
++        assert_eq!(buffer[(6, 0)].bg, Color::Blue);
++        assert!(buffer[(6, 0)].modifier.contains(Modifier::UNDERLINED));
++    }
++
+     #[test]
+     fn yocto_logger_viewport_is_bounded_unicode_safe_and_keeps_search_styles() {
+         let style = Style::default()
+diff --git a/fuzz/Cargo.lock b/fuzz/Cargo.lock
+index b4e719e..ae55215 100644
+--- a/fuzz/Cargo.lock
++++ b/fuzz/Cargo.lock
+@@ -344,7 +344,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-model"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "regex",
+  "serde",
+@@ -355,7 +355,7 @@ dependencies = [
+ 
+ [[package]]
+ name = "yoctui-protocol"
+-version = "0.1.60"
++version = "0.1.61"
+ dependencies = [
+  "libc",
+  "serde",
+diff --git a/fuzz/Cargo.toml b/fuzz/Cargo.toml
+index 60c843d..da40f53 100644
+--- a/fuzz/Cargo.toml
++++ b/fuzz/Cargo.toml
+@@ -9,8 +9,8 @@ cargo-fuzz = true
+ 
+ [dependencies]
+ libfuzzer-sys = "0.4"
+-yoctui-model = { version = "0.1.60", path = "../crates/yoctui-model" }
+-yoctui-protocol = { version = "0.1.60", path = "../crates/yoctui-protocol" }
++yoctui-model = { version = "0.1.61", path = "../crates/yoctui-model" }
++yoctui-protocol = { version = "0.1.61", path = "../crates/yoctui-protocol" }
+ 
+ [[bin]]
+ name = "protocol_frames"
+diff --git a/scripts/verify-cratesio-package.sh b/scripts/verify-cratesio-package.sh
+index 8373085..40f81bd 100755
+--- a/scripts/verify-cratesio-package.sh
++++ b/scripts/verify-cratesio-package.sh
+@@ -4,7 +4,7 @@ set -euo pipefail
+ repo_root="$(git rev-parse --show-toplevel)"
+ cd "$repo_root"
+ 
+-version="0.1.60"
++version="0.1.61"
+ public_crates=(
+   yoctui-model
+   yoctui-protocol

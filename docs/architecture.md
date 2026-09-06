@@ -635,6 +635,9 @@ Terminal ANSI/VT output remains exclusively on the separate tui-term path.
 Word wrapping is independently implemented over typed styled graphemes and
 tested against the previous Ratatui paragraph layout; table adapters retain
 column geometry and full-row selection without parsing process text.
+Printable ASCII lines that fit the complete viewport width and remaining byte
+budget bypass redundant grapheme segmentation. Styled spans are preserved;
+Unicode, controls, overflow and wrapping retain the bounded grapheme path.
 
 `yoctui_model::App::job_history_rows` is the borrowed presentation projection
 for retained work. It merges background jobs and completed `BuildRecord`s

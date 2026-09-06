@@ -11,7 +11,7 @@ Status values:
 
 ## Current phase
 
-M52 is IN_PROGRESS: image-owned udev rules, verification of existing tui-term
+M52 is BLOCKED on strict upstream-cache Memcheck policy: image-owned udev rules, verification of existing tui-term
 SSH/runqemu consoles, and tui-logger presentation integration. IMAGE-UDEV-001
 is complete in v0.1.58: six Images tabs, bounded offline rule inventory,
 image-contained symlink resolution, override/mask reporting, scrollable preview,
@@ -29,8 +29,16 @@ and managed-operation panes/inspectors without taking ownership of history,
 input or tracing. UI/workspace/strict-Clippy suites, offline dependency and
 license checks passed; regenerated production fixtures differ only in version
 headers. The candidate graph, MIT notices and shipped SBOM were refreshed.
-LOG-CONSOLE-IMAGE-001 is active: final release performance/evidence and full
-completion checks remain; development timings are not release CPU evidence.
+LOG-CONSOLE-IMAGE-001 is blocked in the v0.1.61 candidate. A profile-guided
+fitting-ASCII path preserves all visual fixtures and reduces log-heavy rendering
+to 1.202 ms/frame. The final real Poky six-minute sample passes the unchanged
+CPU ceiling at 0.9777% of one logical CPU, input p95 5.821 ms, with cancellation
+and reconnect healthy. Earlier failed CPU samples are retained. Workspace,
+273 UI tests, strict Clippy, sanitizers and both rendering matrices pass.
+Strict Valgrind still rejects 39,367 fixed upstream-cache bytes as PossiblyLost;
+upstream lacks a full cleanup API, and no exception has been approved or added.
+Full completion is therefore not passed and the candidate is not released.
+See [the source-bound integration report](../artifacts/performance/logger/README.md).
 
 M51 integration is complete in v0.1.57. Kernel (M47), firmware (M48), offline
 rootfs exploration (M49), and Overview Insights (M50) coexist with the completed
@@ -576,7 +584,8 @@ explicit follow/search/position state, retained bookmarks, exact correlated
 task/error/job-history jumps, responsive action/filter presentation, preferred
 retention and loss accounting, and UTF-8-safe 64 KiB copy plus 256 KiB export
 caps are covered across model, app, and production UI regressions. The separate
-Yoctui self-diagnostic view is also complete without admitting `tui-logger`:
+Yoctui self-diagnostic view was completed without admitting `tui-logger` (M52
+later admits that widget for domain-output presentation only):
 the existing tracing stack feeds a nonblocking bounded local-client capture,
 while an independent typed store owns level/target/query filters, follow,
 selection, viewport rows, ingress/retention loss, clear, and capped export.

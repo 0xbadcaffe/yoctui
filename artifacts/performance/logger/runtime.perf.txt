@@ -1,0 +1,89 @@
+# To display the perf.data header info, please use --header/--header-only options.
+#
+#
+# Total Lost Samples: 0
+#
+# Samples: 275  of event 'cycles:u'
+# Event count (approx.): 958061705
+#
+# Overhead  Command          Shared Object                 Symbol                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+# ........  ...............  ............................  ........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................
+#
+    11.69%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>
+     8.01%  yoctui-m52-opti  libc.so.6                     [.] __memmove_avx_unaligned_erms
+     7.62%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>
+     4.73%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui_protocol::daemon::DaemonSnapshotJournal>::synchronize_with_limit
+     4.63%  yoctui-m52-opti  libc.so.6                     [.] _int_malloc
+     4.07%  yoctui-m52-opti  libc.so.6                     [.] __libc_malloc2
+     3.79%  yoctui-m52-opti  libc.so.6                     [.] malloc
+     3.18%  yoctui-m52-opti  libc.so.6                     [.] _int_free_merge_chunk
+     3.00%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] yoctui::tui::{closure#0}
+     2.56%  yoctui-m52-opti  libc.so.6                     [.] cfree@GLIBC_2.2.5
+     2.06%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>
+     1.87%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq
+     1.86%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+     1.82%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <&ratatui_widgets::block::Block as ratatui_core::widgets::widget::Widget>::render
+     1.62%  yoctui-m52-opti  libc.so.6                     [.] _int_free_chunk
+     1.57%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<str, alloc::string::String>
+     1.51%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next
+     1.46%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render
+     1.41%  yoctui-m52-opti  libc.so.6                     [.] _int_free_maybe_trim
+     1.39%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] ratatui_widgets::paragraph::render_line
+     1.29%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <ratatui_core::buffer::cell::Cell>::set_symbol
+     1.28%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+     1.18%  yoctui-m52-opti  libc.so.6                     [.] unlink_chunk.isra.0
+     1.15%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>
+     1.11%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <ratatui_core::buffer::cell::Cell as ratatui_core::buffer::cell_width::CellWidth>::cell_width
+     1.08%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <&ratatui_widgets::paragraph::Paragraph as ratatui_core::widgets::widget::Widget>::render
+     1.04%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui_protocol::daemon::DaemonBuildEvent as core::clone::Clone>::clone
+     1.03%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <ratatui_widgets::reflow::WordWrapper<core::iter::adapters::map::Map<core::slice::iter::Iter<ratatui_core::text::line::Line>, <ratatui_widgets::paragraph::Paragraph>::render_paragraph::{closure#0}>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>> as ratatui_widgets::reflow::LineComposer>::next_line
+     0.93%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] core::ptr::drop_glue::<alloc::vec::Vec<yoctui_protocol::RecipeData>>
+     0.88%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <tokio::sync::mpsc::list::Rx<yoctui::daemon_raw::DaemonRawEvent>>::pop
+     0.85%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] yoctui_model::telemetry_projection::series
+     0.77%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] core::ptr::drop_glue::<yoctui_protocol::daemon_ipc::IpcError>
+     0.75%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui::daemon_devtool::DaemonDevtoolSupervisor>::try_event
+     0.75%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <tokio::sync::mpsc::chan::Rx<yoctui::daemon_bitbake::DaemonBitBakeEvent, tokio::sync::mpsc::bounded::Semaphore>>::try_recv::{closure#0}
+     0.74%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] yoctui::run_daemon_foreground::{closure#0}
+     0.67%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] yoctui_ui::yocto_logs::viewport
+     0.64%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <std::sys::pal::unix::time::Timespec>::now
+     0.64%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <alloc::vec::Vec<alloc::string::String> as core::clone::Clone>::clone
+     0.63%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] core::str::count::do_count_chars
+     0.62%  yoctui-m52-opti  libc.so.6                     [.] _int_realloc
+     0.58%  yoctui-m52-opti  libc.so.6                     [.] __memcmp_avx2_movbe
+     0.58%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <std::time::Instant>::saturating_duration_since
+     0.55%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] core::slice::memchr::memrchr
+     0.50%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <alloc::string::String as core::fmt::Write>::write_str
+     0.46%  yoctui-m52-opti  libc.so.6                     [.] __errno_location
+     0.46%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <crossterm::style::types::colored::Colored as core::fmt::Display>::fmt
+     0.45%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui::client_runtime::InteractiveDaemonRuntime>::flush_task_events
+     0.44%  yoctui-m52-opti  [unknown]                     [k] 0xffffffff91e00ef0
+     0.44%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] jiff::tz::system::get
+     0.43%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui_protocol::daemon::CompatibilitySnapshotData as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>
+     0.43%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] unicode_width::tables::lookup_width
+     0.41%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <u64 as itoa::Unsigned>::fmt
+     0.41%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui_protocol::daemon_ipc::DaemonListener>::accept
+     0.40%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>
+     0.40%  yoctui-m52-opti  libc.so.6                     [.] recv
+     0.40%  yoctui-m52-opti  [vdso]                        [.] 0x00000000000009b1
+     0.38%  yoctui-m52-opti  libc.so.6                     [.] clock_gettime@@GLIBC_2.17
+     0.38%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <tokio::sync::mpsc::list::Rx<()>>::pop
+     0.37%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<yoctui_protocol::daemon::LifecycleState>
+     0.36%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui::daemon_sdk::DaemonSdkSupervisor>::try_event
+     0.36%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui_protocol::daemon::DaemonBuildEvent as serde_core::ser::Serialize>::serialize::<&mut serde_json::ser::Serializer<&mut alloc::vec::Vec<u8>>>
+     0.35%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui::daemon_wic::DaemonWicSupervisor>::try_event
+     0.34%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] core::fmt::float::float_to_decimal_common_exact::<f64>
+     0.32%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <yoctui::daemon_security::DaemonSecurityMapperSupervisor>::try_event
+     0.32%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <core::str::pattern::CharSearcher as core::str::pattern::Searcher>::next_match
+     0.31%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] yoctui_protocol::daemon_ipc::map_timeout
+     0.30%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <std::sys::pal::unix::time::Timespec>::sub_timespec
+     0.28%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <core::marker::PhantomData<yoctui_protocol::daemon::DaemonPressureCounters> as serde_core::de::DeserializeSeed>::deserialize::<serde::private::de::content::ContentDeserializer<serde_json::error::Error>>
+     0.23%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] yoctui_ui::bounded_status_line
+     0.19%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] yoctui_ui::inspector
+     0.10%  yoctui-m52-opti  [vdso]                        [.] 0x0000000000000a0b
+     0.10%  yoctui-m52-opti  libc.so.6                     [.] __syscall_cancel
+     0.10%  yoctui-m52-opti  yoctui-m52-optimized-release  [.] <alloc::raw_vec::RawVec<(usize, alloc::vec::Vec<ratatui_core::text::line::Line>, usize)>>::grow_one
+
+
+#
+# (Cannot load tips.txt file, please install perf!)
+#

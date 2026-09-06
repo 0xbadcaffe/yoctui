@@ -89,6 +89,19 @@ fn carry_word(spans: &mut Vec<Span<'static>>, available: usize) -> Option<Vec<Sp
     Some(tail)
 }
 
+fn ascii_line_bytes(line: &Line<'_>, width: usize, remaining: usize) -> Option<usize> {
+    line.spans.iter().try_fold(0usize, |used, span| {
+        let bytes = used.checked_add(span.content.len())?;
+        (bytes <= width
+            && bytes <= remaining
+            && span
+                .content
+                .bytes()
+                .all(|byte| (b' '..=b'~').contains(&byte)))
+        .then_some(bytes)
+    })
+}
+
 /// Project at most width × height cells, preserving graphemes and span styles.
 /// Wrapping never cuts a wide or combining grapheme and never scans later rows.
 fn viewport(text: Text<'_>, area: Rect, wrap: bool) -> Vec<Line<'static>> {
@@ -101,6 +114,28 @@ fn viewport(text: Text<'_>, area: Rect, wrap: bool) -> Vec<Line<'static>> {
     let mut bytes = 0;
     for line in text.lines {
         let style = text.style.patch(line.style);
+        // Profiled hot path: an already fitting printable ASCII row needs no
+        // grapheme segmentation, per-character allocation, or wrapping pass.
+        // Unicode, controls, long rows and exhausted byte budgets retain the
+        // exact bounded grapheme path below.
+        if let Some(length) = ascii_line_bytes(&line, width, MAX_PROJECTION_BYTES - bytes) {
+            bytes += length;
+            rows.push(
+                Line::from(
+                    line.spans
+                        .into_iter()
+                        .map(|span| {
+                            Span::styled(span.content.into_owned(), style.patch(span.style))
+                        })
+                        .collect::<Vec<_>>(),
+                )
+                .style(text.style),
+            );
+            if rows.len() == height {
+                break;
+            }
+            continue;
+        }
         let mut spans = Vec::new();
         let mut used = 0;
         for grapheme in line.styled_graphemes(style) {
@@ -243,6 +278,47 @@ mod tests {
         backend::TestBackend,
         style::{Color, Modifier},
     };
+
+    #[test]
+    fn yocto_logger_ascii_fast_path_requires_complete_printable_bounded_lines() {
+        let line = Line::from(vec![Span::raw("task: "), Span::raw("done")]);
+        assert_eq!(ascii_line_bytes(&line, 10, 10), Some(10));
+        assert_eq!(ascii_line_bytes(&line, 9, 10), None);
+        assert_eq!(ascii_line_bytes(&line, 10, 9), None);
+        for source in ["café", "界", "e\u{301}", "a\tb", "a\nb", "a\rb", "\u{7f}"] {
+            assert_eq!(
+                ascii_line_bytes(&Line::from(Span::raw(source)), 80, 80),
+                None
+            );
+        }
+        let mut terminal = Terminal::new(TestBackend::new(20, 2)).unwrap();
+        terminal
+            .draw(|frame| {
+                render(
+                    frame,
+                    frame.area(),
+                    Text::from(
+                        Line::from(vec![
+                            Span::styled("task: ", Style::default().fg(Color::Red)),
+                            Span::styled(
+                                "done",
+                                Style::default().add_modifier(Modifier::UNDERLINED),
+                            ),
+                        ])
+                        .style(Style::default().bg(Color::Blue)),
+                    )
+                    .style(Style::default().fg(Color::Green)),
+                    Block::default(),
+                    true,
+                );
+            })
+            .unwrap();
+        let buffer = terminal.backend().buffer();
+        assert_eq!(buffer[(0, 0)].fg, Color::Red);
+        assert_eq!(buffer[(6, 0)].fg, Color::Green);
+        assert_eq!(buffer[(6, 0)].bg, Color::Blue);
+        assert!(buffer[(6, 0)].modifier.contains(Modifier::UNDERLINED));
+    }
 
     #[test]
     fn yocto_logger_viewport_is_bounded_unicode_safe_and_keeps_search_styles() {

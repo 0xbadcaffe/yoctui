@@ -1,19 +1,24 @@
 {
   "schema": "yoctui.performance.real-poky-manifest.v1",
-  "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
+  "source_base_revision": "e3e7ecbd538c928d5d820b46ac26965026f2b064",
+  "source_patch": "artifacts/performance/logger/optimized-source.patch",
+  "source_patch_sha256": "57334ee65a2b40f2ebaf3762bee02224912ae031471cc0ab49419652966d48eb",
   "artifact": "linux-yocto-do-compile.json",
-  "artifact_sha256": "b23f06a47f58398caa33239f887a7b335d5cefda890d02be873e0522ad7bf5a0",
+  "artifact_sha256": "fd21aae064fd5c4045c12401e3c779049880f71c23f630fe31d3e2748ef9fec0",
   "binary": {
-    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-    "sha256": "ee4be85588ce923b0910f71866a9bed5d8e0687f8fad4d29b0b07cb98ab27e8a",
-    "version": "yoctui 0.1.56"
+    "path": "/tmp/yoctui-m52-optimized-release",
+    "sha256": "2b7ff3659d2867e1463dc9a1f227624a879283142b4d3cbd7b6cd630e0dc6566",
+    "version": "yoctui 0.1.61"
   },
   "sources": {
-    "crates/yoctui-app/src/lib.rs": "077481ae2a139f09c7262bcd5407a2c857bb2d07bb48438619f17d811375a640",
-    "crates/yoctui-cli/src/main.rs": "8ecd7e02618a9c7542c0d2fb059481068207b51a23656fb95bb78d70864eac18",
+    "crates/yoctui-app/src/lib.rs": "05ad8dec3422c3bb75dc6806690b9552787aebdcdf5b0b6f50d6a0e1af5f72c9",
+    "crates/yoctui-cli/src/main.rs": "1ef6c12bf6e4bdcbd92fb293af6c290c3e85a2e69b6eb2e8788af6ed582fa470",
     "crates/yoctui-cli/src/render_scheduler.rs": "9cbd30b42bfd057f4a33be507f61fd4a431365d468143d0ce9a5845bc65b22fa",
     "crates/yoctui-protocol/src/daemon.rs": "58f0a2cddd8ffe562721b9acaae75abc94581c5bfd46ffbae9be16f5a6d4c2b3",
-    "scripts/capture-real-poky-performance.py": "45b207e89372952500cfe3f492c6b60ae457fc9be081fdd0371f01f3e7646579"
+    "scripts/capture-real-poky-performance.py": "45b207e89372952500cfe3f492c6b60ae457fc9be081fdd0371f01f3e7646579",
+    "crates/yoctui-ui/src/lib.rs": "a83e1f11409df21271630428bee4a0c744f8f8db9999c990b7f9a8573866c90c",
+    "crates/yoctui-ui/src/yocto_logs.rs": "fe977125a094e6312a3d07cdb955b0985e45d407dbf633e921be986f86b660ea",
+    "artifacts/performance/logger/optimized-source.patch": "57334ee65a2b40f2ebaf3762bee02224912ae031471cc0ab49419652966d48eb"
   },
   "thresholds": {
     "combined_cpu_percent_one_logical_cpu": 1,
@@ -26,9 +31,9 @@
     "render_frames_per_second_maximum": 6
   },
   "findings": [
-    "The supported Poky 6.0.2 linux-yocto do_compile workload held the eight-logical-CPU host at a 99.8737% trimmed-mean utilization for the complete 120-second sample window.",
-    "Integrated v0.1.56 daemon plus one interactive client consumed a 0.9858% trimmed mean of one logical CPU; input p95 was 8.0094 ms and every IPC continuity/cancellation check passed. This meets the 1% goal with limited headroom.",
-    "High-rate job progress updates the bounded journal incrementally, compatibility decoding is generation-cached, and a priority-aware readiness notification wakes immediately for critical work while coalescing cosmetic work.",
+    "Supported Poky 6.0.2 linux-yocto do_compile held the eight-logical-CPU host at 99.8601% trimmed-mean utilization for a complete 360-second window after a ten-second warmup, in an isolated offline build directory.",
+    "The v0.1.61 ASCII-optimized daemon plus attached client consumed 0.9777% of one logical CPU; input p95 was 5.8214 ms. Cancellation acknowledgement was 0.4570 ms, fresh attach 26.5856 ms, and all continuity checks passed. Headroom remains limited.",
+    "Pre-optimization 120- and 360-second captures failed at 1.0170% and 1.0065%; both are retained under artifacts/performance/logger. The source patch preserves all performance thresholds and fixes only measured redundant ASCII segmentation.",
     "At 90% or greater host utilization during live work, presentation coalesces to 1 Hz while input and resize stay immediate; below saturation ordinary activity remains 4 Hz."
   ]
 }

@@ -1,0 +1,20 @@
+yoctui workbench profile: frames=500 checksum=337fcbd136405209 elapsed_ms=501
+yoctui ui performance: scenario=idle frames=500 checksum=337fcbd136405209 elapsed_ms=501 ns_per_frame=1002244
+yoctui workbench profile: frames=500 checksum=a36e5ca31263ddc3 elapsed_ms=689
+yoctui ui performance: scenario=active-build frames=500 checksum=a36e5ca31263ddc3 elapsed_ms=689 ns_per_frame=1378743
+yoctui workbench profile: frames=500 checksum=2dce5c83a971b7ef elapsed_ms=770
+yoctui ui performance: scenario=large-metadata frames=500 checksum=2dce5c83a971b7ef elapsed_ms=770 ns_per_frame=1541723
+yoctui workbench profile: frames=500 checksum=2e8c3d073fe03ba0 elapsed_ms=1121
+yoctui ui performance: scenario=log-heavy frames=500 checksum=2e8c3d073fe03ba0 elapsed_ms=1121 ns_per_frame=2242617
+yoctui workbench profile: frames=500 checksum=c94760274af15be7 elapsed_ms=526
+yoctui ui performance: scenario=telemetry frames=500 checksum=c94760274af15be7 elapsed_ms=526 ns_per_frame=1053467
+next-generation UI performance thresholds passed
+yoctui workbench profile: frames=300 checksum=12401f377bea7b47 elapsed_ms=404
+yoctui ui performance: scenario=menu-heavy frames=300 checksum=12401f377bea7b47 elapsed_ms=404 ns_per_frame=1346789
+yoctui workbench profile: frames=300 checksum=5251f309aac667ef elapsed_ms=877
+yoctui ui performance: scenario=large-rootfs frames=300 checksum=5251f309aac667ef elapsed_ms=877 ns_per_frame=2925806
+yoctui workbench profile: frames=300 checksum=5da7c8b705e376b9 elapsed_ms=2825
+yoctui ui performance: scenario=large-graph frames=300 checksum=5da7c8b705e376b9 elapsed_ms=2825 ns_per_frame=9416915
+yoctui workbench profile: frames=300 checksum=fd1224e04e24cb30 elapsed_ms=3567
+yoctui ui performance: scenario=large-editor frames=300 checksum=fd1224e04e24cb30 elapsed_ms=3567 ns_per_frame=11891508
+performance workload large-editor exceeded threshold: 11891508 ns/frame > 10000000

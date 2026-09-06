@@ -1,0 +1,14 @@
+[
+  {
+    "role": "daemon",
+    "pid": 1410055,
+    "executable": "/tmp/yoctui-m52-optimized-release",
+    "command": "/tmp/yoctui-m52-optimized-release daemon foreground"
+  },
+  {
+    "role": "client",
+    "pid": 1436349,
+    "executable": "/tmp/yoctui-m52-optimized-release",
+    "command": "/tmp/yoctui-m52-optimized-release attach"
+  }
+]

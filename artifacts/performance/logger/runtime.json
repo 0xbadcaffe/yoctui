@@ -1,0 +1,126 @@
+{
+  "source_patch": "artifacts/performance/logger/optimized-source.patch",
+  "source_patch_sha256": "57334ee65a2b40f2ebaf3762bee02224912ae031471cc0ab49419652966d48eb",
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-09-06T14:25:05.359858+00:00",
+  "scenario": "m52-optimized-real-poky",
+  "revision": "e3e7ecbd538c928d5d820b46ac26965026f2b064",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/tmp/yoctui-m52-optimized-release",
+    "sha256": "2b7ff3659d2867e1463dc9a1f227624a879283142b4d3cbd7b6cd630e0dc6566"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 60,
+    "samples": 275,
+    "unresolved_stack_lines": 1,
+    "dropped_unresolved_ppm": 4397,
+    "maximum_dropped_unresolved_ppm": 15000
+  },
+  "processes": [
+    {
+      "role": "daemon",
+      "pid": 1410055,
+      "executable": "/tmp/yoctui-m52-optimized-release",
+      "command": "/tmp/yoctui-m52-optimized-release daemon foreground"
+    },
+    {
+      "role": "client",
+      "pid": 1436349,
+      "executable": "/tmp/yoctui-m52-optimized-release",
+      "command": "/tmp/yoctui-m52-optimized-release attach"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "90ce51bdbd1a34eea12ccdd7b4b4b7d9a7247db9ce4b4e3250dc77cad619ec4d",
+    "flat_report_sha256": "8abc78ad49f60ffda37e0738ee20668e4d4888533d98f18d001d3a4a317e6cd4"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 11.69,
+      "symbol": "serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>"
+    },
+    {
+      "self_percent": 8.01,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_percent": 7.62,
+      "symbol": "<ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>"
+    },
+    {
+      "self_percent": 4.73,
+      "symbol": "<yoctui_protocol::daemon::DaemonSnapshotJournal>::synchronize_with_limit"
+    },
+    {
+      "self_percent": 4.63,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_percent": 4.07,
+      "symbol": "__libc_malloc2"
+    },
+    {
+      "self_percent": 3.79,
+      "symbol": "malloc"
+    },
+    {
+      "self_percent": 3.18,
+      "symbol": "_int_free_merge_chunk"
+    },
+    {
+      "self_percent": 3.0,
+      "symbol": "yoctui::tui::{closure#0}"
+    },
+    {
+      "self_percent": 2.56,
+      "symbol": "cfree@GLIBC_2.2.5"
+    },
+    {
+      "self_percent": 2.06,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>"
+    },
+    {
+      "self_percent": 1.87,
+      "symbol": "<ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq"
+    },
+    {
+      "self_percent": 1.86,
+      "symbol": "<unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 1.82,
+      "symbol": "<&ratatui_widgets::block::Block as ratatui_core::widgets::widget::Widget>::render"
+    },
+    {
+      "self_percent": 1.62,
+      "symbol": "_int_free_chunk"
+    },
+    {
+      "self_percent": 1.57,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeMap>::serialize_entry::<str, alloc::string::String>"
+    },
+    {
+      "self_percent": 1.51,
+      "symbol": "<ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 1.46,
+      "symbol": "<&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render"
+    },
+    {
+      "self_percent": 1.41,
+      "symbol": "_int_free_maybe_trim"
+    },
+    {
+      "self_percent": 1.39,
+      "symbol": "ratatui_widgets::paragraph::render_line"
+    }
+  ]
+}

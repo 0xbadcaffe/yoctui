@@ -1,0 +1,23 @@
+cycles:u, 499 Hz, 5025 samples, zero lost samples.
+Self overhead >=1%; full call stacks are retained in log-heavy.svg.
+11.80% [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+ 8.88% [.] <&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render
+ 7.81% [.] core::str::count::do_count_chars
+ 7.09% [.] <ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>
+ 5.63% [.] <yoctui_model::LogState>::filtered
+ 5.56% [.] <yoctui_model::LogState>::filtered::{closure#1}
+ 4.95% [.] yoctui_ui::yocto_logs::viewport
+ 4.53% [.] <ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq
+ 3.69% [.] <yoctui_model::LogState>::window
+ 3.68% [.] <ratatui_core::buffer::diff::BufferDiff as core::iter::traits::iterator::Iterator>::next
+ 2.66% [.] __memmove_avx_unaligned_erms
+ 2.57% [.] <yoctui_model::LogState>::selected
+ 2.44% [.] <core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>
+ 2.37% [.] <unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next
+ 2.06% [.] <ratatui_core::buffer::cell::Cell as ratatui_core::buffer::cell_width::CellWidth>::cell_width
+ 1.96% [.] _int_malloc
+ 1.18% [.] malloc
+ 1.17% [.] workbench_profile::main
+ 1.16% [.] __memcmp_avx2_movbe
+ 1.14% [.] <core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>
+ 1.07% [.] cfree@GLIBC_2.2.5

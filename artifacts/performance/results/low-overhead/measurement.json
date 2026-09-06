@@ -1,14 +1,16 @@
 {
+  "source_patch": "artifacts/performance/logger/optimized-source.patch",
+  "source_patch_sha256": "57334ee65a2b40f2ebaf3762bee02224912ae031471cc0ab49419652966d48eb",
   "artifacts": {
-    "idle-attached-client.json": "6ec988833b91c65a4dba79826828e8903bc81fa0e6036ca0d9bc5864add74a5f",
-    "idle-daemon.json": "7d3299e9d52ac5ad8a38df64cdff5d91b8f9f48384860e5dbc84cdfd18119170"
+    "idle-attached-client.json": "91ce9ef0c7ea577e4fed43f60b958d8b2a82161576bf167b7452ca1006ebfdb8",
+    "idle-daemon.json": "a7f78f6cc3d469fa02c05fabc67f6a41c0c1eb0aa3e1219f4b431eae3a649f4f"
   },
   "binary": {
-    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-    "sha256": "c83df9cbab3f91565573c63387a2fa0b81d0b0bd3d29df14faaa425da2f912cf",
-    "version": "yoctui 0.1.57"
+    "path": "/tmp/yoctui-m52-optimized-release",
+    "sha256": "2b7ff3659d2867e1463dc9a1f227624a879283142b4d3cbd7b6cd630e0dc6566",
+    "version": "yoctui 0.1.61"
   },
-  "captured_at_unix_ms": 1788688828198,
+  "captured_at_unix_ms": 1788704169340,
   "method": {
     "clock": "CLOCK_MONOTONIC",
     "cpu_source": "/proc/PID/stat fields 14+15",
@@ -25,23 +27,23 @@
     "warmup_seconds": 10
   },
   "observations": {
-    "attached_daemon_cpu_percent_one_logical_cpu": 0.020789546536207296,
-    "combined_cpu_percent_one_logical_cpu": 0.16642717540751498,
-    "idle_client_cpu_percent_one_logical_cpu": 0.08319157560334776,
+    "attached_daemon_cpu_percent_one_logical_cpu": 0.0,
+    "combined_cpu_percent_one_logical_cpu": 0.08326174470197929,
+    "idle_client_cpu_percent_one_logical_cpu": 0.020809204351478507,
     "idle_daemon_cpu_percent_one_logical_cpu": 0.0
   },
-  "pty_bytes_drained": 19638,
-  "revision": "78eb9bfc4e581210e88b05dae403c0f87447b602",
+  "pty_bytes_drained": 19678,
+  "revision": "e3e7ecbd538c928d5d820b46ac26965026f2b064",
   "schema": "yoctui.performance.low-overhead-suite.v1",
   "sources": {
-    "crates/yoctui-cli/src/main.rs": "8ecd7e02618a9c7542c0d2fb059481068207b51a23656fb95bb78d70864eac18",
+    "crates/yoctui-cli/src/main.rs": "1ef6c12bf6e4bdcbd92fb293af6c290c3e85a2e69b6eb2e8788af6ed582fa470",
     "crates/yoctui-protocol/src/daemon_ipc.rs": "c2d348345f45061bbdbc5991ebcf2a4be109af425323f6e352fca5689cbfeb1a",
     "scripts/measure-low-overhead.py": "f211f06d3e2d704d0a1e12f62984ddd8a8d3889314e5453260d3232da06e2263",
     "scripts/measure-process-overhead.py": "0d6b43a7d7caf3ba5c2e690e8f462b45f0cefb400bd1b90d9649bc42b52b5c70"
   },
   "startup": {
-    "client_first_frame_ms": 11.158259818330407,
-    "daemon_socket_ready_ms": 10.4421298019588,
+    "client_first_frame_ms": 13.131815008819103,
+    "daemon_socket_ready_ms": 10.207490995526314,
     "maximum_excluded_startup_ms": 5000
   },
   "thresholds": {

@@ -39,12 +39,12 @@ notes = "Reevaluate tui-logger by explicit user request. Integrate Logs and embe
 id = "LOG-CONSOLE-IMAGE-001"
 milestone = "M52"
 title = "Complete Yocto log widget console and udev integration"
-status = "IN_PROGRESS"
+status = "BLOCKED"
 priority = 970
 required = true
 depends_on = ["IMAGE-UDEV-001", "CONSOLE-TERM-002", "YOCTO-LOGGER-ADAPTER-001"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh", "./scripts/verify-performance.sh"]
-notes = "Review production visual fixtures, bump version, refresh affected evidence under repository policy, run full completion on a clean committed checkout. Never claim fixture results as live SSH/QEMU/Yocto execution."
+notes = "v0.1.61 candidate integrates all children and adds a profile-guided fitting-ASCII viewport path. UI/workspace/strict-Clippy/sanitizer checks and both quiet-host rendering matrices passed; real Poky 360-second CPU is 0.9777% of one logical CPU with 5.821 ms input p95 and healthy cancellation/reconnect. BLOCKED: tui-logger 0.18.3 process-global target maps and Jiff timezone caches retain 39,367 bytes classified PossiblyLost by strict Memcheck, identically across 16/128 frames and the optimized rerun. Upstream exposes no complete cleanup API. No suppression or gate relaxation was applied. Requires upstream cleanup support or explicit reviewed bounded-cache policy approval; reproduce with ./scripts/valgrind.sh. Evidence: artifacts/performance/logger/README.md and memcheck-optimized.json. Full completion must pass before release; console fixtures are not live SSH/QEMU evidence."
 
 [[task]]
 id = "WORKBENCH-INTEGRATION-001"

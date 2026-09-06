@@ -1025,6 +1025,13 @@ runqemu paths. Add image-owned udev rules with bounded offline preview and
 precedence/masking evidence. Dependency, visual, performance, and completion
 gates remain required.
 
+The three feature children are implemented (v0.1.58–0.1.60). The integrated
+v0.1.61 candidate and profile-guided ASCII optimization pass functional and
+rendering checks, with real-build combined CPU at 0.9777% of one logical CPU.
+M52 release completion is BLOCKED by strict Memcheck findings for fixed
+tui-logger/Jiff process-lifetime caches, pending upstream cleanup support or
+an explicitly approved bounded exception. No verification rule was weakened.
+
 ## M51 — Workbench integration release
 
 Complete in v0.1.57: the M47–M50 feature histories coexist with completed M46

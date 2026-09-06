@@ -1,6 +1,6 @@
 {
   "schema": "yoctui.performance.process-overhead.v1",
-  "captured_at_utc": "2026-09-06T10:00:27.751585+00:00",
+  "captured_at_utc": "2026-09-06T14:16:08.344334+00:00",
   "scenario": "optimized-idle-attached-client",
   "measurement": {
     "clock": "CLOCK_MONOTONIC",
@@ -22,20 +22,20 @@
       "powersave"
     ],
     "load_average_before": [
-      1.13525390625,
-      3.5888671875,
-      4.55322265625
+      8.66357421875,
+      8.796875,
+      8.095703125
     ],
     "load_average_after": [
-      0.7392578125,
-      2.97900390625,
-      4.27001953125
+      6.87548828125,
+      8.2587890625,
+      7.9599609375
     ],
     "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
     "filesystem": {
       "path": "/home/bspguy-dev/projects/yoctui",
       "type": "ext4",
-      "free_bytes": 48142286848,
+      "free_bytes": 26071134208,
       "total_bytes": 489997189120
     }
   },
@@ -44,26 +44,26 @@
     "rows": 50,
     "refresh_milliseconds": 100
   },
-  "revision": "78eb9bfc4e581210e88b05dae403c0f87447b602",
+  "revision": "e3e7ecbd538c928d5d820b46ac26965026f2b064",
   "worktree_clean": false,
   "rustc": "rustc 1.97.0 (2d8144b78 2026-07-07)",
   "binary": {
-    "path": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-    "sha256": "c83df9cbab3f91565573c63387a2fa0b81d0b0bd3d29df14faaa425da2f912cf",
-    "version_output": "yoctui 0.1.57"
+    "path": "/tmp/yoctui-m52-optimized-release",
+    "sha256": "2b7ff3659d2867e1463dc9a1f227624a879283142b4d3cbd7b6cd630e0dc6566",
+    "version_output": "yoctui 0.1.61"
   },
   "processes": {
     "daemon": {
-      "pid": 980049,
-      "start_time_ticks_since_boot": 106581392,
-      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui daemon foreground"
+      "pid": 1410003,
+      "start_time_ticks_since_boot": 108115334,
+      "executable": "/tmp/yoctui-m52-optimized-release",
+      "command": "/tmp/yoctui-m52-optimized-release daemon foreground"
     },
     "client": {
-      "pid": 980562,
-      "start_time_ticks_since_boot": 106588450,
-      "executable": "/home/bspguy-dev/projects/yoctui/target/release/yoctui",
-      "command": "/home/bspguy-dev/projects/yoctui/target/release/yoctui attach"
+      "pid": 1411174,
+      "start_time_ticks_since_boot": 108122486,
+      "executable": "/tmp/yoctui-m52-optimized-release",
+      "command": "/tmp/yoctui-m52-optimized-release attach"
     }
   },
   "supplemental_metrics": {},
@@ -73,1346 +73,1346 @@
     "process_wakeups_reason": "Linux /proc does not expose per-process wakeups; perf scheduling samples are captured by the profiling task"
   },
   "summary": {
-    "combined_cpu_trimmed_mean_percent_one_logical_cpu": 0.16642717540751498,
+    "combined_cpu_trimmed_mean_percent_one_logical_cpu": 0.08326174470197929,
     "combined_cpu_median_percent_one_logical_cpu": 0.0,
     "processes": {
       "daemon": {
-        "cpu_trimmed_mean_percent_one_logical_cpu": 0.020789546536207296,
+        "cpu_trimmed_mean_percent_one_logical_cpu": 0.0,
         "cpu_median_percent_one_logical_cpu": 0.0,
-        "voluntary_context_switches_mean_per_second": 9.96637895634138,
-        "involuntary_context_switches_mean_per_second": 0.0,
-        "rss_max_bytes": 12685312,
-        "virtual_max_bytes": 162488320,
+        "voluntary_context_switches_mean_per_second": 9.983809035276304,
+        "involuntary_context_switches_mean_per_second": 0.03330828501490896,
+        "rss_max_bytes": 12693504,
+        "virtual_max_bytes": 163000320,
         "threads_max": 3
       },
       "client": {
-        "cpu_trimmed_mean_percent_one_logical_cpu": 0.08319157560334776,
+        "cpu_trimmed_mean_percent_one_logical_cpu": 0.020809204351478507,
         "cpu_median_percent_one_logical_cpu": 0.0,
-        "voluntary_context_switches_mean_per_second": 19.533366771858535,
-        "involuntary_context_switches_mean_per_second": 0.016639899539821597,
-        "rss_max_bytes": 15855616,
-        "virtual_max_bytes": 163344384,
+        "voluntary_context_switches_mean_per_second": 19.53281957157966,
+        "involuntary_context_switches_mean_per_second": 0.14988299804158628,
+        "rss_max_bytes": 15966208,
+        "virtual_max_bytes": 163856384,
         "threads_max": 3
       }
     }
   },
   "samples": [
     {
-      "elapsed_seconds": 1.0011838302016258,
+      "elapsed_seconds": 1.0017655838746578,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.988175695951988,
+          "voluntary_context_switches_per_second": 9.982375279176305,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12681216,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12689408,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.976351391903975,
+          "voluntary_context_switches_per_second": 17.968275502517347,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15822848,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0010747318156064,
+      "elapsed_seconds": 1.00078547000885,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.989264219928344,
+          "voluntary_context_switches_per_second": 9.99215146470059,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12681216,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12689408,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.98067559587102,
+          "voluntary_context_switches_per_second": 19.98430292940118,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15822848,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001372405095026,
-      "combined_cpu_percent_one_logical_cpu": 0.9986294758193425,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.986294758193425,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12681216,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9986294758193425,
-          "voluntary_context_switches_per_second": 19.97258951638685,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15822848,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0014758850447834,
+      "elapsed_seconds": 1.0008872931357473,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.98526289981793,
+          "voluntary_context_switches_per_second": 9.991134934554244,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12681216,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12689408,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.97052579963586,
+          "voluntary_context_switches_per_second": 19.98226986910849,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15822848,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0015357069205493,
+      "elapsed_seconds": 1.0007328218780458,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984666478589453,
+          "voluntary_context_switches_per_second": 9.992677147566015,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12689408,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.969332957178906,
+          "voluntary_context_switches_per_second": 19.98535429513203,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15826944,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001040630042553,
-      "combined_cpu_percent_one_logical_cpu": 0.9989604517425945,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.9989604517425945,
-          "voluntary_context_switches_per_second": 9.989604517425944,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.979209034851888,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15831040,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0016763270832598,
+      "elapsed_seconds": 1.0007425050716847,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.98326478286513,
+          "voluntary_context_switches_per_second": 9.992580458330472,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.969876609157232,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15831040,
-          "virtual_bytes": 163344384,
+          "voluntary_context_switches_per_second": 19.985160916660945,
+          "involuntary_context_switches_per_second": 2.9977741374991416,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0015987679362297,
+      "elapsed_seconds": 1.0006935810670257,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984037840426621,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "voluntary_context_switches_per_second": 9.993068996542517,
+          "involuntary_context_switches_per_second": 0.9993068996542517,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.968075680853243,
+          "voluntary_context_switches_per_second": 17.98752419377653,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15831040,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0010748789645731,
+      "elapsed_seconds": 1.0007242178544402,
+      "combined_cpu_percent_one_logical_cpu": 0.9992763062574893,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9992763062574893,
+          "voluntary_context_switches_per_second": 9.992763062574893,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 19.985526125149786,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0014303531497717,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.989262751596714,
+          "voluntary_context_switches_per_second": 9.985716898381671,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.978525503193428,
+          "voluntary_context_switches_per_second": 19.971433796763343,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15831040,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0016086110845208,
-      "combined_cpu_percent_one_logical_cpu": 0.9983939723892958,
+      "elapsed_seconds": 1.00078935502097,
+      "combined_cpu_percent_one_logical_cpu": 0.9992112675689345,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.983939723892957,
+          "voluntary_context_switches_per_second": 9.992112675689345,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
-          "cpu_percent_one_logical_cpu": 0.9983939723892958,
-          "voluntary_context_switches_per_second": 19.967879447785915,
-          "involuntary_context_switches_per_second": 0.9983939723892958,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "cpu_percent_one_logical_cpu": 0.9992112675689345,
+          "voluntary_context_switches_per_second": 19.98422535137869,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15933440,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0014668828807771,
+      "elapsed_seconds": 1.0006960988976061,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.985352657128736,
+          "voluntary_context_switches_per_second": 9.993043853190064,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.973634782831724,
+          "voluntary_context_switches_per_second": 17.987478935742118,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15941632,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0010749439243227,
+      "elapsed_seconds": 1.000928825000301,
+      "combined_cpu_percent_one_logical_cpu": 0.9990720369150117,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.990720369150116,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9990720369150117,
+          "voluntary_context_switches_per_second": 19.981440738300233,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15941632,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0008334501180798,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.98926210339349,
+          "voluntary_context_switches_per_second": 9.991672439425546,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.97852420678698,
+          "voluntary_context_switches_per_second": 19.983344878851092,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15941632,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001461923122406,
+      "elapsed_seconds": 1.0007550849113613,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.985402109769206,
+          "voluntary_context_switches_per_second": 9.992454848116727,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.97080421953841,
+          "voluntary_context_switches_per_second": 19.984909696233455,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15941632,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0016123589593917,
+      "elapsed_seconds": 1.0007238150574267,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.98390236557118,
+          "voluntary_context_switches_per_second": 9.992767084718723,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.96780473114236,
+          "voluntary_context_switches_per_second": 17.9869807524937,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15941632,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0012572519481182,
+      "elapsed_seconds": 1.0017104018479586,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.987443267495221,
+          "voluntary_context_switches_per_second": 9.982925186313297,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.974886534990443,
+          "voluntary_context_switches_per_second": 19.965850372626594,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15945728,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0008484739810228,
+      "elapsed_seconds": 1.0008104550652206,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.991522453167681,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "voluntary_context_switches_per_second": 9.99190201240286,
+          "involuntary_context_switches_per_second": 0.999190201240286,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.98474041570183,
+          "voluntary_context_switches_per_second": 19.98380402480572,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15945728,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0009647482074797,
-      "combined_cpu_percent_one_logical_cpu": 0.9990361816345608,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.9990361816345608,
-          "voluntary_context_switches_per_second": 9.990361816345606,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.980723632691213,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.001527433982119,
-      "combined_cpu_percent_one_logical_cpu": 0.9984748955142987,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984748955142988,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9984748955142987,
-          "voluntary_context_switches_per_second": 19.969497910285977,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0016029810067266,
+      "elapsed_seconds": 1.0007690461352468,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.983995844290366,
+          "voluntary_context_switches_per_second": 9.992315448422225,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.96799168858073,
+          "voluntary_context_switches_per_second": 19.98463089684445,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15945728,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0004749819636345,
-      "combined_cpu_percent_one_logical_cpu": 0.9995252435371225,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.995252435371224,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9995252435371225,
-          "voluntary_context_switches_per_second": 19.99050487074245,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15835136,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0022396459244192,
+      "elapsed_seconds": 1.0008056359365582,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.977653588804568,
+          "voluntary_context_switches_per_second": 9.991950125902276,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.95977645984822,
+          "voluntary_context_switches_per_second": 19.983900251804553,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15945728,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0015965830534697,
+      "elapsed_seconds": 1.0008530798368156,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984059619606505,
+          "voluntary_context_switches_per_second": 9.991476472880969,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.96811923921301,
+          "voluntary_context_switches_per_second": 17.984657651185742,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15945728,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0009410418570042,
+      "elapsed_seconds": 1.0008014710620046,
+      "combined_cpu_percent_one_logical_cpu": 0.9991991707794414,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.991991707794414,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9991991707794414,
+          "voluntary_context_switches_per_second": 19.983983415588828,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15949824,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0008915569633245,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.990598428702071,
+          "voluntary_context_switches_per_second": 9.991092372024502,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.981196857404143,
+          "voluntary_context_switches_per_second": 19.982184744049004,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15949824,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.000959677156061,
+      "elapsed_seconds": 1.0007349490188062,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.990412429411867,
+          "voluntary_context_switches_per_second": 9.992655907345629,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.980824858823734,
+          "voluntary_context_switches_per_second": 19.985311814691258,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15949824,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0015054140239954,
+      "elapsed_seconds": 1.0008482979610562,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984968488408398,
+          "voluntary_context_switches_per_second": 9.991524210384487,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 18.971440127975956,
+          "voluntary_context_switches_per_second": 19.983048420768974,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15949824,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0021061929874122,
-      "combined_cpu_percent_one_logical_cpu": 1.9957964674759003,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.9978982337379502,
-          "voluntary_context_switches_per_second": 9.9789823373795,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9978982337379502,
-          "voluntary_context_switches_per_second": 18.960066441021052,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.001439832849428,
+      "elapsed_seconds": 1.000742076197639,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.985622372885535,
+          "voluntary_context_switches_per_second": 9.992584740711026,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.97124474577107,
+          "voluntary_context_switches_per_second": 17.986652533279848,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15949824,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0014671820681542,
+      "elapsed_seconds": 1.0009174128063023,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.985349674014037,
+          "voluntary_context_switches_per_second": 9.990834280685256,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.970699348028074,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "voluntary_context_switches_per_second": 19.981668561370512,
+          "involuntary_context_switches_per_second": 0.9990834280685256,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001882451120764,
+      "elapsed_seconds": 1.0008717661257833,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.981210858432961,
+          "voluntary_context_switches_per_second": 9.991289931884504,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.962421716865922,
+          "voluntary_context_switches_per_second": 19.982579863769008,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001616613008082,
+      "elapsed_seconds": 1.0008412059396505,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.983859962114378,
+          "voluntary_context_switches_per_second": 9.991595010930222,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.97094793180588,
+          "voluntary_context_switches_per_second": 19.983190021860445,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15839232,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0014222839381546,
-      "combined_cpu_percent_one_logical_cpu": 1.9971594721608124,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.9985797360804062,
-          "voluntary_context_switches_per_second": 9.985797360804062,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9985797360804062,
-          "voluntary_context_switches_per_second": 19.971594721608124,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15843328,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0015832509379834,
+      "elapsed_seconds": 1.0008012021426111,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984192517831136,
+          "voluntary_context_switches_per_second": 9.991994392683623,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.968385035662273,
+          "voluntary_context_switches_per_second": 17.985589906830523,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15843328,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0014314351137727,
+      "elapsed_seconds": 1.0007456769235432,
+      "combined_cpu_percent_one_logical_cpu": 0.9992548786962183,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9992548786962183,
+          "voluntary_context_switches_per_second": 9.992548786962182,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 19.985097573924364,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0007915869355202,
+      "combined_cpu_percent_one_logical_cpu": 0.9992090391787325,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.992090391787325,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9992090391787325,
+          "voluntary_context_switches_per_second": 19.98418078357465,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.000796965090558,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.985706109638848,
+          "voluntary_context_switches_per_second": 9.992036695570057,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.971412219277695,
+          "voluntary_context_switches_per_second": 19.984073391140114,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15843328,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.000764440977946,
+      "elapsed_seconds": 1.0007629860192537,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.992361429456876,
+          "voluntary_context_switches_per_second": 9.9923759568458,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.984722858913752,
+          "voluntary_context_switches_per_second": 19.9847519136916,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15843328,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0016133259050548,
+      "elapsed_seconds": 1.000780361937359,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.983892727229872,
+          "voluntary_context_switches_per_second": 8.992982218972967,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.97100690901377,
+          "voluntary_context_switches_per_second": 17.985964437945935,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15843328,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0014241361059248,
+      "elapsed_seconds": 1.0007229330949485,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.9857788917345,
+          "voluntary_context_switches_per_second": 9.99277589159756,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.971557783469,
+          "voluntary_context_switches_per_second": 19.98555178319512,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15953920,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0009950478561223,
+      "elapsed_seconds": 1.0008009308949113,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 8.991053471518885,
+          "voluntary_context_switches_per_second": 9.99199710082009,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.980118825597522,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "voluntary_context_switches_per_second": 19.98399420164018,
+          "involuntary_context_switches_per_second": 1.9983994201640178,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0011802590452135,
-      "combined_cpu_percent_one_logical_cpu": 1.9976422646480485,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.9988211323240243,
-          "voluntary_context_switches_per_second": 9.988211323240241,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9988211323240243,
-          "voluntary_context_switches_per_second": 19.976422646480483,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0015563790220767,
+      "elapsed_seconds": 1.000758338952437,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984460395294008,
+          "voluntary_context_switches_per_second": 9.992422356897562,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.968920790588015,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "voluntary_context_switches_per_second": 19.984844713795123,
+          "involuntary_context_switches_per_second": 0.9992422356897562,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001085199881345,
+      "elapsed_seconds": 1.0007274481467903,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.989159765008276,
+          "voluntary_context_switches_per_second": 9.992730806493443,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.980487577014898,
+          "voluntary_context_switches_per_second": 17.986915451688198,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0016015390865505,
+      "elapsed_seconds": 1.0008449179586023,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984010217396321,
+          "voluntary_context_switches_per_second": 9.991557953250883,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.968020434792642,
+          "voluntary_context_switches_per_second": 19.983115906501766,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0016056490130723,
+      "elapsed_seconds": 1.000792610924691,
+      "combined_cpu_percent_one_logical_cpu": 0.9992080168098377,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.992080168098378,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9992080168098377,
+          "voluntary_context_switches_per_second": 19.984160336196755,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.000787357101217,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.983969249627792,
+          "voluntary_context_switches_per_second": 9.992132623422647,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.967938499255585,
+          "voluntary_context_switches_per_second": 19.984265246845293,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0005152230150998,
+      "elapsed_seconds": 1.0007400328759104,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.994850423029575,
+          "voluntary_context_switches_per_second": 9.992605143677688,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.98970084605915,
+          "voluntary_context_switches_per_second": 19.985210287355375,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0007909559644759,
+      "elapsed_seconds": 1.0007108140271157,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.99209669152422,
+          "voluntary_context_switches_per_second": 9.99289690870577,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 18.984983713896018,
+          "voluntary_context_switches_per_second": 17.98721443567039,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0013638229575008,
+      "elapsed_seconds": 1.000768698984757,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.98638034522285,
+          "voluntary_context_switches_per_second": 9.992318914594982,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 18.974122655923416,
+          "voluntary_context_switches_per_second": 19.984637829189964,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15847424,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0014223030302674,
-      "combined_cpu_percent_one_logical_cpu": 0.9985797170424869,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.985797170424869,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9985797170424869,
-          "voluntary_context_switches_per_second": 19.971594340849737,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0010892709251493,
+      "elapsed_seconds": 1.0007854751311243,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.989119142949733,
+          "voluntary_context_switches_per_second": 9.992151413558222,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.978238285899465,
+          "voluntary_context_switches_per_second": 19.984302827116444,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15958016,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0010656660888344,
+      "elapsed_seconds": 1.0008610519580543,
+      "combined_cpu_percent_one_logical_cpu": 0.9991396888145765,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9991396888145765,
+          "voluntary_context_switches_per_second": 9.991396888145765,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 19.98279377629153,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15962112,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0008014258928597,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.989354683464493,
+          "voluntary_context_switches_per_second": 9.991992158762717,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.978709366928985,
+          "voluntary_context_switches_per_second": 19.983984317525433,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15962112,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0015421989373863,
+      "elapsed_seconds": 1.0008478690870106,
+      "combined_cpu_percent_one_logical_cpu": 0.9991528491859766,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.991528491859766,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9991528491859766,
+          "voluntary_context_switches_per_second": 17.984751285347578,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15962112,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0008442660328,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984601757778929,
+          "voluntary_context_switches_per_second": 9.991564461510615,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.97228316400207,
+          "voluntary_context_switches_per_second": 19.98312892302123,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15962112,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0011644831392914,
+      "elapsed_seconds": 1.0012364138383418,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.988368713044634,
+          "voluntary_context_switches_per_second": 9.987651129930423,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.97673742608927,
+          "voluntary_context_switches_per_second": 19.975302259860847,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15962112,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0007670398335904,
-      "combined_cpu_percent_one_logical_cpu": 0.9992335480655739,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.992335480655738,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9992335480655739,
-          "voluntary_context_switches_per_second": 19.984670961311476,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.001557300100103,
+      "elapsed_seconds": 1.0008244761265814,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984451213126325,
+          "voluntary_context_switches_per_second": 9.99176203074317,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.96890242625265,
+          "voluntary_context_switches_per_second": 19.98352406148634,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001614955952391,
-      "combined_cpu_percent_one_logical_cpu": 0.9983876479251896,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.9983876479251896,
-          "voluntary_context_switches_per_second": 9.983876479251895,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.97097766265341,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0008267781231552,
+      "elapsed_seconds": 1.0007796669378877,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.991739048742224,
+          "voluntary_context_switches_per_second": 9.992209404690712,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.983478097484447,
+          "voluntary_context_switches_per_second": 19.984418809381424,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.001352093880996,
-      "combined_cpu_percent_one_logical_cpu": 0.9986497318083635,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.9986497318083635,
-          "voluntary_context_switches_per_second": 9.986497318083636,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.97299463616727,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15851520,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.0015737500507385,
+      "elapsed_seconds": 1.000827491050586,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984287227469183,
+          "voluntary_context_switches_per_second": 9.991731931247038,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.968574454938366,
+          "voluntary_context_switches_per_second": 17.985117476244668,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15855616,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0015739460941404,
-      "combined_cpu_percent_one_logical_cpu": 0.9984285273191477,
-      "processes": {
-        "daemon": {
-          "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984285273191476,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
-          "threads": 3
-        },
-        "client": {
-          "cpu_percent_one_logical_cpu": 0.9984285273191477,
-          "voluntary_context_switches_per_second": 19.968570546382953,
-          "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15855616,
-          "virtual_bytes": 163344384,
-          "threads": 3
-        }
-      }
-    },
-    {
-      "elapsed_seconds": 1.001628714846447,
+      "elapsed_seconds": 1.000804882030934,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.983739335521179,
+          "voluntary_context_switches_per_second": 9.991957652831381,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 17.97073080393812,
+          "voluntary_context_switches_per_second": 19.983915305662762,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15855616,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 1.0015744611155242,
+      "elapsed_seconds": 1.0008103719446808,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.984280139154402,
+          "voluntary_context_switches_per_second": 9.991902842262654,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.968560278308804,
+          "voluntary_context_switches_per_second": 19.983805684525308,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15855616,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
     },
     {
-      "elapsed_seconds": 0.9207775250542909,
+      "elapsed_seconds": 1.0007602469995618,
       "combined_cpu_percent_one_logical_cpu": 0.0,
       "processes": {
         "daemon": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 9.774348042942666,
+          "voluntary_context_switches_per_second": 9.992403305368683,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 12685312,
-          "virtual_bytes": 162488320,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
           "threads": 3
         },
         "client": {
           "cpu_percent_one_logical_cpu": 0.0,
-          "voluntary_context_switches_per_second": 19.548696085885332,
+          "voluntary_context_switches_per_second": 19.984806610737365,
+          "involuntary_context_switches_per_second": 1.9984806610737365,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.00115953409113,
+      "combined_cpu_percent_one_logical_cpu": 1.9976836177419366,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.9988418088709683,
+          "voluntary_context_switches_per_second": 9.988418088709683,
           "involuntary_context_switches_per_second": 0.0,
-          "rss_bytes": 15855616,
-          "virtual_bytes": 163344384,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.9988418088709683,
+          "voluntary_context_switches_per_second": 17.979152559677427,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0010096889454871,
+      "combined_cpu_percent_one_logical_cpu": 0.0,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.989913294979685,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 19.97982658995937,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0019981060177088,
+      "combined_cpu_percent_one_logical_cpu": 0.0,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.980058784485632,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 19.960117568971263,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 1.0009965559002012,
+      "combined_cpu_percent_one_logical_cpu": 0.0,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 9.990044362347431,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 19.980088724694863,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
+          "threads": 3
+        }
+      }
+    },
+    {
+      "elapsed_seconds": 0.9483227950986475,
+      "combined_cpu_percent_one_logical_cpu": 0.0,
+      "processes": {
+        "daemon": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 10.544932644964808,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 12693504,
+          "virtual_bytes": 163000320,
+          "threads": 3
+        },
+        "client": {
+          "cpu_percent_one_logical_cpu": 0.0,
+          "voluntary_context_switches_per_second": 18.980878760936655,
+          "involuntary_context_switches_per_second": 0.0,
+          "rss_bytes": 15966208,
+          "virtual_bytes": 163856384,
           "threads": 3
         }
       }
