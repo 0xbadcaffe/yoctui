@@ -1,5 +1,17 @@
 # Testing
 
+## Environment path setup regression
+
+`cargo test --workspace environment_setup` covers the typed draft, Unicode and
+path bounds, stale replies, directory errors, hidden folders, symlinks, split
+source layout, key routing and narrow-terminal selection. After
+`cargo build --locked -p yoctui`, run
+`python3 scripts/test-environment-setup.py`. The real 120x32 PTY test uses private
+XDG roots and a fake source tree: manual bracketed paste, Source/Build browsing,
+child/parent navigation and saving must work without a daemon, source-script
+execution or build initialization. It is startup/UI evidence, not live BitBake
+compatibility evidence. The completion script invokes this test explicitly.
+
 ## Overview visualization regressions
 
 The focused suite covers all eight responsive Insights empty/data states,

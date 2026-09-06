@@ -3816,18 +3816,38 @@ and keeps the Workspace focus available for navigation. Until the connection che
 build and metadata actions remain visible but disabled with the reason
 `Configure and verify a BitBake environment first`.
 
-The Build environment workspace is a typed setup form with these rows:
+The Build environment workspace offers `Enter`/`e` to configure paths and `b`
+to open the Source directory browser directly. The focus-trapped setup form
+has Source directory, Build directory and Environment script rows. Tab/Shift-Tab
+or Up/Down selects a row; `e`/Enter edits its plain path (no TOML or vi mode
+required), `b` browses Source/Build, `s` saves the profile, and Esc cancels all
+draft changes. Manual entry accepts literal path characters and paste; Enter
+accepts the value, Esc discards it, and Ctrl-U clears it. The advanced TOML
+profile editor remains available with `A` from the workspace (`a` retains
+the global contextual-actions menu).
 
-Activating any editable setup row opens a bounded, focus-trapped popup editor.
-The Build environment profile popup is a TOML document with a vi-like Normal
-and Insert mode: `i` enters Insert, Esc returns to Normal, Enter applies the
-validated document, and `q` closes without applying. Paste and literal path
-characters are accepted as document input.
+The local directory browser shows the current absolute directory and sorted
+child directories only, including hidden folders. Mouse wheel follows the same
+selection route as Up/Down. Up/Down, Home/End,
+PageUp/PageDown move a visible selection; Enter/Right descends and
+Left/Backspace goes to the parent. `s` explicitly chooses the current directory;
+Esc returns to the unchanged form. Initial browsing uses the configured path
+or its nearest existing ancestor, otherwise the client home/current directory.
+Directory reads are bounded and off the input/render thread. Unreadable paths,
+empty directories, clipped listings and unavailable environment scripts have
+visible explanations. Stale asynchronous results cannot overwrite a newer
+dialog. Source selection detects `oe-init-build-env` in conventional monolithic
+or split Poky layouts; build and custom-script paths remain independently
+editable. Browsing neither creates directories nor runs a script, starts a
+daemon, changes the active backend, or initializes a build. Saved paths remain
+unverified until the existing explicit `V` verification succeeds.
 
 ### Editable-popup convention
 
 Every editable workflow uses a bounded, focus-trapped popup rather than an
-inline text field. Structured settings are presented as TOML documents with
+inline text field. The guided environment form above is the plain-path exception
+to vi/TOML editing; its explicit editing mode reserves literal keys and paste.
+Other structured settings are presented as TOML documents with
 their typed field names. Popup editors use explicit Normal, Insert, and Visual
 modes. `i` enters Insert, `v` enters or leaves Visual, Esc returns from Insert
 to Normal, and workflow save/preview actions validate before applying. Existing

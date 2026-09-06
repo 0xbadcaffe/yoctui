@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "ENVIRONMENT-BROWSER-001"
+milestone = "M53"
+title = "Add guided environment paths with a local directory browser"
+status = "DONE"
+priority = 1100
+required = true
+depends_on = ["WORKBENCH-INTEGRATION-001"]
+verify = ["cargo test --workspace environment_setup", "cargo build --locked -p yoctui", "python3 scripts/test-environment-setup.py", "cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Complete in v0.1.62: model-owned Source/Build/Script form, plain manual edits/paste, bounded async local directory browser, hierarchy/page/wheel navigation, explicit folder choice and save/cancel. Detect monolithic/split source scripts without execution. Nine focused tests and real disconnected 120x32 PTY cover path errors, Unicode/bounds, stale replies, symlinks, bottom selection, editing, navigation and save without initialization or daemon creation. Full workspace, strict Clippy, 46 bridge tests, docs and version checks pass. Repaired the existing PTY test subscription race by requiring Attached before the next command; no protocol behavior changed. Reviewed golden diffs contain only version digits; production rasters regenerated. M52 release gate remains independently BLOCKED."
+
+[[task]]
 id = "IMAGE-UDEV-001"
 milestone = "M52"
 title = "List image-owned udev rules with bounded offline inspection"

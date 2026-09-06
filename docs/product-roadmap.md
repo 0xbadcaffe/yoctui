@@ -1102,3 +1102,13 @@ Exit criteria:
   checks pass in version 0.1.47
 
 Progress: complete on `feature/overview-visualizations`.
+
+## M53 — Guided environment path setup
+
+Add a local directory browser alongside plain manual Source/Build/Script
+fields, explicit save/cancel and the existing verify-before-build boundary.
+Bounded filesystem fixtures and responsive rendering tests cover disconnected
+startup without requiring a daemon or executing Poky initialization.
+
+Progress: complete in v0.1.62, including the disconnected real-PTY startup
+regression. The independent M52 release-policy blocker remains open.

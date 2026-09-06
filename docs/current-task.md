@@ -9,7 +9,8 @@
 ## Objective
 
 Resolve the upstream logger lifetime/strict Memcheck-policy conflict before
-approving the integrated v0.1.61 candidate. Do not mark this task DONE or
+approving the integrated candidate. The logger evidence remains explicitly
+bound to v0.1.61; v0.1.62 adds the independently verified M53 path browser. Do not mark this task DONE or
 publish the candidate while the full completion gate remains unsatisfied.
 
 ## External blocker
@@ -27,7 +28,7 @@ about that policy choice; no approval has been received. Preserve the strict
 gate until then. Reproduction, stacks, source/binary identities and prior failed
 CPU measurements are in [the integration report](../artifacts/performance/logger/README.md).
 
-## Verified candidate
+## Prior v0.1.61 logger evidence
 
 All 273 UI tests, workspace tests, strict Clippy, sanitizers and both quiet-host
 rendering matrices passed. The optimized real Poky six-minute compile sample
@@ -64,6 +65,12 @@ python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ./scripts/verify-completion.sh
 ```
+
+M53 ENVIRONMENT-BROWSER-001 is complete in v0.1.62. Guided paths, directory
+browsing, manual paste, safe cancellation and disconnected real-PTY startup
+passed focused/workspace/Clippy/bridge/docs tests. The installed executable was
+not replaced. Release evidence must be refreshed as required by source-bound
+policy before approving a later candidate.
 
 No independent later tasks are queued. The installed daemon and normal Poky
 build are unchanged. The stopped, isolated `/tmp/yoctui-m52-poky.nHLLjU`

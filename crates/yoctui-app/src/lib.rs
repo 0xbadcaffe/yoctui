@@ -1,5 +1,7 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
+mod environment_setup;
 mod keyboard_prefix;
+pub use environment_setup::*;
 mod pty_context;
 mod pty_devtool;
 mod pty_menuconfig;
@@ -5053,6 +5055,9 @@ fn dialog_mouse_action(
         MouseKind::Drag | MouseKind::Up | MouseKind::Down | MouseKind::ContextDown => return None,
     };
     match app.active_dialog()? {
+        yoctui_model::Dialog::EnvironmentSetup(setup) if setup.editor.is_none() => {
+            environment_setup_action(setup, if delta < 0 { Input::Up } else { Input::Down })
+        }
         yoctui_model::Dialog::ThemePicker { .. } => Some(Action::SelectTheme { delta }),
         yoctui_model::Dialog::ImagePicker(_) => Some(Action::SelectImage { delta }),
         yoctui_model::Dialog::RecipeTaskPicker(_) => Some(Action::SelectRecipeTask { delta }),
@@ -6000,7 +6005,13 @@ pub fn build_environment_action(key: Input) -> Option<Action> {
         return Some(Action::SelectBuildEnvironmentField { delta });
     }
     match key {
-        Input::Char('e') => Some(Action::OpenBuildEnvironmentEditor),
+        Input::Enter | Input::Char('e') => Some(Action::EnvironmentSetup(
+            yoctui_model::EnvironmentSetupAction::Open { browse: false },
+        )),
+        Input::Char('b') => Some(Action::EnvironmentSetup(
+            yoctui_model::EnvironmentSetupAction::Open { browse: true },
+        )),
+        Input::Char('A') => Some(Action::OpenBuildEnvironmentEditor),
         Input::Char('c') => Some(Action::OpenBuildEnvironmentCloneEditor),
         Input::Up | Input::Char('k') => Some(Action::SelectBuildEnvironmentField { delta: -1 }),
         Input::Down | Input::Char('j') => Some(Action::SelectBuildEnvironmentField { delta: 1 }),

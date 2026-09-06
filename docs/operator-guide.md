@@ -8,6 +8,16 @@ treated as proof that an operation or artifact exists.
 
 ## Start a workspace safely
 
+Without an initialized environment, start `yoctui` and open **Build environment**.
+Press `e` for the guided Source/Build/Script form. Select Source or Build with
+Tab, then `b` to browse directories, or `e` to type/paste a path. In the browser,
+Enter/Right opens a folder, Left/Backspace goes up, and `s` chooses the current
+folder; page keys and Home/End move through long lists. Choosing Source detects
+the usual environment script. Use an existing build directory; browsing never
+creates one. `s` saves the form without starting anything, Esc discards the
+draft, and `V` explicitly initializes and verifies the saved profile. Custom
+script paths remain editable; `A` retains the advanced TOML editor.
+
 Source the setup script for exactly one Yocto layout, verify `BUILDDIR`, and
 launch without a positional target:
 

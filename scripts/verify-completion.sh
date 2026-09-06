@@ -68,6 +68,8 @@ cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 
 ./scripts/test-terminal.sh
+cargo build --locked -p yoctui
+python3 scripts/test-environment-setup.py
 ./scripts/test-fuzz.sh
 ./scripts/test-stress.sh
 ./scripts/test-sanitizers.sh

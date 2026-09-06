@@ -1,5 +1,6 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
 mod dialogs;
+mod environment_setup;
 mod layout;
 mod overview;
 pub mod primitives;
@@ -1228,7 +1229,7 @@ fn footer_shortcuts(app: &App) -> String {
             "↑/↓ select | ←/→ change | r retry save | Ctrl+P commands | Tab focus | q quit"
         }
         Screen::BuildEnvironment => {
-            "↑/↓ select | e edit profile | i initialize | V verify | Tab focus | q quit"
+            "e configure | b browse paths | A advanced | V verify | Tab focus | q quit"
         }
     };
     with_compatibility_footer(
@@ -2889,6 +2890,8 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             .wrap(Wrap { trim: false }),
             popup,
         );
+    } else if let Some(Dialog::EnvironmentSetup(setup)) = app.active_dialog() {
+        environment_setup::environment_setup_popup(frame, app, setup, area);
     } else if let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog() {
         build_environment_clone_editor(frame, app, editor, area);
     } else if let Some(Dialog::BuildEnvironmentCloneReview(plan)) = app.active_dialog() {
@@ -15974,7 +15977,7 @@ fn build_environment_workspace(frame: &mut Frame, app: &App, area: Rect) {
         }
     };
     let text = format!(
-        "Build environment\n\n{status}{draft}{images}\n\n{profile}\n\nChoose e to edit, c to clone Poky, or V to verify BitBake. N/n profile item | p preview/open."
+        "Build environment\n\nEnter/e Configure paths  |  b Browse directories\nA Advanced TOML  |  c Clone Poky  |  V Initialize and verify\n\n{status}{draft}{images}\n\n{profile}\n\nN/n profile item | p preview/open."
     );
     frame.render_widget(
         Paragraph::new(text)
@@ -27466,7 +27469,8 @@ mod tests {
                     "Build environment",
                     "connected",
                     "available images:",
-                    "V to verify BitBake",
+                    "b Browse directories",
+                    "V Initialize and verify",
                 ],
                 selected: None,
             },

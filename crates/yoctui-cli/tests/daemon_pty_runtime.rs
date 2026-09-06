@@ -196,9 +196,14 @@ fn exercise_terminal_kind(kind: PtyKind) {
         })
         .unwrap();
     let mut running = false;
+    // A queued PtyChanged event can precede the subscription's Attached reply.
+    // Consume that reply before issuing the next command; otherwise its snapshot
+    // is mistaken for a command result under different process scheduling.
+    let mut subscription_attached = false;
     for _ in 0..20 {
         match connection.receive::<ServerMessage>().unwrap() {
             ServerMessage::Attached { snapshot, .. } => {
+                subscription_attached = true;
                 running = snapshot.pty_sessions.iter().any(|session| {
                     assert_eq!(session.kind, kind);
                     session.lifecycle == yoctui_protocol::daemon::LifecycleState::Running
@@ -211,11 +216,12 @@ fn exercise_terminal_kind(kind: PtyKind) {
             }
             _ => {}
         }
-        if running {
+        if running && subscription_attached {
             break;
         }
     }
     assert!(running, "PTY did not reach running state");
+    assert!(subscription_attached, "PTY subscription did not attach");
     connection
         .send(&ClientMessage::Command(CommandRequest {
             request_id: RequestId(2),

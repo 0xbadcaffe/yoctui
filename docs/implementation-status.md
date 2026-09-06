@@ -1,5 +1,18 @@
 # Yoctui Implementation Status
 
+M53 `ENVIRONMENT-BROWSER-001` is complete in v0.1.62: guided Source/Build/Script
+fields with plain manual editing/paste and a local directory browser. Folder
+selection, parent/child/page/wheel navigation, source-script detection and
+save/cancel do not initialize a build or start a daemon. Nine focused tests,
+the real disconnected startup PTY, all workspace tests, strict Clippy and
+46 bridge tests pass. Existing visual goldens changed only in version digits.
+The broad run exposed a PTY test subscription race (a Running event arrived
+before Attached); the fixture now waits for both before sending its next
+command. A separate transient signature-fixture ETXTBSY passed on rerun without
+changing that adapter or its assertions. Unrelated M52 release validation
+remains blocked on the documented upstream logger lifetime/strict Memcheck
+policy conflict; the candidate is not installed or published.
+
 The machine-readable source of truth is `docs/task-registry.toml`.
 
 Status values:

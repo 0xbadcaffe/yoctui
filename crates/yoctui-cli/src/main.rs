@@ -149,6 +149,7 @@ mod daemon_security;
 mod daemon_test;
 #[cfg(unix)]
 mod daemon_wic;
+mod environment_setup;
 mod global_search;
 mod internal_tracing;
 mod maintenance_cli;
@@ -11470,8 +11471,10 @@ async fn tui(
             }
         }
     } else if !build_dir_configured {
-        app.notification =
-            Some("Configure and verify a BitBake environment in Settings before building.".into());
+        app.notification = Some(
+            "Build environment: press e to configure paths or b to browse, then V to verify."
+                .into(),
+        );
     }
     if !targets.is_empty() {
         app.build.target = targets.first().cloned()
@@ -11612,12 +11615,17 @@ async fn tui(
     let mut next_elapsed_refresh = Instant::now();
     let frame_interval = interactive_frame_interval(refresh);
     let mut render_scheduler = RenderScheduler::default();
+    let mut environment_browser_io = environment_setup::EnvironmentBrowserIo::default();
     let render_measurement_started = Instant::now();
     let mut prefix_state = PrefixState::default();
     #[cfg(unix)]
     let mut termination = termination_receiver()?;
     loop {
         let (internal_records, ingress_dropped) = internal_tracing_capture.drain(256);
+        render_scheduler.invalidate_if(
+            environment_browser_io.poll(&mut app).await,
+            RenderCause::State,
+        );
         if ingress_dropped > 0 {
             let _ = update(&mut app, Action::InternalLogIngressDropped(ingress_dropped));
             render_scheduler.invalidate(RenderCause::State);
@@ -11799,6 +11807,15 @@ async fn tui(
             let terminal_event = event::read()?;
             render_scheduler.invalidate(RenderCause::Input);
             if let Event::Paste(text) = terminal_event {
+                if matches!(app.active_dialog(), Some(Dialog::EnvironmentSetup(_))) {
+                    let _ = update(
+                        &mut app,
+                        Action::EnvironmentSetup(yoctui_model::EnvironmentSetupAction::Insert(
+                            text,
+                        )),
+                    );
+                    continue;
+                }
                 if app.screen == Screen::TerminalSessions
                     && app.active_dialog().is_none()
                     && !app.menu.is_open()
@@ -12029,6 +12046,14 @@ async fn tui(
                 let Some(mut input) = input_from_key(k) else {
                     continue;
                 };
+                if let Some(Dialog::EnvironmentSetup(setup)) = app.active_dialog() {
+                    if let Some(action) = yoctui_app::environment_setup_action(setup, input)
+                        && let Some(effect) = compatibility_workspace_action(&mut app, action)
+                    {
+                        environment_browser_io.submit(effect);
+                    }
+                    continue;
+                }
                 if app.active_dialog().is_none() && !app.menu.is_open() && !app.onboarding.open {
                     match prefix_state.feed(input, Instant::now()) {
                         PrefixEvent::Awaiting => {
@@ -14127,6 +14152,12 @@ async fn tui(
                 {
                     let action = build_environment_action(input)
                         .expect("build environment action was checked");
+                    if matches!(action, Action::EnvironmentSetup(_)) {
+                        if let Some(effect) = compatibility_workspace_action(&mut app, action) {
+                            environment_browser_io.submit(effect);
+                        }
+                        continue;
+                    }
                     if let Some(Effect::VerifyBuildEnvironment {
                         profile,
                         generation,

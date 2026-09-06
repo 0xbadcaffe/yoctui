@@ -608,6 +608,7 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
 
     match effect {
         Effect::PersistSettings
+        | Effect::ReadEnvironmentDirectory { .. }
         | Effect::PersistOnboarding
         | Effect::GenerateProjectProfile { .. }
         | Effect::VerifyBuildEnvironment { .. }
@@ -871,6 +872,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
     use CapabilityId as Id;
     match dialog {
         Dialog::BuildEnvironmentCloneEditor(_)
+        | Dialog::EnvironmentSetup(_)
         | Dialog::BuildEnvironmentCloneReview(_)
         | Dialog::BuildEnvironmentEditor(_)
         | Dialog::ThemePicker { .. }

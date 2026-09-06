@@ -1505,6 +1505,15 @@ NDJSON protocol stream.
 
 ### Build-environment onboarding
 
+The guided path form and directory-browser selection are pure, transient model
+state. A typed directory-read effect is serviced by a bounded app adapter on a
+blocking worker; the CLI polls completion through its existing input/event
+schedule, never scans during rendering. Request identities reject stale replies.
+Only the current directory is listed, with bounded entries and path bytes;
+symlinks resolve on navigation and source-script detection is evidence, not
+execution authority. Manual fields and browser choices share one draft, and
+save still enters the existing unverified profile/explicit verification path.
+
 Interactive startup may begin without a build directory. `yoctui-model` owns a
 typed environment profile and lifecycle for source inspection, clone preview,
 initialization, interactive-shell handoff, and connection verification. It

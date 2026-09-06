@@ -9,6 +9,7 @@ mod compatibility_ui;
 mod daemon_state;
 mod dashboard;
 mod embedded_shell;
+mod environment_setup;
 mod focus;
 mod global_search;
 mod image;
@@ -58,6 +59,7 @@ pub use compatibility_ui::*;
 pub use daemon_state::*;
 pub use dashboard::*;
 pub use embedded_shell::*;
+pub use environment_setup::*;
 pub use focus::*;
 pub use global_search::*;
 pub use image::*;
@@ -2063,6 +2065,7 @@ pub enum PopupEditorCommand {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Dialog {
+    EnvironmentSetup(Box<EnvironmentSetup>),
     BuildEnvironmentCloneEditor(PopupEditor),
     BuildEnvironmentCloneReview(BuildEnvironmentClonePlan),
     BuildEnvironmentEditor(PopupEditor),
@@ -2203,6 +2206,7 @@ impl Dialog {
                     | MaintenanceDialog::ConfirmCancellation(_)
             ),
             Self::BuildEnvironmentCloneEditor(_)
+            | Self::EnvironmentSetup(_)
             | Self::BuildEnvironmentEditor(_)
             | Self::ThemePicker { .. }
             | Self::BuildOptions
@@ -4139,6 +4143,7 @@ pub struct App {
     pub build_environment: BuildEnvironmentState,
     pub build_environment_generation: u64,
     pub build_environment_draft: Option<BuildEnvironmentDraft>,
+    pub environment_setup_generation: u64,
     pub available_images: Vec<String>,
     pub color_enabled: bool,
     pub color_forced_off: bool,
@@ -4331,6 +4336,7 @@ impl App {
             backend: "unknown".into(),
             project_profile: ProjectProfileState::NotLoaded,
             project_profile_selection: 0,
+            environment_setup_generation: 0,
             build_environment: BuildEnvironmentState::Connected(BuildEnvironmentProfile {
                 source_dir: PathBuf::from("/"),
                 build_dir: PathBuf::from("/"),
@@ -5985,6 +5991,7 @@ pub enum Action {
     ConfirmBuildEnvironmentClone,
     CancelBuildEnvironmentClone,
     OpenBuildEnvironmentEditor,
+    EnvironmentSetup(EnvironmentSetupAction),
     ToggleBuildEnvironmentEditor,
     AppendBuildEnvironmentEditor(char),
     BackspaceBuildEnvironmentEditor,
@@ -11365,6 +11372,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
+        Action::EnvironmentSetup(action) => return environment_setup_update(app, action),
         Action::OpenBuildEnvironmentEditor => {
             let profile = match &app.build_environment {
                 BuildEnvironmentState::Configured(profile)
@@ -19104,6 +19112,11 @@ fn next_filter<T: Clone + PartialEq>(values: &[T], current: Option<T>) -> Option
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
+    ReadEnvironmentDirectory {
+        request: u64,
+        path: PathBuf,
+        initial: bool,
+    },
     PersistSettings,
     PersistOnboarding,
     GenerateProjectProfile {
