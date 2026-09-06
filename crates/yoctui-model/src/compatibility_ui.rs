@@ -903,6 +903,19 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::local("kernel.compile", "Compile selected DTS", "c"),
             Action::local("kernel.decompile", "Decompile selected DTB", "d"),
         ],
+        Destination::Firmware => vec![
+            Action::local("firmware.refresh", "Refresh firmware files", "r"),
+            Action::capability(
+                "firmware.menuconfig",
+                "Open firmware menuconfig",
+                "m",
+                Id::MenuConfig,
+            ),
+            Action::local("firmware.view", "View selected text file", "Enter"),
+            Action::local("firmware.explore", "Explore selected root", "o"),
+            Action::local("firmware.compile", "Compile selected DTS", "c"),
+            Action::local("firmware.decompile", "Decompile selected DTB", "d"),
+        ],
         Destination::Sdk => vec![
             Action::all(
                 "sdk.standard",

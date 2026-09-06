@@ -1029,3 +1029,16 @@ Exit criteria:
 - `.config`, DTS/DTSI, and DTB/DTBO artifacts are browsable from authoritative roots
 - exact confirmed `dtc` compile/decompile operations refuse overwrites
 - bounded scanning, focused tests, workspace checks, and documentation pass in version 0.1.47
+
+## M48 — U-Boot and BIOS/UEFI workbench
+
+Goal: expose the active image's boot firmware with the same direct
+configuration and device-tree workflow as the kernel.
+
+Exit criteria:
+
+- U-Boot / BIOS is a separate Content destination
+- image-scoped bootloader and EFI variables plus recipe metadata select the provider
+- the detected target's advertised menuconfig task runs in the persistent PTY
+- `.config`, DTS/DTSI, and DTB/DTBO artifacts use the shared bounded explorer
+- focused tests, workspace checks, and documentation pass in version 0.1.48

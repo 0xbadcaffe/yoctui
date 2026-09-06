@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.47  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.48  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -12,27 +12,27 @@
 │    Packages              ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers                            ││Writer: 01010101 · epoch 4                  │
 │    Images                ││layer                 path                                                          ││Viewers: 2                                  │
 │    Kernel                ││meta                  /home/user/yocto/meta                                         ││Dimensions: 88x18                           │
-│    SDK                   ││meta-poky             /home/user/yocto/meta-poky                                    ││Working directory: /home/user/yocto/build   │
-│▾ BUILD                   ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp                               ││Restartable: yes                            │
-│    Tasks                 ││bspguy@builder:~/yocto/build$                                                       ││Exit code: unavailable                      │
-│  ▱ Logs              LIVE││                                                                                    ││                                            │
-│  ▱ Errors                ││                                                                                    ││Replica / history                           │
-│    Configuration         ││                                                                                    ││Viewport offset: 0                          │
-│    Dependencies          ││                                                                                    ││Retained scrollback: 0 lines                │
-│▾ VALIDATE                ││                                                                                    ││Dropped history: none observed              │
-│    Testing               ││                                                                                    ││Cursor: 35,6 (visible)                      │
-│    Security              ││                                                                                    ││                                            │
-│    QA                    ││                                                                                    ││▾ CONTEXTUAL ACTIONS                        │
-│▾ TOOLS                   ││                                                                                    ││✓ Open build shell        [n] — Local       │
-│    Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘│? Open devshell           [s] — Unknown     │
-│    Terminal Sessions     │┌ devshell:busybox #2 Running ───────────────────────────────────────────────────────┐│  Reason: No current environment capability │
-│    Devtool               ││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build                 ││snapshot: devshell.                         │
-│    QEMU / Wic            ││last search: busybox · 3 matches                                                    ││? Open menuconfig         [m] — Unknown     │
-│    Maintenance           ││history 312 · dropped ≥14                                                           ││  Reason: No current environment capability │
-│  ▱ Build environment     ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                    ││snapshot: menuconfig.                       │
-│  ▱ Compatibility         ││CC      coreutils/ls.o                                                              ││✓ Take writer control     [o] — Local       │
-│  ▱ Settings              ││CC      coreutils/cp.o                                                              ││✓ Release writer control  [c] — Local       │
-│                          ││LD      busybox_unstripped                                                          ││                                            │
+│    U-Boot / BIOS         ││meta-poky             /home/user/yocto/meta-poky                                    ││Working directory: /home/user/yocto/build   │
+│    SDK                   ││meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp                               ││Restartable: yes                            │
+│▾ BUILD                   ││bspguy@builder:~/yocto/build$                                                       ││Exit code: unavailable                      │
+│    Tasks                 ││                                                                                    ││                                            │
+│  ▱ Logs              LIVE││                                                                                    ││Replica / history                           │
+│  ▱ Errors                ││                                                                                    ││Viewport offset: 0                          │
+│    Configuration         ││                                                                                    ││Retained scrollback: 0 lines                │
+│    Dependencies          ││                                                                                    ││Dropped history: none observed              │
+│▾ VALIDATE                ││                                                                                    ││Cursor: 35,6 (visible)                      │
+│    Testing               ││                                                                                    ││                                            │
+│    Security              ││                                                                                    ││▾ CONTEXTUAL ACTIONS                        │
+│    QA                    ││                                                                                    ││✓ Open build shell        [n] — Local       │
+│▾ TOOLS                   │└────────────────────────────────────────────────────────────────────────────────────┘│? Open devshell           [s] — Unknown     │
+│    Raw Mode              │┌ devshell:busybox #2 Running ───────────────────────────────────────────────────────┐│  Reason: No current environment capability │
+│    Terminal Sessions     ││Devshell · read-only · 2 viewer(s) · 88x18 · /home/user/yocto/build                 ││snapshot: devshell.                         │
+│    Devtool               ││last search: busybox · 3 matches                                                    ││? Open menuconfig         [m] — Unknown     │
+│    QEMU / Wic            ││history 312 · dropped ≥14                                                           ││  Reason: No current environment capability │
+│    Maintenance           ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                    ││snapshot: menuconfig.                       │
+│  ▱ Build environment     ││CC      coreutils/ls.o                                                              ││✓ Take writer control     [o] — Local       │
+│  ▱ Compatibility         ││CC      coreutils/cp.o                                                              ││✓ Release writer control  [c] — Local       │
+│  ▱ Settings              ││LD      busybox_unstripped                                                          ││                                            │
 │                          ││busybox-devshell$                                                                   ││                                            │
 │                          ││                                                                                    ││                                            │
 │                          ││                                                                                    ││                                            │

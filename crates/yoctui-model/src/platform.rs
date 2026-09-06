@@ -1,5 +1,24 @@
 use std::path::PathBuf;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PlatformComponent {
+    Kernel,
+    BootFirmware,
+    UBoot,
+    BiosUefi,
+}
+
+impl PlatformComponent {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Kernel => "Kernel",
+            Self::BootFirmware => "U-Boot / BIOS",
+            Self::UBoot => "U-Boot",
+            Self::BiosUefi => "BIOS / UEFI",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum PlatformView {
     #[default]
@@ -51,6 +70,7 @@ pub struct PlatformFile {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlatformInventory {
+    pub component: PlatformComponent,
     pub target: String,
     pub provider: Option<PathBuf>,
     pub tasks: Vec<String>,
@@ -134,6 +154,7 @@ mod tests {
     fn view_filters_and_selection_are_independent() {
         let mut state = PlatformWorkbench {
             inventory: PlatformInventoryState::Available(PlatformInventory {
+                component: PlatformComponent::Kernel,
                 target: "virtual/kernel".into(),
                 provider: None,
                 tasks: vec![],

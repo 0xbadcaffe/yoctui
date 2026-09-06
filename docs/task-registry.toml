@@ -7336,3 +7336,14 @@ required = true
 depends_on = []
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
 notes = "Version 0.1.47 adds a virtual/kernel-backed destination, authoritative config/device-tree inventory, persistent-PTY menuconfig, in-app source exploration, and collision-safe confirmed dtc compile/decompile commands."
+
+[[task]]
+id = "FIRMWARE-WORKBENCH-001"
+milestone = "M48"
+title = "Add U-Boot and BIOS/UEFI configuration and device-tree workbench"
+status = "DONE"
+priority = 820
+required = true
+depends_on = ["KERNEL-WORKBENCH-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Version 0.1.48 adds image-aware U-Boot and BIOS/UEFI provider resolution, provider-task-gated persistent-PTY menuconfig, and the shared bounded configuration/device-tree viewer, explorer, compiler, and decompiler."

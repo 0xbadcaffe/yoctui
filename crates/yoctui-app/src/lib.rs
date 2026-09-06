@@ -4530,6 +4530,12 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "kernel.explore" => Input::Char('o'),
         "kernel.compile" => Input::Char('c'),
         "kernel.decompile" => Input::Char('d'),
+        "firmware.refresh" => Input::Char('r'),
+        "firmware.menuconfig" => Input::Char('m'),
+        "firmware.view" => Input::Enter,
+        "firmware.explore" => Input::Char('o'),
+        "firmware.compile" => Input::Char('c'),
+        "firmware.decompile" => Input::Char('d'),
         "sdk.standard" => Input::Char('s'),
         "sdk.extensible" => Input::Char('E'),
         "sdk.testsdk" => Input::Char('t'),
@@ -5101,6 +5107,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
             images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)
         }
         Screen::Kernel => platform_workspace_action(key),
+        Screen::Firmware => firmware_workspace_action(key),
         Screen::Sdk => sdk_workspace_action(app.sdk_artifact_searching, key),
         Screen::Testing => match app.test_view {
             TestWorkspaceView::Launches => testing_workspace_action(key),
@@ -5161,6 +5168,23 @@ pub fn platform_workspace_action(key: Input) -> Option<Action> {
         Input::Char('c') => Some(Action::CompileSelectedKernelDts),
         Input::Char('d') => Some(Action::DecompileSelectedKernelDtb),
         Input::Char('r') => Some(Action::InspectKernel),
+        _ => None,
+    }
+}
+
+pub fn firmware_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectFirmwareFile { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectFirmwareFile { delta: 1 }),
+        Input::PageUp => Some(Action::SelectFirmwareFile { delta: -10 }),
+        Input::PageDown => Some(Action::SelectFirmwareFile { delta: 10 }),
+        Input::Tab | Input::BackTab => Some(Action::CycleFirmwareView),
+        Input::Char('m') => Some(Action::LaunchFirmwareMenuconfig),
+        Input::Enter | Input::Char('e') => Some(Action::OpenSelectedFirmwareFile),
+        Input::Char('o') => Some(Action::ExploreSelectedFirmwareRoot),
+        Input::Char('c') => Some(Action::CompileSelectedFirmwareDts),
+        Input::Char('d') => Some(Action::DecompileSelectedFirmwareDtb),
+        Input::Char('r') => Some(Action::InspectFirmware),
         _ => None,
     }
 }
@@ -15397,6 +15421,26 @@ mod tests {
         assert_eq!(
             platform_workspace_action(Input::Char('d')),
             Some(Action::DecompileSelectedKernelDtb)
+        );
+    }
+
+    #[test]
+    fn firmware_workbench_keys_route_to_typed_actions() {
+        assert_eq!(
+            firmware_workspace_action(Input::Tab),
+            Some(Action::CycleFirmwareView)
+        );
+        assert_eq!(
+            firmware_workspace_action(Input::Char('m')),
+            Some(Action::LaunchFirmwareMenuconfig)
+        );
+        assert_eq!(
+            firmware_workspace_action(Input::Char('c')),
+            Some(Action::CompileSelectedFirmwareDts)
+        );
+        assert_eq!(
+            firmware_workspace_action(Input::Char('d')),
+            Some(Action::DecompileSelectedFirmwareDtb)
         );
     }
 }

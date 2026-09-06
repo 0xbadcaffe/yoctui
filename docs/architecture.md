@@ -2109,6 +2109,15 @@ exact recipe file identity and advertised task, then emits only
 environment. There is no free-form task/argument field and the client remains
 attached to Yoctui while the daemon-owned PTY runs the terminal application.
 
+The dedicated boot-firmware workbench resolves an image-scoped provider before
+launch. It combines preferred/runtime bootloader, U-Boot machine, and EFI
+provider variables with the workspace's authoritative recipe inventory, then
+accepts the first candidate for which recipe metadata is returned. U-Boot and
+BIOS/UEFI classification comes from that target and provider path; unresolved
+identity stays explicitly generic. The selected target, its advertised tasks,
+and its recipe-scoped `FILE`, `S`, `B`, and `WORKDIR` values drive the shared
+bounded platform scanner and exact terminal argv.
+
 SDK shell initialization is split across the adapter and typed context
 authority. `SdkShellAdapter` inspects one canonical, direct-child
 `environment-setup-*` file under an explicitly selected SDK root, records its

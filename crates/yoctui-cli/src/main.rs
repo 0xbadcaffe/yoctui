@@ -49,17 +49,18 @@ use yoctui_app::{
     dependency_workspace_action, devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
-    devtool_update_confirmation_action, errors_action, focus_action_for_app, global_search_action,
-    image_console_dialog_action, images_workspace_action_for_view, keymap_action_for_app,
-    keymap_preferences_action, log_workspace_action, maintenance_dialog_action,
-    maintenance_workspace_action, menu_action, model_action_from_backend_event,
-    mouse_action_for_app, notification_popup_action, onboarding_action, package_workspace_action,
-    platform_workspace_action, popup_editor_action, qa_dialog_action, qa_layer_capability_action,
-    qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
-    qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
-    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
-    qemu_launch_dialog_action, quit_confirmation_action, raw_mode_input, recipe_editor_action,
-    recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    devtool_update_confirmation_action, errors_action, firmware_workspace_action,
+    focus_action_for_app, global_search_action, image_console_dialog_action,
+    images_workspace_action_for_view, keymap_action_for_app, keymap_preferences_action,
+    log_workspace_action, maintenance_dialog_action, maintenance_workspace_action, menu_action,
+    model_action_from_backend_event, mouse_action_for_app, notification_popup_action,
+    onboarding_action, package_workspace_action, platform_workspace_action, popup_editor_action,
+    qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action, qa_report_error_action,
+    qa_report_response_action, qa_task_capability_action, qa_workspace_action,
+    qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
+    qemu_launch_confirmation_action, qemu_launch_dialog_action, quit_confirmation_action,
+    raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
+    sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
@@ -101,19 +102,19 @@ use yoctui_model::{
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
     ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
     LayerRelationship, LayerRelationships, OnboardingProgress, PackageDetailRequest,
-    PackageInventoryRequest, PlatformInventory, PreviewKind, QaAction, QaCheckFamily, QaCheckId,
-    QaEffect, QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
-    QaReportRequest, QaScope, QaSessionId, QaSessionStatus, QaSourceLocation, QemuCapability,
-    QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity,
-    RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation,
-    SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityAction, SecurityEffect,
-    SecurityOperation, SecurityReportRequest, SecurityScope, SecuritySessionId,
-    SecuritySessionStatus, Severity, SignatureComparisonRequest, SignatureTarget,
-    TEXTAREA_MAX_BYTES, TestComparison, TestOperation, TestSessionId, TestWorkspaceView,
-    TextAreaRevision, Theme, VariableDetail, VariableIdentity, WicCapability, WicCreateDraft,
-    WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation, WicSessionId,
-    WorkbenchPreferences, bitbake_coexistence_diagnostic, update, validate_config_edit_request,
-    validate_raw_favorites,
+    PackageInventoryRequest, PlatformComponent, PlatformInventory, PreviewKind, QaAction,
+    QaCheckFamily, QaCheckId, QaEffect, QaFindingScope, QaLayerIdentity, QaLayerSessionId,
+    QaReportFormat, QaReportIdentity, QaReportRequest, QaScope, QaSessionId, QaSessionStatus,
+    QaSourceLocation, QemuCapability, QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest,
+    QemuSessionId, RecipeIdentity, RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest,
+    SdkNativePreview, SdkOperation, SdkPublishPreview, SdkSessionId, SdkToolCapability,
+    SecurityAction, SecurityEffect, SecurityOperation, SecurityReportRequest, SecurityScope,
+    SecuritySessionId, SecuritySessionStatus, Severity, SignatureComparisonRequest,
+    SignatureTarget, TEXTAREA_MAX_BYTES, TestComparison, TestOperation, TestSessionId,
+    TestWorkspaceView, TextAreaRevision, Theme, VariableDetail, VariableIdentity, WicCapability,
+    WicCreateDraft, WicCreatePreview, WicCreateRequest, WicDeviceInventoryRequest, WicOperation,
+    WicSessionId, WorkbenchPreferences, bitbake_coexistence_diagnostic, update,
+    validate_config_edit_request, validate_raw_favorites,
 };
 use yoctui_ui::render;
 
@@ -10500,6 +10501,7 @@ async fn inspect_kernel_workbench(app: &mut App, backend: &mut dyn BitBakeBacken
             let _ = compatibility_workspace_action(
                 app,
                 Action::KernelLoaded(PlatformInventory {
+                    component: PlatformComponent::Kernel,
                     target,
                     provider,
                     tasks: metadata.tasks.unwrap_or_default(),
@@ -10519,6 +10521,242 @@ async fn inspect_kernel_workbench(app: &mut App, backend: &mut dyn BitBakeBacken
                 Action::KernelFailed(format!("artifact scanner did not complete: {error}")),
             );
         }
+    }
+}
+
+async fn firmware_variable_hint(
+    backend: &mut dyn BitBakeBackend,
+    name: &str,
+    image: Option<&str>,
+) -> Option<String> {
+    if let Some(image) = image
+        && let Ok(value) = backend
+            .get_variable(name.into(), Some(image.to_owned()))
+            .await
+        && let Some(value) = value.value
+        && !value.trim().is_empty()
+    {
+        return Some(value.trim().to_owned());
+    }
+    backend
+        .get_variable(name.into(), None)
+        .await
+        .ok()
+        .and_then(|value| value.value)
+        .map(|value| value.trim().to_owned())
+        .filter(|value| !value.is_empty())
+}
+
+fn push_firmware_candidate(candidates: &mut Vec<String>, candidate: &str) {
+    let candidate = candidate.trim();
+    if candidate.is_empty()
+        || !candidate
+            .chars()
+            .all(|value| value.is_ascii_alphanumeric() || "+._-/".contains(value))
+        || candidates.iter().any(|existing| existing == candidate)
+    {
+        return;
+    }
+    candidates.push(candidate.to_owned());
+}
+
+fn classify_firmware_component(
+    target: &str,
+    provider: Option<&Path>,
+    uboot_machine: Option<&str>,
+    efi_provider: Option<&str>,
+) -> PlatformComponent {
+    let identity = format!(
+        "{} {}",
+        target.to_ascii_lowercase(),
+        provider
+            .map(|path| path.display().to_string().to_ascii_lowercase())
+            .unwrap_or_default()
+    );
+    if identity.contains("u-boot") || uboot_machine.is_some() {
+        PlatformComponent::UBoot
+    } else if identity.contains("ovmf")
+        || identity.contains("edk2")
+        || identity.contains("uefi")
+        || identity.contains("efi")
+        || identity.contains("seabios")
+        || identity.contains("coreboot")
+        || efi_provider.is_some()
+    {
+        PlatformComponent::BiosUefi
+    } else {
+        PlatformComponent::BootFirmware
+    }
+}
+
+async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn BitBakeBackend) {
+    let image = app.build.target.as_deref();
+    let preferred =
+        firmware_variable_hint(backend, "PREFERRED_PROVIDER_virtual/bootloader", image).await;
+    let runtime = firmware_variable_hint(backend, "VIRTUAL-RUNTIME_bootloader", image).await;
+    let uboot_machine = firmware_variable_hint(backend, "UBOOT_MACHINE", image).await;
+    let efi_provider = firmware_variable_hint(backend, "EFI_PROVIDER", image).await;
+
+    let mut candidates = Vec::new();
+    if let Some(candidate) = preferred.as_deref() {
+        push_firmware_candidate(&mut candidates, candidate);
+    }
+    if uboot_machine.is_some() {
+        push_firmware_candidate(&mut candidates, "virtual/bootloader");
+    }
+    if let Some(candidate) = efi_provider.as_deref() {
+        push_firmware_candidate(&mut candidates, candidate);
+    }
+    if let Some(candidate) = runtime.as_deref() {
+        push_firmware_candidate(&mut candidates, candidate);
+    }
+    push_firmware_candidate(&mut candidates, "virtual/bootloader");
+    for recipe in &app.workspace.recipes {
+        let name = recipe.name.to_ascii_lowercase();
+        if [
+            "u-boot",
+            "uboot",
+            "ovmf",
+            "edk2",
+            "uefi",
+            "seabios",
+            "coreboot",
+            "grub-efi",
+            "systemd-boot",
+        ]
+        .iter()
+        .any(|needle| name.contains(needle))
+        {
+            push_firmware_candidate(&mut candidates, &recipe.name);
+        }
+    }
+
+    let mut selected = None;
+    let mut failures = Vec::new();
+    for candidate in candidates {
+        match backend.get_recipe_metadata(candidate.clone()).await {
+            Ok(metadata) => {
+                selected = Some((candidate, metadata));
+                break;
+            }
+            Err(error) => failures.push(format!("{candidate}: {error}")),
+        }
+    }
+    let Some((target, metadata)) = selected else {
+        let detail = failures.first().map_or(
+            "no boot firmware candidate was reported".to_owned(),
+            Clone::clone,
+        );
+        let _ = compatibility_workspace_action(
+            app,
+            Action::FirmwareFailed(format!(
+                "could not resolve U-Boot or BIOS/UEFI for the active image ({detail})"
+            )),
+        );
+        return;
+    };
+
+    let mut roots = Vec::new();
+    let mut limitations = Vec::new();
+    let mut provider = None;
+    for variable in ["FILE", "S", "B", "WORKDIR"] {
+        match backend
+            .get_variable(variable.into(), Some(target.clone()))
+            .await
+        {
+            Ok(value) => {
+                let Some(value) = value.value.filter(|value| !value.trim().is_empty()) else {
+                    limitations.push(format!("{variable} was not reported for {target}."));
+                    continue;
+                };
+                let path = PathBuf::from(value);
+                if variable == "FILE" {
+                    if path.is_absolute() {
+                        provider = Some(path);
+                    } else {
+                        limitations.push("Firmware provider FILE was not absolute.".into());
+                    }
+                } else if path.is_absolute() {
+                    roots.push(path);
+                } else {
+                    limitations.push(format!("Firmware {variable} was not absolute."));
+                }
+            }
+            Err(error) => limitations.push(format!("Could not query firmware {variable}: {error}")),
+        }
+    }
+    if let Some(deploy) = app.workspace.variables.get("DEPLOY_DIR_IMAGE") {
+        roots.push(PathBuf::from(deploy));
+    }
+    let component = classify_firmware_component(
+        &target,
+        provider.as_deref(),
+        uboot_machine.as_deref(),
+        efi_provider.as_deref(),
+    );
+    let scan = tokio::task::spawn_blocking(move || PlatformArtifactAdapter.scan(roots)).await;
+    match scan {
+        Ok(Ok(scan)) => {
+            limitations.extend(scan.limitations);
+            let _ = compatibility_workspace_action(
+                app,
+                Action::FirmwareLoaded(PlatformInventory {
+                    component,
+                    target,
+                    provider,
+                    tasks: metadata.tasks.unwrap_or_default(),
+                    roots: scan.roots,
+                    files: scan.files,
+                    dtc: scan.dtc,
+                    limitations,
+                }),
+            );
+        }
+        Ok(Err(error)) => {
+            let _ = compatibility_workspace_action(app, Action::FirmwareFailed(error.to_string()));
+        }
+        Err(error) => {
+            let _ = compatibility_workspace_action(
+                app,
+                Action::FirmwareFailed(format!("artifact scanner did not complete: {error}")),
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod firmware_workbench_tests {
+    use super::*;
+
+    #[test]
+    fn firmware_detection_classifies_provider_identity_without_guessing_unknowns() {
+        assert_eq!(
+            classify_firmware_component(
+                "virtual/bootloader",
+                Some(Path::new("/layers/u-boot/u-boot_2026.bb")),
+                None,
+                None,
+            ),
+            PlatformComponent::UBoot
+        );
+        assert_eq!(
+            classify_firmware_component("ovmf", None, None, Some("ovmf")),
+            PlatformComponent::BiosUefi
+        );
+        assert_eq!(
+            classify_firmware_component("virtual/bootloader", None, None, None),
+            PlatformComponent::BootFirmware
+        );
+    }
+
+    #[test]
+    fn firmware_candidates_are_bounded_to_single_native_targets() {
+        let mut candidates = Vec::new();
+        push_firmware_candidate(&mut candidates, "u-boot-fslc");
+        push_firmware_candidate(&mut candidates, "u-boot-fslc");
+        push_firmware_candidate(&mut candidates, "u-boot; rm -rf / ");
+        push_firmware_candidate(&mut candidates, "${BOOTLOADER}");
+        assert_eq!(candidates, vec!["u-boot-fslc"]);
     }
 }
 
@@ -11326,6 +11564,12 @@ async fn tui(
     {
         inspect_kernel_workbench(&mut app, backend.as_mut()).await;
     }
+    if app.screen == Screen::Firmware
+        && let Some(Effect::InspectFirmware) =
+            compatibility_workspace_action(&mut app, Action::InspectFirmware)
+    {
+        inspect_firmware_workbench(&mut app, backend.as_mut()).await;
+    }
     if app.screen == Screen::Testing
         && let Some(effect) =
             compatibility_workspace_action(&mut app, Action::InspectTestCapability)
@@ -11718,6 +11962,8 @@ async fn tui(
                     let effect = compatibility_workspace_action(&mut app, action);
                     if let Some(Effect::InspectKernel) = effect {
                         inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                    } else if let Some(Effect::InspectFirmware) = effect {
+                        inspect_firmware_workbench(&mut app, backend.as_mut()).await;
                     }
                 }
                 continue;
@@ -12929,6 +13175,8 @@ async fn tui(
                         );
                     } else if let Some(Effect::InspectKernel) = effect {
                         inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                    } else if let Some(Effect::InspectFirmware) = effect {
+                        inspect_firmware_workbench(&mut app, backend.as_mut()).await;
                     } else if let Some(effect @ Effect::Security(_)) = effect {
                         let _ = route_independent_security_effect(
                             &guard,
@@ -13498,12 +13746,19 @@ async fn tui(
                     input,
                 ) {
                     let _ = compatibility_workspace_action(&mut app, action);
-                } else if app.screen == Screen::Kernel
-                    && let Some(action) = platform_workspace_action(input)
+                } else if matches!(app.screen, Screen::Kernel | Screen::Firmware)
+                    && let Some(action) = match app.screen {
+                        Screen::Kernel => platform_workspace_action(input),
+                        Screen::Firmware => firmware_workspace_action(input),
+                        _ => None,
+                    }
                 {
                     match compatibility_workspace_action(&mut app, action) {
                         Some(Effect::InspectKernel) => {
                             inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                        }
+                        Some(Effect::InspectFirmware) => {
+                            inspect_firmware_workbench(&mut app, backend.as_mut()).await;
                         }
                         Some(Effect::OpenWorkspaceEditor { label, root }) => {
                             open_workspace_editor(&mut app, label, root).await;

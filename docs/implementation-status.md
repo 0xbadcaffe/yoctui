@@ -11,6 +11,13 @@ Status values:
 
 ## Current phase
 
+M48 is complete in v0.1.48. U-Boot / BIOS is a separate Content destination
+that resolves the active image's boot firmware from authoritative BitBake
+variables and recipe metadata. It labels detected U-Boot and BIOS/UEFI
+providers, invokes menuconfig only when the selected provider advertises the
+task, and exposes the shared bounded `.config`, DTS/DTSI, and DTB/DTBO viewer,
+explorer, compiler, and decompiler.
+
 M47 is complete in v0.1.47. Kernel is a dedicated Content destination backed
 by `virtual/kernel` metadata and recipe-scoped `FILE`, `S`, `B`, and `WORKDIR`
 values plus `DEPLOY_DIR_IMAGE`. It provides provider-verified menuconfig in a
