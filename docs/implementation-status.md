@@ -11,6 +11,15 @@ Status values:
 
 ## Current phase
 
+M47 is complete in v0.1.47. Kernel is a dedicated Content destination backed
+by `virtual/kernel` metadata and recipe-scoped `FILE`, `S`, `B`, and `WORKDIR`
+values plus `DEPLOY_DIR_IMAGE`. It provides provider-verified menuconfig in a
+persistent PTY, in-app `.config` and DTS/DTSI viewing and exploration, and
+confirmed `dtc` compilation/decompilation with collision refusal. Artifact
+discovery is bounded and does not follow directory symlinks.
+
+The unrelated M46 real-Poky performance evidence remains active.
+
 M46 Low-Overhead / Build-Saturation Responsiveness is registered and
 `PERF-REAL-POKY-001` is active. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,

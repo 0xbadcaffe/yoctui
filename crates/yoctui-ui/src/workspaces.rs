@@ -22,6 +22,7 @@ pub(super) fn workspace(
         Screen::Recipes => recipes(frame, app, area),
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
+        Screen::Kernel => platform_workspace(frame, app, area, "Kernel"),
         Screen::Sdk => sdk_workspace(frame, app, area),
         Screen::Testing => testing_workspace(frame, app, area),
         Screen::Security => security_workspace(frame, app, area),

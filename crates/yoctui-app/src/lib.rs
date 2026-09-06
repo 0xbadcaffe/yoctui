@@ -4507,6 +4507,12 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "images.artifacts" | "sdk.artifacts" => Input::Char('R'),
         "images.rootfs" => Input::Char('p'),
         "images.cancel" | "qemu_wic.cancel" => Input::Char('x'),
+        "kernel.refresh" => Input::Char('r'),
+        "kernel.menuconfig" => Input::Char('m'),
+        "kernel.view" => Input::Enter,
+        "kernel.explore" => Input::Char('o'),
+        "kernel.compile" => Input::Char('c'),
+        "kernel.decompile" => Input::Char('d'),
         "sdk.standard" => Input::Char('s'),
         "sdk.extensible" => Input::Char('E'),
         "sdk.testsdk" => Input::Char('t'),
@@ -5077,6 +5083,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Images => {
             images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)
         }
+        Screen::Kernel => platform_workspace_action(key),
         Screen::Sdk => sdk_workspace_action(app.sdk_artifact_searching, key),
         Screen::Testing => match app.test_view {
             TestWorkspaceView::Launches => testing_workspace_action(key),
@@ -5121,6 +5128,23 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         }
         Screen::Settings => settings_action(key),
         Screen::LayerRelationships | Screen::Bbmask | Screen::Help => None,
+    }
+}
+
+pub fn platform_workspace_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectKernelFile { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectKernelFile { delta: 1 }),
+        Input::PageUp => Some(Action::SelectKernelFile { delta: -10 }),
+        Input::PageDown => Some(Action::SelectKernelFile { delta: 10 }),
+        Input::Tab | Input::BackTab => Some(Action::CycleKernelView),
+        Input::Char('m') => Some(Action::LaunchKernelMenuconfig),
+        Input::Enter | Input::Char('e') => Some(Action::OpenSelectedKernelFile),
+        Input::Char('o') => Some(Action::ExploreSelectedKernelRoot),
+        Input::Char('c') => Some(Action::CompileSelectedKernelDts),
+        Input::Char('d') => Some(Action::DecompileSelectedKernelDtb),
+        Input::Char('r') => Some(Action::InspectKernel),
+        _ => None,
     }
 }
 
@@ -15291,6 +15315,26 @@ mod tests {
         assert_eq!(
             settings_action(Input::Char('R')),
             Some(Action::ResetPreferences)
+        );
+    }
+
+    #[test]
+    fn kernel_workbench_keys_route_to_typed_actions() {
+        assert_eq!(
+            platform_workspace_action(Input::Tab),
+            Some(Action::CycleKernelView)
+        );
+        assert_eq!(
+            platform_workspace_action(Input::Char('m')),
+            Some(Action::LaunchKernelMenuconfig)
+        );
+        assert_eq!(
+            platform_workspace_action(Input::Char('c')),
+            Some(Action::CompileSelectedKernelDts)
+        );
+        assert_eq!(
+            platform_workspace_action(Input::Char('d')),
+            Some(Action::DecompileSelectedKernelDtb)
         );
     }
 }

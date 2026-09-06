@@ -991,3 +991,16 @@ The bounded-memory gate now passes its 30-minute release run: daemon/client RSS
 growth was 1.29 MiB/108 KiB, both final 20-minute slopes were zero, threads
 stayed 3/1, and correctness/continuity survived the full 4,000-event/s stream.
 Supported real-Poky saturation evidence is next.
+
+## M47 — Kernel configuration and device trees
+
+Goal: make the active kernel provider directly inspectable and configurable
+without leaving Yoctui.
+
+Exit criteria:
+
+- Kernel is a dedicated Content destination resolved through `virtual/kernel`
+- provider-reported menuconfig runs in the persistent PTY
+- `.config`, DTS/DTSI, and DTB/DTBO artifacts are browsable from authoritative roots
+- exact confirmed `dtc` compile/decompile operations refuse overwrites
+- bounded scanning, focused tests, workspace checks, and documentation pass in version 0.1.47

@@ -36,6 +36,8 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
 - **Metadata workbench** — layer tree, recipe browser, syntax-aware preview,
   in-TUI editing, configuration provenance, BBMASK, dependencies, and
   signatures.
+- **Kernel workbench** — provider-aware menuconfig, `.config` browsing, and
+  bounded DTS/DTB exploration, compilation, and decompilation.
 - **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
   consoles, Wic, Testing, CVE/SPDX, QA, sstate, release, and maintenance tools.
 - **Terminal-native UX** — responsive layouts, command palette, contextual
@@ -324,6 +326,7 @@ cargo install flamegraph
 - [Operator guide](docs/operator-guide.md) — daily workflows and troubleshooting
 - [Keymap reference](docs/keymap.md) — menus, focus, navigation, customization, and the `Ctrl+B` terminal prefix
 - [Rootfs composition](docs/rootfs-composition.md) — package/filesystem authority and accessible chart fallbacks
+- [Kernel and firmware workbenches](docs/platform-workbenches.md) — menuconfig, configuration, and device-tree workflows
 - [Embedded shells and terminal sessions](docs/embedded-shell.md) — inherited-shell and persistent-PTY behavior
 - [Compatibility evidence](docs/compatibility.md) — live, fixture, and host validation boundaries
 - [Release compatibility matrix](docs/compatibility-matrix.md) — support classifications, exact tested revisions, and renewal policy

@@ -50,12 +50,12 @@ use yoctui_model::{
     MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,
     MaintenanceToolCapability, MaintenanceToolInterface, MaintenanceView, NAVIGATOR_GROUPS,
     PackageDetailState, PackageField, PackageIdentity, PackageInventoryState, PaneNode,
-    PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily, QaDialog, QaFindingStatus,
-    QaLayerCapability, QaLayerRunCapability, QaOutputStream, QaReportFailureKind,
-    QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView, QemuCapability,
-    QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview, QemuNetworkingMode,
-    QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor, RecipeIdentity,
-    RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
+    PlatformInventoryState, PreviewKind, QaCapability, QaCheckAvailability, QaCheckFamily,
+    QaDialog, QaFindingStatus, QaLayerCapability, QaLayerRunCapability, QaOutputStream,
+    QaReportFailureKind, QaReportInventoryState, QaSessionStatus, QaStatusFilter, QaView,
+    QemuCapability, QemuDisplayMode, QemuLaunchDialog, QemuLaunchField, QemuLaunchPreview,
+    QemuNetworkingMode, QemuSerialMode, QemuSessionId, Recipe, RecipeBuildStatus, RecipeEditor,
+    RecipeIdentity, RootfsCompositionState, RootfsEntryKind, RootfsGroupIdentity, Screen,
     SdkArtifactInventoryState, SdkArtifactKind, SdkBuildAction, SdkKind, SdkNativeDialog,
     SdkNativeField, SdkNativeMode, SdkNativePreview, SdkOperation, SdkPublishDraft,
     SdkPublishPreview, SdkSessionId, SdkToolCapability, SecurityCapability, SecurityDialog,
@@ -1138,6 +1138,9 @@ fn footer_shortcuts(app: &App) -> String {
                 "j/k select path | PgUp/PgDn page | r refresh | Tab artifacts | Shift+Tab packages"
             }
         },
+        Screen::Kernel => {
+            "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
+        }
         Screen::Sdk => {
             "↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel"
         }
@@ -4326,7 +4329,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 22] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 23] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -4336,6 +4339,7 @@ fn navigator(frame: &mut Frame, app: &App, area: Rect, task_rows: Option<&[TaskR
         ("Recipes", Screen::Recipes, WorkspaceDestination::Recipes),
         ("Packages", Screen::Packages, WorkspaceDestination::Packages),
         ("Images", Screen::Images, WorkspaceDestination::Images),
+        ("Kernel", Screen::Kernel, WorkspaceDestination::Kernel),
         ("SDK", Screen::Sdk, WorkspaceDestination::Sdk),
         ("Tasks", Screen::Tasks, WorkspaceDestination::Tasks),
         ("Logs", Screen::Logs, WorkspaceDestination::Logs),
@@ -6030,6 +6034,7 @@ fn inspector_related_paths(app: &App) -> Vec<String> {
         Screen::Images => app
             .selected_image_artifact()
             .map(|artifact| artifact.identity.path.clone()),
+        Screen::Kernel => app.kernel.selected_file().map(|file| file.path.clone()),
         Screen::Sdk => app
             .selected_sdk_artifact()
             .map(|artifact| artifact.identity.path.clone()),
@@ -6278,6 +6283,7 @@ fn inspector(
             ),
         Screen::Packages => package_inspector_text(app),
         Screen::Images => image_artifact_inspector_text(app),
+        Screen::Kernel => platform_inspector_text(app, "Kernel"),
         Screen::Sdk => sdk_inspector_text(app),
         Screen::Testing => testing_inspector_text(app),
         Screen::Security => security_inspector_text(app),
@@ -13089,6 +13095,147 @@ fn wic_cancellation_confirmation(
         .wrap(Wrap { trim: false }),
         popup,
     );
+}
+
+fn platform_workspace(frame: &mut Frame, app: &App, area: Rect, title: &str) {
+    let block = pane_block(app, title, app.focus == FocusTarget::Workspace);
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let selection = match app.kernel.view {
+        yoctui_model::PlatformView::Configuration => app.kernel.config_selection,
+        yoctui_model::PlatformView::DeviceTrees => app.kernel.device_tree_selection,
+    };
+    let tabs = Line::from(vec![
+        Span::styled(
+            " 1 Configuration ",
+            if app.kernel.view == yoctui_model::PlatformView::Configuration {
+                selected_style(app, true)
+            } else {
+                Style::default()
+            },
+        ),
+        Span::raw(" │ "),
+        Span::styled(
+            " 2 Device trees ",
+            if app.kernel.view == yoctui_model::PlatformView::DeviceTrees {
+                selected_style(app, true)
+            } else {
+                Style::default()
+            },
+        ),
+        Span::raw("  Tab switches"),
+    ]);
+    let mut lines = vec![tabs];
+    match &app.kernel.inventory {
+        PlatformInventoryState::NotLoaded => {
+            lines.push(Line::from("Not inspected. Press r to scan."))
+        }
+        PlatformInventoryState::Loading => lines.push(Line::from(
+            "Inspecting provider, configuration, and device trees…",
+        )),
+        PlatformInventoryState::Failed(message) => {
+            lines.push(Line::from(format!("Inspection failed: {message}")))
+        }
+        PlatformInventoryState::Available(inventory) => {
+            lines.push(Line::from(format!(
+                "Target {} | provider {} | menuconfig {} | dtc {}",
+                inventory.target,
+                inventory
+                    .provider
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                if inventory
+                    .tasks
+                    .iter()
+                    .any(|task| task == "menuconfig" || task == "do_menuconfig")
+                {
+                    "available"
+                } else {
+                    "unavailable"
+                },
+                inventory
+                    .dtc
+                    .as_ref()
+                    .map_or("unavailable", |_| "available"),
+            )));
+            lines.push(Line::from("Kind         Size       File"));
+            let files = app.kernel.visible_files().collect::<Vec<_>>();
+            if files.is_empty() {
+                lines.push(Line::from(match app.kernel.view {
+                    yoctui_model::PlatformView::Configuration => {
+                        "No .config file was found in the reported source/build roots."
+                    }
+                    yoctui_model::PlatformView::DeviceTrees => {
+                        "No DTS, DTSI, DTB, or DTBO artifact was found."
+                    }
+                }));
+            }
+            let capacity = usize::from(inner.height.saturating_sub(4)).max(1);
+            let viewport =
+                yoctui_model::centered_viewport_range(Some(selection), files.len(), capacity);
+            for (offset, file) in files[viewport.clone()].iter().enumerate() {
+                let index = viewport.start + offset;
+                lines.push(Line::styled(
+                    format!(
+                        "{:<12} {:>9}  {}",
+                        file.kind.label(),
+                        file.size_bytes,
+                        file.path.display()
+                    ),
+                    selected_style(app, index == selection),
+                ));
+            }
+            if let Some(limitation) = inventory.limitations.first() {
+                lines.push(Line::styled(
+                    format!("Limited: {limitation}"),
+                    ThemePalette::for_app(app)
+                        .role(ThemePalette::for_app(app).warning, Modifier::empty()),
+                ));
+            }
+        }
+    }
+    frame.render_widget(Paragraph::new(Text::from(lines)), inner);
+}
+
+fn platform_inspector_text(app: &App, title: &str) -> String {
+    match &app.kernel.inventory {
+        PlatformInventoryState::NotLoaded => format!("{title} has not been inspected."),
+        PlatformInventoryState::Loading => format!("{title} inspection is loading."),
+        PlatformInventoryState::Failed(message) => format!("{title} inspection failed: {message}"),
+        PlatformInventoryState::Available(inventory) => {
+            let selected = app.kernel.selected_file();
+            format!(
+                "Target: {}\nProvider: {}\nView: {}\nRoots: {}\nFiles: {}\nmenuconfig: {}\ndtc: {}\n\nSelected: {}\nKind: {}\nSize: {} bytes\n\nText sources open in the in-app explorer/editor. DTB and DTBO files are binary and can be decompiled to a new .yoctui.dts file.",
+                inventory.target,
+                inventory
+                    .provider
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                app.kernel.view.label(),
+                inventory.roots.len(),
+                inventory.files.len(),
+                if inventory
+                    .tasks
+                    .iter()
+                    .any(|task| task == "menuconfig" || task == "do_menuconfig")
+                {
+                    "available"
+                } else {
+                    "unavailable"
+                },
+                inventory
+                    .dtc
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                selected.map_or_else(|| "none".into(), |file| file.path.display().to_string()),
+                selected.map_or("unavailable", |file| file.kind.label()),
+                selected.map_or(0, |file| file.size_bytes),
+            )
+        }
+    }
 }
 
 fn images_workspace(frame: &mut Frame, app: &App, area: Rect) {
@@ -20445,7 +20592,7 @@ mod tests {
     fn concept_failed_errors_app() -> App {
         let mut app = literal_reference_app();
         app.screen = Screen::Errors;
-        app.navigator_selection = 8;
+        app.navigator_selection = 9;
         app.focus = FocusTarget::Workspace;
         app.build.status = BuildStatus::Failed;
         app.build.exit_code = Some(1);
@@ -20713,7 +20860,7 @@ mod tests {
     fn concept_terminal_sessions_app() -> App {
         let mut app = concept_idle_dashboard_app();
         app.screen = Screen::TerminalSessions;
-        app.navigator_selection = 15;
+        app.navigator_selection = 16;
         app.focus = FocusTarget::Workspace;
         app.terminal.client_id = Some([1; 16]);
         app.terminal.query = "busybox".into();
@@ -20827,7 +20974,7 @@ mod tests {
     #[test]
     fn concept_screen_contracts_render_through_production_renderer() {
         let mut active = literal_reference_app();
-        active.navigator_selection = 6;
+        active.navigator_selection = 7;
         active.focus = FocusTarget::Workspace;
         let scenes = [
             (
@@ -20977,7 +21124,7 @@ mod tests {
     #[test]
     fn concept_screens_keep_navigator_identity_aligned_with_the_visible_workspace() {
         let mut active = literal_reference_app();
-        active.navigator_selection = 6;
+        active.navigator_selection = 7;
         for app in [
             concept_idle_dashboard_app(),
             active,
@@ -21717,7 +21864,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 9;
+        app.navigator_selection = 10;
         let navigator = rendered_text(&app, 180, 42);
         for expected in [
             "~ Configuration",
@@ -21806,7 +21953,7 @@ mod tests {
         }
 
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 16;
+        app.navigator_selection = 17;
         let devtool = rendered_text(&app, 180, 58);
         for expected in [
             "Destination: Devtool",
@@ -21856,7 +22003,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 16;
+        app.navigator_selection = 17;
         let unavailable = rendered_text(&app, 180, 56);
         assert!(unavailable.contains("Upgrade recipe"), "{unavailable}");
         assert!(unavailable.contains("[U] — Unavailable"), "{unavailable}");
@@ -21883,7 +22030,7 @@ mod tests {
             },
         );
         yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
-        assert_eq!(app.navigator_selection, 16);
+        assert_eq!(app.navigator_selection, 17);
         let available = rendered_text(&app, 180, 56);
         assert!(available.contains("Upgrade recipe"), "{available}");
         assert!(available.contains("[U] — Available"), "{available}");
@@ -21915,7 +22062,7 @@ mod tests {
             .implementations
             .remove(&yoctui_model::CapabilityId::DevtoolUpgrade);
         yoctui_model::install_workspace_compatibility(&mut app, replacement).unwrap();
-        assert_eq!(app.navigator_selection, 16);
+        assert_eq!(app.navigator_selection, 17);
         let replaced = rendered_text(&app, 180, 56);
         assert!(
             replaced.contains("The reconnected Devtool omits upgrade."),
@@ -22030,7 +22177,7 @@ mod tests {
         let mut app = compatibility_ui_inspector_app();
         app.screen = Screen::Configuration;
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 9;
+        app.navigator_selection = 10;
         let navigator = rendered_text(&app, 180, 42);
         assert!(navigator.contains("Compatibility: Limited"), "{navigator}");
         assert!(
@@ -22774,7 +22921,7 @@ mod tests {
     fn workbench_navigator_scrolls_the_last_destination_into_view() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 21;
+        app.navigator_selection = 22;
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("TOOLS"), "{output}");
         assert!(output.contains("Settings"), "{output}");
@@ -22801,7 +22948,7 @@ mod tests {
         assert!(expanded.contains("Errors         3"), "{expanded}");
         assert!(expanded.contains("Logs        LIVE"), "{expanded}");
 
-        app.navigator_selection = 6;
+        app.navigator_selection = 7;
         app.navigator_groups_expanded[2] = false;
         let collapsed = rendered_text(&app, 180, 40);
         assert!(collapsed.contains("▸ BUILD"), "{collapsed}");
@@ -22812,9 +22959,9 @@ mod tests {
     fn next_generation_navigator_reports_bounded_scroll_position() {
         let mut app = App::new(32, 8192);
         app.focus = FocusTarget::Navigator;
-        app.navigator_selection = 21;
+        app.navigator_selection = 22;
         let output = rendered_text(&app, 80, 24);
-        assert!(output.contains("Navigator · 27/27 ↑"), "{output}");
+        assert!(output.contains("Navigator · 28/28 ↑"), "{output}");
         assert!(output.contains("Settings"), "{output}");
     }
 
@@ -23571,7 +23718,7 @@ mod tests {
             "{top}"
         );
 
-        navigator_app.navigator_selection = 21;
+        navigator_app.navigator_selection = 22;
         let bottom = rendered_text(&navigator_app, 80, 24);
         assert!(
             bottom.contains(&format!(
@@ -34435,5 +34582,37 @@ mod tests {
         let accessible = rendered_text(&app, 100, 30);
         assert!(accessible.contains("shortcuts hidden"), "{accessible}");
         assert!(!accessible.contains('�'), "{accessible}");
+    }
+
+    #[test]
+    fn kernel_workspace_renders_configuration_and_device_tree_inventory() {
+        let mut app = App::new(32, 4096);
+        app.screen = Screen::Kernel;
+        app.kernel.inventory = PlatformInventoryState::Available(yoctui_model::PlatformInventory {
+            target: "virtual/kernel".into(),
+            provider: Some("/layers/linux-yocto.bb".into()),
+            tasks: vec!["do_menuconfig".into()],
+            roots: vec!["/work/kernel".into()],
+            files: vec![yoctui_model::PlatformFile {
+                path: "/work/kernel/.config".into(),
+                root: "/work/kernel".into(),
+                kind: yoctui_model::PlatformFileKind::DotConfig,
+                size_bytes: 42,
+            }],
+            dtc: Some("/usr/bin/dtc".into()),
+            limitations: vec![],
+        });
+        let output = rendered_text(&app, 120, 30);
+        for expected in [
+            "Kernel",
+            "Configuration",
+            "virtual/kernel",
+            "linux-yocto.bb",
+            ".config",
+            "menuconfig available",
+            "dtc available",
+        ] {
+            assert!(output.contains(expected), "missing {expected}: {output}");
+        }
     }
 }

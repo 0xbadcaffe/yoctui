@@ -890,6 +890,19 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             ),
             Action::local("images.cancel", "Cancel owned image operation", "x/c"),
         ],
+        Destination::Kernel => vec![
+            Action::local("kernel.refresh", "Refresh kernel files", "r"),
+            Action::capability(
+                "kernel.menuconfig",
+                "Open kernel menuconfig",
+                "m",
+                Id::MenuConfig,
+            ),
+            Action::local("kernel.view", "View selected text file", "Enter"),
+            Action::local("kernel.explore", "Explore selected root", "o"),
+            Action::local("kernel.compile", "Compile selected DTS", "c"),
+            Action::local("kernel.decompile", "Decompile selected DTB", "d"),
+        ],
         Destination::Sdk => vec![
             Action::all(
                 "sdk.standard",

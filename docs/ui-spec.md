@@ -5155,6 +5155,14 @@ primary visual area and retains the exact installed-byte table as independent
 authority. Narrow, no-color, and ASCII layouts retain their existing
 accessible table fallback.
 
+Kernel is a dedicated Content destination with Configuration and Device trees
+tabs. Up/Down selects an authoritative artifact, `Tab` switches tabs, `m`
+opens provider-verified menuconfig in a persistent PTY, `Enter`/`e` opens text
+in the in-app explorer/editor, `o` explores the selected root, `c` compiles a
+DTS, `d` decompiles a DTB/DTBO, and `r` refreshes the inventory. Binary device
+trees do not enter the text viewer. Compile/decompile actions preview exact
+argv and refuse to overwrite an existing `.yoctui` output.
+
 Logs opens with Workspace focus. Up/Down, PageUp/PageDown, Home/End, and mouse
 wheel input pause live follow and move the retained selection; `f` resumes
 follow at the newest matching entry. Daemon snapshots and incremental log

@@ -54,12 +54,12 @@ use yoctui_app::{
     keymap_preferences_action, log_workspace_action, maintenance_dialog_action,
     maintenance_workspace_action, menu_action, model_action_from_backend_event,
     mouse_action_for_app, notification_popup_action, onboarding_action, package_workspace_action,
-    popup_editor_action, qa_dialog_action, qa_layer_capability_action, qa_layer_runner_action,
-    qa_report_error_action, qa_report_response_action, qa_task_capability_action,
-    qa_workspace_action, qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
-    qemu_launch_confirmation_action, qemu_launch_dialog_action, quit_confirmation_action,
-    raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
-    sdk_actions_for_runner_event, sdk_build_confirmation_action,
+    platform_workspace_action, popup_editor_action, qa_dialog_action, qa_layer_capability_action,
+    qa_layer_runner_action, qa_report_error_action, qa_report_response_action,
+    qa_task_capability_action, qa_workspace_action, qemu_actions_for_runner_event,
+    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
+    qemu_launch_dialog_action, quit_confirmation_action, raw_mode_input, recipe_editor_action,
+    recover_daemon_model_metadata, sdk_actions_for_runner_event, sdk_build_confirmation_action,
     sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
     sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
     security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
@@ -77,22 +77,23 @@ use yoctui_app::{
 use yoctui_bitbake::{
     BackendEvent, BitBakeBackend, BridgeBackend, BuildEnvironmentAdapter, DevtoolCommandSpec,
     DevtoolInspector, DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter,
-    ImageArtifactCancellation, PackageDataAdapter, PackageDataCancellation, ProcessBackend,
-    QaConfiguredLayerInput, QaFamilyTaskBinding, QaLayerCapabilityInput,
-    QaLayerCapabilityInspector, QaLayerCommandSpec, QaLayerJobRunner, QaLayerRunnerEvent,
-    QaReportAdapter, QaReportAdapterError, QaReportCancellation, QaReportCandidate, QaReportOrigin,
-    QaReportRootInput, QaReportScanInput, QaTaskCapabilityInput, QaTaskCapabilityInspector,
-    QaTaskScopeInput, QemuAdapterError, QemuCapabilityInspector, QemuCommandSpec, QemuJobRunner,
-    QemuRunnerEvent, RootfsCompositionAdapter, RootfsCompositionCancellation,
-    RootfsCompositionSources, SdkArtifactAdapter, SdkArtifactCancellation, SdkArtifactScanOutcome,
-    SdkToolAdapter, SdkToolAdapterError, SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent,
-    SecurityCapabilityInput, SecurityCapabilityInspector, SecurityMapperCommandSpec,
-    SecurityMapperJobRunner, SecurityMapperRunnerEvent, SecurityReportAdapter,
-    SecurityReportAdapterError, SecurityReportCancellation, SecurityReportScanOutcome,
-    SignatureAdapter, SignatureCancellation, TestResultAdapter, TestResultJob, TestResultOperation,
-    TestResultRunnerEvent, TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue,
-    WicAdapterError, WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector,
-    WicDeviceInventoryResponse, WicJobRunner, WicRunnerEvent,
+    ImageArtifactCancellation, PackageDataAdapter, PackageDataCancellation,
+    PlatformArtifactAdapter, ProcessBackend, QaConfiguredLayerInput, QaFamilyTaskBinding,
+    QaLayerCapabilityInput, QaLayerCapabilityInspector, QaLayerCommandSpec, QaLayerJobRunner,
+    QaLayerRunnerEvent, QaReportAdapter, QaReportAdapterError, QaReportCancellation,
+    QaReportCandidate, QaReportOrigin, QaReportRootInput, QaReportScanInput, QaTaskCapabilityInput,
+    QaTaskCapabilityInspector, QaTaskScopeInput, QemuAdapterError, QemuCapabilityInspector,
+    QemuCommandSpec, QemuJobRunner, QemuRunnerEvent, RootfsCompositionAdapter,
+    RootfsCompositionCancellation, RootfsCompositionSources, SdkArtifactAdapter,
+    SdkArtifactCancellation, SdkArtifactScanOutcome, SdkToolAdapter, SdkToolAdapterError,
+    SdkToolCommandSpec, SdkToolJobRunner, SdkToolRunnerEvent, SecurityCapabilityInput,
+    SecurityCapabilityInspector, SecurityMapperCommandSpec, SecurityMapperJobRunner,
+    SecurityMapperRunnerEvent, SecurityReportAdapter, SecurityReportAdapterError,
+    SecurityReportCancellation, SecurityReportScanOutcome, SignatureAdapter, SignatureCancellation,
+    TestResultAdapter, TestResultJob, TestResultOperation, TestResultRunnerEvent,
+    TestRunnerAdapter, TestRunnerEvent, TestRunnerJob, VariableValue, WicAdapterError,
+    WicCapabilityInspector, WicCreateCommandSpec, WicDeviceInspector, WicDeviceInventoryResponse,
+    WicJobRunner, WicRunnerEvent,
 };
 use yoctui_model::{
     Action, AnimationSpeed, App, AppError, BitBakeCoexistenceDiagnostic,
@@ -100,8 +101,8 @@ use yoctui_model::{
     DevtoolOperation, DevtoolWorkspace, Dialog, Effect, GitFileState, HostTelemetry,
     ImageArtifactInventoryState, ImageArtifactRequest, LayerBrowserEntry, LayerInspectorMode,
     LayerRelationship, LayerRelationships, OnboardingProgress, PackageDetailRequest,
-    PackageInventoryRequest, PreviewKind, QaAction, QaCheckFamily, QaCheckId, QaEffect,
-    QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
+    PackageInventoryRequest, PlatformInventory, PreviewKind, QaAction, QaCheckFamily, QaCheckId,
+    QaEffect, QaFindingScope, QaLayerIdentity, QaLayerSessionId, QaReportFormat, QaReportIdentity,
     QaReportRequest, QaScope, QaSessionId, QaSessionStatus, QaSourceLocation, QemuCapability,
     QemuLaunchDraft, QemuLaunchPreview, QemuLaunchRequest, QemuSessionId, RecipeIdentity,
     RootfsCompositionRequest, Screen, SdkArtifactInventoryRequest, SdkNativePreview, SdkOperation,
@@ -10445,6 +10446,76 @@ async fn open_workspace_editor(app: &mut App, recipe: String, root: PathBuf) {
     }
 }
 
+async fn inspect_kernel_workbench(app: &mut App, backend: &mut dyn BitBakeBackend) {
+    let target = "virtual/kernel".to_owned();
+    let metadata = match backend.get_recipe_metadata(target.clone()).await {
+        Ok(metadata) => metadata,
+        Err(error) => {
+            let _ = compatibility_workspace_action(app, Action::KernelFailed(error.to_string()));
+            return;
+        }
+    };
+    let mut roots = Vec::new();
+    let mut limitations = Vec::new();
+    let mut provider = None;
+    for variable in ["FILE", "S", "B", "WORKDIR"] {
+        match backend
+            .get_variable(variable.into(), Some(target.clone()))
+            .await
+        {
+            Ok(value) => {
+                let Some(value) = value.value.filter(|value| !value.trim().is_empty()) else {
+                    limitations.push(format!("{variable} was not reported for {target}."));
+                    continue;
+                };
+                let path = PathBuf::from(value);
+                if variable == "FILE" {
+                    if path.is_absolute() {
+                        provider = Some(path);
+                    } else {
+                        limitations.push("Kernel provider FILE was not absolute.".into());
+                    }
+                } else if path.is_absolute() {
+                    roots.push(path);
+                } else {
+                    limitations.push(format!("Kernel {variable} was not absolute."));
+                }
+            }
+            Err(error) => limitations.push(format!("Could not query kernel {variable}: {error}")),
+        }
+    }
+    if let Some(deploy) = app.workspace.variables.get("DEPLOY_DIR_IMAGE") {
+        roots.push(PathBuf::from(deploy));
+    }
+    let scan = tokio::task::spawn_blocking(move || PlatformArtifactAdapter.scan(roots)).await;
+    match scan {
+        Ok(Ok(scan)) => {
+            limitations.extend(scan.limitations);
+            let _ = compatibility_workspace_action(
+                app,
+                Action::KernelLoaded(PlatformInventory {
+                    target,
+                    provider,
+                    tasks: metadata.tasks.unwrap_or_default(),
+                    roots: scan.roots,
+                    files: scan.files,
+                    dtc: scan.dtc,
+                    limitations,
+                }),
+            );
+        }
+        Ok(Err(error)) => {
+            let _ = compatibility_workspace_action(app, Action::KernelFailed(error.to_string()));
+        }
+        Err(error) => {
+            let _ = compatibility_workspace_action(
+                app,
+                Action::KernelFailed(format!("artifact scanner did not complete: {error}")),
+            );
+        }
+    }
+}
+
 fn scan_layer_directory(scan: &Path) -> io::Result<Vec<LayerBrowserEntry>> {
     let git_output = ProcessCommand::new("git")
         .args([
@@ -11243,6 +11314,12 @@ async fn tui(
             effect,
         );
     }
+    if app.screen == Screen::Kernel
+        && let Some(Effect::InspectKernel) =
+            compatibility_workspace_action(&mut app, Action::InspectKernel)
+    {
+        inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+    }
     if app.screen == Screen::Testing
         && let Some(effect) =
             compatibility_workspace_action(&mut app, Action::InspectTestCapability)
@@ -11631,7 +11708,10 @@ async fn tui(
                         terminal_size.height,
                     )
                 {
-                    let _ = compatibility_workspace_action(&mut app, action);
+                    let effect = compatibility_workspace_action(&mut app, action);
+                    if let Some(Effect::InspectKernel) = effect {
+                        inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                    }
                 }
                 continue;
             }
@@ -12840,6 +12920,8 @@ async fn tui(
                             &mut sdk_capability_operation,
                             effect,
                         );
+                    } else if let Some(Effect::InspectKernel) = effect {
+                        inspect_kernel_workbench(&mut app, backend.as_mut()).await;
                     } else if let Some(effect @ Effect::Security(_)) = effect {
                         let _ = route_independent_security_effect(
                             &guard,
@@ -13409,6 +13491,32 @@ async fn tui(
                     input,
                 ) {
                     let _ = compatibility_workspace_action(&mut app, action);
+                } else if app.screen == Screen::Kernel
+                    && let Some(action) = platform_workspace_action(input)
+                {
+                    match compatibility_workspace_action(&mut app, action) {
+                        Some(Effect::InspectKernel) => {
+                            inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+                        }
+                        Some(Effect::OpenWorkspaceEditor { label, root }) => {
+                            open_workspace_editor(&mut app, label, root).await;
+                        }
+                        Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
+                            if let Some(Effect::LoadRecipeEditorFile(path)) =
+                                compatibility_workspace_action(
+                                    &mut app,
+                                    Action::OpenRecipeEditor {
+                                        recipe: layer,
+                                        root,
+                                        files: vec![file],
+                                    },
+                                )
+                            {
+                                load_recipe_editor_file(&mut app, path).await;
+                            }
+                        }
+                        _ => {}
+                    }
                 } else if collection_scroll_delta(input).is_some()
                     && let Some(action) = workspace_collection_action(&app, input)
                 {
