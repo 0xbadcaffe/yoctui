@@ -124,45 +124,6 @@
     {
       "authors": [
         {
-          "name": "bluss"
-        }
-      ],
-      "bom-ref": "pkg:cargo/arrayvec@0.7.8",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/bluss/arrayvec"
-        },
-        {
-          "type": "distribution",
-          "url": "https://crates.io/crates/arrayvec/0.7.8"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "d3fb67a6e08acf24fdeccbac2cb6ac4305825bd1f117462e0e6f2f193345ad56"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "MIT OR Apache-2.0"
-        }
-      ],
-      "name": "arrayvec",
-      "properties": [
-        {
-          "name": "cargo:source",
-          "value": "registry+https://github.com/rust-lang/crates.io-index"
-        }
-      ],
-      "purl": "pkg:cargo/arrayvec@0.7.8",
-      "type": "library",
-      "version": "0.7.8"
-    },
-    {
-      "authors": [
-        {
           "name": "Josh Stone <cuviper@gmail.com>"
         }
       ],
@@ -2557,7 +2518,7 @@
           "name": "Jerome Froelich <jeromefroelic@hotmail.com>"
         }
       ],
-      "bom-ref": "pkg:cargo/lru@0.18.2",
+      "bom-ref": "pkg:cargo/lru@0.18.4",
       "externalReferences": [
         {
           "type": "vcs",
@@ -2565,13 +2526,13 @@
         },
         {
           "type": "distribution",
-          "url": "https://crates.io/crates/lru/0.18.2"
+          "url": "https://crates.io/crates/lru/0.18.4"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "5d2f2f9b4ba7e6b24d95e7e899329d35be83bcded72c8540cdd5368932d1d90a"
+          "content": "ff9840bcc50b71349309900da0ce7279aa336ae71d73250b07998932c7d97c25"
         }
       ],
       "licenses": [
@@ -2586,9 +2547,9 @@
           "value": "registry+https://github.com/rust-lang/crates.io-index"
         }
       ],
-      "purl": "pkg:cargo/lru@0.18.2",
+      "purl": "pkg:cargo/lru@0.18.4",
       "type": "library",
-      "version": "0.18.2"
+      "version": "0.18.4"
     },
     {
       "authors": [
@@ -4519,7 +4480,7 @@
           "name": "The Servo Project Developers"
         }
       ],
-      "bom-ref": "pkg:cargo/smallvec@1.15.2",
+      "bom-ref": "pkg:cargo/smallvec@1.16.0",
       "externalReferences": [
         {
           "type": "vcs",
@@ -4527,13 +4488,13 @@
         },
         {
           "type": "distribution",
-          "url": "https://crates.io/crates/smallvec/1.15.2"
+          "url": "https://crates.io/crates/smallvec/1.16.0"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
+          "content": "b9be42f50aa861c555654aa3a37f52f4b1074bacf4e48fe0ef7fa584e80f1f0f"
         }
       ],
       "licenses": [
@@ -4548,9 +4509,9 @@
           "value": "registry+https://github.com/rust-lang/crates.io-index"
         }
       ],
-      "purl": "pkg:cargo/smallvec@1.15.2",
+      "purl": "pkg:cargo/smallvec@1.16.0",
       "type": "library",
-      "version": "1.15.2"
+      "version": "1.16.0"
     },
     {
       "authors": [
@@ -4756,7 +4717,7 @@
           "name": "David Tolnay <dtolnay@gmail.com>"
         }
       ],
-      "bom-ref": "pkg:cargo/syn@3.0.4",
+      "bom-ref": "pkg:cargo/syn@3.0.5",
       "externalReferences": [
         {
           "type": "vcs",
@@ -4764,13 +4725,13 @@
         },
         {
           "type": "distribution",
-          "url": "https://crates.io/crates/syn/3.0.4"
+          "url": "https://crates.io/crates/syn/3.0.5"
         }
       ],
       "hashes": [
         {
           "alg": "SHA-256",
-          "content": "e6275cddf4610d1775e6d1fe9469b2e77d0f39fd98fb7450901b821e0c53649f"
+          "content": "12df2e0110f65b775f769bb17ef989067a1d931b2eb822bd4346631eeada89f9"
         }
       ],
       "licenses": [
@@ -4785,9 +4746,9 @@
           "value": "registry+https://github.com/rust-lang/crates.io-index"
         }
       ],
-      "purl": "pkg:cargo/syn@3.0.4",
+      "purl": "pkg:cargo/syn@3.0.5",
       "type": "library",
-      "version": "3.0.4"
+      "version": "3.0.5"
     },
     {
       "authors": [
@@ -5738,87 +5699,6 @@
     {
       "authors": [
         {
-          "name": "Jesse Luehrs <doy@tozt.net>"
-        }
-      ],
-      "bom-ref": "pkg:cargo/vt100@0.16.2",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/doy/vt100-rust"
-        },
-        {
-          "type": "distribution",
-          "url": "https://crates.io/crates/vt100/0.16.2"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "054ff75fb8fa83e609e685106df4faeffdf3a735d3c74ebce97ec557d5d36fd9"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "MIT"
-        }
-      ],
-      "name": "vt100",
-      "properties": [
-        {
-          "name": "cargo:source",
-          "value": "registry+https://github.com/rust-lang/crates.io-index"
-        }
-      ],
-      "purl": "pkg:cargo/vt100@0.16.2",
-      "type": "library",
-      "version": "0.16.2"
-    },
-    {
-      "authors": [
-        {
-          "name": "Joe Wilm <joe@jwilm.com>"
-        },
-        {
-          "name": "Christian Duerr <contact@christianduerr.com>"
-        }
-      ],
-      "bom-ref": "pkg:cargo/vte@0.15.0",
-      "externalReferences": [
-        {
-          "type": "vcs",
-          "url": "https://github.com/alacritty/vte"
-        },
-        {
-          "type": "distribution",
-          "url": "https://crates.io/crates/vte/0.15.0"
-        }
-      ],
-      "hashes": [
-        {
-          "alg": "SHA-256",
-          "content": "a5924018406ce0063cd67f8e008104968b74b563ee1b85dde3ed1f7cb87d3dbd"
-        }
-      ],
-      "licenses": [
-        {
-          "expression": "Apache-2.0 OR MIT"
-        }
-      ],
-      "name": "vte",
-      "properties": [
-        {
-          "name": "cargo:source",
-          "value": "registry+https://github.com/rust-lang/crates.io-index"
-        }
-      ],
-      "purl": "pkg:cargo/vte@0.15.0",
-      "type": "library",
-      "version": "0.15.0"
-    },
-    {
-      "authors": [
-        {
           "name": "The Cranelift Project Developers"
         }
       ],
@@ -6711,10 +6591,6 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/arrayvec@0.7.8"
-    },
-    {
-      "dependsOn": [],
       "ref": "pkg:cargo/autocfg@1.5.1"
     },
     {
@@ -6755,7 +6631,7 @@
       "dependsOn": [
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@3.0.4"
+        "pkg:cargo/syn@3.0.5"
       ],
       "ref": "pkg:cargo/bytemuck_derive@1.12.0"
     },
@@ -6821,7 +6697,7 @@
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
         "pkg:cargo/strsim@0.11.1",
-        "pkg:cargo/syn@3.0.4"
+        "pkg:cargo/syn@3.0.5"
       ],
       "ref": "pkg:cargo/darling_core@0.24.1"
     },
@@ -6837,7 +6713,7 @@
       "dependsOn": [
         "pkg:cargo/darling_core@0.24.1",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@3.0.4"
+        "pkg:cargo/syn@3.0.5"
       ],
       "ref": "pkg:cargo/darling_macro@0.24.1"
     },
@@ -7001,7 +6877,7 @@
         "pkg:cargo/indoc@2.0.7",
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@3.0.4"
+        "pkg:cargo/syn@3.0.5"
       ],
       "ref": "pkg:cargo/instability@0.3.13"
     },
@@ -7103,7 +6979,7 @@
       "dependsOn": [
         "pkg:cargo/hashbrown@0.17.1"
       ],
-      "ref": "pkg:cargo/lru@0.18.2"
+      "ref": "pkg:cargo/lru@0.18.4"
     },
     {
       "dependsOn": [],
@@ -7180,7 +7056,7 @@
         "pkg:cargo/cfg-if@1.0.4",
         "pkg:cargo/libc@0.2.189",
         "pkg:cargo/redox_syscall@0.5.18",
-        "pkg:cargo/smallvec@1.15.2",
+        "pkg:cargo/smallvec@1.16.0",
         "pkg:cargo/windows-link@0.2.1"
       ],
       "ref": "pkg:cargo/parking_lot_core@0.9.12"
@@ -7294,7 +7170,7 @@
         "pkg:cargo/hashbrown@0.17.1",
         "pkg:cargo/itertools@0.14.0",
         "pkg:cargo/kasuari@0.4.12",
-        "pkg:cargo/lru@0.18.2",
+        "pkg:cargo/lru@0.18.4",
         "pkg:cargo/strum@0.28.0",
         "pkg:cargo/thiserror@2.0.20",
         "pkg:cargo/unicode-segmentation@1.13.3",
@@ -7360,7 +7236,7 @@
       "dependsOn": [
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@3.0.4"
+        "pkg:cargo/syn@3.0.5"
       ],
       "ref": "pkg:cargo/ref-cast-impl@1.0.27"
     },
@@ -7433,7 +7309,7 @@
       "dependsOn": [
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@3.0.4"
+        "pkg:cargo/syn@3.0.5"
       ],
       "ref": "pkg:cargo/serde_derive@1.0.229"
     },
@@ -7443,7 +7319,7 @@
     },
     {
       "dependsOn": [],
-      "ref": "pkg:cargo/smallvec@1.15.2"
+      "ref": "pkg:cargo/smallvec@1.16.0"
     },
     {
       "dependsOn": [],
@@ -7482,7 +7358,7 @@
         "pkg:cargo/quote@1.0.47",
         "pkg:cargo/unicode-ident@1.0.24"
       ],
-      "ref": "pkg:cargo/syn@3.0.4"
+      "ref": "pkg:cargo/syn@3.0.5"
     },
     {
       "dependsOn": [],
@@ -7500,7 +7376,7 @@
       "dependsOn": [
         "pkg:cargo/proc-macro2@1.0.107",
         "pkg:cargo/quote@1.0.47",
-        "pkg:cargo/syn@3.0.4"
+        "pkg:cargo/syn@3.0.5"
       ],
       "ref": "pkg:cargo/thiserror-impl@2.0.20"
     },
@@ -7636,21 +7512,6 @@
     {
       "dependsOn": [],
       "ref": "pkg:cargo/vsimd@0.8.0"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/itoa@1.0.18",
-        "pkg:cargo/unicode-width@0.2.2",
-        "pkg:cargo/vte@0.15.0"
-      ],
-      "ref": "pkg:cargo/vt100@0.16.2"
-    },
-    {
-      "dependsOn": [
-        "pkg:cargo/arrayvec@0.7.8",
-        "pkg:cargo/memchr@2.8.3"
-      ],
-      "ref": "pkg:cargo/vte@0.15.0"
     },
     {
       "dependsOn": [],
@@ -7795,7 +7656,7 @@
     "properties": [
       {
         "name": "yoctui:cargo-lock-sha256",
-        "value": "6935b0e2fb5138de5f866fb3d385a443d9fc27284d745eb69f33834a932d69e3"
+        "value": "39c7aa64346c2de99e7b4c63f1e5ff1f6dc4a9932d79bfd11eb5642a8d1a67a1"
       }
     ],
     "tools": {
@@ -7808,7 +7669,7 @@
       ]
     }
   },
-  "serialNumber": "urn:uuid:9d33d438-0d69-5d8d-b85b-dc54c583e1e4",
+  "serialNumber": "urn:uuid:83c5f4e9-71ce-507e-8b48-c9ed4aecfaab",
   "specVersion": "1.5",
   "version": 1
 }

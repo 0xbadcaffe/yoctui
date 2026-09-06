@@ -4741,6 +4741,17 @@ trees, and textual fallbacks. Widgets receive typed values and presentation
 state; they do not sample the host, scan files, parse process output, or become
 a second interaction authority.
 
+M52 uses tui-logger for BitBake Logs, Dashboard/Tasks log panes and recent tails,
+correlated error logs, Raw captured output, and embedded managed-operation
+output in QA, Security, Maintenance and the relevant inspectors (SDK, Images,
+Testing and job history included). Structured errors/job tables remain typed
+tables. Existing filters, selection, search emphasis, bookmarks, source labels,
+loss counters, follow/pause and export remain model-owned. Wrapped output is
+grapheme-safe at the available cell width; unwrapped columns retain horizontal
+offsets. A 256-KiB per-viewport safety cap is explicitly marked when reached.
+Yoctui self-diagnostics are not sent to the domain-log widget. SSH, QEMU and
+other interactive terminals remain tui-term panes, not log widgets.
+
 The interactive shell renders through one coalesced invalidation scheduler.
 Input, meaningful daemon/backend/local state, telemetry that is due for a
 visible surface, resize/full-clear, and due live presentation can request a

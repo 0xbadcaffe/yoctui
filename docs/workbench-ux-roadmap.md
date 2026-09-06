@@ -174,8 +174,10 @@ with a generic logger widget. Improvements include:
 - wrapped and unwrapped views with exact source and loss accounting
 - export/copy through typed bounded effects
 
-`tui-logger` is evaluated only for a separate Yoctui self-diagnostic view. It
-must not capture or reinterpret BitBake domain logs.
+M52 supersedes the original self-diagnostic-only evaluation: `tui-logger` now
+presents bounded typed Yocto output through a temporary viewport adapter. It
+does not capture or reinterpret BitBake logs, install a global logger, or own
+history. Local tracing diagnostics and interactive PTYs remain separate.
 
 ### Text areas
 
@@ -296,7 +298,7 @@ refresh its candidate before changing `Cargo.lock`.
 | [`throbber-widgets-tui`](https://crates.io/crates/throbber-widgets-tui) | 0.11.1 | Zlib | 1.88.0 | Adopt without `rand`; model phase remains authoritative. |
 | [`tui-big-text`](https://crates.io/crates/tui-big-text) | 0.8.9 | MIT OR Apache-2.0 | 1.88.0 | Defer until onboarding value is demonstrated. |
 | [`tui-checkbox`](https://crates.io/crates/tui-checkbox) | 0.4.6 | MIT | 1.74.0 | Reject; native primitive is smaller than the dependency. |
-| [`tui-logger`](https://crates.io/crates/tui-logger) | 0.18.3 | MIT | not declared | Reject; existing bounded tracing remains authoritative. |
+| [`tui-logger`](https://crates.io/crates/tui-logger) | 0.18.3 | MIT | upstream unspecified; Yoctui tests 1.97.0 | Adopt (M52); viewport renderer only, model retention and tracing remain authoritative. |
 | [`tui-menu`](https://crates.io/crates/tui-menu) | 0.3.1 | MIT OR Apache-2.0 | not declared | Reject; menus must project the typed action catalog directly. |
 | [`tui-nodes`](https://crates.io/crates/tui-nodes) | 0.10.0 | MIT | not declared | Reject; bounded reducer-owned topology/tree/table projections have complete text parity. |
 | [`tui-piechart`](https://crates.io/crates/tui-piechart) | 1.0.2 | MIT | 1.74.0 | Adopt for wide rootfs composition with exact text parity. |

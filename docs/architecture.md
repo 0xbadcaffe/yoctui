@@ -611,8 +611,8 @@ domain identity, feed Errors, or satisfy task/job correlation.
 
 The interactive CLI installs `internal_tracing::InternalTracingLayer` alongside
 the existing stderr formatting layer and the configured `EnvFilter`; the
-historical `tui-logger` rejection is being reevaluated by M52 for domain-log
-presentation, not replacement tracing or retention authority. The layer
+M52 `tui-logger` adapter owns only domain-log presentation, not replacement
+tracing or retention authority. The layer
 uses `try_send` into a 1,024-record bounded standard-library channel, caps field
 formatting at 64 KiB on UTF-8 boundaries, and atomically counts full/disconnected
 loss without blocking a tracing call. The TUI loop drains at most 256 records
@@ -620,6 +620,21 @@ per frame and reduces them through typed `Action::InternalLog` or
 `Action::InternalLogIngressDropped`. This capture scope is the local interactive
 client after subscriber initialization; daemon-process tracing is not
 represented as present.
+
+`yoctui-ui::yocto_logs` projects the selected typed log/output viewport through
+upstream `tui-logger` 0.18.3 `Drain`, `LogFormatter`, and `TuiLoggerWidget`.
+Its sole constant target prevents an unbounded per-recipe target map. A mutex
+serializes scratch ingest/render/clear across panes and parallel renderer tests.
+The hot buffer is flushed in batches of at most 64 records; retained scratch
+records never exceed the visible rows, and projection text is capped at 256 KiB.
+RAII clears retained records after rendering, including unwinding. There is no
+`init_logger`, global log registration, mover thread, tracing layer, file sink,
+or widget-owned input/timer. The original typed model remains authoritative for
+filtering, correlation, selected identity, bookmarks, exports, and retention.
+Terminal ANSI/VT output remains exclusively on the separate tui-term path.
+Word wrapping is independently implemented over typed styled graphemes and
+tested against the previous Ratatui paragraph layout; table adapters retain
+column geometry and full-row selection without parsing process text.
 
 `yoctui_model::App::job_history_rows` is the borrowed presentation projection
 for retained work. It merges background jobs and completed `BuildRecord`s

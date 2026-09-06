@@ -23,7 +23,14 @@ argv and rejecting stale launch authority. Both console kinds passed real-PTY
 input/resize/lifecycle fixtures and typed-cell renderer tests. Workspace,
 strict Clippy, bridge (46 tests), terminal lifecycle, and documentation checks
 passed; console fixtures are not evidence of a guest boot or live SSH login.
-YOCTO-LOGGER-ADAPTER-001 is active; final release gates remain.
+YOCTO-LOGGER-ADAPTER-001 is complete in v0.1.60. Upstream tui-logger renders
+bounded typed Yocto output across Logs, task/error tails, captured Raw output,
+and managed-operation panes/inspectors without taking ownership of history,
+input or tracing. UI/workspace/strict-Clippy suites, offline dependency and
+license checks passed; regenerated production fixtures differ only in version
+headers. The candidate graph, MIT notices and shipped SBOM were refreshed.
+LOG-CONSOLE-IMAGE-001 is active: final release performance/evidence and full
+completion checks remain; development timings are not release CPU evidence.
 
 M51 integration is complete in v0.1.57. Kernel (M47), firmware (M48), offline
 rootfs exploration (M49), and Overview Insights (M50) coexist with the completed

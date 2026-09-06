@@ -33,6 +33,8 @@ use std::{
     path::{Path, PathBuf},
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
+mod yocto_logs;
+
 use tui_piechart::{LegendPosition, PieChart, PieSlice, Resolution};
 use tui_term::widget::PseudoTerminal;
 use tui_tree_widget::{Tree, TreeItem, TreeState};
@@ -5059,19 +5061,16 @@ fn raw_output_stream(
         " {label} · {} B/{} lines ",
         output.retained_bytes, output.retained_lines,
     );
-    frame.render_widget(
-        Paragraph::new(if visible.is_empty() {
+    yocto_logs::render(
+        frame,
+        area,
+        Text::from(if visible.is_empty() {
             vec![Line::raw("No retained output")]
         } else {
             visible
-        })
-        .block(pane_block(
-            app,
-            &title,
-            app.raw_mode.output.stream == stream,
-        ))
-        .wrap(Wrap { trim: false }),
-        area,
+        }),
+        pane_block(app, &title, app.raw_mode.output.stream == stream),
+        true,
     );
 }
 
@@ -6165,11 +6164,12 @@ fn tasks_inspector(
             .wrap(Wrap { trim: false }),
         sections[1],
     );
-    frame.render_widget(
-        Paragraph::new(Text::from(task_inspector_recent_lines(app, &inspector)))
-            .block(pane_block(app, "Recent output · Recent Log (tail)", false))
-            .wrap(Wrap { trim: false }),
+    yocto_logs::render(
+        frame,
         sections[2],
+        Text::from(task_inspector_recent_lines(app, &inspector)),
+        pane_block(app, "Recent output · Recent Log (tail)", false),
+        true,
     );
     let actions = task_inspector_actions(app);
     frame.render_widget(
@@ -6371,12 +6371,29 @@ fn inspector(
         area.width.saturating_sub(2),
     );
     let title = format!("Inspector: {}", app.inspector_mode().label());
-    frame.render_widget(
-        Paragraph::new(document)
-            .block(pane_block(app, &title, app.focus == FocusTarget::Inspector))
-            .wrap(Wrap { trim: false }),
-        area,
-    );
+    let block = pane_block(app, &title, app.focus == FocusTarget::Inspector);
+    if matches!(
+        app.screen,
+        Screen::Errors
+            | Screen::Recipes
+            | Screen::BuildHistory
+            | Screen::Images
+            | Screen::Sdk
+            | Screen::Testing
+            | Screen::Security
+            | Screen::Qa
+            | Screen::Maintenance
+    ) || (app.screen == Screen::Logs && app.log_workspace_view == LogWorkspaceView::BitBake)
+    {
+        yocto_logs::render(frame, area, document, block, true);
+    } else {
+        frame.render_widget(
+            Paragraph::new(document)
+                .block(block)
+                .wrap(Wrap { trim: false }),
+            area,
+        );
+    }
 }
 
 #[allow(dead_code)]
@@ -8801,11 +8818,12 @@ fn render_task_log(frame: &mut Frame, app: &App, area: Rect, selected: Option<&T
     let activity = compact_log_activity(app, area.width.saturating_sub(24));
     let title = format!("{context} · {activity}");
     let limit = usize::from(area.height.saturating_sub(2)).max(1);
-    frame.render_widget(
-        Paragraph::new(Text::from(matching_task_logs_ref(app, selected, limit)))
-            .block(Block::default().title(title).borders(Borders::ALL))
-            .wrap(Wrap { trim: false }),
+    yocto_logs::render(
+        frame,
         area,
+        Text::from(matching_task_logs_ref(app, selected, limit)),
+        Block::default().title(title).borders(Borders::ALL),
+        true,
     );
 }
 
@@ -9282,11 +9300,12 @@ fn qa_workspace(frame: &mut Frame, app: &App, area: Rect) {
     }
     qa_inventory_lines(app, &palette, &mut lines);
     qa_session_lines(app, &palette, &mut lines);
-    frame.render_widget(
-        Paragraph::new(lines)
-            .block(pane_block(app, "QA", app.focus == FocusTarget::Workspace))
-            .wrap(Wrap { trim: false }),
+    yocto_logs::render(
+        frame,
         area,
+        Text::from(lines),
+        pane_block(app, "QA", app.focus == FocusTarget::Workspace),
+        true,
     );
 }
 
@@ -9959,15 +9978,12 @@ fn security_workspace(frame: &mut Frame, app: &App, area: Rect) {
     let collection_capacity = usize::from(area.height.saturating_sub(14)).max(1);
     security_inventory_lines(app, &palette, &mut lines, collection_capacity);
     security_session_lines(app, &palette, &mut lines);
-    frame.render_widget(
-        Paragraph::new(lines)
-            .block(pane_block(
-                app,
-                "Security",
-                app.focus == FocusTarget::Workspace,
-            ))
-            .wrap(Wrap { trim: false }),
+    yocto_logs::render(
+        frame,
         area,
+        Text::from(lines),
+        pane_block(app, "Security", app.focus == FocusTarget::Workspace),
+        true,
     );
 }
 
@@ -16940,11 +16956,7 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
                 lines.push(Line::from(spans).style(style));
             }
         }
-        let text = Text::from(lines);
-        frame.render_widget(
-            Paragraph::new(text).block(block).wrap(Wrap { trim: false }),
-            log_area,
-        );
+        yocto_logs::render(frame, log_area, Text::from(lines), block, true);
         return;
     }
     let rows = visible.iter().enumerate().map(|(offset, l)| {
@@ -16954,39 +16966,37 @@ fn logs(frame: &mut Frame, app: &App, area: Rect) {
             .chars()
             .skip(horizontal_offset)
             .collect::<String>();
-        Row::new(vec![
-            Cell::from(if app.logs.is_bookmarked(l.id) {
-                format!("★ {}", log_severity_label(l.severity))
-            } else {
-                log_severity_label(l.severity).into()
-            }),
-            Cell::from(l.recipe.as_deref().unwrap_or("")),
-            Cell::from(l.task.as_deref().unwrap_or("")),
-            Cell::from(Line::from(log_search_spans(app, &message))),
-        ])
-        .style(if selected {
-            selected_log_style(app, l.severity)
-        } else {
-            severity_style(app, l.severity)
-        })
-    });
-    frame.render_widget(
-        Table::new(
-            rows,
-            [
-                Constraint::Length(11),
-                Constraint::Length(16),
-                Constraint::Length(18),
-                Constraint::Min(10),
+        (
+            vec![
+                Line::from(if app.logs.is_bookmarked(l.id) {
+                    format!("★ {}", log_severity_label(l.severity))
+                } else {
+                    log_severity_label(l.severity).into()
+                }),
+                Line::from(l.recipe.as_deref().unwrap_or("")),
+                Line::from(l.task.as_deref().unwrap_or("")),
+                Line::from(log_search_spans(app, &message)),
             ],
+            if selected {
+                selected_log_style(app, l.severity)
+            } else {
+                severity_style(app, l.severity)
+            },
         )
-        .header(
-            Row::new(["Level", "Recipe", "Task", "Message"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(block),
+    });
+    yocto_logs::table(
+        frame,
         log_area,
-    )
+        block,
+        &[
+            Constraint::Length(11),
+            Constraint::Length(16),
+            Constraint::Length(18),
+            Constraint::Min(10),
+        ],
+        &["Level", "Recipe", "Task", "Message"],
+        rows,
+    );
 }
 
 fn internal_log_level_label(level: InternalLogLevel) -> &'static str {
@@ -17385,30 +17395,28 @@ fn render_correlated_error_log(
         app.logs.dropped, app.logs.dropped_warnings, app.logs.dropped_errors,
     );
     let rows = matches[start..].iter().map(|entry| {
-        Row::new([
-            Cell::from(timestamp_text(entry.timestamp)),
-            Cell::from(log_severity_label(entry.severity)),
-            Cell::from(entry.task.as_deref().unwrap_or("")),
-            Cell::from(entry.message.as_str()),
-        ])
-        .style(severity_style(app, entry.severity))
-    });
-    frame.render_widget(
-        Table::new(
-            rows,
-            [
-                Constraint::Length(10),
-                Constraint::Length(9),
-                Constraint::Length(13),
-                Constraint::Min(12),
+        (
+            vec![
+                Line::from(timestamp_text(entry.timestamp)),
+                Line::from(log_severity_label(entry.severity)),
+                Line::from(entry.task.as_deref().unwrap_or("")),
+                Line::from(entry.message.as_str()),
             ],
+            severity_style(app, entry.severity),
         )
-        .header(
-            Row::new(["Time", "Severity", "Task", "Message"])
-                .style(Style::default().add_modifier(Modifier::BOLD)),
-        )
-        .block(Block::default().title(title).borders(Borders::ALL)),
+    });
+    yocto_logs::table(
+        frame,
         panes[0],
+        Block::default().title(title).borders(Borders::ALL),
+        &[
+            Constraint::Length(10),
+            Constraint::Length(9),
+            Constraint::Length(13),
+            Constraint::Min(12),
+        ],
+        &["Time", "Severity", "Task", "Message"],
+        rows,
     );
     frame.render_widget(
         Paragraph::new(vec![
@@ -19354,18 +19362,19 @@ fn maintenance_workspace(frame: &mut Frame, app: &App, area: Rect) {
             lines.push(Line::raw(format!("  {:?}: {}", output.stream, output.text)));
         }
     }
-    frame.render_widget(
-        Paragraph::new(Text::from(lines))
-            .block(pane_block(
-                app,
-                &format!(
-                    "Maintenance · {}",
-                    maintenance_view_label(app.maintenance.view)
-                ),
-                app.focus == FocusTarget::Workspace,
-            ))
-            .wrap(Wrap { trim: false }),
+    yocto_logs::render(
+        frame,
         area,
+        Text::from(lines),
+        pane_block(
+            app,
+            &format!(
+                "Maintenance · {}",
+                maintenance_view_label(app.maintenance.view)
+            ),
+            app.focus == FocusTarget::Workspace,
+        ),
+        true,
     );
 }
 

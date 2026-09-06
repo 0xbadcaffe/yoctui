@@ -2,9 +2,9 @@
 
 This file is generated from the exact `Cargo.lock` graph. It inventories every non-workspace package, records the byte-authoritative SHA-256 of every packaged root-level license, notice, copying, and copyright file, and displays a Markdown-safe normalization of its content (UTF-8 text directly; non-UTF-8 data as hexadecimal). Packages with no packaged notice file remain listed with their manifest SPDX expression and authorship metadata in the SBOM.
 
-- Cargo.lock SHA-256: `a7211635f65c27da9d99f10a1440c641bed7ee979ce1abe3c8bfc559cd99a64d`
-- Third-party packages: 240
-- Unique packaged notice materials: 159
+- Cargo.lock SHA-256: `da7185119431353dbfd76da66959bcd084898c488be37e6fb74126d22287bbd2`
+- Third-party packages: 251
+- Unique packaged notice materials: 161
 
 ## Package inventory
 
@@ -54,6 +54,9 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `darling 0.23.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `25ae13da2f202d56bd7f91c25fba009e7717a1e4a1cc98a76d844b65ae912e9d` | [`8ea93490d74a`](#notice-8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6) |
 | `darling_core 0.23.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `9865a50f7c335f53564bb694ef660825eb8610e0a53d3e11bf1b0d3df31e03b0` | [`8ea93490d74a`](#notice-8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6) |
 | `darling_macro 0.23.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `ac3984ec7bd6cfa798e62b4a642426a5be0e68f9401cfc2a01e3fa9ea2fcdb8d` | [`8ea93490d74a`](#notice-8ea93490d74a5a1b1af3ff71d786271b3f1e5f0bea79ac16e02ec533cef040d6) |
+| `defmt 1.1.1` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `e2953bfe4f93bbd20cc71198842756f77d161884c99ebbabc41d80231ded88d1` | [`2710a622a896`](#notice-2710a622a896bba67356913d4d0492cab5465f61b2ecce6d880aeb483834fb50), [`8173d5c29b4f`](#notice-8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90) |
+| `defmt-macros 1.1.1` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `bad9c72e7ca2137e0dc3813245a0d282fd6daad32fd800af018306a9169b5fe8` | [`2710a622a896`](#notice-2710a622a896bba67356913d4d0492cab5465f61b2ecce6d880aeb483834fb50), [`8173d5c29b4f`](#notice-8173d5c29b4f956d532781d2b86e4e30f83e6b7878dce18c919451d6ba707c90) |
+| `defmt-parser 1.0.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `10d60334b3b2e7c9d91ef8150abfb6fa4c1c39ebbcf4a81c2e346aad939fee3e` | none packaged |
 | `deltae 0.3.2` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `5729f5117e208430e437df2f4843f5e5952997175992d1414f94c57d61e270b4` | [`581056b17960`](#notice-581056b179603e8191b5d6e54e543abfecc13591b39c0d60ec8593d7013568ee) |
 | `deranged 0.5.8` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `7cd812cc2bc1d69d4764bd80df88b4317eaef9e773c75226407d9bc0876b211c` | [`231c837c45eb`](#notice-231c837c45eb53f108fb48929e488965bc4fcc14e9ea21d35f50e6b99d98685b), [`edd65bdd8895`](#notice-edd65bdd88957a205c47d53fa499eed8865a70320f0f03f6391668cb304ea376) |
 | `derive_more 2.1.1` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `d751e9e49156b02b44f9c1815bcb94b984cdcc4396ecc32521c739452808b134` | [`8a35369f3ca2`](#notice-8a35369f3ca263b3c62fbb5032947e53b6bfebc6c8a4d1bb982de1c069f6fba5) |
@@ -61,6 +64,7 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `digest 0.10.7` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `9ed9a281f7bc9b7576e61468ba615a66a5c8cfdff42420a70aa82701a3b1e292` | [`9e0dfd2dd417`](#notice-9e0dfd2dd4173a530e238cb6adb37aa78c34c6bc7444e0e10c1ab5d8881f63ba), [`a9040321c371`](#notice-a9040321c3712d8fd0b09cf52b17445de04a23a10165049ae187cd39e5c86be5) |
 | `document-features 0.2.12` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `d4b8a88685455ed29a21542a33abd9cb6510b6b129abadabdcef0f4c55bc8f61` | [`074e6e32c86a`](#notice-074e6e32c86a4c0ef8b3ed25b721ca23aca83df277cd88106ef7177c354615ff), [`aa893340d14b`](#notice-aa893340d14b9844625be6a50ac644169a01b52f0211cbf81b09e1874c8cd81d) |
 | `either 1.16.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e` | [`7576269ea71f`](#notice-7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2) |
+| `env_filter 0.1.4` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `1bf3c259d255ca70051b30e2e95b5446cdb8949ac4cd22c0d7fd634d89f568e2` | [`6efb0476a1cc`](#notice-6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6), [`c6596eb7be85`](#notice-c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08) |
 | `equivalent 1.0.2` | `Apache-2.0 OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `877a4ace8713b0bcf2a4e7eec82529c029f1d0619886d18145fea96c3ffe5c0f` | [`7365cc8878a1`](#notice-7365cc8878a1d7ce155a58c4ca09c3d7a6be413efa5334a80ea842912b669349), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2) |
 | `errno 0.3.14` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb` | [`8764a5976757`](#notice-8764a597675778ddfd4e25f81b08a05dbcf089ac05662df7613fe67f150e3aa2), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2) |
 | `euclid 0.22.14` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `f1a05365e3b1c6d1650318537c7460c6923f1abdd272ad6842baa2b509957a06` | [`62065228e42c`](#notice-62065228e42caebca7e7d7db1204cbb867033de5982ca4009928915e4095f3a3), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2), [`ec82b96487e9`](#notice-ec82b96487e9e778ee610c7ab245162464782cfa1f555c2299333f8dbe5c036a) |
@@ -89,6 +93,11 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `is_terminal_polyfill 1.70.2` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `a6cb138bb79a146c1bd460005623e142ef0181e3d0219cb493e02f7d08a35695` | [`6efb0476a1cc`](#notice-6efb0476a1cc085077ed49357026d8c173bf33017278ef440f222fb9cbcb66e6), [`c6596eb7be85`](#notice-c6596eb7be8581c18be736c846fb9173b69eccf6ef94c5135893ec56bd92ba08) |
 | `itertools 0.14.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285` | [`7576269ea71f`](#notice-7576269ea71f767b99297934c0b2367532690f8c4badc695edf8e04ab6a1e545), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2) |
 | `itoa 1.0.18` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682` | [`23f18e03dc49`](#notice-23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3), [`62c7a1e35f56`](#notice-62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a) |
+| `jiff 0.2.35` | `Unlicense OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `668b7183bd07af9a4885f5c35b0cc5c83c4607a913c16b7e17291832910d2dcc` | [`01c266bced4a`](#notice-01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f), [`0f96a83840e1`](#notice-0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f) |
+| `jiff-core 0.1.0` | `Unlicense OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `7feca88439efe53da3754500c1851dedf3cb36c524dd5cf8225cc0794de95d09` | [`01c266bced4a`](#notice-01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f), [`0f96a83840e1`](#notice-0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f) |
+| `jiff-static 0.2.35` | `Unlicense OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `3a69dcb3a21cfb32ce1cd056169337ca284af0766dd766e7878819b251a49204` | [`01c266bced4a`](#notice-01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f), [`0f96a83840e1`](#notice-0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f) |
+| `jiff-tzdb 0.1.8` | `Unlicense OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `142bd39932ad231f10513df9ab62661fead8719872150b7ad02a2df79f4e141e` | [`01c266bced4a`](#notice-01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f), [`0f96a83840e1`](#notice-0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f) |
+| `jiff-tzdb-platform 0.1.3` | `Unlicense OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `875a5a69ac2bab1a891711cf5eccbec1ce0341ea805560dcd90b7a2e925132e8` | [`01c266bced4a`](#notice-01c266bced4a434da0051174d6bee16a4c82cf634e2679b6155d40d75012390f), [`0f96a83840e1`](#notice-0f96a83840e146e43c0ec96a22ec1f392e0680e6c1226e6f3ba87e0740af850f) |
 | `js-sys 0.3.103` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `53b44bfcdb3f8d5837a46dae1ca9660a837176eee74a28b229bc626816589102` | [`378f5840b258`](#notice-378f5840b258e2779c39418f3f2d7b2ba96f1c7917dd6be0713f88305dbda397), [`a60eea817514`](#notice-a60eea817514531668d7e00765731449fe14d059d3249e0bc93b36de45f759f2) |
 | `kasuari 0.4.12` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `bde5057d6143cc94e861d90f591b9303d6716c6b9602309150bd068853c10899` | [`000b4962e6b2`](#notice-000b4962e6b27176a0ff89cce4be555b16472cafb5671eb2804a8fdac6854793), [`74a705618923`](#notice-74a7056189235b49336669da4e67ad1b315de4ed17e93df751f48c3fab403812) |
 | `lab 0.11.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `bf36173d4167ed999940f804952e6b08197cae5ad5d572eb4db150ce8ad5d58f` | [`22c404ba4f85`](#notice-22c404ba4f8503eeef72b1cc644b95c2e40b9b974dfc3552aebfff8a26b07463) |
@@ -133,6 +142,7 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `phf_shared 0.11.3` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `67eabc2ef2a60eb7faa00097bd1ffdb5bd28e62bf39990626a582201b7a754e5` | [`0ab4d106b6fa`](#notice-0ab4d106b6faac07fb6a051815fd1b4d862d730895e2d7d7358c2f13565e7a38) |
 | `pin-project-lite 0.2.17` | `Apache-2.0 OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd` | [`0d542e0c8804`](#notice-0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594), [`23f18e03dc49`](#notice-23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3) |
 | `portable-atomic 1.14.0` | `Apache-2.0 OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `3d20d5497ef88037a52ff98267d066e7f11fcc5e99bbfbd58a42336193aacec3` | [`0d542e0c8804`](#notice-0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594), [`23f18e03dc49`](#notice-23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3) |
+| `portable-atomic-util 0.2.7` | `Apache-2.0 OR MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `c2a106d1259c23fac8e543272398ae0e3c0b8d33c88ed73d0cc71b0f1d902618` | [`0d542e0c8804`](#notice-0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594), [`23f18e03dc49`](#notice-23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3) |
 | `powerfmt 0.2.0` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `439ee305def115ba05938db6eb1644ff94165c5ab5e9420d1c1bcedbba909391` | [`070dbc7dda03`](#notice-070dbc7dda03a29296f2d58bdb9b7331af90f2abc9f31df22875d1eabaf29852), [`155420c6403d`](#notice-155420c6403d4e0fca34105e3c03fdd6939b64c393c7ec6f95f5b72c5474eab0) |
 | `ppv-lite86 0.2.21` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `85eae3c4ed2f50dcfe72643da4befc30deadb458a9b590d720cde2f2b1e97da9` | [`0218327e7a48`](#notice-0218327e7a480793ffdd4eb792379a9709e5c135c7ba267f709d6f6d4d70af0a), [`4cada0bd02ea`](#notice-4cada0bd02ea3692eee6f16400d86c6508bbd3bafb2b65fed0419f36d4f83e8f) |
 | `proc-macro2 1.0.107` | `MIT OR Apache-2.0` | `registry+https://github.com/rust-lang/crates.io-index` | `985e7ec9bb745e6ce6535b544d84d6cd6f7ad8bd711c398938ae983b91a766d9` | [`23f18e03dc49`](#notice-23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3), [`62c7a1e35f56`](#notice-62c7a1e35f56406896d7aa7ca52d0cc0d272ac022b5d2796e7d6905db8a3636a) |
@@ -209,6 +219,7 @@ This file is generated from the exact `Cargo.lock` graph. It inventories every n
 | `tracing-core 0.1.36` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a` | [`898b1ae9821e`](#notice-898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1) |
 | `tracing-log 0.2.0` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `ee855f1f400bd0e5c02d150ae5de3840039a3f54b025156404e34c23c03f47c3` | [`898b1ae9821e`](#notice-898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1) |
 | `tracing-subscriber 0.3.23` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `cb7f578e5945fb242538965c2d0b04418d38ec25c79d160cd279bf0731c8d319` | [`898b1ae9821e`](#notice-898b1ae9821e98daf8964c8d6c7f61641f5f5aa78ad500020771c0939ee0dea1) |
+| `tui-logger 0.18.3` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `a6f73b6b6152df40e19f2ffc818c7259211955dd9b35072d361ddbc51c20bb61` | [`4b70cd1bf820`](#notice-4b70cd1bf820b8ea430b45b8eca7f0663b5ae2607200f85a81db972c942c4e32) |
 | `tui-piechart 1.0.2` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `80333ebf441bf1bf04055494abdd345ef90c6e74b3ada1349c6239cd5525bf9a` | [`68f20ab30fee`](#notice-68f20ab30fee99acb186f501c5e7bee63dc7ad6fd5232192cf2389e219c1522f) |
 | `tui-term 0.3.4` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `a338ded85dbe7f9ea2298321d126244f54e531e2b2006b97abdab8e47d6f3c88` | [`e40eec05dd9a`](#notice-e40eec05dd9a1e4d2f9eb860df83bbba96c94861142a251f8c62907b72badd89) |
 | `tui-tree-widget 0.24.1` | `MIT` | `registry+https://github.com/rust-lang/crates.io-index` | `246c1142baa1e7a42b94f0fb2b60d838fc884c16281e330bf8624da65ed8f89a` | none packaged |
@@ -500,7 +511,7 @@ SOFTWARE.
 
 Packaged filenames: `COPYING`
 
-Used by: `aho-corasick 1.1.4`, `memchr 2.8.3`
+Used by: `aho-corasick 1.1.4`, `jiff 0.2.35`, `jiff-core 0.1.0`, `jiff-static 0.2.35`, `jiff-tzdb 0.1.8`, `jiff-tzdb-platform 0.1.3`, `memchr 2.8.3`
 
 ```text
 This project is dual-licensed under the Unlicense and MIT licenses.
@@ -1155,7 +1166,7 @@ SOFTWARE.
 
 Packaged filenames: `LICENSE-APACHE`, `LICENSE-Apache`
 
-Used by: `num-conv 0.2.2`, `pin-project-lite 0.2.17`, `portable-atomic 1.14.0`, `time 0.3.53`, `time-core 0.1.9`
+Used by: `num-conv 0.2.2`, `pin-project-lite 0.2.17`, `portable-atomic 1.14.0`, `portable-atomic-util 0.2.7`, `time 0.3.53`, `time-core 0.1.9`
 
 ```text
 
@@ -1373,7 +1384,7 @@ THE SOFTWARE.
 
 Packaged filenames: `LICENSE-MIT`
 
-Used by: `aho-corasick 1.1.4`, `memchr 2.8.3`, `ucd-trie 0.1.7`
+Used by: `aho-corasick 1.1.4`, `jiff 0.2.35`, `jiff-core 0.1.0`, `jiff-static 0.2.35`, `jiff-tzdb 0.1.8`, `jiff-tzdb-platform 0.1.3`, `memchr 2.8.3`, `ucd-trie 0.1.7`
 
 ```text
 The MIT License (MIT)
@@ -2555,7 +2566,7 @@ according to those terms.
 
 Packaged filenames: `LICENSE-MIT`
 
-Used by: `anyhow 1.0.104`, `async-trait 0.1.91`, `fastrand 2.5.0`, `finl_unicode 1.4.0`, `indoc 2.0.7`, `itoa 1.0.18`, `linux-raw-sys 0.12.1`, `minimal-lexical 0.2.1`, `once_cell 1.21.4`, `pest 2.8.7`, `pest_derive 2.8.7`, `pest_generator 2.8.7`, `pest_meta 2.8.7`, `pin-project-lite 0.2.17`, `portable-atomic 1.14.0`, `proc-macro2 1.0.107`, `quote 1.0.47`, `rustix 1.1.4`, `rustversion 1.0.23`, `semver 1.0.28`, `serde 1.0.229`, `serde_core 1.0.229`, `serde_derive 1.0.229`, `serde_json 1.0.150`, `syn 1.0.109`, `syn 2.0.119`, `syn 3.0.0`, `thiserror 1.0.69`, `thiserror 2.0.19`, `thiserror-impl 1.0.69`, `thiserror-impl 2.0.19`, `unicode-ident 1.0.24`, `wasi 0.11.1+wasi-snapshot-preview1`, `wasip2 1.0.4+wasi-0.2.12`, `wit-bindgen 0.57.1`, `zmij 1.0.23`
+Used by: `anyhow 1.0.104`, `async-trait 0.1.91`, `fastrand 2.5.0`, `finl_unicode 1.4.0`, `indoc 2.0.7`, `itoa 1.0.18`, `linux-raw-sys 0.12.1`, `minimal-lexical 0.2.1`, `once_cell 1.21.4`, `pest 2.8.7`, `pest_derive 2.8.7`, `pest_generator 2.8.7`, `pest_meta 2.8.7`, `pin-project-lite 0.2.17`, `portable-atomic 1.14.0`, `portable-atomic-util 0.2.7`, `proc-macro2 1.0.107`, `quote 1.0.47`, `rustix 1.1.4`, `rustversion 1.0.23`, `semver 1.0.28`, `serde 1.0.229`, `serde_core 1.0.229`, `serde_derive 1.0.229`, `serde_json 1.0.150`, `syn 1.0.109`, `syn 2.0.119`, `syn 3.0.0`, `thiserror 1.0.69`, `thiserror 2.0.19`, `thiserror-impl 1.0.69`, `thiserror-impl 2.0.19`, `unicode-ident 1.0.24`, `wasi 0.11.1+wasi-snapshot-preview1`, `wasip2 1.0.4+wasi-0.2.12`, `wit-bindgen 0.57.1`, `zmij 1.0.23`
 
 ```text
 Permission is hereby granted, free of charge, to any
@@ -2871,6 +2882,41 @@ prospectively choose to deem waived or otherwise exclude such Section(s) of
 the License, but only in their entirety and only with respect to the Combined
 Software.
 
+```
+
+<a id="notice-2710a622a896bba67356913d4d0492cab5465f61b2ecce6d880aeb483834fb50"></a>
+### SHA-256 `2710a622a896bba67356913d4d0492cab5465f61b2ecce6d880aeb483834fb50`
+
+Packaged filenames: `LICENSE-MIT`
+
+Used by: `defmt 1.1.1`, `defmt-macros 1.1.1`
+
+```text
+Copyright (c) Ferrous Systems
+
+Permission is hereby granted, free of charge, to any
+person obtaining a copy of this software and associated
+documentation files (the "Software"), to deal in the
+Software without restriction, including without
+limitation the rights to use, copy, modify, merge,
+publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software
+is furnished to do so, subject to the following
+conditions:
+
+The above copyright notice and this permission notice
+shall be included in all copies or substantial portions
+of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
+TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT
+SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
 ```
 
 <a id="notice-275c491d6d1160553c32fd6127061d7f9606c3ea25abfad6ca3f6ed088785427"></a>
@@ -4325,6 +4371,37 @@ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
 
+<a id="notice-4b70cd1bf820b8ea430b45b8eca7f0663b5ae2607200f85a81db972c942c4e32"></a>
+### SHA-256 `4b70cd1bf820b8ea430b45b8eca7f0663b5ae2607200f85a81db972c942c4e32`
+
+Packaged filenames: `LICENSE`
+
+Used by: `tui-logger 0.18.3`
+
+```text
+MIT License
+
+Copyright (c) 2024 Jochen Kiemes
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```
+
 <a id="notice-4cada0bd02ea3692eee6f16400d86c6508bbd3bafb2b65fed0419f36d4f83e8f"></a>
 ### SHA-256 `4cada0bd02ea3692eee6f16400d86c6508bbd3bafb2b65fed0419f36d4f83e8f`
 
@@ -5728,7 +5805,7 @@ APPENDIX: How to apply the Apache License to your work.
 
 Packaged filenames: `LICENSE-MIT`
 
-Used by: `anstream 1.0.0`, `anstyle 1.0.14`, `anstyle-parse 1.0.0`, `anstyle-query 1.1.5`, `anstyle-wincon 3.0.11`, `clap 4.6.2`, `clap_builder 4.6.2`, `clap_derive 4.6.1`, `clap_lex 1.1.0`, `colorchoice 1.0.5`, `is_terminal_polyfill 1.70.2`, `once_cell_polyfill 1.70.2`, `serde_spanned 1.1.1`, `toml 0.9.12+spec-1.1.0`, `toml_datetime 0.7.5+spec-1.1.0`, `toml_parser 1.1.2+spec-1.1.0`, `toml_writer 1.1.2+spec-1.1.0`
+Used by: `anstream 1.0.0`, `anstyle 1.0.14`, `anstyle-parse 1.0.0`, `anstyle-query 1.1.5`, `anstyle-wincon 3.0.11`, `clap 4.6.2`, `clap_builder 4.6.2`, `clap_derive 4.6.1`, `clap_lex 1.1.0`, `colorchoice 1.0.5`, `env_filter 0.1.4`, `is_terminal_polyfill 1.70.2`, `once_cell_polyfill 1.70.2`, `serde_spanned 1.1.1`, `toml 0.9.12+spec-1.1.0`, `toml_datetime 0.7.5+spec-1.1.0`, `toml_parser 1.1.2+spec-1.1.0`, `toml_writer 1.1.2+spec-1.1.0`
 
 ```text
 Copyright (c) Individual contributors
@@ -5987,7 +6064,7 @@ SOFTWARE.
 
 Packaged filenames: `LICENSE-APACHE`
 
-Used by: `bit-set 0.5.3`, `bit-set 0.8.0`, `bit-vec 0.6.3`, `bit-vec 0.8.0`, `minimal-lexical 0.2.1`
+Used by: `bit-set 0.5.3`, `bit-set 0.8.0`, `bit-vec 0.6.3`, `bit-vec 0.8.0`, `defmt 1.1.1`, `defmt-macros 1.1.1`, `minimal-lexical 0.2.1`
 
 ```text
                               Apache License
@@ -8574,7 +8651,7 @@ SOFTWARE.
 
 Packaged filenames: `LICENSE-APACHE`
 
-Used by: `anstream 1.0.0`, `anstyle 1.0.14`, `anstyle-parse 1.0.0`, `anstyle-query 1.1.5`, `anstyle-wincon 3.0.11`, `clap 4.6.2`, `clap_builder 4.6.2`, `clap_derive 4.6.1`, `clap_lex 1.1.0`, `colorchoice 1.0.5`, `hex 0.4.3`, `is_terminal_polyfill 1.70.2`, `once_cell_polyfill 1.70.2`, `quick-error 1.2.3`, `serde_spanned 1.1.1`, `toml 0.9.12+spec-1.1.0`, `toml_datetime 0.7.5+spec-1.1.0`, `toml_parser 1.1.2+spec-1.1.0`, `toml_writer 1.1.2+spec-1.1.0`
+Used by: `anstream 1.0.0`, `anstyle 1.0.14`, `anstyle-parse 1.0.0`, `anstyle-query 1.1.5`, `anstyle-wincon 3.0.11`, `clap 4.6.2`, `clap_builder 4.6.2`, `clap_derive 4.6.1`, `clap_lex 1.1.0`, `colorchoice 1.0.5`, `env_filter 0.1.4`, `hex 0.4.3`, `is_terminal_polyfill 1.70.2`, `once_cell_polyfill 1.70.2`, `quick-error 1.2.3`, `serde_spanned 1.1.1`, `toml 0.9.12+spec-1.1.0`, `toml_datetime 0.7.5+spec-1.1.0`, `toml_parser 1.1.2+spec-1.1.0`, `toml_writer 1.1.2+spec-1.1.0`
 
 ```text
                                  Apache License
