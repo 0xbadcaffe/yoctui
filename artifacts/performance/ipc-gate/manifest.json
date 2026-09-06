@@ -1,10 +1,10 @@
 {
   "schema": "yoctui.performance.ipc-continuity-gate.v1",
-  "source_base_revision": "6d0594d56d38fb9cbd97e3545fc145755bb0ea60",
+  "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
   "event_flood_artifact": "artifacts/performance/ipc-gate/event-flood.json",
-  "event_flood_sha256": "aaab6532abc1e50cafacb27fb6c08049dfec03e48d5eb99bdb4917afd484178b",
+  "event_flood_sha256": "94d577aaaff9db8fe2c629924f6717789d4363fa3a44d6aa22c2fd81aa86d206",
   "saturated_latency_artifact": "artifacts/performance/ipc-latency/host-audit.json",
-  "saturated_latency_sha256": "959e91377599d739460228e4f977b91baeccd64e33fdd71b7dca3481c7cde592",
+  "saturated_latency_sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26",
   "sources": {
     "scripts/event-flood-harness.py": "ccf91c0a588525534a750f07f1cdfbf5d56dc82e3858e6da467b65ca18c3b83f",
     "scripts/fixtures/bitbake-event-flood-bridge.py": "001d0370fe32df2d21f788643cac8355d339a55d8db98f601d0d3b88567a949b",
@@ -12,15 +12,15 @@
   },
   "observations": {
     "requested_event_rate_per_second": 4000,
-    "generated_ordinary_events": 4001,
+    "generated_ordinary_events": 4003,
     "healthy_client_event_frames": 1652,
     "critical_sentinels_retained": 4,
     "important_transitions_observed": 2,
-    "maximum_queue_depth": 599,
+    "maximum_queue_depth": 602,
     "slow_client_disconnects": 1,
     "forced_resynchronizations": 0,
     "reconnect_succeeded": true,
-    "saturated_daemon_event_p95_ms": 3.262296,
-    "saturated_detach_acknowledgement_ms": 0.119384
+    "saturated_daemon_event_p95_ms": 28.371364,
+    "saturated_detach_acknowledgement_ms": 0.149685
   }
 }

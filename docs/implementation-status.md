@@ -38,7 +38,6 @@ shared file preview uses Right to take focus and arrow scrolling, and mouse
 activation now starts the Packages inventory operation instead of leaving it
 stuck in Loading. Combined release verification is pending.
 
-M46 Low-Overhead / Build-Saturation Responsiveness is registered and
 M46 Low-Overhead / Build-Saturation Responsiveness is complete. It adds 30 required dependency-ordered tasks for an
 exact <=1% of one logical CPU steady-state goal, saturation responsiveness,
 bounded priority-aware IPC, profiling, deterministic and live evidence, CI,

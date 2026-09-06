@@ -1,6 +1,6 @@
 {
   "schema": "yoctui.performance.responsiveness-manifest.v1",
-  "source_base_revision": "df4dbbb2fd51f5803ecbbc5fe8a9ee19f8c0b33c",
+  "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
   "sources": {
     "crates/yoctui-e2e/examples/input_latency_probe.rs": "78ac66134c00228fb9476d66fc4afdf3ff65e6258e68793163bb987b25924108",
     "scripts/cpu-saturation-harness.py": "b54d207b1a79013a2357467792dfd2d48f52b4bffc65951e1523318538d0f473",
@@ -10,12 +10,12 @@
   "evidence": {
     "input_and_render": {
       "path": "artifacts/performance/input-latency/host-audit.json",
-      "sha256": "2115d41c2b84e838704aa1d3c2919097f2e670c0f9c5cc3a4911c87becd6cb54",
+      "sha256": "bc8e06ad4b8c57b1cc3f4abaafb6cdc24dec83ab2e0b588362436da593e29505",
       "schema": "yoctui.performance.input-latency.v1"
     },
     "ipc_backend_cancellation_detach_reconnect": {
       "path": "artifacts/performance/ipc-latency/host-audit.json",
-      "sha256": "959e91377599d739460228e4f977b91baeccd64e33fdd71b7dca3481c7cde592",
+      "sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26",
       "schema": "yoctui.performance.ipc-latency.v1"
     }
   },
@@ -31,12 +31,12 @@
     "all_cpus_runnable": true
   },
   "observations": {
-    "keyboard_to_visible_frame_p95_ms": 4.336407,
-    "mouse_to_visible_selection_p95_ms": 4.440078,
-    "daemon_event_to_client_p95_ms": 3.262296,
-    "cancellation_request_to_ack_p95_ms": 1.35879,
-    "detach_acknowledgement_ms": 0.119384,
-    "input_host_cpu_utilization_percent": 99.74673106372953,
-    "ipc_host_cpu_utilization_percent": 99.25617375781017
+    "keyboard_to_visible_frame_p95_ms": 5.717701,
+    "mouse_to_visible_selection_p95_ms": 5.243934,
+    "daemon_event_to_client_p95_ms": 28.371364,
+    "cancellation_request_to_ack_p95_ms": 4.987059,
+    "detach_acknowledgement_ms": 0.149685,
+    "input_host_cpu_utilization_percent": 99.84707681449241,
+    "ipc_host_cpu_utilization_percent": 99.30049548236666
   }
 }

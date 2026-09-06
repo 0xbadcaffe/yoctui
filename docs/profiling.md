@@ -25,6 +25,13 @@ status 2. On locked-down Linux hosts, grant `CAP_PERFMON` to `perf` or
 temporarily lower `kernel.perf_event_paranoid` according to local security
 policy before running the flamegraph gate.
 
+`YOCTUI_PROFILE_TARGET_DIR` selects the ordinary benchmark build cache.
+`YOCTUI_FLAMEGRAPH_BUILD_TARGET_DIR` optionally selects a separate cache for
+the frame-pointer-instrumented flamegraph build; when unset, the existing
+profile-cache default is preserved. For example, use `target` for ordinary
+release benchmarks and `target/ui-performance` for frame-pointer builds. This
+changes only artifact placement, not sampling, workloads, or acceptance limits.
+
 ## Next-generation UI rendering matrix
 
 `scripts/test-next-generation-ui-performance.sh` runs five deterministic

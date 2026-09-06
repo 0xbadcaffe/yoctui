@@ -10,7 +10,7 @@ status = "IN_PROGRESS"
 priority = 900
 required = true
 depends_on = ["PERF-001", "KERNEL-WORKBENCH-001", "FIRMWARE-WORKBENCH-001", "ROOTFS-SYSTEM-EXPLORER-001", "OVERVIEW-001"]
-verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-performance.sh"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-performance.sh", "./scripts/test-workbench-ux-performance.sh"]
 notes = "Integrate all four feature histories, preserve M46 scheduling and IPC, reconcile Navigator identities and mouse effects, review regenerated production goldens/rasters, and verify the combined release. Full repository completion is required before advancing and pushing master."
 
 # Statuses reflect the implementation and test evidence present on master.

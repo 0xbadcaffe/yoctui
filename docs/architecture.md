@@ -3475,6 +3475,12 @@ projects Dashboard through the existing task cockpit, derives transient
 `tui-tree-widget`/`tui-piechart` state, and never performs filesystem or daemon
 I/O.
 
+Editor dirty and visual-diff predicates compare their respective baseline
+strings exactly with the current buffer. They do not hash either buffer during
+rendering. Cryptographic revisions remain unchanged for explicit save/conflict
+checks and diff records; direct buffer mutations and independent baselines
+therefore retain their existing semantics without an invalidation cache.
+
 The CLI alone starts and polls the daemon and owns terminal suspension around
 Vim. On return it reloads the selected file through the containment-checked
 editor workflow; the reducer advances disk authority while retaining the

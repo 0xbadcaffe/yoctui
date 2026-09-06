@@ -24,6 +24,26 @@ Reconcile Navigator identities, mouse dispatch, release version, and visual fixt
 - Workspace, bridge, Clippy, roadmap, documentation, and performance gates pass.
 - The full completion verifier passes before master is pushed.
 
+## Verification progress
+
+The integrated source checkpoint is `7dab483` (v0.1.56); all four feature tips
+are ancestors. Workspace tests, strict Clippy, bridge checks, reviewed production
+goldens/rasters, coverage, fuzz/stress, sanitizers, Valgrind, and a fresh CPU
+flamegraph passed. Fresh release evidence measured 0.0625% combined idle CPU
+and 0.9858% during sustained real Poky compilation, both measured against one
+logical CPU. Real-build input p95 was 8.009 ms, with cancellation and reconnect
+passing. The 30-minute event-stream endurance capture preserved bounded memory,
+critical events, ordering, and continuity.
+
+The fresh optimized input probe and aggregate performance verifier passed.
+Rendering verification exposed a repeatable large-editor regression:
+10.15–11.86 ms/frame against the unchanged 10 ms threshold. A 2,144-sample
+CPU profile attributed 43.38% of self time to SHA-256, including repeated
+boolean dirty/diff checks. Replace those checks with exact text comparison;
+save/conflict revision hashes remain unchanged. Verify the fix and refresh
+versioned fixtures, then record the final merge, run the full completion gate
+on the clean merge, and push master.
+
 ## Verification
 
 ```bash
