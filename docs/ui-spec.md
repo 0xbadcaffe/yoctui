@@ -5163,6 +5163,13 @@ DTS, `d` decompiles a DTB/DTBO, and `r` refreshes the inventory. Binary device
 trees do not enter the text viewer. Compile/decompile actions preview exact
 argv and refuse to overwrite an existing `.yoctui` output.
 
+U-Boot / BIOS is the adjacent Content destination. It selects the active
+image's boot provider from authoritative BitBake variables and recipe metadata,
+then labels the workspace U-Boot or BIOS / UEFI. It uses the same tabs and
+keys as Kernel. Menuconfig launches the detected provider only when its task
+inventory advertises `menuconfig`; configuration and device-tree exploration
+remain available when a BIOS provider has no Kconfig task.
+
 Logs opens with Workspace focus. Up/Down, PageUp/PageDown, Home/End, and mouse
 wheel input pause live follow and move the retained selection; `f` resumes
 follow at the newest matching entry. Daemon snapshots and incremental log

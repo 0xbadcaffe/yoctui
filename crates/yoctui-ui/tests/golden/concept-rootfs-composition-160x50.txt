@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.47  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.48  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -12,27 +12,27 @@
 │    Packages              │││                        ■ libraries 27.0%   ││kernel and 50    18900000    14.95% │││Path:                                       │
 │    Images                │││      ⣀⣤⣶⣶⣶⣷⣶⣶⣦⣄⡀                           ││locales    70    11400000    9.01%  │││/home/user/yocto/build/tmp/deploy/images/qem│
 │    Kernel                │││   ⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄     ■ kernel and modules││utilities  70    8800000     6.96%  │││ux86-64/core-image-minimal-qemux86-64.rootfs│
-│    SDK                   │││  ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧                        ││Other      22    6400000     5.06%  │││.ext4                                       │
-│▾ BUILD                   │││ ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧   ■ locales 9.0%      ││                                    │││Installed packages: available               │
-│    Tasks                 │││ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿                       ││                                    │││Filesystem tree: partial · 1 limitation(s)  │
-│  ▱ Logs              LIVE│││ ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁  ■ utilities 7.0%    ││                                    │││                                            │
-│  ▱ Errors                │││ ⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿                       ││                                    │││Exact totals                                │
-│    Configuration         │││  ⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁   ■ Other 5.1%        ││                                    │││Package bytes: 126400000                    │
-│    Dependencies          │││   ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠁                        ││                                    │││Package files: 4735                         │
-│▾ VALIDATE                │││     ⠉⠛⠿⣿⣿⣿⣿⣿⣿⡿⠟⠋⠁                          ││                                    │││Filesystem bytes: 1198305                   │
-│    Testing               │││           ⠁                                ││                                    │││Entries: 9 (files 2 · dirs 5 · symlinks 1 · │
-│    Security              │││                                            ││                                    │││special 1)                                  │
-│    QA                    │││                                            ││                                    │││Overflow: false                             │
-│▾ TOOLS                   │││                                            ││                                    │││                                            │
-│    Raw Mode              │││                                            ││                                    │││Selected group: base system                 │
-│    Terminal Sessions     ││└────────────────────────────────────────────┘└────────────────────────────────────┘││Selected package: base-system-000           │
-│    Devtool               ││┌Accessible package selection · j/k moves checked row──────────────────────────────┐││Recipe: base-system                         │
-│    QEMU / Wic            │││  ⊟ base system group · 90 packages (indeterminate)                               │││Category: base system                       │
-│    Maintenance           │││> ☑ base-system-000 · 520000 B · 3 files (checked)                                │││Installed bytes: 520000                     │
-│  ▱ Build environment     │││  ☐ base-system-001 · 520000 B · 4 files (unchecked)                              │││Reported files: 3                           │
-│  ▱ Compatibility         │││  ☐ base-system-002 · 520000 B · 5 files (unchecked)                              │││                                            │
-│  ▱ Settings              │││  ☐ base-system-003 · 520000 B · 6 files (unchecked)                              │││Limitations                                 │
-│                          │││  ☐ base-system-004 · 520000 B · 7 files (unchecked)                              │││! package ownership is partial              │
+│    U-Boot / BIOS         │││  ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧                        ││Other      22    6400000     5.06%  │││.ext4                                       │
+│    SDK                   │││ ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧   ■ locales 9.0%      ││                                    │││Installed packages: available               │
+│▾ BUILD                   │││ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿                       ││                                    │││Filesystem tree: partial · 1 limitation(s)  │
+│    Tasks                 │││ ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁  ■ utilities 7.0%    ││                                    │││                                            │
+│  ▱ Logs              LIVE│││ ⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿                       ││                                    │││Exact totals                                │
+│  ▱ Errors                │││  ⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁   ■ Other 5.1%        ││                                    │││Package bytes: 126400000                    │
+│    Configuration         │││   ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠁                        ││                                    │││Package files: 4735                         │
+│    Dependencies          │││     ⠉⠛⠿⣿⣿⣿⣿⣿⣿⡿⠟⠋⠁                          ││                                    │││Filesystem bytes: 1198305                   │
+│▾ VALIDATE                │││           ⠁                                ││                                    │││Entries: 9 (files 2 · dirs 5 · symlinks 1 · │
+│    Testing               │││                                            ││                                    │││special 1)                                  │
+│    Security              │││                                            ││                                    │││Overflow: false                             │
+│    QA                    │││                                            ││                                    │││                                            │
+│▾ TOOLS                   │││                                            ││                                    │││Selected group: base system                 │
+│    Raw Mode              ││└────────────────────────────────────────────┘└────────────────────────────────────┘││Selected package: base-system-000           │
+│    Terminal Sessions     ││┌Accessible package selection · j/k moves checked row──────────────────────────────┐││Recipe: base-system                         │
+│    Devtool               │││  ⊟ base system group · 90 packages (indeterminate)                               │││Category: base system                       │
+│    QEMU / Wic            │││> ☑ base-system-000 · 520000 B · 3 files (checked)                                │││Installed bytes: 520000                     │
+│    Maintenance           │││  ☐ base-system-001 · 520000 B · 4 files (unchecked)                              │││Reported files: 3                           │
+│  ▱ Build environment     │││  ☐ base-system-002 · 520000 B · 5 files (unchecked)                              │││                                            │
+│  ▱ Compatibility         │││  ☐ base-system-003 · 520000 B · 6 files (unchecked)                              │││Limitations                                 │
+│  ▱ Settings              │││  ☐ base-system-004 · 520000 B · 7 files (unchecked)                              │││! package ownership is partial              │
 │                          │││  ☐ Filesystem ownership (disabled) — partial; Tab for evidence                   │││                                            │
 │                          │││Other membership remains inspectable · exact bytes stay authoritative             │││▾ RELATED PATHS                             │
 │                          │││                                                                                  │││/home/user/yocto/build/tmp/deploy/images/qem│

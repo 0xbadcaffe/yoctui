@@ -38,6 +38,8 @@ missing target as distinct typed outcomes—no fixture backend or inferred state
   signatures.
 - **Kernel workbench** — provider-aware menuconfig, `.config` browsing, and
   bounded DTS/DTB exploration, compilation, and decompilation.
+- **U-Boot / BIOS workbench** — image-aware boot-firmware detection with the
+  same configuration, source exploration, and device-tree workflow.
 - **Yocto workflows** — Devtool, packages, SDK, embedded QEMU/SSH image
   consoles, Wic, Testing, CVE/SPDX, QA, sstate, release, and maintenance tools.
 - **Terminal-native UX** — responsive layouts, command palette, contextual
