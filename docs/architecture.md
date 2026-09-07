@@ -12,6 +12,13 @@ preserves each workflow's confirmation boundary.
 
 ## Architectural principles
 
+Executable discovery canonicalizes absolute initialized PATH directories before
+joining the requested tool basename. Directory symlinks (for example OpenBMC's
+scripts link) are valid search roots; relative/missing roots are not. Final-file
+aliases retain the existing same-directory relative-target checks, and the
+requested basename is retained for argv[0]-sensitive tools. Discovery never
+grants capability authority by PATH membership alone: bounded probes still run.
+
 The daemon-build CLI retains optimistic generation checks. An explicit stale
 rejection permits at most two retries (three total submissions), each after
 refreshing the attached snapshot and confirming unchanged daemon instance,

@@ -72,18 +72,18 @@ notes = "v0.1.69: measured real Romulus inventory 4799 records/1051217 bytes, ju
 id = "OPENBMC-TOOLS-001"
 milestone = "M56"
 title = "Discover tools through canonicalized initialized PATH directories"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1287
 required = true
 depends_on = ["OPENBMC-ENV-001"]
 verify = ["cargo test -p yoctui daemon_compatibility", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "OpenBMC scripts is a directory symlink to upstream-layers/openembedded-core/scripts. Both lexical and canonical devtool --help work in the initialized environment, yet doctor records executable_identity negative because discover_executable rejects noncanonical PATH directories. Canonicalize absolute PATH directories before resolving tool identity, retaining safe basename-sensitive sibling file aliases and rejecting relative/dangling/escaping file aliases. Tests first and live Devtool/Recipetool/pkgdata tool recheck; no broad safety bypass."
+notes = "v0.1.71 canonicalizes absolute initialized PATH directories before joining the requested basename, preserving safe sibling aliases and rejecting relative/dangling/escaping/nonexecutable candidates. Regression failed before fix; 14 focused compatibility tests and 1543 workspace tests (4 existing ignored), 49 bridge tests, strict Clippy, fmt, Ruff/mypy and docs pass. Real OpenBMC doctor finds canonical Devtool, Recipetool and pkgdata tools; pkgdata.list_packages Available. Some Devtool/Recipetool help probes time out and correctly remain Unknown, not falsely enabled. Version-only goldens/rasters refreshed. Evidence in docs/testing/openbmc.md and doctor-v0.1.71.json. No image-build or release-performance claim."
 
 [[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 1280
 required = true
 depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001"]

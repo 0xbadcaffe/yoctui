@@ -1,5 +1,11 @@
 # Compatibility and Validation Evidence
 
+Initialized PATH entries may be absolute directory symlinks. Yoctui resolves
+the directory before inspecting executables, while preserving safe sibling
+file aliases such as bitbake-dumpsig. Relative or dangling search roots and
+escaping final-file aliases remain rejected. Finding an executable does not
+replace the capability's required bounded runtime probes.
+
 Yoctui requires stable Rust for compilation and an initialized Yocto
 environment for production BitBake control. This document records observed
 evidence, not compatibility inferred from version numbers. The authoritative

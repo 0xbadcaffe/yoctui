@@ -588,10 +588,12 @@ fn canonical_initialized_build(value: &str) -> Result<PathBuf, DaemonCompatibili
 
 fn discover_executable(path: &str, name: &str) -> Option<PathBuf> {
     std::env::split_paths(path).find_map(|directory| {
-        let candidate = directory.join(name);
-        if !candidate.is_absolute() || fs::canonicalize(&directory).ok()? != directory {
+        if !directory.is_absolute() {
             return None;
         }
+        let directory = fs::canonicalize(directory).ok()?;
+        // Keep the requested basename: sibling aliases can select behavior by argv[0].
+        let candidate = directory.join(name);
         let metadata = fs::symlink_metadata(&candidate).ok()?;
         let executable_metadata = if metadata.file_type().is_symlink() {
             let target = fs::read_link(&candidate).ok()?;
@@ -847,6 +849,63 @@ pub enum DaemonCompatibilityError {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn daemon_compatibility_discovers_directory_symlinks_and_preserves_tool_alias_name() {
+        let fixture = RuntimeFixture::new();
+        write_tool(&fixture.bin.join("devtool"), "echo fixture");
+        write_tool(&fixture.bin.join("bitbake-diffsigs"), "echo fixture");
+        std::os::unix::fs::symlink("bitbake-diffsigs", fixture.bin.join("bitbake-dumpsig"))
+            .unwrap();
+        let alias = fixture.root.join("scripts");
+        std::os::unix::fs::symlink(&fixture.bin, &alias).unwrap();
+        let path = alias.to_str().unwrap();
+        assert_eq!(
+            discover_executable(path, "devtool"),
+            Some(fixture.bin.join("devtool"))
+        );
+        assert_eq!(
+            discover_executable(path, "bitbake-dumpsig"),
+            Some(fixture.bin.join("bitbake-dumpsig"))
+        );
+    }
+
+    #[test]
+    fn daemon_compatibility_directory_resolution_keeps_unsafe_tools_rejected() {
+        let fixture = RuntimeFixture::new();
+        let alias = fixture.root.join("scripts");
+        std::os::unix::fs::symlink(&fixture.bin, &alias).unwrap();
+        write_tool(&fixture.root.join("outside"), "echo fixture");
+        std::os::unix::fs::symlink("../outside", fixture.bin.join("escape")).unwrap();
+        std::os::unix::fs::symlink(fixture.root.join("outside"), fixture.bin.join("absolute"))
+            .unwrap();
+        std::os::unix::fs::symlink("missing", fixture.bin.join("dangling")).unwrap();
+        fs::write(fixture.bin.join("non-executable"), "not a tool").unwrap();
+        fs::create_dir(fixture.bin.join("directory")).unwrap();
+        for name in [
+            "escape",
+            "absolute",
+            "dangling",
+            "non-executable",
+            "directory",
+            "missing",
+        ] {
+            assert!(
+                discover_executable(alias.to_str().unwrap(), name).is_none(),
+                "{name}"
+            );
+        }
+        assert!(discover_executable(".", "bitbake").is_none());
+        assert!(discover_executable("", "bitbake").is_none());
+        std::os::unix::fs::symlink("missing", fixture.root.join("dangling-directory")).unwrap();
+        assert!(
+            discover_executable(
+                fixture.root.join("dangling-directory").to_str().unwrap(),
+                "bitbake"
+            )
+            .is_none()
+        );
+    }
 
     #[test]
     fn command_probes_are_grouped_by_executable_for_serial_scheduling() {

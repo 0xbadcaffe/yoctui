@@ -23,8 +23,12 @@ formatting, Ruff/mypy and docs pass. OPENBMC-CLI-BUILD-001 is DONE in v0.1.70:
 bounded stale-generation refresh/retry, nonzero rejection status and no duplicate
 resubmission on ambiguous I/O or acceptance. Six real-CLI/socket test groups and
 a live invalid-target rejection pass; 1,541 workspace tests, 49 bridge tests,
-Clippy, formatting, Python checks and docs pass. OPENBMC-TOOLS-001 is IN_PROGRESS
-before the actual image build.
+Clippy, formatting, Python checks and docs pass. OPENBMC-TOOLS-001 is DONE in
+v0.1.71: canonicalized absolute PATH directories expose the real tools while
+retaining final-file alias safety. Fourteen focused tests, 1,543 workspace tests,
+49 bridge tests, strict Clippy, formatting, Python and docs checks pass. Real
+tool identities and package-list capability are verified; timed-out Devtool
+help probes remain Unknown. OPENBMC-LIVE-001 is now IN_PROGRESS.
 No image build was accepted yet.
 Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the

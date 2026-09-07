@@ -1,0 +1,3723 @@
+{
+  "schema": "yoctui.doctor.compatibility.v1",
+  "authority": "current",
+  "authority_reason": null,
+  "release_support": "unknown",
+  "release_support_reason": "Runtime capability evidence is current; no live release-support claim is encoded yet.",
+  "operating_mode": "degraded",
+  "schema_version": 1,
+  "generation": 1,
+  "environment": {
+    "build_directory": {
+      "state": "detected",
+      "value": "/home/bspguy-dev/src/build-openbmc-romulus",
+      "authority": "initialized_environment"
+    },
+    "source_roots": {
+      "state": "detected",
+      "value": [
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/meta-aspeed"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/meta-ibm/meta-romulus"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/meta-openpower"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/meta-phosphor"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-networking"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-oe"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-perl"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-python"
+        },
+        {
+          "kind": "layer",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta"
+        }
+      ],
+      "authority": "configured_layer_metadata"
+    },
+    "bitbake_version": {
+      "state": "detected",
+      "value": "2.19.0",
+      "authority": "bit_bake_version_probe"
+    },
+    "oe_core": {
+      "state": "detected",
+      "value": {
+        "name": "blacksail",
+        "version": null
+      },
+      "authority": "bit_bake_datastore"
+    },
+    "poky": {
+      "state": "unknown"
+    },
+    "distro": {
+      "state": "detected",
+      "value": {
+        "name": "openbmc-openpower",
+        "version": "nodistro.0"
+      },
+      "authority": "bit_bake_datastore"
+    },
+    "machine": {
+      "state": "detected",
+      "value": "romulus",
+      "authority": "bit_bake_datastore"
+    },
+    "layer_series": {
+      "state": "detected",
+      "value": [
+        {
+          "layer": "core",
+          "root": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta",
+          "compatible_series": [
+            "blacksail",
+            "wrynose"
+          ]
+        }
+      ],
+      "authority": "configured_layer_metadata"
+    },
+    "available_tools": {
+      "state": "detected",
+      "value": [
+        {
+          "id": "bitbake",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "version": "2.19.0"
+        },
+        {
+          "id": "bitbake-diffsigs",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+          "version": null
+        },
+        {
+          "id": "bitbake-dumpsig",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
+          "version": null
+        },
+        {
+          "id": "bitbake-getvar",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+          "version": null
+        },
+        {
+          "id": "bitbake-layers",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "version": null
+        },
+        {
+          "id": "bitbake-prserv",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
+          "version": null
+        },
+        {
+          "id": "bitbake-selftest",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
+          "version": null
+        },
+        {
+          "id": "buildhistory-diff",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/buildhistory-diff",
+          "version": null
+        },
+        {
+          "id": "devtool",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "version": null
+        },
+        {
+          "id": "oe-check-sstate",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-check-sstate",
+          "version": null
+        },
+        {
+          "id": "oe-find-native-sysroot",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-find-native-sysroot",
+          "version": null
+        },
+        {
+          "id": "oe-git-archive",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-git-archive",
+          "version": null
+        },
+        {
+          "id": "oe-pkgdata-util",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+          "version": null
+        },
+        {
+          "id": "oe-publish-sdk",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-publish-sdk",
+          "version": null
+        },
+        {
+          "id": "oe-selftest",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-selftest",
+          "version": null
+        },
+        {
+          "id": "recipetool",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+          "version": null
+        },
+        {
+          "id": "resulttool",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/resulttool",
+          "version": null
+        },
+        {
+          "id": "runqemu",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/runqemu",
+          "version": null
+        },
+        {
+          "id": "yocto-check-layer",
+          "executable": "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/yocto-check-layer",
+          "version": null
+        }
+      ],
+      "authority": "executable_probe"
+    },
+    "backend": {
+      "state": "unknown"
+    },
+    "protocol": {
+      "state": "detected",
+      "value": {
+        "name": "yoctui-daemon",
+        "version": "1.2"
+      },
+      "authority": "protocol_negotiation"
+    }
+  },
+  "summary": {
+    "available": 71,
+    "limited": 1,
+    "unavailable": 6,
+    "unknown": 29,
+    "unsupported": 0
+  },
+  "missing_tools": [
+    {
+      "tool": "build-compare",
+      "reason": "build-compare is absent from the initialized environment"
+    },
+    {
+      "tool": "sstate-cache-management.sh",
+      "reason": "sstate-cache-management.sh is absent from the initialized environment"
+    },
+    {
+      "tool": "wic",
+      "reason": "wic is absent from the initialized environment"
+    }
+  ],
+  "limited_features": [
+    {
+      "id": "bitbake.dependency_graph",
+      "state": "limited",
+      "reason_code": "fallback.available_capability",
+      "reason": "The preferred implementation is unavailable; a maintained capability-backed fallback was selected.",
+      "requirement": "Required capability: bitbake.graph_generation",
+      "limitations": [
+        "Uses bitbake.graph_generation through implementation bitbake.graph.argv."
+      ],
+      "implementation": "bitbake.graph.argv"
+    }
+  ],
+  "unavailable_features": [
+    {
+      "id": "bitbake.raw.multiconfig",
+      "state": "unavailable",
+      "reason_code": "environment.capability_unavailable",
+      "reason": "Connected environment does not expose Raw multiconfig target syntax.",
+      "requirement": "Required capability: bitbake.raw.multiconfig",
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "pkgdata.generated",
+      "state": "unavailable",
+      "reason_code": "environment.capability_unavailable",
+      "reason": "Connected environment does not expose generated package data.",
+      "requirement": "Required capability: pkgdata.generated",
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "wic.create",
+      "state": "unavailable",
+      "reason_code": "environment.capability_unavailable",
+      "reason": "Connected environment does not expose Wic image creation.",
+      "requirement": "Required capability: wic.create",
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "prserv.diagnostics",
+      "state": "unavailable",
+      "reason_code": "environment.capability_unavailable",
+      "reason": "Connected environment does not expose PR service diagnostics.",
+      "requirement": "Required capability: prserv.diagnostics",
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "sstate.cleanup",
+      "state": "unavailable",
+      "reason_code": "environment.capability_unavailable",
+      "reason": "Connected environment does not expose shared-state cache cleanup.",
+      "requirement": "Required capability: sstate.cleanup",
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "build_compare",
+      "state": "unavailable",
+      "reason_code": "environment.capability_unavailable",
+      "reason": "Connected environment does not expose build output comparison.",
+      "requirement": "Required capability: build_compare",
+      "limitations": [],
+      "implementation": null
+    }
+  ],
+  "unsupported_features": [],
+  "unknown_features": [
+    {
+      "id": "devtool.modify",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devtool.status",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devtool.edit_recipe",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devtool.update_recipe",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devtool.finish",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devtool.undeploy_target",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devtool.reset",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devtool.upgrade",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "recipetool.create",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "recipetool.create_outfile",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "bitbake_layers.show_layers",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "bitbake_layers.create_and_add_layer",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "bitbake_layers.add_layer",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "bitbake_layers.remove_layer",
+      "state": "unknown",
+      "reason_code": "evidence.incomplete",
+      "reason": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "sdk.populate",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "sdk.extensible",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "sdk.native_tools",
+      "state": "unknown",
+      "reason_code": "evidence.conflict",
+      "reason": "Direct capability probes returned conflicting positive and negative evidence.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "cve.check",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "spdx.create",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "testimage",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "testsdk",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "testsdk_extensible",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "ptest",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "qa.task",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "menuconfig",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "devshell",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "buildhistory",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "locked_signatures",
+      "state": "unknown",
+      "reason_code": "fallback.not_declared",
+      "reason": "This capability does not declare a release/version fallback.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    },
+    {
+      "id": "hashserv.diagnostics",
+      "state": "unknown",
+      "reason_code": "evidence.conflict",
+      "reason": "Direct capability probes returned conflicting positive and negative evidence.",
+      "requirement": null,
+      "limitations": [],
+      "implementation": null
+    }
+  ],
+  "capabilities": [
+    {
+      "id": "bitbake.workspace_inspection",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports workspace",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.workspace",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.recipe_inventory",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports recipes",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.recipes",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.recipe_dependencies",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports recipe_dependencies",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.dependencies",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.recipe_sources",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports recipe_sources",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.recipe_sources",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.recipe_metadata",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports recipe_metadata",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.recipe_metadata",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.layer_inventory",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports layers",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.layers",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.layer_relationships",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports layer_relationships",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.layer_relationships",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.build",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports build",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.build",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.cancellation",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports cancel",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.cancel",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.task_list",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports tasks",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.tasks",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.force_task",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes -f",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes -c",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.force_task.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.environment_dump",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes -e",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.environment_dump.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.graph_generation",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes -g",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.graph.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.dependency_graph",
+      "state": {
+        "state": "available_with_limitations",
+        "reason": {
+          "code": "fallback.available_capability",
+          "message": "The preferred implementation is unavailable; a maintained capability-backed fallback was selected.",
+          "requirement": "Required capability: bitbake.graph_generation"
+        },
+        "limitations": [
+          "Uses bitbake.graph_generation through implementation bitbake.graph.argv."
+        ]
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "negative",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment does not report dependency_graph",
+          "argv": []
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake.graph_generation",
+          "detail": "Positive capability authority selected maintained fallback bitbake.graph.argv",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.graph.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.getvar",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-getvar",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-getvar",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-getvar",
+          "detail": "Bounded help output exposes --value",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-getvar",
+          "detail": "Bounded help output exposes --recipe",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake_getvar.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.variable_history",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports variable_history",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.variable_history",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.diffsigs",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-diffsigs",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-diffsigs",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-diffsigs",
+          "detail": "Bounded help output exposes -c",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake_diffsigs.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.dumpsig",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-dumpsig",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-dumpsig",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake_dumpsig.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.server_socket",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports server_socket",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.server_socket",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.server_status",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --status-only",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.server.status.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.server_start",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --server-only",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.server.start.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.server_stop",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --kill-server",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.server.stop.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.native_events",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "positive",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment reports native_events",
+          "argv": []
+        }
+      ],
+      "implementation": {
+        "id": "tinfoil.native_events",
+        "kind": "backend_api"
+      }
+    },
+    {
+      "id": "bitbake.raw.cli",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.show_versions",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --show-versions",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.show_versions.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.task_execution",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --cmd",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.task_execution.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.clear_stamp",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --clear-stamp",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.clear_stamp.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.dry_run",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --dry-run",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.dry_run.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.parse_only",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --parse-only",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.parse_only.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.continue",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --continue",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.continue.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.profile",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --profile",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.profile.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.dump_signatures",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --dump-signatures",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.dump_signatures.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.revisions_changed",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --revisions-changed",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.revisions_changed.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.buildfile",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --buildfile",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.buildfile.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.debug",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --debug",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.debug.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.log_domains",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --log-domains",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.log_domains.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.verbose",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --verbose",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.verbose.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.quiet",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --quiet",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.quiet.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.event_log",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --write-log",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.event_log.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.ui",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --ui",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.ui.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.server_bind",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --bind",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.server_bind.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.server_idle_timeout",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --idle-timeout",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.server_idle_timeout.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.server_remote",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --remote-server",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.server_remote.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.server_token",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --token",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.server_token.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.server_observe",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --observe-only",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.server_observe.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.config_read",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --read",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.config_read.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.config_postread",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --postread",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.config_postread.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.ignore_deps",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --ignore-deps",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.ignore_deps.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.multiconfig",
+      "state": {
+        "state": "unavailable",
+        "reason": {
+          "code": "environment.capability_unavailable",
+          "message": "Connected environment does not expose Raw multiconfig target syntax.",
+          "requirement": "Required capability: bitbake.raw.multiconfig"
+        }
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "negative",
+          "subject": "bitbake",
+          "detail": "Bounded help output does not expose mc:",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "bitbake.raw.runall",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --runall",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.runall.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.runonly",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --runonly",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.runonly.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.no_setscene",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --no-setscene",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.no_setscene.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.skip_setscene",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --skip-setscene",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.skip_setscene.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake.raw.setscene_only",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake",
+          "detail": "Bounded help output exposes --setscene-only",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake.raw.setscene_only.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "devtool.modify",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "modify",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devtool.status",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devtool.edit_recipe",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "edit-recipe",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devtool.update_recipe",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "update-recipe",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devtool.finish",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "finish",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devtool.deploy_target",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Bounded help output exposes deploy-target",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "deploy-target",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "devtool.deploy_target.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "devtool.undeploy_target",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "undeploy-target",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devtool.reset",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "reset",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devtool.upgrade",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "devtool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "devtool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool",
+            "upgrade",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "recipetool.create",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "recipetool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "recipetool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+            "create",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "recipetool.create_outfile",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "recipetool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "recipetool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+            "create",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "recipetool",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+            "create",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "recipetool.appendfile",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "recipetool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "recipetool",
+          "detail": "Bounded help output exposes appendfile",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool",
+            "appendfile",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "recipetool.appendfile.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake_layers.show_layers",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-layers",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "bitbake-layers",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "show-layers",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "bitbake_layers.create_layer",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-layers",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-layers",
+          "detail": "Bounded help output exposes create-layer",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "create-layer",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake_layers.create_layer.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake_layers.create_and_add_layer",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-layers",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-layers",
+          "detail": "Bounded help output exposes create-layer",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "create-layer",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "bitbake-layers",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "create-layer",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "bitbake_layers.add_layer",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-layers",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "bitbake-layers",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "add-layer",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "bitbake_layers.remove_layer",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.incomplete",
+          "message": "Required capability probes were incomplete; partial positive evidence cannot enable the feature.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-layers",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "inconclusive",
+          "subject": "bitbake-layers",
+          "detail": "Read-only probe timed out and its process group was terminated",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers",
+            "remove-layer",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "one or more required direct probes are absent or inconclusive",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "pkgdata.lookup_pkg",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes lookup-pkg",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "lookup-pkg",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "pkgdata.lookup_pkg.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "pkgdata.find_path",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes find-path",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "find-path",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "pkgdata.find_path.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "pkgdata.generated",
+      "state": {
+        "state": "unavailable",
+        "reason": {
+          "code": "environment.capability_unavailable",
+          "message": "Connected environment does not expose generated package data.",
+          "requirement": "Required capability: pkgdata.generated"
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "negative",
+          "subject": "Build artifact inventory",
+          "detail": "Connected environment does not report pkgdata",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "pkgdata.list_packages",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes list-pkgs",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "list-pkgs",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes -r",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "list-pkgs",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "pkgdata.list_packages.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "pkgdata.package_info",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes package-info",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "package-info",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes -e",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "package-info",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "pkgdata.package_info.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "pkgdata.list_package_files",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes list-pkg-files",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "list-pkg-files",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes -r",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "list-pkg-files",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "pkgdata.list_package_files.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "pkgdata.read_value",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes read-value",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "read-value",
+            "--help"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-pkgdata-util",
+          "detail": "Bounded help output exposes -n",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util",
+            "read-value",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "pkgdata.read_value.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "wic.create",
+      "state": {
+        "state": "unavailable",
+        "reason": {
+          "code": "environment.capability_unavailable",
+          "message": "Connected environment does not expose Wic image creation.",
+          "requirement": "Required capability: wic.create"
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "negative",
+          "subject": "wic",
+          "detail": "wic is absent from the initialized environment",
+          "argv": []
+        },
+        {
+          "kind": "executable_identity",
+          "outcome": "negative",
+          "subject": "wic",
+          "detail": "wic is absent from the initialized environment",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "runqemu",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "runqemu",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/runqemu",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/runqemu"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "runqemu",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/runqemu",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "runqemu.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "sdk.populate",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: populate_sdk",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "sdk.extensible",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: populate_sdk_ext",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "sdk.publish",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-publish-sdk",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-publish-sdk",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-publish-sdk"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-publish-sdk",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-publish-sdk",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "oe_publish_sdk.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "sdk.native_tools",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.conflict",
+          "message": "Direct capability probes returned conflicting positive and negative evidence.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-find-native-sysroot",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-find-native-sysroot",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-find-native-sysroot"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "negative",
+          "subject": "oe-find-native-sysroot",
+          "detail": "Read-only help/version probe returned a non-zero status",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-find-native-sysroot",
+            "--help"
+          ]
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "direct capability probes conflict",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "cve.check",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: cve_check",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "spdx.create",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: create_spdx, create_recipe_sbom, create_rootfs_sbom",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "yocto_check_layer",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "yocto-check-layer",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/yocto-check-layer",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/yocto-check-layer"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "yocto-check-layer",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/yocto-check-layer",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "yocto_check_layer.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "resulttool",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "resulttool",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/resulttool",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/resulttool"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "resulttool",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/resulttool",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "resulttool.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "oe_selftest",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-selftest",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-selftest",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-selftest"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-selftest",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-selftest",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "oe_selftest.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "bitbake_selftest",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-selftest",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-selftest",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake_selftest.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "testimage",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: testimage",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "testsdk",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: testsdk",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "testsdk_extensible",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: testsdkext",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "ptest",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "Build configuration",
+          "detail": "Build configuration inventory was not probed for ptest_enabled",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "qa.task",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "Build configuration",
+          "detail": "Build configuration inventory was not probed for qa_tasks",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "menuconfig",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: menuconfig",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "devshell",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: devshell",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "buildhistory",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: buildhistory_get_image_installed",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "buildhistory.compare",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "buildhistory-diff",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/buildhistory-diff",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/buildhistory-diff"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "buildhistory-diff",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/buildhistory-diff",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "buildhistory_diff.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "locked_signatures",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "fallback.not_declared",
+          "message": "This capability does not declare a release/version fallback.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "metadata",
+          "outcome": "inconclusive",
+          "subject": "BitBake task inventory",
+          "detail": "Task inventory was not probed: locked_sigs",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "no catalog fallback selector",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "hashserv.diagnostics",
+      "state": {
+        "state": "unknown",
+        "reason": {
+          "code": "evidence.conflict",
+          "message": "Direct capability probes returned conflicting positive and negative evidence.",
+          "requirement": null
+        }
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "negative",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment does not report hashserv",
+          "argv": []
+        },
+        {
+          "kind": "metadata",
+          "outcome": "positive",
+          "subject": "BitBake metadata variable",
+          "detail": "Connected environment reports BB_HASHSERVE",
+          "argv": []
+        },
+        {
+          "kind": "release_version_fallback",
+          "outcome": "inconclusive",
+          "subject": "BitBake version fallback",
+          "detail": "direct capability probes conflict",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "prserv.diagnostics",
+      "state": {
+        "state": "unavailable",
+        "reason": {
+          "code": "environment.capability_unavailable",
+          "message": "Connected environment does not expose PR service diagnostics.",
+          "requirement": "Required capability: prserv.diagnostics"
+        }
+      },
+      "evidence": [
+        {
+          "kind": "backend_negotiation",
+          "outcome": "negative",
+          "subject": "BitBake backend capability",
+          "detail": "Connected environment does not report prserv",
+          "argv": []
+        },
+        {
+          "kind": "metadata",
+          "outcome": "negative",
+          "subject": "BitBake metadata variable",
+          "detail": "Connected environment does not report PRSERV_HOST",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "sstate.readiness",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-check-sstate",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-check-sstate",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-check-sstate"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-check-sstate",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-check-sstate",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "oe_check_sstate.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "sstate.cleanup",
+      "state": {
+        "state": "unavailable",
+        "reason": {
+          "code": "environment.capability_unavailable",
+          "message": "Connected environment does not expose shared-state cache cleanup.",
+          "requirement": "Required capability: sstate.cleanup"
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "negative",
+          "subject": "sstate-cache-management.sh",
+          "detail": "sstate-cache-management.sh is absent from the initialized environment",
+          "argv": []
+        },
+        {
+          "kind": "executable_identity",
+          "outcome": "negative",
+          "subject": "sstate-cache-management.sh",
+          "detail": "sstate-cache-management.sh is absent from the initialized environment",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "prserv.management",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "bitbake-prserv",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "bitbake-prserv",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "bitbake_prserv.argv",
+        "kind": "command"
+      }
+    },
+    {
+      "id": "build_compare",
+      "state": {
+        "state": "unavailable",
+        "reason": {
+          "code": "environment.capability_unavailable",
+          "message": "Connected environment does not expose build output comparison.",
+          "requirement": "Required capability: build_compare"
+        }
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "negative",
+          "subject": "build-compare",
+          "detail": "build-compare is absent from the initialized environment",
+          "argv": []
+        },
+        {
+          "kind": "executable_identity",
+          "outcome": "negative",
+          "subject": "build-compare",
+          "detail": "build-compare is absent from the initialized environment",
+          "argv": []
+        }
+      ],
+      "implementation": null
+    },
+    {
+      "id": "git_archive",
+      "state": {
+        "state": "available"
+      },
+      "evidence": [
+        {
+          "kind": "executable_identity",
+          "outcome": "positive",
+          "subject": "oe-git-archive",
+          "detail": "Canonical executable is available at /home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-git-archive",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-git-archive"
+          ]
+        },
+        {
+          "kind": "direct_probe",
+          "outcome": "positive",
+          "subject": "oe-git-archive",
+          "detail": "Bounded version/help probe succeeded",
+          "argv": [
+            "/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-git-archive",
+            "--help"
+          ]
+        }
+      ],
+      "implementation": {
+        "id": "oe_git_archive.argv",
+        "kind": "command"
+      }
+    }
+  ]
+}

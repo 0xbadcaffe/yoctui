@@ -1,0 +1,89 @@
+environment initialized: yes
+build directory: / (usable)
+bitbake: BitBake Build Tool version 2.19.0
+BitBake Python module: 2.19.0
+conf/local.conf: not found (may be normal outside a build dir)
+conf/bblayers.conf: not found (may be normal outside a build dir)
+bridge protocol: ok (bounded handshake and shutdown)
+compatibility report:
+  authority: Current
+  release support: Unknown (Runtime capability evidence is current; no live release-support claim is encoded yet.)
+  snapshot generation: 1
+  operating mode: Some(Degraded)
+  build directory: /home/bspguy-dev/src/build-openbmc-romulus [InitializedEnvironment]
+  BitBake: 2.19.0 [BitBakeVersionProbe]
+  OE-Core: blacksail unknown [BitBakeDatastore]
+  Poky: unknown
+  DISTRO: openbmc-openpower nodistro.0 [BitBakeDatastore]
+  MACHINE: romulus [BitBakeDatastore]
+  backend: unknown
+  protocol: yoctui-daemon 1.2 [ProtocolNegotiation]
+  capabilities: available=71 limited=1 unavailable=6 unknown=29 unsupported=0
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-aspeed [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-ibm/meta-romulus [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-openpower [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-phosphor [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-networking [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-oe [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-perl [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-python [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta [ConfiguredLayerMetadata]
+  layer series: core=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta (blacksail, wrynose) [ConfiguredLayerMetadata]
+  available tool: bitbake=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake 2.19.0 [ExecutableProbe]
+  available tool: bitbake-diffsigs=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs unknown [ExecutableProbe]
+  available tool: bitbake-dumpsig=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig unknown [ExecutableProbe]
+  available tool: bitbake-getvar=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar unknown [ExecutableProbe]
+  available tool: bitbake-layers=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers unknown [ExecutableProbe]
+  available tool: bitbake-prserv=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv unknown [ExecutableProbe]
+  available tool: bitbake-selftest=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest unknown [ExecutableProbe]
+  available tool: buildhistory-diff=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/buildhistory-diff unknown [ExecutableProbe]
+  available tool: devtool=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/devtool unknown [ExecutableProbe]
+  available tool: oe-check-sstate=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-check-sstate unknown [ExecutableProbe]
+  available tool: oe-find-native-sysroot=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-find-native-sysroot unknown [ExecutableProbe]
+  available tool: oe-git-archive=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-git-archive unknown [ExecutableProbe]
+  available tool: oe-pkgdata-util=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-pkgdata-util unknown [ExecutableProbe]
+  available tool: oe-publish-sdk=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-publish-sdk unknown [ExecutableProbe]
+  available tool: oe-selftest=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/oe-selftest unknown [ExecutableProbe]
+  available tool: recipetool=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/recipetool unknown [ExecutableProbe]
+  available tool: resulttool=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/resulttool unknown [ExecutableProbe]
+  available tool: runqemu=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/runqemu unknown [ExecutableProbe]
+  available tool: yocto-check-layer=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/scripts/yocto-check-layer unknown [ExecutableProbe]
+  missing tool: build-compare — build-compare is absent from the initialized environment
+  missing tool: sstate-cache-management.sh — sstate-cache-management.sh is absent from the initialized environment
+  missing tool: wic — wic is absent from the initialized environment
+  limited: bitbake.dependency_graph — The preferred implementation is unavailable; a maintained capability-backed fallback was selected. [fallback.available_capability]; limitations=Uses bitbake.graph_generation through implementation bitbake.graph.argv.; implementation=bitbake.graph.argv
+  unavailable: bitbake.raw.multiconfig — Connected environment does not expose Raw multiconfig target syntax. [environment.capability_unavailable]
+  unavailable: pkgdata.generated — Connected environment does not expose generated package data. [environment.capability_unavailable]
+  unavailable: wic.create — Connected environment does not expose Wic image creation. [environment.capability_unavailable]
+  unavailable: prserv.diagnostics — Connected environment does not expose PR service diagnostics. [environment.capability_unavailable]
+  unavailable: sstate.cleanup — Connected environment does not expose shared-state cache cleanup. [environment.capability_unavailable]
+  unavailable: build_compare — Connected environment does not expose build output comparison. [environment.capability_unavailable]
+  unknown: devtool.modify — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: devtool.status — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: devtool.edit_recipe — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: devtool.update_recipe — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: devtool.finish — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: devtool.undeploy_target — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: devtool.reset — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: devtool.upgrade — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: recipetool.create — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: recipetool.create_outfile — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: bitbake_layers.show_layers — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: bitbake_layers.create_and_add_layer — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: bitbake_layers.add_layer — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: bitbake_layers.remove_layer — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: sdk.populate — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: sdk.extensible — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: sdk.native_tools — Direct capability probes returned conflicting positive and negative evidence. [evidence.conflict]
+  unknown: cve.check — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: spdx.create — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: testimage — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: testsdk — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: testsdk_extensible — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: ptest — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: qa.task — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: menuconfig — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: devshell — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: buildhistory — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: locked_signatures — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: hashserv.diagnostics — Direct capability probes returned conflicting positive and negative evidence. [evidence.conflict]

@@ -160,8 +160,6 @@ were regenerated. The measurement also recorded an upstream os-release warning
 because this shallow checkout has no reachable Git tag; inspect this during
 image-build validation rather than hiding it.
 
-### Remaining image-build acceptance
-
 ### CLI submission candidate v0.1.70
 
 Five production-CLI regression cases failed before the change. Six socket-backed
@@ -183,6 +181,31 @@ All 1,541 workspace tests (four existing ignored), 49 bridge tests, strict
 Clippy, formatting, Ruff/mypy and documentation checks pass. Fixture/raster
 changes are version-only. Actual obmc-phosphor-image submission follows the
 symlinked-tool discovery fix.
+
+### Canonical tool discovery candidate v0.1.71
+
+The directory-symlink regression failed before the fix. Fourteen focused daemon
+compatibility tests now pass, including basename-sensitive sibling aliases and
+rejection of relative, dangling, escaping and nonexecutable candidates. Absolute
+initialized PATH directories are canonicalized; the existing final-file alias
+safety checks remain unchanged.
+
+The [live doctor report](../../artifacts/live-openbmc/romulus/doctor-v0.1.71.json)
+finds Devtool, Recipetool and oe-pkgdata-util at their canonical OpenBMC paths.
+The package-list command capability is Available. Devtool status and some
+Recipetool operations remain Unknown because their bounded help probes timed
+out, not because the executables are missing. No unsupported operation was
+enabled from executable presence alone. Generated package data is correctly
+unavailable before any image/package build.
+
+The private daemon started in 113.21 seconds with running executable SHA-256
+`031841516c11bf8ef9d39cda7414737cd169d68b44b30b58d00bfa9589b61b43`.
+The JSON report SHA-256 is
+`91e4d008820ad7323f114dd0e85a7e9d12225c433f0c80c9fc68db8f5fd3c248`.
+All 1,543 workspace tests (four existing ignored), 49 bridge tests, strict
+Clippy, formatting, Ruff/mypy and documentation checks pass. Version-only
+goldens and six production rasters were refreshed. Another 58.3 GiB of agent
+Cargo debug outputs were cleaned before rebuilding; no Poky data was removed.
 
 ### Image validation still required
 

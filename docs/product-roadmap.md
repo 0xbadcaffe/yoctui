@@ -8,7 +8,7 @@ M56 real OpenBMC validation additionally requires bounded large-inventory
 transfer (OPENBMC-INVENTORY-001): live Romulus parsing exposed a recipe response
 above the bridge's 1 MiB frame limit. v0.1.69 now transfers the complete real
 inventory in bounded chunks; v0.1.70 fixes bounded CLI stale retries and rejection
-status. Tool discovery still gates the required image build. Inventory and
+status. v0.1.71 fixes symlinked PATH tool discovery. The image build is next; inventory and
 submission tests are not image-build validation.
 
 Yoctui is 100% complete only when:
