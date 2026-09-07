@@ -50,12 +50,23 @@ notes = "Two real daemon build attempts for obmc-phosphor-image rejected StaleGe
 id = "OPENBMC-STARTUP-001"
 milestone = "M56"
 title = "Keep daemon startup responsive during large initial metadata scans"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1288
 required = true
 depends_on = ["OPENBMC-CAPABILITY-001"]
 verify = ["cargo test -p yoctui daemon_startup", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Real OpenBMC bootstrap enabled by direct probing waits for full recipe inventory before entering the IPC loop. daemon start exceeded 180 seconds while Cooker/parser processes continued; status then reports no runtime record despite foreground daemon 2353642 remaining alive. Make metadata startup nonblocking or defer inventory through an owned workflow without making recipe navigation empty/inert. Preserve authority, cancellation, lifecycle ownership and cache bounds; timeout must not leave an unmanageable daemon. Add slow-inventory/lifecycle tests and real startup evidence."
+notes = "v0.1.68 candidate: initial inventory runs as an owned single-result background scan with cancellation, ten-minute deadline and bounded bridge interrupt/reap; IPC readiness no longer awaits full recipes. Build requests during the scan get an explicit conflict, shutdown stays serviceable, and startup-failure guard reaps its exact child. Slow fake-inventory IPC/cancellation and deferred Workspace delivery tests cover the integration. Real OpenBMC readiness 86.16s (second run 70.68s), attach 26.86ms, shutdown during inventory 5.08s, no daemon/bridge/Cooker/parser left. Live attached client remained connected during parsing, then observed explicit 1 MiB inventory transfer failure; OPENBMC-INVENTORY-001 separately owns that newly exposed bounded-transfer defect. See artifacts/live-openbmc/romulus and docs/testing/openbmc.md."
+
+[[task]]
+id = "OPENBMC-INVENTORY-001"
+milestone = "M56"
+title = "Transfer large recipe inventories within bounded bridge frames"
+status = "IN_PROGRESS"
+priority = 1289
+required = true
+depends_on = ["OPENBMC-STARTUP-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-bitbake", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Real Romulus initial parse completes, but list_recipes emits more than the 1048576-byte NDJSON limit. Daemon reports explicit metadata failure and stays attached, but no inventory arrives. Add bounded chunked/paginated inventory transfer with total resource limits, ordering/correlation and compatibility tests, not an unbounded line-limit increase. Preserve complete recipe navigation, report oversize individual records, and verify real OpenBMC inventory reaches an already attached client. Inspect downstream daemon snapshot/model bounds too."
 
 [[task]]
 id = "OPENBMC-TOOLS-001"
@@ -75,7 +86,7 @@ title = "Build one OpenBMC machine through Yoctui and investigate integration de
 status = "NOT_STARTED"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-TOOLS-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. Record evidence in docs/testing/openbmc.md."
 

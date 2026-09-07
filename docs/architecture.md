@@ -12,6 +12,14 @@ preserves each workflow's confirmation boundary.
 
 ## Architectural principles
 
+Initial daemon recipe inventory is an owned, cancellable background scan, not
+part of IPC readiness. It has a ten-minute deadline and a single result slot.
+The daemon publishes the resulting typed Workspace through its bounded journal;
+until then, build commands report an explicit metadata-loading conflict. Attach,
+doctor, telemetry and shutdown remain serviceable. Shutdown interrupts the
+scan's bridge and waits for bounded cleanup. A failed readiness attempt must
+reap the exact foreground child it spawned, not leave an untracked daemon.
+
 1. Domain state is independent of terminal rendering.
 2. UI consumes typed state and emits typed actions.
 3. Raw backend output is normalized before reaching widgets.

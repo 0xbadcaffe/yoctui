@@ -1,36 +1,37 @@
 # Current Task
 
-**ID:** OPENBMC-STARTUP-001
-**Title:** Keep daemon startup responsive during large initial metadata scans
+**ID:** OPENBMC-INVENTORY-001
+**Title:** Transfer large recipe inventories within bounded bridge frames
 **Status:** IN_PROGRESS
 
-Depends on OPENBMC-CAPABILITY-001 (DONE in v0.1.67). OpenBMC revision
-`d4fd7d3f54e88e800c0284b753af68a13aabbef6` is initialized for Romulus;
-an isolated v0.1.67 daemon has Current environment authority and positive direct
-build/cancel/native-event capabilities. See [OpenBMC evidence](testing/openbmc.md).
+Depends on OPENBMC-STARTUP-001 (DONE in v0.1.68). Startup IPC is now responsive
+while an owned background scan parses recipes. Full checks: 1,530 workspace
+tests, 47 bridge tests, Clippy, formatting and docs pass. Live startup/attach/
+shutdown evidence is in [OpenBMC validation](testing/openbmc.md).
 
-The initial storage blocker was resolved without deleting Poky: after tests,
-the candidate binary was saved and regenerable Cargo workspace debug artifacts
-were cleaned (79.1 GiB). Root now has 78 GiB free. Preserve all Poky data.
-Establish a disk stop margin and monitor usage; this budget is not a guarantee
-that the full image will fit.
+New observed defect: Romulus parsing completes, but `list_recipes` emits over
+the bridge's 1,048,576-byte line limit. The attached client receives a clear
+failure without disconnecting, but no inventory arrives. Add bounded inventory
+chunking/pagination with explicit completion, correlation/order checks and
+aggregate bounds. Keep legacy bridge compatibility; do not remove frame limits
+or silently truncate recipes. Check downstream Workspace/daemon frame limits.
+Add failing tests first, then verify real inventory reaches an attached client.
 
-Observed defect: initial full recipe inventory blocks the daemon IPC loop.
-The real OpenBMC scan exceeded the 180-second readiness deadline; the parent
-exited while its daemon and parser children continued. Daemon status then
-reported no runtime record despite the process remaining alive. The scan later
-completed, and direct socket doctor confirmed capability resolution works.
-Make metadata startup nonblocking or defer it through an owned workflow while
-preserving usable recipe navigation, authority, cancellation and cleanup.
-Add slow-scan/lifecycle tests before the smallest coherent implementation.
+OpenBMC revision `d4fd7d3f54e88e800c0284b753af68a13aabbef6`, source
+`/home/bspguy-dev/src/openbmc`, build `/home/bspguy-dev/src/build-openbmc-romulus`,
+MACHINE romulus, DISTRO openbmc-openpower, BitBake 2.19.0. The private test daemon
+PID 2404826 is idle after reporting the transfer error; verify identity before
+stopping it. Private XDG paths are documented in the evidence. No image build
+has been accepted yet. Installed release remains v0.1.64.
 
-Next, OPENBMC-CLI-BUILD-001 fixes repeated StaleGeneration rejections and the
-incorrect zero exit status; OPENBMC-TOOLS-001 fixes executable discovery through
-OpenBMC's symlinked scripts directory without weakening file-alias safety. Then execute
-OPENBMC-LIVE-001 through Yoctui. No image build has started successfully yet.
+Next: OPENBMC-CLI-BUILD-001 (bounded stale-generation retries and nonzero rejected
+command status), OPENBMC-TOOLS-001 (safe canonicalized PATH directory discovery),
+then OPENBMC-LIVE-001: build obmc-phosphor-image through Yoctui and inspect it.
+Preserve all user Poky data. Root has about 48 GiB free after validation builds;
+agent-generated Cargo outputs can be cleaned after saving the tested binary.
+The new OpenBMC config stops scheduling at 15 GiB and halts at 8 GiB free.
 
-Verification: focused daemon startup/lifecycle tests, full
-workspace/strict Clippy, docs/roadmap and live authoritative capability recheck.
-Full completion also requires fresh source-bound
-real-Poky performance evidence for the changed candidate. Installed Yoctui
-remains v0.1.64; no new release or successful full completion is claimed.
+Verification: bridge tests, backend tests, full workspace, strict Clippy,
+docs/roadmap, real OpenBMC inventory capture. Full completion also requires
+fresh source-bound real-Poky performance evidence. Do not claim release or
+image-build completion from fixture-only or old-version evidence.

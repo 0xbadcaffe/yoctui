@@ -4,6 +4,11 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+M56 real OpenBMC validation additionally requires bounded large-inventory
+transfer (OPENBMC-INVENTORY-001): live Romulus parsing exposed a recipe response
+above the bridge's 1 MiB frame limit. Startup responsiveness and reporting the
+failure do not count as successful inventory or image-build validation.
+
 Yoctui is 100% complete only when:
 
 - every required task in `docs/task-registry.toml` is `DONE`

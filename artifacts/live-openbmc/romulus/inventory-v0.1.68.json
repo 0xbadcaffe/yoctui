@@ -1,0 +1,36 @@
+{
+  "version": "0.1.68",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "machine": "romulus",
+  "attach_ms": 42.815497843548656,
+  "initial_workspace_available": false,
+  "inventory_wait_seconds": 123.73402852797881,
+  "events_received": 26,
+  "metadata_logs": [
+    {
+      "source": "daemon-metadata",
+      "severity": "info",
+      "message": "Loading initial workspace and recipe inventory",
+      "unix_ms": 1788806487240,
+      "recipe": null,
+      "task": null,
+      "path": null,
+      "build": null
+    },
+    {
+      "source": "daemon-metadata",
+      "severity": "error",
+      "message": "Initial metadata scan failed: protocol: message exceeds 1048576 byte limit: message exceeds 1048576 byte limit",
+      "unix_ms": 1788806645818,
+      "recipe": null,
+      "task": null,
+      "path": null,
+      "build": null
+    }
+  ],
+  "recipe_count": 0,
+  "layer_count": 0,
+  "workspace_received": false,
+  "binary_sha256": "45aa6d73e2a769bd613f8b3e3580c76dea15687a1a82f6f50622ee3feed936fb",
+  "binary_hash_source": "/proc/2404826/exe (running executable; disk binary was rebuilt during validation)"
+}

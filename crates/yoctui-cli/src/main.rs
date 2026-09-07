@@ -134,6 +134,8 @@ mod daemon_devtool;
 #[cfg(unix)]
 mod daemon_maintenance;
 #[cfg(unix)]
+mod daemon_metadata;
+#[cfg(unix)]
 mod daemon_pty;
 #[cfg(unix)]
 mod daemon_qa;
@@ -2104,6 +2106,34 @@ async fn daemon_cli(_command: DaemonCliCommand) -> Result<()> {
 const DAEMON_STARTUP_TIMEOUT: Duration = Duration::from_secs(180);
 
 #[cfg(unix)]
+struct DaemonStartupChild {
+    child: std::process::Child,
+    ready: bool,
+}
+
+#[cfg(unix)]
+impl Drop for DaemonStartupChild {
+    fn drop(&mut self) {
+        if self.ready || self.child.try_wait().ok().flatten().is_some() {
+            return;
+        }
+        // Only the unreaped foreground child spawned by this startup attempt.
+        unsafe {
+            libc::kill(self.child.id() as i32, libc::SIGTERM);
+        }
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while Instant::now() < deadline {
+            if self.child.try_wait().ok().flatten().is_some() {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(25));
+        }
+        let _ = self.child.kill();
+        let _ = self.child.wait();
+    }
+}
+
+#[cfg(unix)]
 fn start_daemon() -> Result<()> {
     use yoctui_protocol::daemon_ipc::{DaemonConnection, runtime_paths};
     let paths = runtime_paths()?;
@@ -2129,9 +2159,13 @@ fn start_daemon() -> Result<()> {
         command.stdout(Stdio::null()).stderr(Stdio::null());
     }
     command.process_group(0);
-    let mut child = command
+    let child = command
         .spawn()
         .context("could not start the Yoctui daemon")?;
+    let mut child = DaemonStartupChild {
+        child,
+        ready: false,
+    };
     let deadline = Instant::now() + DAEMON_STARTUP_TIMEOUT;
     let interactive = io::stderr().is_terminal();
     let mut indicator_phase = 0usize;
@@ -2146,13 +2180,18 @@ fn start_daemon() -> Result<()> {
             indicator_phase = indicator_phase.wrapping_add(1);
             next_indicator_frame = Instant::now() + Duration::from_millis(80);
         }
-        if let Some(status) = child.try_wait()? {
+        if let Some(status) = child.child.try_wait()? {
             if interactive {
                 eprint!("\r\x1b[2K");
             }
             anyhow::bail!("Yoctui daemon exited during startup with {status}");
         }
         if let Ok(record) = daemon_is_available() {
+            anyhow::ensure!(
+                record.pid == child.child.id(),
+                "another daemon owns the startup socket"
+            );
+            child.ready = true;
             if interactive {
                 eprint!("\r\x1b[2K");
             }
@@ -2514,6 +2553,7 @@ fn daemon_service_wait(has_active_work: bool) -> Duration {
 async fn inspect_daemon_startup_workspace(
     startup_environment: &BTreeMap<String, String>,
     compatibility: Option<yoctui_model::DaemonCompatibilitySnapshot>,
+    mut cancelled: tokio::sync::oneshot::Receiver<()>,
 ) -> Result<Option<yoctui_model::Workspace>> {
     let Some(compatibility) = compatibility else {
         return Ok(None);
@@ -2531,36 +2571,38 @@ async fn inspect_daemon_startup_workspace(
         .get("PYTHON")
         .map(String::as_str)
         .unwrap_or("python3");
-    let mut backend = spawn_configured_bridge_with_compatibility(
+    let startup = spawn_configured_bridge_with_compatibility(
         python,
         build_dir,
         Some(startup_environment.clone()),
         compatibility,
-    )
-    .await
-    .context("could not start the daemon-owned startup metadata bridge")?;
-    let inspection = backend.inspect_workspace().await;
-    let mut workspace = match inspection {
-        Ok(workspace) => workspace,
-        Err(error) => {
-            if let Err(shutdown_error) = backend.shutdown().await {
-                tracing::warn!(%shutdown_error, "failed startup metadata bridge cleanup");
-            }
-            return Err(error).context("daemon startup workspace inspection failed");
-        }
+    );
+    let mut backend = tokio::select! {
+        biased;
+        _ = &mut cancelled => return Err(anyhow::anyhow!("startup metadata scan cancelled")),
+        result = tokio::time::timeout(Duration::from_secs(30), startup) =>
+            result.context("startup metadata bridge handshake timed out")?
+                .context("could not start the daemon-owned startup metadata bridge")?,
     };
-    match backend.list_recipes(None).await {
-        Ok(recipes) => workspace.recipes = recipes,
-        Err(error) => tracing::warn!(%error, "daemon startup recipe inventory unavailable"),
+    let result = tokio::select! {
+        biased;
+        _ = &mut cancelled => Err(anyhow::anyhow!("startup metadata scan cancelled")),
+        result = tokio::time::timeout(Duration::from_secs(600), async {
+            let mut workspace = backend.inspect_workspace().await?;
+            workspace.recipes = backend.list_recipes(None).await?;
+            workspace.layers = backend.list_layers().await?;
+            Ok::<_, anyhow::Error>(Some(workspace))
+        }) => result.context("startup metadata scan exceeded ten minutes").and_then(|result| result),
+    };
+    if result.is_err()
+        || !matches!(
+            tokio::time::timeout(Duration::from_secs(5), backend.shutdown()).await,
+            Ok(Ok(()))
+        )
+    {
+        backend.interrupt_metadata().await;
     }
-    match backend.list_layers().await {
-        Ok(layers) => workspace.layers = layers,
-        Err(error) => tracing::warn!(%error, "daemon startup layer inventory unavailable"),
-    }
-    if let Err(error) = backend.shutdown().await {
-        tracing::warn!(%error, "daemon startup metadata bridge shutdown failed");
-    }
-    Ok(Some(workspace))
+    result
 }
 
 #[cfg(unix)]
@@ -2651,35 +2693,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             )?;
         }
     }
-    let startup_workspace = match inspect_daemon_startup_workspace(
-        &startup_environment,
-        daemon_state.compatibility.clone(),
-    )
-    .await
-    {
-        Ok(workspace) => workspace,
-        Err(error) => {
-            eprintln!("daemon startup workspace inspection unavailable: {error}");
-            tracing::warn!(%error, "daemon startup workspace inspection unavailable");
-            None
-        }
-    };
-    if let Some(workspace) = startup_workspace.clone() {
-        yoctui_app::reduce_daemon_state(
-            &mut daemon_state,
-            yoctui_model::DaemonStateAction::ReplaceWorkspace(workspace),
-        )?;
-    }
-    let mut snapshot = daemon_protocol_snapshot(&daemon_state);
-    if let Some(workspace) = startup_workspace {
-        let (Some(event), _) = daemon_build_event(
-            yoctui_bitbake::BackendEvent::Workspace(workspace),
-            yoctui_protocol::daemon::JobId(0),
-        ) else {
-            unreachable!("workspace backend events always map to daemon workspace events");
-        };
-        snapshot.build_events.push(event);
-    }
+    let snapshot = daemon_protocol_snapshot(&daemon_state);
     let snapshot = persisted
         .as_ref()
         .map(|persisted| recover_persisted_snapshot(snapshot.clone(), persisted, &record.boot_id).0)
@@ -2720,6 +2734,19 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         paths: paths.clone(),
         instance,
     };
+    let startup_compatibility = daemon_state.compatibility.clone();
+    let startup_configured = startup_compatibility.is_some();
+    let mut startup_metadata = daemon_metadata::StartupMetadata::spawn(|cancelled| async move {
+        inspect_daemon_startup_workspace(&startup_environment, startup_compatibility, cancelled)
+            .await
+    });
+    if startup_configured {
+        publish_startup_metadata_log(
+            &mut daemon_journal,
+            "Loading initial workspace and recipe inventory",
+            false,
+        )?;
+    }
     // Connections are serviced in short, bounded slices.  Keeping the
     // negotiated state and replay cursor alongside each socket lets one idle
     // client yield to other clients while the daemon continues polling jobs.
@@ -2746,6 +2773,40 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         )?;
         drop(client_connections);
         bitbake_supervisor.consume_notification();
+
+        if let Some(result) = startup_metadata.try_result() {
+            match result {
+                Ok(Some(workspace)) => {
+                    yoctui_app::reduce_daemon_state(
+                        &mut daemon_state,
+                        yoctui_model::DaemonStateAction::ReplaceWorkspace(workspace.clone()),
+                    )?;
+                    if let (Some(event), _) = daemon_build_event(
+                        yoctui_bitbake::BackendEvent::Workspace(workspace),
+                        yoctui_protocol::daemon::JobId(0),
+                    ) {
+                        daemon_journal
+                            .publish(yoctui_protocol::daemon::DaemonEvent::Build(event))?;
+                    }
+                    publish_startup_metadata_log(
+                        &mut daemon_journal,
+                        "Initial workspace and recipe inventory ready",
+                        false,
+                    )?;
+                }
+                Ok(None) if startup_configured => publish_startup_metadata_log(
+                    &mut daemon_journal,
+                    "Initial metadata unavailable: no configured build environment",
+                    false,
+                )?,
+                Ok(None) => {}
+                Err(error) => publish_startup_metadata_log(
+                    &mut daemon_journal,
+                    &format!("Initial metadata scan failed: {error:#}"),
+                    true,
+                )?,
+            }
+        }
 
         for _ in 0..MAX_SUPERVISOR_EVENTS_PER_TICK {
             let Some(event) = devtool_supervisor.try_event() else {
@@ -3272,6 +3333,13 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                         continue;
                     }
                     let outcome = match request.command {
+                        DaemonCommand::StartBuild { .. } if startup_metadata.pending() => {
+                            CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
+                                message: "Initial recipe inventory is still loading; retry the build when metadata is ready".into(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            }
+                        }
                         DaemonCommand::StartBuild { targets, task, force } => {
                             let build_dir = daemon_journal
                                 .snapshot()
@@ -3863,9 +3931,34 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             PersistedPreferences::default(),
         ),
     )?;
+    startup_metadata.shutdown().await;
     remove_runtime_record(&paths, instance)?;
     std::mem::forget(record_guard);
     drop(listener);
+    Ok(())
+}
+
+#[cfg(unix)]
+fn publish_startup_metadata_log(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    message: &str,
+    failed: bool,
+) -> Result<()> {
+    use yoctui_protocol::daemon::{DaemonEvent, LogRecord, LogSeverity};
+    journal.publish(DaemonEvent::Log(LogRecord {
+        source: "daemon-metadata".into(),
+        severity: if failed {
+            LogSeverity::Error
+        } else {
+            LogSeverity::Info
+        },
+        message: message.into(),
+        unix_ms: unix_ms(),
+        recipe: None,
+        task: None,
+        path: None,
+        build: None,
+    }))?;
     Ok(())
 }
 

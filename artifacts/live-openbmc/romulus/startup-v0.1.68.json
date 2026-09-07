@@ -1,0 +1,14 @@
+{
+  "version": "0.1.68",
+  "machine": "romulus",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "startup_elapsed_seconds": 86.16,
+  "attach_ms": 26.864806190133095,
+  "metadata_status_from_daemon_status": "Loading initial workspace and recipe inventory",
+  "build_events": [],
+  "jobs": [],
+  "stop_elapsed_seconds": 5.08,
+  "stopped_during_inventory": true,
+  "daemon_and_bridge_reaped": true,
+  "remaining_cooker_or_parser_processes": 0
+}

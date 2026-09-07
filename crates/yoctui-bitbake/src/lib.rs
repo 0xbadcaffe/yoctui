@@ -2198,6 +2198,30 @@ impl BridgeBackend {
             .is_some_and(|authority| authority.require(operation).is_ok())
     }
 
+    /// Interrupt an owned metadata query so Python can release its Tinfoil
+    /// connection even while waiting for a synchronous recipe parse. Never
+    /// use this to cancel a build: builds require the typed cancellation path.
+    #[cfg(unix)]
+    pub async fn interrupt_metadata(&mut self) {
+        if self.child.try_wait().ok().flatten().is_none()
+            && let Some(pid) = self.child.id()
+        {
+            // SAFETY: this PID belongs to our unreaped bridge child, not the
+            // shared BitBake server or another user's process group.
+            unsafe {
+                libc::kill(pid as i32, libc::SIGINT);
+            }
+            if tokio::time::timeout(Duration::from_secs(5), self.child.wait())
+                .await
+                .is_err()
+            {
+                let _ = self.child.start_kill();
+                let _ = self.child.wait().await;
+            }
+        }
+        self.finish_stderr_capture().await;
+    }
+
     /// Ask the bridge to finish its protocol work before the drop fallback kills it.
     pub async fn shutdown(&mut self) -> Result<(), BackendError> {
         self.command(Command::Shutdown).await?;
@@ -4422,6 +4446,33 @@ printf '%s\n' 'digraph depends {' '"image.do_build" -> "busybox.do_build"' '}' >
         assert!(diagnostic.contains("[redacted sensitive diagnostic]"));
         assert!(diagnostic.contains("last diagnostic"));
         assert!(!diagnostic.contains("do-not-display"));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn daemon_startup_metadata_interrupt_runs_python_cleanup_and_reaps() {
+        let script = fixture_script("interrupt-metadata");
+        fs::write(&script, r#"import json, signal, sys, time
+signal.signal(signal.SIGINT, signal.default_int_handler)
+request = json.loads(sys.stdin.readline())
+try:
+    print(json.dumps({'protocol_version':1, 'sequence':1, 'correlation_id':'1', 'message':{'type':'hello_ack','bitbake_version':'fixture'}}), flush=True)
+    time.sleep(60)
+finally:
+    print('metadata cleanup ran', file=sys.stderr, flush=True)
+"#).unwrap();
+        let mut backend = BridgeBackend::spawn("python3", script.clone(), std::env::temp_dir())
+            .await
+            .unwrap();
+        backend.interrupt_metadata().await;
+        assert!(backend.child.try_wait().unwrap().is_some());
+        assert!(
+            backend
+                .stderr_diagnostic()
+                .unwrap()
+                .contains("metadata cleanup ran")
+        );
+        fs::remove_file(script).unwrap();
     }
 
     #[cfg(unix)]

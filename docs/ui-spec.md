@@ -1,5 +1,11 @@
 # Yoctui UI Specification
 
+Daemon attachment does not wait for the initial recipe inventory. The retained
+daemon logs report metadata loading, completion or failure. Recipe/layer content
+arrives as a typed workspace update without requiring reattachment. A build
+requested while this scan owns the metadata connection reports a visible
+metadata-loading conflict; it is not silently queued or reported as started.
+
 Status: **Authoritative product and interaction contract**
 
 This document defines how Yoctui must look, behave, navigate, present BitBake state, and expose Yocto workflows.

@@ -1,7 +1,8 @@
 # OpenBMC live integration
 
-Status: environment and direct-capability tasks complete; no successful image
-build is claimed. Startup, CLI generation/error status and symlinked tool
+Status: environment, direct-capability and startup-responsiveness tasks complete;
+no successful image build is claimed. Large inventory transfer, CLI
+generation/error status and symlinked tool
 discovery defects remain before OPENBMC-LIVE-001 can run.
 
 ## Planned machine and isolation
@@ -108,6 +109,34 @@ daemon JSON hash is
 `313528101babdad46f71dd366cee3cd4f40b7058ab8067ca34e05e35a3b8b540`.
 
 ## Required live evidence
+
+### Startup responsiveness candidate v0.1.68
+
+The [startup capture](../../artifacts/live-openbmc/romulus/startup-v0.1.68.json)
+records readiness at 86.16 seconds, while metadata was still loading. Attach
+took 26.86 ms; stopping during that scan took 5.08 seconds. Afterwards no owned
+daemon, bridge, Cooker or parser process remained. The isolated daemon was
+restarted (70.68 seconds) for the
+[inventory capture](../../artifacts/live-openbmc/romulus/inventory-v0.1.68.json).
+The client remained attached through real parsing, receiving 26 events over
+123.73 seconds. The scan then reported a 1 MiB bridge frame overflow, not a
+disconnect. This is required follow-up OPENBMC-INVENTORY-001, not inventory or
+image-build success. The capture records the running executable's hash, rather
+than the subsequently rebuilt binary at the same disk path.
+
+Startup uses one owned result slot, a ten-minute inventory deadline and bounded
+interrupt/reap. Full inventory does not gate IPC readiness; build commands get
+an explicit metadata-loading conflict while the scan owns the connection.
+Failed parent startup reaps only its own unreaped foreground child. Tests cover
+slow-scan cancellation, failed-worker completion, process reaping, Python cleanup
+and deferred Workspace publication to an already attached client. The six
+production rasters and 17 cell/text fixtures change only version digits.
+Final validation: 1,530 workspace tests (four existing ignored), 47 bridge tests,
+strict Clippy, formatting and documentation checks pass. The cleanup test's
+readiness marker was moved inside its Python try/finally to remove a test-only
+race between advertising readiness and installing the cleanup scope.
+
+### Image-build acceptance
 
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.

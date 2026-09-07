@@ -10,8 +10,14 @@ authority and doctor evidence exist. OPENBMC-CAPABILITY-001 is DONE in v0.1.67:
 real BitBake 2.19 build/cancel/event capabilities are Available from a bounded
 read-only probe, with no version-range widening. 1,523 workspace tests, 47
 bridge tests, Clippy, Ruff/mypy, formatting and docs pass.
-OPENBMC-STARTUP-001 is IN_PROGRESS after initial recipe parsing exceeded the
-180-second startup deadline and left an untracked daemon. CLI generation/error
+OPENBMC-STARTUP-001 is DONE in v0.1.68: IPC readiness is independent of initial
+recipe parsing, with an owned cancellable background scan, bounded cleanup and
+failed-startup child reaping. 1,530 workspace tests (four existing ignored),
+47 bridge tests, strict Clippy, formatting and docs pass. Real OpenBMC startup
+took 86.16 seconds, attach 26.86 ms and shutdown during inventory 5.08 seconds;
+no owned processes remained. A second attached run exposed the independent
+1 MiB recipe-response overflow. OPENBMC-INVENTORY-001 is IN_PROGRESS to fix
+bounded transfer; successful inventory is not yet claimed. CLI generation/error
 status and symlinked-tool discovery tasks remain NOT_STARTED before live build.
 No image build was accepted yet.
 Storage preflight was unblocked by cleaning
