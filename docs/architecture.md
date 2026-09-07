@@ -286,6 +286,14 @@ unavailable state. A valid zero stays available. Compact and expanded UI
 renderers consume this same projection; responsive layout may allocate chart
 geometry but cannot reinterpret missing samples or add points.
 
+Dashboard/Tasks reserve a four-row compact CPU/RAM/filesystem strip when the
+full telemetry tier does not fit. This is a UI-only projection of existing
+typed samples, with no new sampling, timer, capability probing or focus target.
+Unavailable values are not rendered as zero; chart detail yields before meters.
+The app's pure `task_workspace_panel_heights` allocation is shared by rendering
+and mouse hit testing. Hit testing accounts for the Dashboard's four summary
+rows versus Tasks' two, and excludes borders, logs, history and resource meters.
+
 `TELEMETRY_PROVENANCE` is the closed audit of host and daemon metrics. Each
 entry fixes its source, unit, host support, nominal cadence, delta requirement,
 history capacity, precision, renderability, and unavailable behavior. Host

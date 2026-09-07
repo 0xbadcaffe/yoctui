@@ -1,5 +1,22 @@
 # Yoctui Implementation Status
 
+M55 COMPACT-TELEMETRY-001 is DONE in the v0.1.65 candidate: compact CPU/RAM/FS
+meters remain visible in short Dashboard/Tasks workspaces, with shared mouse
+row geometry. 1,520 workspace tests, strict Clippy, formatting, 46 bridge tests
+and documentation checks pass. See [evidence](testing/compact-telemetry.md).
+Installed Yoctui remains v0.1.64; release performance evidence is not refreshed.
+M56 OPENBMC-ENV-001 is IN_PROGRESS. Storage preflight was unblocked by cleaning
+79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the
+candidate binary; 78 GiB is now free, with all Poky data untouched. See
+[preflight](testing/openbmc.md). No OpenBMC download/build has completed.
+Packages diagnosis: the
+previously connected v0.1.21 daemon advertised generation-1 negative pkgdata authority, while the generated
+qemux86-64 database is readable and lists 4,387 packages. The installed client
+is v0.1.64. The user subsequently requested cancellation and daemon shutdown:
+job 3 acknowledged cancellation and terminated, daemon stop succeeded, and no
+BitBake workers remained. A fresh daemon capability check is still needed.
+OpenBMC live validation is queued next, subject to disk-space preflight.
+
 Release validation resumed for v0.1.64: on 2026-09-06 the user approved the
 reviewed bounded tui-logger/Jiff cache exception and crates.io publication.
 The exception must retain exact allocation/dependency checks, a 39,367-byte

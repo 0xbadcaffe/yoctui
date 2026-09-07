@@ -7461,6 +7461,91 @@ fn render_telemetry_cell(
     }
 }
 
+fn render_compact_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
+    let palette = ThemePalette::for_app(app);
+    let block = pane_block(app, "Resources", false).style(palette.base());
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+    if inner.is_empty() {
+        return;
+    }
+    let telemetry = &app.host_telemetry;
+    let values = [
+        (
+            "CPU",
+            telemetry
+                .cpu_utilization_percent
+                .map(|value| value.min(100)),
+        ),
+        (
+            "RAM",
+            utilization_percent(
+                telemetry.memory_total_bytes,
+                telemetry.memory_available_bytes,
+            ),
+        ),
+        (
+            "FS",
+            app.workspace.build_dir.as_ref().and_then(|_| {
+                utilization_percent(telemetry.disk_total_bytes, telemetry.disk_available_bytes)
+            }),
+        ),
+    ];
+    let cells = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(inner);
+    let unicode = app.preferences.symbols == SymbolPreference::Unicode;
+    for ((label, percent), cell) in values.into_iter().zip(cells.iter()) {
+        let text = percent.map_or_else(
+            || format!("{label} --"),
+            |value| format!("{label} {value}%"),
+        );
+        frame.render_widget(
+            Paragraph::new(text).style(palette.role(palette.informational, Modifier::BOLD)),
+            Rect::new(cell.x, cell.y, cell.width, 1),
+        );
+        if cell.height < 2 {
+            continue;
+        }
+        let bar = Rect::new(cell.x, cell.y + 1, cell.width.saturating_sub(1), 1);
+        let Some(percent) = percent else {
+            frame.render_widget(
+                Paragraph::new("unavailable").style(palette.role(palette.muted, Modifier::DIM)),
+                bar,
+            );
+            continue;
+        };
+        let filled = (u32::from(percent) * u32::from(bar.width)).div_ceil(100);
+        for index in 0..bar.width {
+            let active = u32::from(index) < filled;
+            let segment = u32::from(index + 1) * 100 / u32::from(bar.width.max(1));
+            let color = if !active {
+                palette.muted
+            } else if segment >= 90 {
+                palette.error
+            } else if segment >= 70 {
+                palette.warning
+            } else {
+                palette.success
+            };
+            let symbol = match (unicode, active) {
+                (true, true) => "▪",
+                (true, false) => "▫",
+                (false, true) => "#",
+                (false, false) => ".",
+            };
+            if let Some(cell) = frame.buffer_mut().cell_mut((bar.x + index, bar.y)) {
+                cell.set_symbol(symbol).set_style(palette.role(
+                    color,
+                    if active {
+                        Modifier::BOLD
+                    } else {
+                        Modifier::DIM
+                    },
+                ));
+            }
+        }
+    }
+}
+
 fn render_telemetry_strip(frame: &mut Frame, app: &App, area: Rect) {
     let mode = telemetry_strip_mode(area);
     if mode == TelemetryStripMode::Hidden {
@@ -9143,63 +9228,19 @@ fn tasks_workspace(
     rows: &[TaskRowRef<'_>],
 ) {
     let selected = rows.get(app.task_progress_scroll);
-    if matches!(area.width, 86 | 89) && area.height == 42 {
-        let panels = Layout::vertical([
-            Constraint::Length(12),
-            Constraint::Length(12),
-            Constraint::Length(10),
-            Constraint::Length(8),
-        ])
-        .split(area);
-        render_task_table(frame, app, panels[0], rows, now);
+    let heights = yoctui_app::task_workspace_panel_heights(app, area.width, area.height);
+    let panels = Layout::vertical(heights.map(Constraint::Length)).split(area);
+    render_task_table(frame, app, panels[0], rows, now);
+    if heights[1] > 0 {
         render_task_log(frame, app, panels[1], selected);
+    }
+    if heights[2] > 0 {
         render_job_history(frame, app, panels[2], now);
+    }
+    if heights[3] == 8 {
         render_telemetry_strip(frame, app, panels[3]);
-    } else if area.width == 89 && area.height == 44 {
-        let panels = Layout::vertical([
-            Constraint::Length(17),
-            Constraint::Length(18),
-            Constraint::Length(9),
-        ])
-        .split(area);
-        render_task_table(frame, app, panels[0], rows, now);
-        render_task_log(frame, app, panels[1], selected);
-        render_job_history(frame, app, panels[2], now);
-    } else if area.height >= 46
-        && telemetry_available(app)
-        && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
-            != TelemetryStripMode::Hidden
-    {
-        let extra = area.height.saturating_sub(46);
-        let main_height = 14 + extra.div_ceil(2);
-        let secondary_height = 14 + extra / 2;
-        let panels = Layout::vertical([
-            Constraint::Length(main_height),
-            Constraint::Length(secondary_height),
-            Constraint::Min(10),
-            Constraint::Length(8),
-        ])
-        .split(area);
-        render_task_table(frame, app, panels[0], rows, now);
-        render_task_log(frame, app, panels[1], selected);
-        render_job_history(frame, app, panels[2], now);
-        render_telemetry_strip(frame, app, panels[3]);
-    } else if area.height >= 27 {
-        let panels = Layout::vertical([
-            Constraint::Percentage(45),
-            Constraint::Percentage(30),
-            Constraint::Min(6),
-        ])
-        .split(area);
-        render_task_table(frame, app, panels[0], rows, now);
-        render_task_log(frame, app, panels[1], selected);
-        render_job_history(frame, app, panels[2], now);
-    } else if area.height >= 18 {
-        let panels = Layout::vertical([Constraint::Percentage(62), Constraint::Min(6)]).split(area);
-        render_task_table(frame, app, panels[0], rows, now);
-        render_task_log(frame, app, panels[1], selected);
     } else {
-        render_task_table(frame, app, area, rows, now);
+        render_compact_telemetry_strip(frame, app, panels[3]);
     }
 }
 
@@ -21819,8 +21860,13 @@ mod tests {
         assert!(row(2).contains("Tasks: Build"), "{}", row(2));
         assert_eq!(buffer[(26, 18)].symbol(), "└");
         assert!(row(19).contains("Log Viewer"), "{}", row(19));
-        assert_eq!(buffer[(26, 36)].symbol(), "└");
-        assert!(row(37).contains("Job History"), "{}", row(37));
+        assert_eq!(buffer[(26, 32)].symbol(), "└");
+        assert!(row(33).contains("Job History"), "{}", row(33));
+        assert_eq!(buffer[(26, 41)].symbol(), "└");
+        assert!(row(42).contains("Resources"), "{}", row(42));
+        for metric in ["CPU", "RAM", "FS"] {
+            assert!(row(43).contains(metric), "{}", row(43));
+        }
         assert_eq!(buffer[(26, 45)].symbol(), "└");
 
         assert!(row(2).contains("Inspector: Task"), "{}", row(2));
@@ -28445,6 +28491,98 @@ mod tests {
             .collect::<String>();
         assert!(output.contains("e edit BBMASK"));
     }
+    #[test]
+    fn compact_resource_meters_remain_visible_across_workspace_sizes() {
+        let mut app = literal_reference_app();
+        app.focus = FocusTarget::Workspace;
+        app.host_telemetry.cpu_utilization_percent = Some(42);
+        app.host_telemetry.memory_total_bytes = Some(100);
+        app.host_telemetry.memory_available_bytes = Some(25);
+        app.host_telemetry.disk_total_bytes = Some(100);
+        app.host_telemetry.disk_available_bytes = Some(40);
+        app.workspace.build_dir = Some("/work/build".into());
+        let selected = app.task_progress_scroll;
+        for screen in [Screen::Dashboard, Screen::Tasks] {
+            app.screen = screen;
+            for (width, height) in [(181, 43), (160, 48), (130, 40), (100, 30), (80, 24)] {
+                let output = rendered_text_at(&app, width, height, literal_now());
+                for expected in [
+                    "Resources",
+                    "CPU 42%",
+                    "RAM 75%",
+                    "FS 60%",
+                    "▪",
+                    "▫",
+                    "do_compile",
+                    "Log Viewer",
+                ] {
+                    assert!(
+                        output.contains(expected),
+                        "{screen:?} {width}x{height}: missing {expected}: {output}"
+                    );
+                }
+                assert_eq!(app.task_progress_scroll, selected);
+                assert_eq!(app.focus, FocusTarget::Workspace);
+            }
+        }
+    }
+
+    #[test]
+    fn compact_resource_meters_distinguish_unknown_zero_and_accessibility() {
+        let render_strip = |app: &App, width, height| {
+            let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
+            terminal
+                .draw(|frame| render_compact_telemetry_strip(frame, app, frame.area()))
+                .unwrap();
+            terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>()
+        };
+        let mut app = App::new(10, 1_000);
+        for expected in ["CPU --", "RAM --", "FS --", "unavailable"] {
+            assert!(render_strip(&app, 78, 4).contains(expected));
+        }
+        assert!(!render_strip(&app, 78, 4).contains("0%"));
+        app.workspace.build_dir = Some("/work/build".into());
+        app.host_telemetry.cpu_utilization_percent = Some(0);
+        app.host_telemetry.memory_total_bytes = Some(100);
+        app.host_telemetry.memory_available_bytes = Some(100);
+        app.host_telemetry.disk_total_bytes = Some(100);
+        app.host_telemetry.disk_available_bytes = Some(100);
+        let zero = render_strip(&app, 78, 4);
+        for expected in ["CPU 0%", "RAM 0%", "FS 0%", "▫"] {
+            assert!(zero.contains(expected), "{zero}");
+        }
+        assert!(!zero.contains('▪'));
+        app.host_telemetry.memory_total_bytes = Some(0);
+        app.host_telemetry.disk_available_bytes = Some(101);
+        let invalid = render_strip(&app, 78, 4);
+        assert!(invalid.contains("RAM --") && invalid.contains("FS --"));
+        app.host_telemetry.cpu_utilization_percent = Some(42);
+        app.preferences.symbols = SymbolPreference::Ascii;
+        app.color_enabled = false;
+        app.reduced_motion = true;
+        let accessible = render_strip(&app, 78, 4);
+        for expected in ["CPU 42%", "#", ".", "unavailable"] {
+            assert!(accessible.contains(expected), "{accessible}");
+        }
+        assert!(!accessible.contains('▪') && !accessible.contains('▫'));
+        for width in 1..20 {
+            for height in 1..4 {
+                let _ = render_strip(&app, width, height);
+            }
+        }
+        for (width, height) in [(160, 50), (200, 60)] {
+            app.focus = FocusTarget::Workspace;
+            let full = rendered_text_at(&app, width, height, literal_now());
+            assert!(full.contains("Resource Telemetry"), "{full}");
+        }
+    }
+
     #[test]
     fn dashboard_renders_host_cpu_and_build_disk_space() {
         let mut terminal = Terminal::new(TestBackend::new(300, 40)).unwrap();

@@ -5260,20 +5260,52 @@ fn workspace_tab_click(
     }
 }
 
-fn task_row_click(app: &yoctui_model::App, area: MouseRect, mouse: MouseInput) -> Option<Action> {
-    let table_height = if area.width == 89 && area.height == 44 {
-        17
-    } else if area.height >= 46 {
-        14 + area.height.saturating_sub(46).div_ceil(2)
-    } else if area.height >= 27 {
-        area.height.saturating_mul(45) / 100
-    } else if area.height >= 18 {
-        area.height.saturating_mul(62) / 100
+/// Shared table/log/history/telemetry row allocation for rendering and mouse hit testing.
+pub fn task_workspace_panel_heights(app: &yoctui_model::App, width: u16, height: u16) -> [u16; 4] {
+    if matches!(width, 86 | 89) && height == 42 {
+        return [12, 12, 10, 8];
+    }
+    if width == 89 && height == 44 {
+        return [17, 14, 9, 4];
+    }
+    if height >= 46 && width >= 64 {
+        let filesystem_known = app.workspace.build_dir.is_some()
+            && matches!((app.host_telemetry.disk_total_bytes, app.host_telemetry.disk_available_bytes),
+                (Some(total), Some(available)) if total > 0 && available <= total);
+        let telemetry_known = filesystem_known
+            || app
+                .host_telemetry_projection()
+                .series
+                .iter()
+                .any(|series| series.is_supported());
+        if telemetry_known {
+            let extra = height - 46;
+            return [14 + extra.div_ceil(2), 14 + extra / 2, 10, 8];
+        }
+    }
+    let telemetry = height.min(4);
+    let content = height - telemetry;
+    if content >= 27 {
+        let main = (u32::from(content) * 45 / 100) as u16;
+        let log = (u32::from(content) * 30 / 100) as u16;
+        [main, log, content - main - log, telemetry]
+    } else if content >= 14 {
+        let log = (content * 38 / 100).max(6);
+        [content - log, log, 0, telemetry]
     } else {
-        area.height
+        [content, 0, 0, telemetry]
+    }
+}
+
+fn task_row_click(app: &yoctui_model::App, area: MouseRect, mouse: MouseInput) -> Option<Action> {
+    let table_height = task_workspace_panel_heights(app, area.width, area.height)[0];
+    let summary_height = if app.screen == Screen::Dashboard {
+        4
+    } else {
+        2
     };
-    let first_row = area.y.saturating_add(4);
-    let visible_rows = usize::from(table_height.saturating_sub(5)).max(1);
+    let first_row = area.y.saturating_add(summary_height + 2);
+    let visible_rows = usize::from(table_height.saturating_sub(summary_height + 3));
     if mouse.row < first_row || mouse.row >= first_row.saturating_add(visible_rows as u16) {
         return None;
     }
@@ -11205,6 +11237,75 @@ mod tests {
             None,
             "the below-minimum resize screen is inert"
         );
+    }
+
+    #[test]
+    fn compact_resource_meters_mouse_geometry_excludes_logs_and_meters() {
+        let mut app = yoctui_model::App::new(100, 4096);
+        for index in 0..100 {
+            let id = TaskId(format!("task-{index:03}"));
+            app.tasks.insert(
+                id.clone(),
+                TaskInfo::active(id, format!("recipe-{index}"), "do_compile".into()),
+            );
+        }
+        app.task_progress_scroll = 50;
+        for screen in [Screen::Dashboard, Screen::Tasks] {
+            app.screen = screen;
+            for (width, height) in [
+                (101, 39),
+                (89, 44),
+                (76, 36),
+                (78, 26),
+                (80, 19),
+                (86, 42),
+                (116, 56),
+            ] {
+                let panels = task_workspace_panel_heights(&app, width, height);
+                assert_eq!(panels.iter().sum::<u16>(), height);
+                assert!(panels[3] >= 4);
+                let area = MouseRect {
+                    x: 0,
+                    y: 2,
+                    width,
+                    height,
+                };
+                let summary = if screen == Screen::Dashboard { 4 } else { 2 };
+                let count = panels[0] - summary - 3;
+                let first = area.y + summary + 2;
+                for offset in 0..count {
+                    assert_eq!(
+                        task_row_click(
+                            &app,
+                            area,
+                            MouseInput {
+                                kind: MouseKind::Down,
+                                column: 1,
+                                row: first + offset
+                            }
+                        ),
+                        Some(Action::ScrollBuildTasks {
+                            delta: isize::try_from(offset).unwrap()
+                                - isize::try_from(count / 2).unwrap()
+                        })
+                    );
+                }
+                for row in [first - 1, first + count, area.y + height - 2] {
+                    assert_eq!(
+                        task_row_click(
+                            &app,
+                            area,
+                            MouseInput {
+                                kind: MouseKind::Down,
+                                column: 1,
+                                row
+                            }
+                        ),
+                        None
+                    );
+                }
+            }
+        }
     }
 
     #[test]

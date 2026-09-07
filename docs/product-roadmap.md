@@ -1132,3 +1132,30 @@ complete: full completion passed before upload, all six public crates are
 published as v0.1.64, and registry checksum/install/real-PTY verification passed.
 The optimized release is installed locally with a backup; the daemon was not
 restarted.
+
+## M55 — Compact resource visibility
+
+Keep four-row CPU/RAM/filesystem square-dot meters visible on short Dashboard
+and Tasks workspaces down to the supported minimum. Preserve typed values,
+unknown states, task selection, log access, accessibility, and the existing
+full-size telemetry tier. Rendering-only changes must not add polling or focus.
+
+Progress: COMPACT-TELEMETRY-001 DONE in the v0.1.65 candidate; full workspace,
+Clippy, bridge, documentation and reviewed UI regressions pass. Not yet installed
+or released. Package availability was diagnosed
+separately as stale authority in the old v0.1.21 daemon. The user's subsequent
+shutdown request was completed through acknowledged cancellation and daemon stop.
+
+## M56 — OpenBMC live integration
+
+After M55, provision a separate OpenBMC checkout and supported machine build
+directory without modifying Poky. Record the revision, machine, initialization
+command, storage budget and prerequisites. Exercise a real image build through
+Yoctui and inspect package/rootfs availability, task/log lifecycles and terminal
+outcomes. Register atomic regression fixes for observed defects; fixture tests
+alone do not establish OpenBMC compatibility. Storage is currently constrained
+and Poky generated output must not be removed without approval.
+Progress: OPENBMC-ENV-001 IN_PROGRESS; OPENBMC-LIVE-001 NOT_STARTED.
+Storage preflight was unblocked by cleaning completed Cargo debug outputs,
+not Poky data; 78 GiB is available, subject to monitoring and a stop margin.
+See [live integration preflight](testing/openbmc.md).

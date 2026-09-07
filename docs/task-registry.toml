@@ -3,6 +3,39 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "COMPACT-TELEMETRY-001"
+milestone = "M55"
+title = "Keep compact resource meters visible in short Dashboard and Tasks workspaces"
+status = "DONE"
+priority = 1300
+required = true
+depends_on = ["RELEASE-PUBLISH-001"]
+verify = ["cargo test -p yoctui-ui compact_resource_meters", "cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.65 candidate: four-row CPU/RAM/FS square-dot strip at short Dashboard/Tasks sizes, including 181x43 and minimum 80x24. Tests first reproduced missing Resources; cover percentages, zero/unavailable/invalid readings, resize/selection/log access, accessibility, full-size preservation and shared mouse row geometry. 468 UI/app tests, 1520 workspace tests (4 existing ignored), strict Clippy, formatting, 46 bridge tests, docs/roadmap pass. Reviewed 160x48 fixture shortens logs four rows for meters; other 16 cell/text fixtures change only version digits, six rasters refreshed. See docs/testing/compact-telemetry.md. Installed release remains 0.1.64; not release-performance or OpenBMC completion. Old v0.1.21 daemon had stale negative pkgdata authority despite 4387 readable packages; user-authorized cancellation and daemon shutdown completed."
+
+[[task]]
+id = "OPENBMC-ENV-001"
+milestone = "M56"
+title = "Provision an isolated supported OpenBMC machine workspace"
+status = "IN_PROGRESS"
+priority = 1290
+required = true
+depends_on = ["COMPACT-TELEMETRY-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Initial storage blocker resolved without deleting Poky: after validation, saved the v0.1.65 candidate executable and cleaned regenerable Cargo workspace debug artifacts (79.1 GiB); root now has 78 GiB free. Separate Romulus checkout/build planned in docs/testing/openbmc.md. Establish a disk stop margin and monitor usage; do not assume this guarantees image completion. Preserve Poky source/conf/output/downloads/sstate. Done requires upstream revision, initialized machine configuration and current Yoctui doctor evidence; no download/build success claimed yet."
+
+[[task]]
+id = "OPENBMC-LIVE-001"
+milestone = "M56"
+title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
+status = "NOT_STARTED"
+priority = 1280
+required = true
+depends_on = ["OPENBMC-ENV-001"]
+verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
+notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. Record evidence in docs/testing/openbmc.md."
+
+[[task]]
 id = "RELEASE-README-001"
 milestone = "M54"
 title = "Replace README promotion with feature coverage and operator how-tos"

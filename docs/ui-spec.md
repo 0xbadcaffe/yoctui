@@ -100,11 +100,13 @@ Tasks workspace uses this exact application-controlled cell geometry:
 | Header | `x=0, y=0, width=160, height=2` |
 | Navigator | `x=0, y=2, width=26, height=44` |
 | Tasks table | `x=26, y=2, width=89, height=17` |
-| Log Viewer | `x=26, y=19, width=89, height=18` |
-| Job History | `x=26, y=37, width=89, height=9` |
-| Task Inspector | `x=115, y=2, width=45, height=16` |
-| Recent Log | `x=115, y=18, width=45, height=15` |
-| Actions | `x=115, y=33, width=45, height=7` |
+| Log Viewer | `x=26, y=19, width=89, height=14` |
+| Job History | `x=26, y=33, width=89, height=9` |
+| Compact resources | `x=26, y=42, width=89, height=4` |
+| Task Inspector | `x=115, y=2, width=45, height=11` |
+| Secondary facts | `x=115, y=13, width=45, height=12` |
+| Recent Log | `x=115, y=25, width=45, height=6` |
+| Actions | `x=115, y=31, width=45, height=9` |
 | System Status | `x=115, y=40, width=45, height=6` |
 | Command rail | `x=0, y=46, width=160, height=2` |
 
@@ -150,10 +152,10 @@ comes from typed model state; missing values read `unavailable`, `unknown`, or
 
 ### Next-generation layout contract
 
-This section is the normative M19 layout contract. It refines the earlier
-literal scene without invalidating the reviewed `160x48` acceptance artifact:
-that artifact remains a regression fixture until a later target-design golden
-task reviews and replaces it. New canonical scenes use `200x60` and `160x50`
+This section is the normative responsive layout contract. M55 intentionally
+updates the `160x48` acceptance artifact to retain compact meters, shortening
+the log viewport by four rows without removing task or history rows. The
+artifact remains a reviewed regression fixture. Larger canonical scenes use `200x60` and `160x50`
 so the telemetry/context tier can be exercised without removing the task,
 log, or history tiers.
 
@@ -220,11 +222,11 @@ Height degradation is independent of width:
 
 - body height `46+` (for example `160x50`): Main, Secondary, History/Context,
   and supported Telemetry tiers may all render
-- body height `36..45`: omit the Telemetry tier first and give its rows to Main
-  and Secondary; the reviewed `160x48` Tasks geometry remains valid
-- body height `27..35`: retain Main, Secondary, and a compact Context summary
-- body height `18..26`: retain Main and Secondary; history moves to Inspector
-- body height `1..17`: render only Main with its title and bounded rows
+- below full telemetry geometry, Dashboard and Tasks reserve four rows for a
+  compact CPU/RAM/Build-FS meter strip, including the reviewed `160x48` layout
+- remaining body height `27..45`: retain Main, Secondary, and compact Context
+- remaining body height `14..26`: retain Main and Secondary; history moves to Inspector
+- remaining content height `1..13`: render only Main with its title and bounded rows
 
 The canonical responsive verification matrix is `200x60`, `160x50`,
 `130x40`, `100x30`, `80x24`, and `79x23`. The first three exercise the wide
@@ -391,15 +393,21 @@ sampling failure produce an unavailable sample rather than a spike.
 - Wide: `CPU | RAM | Build FS | Read | Write | RX | TX`
 - Medium: `CPU | RAM | Build FS | I/O`, where I/O is a textual aggregate with
   separate read/write values and never a fabricated combined counter
-- Narrow: omit the strip and expose a compact summary in System Status or the
-  Inspector
+- Short or narrow Dashboard/Tasks: a four-row `Resources` strip with three
+  labeled CPU/RAM/FS cells, exact percentages and one-row square-dot meters.
+  Unsupported values read `--`/`unavailable` and never show a zero-filled meter.
 
 The strip's render-area breakpoints are explicit: `112+` columns is Wide,
 `64..111` is Medium, and below 64 is Hidden. It requires at least four rows,
-and Dashboard/Tasks allocate the bounded eight-row tier only when their
+and Dashboard/Tasks allocate the bounded eight-row tier when their
 Workspace body is at least 46 rows high and at least one metric group is
-authoritative. Otherwise those rows return to higher-priority workspace
-content. Wide preserves the stable cell order and omits the paired Read/Write
+authoritative. Otherwise a four-row compact strip remains visible whenever the
+Dashboard/Tasks workspace itself is visible, including at 80x24. This overrides
+the older hide-telemetry-first rule. Charts and optional rate cells collapse
+before these three essential meters. Missing telemetry retains labeled
+unavailable cells. ASCII uses `#`/`.`; Unicode uses square `▪`/`▫` segments.
+No-color and reduced-motion retain numeric values and determinate bars without
+introducing polling or animation. Wide preserves the stable cell order and omits the paired Read/Write
 or RX/TX cells when neither a current sample nor retained valid history proves
 that optional host source. Medium similarly omits its two-line `I/O` cell when
 disk rates are unsupported. Vertical separators and semantic graph roles are
