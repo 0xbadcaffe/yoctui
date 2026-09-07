@@ -1,8 +1,9 @@
 # OpenBMC live integration
 
 Status: environment, direct-capability, startup-responsiveness, bounded
-inventory and CLI submission tasks complete. No image build is claimed.
-Symlinked tool discovery remains before OPENBMC-LIVE-001 can run.
+inventory, CLI submission and symlinked tool discovery tasks complete. Romulus
+image job 1 was accepted through Yoctui v0.1.71 and is executing real tasks.
+No completed image is claimed. Initial attachment exposed OPENBMC-ATTACH-001.
 
 ## Planned machine and isolation
 
@@ -208,6 +209,22 @@ goldens and six production rasters were refreshed. Another 58.3 GiB of agent
 Cargo debug outputs were cleaned before rebuilding; no Poky data was removed.
 
 ### Image validation still required
+
+The new workspace enables rm_work for completed package work directories,
+excluding obmc-phosphor-image so rootfs inspection remains possible. All Poky
+data and default parallelism remain unchanged. Fetching upstream Git history
+and tags (without changing HEAD) makes git describe report
+3.1.0-dev-1106-gd4fd7d3f54 and resolves the shallow-checkout os-release warning.
+The first premature build submission was explicitly rejected while initial
+inventory loaded. After Workspace readiness, the CLI accepted image job 1.
+
+Live compact capture at 100x24 shows CPU/RAM/FS meters. A client without a local
+environment initially opened environment setup despite the active daemon:
+the 250 ms initial snapshot timeout is too short. A read-only attach observation
+took 767 ms including detach (not an isolated latency percentile). This is
+OPENBMC-ATTACH-001. The first capture also demonstrated that the older generic
+capture script starts a local bridge unless the environment is sourced; the
+subsequent captures explicitly use yoctui attach and are not fixture renders.
 
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.

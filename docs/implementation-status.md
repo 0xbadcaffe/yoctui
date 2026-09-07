@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+HOST-PYTHON-001 is DONE: default account shells now
+use unshimmed system Python; pyenv was upgraded to v2.8.5 with upstream alias-loop
+protection, retaining both managed interpreters. The inactive OpenBMC Python
+host-tool link was repaired; Poky already resolved correctly and was unchanged.
+Login/interactive/restricted-PATH and explicit managed-version checks pass.
+See [scope and rollback](testing/host-python.md). The initial image attempt was
+cancelled after host shim recursion stalled it; retry and image success remain.
+
 M55 COMPACT-TELEMETRY-001 is DONE in the v0.1.65 candidate: compact CPU/RAM/FS
 meters remain visible in short Dashboard/Tasks workspaces, with shared mouse
 row geometry. 1,520 workspace tests, strict Clippy, formatting, 46 bridge tests
@@ -28,8 +36,11 @@ v0.1.71: canonicalized absolute PATH directories expose the real tools while
 retaining final-file alias safety. Fourteen focused tests, 1,543 workspace tests,
 49 bridge tests, strict Clippy, formatting, Python and docs checks pass. Real
 tool identities and package-list capability are verified; timed-out Devtool
-help probes remain Unknown. OPENBMC-LIVE-001 is now IN_PROGRESS.
-No image build was accepted yet.
+help probes remain Unknown. OPENBMC-LIVE-001 accepted Romulus image job 1;
+real task execution and compact 100x24 CPU/RAM/FS rendering are observed.
+OPENBMC-ATTACH-001 is IN_PROGRESS for the newly observed initial 250 ms snapshot
+timeout, which sends a healthy attached client into local environment setup.
+The image continues under the private daemon while this client-only fix is tested.
 Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the
 candidate binary; 78 GiB is now free, with all Poky data untouched. See

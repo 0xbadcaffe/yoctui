@@ -11,6 +11,11 @@ inventory in bounded chunks; v0.1.70 fixes bounded CLI stale retries and rejecti
 status. v0.1.71 fixes symlinked PATH tool discovery. The image build is next; inventory and
 submission tests are not image-build validation.
 
+The first real OpenBMC attempt exposed a host pyenv-shim recursion loop. The
+user-requested persistent host repair is complete (HOST-PYTHON-001), preserving
+managed interpreters while defaulting build shells to system Python. A separate
+initial-attachment timeout repair (OPENBMC-ATTACH-001) gates the image retry.
+
 Yoctui is 100% complete only when:
 
 - every required task in `docs/task-registry.toml` is `DONE`

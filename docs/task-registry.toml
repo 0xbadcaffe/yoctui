@@ -80,13 +80,35 @@ verify = ["cargo test -p yoctui daemon_compatibility", "cargo test --workspace -
 notes = "v0.1.71 canonicalizes absolute initialized PATH directories before joining the requested basename, preserving safe sibling aliases and rejecting relative/dangling/escaping/nonexecutable candidates. Regression failed before fix; 14 focused compatibility tests and 1543 workspace tests (4 existing ignored), 49 bridge tests, strict Clippy, fmt, Ruff/mypy and docs pass. Real OpenBMC doctor finds canonical Devtool, Recipetool and pkgdata tools; pkgdata.list_packages Available. Some Devtool/Recipetool help probes time out and correctly remain Unknown, not falsely enabled. Version-only goldens/rasters refreshed. Evidence in docs/testing/openbmc.md and doctor-v0.1.71.json. No image-build or release-performance claim."
 
 [[task]]
+id = "HOST-PYTHON-001"
+milestone = "M56"
+title = "Repair persistent Python host-tool resolution without removing managed interpreters"
+status = "DONE"
+priority = 1290
+required = true
+depends_on = ["OPENBMC-ENV-001"]
+verify = ["./scripts/verify-roadmap.sh", "./scripts/check-docs.sh"]
+notes = "Persistent account shell PATH guard removes inherited pyenv shims without displacing virtualenvs; automatic pyenv shim initialization disabled, explicit pyenv retained. Upgraded clean pyenv 2.6.16 to upstream 2.8.5 with alias-loop fix, rehashed, retained both Python 3.10.14/3.11.9 and rollback branch. Repaired only inactive OpenBMC hosttools/python3; Poky already resolved to system Python. Login/interactive/restricted-PATH/duplicate-shim/alias-recovery and explicit version checks pass. Devtool help improves from 24.88s to 2.61s. No system-owned Python replacement or build-output deletion. Backups, commands, exact scope and evidence in docs/testing/host-python.md. Documentation and roadmap checks pass; governance version 0.1.72. OpenBMC attempt 1 was cancelled and daemon restarted with corrected environment; no image success claimed."
+
+[[task]]
+id = "OPENBMC-ATTACH-001"
+milestone = "M56"
+title = "Allow a healthy large daemon snapshot to complete initial client attachment"
+status = "IN_PROGRESS"
+priority = 1288
+required = true
+depends_on = ["OPENBMC-TOOLS-001"]
+verify = ["cargo test -p yoctui initial_daemon_attach", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Real Romulus attach without a locally sourced environment opened Build environment/onboarding despite the current daemon workspace; 250 ms initial attach timeout is too short for the large live snapshot. Give only pre-terminal startup a bounded five-second receive budget, preserving the short interactive reconnect budget. Test delayed real socket response before implementation, unavailable socket and workspace identity installation; recheck a real attached client. Do not extend blocking UI-loop waits or invent local authority."
+
+[[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. Record evidence in docs/testing/openbmc.md."
 
