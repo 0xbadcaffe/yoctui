@@ -12,6 +12,9 @@ use std::collections::HashMap;
 use thiserror::Error;
 pub const VERSION: u32 = 1;
 pub const MAX_LINE_BYTES: usize = 1024 * 1024;
+pub const MAX_RECIPE_CHUNK_BYTES: usize = 512 * 1024;
+pub const MAX_RECIPE_INVENTORY_BYTES: usize = 3 * 1024 * 1024;
+pub const MAX_RECIPE_INVENTORY_RECORDS: usize = 16384;
 #[derive(Debug, Default)]
 pub struct LineFramer {
     pending: Vec<u8>,
@@ -78,6 +81,8 @@ pub enum Command {
     TerminateServer,
     ListRecipes {
         filter: Option<String>,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        chunked: bool,
     },
     ListLayers,
     GetVariable {
@@ -264,6 +269,12 @@ pub enum Event {
     Recipes {
         recipes: Vec<RecipeData>,
     },
+    RecipesChunk {
+        offset: usize,
+        total: usize,
+        complete: bool,
+        recipes: Vec<RecipeData>,
+    },
     Layers {
         layers: Vec<LayerData>,
     },
@@ -392,6 +403,34 @@ pub fn encode_line<T: Serialize>(e: &Envelope<T>) -> Result<Vec<u8>, ProtocolErr
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recipe_inventory_chunking_is_opt_in_and_legacy_commands_still_decode() {
+        let legacy: Command =
+            serde_json::from_str(r#"{"type":"list_recipes","filter":null}"#).unwrap();
+        assert!(matches!(
+            legacy,
+            Command::ListRecipes { chunked: false, .. }
+        ));
+        assert!(!serde_json::to_string(&legacy).unwrap().contains("chunked"));
+        let chunked = Command::ListRecipes {
+            filter: None,
+            chunked: true,
+        };
+        assert!(
+            serde_json::to_string(&chunked)
+                .unwrap()
+                .contains("\"chunked\":true")
+        );
+        let event = Event::RecipesChunk {
+            offset: 0,
+            total: 0,
+            complete: true,
+            recipes: vec![],
+        };
+        let encoded = serde_json::to_string(&event).unwrap();
+        assert_eq!(serde_json::from_str::<Event>(&encoded).unwrap(), event);
+    }
     use proptest::prelude::*;
     #[test]
     fn round_trip() {

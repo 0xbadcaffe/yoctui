@@ -20,6 +20,13 @@ doctor, telemetry and shutdown remain serviceable. Shutdown interrupts the
 scan's bridge and waits for bounded cleanup. A failed readiness attempt must
 reap the exact foreground child it spawned, not leave an untracked daemon.
 
+Large recipe inventories use an opt-in bounded chunked bridge response. The
+BitBake adapter assembles and validates the complete inventory before exposing
+the existing typed Recipes/Workspace model, so UI code never renders partial
+inventories as authoritative. Aggregate record/byte limits remain below the
+daemon frame budget; daemon publication still checks its independent snapshot
+bound and reports a failed metadata scan instead of terminating IPC on overflow.
+
 1. Domain state is independent of terminal rendering.
 2. UI consumes typed state and emits typed actions.
 3. Raw backend output is normalized before reaching widgets.

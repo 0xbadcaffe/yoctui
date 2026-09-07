@@ -1,0 +1,27 @@
+{
+  "version": "0.1.69",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "machine": "romulus",
+  "daemon_pid": 2445464,
+  "attach_ms": 294.68692606315017,
+  "initial_workspace_available": false,
+  "inventory_wait_seconds": 20.48111218982376,
+  "events_received": 6,
+  "metadata_logs": [
+    {
+      "source": "daemon-metadata",
+      "severity": "info",
+      "message": "Loading initial workspace and recipe inventory",
+      "unix_ms": 1788808277593,
+      "recipe": null,
+      "task": null,
+      "path": null,
+      "build": null
+    }
+  ],
+  "recipe_count": 4799,
+  "layer_count": 9,
+  "workspace_received": true,
+  "binary_sha256": "fc888c3d0333be0145a64c235a90917c1b20d57ea1bb2b59f73d6d830614946a",
+  "binary_hash_source": "/proc/2445464/exe"
+}

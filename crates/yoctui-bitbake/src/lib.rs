@@ -29,6 +29,7 @@ mod qa_report;
 mod qa_task;
 mod qemu;
 mod raw_job;
+mod recipe_inventory;
 mod rootfs;
 mod sdk;
 mod sdk_shell;
@@ -2345,6 +2346,11 @@ impl BridgeBackend {
                     )
                     .collect(),
             ),
+            Event::RecipesChunk { .. } => {
+                return Err(BackendError::Bridge(
+                    "recipe chunk outside an active inventory request".into(),
+                ));
+            }
             Event::Layers { layers } => BackendEvent::Layers(
                 layers
                     .into_iter()
@@ -2871,17 +2877,52 @@ impl BitBakeBackend for BridgeBackend {
     }
     async fn list_recipes(&mut self, filter: Option<String>) -> Result<Vec<Recipe>, BackendError> {
         self.require_api(BitBakeApiOperation::Recipes)?;
-        self.command(Command::ListRecipes { filter }).await?;
+        self.command(Command::ListRecipes {
+            filter,
+            chunked: true,
+        })
+        .await?;
+        let correlation = self.sequence.to_string();
+        let mut inventory = recipe_inventory::RecipeInventory::default();
         loop {
-            match self.next_event().await? {
-                BackendEvent::Recipes(recipes) => return Ok(recipes),
-                BackendEvent::CommandFailed { code, message } => {
+            let Some(line) = self.next_line().await? else {
+                return Err(
+                    self.disconnected("bridge disconnected before recipe inventory completion")
+                );
+            };
+            let envelope: Envelope<Event> = decode_line(&line, Some(self.last_sequence))?;
+            if envelope.correlation_id.as_deref() != Some(correlation.as_str()) {
+                return Err(BackendError::Bridge(
+                    "recipe inventory response has wrong request correlation".into(),
+                ));
+            }
+            self.last_sequence = envelope.sequence;
+            let completed = match envelope.message {
+                Event::RecipesChunk {
+                    offset,
+                    total,
+                    complete,
+                    recipes,
+                } => {
+                    if line.len() > yoctui_protocol::MAX_RECIPE_CHUNK_BYTES {
+                        return Err(BackendError::Bridge("recipe chunk exceeds 512 KiB".into()));
+                    }
+                    inventory.push(offset, total, complete, recipes)?
+                }
+                Event::Recipes { recipes } => inventory.push(0, recipes.len(), true, recipes)?,
+                Event::CommandFailed { code, message } | Event::ProtocolError { code, message } => {
                     return Err(BackendError::Bridge(format!("{code}: {message}")));
                 }
-                BackendEvent::Disconnected => {
-                    return Err(self.disconnected("bridge disconnected while listing recipes"));
-                }
-                _ => {}
+                _ => false,
+            };
+            if completed {
+                let BackendEvent::Recipes(recipes) = Self::event(Event::Recipes {
+                    recipes: inventory.finish()?,
+                })?
+                else {
+                    unreachable!("recipe conversion")
+                };
+                return Ok(recipes);
             }
         }
     }

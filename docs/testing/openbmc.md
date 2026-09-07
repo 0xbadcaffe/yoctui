@@ -1,9 +1,8 @@
 # OpenBMC live integration
 
-Status: environment, direct-capability and startup-responsiveness tasks complete;
-no successful image build is claimed. Large inventory transfer, CLI
-generation/error status and symlinked tool
-discovery defects remain before OPENBMC-LIVE-001 can run.
+Status: environment, direct-capability, startup-responsiveness and bounded
+inventory tasks complete. No image build is claimed. CLI generation/error
+status and symlinked tool discovery remain before OPENBMC-LIVE-001 can run.
 
 ## Planned machine and isolation
 
@@ -137,6 +136,33 @@ readiness marker was moved inside its Python try/finally to remove a test-only
 race between advertising readiness and installing the cleanup scope.
 
 ### Image-build acceptance
+
+### Bounded inventory candidate v0.1.69
+
+The [size measurement](../../artifacts/live-openbmc/romulus/inventory-size.json)
+found 4,799 recipes serialized into 1,051,217 bytes (largest record 300 bytes).
+The [live transfer capture](../../artifacts/live-openbmc/romulus/inventory-v0.1.69.json)
+shows the complete 4,799-recipe, nine-layer Workspace arriving 20.48 seconds
+after attach, without reattachment. Its running-binary SHA-256 is recorded in
+the capture. Startup took 141.43 seconds while Rust checks also ran; attach took
+294.69 ms. These are one-shot startup observations, not p95 performance claims.
+
+Opt-in chunks are capped at 512 KiB, the total at 16,384 records / 3 MiB. Request
+correlation, contiguous offsets, stable totals and explicit completion are
+mandatory; incomplete data never becomes authoritative. Legacy callers retain
+single-frame responses when they fit and otherwise get an explicit limit error.
+The 1 MiB bridge and 4 MiB daemon frame limits are unchanged. A daemon snapshot
+overflow reports a scan error and keeps IPC usable.
+
+Validation: 1,535 workspace tests (four existing ignored), 49 bridge tests,
+strict Clippy, formatting, Ruff/mypy and docs pass. The first broad run hit
+ETXTBUSY in an unrelated pkgdata process fixture; its isolated test and the full
+rerun passed. All 17 cell/text fixture changes are version-only; six rasters
+were regenerated. The measurement also recorded an upstream os-release warning
+because this shallow checkout has no reachable Git tag; inspect this during
+image-build validation rather than hiding it.
+
+### Remaining image-build acceptance
 
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.

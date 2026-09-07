@@ -3,6 +3,38 @@ use anyhow::Result;
 use tokio::sync::oneshot;
 use yoctui_model::Workspace;
 
+pub fn publish_workspace(
+    journal: &mut yoctui_protocol::daemon::DaemonSnapshotJournal,
+    workspace: Workspace,
+) -> Result<bool> {
+    use yoctui_protocol::daemon::{DaemonEvent, JobId};
+    let (Some(event), _) =
+        crate::daemon_build_event(yoctui_bitbake::BackendEvent::Workspace(workspace), JobId(0))
+    else {
+        unreachable!("workspace event conversion")
+    };
+    match journal.publish(DaemonEvent::Build(event)) {
+        Ok(_) => {
+            crate::publish_startup_metadata_log(
+                journal,
+                "Initial workspace and recipe inventory ready",
+                false,
+            )?;
+            Ok(true)
+        }
+        Err(error) => {
+            crate::publish_startup_metadata_log(
+                journal,
+                &format!(
+                    "Initial metadata scan could not be published within daemon snapshot bounds: {error}"
+                ),
+                true,
+            )?;
+            Ok(false)
+        }
+    }
+}
+
 pub struct StartupMetadata {
     cancel: Option<oneshot::Sender<()>>,
     result: oneshot::Receiver<Result<Option<Workspace>>>,
@@ -73,6 +105,43 @@ impl Drop for StartupMetadata {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recipe_inventory_oversized_workspace_reports_error_and_keeps_journal_usable() {
+        use yoctui_model::{DaemonGlobalState, DaemonModelInstanceId, DaemonStateLimits};
+        use yoctui_protocol::daemon::{
+            DaemonSnapshotJournal, DaemonSnapshotLimits, MAX_FRAME_BYTES,
+        };
+        let state = DaemonGlobalState::new(
+            DaemonModelInstanceId([1; 16]),
+            1,
+            "fixture-boot".into(),
+            DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut journal = DaemonSnapshotJournal::new(
+            crate::daemon_protocol_snapshot(&state),
+            DaemonSnapshotLimits::default(),
+        )
+        .unwrap();
+        let mut workspace = Workspace::default();
+        workspace
+            .variables
+            .insert("oversized".into(), "x".repeat(MAX_FRAME_BYTES));
+        assert!(!publish_workspace(&mut journal, workspace).unwrap());
+        assert!(journal.snapshot().build_events.is_empty());
+        assert!(
+            journal
+                .snapshot()
+                .recent_logs
+                .last()
+                .unwrap()
+                .message
+                .contains("snapshot bounds")
+        );
+        assert!(publish_workspace(&mut journal, Workspace::default()).unwrap());
+        assert_eq!(journal.snapshot().build_events.len(), 1);
+    }
 
     #[test]
     fn daemon_startup_unready_child_is_terminated_and_reaped() {

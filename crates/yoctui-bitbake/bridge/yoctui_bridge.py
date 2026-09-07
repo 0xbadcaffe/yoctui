@@ -13,6 +13,9 @@ import time
 
 VERSION = 1
 MAX_LINE_BYTES = 1024 * 1024
+MAX_RECIPE_CHUNK_BYTES = 512 * 1024
+MAX_RECIPE_INVENTORY_BYTES = 3 * 1024 * 1024
+MAX_RECIPE_INVENTORY_RECORDS = 16384
 MAX_DEPENDENCY_NODES = 1500
 MAX_DEPENDENCY_EDGES = 3000
 MAX_NATIVE_EVENTS_PER_POLL = 64
@@ -48,6 +51,86 @@ def emit(message, correlation_id=None):
 
 def error(code, message, correlation_id=None):
     emit({"type": "command_failed", "code": code, "message": message}, correlation_id)
+
+
+def emit_recipe_inventory(recipes, correlation_id, chunked):
+    """Opt-in chunks; preflight the complete inventory before emitting any part."""
+    if len(recipes) > MAX_RECIPE_INVENTORY_RECORDS:
+        error(
+            "recipe_inventory_limit",
+            "recipe inventory exceeds 16384 records",
+            correlation_id,
+        )
+        return
+    sizes = [
+        len(
+            json.dumps(recipe, ensure_ascii=False, separators=(",", ":")).encode(
+                "utf-8"
+            )
+        )
+        for recipe in recipes
+    ]
+    if sum(sizes) + max(0, len(recipes) - 1) + 2 > MAX_RECIPE_INVENTORY_BYTES:
+        error(
+            "recipe_inventory_limit", "recipe inventory exceeds 3 MiB", correlation_id
+        )
+        return
+    if not chunked:
+        message = {"type": "recipes", "recipes": recipes}
+        frame = {
+            "protocol_version": VERSION,
+            "sequence": sequence + 1,
+            "correlation_id": correlation_id,
+            "message": message,
+        }
+        if (
+            len(
+                json.dumps(frame, ensure_ascii=False, separators=(",", ":")).encode(
+                    "utf-8"
+                )
+            )
+            > MAX_LINE_BYTES
+        ):
+            error(
+                "recipe_inventory_limit",
+                "recipe inventory requires chunked transfer",
+                correlation_id,
+            )
+        else:
+            emit(message, correlation_id)
+        return
+    # Reserve space for envelope, chunk fields and the request correlation.
+    overhead = (
+        len(json.dumps(correlation_id, ensure_ascii=False).encode("utf-8")) + 1024
+    )
+    budget = MAX_RECIPE_CHUNK_BYTES - overhead
+    if budget < 3 or any(size + 3 > budget for size in sizes):
+        error(
+            "recipe_inventory_limit",
+            "recipe record exceeds bounded chunk size",
+            correlation_id,
+        )
+        return
+    offset = 0
+    while offset < len(recipes) or not recipes:
+        end = offset
+        used = 2
+        while end < len(recipes) and used + sizes[end] + 1 <= budget:
+            used += sizes[end] + 1
+            end += 1
+        emit(
+            {
+                "type": "recipes_chunk",
+                "offset": offset,
+                "total": len(recipes),
+                "complete": end == len(recipes),
+                "recipes": recipes[offset:end],
+            },
+            correlation_id,
+        )
+        if end == len(recipes):
+            break
+        offset = end
 
 
 def bitbake_version():
@@ -2110,6 +2193,14 @@ def handle(command, correlation_id, adapter):
                     emit(event, correlation_id)
     elif kind == "list_recipes":
         filter_value = command.get("filter")
+        chunked = command.get("chunked", False)
+        if not isinstance(chunked, bool):
+            error(
+                "invalid_request",
+                "list_recipes chunked must be boolean",
+                correlation_id,
+            )
+            return True
         if filter_value is not None and not isinstance(filter_value, str):
             error(
                 "invalid_request",
@@ -2134,7 +2225,7 @@ def handle(command, correlation_id, adapter):
                         for recipe in recipes
                         if filter_value.lower() in recipe["name"].lower()
                     ]
-        emit({"type": "recipes", "recipes": recipes}, correlation_id)
+        emit_recipe_inventory(recipes, correlation_id, chunked)
     elif kind == "list_layers":
         try:
             layers = adapter.layers()

@@ -16,9 +16,11 @@ failed-startup child reaping. 1,530 workspace tests (four existing ignored),
 47 bridge tests, strict Clippy, formatting and docs pass. Real OpenBMC startup
 took 86.16 seconds, attach 26.86 ms and shutdown during inventory 5.08 seconds;
 no owned processes remained. A second attached run exposed the independent
-1 MiB recipe-response overflow. OPENBMC-INVENTORY-001 is IN_PROGRESS to fix
-bounded transfer; successful inventory is not yet claimed. CLI generation/error
-status and symlinked-tool discovery tasks remain NOT_STARTED before live build.
+1 MiB recipe-response overflow. OPENBMC-INVENTORY-001 is DONE in v0.1.69:
+bounded opt-in chunks delivered all 4,799 real OpenBMC recipes and nine layers to
+an attached client. 1,535 workspace tests, 49 bridge tests, strict Clippy,
+formatting, Ruff/mypy and docs pass. OPENBMC-CLI-BUILD-001 is IN_PROGRESS;
+symlinked-tool discovery remains NOT_STARTED before live build.
 No image build was accepted yet.
 Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the

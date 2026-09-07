@@ -2777,22 +2777,12 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         if let Some(result) = startup_metadata.try_result() {
             match result {
                 Ok(Some(workspace)) => {
-                    yoctui_app::reduce_daemon_state(
-                        &mut daemon_state,
-                        yoctui_model::DaemonStateAction::ReplaceWorkspace(workspace.clone()),
-                    )?;
-                    if let (Some(event), _) = daemon_build_event(
-                        yoctui_bitbake::BackendEvent::Workspace(workspace),
-                        yoctui_protocol::daemon::JobId(0),
-                    ) {
-                        daemon_journal
-                            .publish(yoctui_protocol::daemon::DaemonEvent::Build(event))?;
+                    if daemon_metadata::publish_workspace(&mut daemon_journal, workspace.clone())? {
+                        yoctui_app::reduce_daemon_state(
+                            &mut daemon_state,
+                            yoctui_model::DaemonStateAction::ReplaceWorkspace(workspace),
+                        )?;
                     }
-                    publish_startup_metadata_log(
-                        &mut daemon_journal,
-                        "Initial workspace and recipe inventory ready",
-                        false,
-                    )?;
                 }
                 Ok(None) if startup_configured => publish_startup_metadata_log(
                     &mut daemon_journal,

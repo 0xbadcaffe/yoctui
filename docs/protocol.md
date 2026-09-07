@@ -1,5 +1,16 @@
 # Bridge protocol
 
+Recipe inventory requests may opt into `chunked: true`. Only opted-in callers
+receive `recipes_chunk` records: zero-based `offset`, fixed `total`, explicit
+`complete`, and `recipes`. Legacy callers retain the single `recipes` response;
+new clients still accept bounded legacy responses. Chunks share the exact
+request correlation and monotonic envelope sequence. Completion is accepted
+only with contiguous offsets and exactly the declared total, never on EOF.
+Each chunk stays within 512 KiB; one transfer permits at most 16,384 recipes
+and 3 MiB of compact serialized recipe data. Empty intermediate chunks, changed
+totals, oversized records and aggregate overflow fail explicitly. The bridge
+1 MiB line limit and daemon 4 MiB snapshot limit remain unchanged.
+
 Each UTF-8 line is one JSON envelope: `protocol_version` (currently 1), monotonic `sequence`, optional `correlation_id`, and tagged `message`. Maximum line length is 1 MiB. Both the Python bridge and Rust transport reject oversized partial lines before processing a complete frame. Unsupported versions, malformed input, and unknown commands produce typed `command_failed` responses. Unknown incoming events deserialize safely.
 
 Commands: `hello`, `inspect_workspace`, `start_build`, `cancel_build`, `list_recipes`, `list_layers`, `get_variable`, `shutdown`. Events: `hello_ack`, `workspace`, lifecycle/task/log events, `command_failed`, `protocol_error`, and `bridge_shutdown`. `build_completed` carries an optional `exit_code` when the backend supplies one. New optional fields are allowed; consumers must not reinterpret unknown events.

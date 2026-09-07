@@ -1,0 +1,8 @@
+{
+  "measurement_warning": "OpenBMC os-release git describe --dirty exited 128: No names found, cannot describe anything (shallow checkout without reachable tags)",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "machine": "romulus",
+  "recipe_count": 4799,
+  "recipe_array_bytes": 1051217,
+  "largest_record_bytes": 300
+}

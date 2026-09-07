@@ -34,6 +34,71 @@ def run_bridge(
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_recipe_inventory_chunks_preserve_all_records_with_bounded_frames(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location("yoctui_inventory_test", BRIDGE)
+        assert spec is not None and spec.loader is not None
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        recipes = [
+            {"name": f"recipe-{i}", "file": "/" + "ü" * 110} for i in range(6000)
+        ]
+        emitted = []
+        with patch.object(
+            bridge,
+            "emit",
+            side_effect=lambda event, correlation: emitted.append((event, correlation)),
+        ):
+            bridge.handle(
+                {"type": "list_recipes", "filter": None, "chunked": True},
+                "inventory-7",
+                SimpleNamespace(
+                    recipes=lambda _: recipes, compatibility_generation=None
+                ),
+            )
+        self.assertGreater(len(emitted), 1)
+        merged: list[dict[str, str]] = []
+        for index, (event, correlation) in enumerate(emitted):
+            self.assertEqual(correlation, "inventory-7")
+            self.assertEqual(event["type"], "recipes_chunk")
+            self.assertEqual(event["offset"], len(merged))
+            self.assertEqual(event["total"], len(recipes))
+            self.assertEqual(event["complete"], index == len(emitted) - 1)
+            self.assertLess(
+                len(
+                    json.dumps(
+                        event, ensure_ascii=False, separators=(",", ":")
+                    ).encode()
+                ),
+                512 * 1024,
+            )
+            merged.extend(event["recipes"])
+        self.assertEqual(merged, recipes)
+
+    def test_recipe_inventory_legacy_empty_and_resource_errors(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "yoctui_inventory_limits_test", BRIDGE
+        )
+        assert spec is not None and spec.loader is not None
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        with patch.object(bridge, "emit") as emit:
+            bridge.emit_recipe_inventory([], "empty", False)
+            self.assertEqual(emit.call_args.args[0], {"type": "recipes", "recipes": []})
+            bridge.emit_recipe_inventory([], "empty", True)
+            self.assertTrue(emit.call_args.args[0]["complete"])
+            recipes: list[dict[str, str]]
+            for recipes in (
+                [{"name": ""}] * 16385,
+                [{"name": "x" * (512 * 1024)}],
+                [{"name": "x" * 400000}] * 9,
+            ):
+                emit.reset_mock()
+                bridge.emit_recipe_inventory(recipes, "limit", True)
+                self.assertEqual(emit.call_count, 1)
+                self.assertEqual(emit.call_args.args[0]["type"], "command_failed")
+
     def test_backend_probe_uses_real_api_shape_and_only_pings(self) -> None:
         spec = importlib.util.spec_from_file_location("yoctui_probe_test", BRIDGE)
         assert spec is not None and spec.loader is not None

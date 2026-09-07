@@ -39,7 +39,7 @@ notes = "v0.1.67: bounded read-only bundled Python probe prepares config, pings 
 id = "OPENBMC-CLI-BUILD-001"
 milestone = "M56"
 title = "Fix daemon build generation handshake and rejected-command exit status"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 1288
 required = true
 depends_on = ["OPENBMC-ENV-001"]
@@ -61,12 +61,12 @@ notes = "v0.1.68 candidate: initial inventory runs as an owned single-result bac
 id = "OPENBMC-INVENTORY-001"
 milestone = "M56"
 title = "Transfer large recipe inventories within bounded bridge frames"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1289
 required = true
 depends_on = ["OPENBMC-STARTUP-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui-bitbake", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Real Romulus initial parse completes, but list_recipes emits more than the 1048576-byte NDJSON limit. Daemon reports explicit metadata failure and stays attached, but no inventory arrives. Add bounded chunked/paginated inventory transfer with total resource limits, ordering/correlation and compatibility tests, not an unbounded line-limit increase. Preserve complete recipe navigation, report oversize individual records, and verify real OpenBMC inventory reaches an already attached client. Inspect downstream daemon snapshot/model bounds too."
+notes = "v0.1.69: measured real Romulus inventory 4799 records/1051217 bytes, just above 1 MiB frame. Opt-in 512 KiB recipes_chunk transfer validates exact correlation, offsets, fixed totals and explicit completion, with 16384-record/3 MiB aggregate bounds; legacy clients retain bounded single-response behavior. Downstream snapshot overflow reports a metadata error without killing daemon IPC. Tests first reproduced absent chunk helper; 1535 workspace tests (4 existing ignored), 49 bridge tests, Clippy, formatting, Ruff/mypy and docs pass. An unrelated pkgdata fixture ETXTBUSY failed one broad run; isolated and complete retries passed. Real attached OpenBMC client received all 4799 recipes and 9 layers in 20.48 seconds after attach, no reattachment. Captures and running-binary hash in artifacts/live-openbmc/romulus/inventory-v0.1.69.json; version-only goldens/rasters refreshed. No image-build or release-performance success claimed."
 
 [[task]]
 id = "OPENBMC-TOOLS-001"
