@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "README-HEADER-001"
+milestone = "M57"
+title = "Present the supplied Yoctui wordmark with accurate clickable README badges"
+status = "DONE"
+priority = 1400
+required = true
+depends_on = ["RELEASE-README-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "./scripts/render-m22-concept-screenshots.sh --check", "cargo fmt --all --check", "git diff --check"]
+notes = "v0.1.74: compact PNG adapted from supplied artwork, accessible clickable CI/crates.io/coverage-gates/Rust-stable/MIT/docs/Linux/GitHub badges and navigation. Operator how-tos and real screenshot attribution preserved. Static header test first failed on the absent header, then passed including links, fragments, alt text, PNG dimensions/size and unsupported-claim guards. Static documentation links, version policy/tests, offline locked metadata, fmt, shell syntax, six raster tests, four gallery tests and independent review pass. All 17 golden diffs are version-only; six deterministic PNGs refreshed. No Rust source changed; full workspace/release gates were not rerun for this documentation task. Artwork prompt and contract in docs/design/readme-header.md. OpenBMC live validation remains incomplete and resumes as current."
+
+[[task]]
 id = "COMPACT-TELEMETRY-001"
 milestone = "M55"
 title = "Keep compact resource meters visible in short Dashboard and Tasks workspaces"

@@ -1176,3 +1176,13 @@ defects before claiming image-build support.
 Storage preflight was unblocked by cleaning completed Cargo debug outputs,
 not Poky data; 78 GiB is available, subject to monitoring and a stop margin.
 See [live integration preflight](testing/openbmc.md).
+
+## M57 — README visual identity
+
+Adapt the supplied circuit-style wordmark into a compact header with clickable,
+accurate badges and navigation, preserving the operator guide and screenshots.
+Do not bake release versions, coverage percentages or nonexistent community
+links into the artwork. Contract: [README header](design/readme-header.md).
+README-HEADER-001 is DONE in v0.1.74: static header/link/asset checks, version,
+formatting, locked metadata and raster/gallery verification pass. No runtime
+source changed and no release is certified. OpenBMC validation resumes.

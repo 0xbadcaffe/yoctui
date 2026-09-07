@@ -1,3 +1,30 @@
+<!-- yoctui-header -->
+<p align="center">
+  <img src="docs/media/yoctui-header.png" width="1000" alt="Yoctui — TUI for the Yocto Project. Visualize, build, inspect, develop and debug, all in your terminal.">
+</p>
+
+<p align="center">
+  <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI workflow status"></a>
+  <a href="docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
+  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square" alt="Latest published crates.io version"></a>
+  <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
+  <br>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
+  <a href="docs/operator-guide.md"><img src="https://img.shields.io/badge/docs-guide-blue?style=flat-square" alt="Operator documentation"></a>
+  <a href="#install"><img src="https://img.shields.io/badge/platform-Linux-purple?style=flat-square&amp;logo=linux&amp;logoColor=white" alt="Linux platform"></a>
+  <a href="https://github.com/0xbadcaffe/yoctui/issues"><img src="https://img.shields.io/badge/community-GitHub-green?style=flat-square&amp;logo=github" alt="Questions and issues on GitHub"></a>
+</p>
+
+<p align="center">
+  <a href="docs/operator-guide.md">Docs</a> ·
+  <a href="#install">Install</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#quickstart-poky-build-environment">Examples</a> ·
+  <a href="https://github.com/0xbadcaffe/yoctui">GitHub</a> ·
+  <a href="https://github.com/0xbadcaffe/yoctui/issues">Issues</a>
+</p>
+<!-- /yoctui-header -->
+
 # Yoctui
 
 Yoctui is a terminal application for Yocto and BitBake development. It runs

@@ -9,8 +9,63 @@ grep -Fq 'source "$POKY_DIR/oe-init-build-env" "$BUILDDIR"' README.md
 grep -Fq 'yoctui --backend bridge' README.md
 python3 - <<'PY'
 from pathlib import Path
+from html.parser import HTMLParser
+from urllib.parse import urlsplit
+import re
+import struct
 
 readme = Path("README.md").read_text(encoding="utf-8")
+header = readme.split("<!-- /yoctui-header -->", 1)[0]
+assert "<!-- yoctui-header -->" in header, "Missing branded README header"
+
+class HeaderLinks(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.hrefs = set()
+        self.images = {}
+
+    def handle_starttag(self, tag, attrs):
+        values = dict(attrs)
+        if tag == "a":
+            self.hrefs.add(values["href"])
+        if tag == "img":
+            assert values.get("alt", "").strip(), "Header image needs alternative text"
+            self.images[values["src"]] = values
+
+links = HeaderLinks()
+links.feed(header)
+for target in (
+    "docs/operator-guide.md", "#install", "#features",
+    "#quickstart-poky-build-environment", "docs/testing.md#completion-gate",
+    "LICENSE", "https://github.com/0xbadcaffe/yoctui",
+    "https://github.com/0xbadcaffe/yoctui/issues",
+    "https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml",
+    "https://crates.io/crates/yoctui",
+):
+    assert target in links.hrefs, f"Missing header link: {target}"
+    parsed = urlsplit(target)
+    if not parsed.scheme:
+        destination = Path(parsed.path or "README.md")
+        assert destination.is_file(), f"Missing local header target: {target}"
+        if parsed.fragment:
+            headings = re.findall(r"^#{1,6} (.+)$", destination.read_text(), re.M)
+            slugs = {re.sub(r"[^\w -]", "", title.lower()).replace(" ", "-") for title in headings}
+            assert parsed.fragment in slugs, f"Missing header anchor: {target}"
+assert any("/actions/workflows/ci.yml/badge.svg" in src for src in links.images)
+assert any("img.shields.io/crates/v/yoctui" in src for src in links.images)
+assert any("rust-stable" in src for src in links.images)
+assert "codecov" not in header.lower(), "No configured Codecov integration"
+assert "discord" not in header.lower(), "No configured Discord invite"
+assert "92%" not in header and "1.81+" not in header
+banner = Path("docs/media/yoctui-header.png")
+assert str(banner) in links.images, "Missing repository-owned banner"
+png = banner.read_bytes()
+assert png.startswith(b"\x89PNG\r\n\x1a\n"), "Header must be a PNG"
+assert png[12:16] == b"IHDR"
+width, height = struct.unpack(">II", png[16:24])
+assert 2 <= width / height <= 3.5, "Header must stay compact and wide"
+assert len(png) <= 2 * 1024 * 1024, "Header should remain under 2 MiB"
+print("README header checks passed")
 required_sections = (
     "Features",
     "Install",

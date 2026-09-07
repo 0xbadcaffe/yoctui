@@ -1,5 +1,17 @@
 # Yoctui Implementation Status
 
+M57 README-HEADER-001 is DONE in v0.1.74. The supplied circuit-style artwork
+forms a compact banner; CI and crates.io badges stay live and other labels
+reflect the actual Rust/coverage/license/platform policies. Links are clickable,
+have alternative text and preserve all existing how-tos. GitHub Issues replaces
+an unconfigured Discord invite. The new header regression first failed and now
+passes; static documentation links, version checks/tests, locked metadata, fmt,
+six raster tests, four gallery tests and independent review pass. All 17 terminal
+fixture diffs are version-only; six rasters refreshed. No runtime source changed
+and no full workspace or release gate is claimed for this documentation change.
+See [header contract and artwork prompt](design/readme-header.md).
+OpenBMC retry remains active; no image success is claimed.
+
 HOST-PYTHON-001 is DONE: default account shells now
 use unshimmed system Python; pyenv was upgraded to v2.8.5 with upstream alias-loop
 protection, retaining both managed interpreters. The inactive OpenBMC Python
