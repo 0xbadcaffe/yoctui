@@ -1,0 +1,2648 @@
+{
+  "schema": "yoctui.openbmc.observation.v1",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "machine": "romulus",
+  "target": "obmc-phosphor-image",
+  "daemon_pid": 2520306,
+  "binary_sha256": "031841516c11bf8ef9d39cda7414737cd169d68b44b30b58d00bfa9589b61b43",
+  "observed_from_unix": 1788811286.6416395,
+  "observed_until_unix": 1788811576.7383504,
+  "event_counts": {
+    "event": 4008,
+    "event.telemetry": 282,
+    "event.build": 2194,
+    "build.parse_progress": 113,
+    "event.log": 999,
+    "event.bit_bake_changed": 1,
+    "build.started": 1,
+    "event.job_changed": 532,
+    "build.task_queued": 531,
+    "build.task_started": 531,
+    "build.task_completed": 523,
+    "build.task_progress": 495
+  },
+  "initial_jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "connecting",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": null
+    }
+  ],
+  "jobs": {},
+  "recent_logs": [
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/qemuwrapper-cross/1.0/sstate-build-create_recipe_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/qemuwrapper-cross/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/qemuwrapper-cross/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/qemuwrapper-cross/1.0/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/qemuwrapper-cross/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/qemuwrapper-cross/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811510380,
+      "recipe": "qemuwrapper-cross",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811510582,
+      "recipe": "patchelf-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/patchelf-native/0.19.1/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/patchelf-native/0.19.1/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/patchelf-native/0.19.1/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/patchelf-native/0.19.1/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/patchelf-native/0.19.1/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/patchelf-native/0.19.1/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811510582,
+      "recipe": "patchelf-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511316,
+      "recipe": "nettle-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/nettle-native/4.0/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/nettle-native/4.0/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/nettle-native/4.0/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/nettle-native/4.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/nettle-native/4.0/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/nettle-native/4.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511316,
+      "recipe": "nettle-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511316,
+      "recipe": "libidn2-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511316,
+      "recipe": "obmc-phosphor-image",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libidn2-native/2.3.8/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libidn2-native/2.3.8/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libidn2-native/2.3.8/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libidn2-native/2.3.8/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libidn2-native/2.3.8/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libidn2-native/2.3.8/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511316,
+      "recipe": "libidn2-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/sstate-build-create_recipe_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511317,
+      "recipe": "obmc-phosphor-image",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511319,
+      "recipe": "p11-kit-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/p11-kit-native/0.26.4/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/p11-kit-native/0.26.4/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/p11-kit-native/0.26.4/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/p11-kit-native/0.26.4/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/p11-kit-native/0.26.4/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/p11-kit-native/0.26.4/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511319,
+      "recipe": "p11-kit-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511319,
+      "recipe": "libxrandr-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511319,
+      "recipe": "libxrandr-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511319,
+      "recipe": "swig-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/swig-native/4.4.1/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/swig-native/4.4.1/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/swig-native/4.4.1/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/swig-native/4.4.1/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/swig-native/4.4.1/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/swig-native/4.4.1/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511319,
+      "recipe": "swig-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511498,
+      "recipe": "libtirpc-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511498,
+      "recipe": "libpng-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtirpc-native/1.3.7/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtirpc-native/1.3.7/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtirpc-native/1.3.7/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtirpc-native/1.3.7/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtirpc-native/1.3.7/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtirpc-native/1.3.7/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511498,
+      "recipe": "libtirpc-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libpng-native/1.6.58/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libpng-native/1.6.58/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libpng-native/1.6.58/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libpng-native/1.6.58/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libpng-native/1.6.58/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libpng-native/1.6.58/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511499,
+      "recipe": "libpng-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811511852,
+      "recipe": "alsa-lib-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/alsa-lib-native/1.2.16.1/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/alsa-lib-native/1.2.16.1/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/alsa-lib-native/1.2.16.1/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/alsa-lib-native/1.2.16.1/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/alsa-lib-native/1.2.16.1/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/alsa-lib-native/1.2.16.1/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811511852,
+      "recipe": "alsa-lib-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512233,
+      "recipe": "python3-qemu-qmp-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512233,
+      "recipe": "libslirp-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/python3-qemu-qmp-native/0.0.6/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/python3-qemu-qmp-native/0.0.6/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/python3-qemu-qmp-native/0.0.6/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/python3-qemu-qmp-native/0.0.6/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/python3-qemu-qmp-native/0.0.6/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/python3-qemu-qmp-native/0.0.6/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512233,
+      "recipe": "python3-qemu-qmp-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libslirp-native/4.9.3/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libslirp-native/4.9.3/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libslirp-native/4.9.3/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libslirp-native/4.9.3/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libslirp-native/4.9.3/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libslirp-native/4.9.3/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512233,
+      "recipe": "libslirp-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512234,
+      "recipe": "pixman-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512234,
+      "recipe": "gnutls-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pixman-native/0.46.4/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pixman-native/0.46.4/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pixman-native/0.46.4/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pixman-native/0.46.4/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pixman-native/0.46.4/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pixman-native/0.46.4/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512234,
+      "recipe": "pixman-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512234,
+      "recipe": "libsdl2-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512234,
+      "recipe": "libsdl2-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnutls-native/3.8.13/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnutls-native/3.8.13/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnutls-native/3.8.13/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnutls-native/3.8.13/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnutls-native/3.8.13/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnutls-native/3.8.13/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512234,
+      "recipe": "gnutls-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512431,
+      "recipe": "lzo-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lzo-native/2.10/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lzo-native/2.10/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lzo-native/2.10/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lzo-native/2.10/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lzo-native/2.10/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lzo-native/2.10/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512431,
+      "recipe": "lzo-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512527,
+      "recipe": "lz4-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lz4-native/1.10.0/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lz4-native/1.10.0/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lz4-native/1.10.0/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lz4-native/1.10.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lz4-native/1.10.0/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/lz4-native/1.10.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512528,
+      "recipe": "lz4-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512730,
+      "recipe": "pigz-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pigz-native/2.8/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pigz-native/2.8/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pigz-native/2.8/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pigz-native/2.8/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pigz-native/2.8/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pigz-native/2.8/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512830,
+      "recipe": "pigz-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811512831,
+      "recipe": "unfs3-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/unfs3-native/0.11.0/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/unfs3-native/0.11.0/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/unfs3-native/0.11.0/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/unfs3-native/0.11.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/unfs3-native/0.11.0/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/unfs3-native/0.11.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811512831,
+      "recipe": "unfs3-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513304,
+      "recipe": "cpio-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/cpio-native/2.15/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/cpio-native/2.15/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/cpio-native/2.15/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/cpio-native/2.15/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/cpio-native/2.15/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/cpio-native/2.15/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513304,
+      "recipe": "cpio-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513304,
+      "recipe": "squashfs-tools-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513304,
+      "recipe": "u-boot-tools-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513304,
+      "recipe": "qemu-system-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/u-boot-tools-native/2026.04/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/u-boot-tools-native/2026.04/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/u-boot-tools-native/2026.04/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/u-boot-tools-native/2026.04/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/u-boot-tools-native/2026.04/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/u-boot-tools-native/2026.04/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513305,
+      "recipe": "u-boot-tools-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/squashfs-tools-native/4.7.5/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/squashfs-tools-native/4.7.5/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/squashfs-tools-native/4.7.5/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/squashfs-tools-native/4.7.5/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/squashfs-tools-native/4.7.5/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/squashfs-tools-native/4.7.5/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513305,
+      "recipe": "squashfs-tools-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513337,
+      "recipe": "u-boot-aspeed-sdk",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513375,
+      "recipe": "qemu-system-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/u-boot-aspeed-sdk/v2019.04+git/sstate-build-create_recipe_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/u-boot-aspeed-sdk/v2019.04+git/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/u-boot-aspeed-sdk/v2019.04+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/u-boot-aspeed-sdk/v2019.04+git/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/u-boot-aspeed-sdk/v2019.04+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/u-boot-aspeed-sdk/v2019.04+git/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513375,
+      "recipe": "u-boot-aspeed-sdk",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513445,
+      "recipe": "mtd-utils-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/mtd-utils-native/2.3.1/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/mtd-utils-native/2.3.1/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/mtd-utils-native/2.3.1/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/mtd-utils-native/2.3.1/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/mtd-utils-native/2.3.1/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/mtd-utils-native/2.3.1/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513546,
+      "recipe": "mtd-utils-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513546,
+      "recipe": "packagegroup-core-ssh-dropbear",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/sstate-build-populate_lic/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/sstate-build-populate_lic/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513546,
+      "recipe": "packagegroup-core-ssh-dropbear",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513651,
+      "recipe": "packagegroup-op-apps",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/sstate-build-populate_lic/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/sstate-build-populate_lic/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513651,
+      "recipe": "packagegroup-op-apps",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811513651,
+      "recipe": "debianutils-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/debianutils-native/5.23.2/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/debianutils-native/5.23.2/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/debianutils-native/5.23.2/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/debianutils-native/5.23.2/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/debianutils-native/5.23.2/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/debianutils-native/5.23.2/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811513786,
+      "recipe": "debianutils-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811514281,
+      "recipe": "linux-yocto-fitimage",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811514281,
+      "recipe": "qemu-helper-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/linux-yocto-fitimage/1.0/sstate-build-create_recipe_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/linux-yocto-fitimage/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/linux-yocto-fitimage/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/linux-yocto-fitimage/1.0/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/linux-yocto-fitimage/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/linux-yocto-fitimage/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811514281,
+      "recipe": "linux-yocto-fitimage",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811514282,
+      "recipe": "packagegroup-obmc-apps",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-helper-native/1.0/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-helper-native/1.0/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-helper-native/1.0/sstate-build-create_recipe_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-helper-native/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-helper-native/1.0/sstate-build-create_recipe_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-helper-native/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811514282,
+      "recipe": "qemu-helper-native",
+      "task": "do_create_recipe_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/sstate-build-populate_lic/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/sstate-build-populate_lic/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811514282,
+      "recipe": "packagegroup-obmc-apps",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811514282,
+      "recipe": "packagegroup-core-boot",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811514282,
+      "recipe": "packagegroup-base",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811514282,
+      "recipe": "packagegroup-obmc-ipmid-providers",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-populate_lic/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-populate_lic/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811514282,
+      "recipe": "packagegroup-core-boot",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-populate_lic/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-populate_lic/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811514282,
+      "recipe": "packagegroup-base",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/sstate-build-populate_lic/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/sstate-build-populate_lic/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811514283,
+      "recipe": "packagegroup-obmc-ipmid-providers",
+      "task": "do_populate_lic",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811521621,
+      "recipe": "llvm-tblgen-native",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-tblgen-native/22.1.8/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-tblgen-native/22.1.8/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-tblgen-native/22.1.8/sstate-build-deploy_source_date_epoch/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-tblgen-native/22.1.8/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-tblgen-native/22.1.8/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-tblgen-native/22.1.8/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811521621,
+      "recipe": "llvm-tblgen-native",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811521824,
+      "recipe": "packagegroup-op-apps",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811521824,
+      "recipe": "packagegroup-core-ssh-dropbear",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/sstate-build-deploy_source_date_epoch/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-core-ssh-dropbear/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811521925,
+      "recipe": "packagegroup-core-ssh-dropbear",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/sstate-build-deploy_source_date_epoch/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-op-apps/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811521925,
+      "recipe": "packagegroup-op-apps",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522366,
+      "recipe": "llvm-native",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/sstate-build-deploy_source_date_epoch/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522366,
+      "recipe": "llvm-native",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522366,
+      "recipe": "packagegroup-core-boot",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-deploy_source_date_epoch/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522366,
+      "recipe": "packagegroup-core-boot",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522366,
+      "recipe": "packagegroup-obmc-apps",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522366,
+      "recipe": "packagegroup-base",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-deploy_source_date_epoch/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522367,
+      "recipe": "packagegroup-base",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/sstate-build-deploy_source_date_epoch/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-apps/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522367,
+      "recipe": "packagegroup-obmc-apps",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522367,
+      "recipe": "packagegroup-obmc-ipmid-providers",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522367,
+      "recipe": "quilt-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/sstate-build-deploy_source_date_epoch/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/sstate-build-deploy_source_date_epoch/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/all-openbmc-linux/packagegroup-obmc-ipmid-providers/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522367,
+      "recipe": "packagegroup-obmc-ipmid-providers",
+      "task": "do_deploy_source_date_epoch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/quilt-native/0.69/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/quilt-native/0.69/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/quilt-native/0.69/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/quilt-native/0.69/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/quilt-native/0.69/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/quilt-native/0.69/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522368,
+      "recipe": "quilt-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522444,
+      "recipe": "texinfo-dummy-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522444,
+      "recipe": "texinfo-dummy-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522650,
+      "recipe": "gettext-minimal-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522686,
+      "recipe": "gnu-config-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gettext-minimal-native/1.0/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gettext-minimal-native/1.0/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gettext-minimal-native/1.0/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gettext-minimal-native/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gettext-minimal-native/1.0/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gettext-minimal-native/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522687,
+      "recipe": "gettext-minimal-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnu-config-native/20260629+git/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnu-config-native/20260629+git/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnu-config-native/20260629+git/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnu-config-native/20260629+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnu-config-native/20260629+git/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gnu-config-native/20260629+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522687,
+      "recipe": "gnu-config-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522756,
+      "recipe": "m4-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522756,
+      "recipe": "libtool-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/m4-native/1.4.21/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/m4-native/1.4.21/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/m4-native/1.4.21/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/m4-native/1.4.21/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/m4-native/1.4.21/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/m4-native/1.4.21/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522756,
+      "recipe": "m4-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522757,
+      "recipe": "libtool-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811522757,
+      "recipe": "quilt-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811522757,
+      "recipe": "quilt-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811522757,
+      "recipe": "quilt-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522859,
+      "recipe": "autoconf-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/autoconf-native/2.73/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/autoconf-native/2.73/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/autoconf-native/2.73/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/autoconf-native/2.73/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/autoconf-native/2.73/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/autoconf-native/2.73/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811522859,
+      "recipe": "autoconf-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811522999,
+      "recipe": "automake-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811523000,
+      "recipe": "automake-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811523403,
+      "recipe": "gettext-minimal-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "gettext-minimal-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "gettext-minimal-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811523403,
+      "recipe": "m4-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "m4-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "m4-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811523403,
+      "recipe": "libtool-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811523403,
+      "recipe": "gnu-config-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "libtool-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "libtool-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "gnu-config-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811523403,
+      "recipe": "gnu-config-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811523404,
+      "recipe": "texinfo-dummy-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811523404,
+      "recipe": "texinfo-dummy-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811523404,
+      "recipe": "texinfo-dummy-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-extended/texinfo-dummy-native/texinfo-dummy/template.py to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/sources/",
+      "unix_ms": 1788811523404,
+      "recipe": "texinfo-dummy-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-extended/texinfo-dummy-native/texinfo-dummy/COPYING to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/texinfo-dummy-native/1.0/sources/",
+      "unix_ms": 1788811523469,
+      "recipe": "texinfo-dummy-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811523469,
+      "recipe": "autoconf-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811523469,
+      "recipe": "autoconf-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811523469,
+      "recipe": "autoconf-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811523670,
+      "recipe": "automake-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811523670,
+      "recipe": "automake-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811523670,
+      "recipe": "automake-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811523771,
+      "recipe": "pkgconf-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811523771,
+      "recipe": "pkgconf-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811524208,
+      "recipe": "pkgconf-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811524208,
+      "recipe": "pkgconf-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811524209,
+      "recipe": "pkgconf-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "warning",
+      "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/m4/m4-1.4.21.tar.gz, attempting MIRRORS if available",
+      "unix_ms": 1788811524955,
+      "recipe": "m4-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "warning",
+      "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/gettext/gettext-1.0.tar.gz, attempting MIRRORS if available",
+      "unix_ms": 1788811524955,
+      "recipe": "gettext-minimal-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "warning",
+      "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/automake/automake-1.18.1.tar.gz, attempting MIRRORS if available",
+      "unix_ms": 1788811525247,
+      "recipe": "automake-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "warning",
+      "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/libtool/libtool-2.5.4.tar.gz, attempting MIRRORS if available",
+      "unix_ms": 1788811525248,
+      "recipe": "libtool-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811526412,
+      "recipe": "pkgconf-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811526412,
+      "recipe": "pkgconf-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811526412,
+      "recipe": "pkgconf-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/pkgconf-2.5.1.tar.xz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/sources/",
+      "unix_ms": 1788811526412,
+      "recipe": "pkgconf-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf/pkg-config-wrapper to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/sources/",
+      "unix_ms": 1788811526412,
+      "recipe": "pkgconf-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf/pkg-config-native.in to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/sources/",
+      "unix_ms": 1788811526412,
+      "recipe": "pkgconf-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf/pkg-config-esdk.in to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/pkgconf-native/2.5.1/sources/",
+      "unix_ms": 1788811526513,
+      "recipe": "pkgconf-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811526717,
+      "recipe": "zlib-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811526718,
+      "recipe": "zlib-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811527027,
+      "recipe": "zlib-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811527027,
+      "recipe": "zlib-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811527027,
+      "recipe": "zlib-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811529683,
+      "recipe": "zlib-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811529683,
+      "recipe": "zlib-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811529683,
+      "recipe": "zlib-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/zlib-1.3.2.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/sources/",
+      "unix_ms": 1788811529984,
+      "recipe": "zlib-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-core/zlib/zlib/run-ptest to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zlib-native/1.3.2/sources/",
+      "unix_ms": 1788811529985,
+      "recipe": "zlib-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811530337,
+      "recipe": "bzip2-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/bzip2-native/1.0.8/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/bzip2-native/1.0.8/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/bzip2-native/1.0.8/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/bzip2-native/1.0.8/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/bzip2-native/1.0.8/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/bzip2-native/1.0.8/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811530337,
+      "recipe": "bzip2-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811530688,
+      "recipe": "bzip2-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811530688,
+      "recipe": "bzip2-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811530688,
+      "recipe": "bzip2-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/libtool-2.5.4.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534513,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool/0001-ltmain.sh-Fix-sysroot-paths-being-encoded-into-RPATH.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534614,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool/0002-ltmain.in-Don-t-encode-RATHS-which-match-default-lin.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534614,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool/0003-libtool-remove-help2man-dependency.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534614,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool/0004-libtool.m4-Change-libtool-to-handle-sysroots-by-defa.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534614,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool/0005-libtool-Check-for-static-libs-for-internal-compiler-.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534614,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool/0006-libtool-Fix-tools-path-issues.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534614,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool/0007-libtool-Fix-problem-with-libtoolize-in-multilib.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libtool-native/2.5.4/sources/",
+      "unix_ms": 1788811534716,
+      "recipe": "libtool-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811535027,
+      "recipe": "gdbm-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811535027,
+      "recipe": "gdbm-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811535439,
+      "recipe": "gdbm-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811535439,
+      "recipe": "gdbm-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811535439,
+      "recipe": "gdbm-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/m4-1.4.21.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/m4-native/1.4.21/sources/",
+      "unix_ms": 1788811538227,
+      "recipe": "m4-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811538849,
+      "recipe": "make-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811538849,
+      "recipe": "make-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811539171,
+      "recipe": "make-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811539171,
+      "recipe": "make-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811539171,
+      "recipe": "make-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "warning",
+      "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/gdbm/gdbm-1.26.tar.gz, attempting MIRRORS if available",
+      "unix_ms": 1788811541936,
+      "recipe": "gdbm-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "warning",
+      "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/make/make-4.4.1.tar.gz, attempting MIRRORS if available",
+      "unix_ms": 1788811544383,
+      "recipe": "make-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/automake-1.18.1.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/sources/",
+      "unix_ms": 1788811544383,
+      "recipe": "automake-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake/0002-automake-Update-for-python.m4-to-respect-libdir.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/sources/",
+      "unix_ms": 1788811544729,
+      "recipe": "automake-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake/0004-Add-a-new-distro-feature-ptest.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/sources/",
+      "unix_ms": 1788811544729,
+      "recipe": "automake-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake/0006-automake-Remove-delays-in-configure-scripts-using-au.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/automake-native/1.18.1/sources/",
+      "unix_ms": 1788811544729,
+      "recipe": "automake-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811545063,
+      "recipe": "perlcross-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811545063,
+      "recipe": "perlcross-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811545649,
+      "recipe": "perlcross-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811545649,
+      "recipe": "perlcross-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811545649,
+      "recipe": "perlcross-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/gdbm-1.26.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/sources/",
+      "unix_ms": 1788811546741,
+      "recipe": "gdbm-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811546741,
+      "recipe": "perlcross-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811546741,
+      "recipe": "perlcross-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811546741,
+      "recipe": "perlcross-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-support/gdbm/files/run-ptest to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/sources/",
+      "unix_ms": 1788811546742,
+      "recipe": "gdbm-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-support/gdbm/files/ptest.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/gdbm-native/1.26/sources/",
+      "unix_ms": 1788811546742,
+      "recipe": "gdbm-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/perl-cross-1.6.4.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sources/",
+      "unix_ms": 1788811547024,
+      "recipe": "perlcross-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl-cross/files/README.md to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sources/",
+      "unix_ms": 1788811547090,
+      "recipe": "perlcross-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl-cross/files/0001-perl-cross-add-LDFLAGS-when-linking-libperl.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sources/",
+      "unix_ms": 1788811547090,
+      "recipe": "perlcross-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl-cross/files/determinism.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sources/",
+      "unix_ms": 1788811547091,
+      "recipe": "perlcross-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811547193,
+      "recipe": "perl-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl-cross/files/0001-Makefile-check-the-file-if-patched-or-not.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sources/",
+      "unix_ms": 1788811547230,
+      "recipe": "perlcross-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811547230,
+      "recipe": "perl-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl-cross/files/0001-patches-for-perl-5.42.2.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perlcross-native/1.6.4/sources/",
+      "unix_ms": 1788811547230,
+      "recipe": "perlcross-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811547722,
+      "recipe": "attr-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/attr-native/2.6.0/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/attr-native/2.6.0/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/attr-native/2.6.0/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/attr-native/2.6.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/attr-native/2.6.0/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/attr-native/2.6.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811547722,
+      "recipe": "attr-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811547722,
+      "recipe": "perl-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811547722,
+      "recipe": "perl-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811547722,
+      "recipe": "perl-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811548211,
+      "recipe": "attr-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811548211,
+      "recipe": "attr-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811548211,
+      "recipe": "attr-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/perl-5.42.2.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811552902,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/make-4.4.1.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/sources/",
+      "unix_ms": 1788811553314,
+      "recipe": "make-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/make/make/0001-m4-getloadavg.m4-restrict-AIX-specific-test-on-AIX.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/sources/",
+      "unix_ms": 1788811553416,
+      "recipe": "make-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/make/make/0001-Fix-signatures-for-getenv-getopt.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/make-native/4.4.1/sources/",
+      "unix_ms": 1788811553416,
+      "recipe": "make-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811553850,
+      "recipe": "flex-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811553850,
+      "recipe": "flex-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/perl-rdepends.txt to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811553947,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/0001-Somehow-this-module-breaks-through-the-perl-wrapper-.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811553947,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/errno_ver.diff to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811553947,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/native-perlinc.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554048,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/perl-dynloader.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554048,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/0002-Constant-Fix-up-shebang.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554048,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/determinism.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554048,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/0001-cpan-Sys-Syslog-Makefile.PL-Fix-_PATH_LOG-for-determ.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554049,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/CVE-2026-8376-01.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554052,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/CVE-2026-8376-02.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554052,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/run-ptest to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554148,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/perl/files/perl-configpm-switch.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/perl-native/5.42.2/sources/",
+      "unix_ms": 1788811554148,
+      "recipe": "perl-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811554350,
+      "recipe": "flex-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811554350,
+      "recipe": "flex-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811554350,
+      "recipe": "flex-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811554827,
+      "recipe": "ncurses-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/ncurses-native/6.6/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/ncurses-native/6.6/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/ncurses-native/6.6/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/ncurses-native/6.6/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/ncurses-native/6.6/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/ncurses-native/6.6/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811554827,
+      "recipe": "ncurses-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811555077,
+      "recipe": "ncurses-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811555078,
+      "recipe": "ncurses-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811555078,
+      "recipe": "ncurses-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/build-openbmc-romulus/downloads/flex-2.6.4.tar.gz to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555851,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/run-ptest to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555851,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/0001-tests-add-a-target-for-building-tests-without-runnin.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555851,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/0001-build-AC_USE_SYSTEM_EXTENSIONS-in-configure.ac.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555851,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/check-funcs.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555851,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/0001-Emit-no-line-directives-if-gen_line_dirs-is-false.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555851,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/0001-build-tests-add-missing-parser-scanner-dependencies.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555852,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/0001-Match-malloc-signature-to-its-use.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555852,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Unpacking /home/bspguy-dev/src/openbmc/meta/recipes-devtools/flex/flex/0001-ax_prog_cc_for_build-Support-ac_-cv_-build_prog_cc_s.patch to /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/flex-native/2.6.4/sources/",
+      "unix_ms": 1788811555852,
+      "recipe": "flex-native",
+      "task": "do_unpack",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788811556261,
+      "recipe": "zstd-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zstd-native/1.5.7/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zstd-native/1.5.7/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zstd-native/1.5.7/sstate-build-recipe_qa/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zstd-native/1.5.7/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zstd-native/1.5.7/sstate-build-recipe_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/zstd-native/1.5.7/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788811556261,
+      "recipe": "zstd-native",
+      "task": "do_recipe_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are []",
+      "unix_ms": 1788811556881,
+      "recipe": "zstd-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788811556881,
+      "recipe": "zstd-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788811556881,
+      "recipe": "zstd-native",
+      "task": "do_fetch",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    }
+  ],
+  "critical": [
+    {
+      "type": "event",
+      "sequence": 3277,
+      "generation": 3277,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "warning",
+          "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/m4/m4-1.4.21.tar.gz, attempting MIRRORS if available",
+          "unix_ms": 1788811524955,
+          "recipe": "m4-native",
+          "task": "do_fetch",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+          "build": null
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 3278,
+      "generation": 3278,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "warning",
+          "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/gettext/gettext-1.0.tar.gz, attempting MIRRORS if available",
+          "unix_ms": 1788811524955,
+          "recipe": "gettext-minimal-native",
+          "task": "do_fetch",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+          "build": null
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 3282,
+      "generation": 3282,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "warning",
+          "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/automake/automake-1.18.1.tar.gz, attempting MIRRORS if available",
+          "unix_ms": 1788811525247,
+          "recipe": "automake-native",
+          "task": "do_fetch",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+          "build": null
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 3283,
+      "generation": 3283,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "warning",
+          "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/libtool/libtool-2.5.4.tar.gz, attempting MIRRORS if available",
+          "unix_ms": 1788811525248,
+          "recipe": "libtool-native",
+          "task": "do_fetch",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+          "build": null
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 3624,
+      "generation": 3624,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "warning",
+          "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/gdbm/gdbm-1.26.tar.gz, attempting MIRRORS if available",
+          "unix_ms": 1788811541936,
+          "recipe": "gdbm-native",
+          "task": "do_fetch",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+          "build": null
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 3653,
+      "generation": 3653,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "warning",
+          "message": "Failed to fetch URL https://ftpmirror.gnu.org/gnu/make/make-4.4.1.tar.gz, attempting MIRRORS if available",
+          "unix_ms": 1788811544383,
+          "recipe": "make-native",
+          "task": "do_fetch",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/fetch2/__init__.py",
+          "build": null
+        }
+      }
+    }
+  ]
+}

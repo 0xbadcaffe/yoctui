@@ -2870,6 +2870,13 @@ fallback as shell-free argv with a 120-second deadline and 16 MiB stream bounds.
 
 ### Production daemon compatibility startup
 
+Initial interactive attachment occurs before terminal initialization and has a
+five-second socket receive budget for negotiation and the bounded snapshot.
+The previous 250 ms startup budget rejected healthy large OpenBMC snapshots and
+could initialize local adapters without the daemon's build directory. Socket
+discovery retains its separate 250 ms budget when the daemon is absent. This startup allowance does not increase the
+250 ms in-loop reconnect budget or make input wait on a five-second read.
+
 The production foreground daemon establishes compatibility authority before it
 writes its runtime record or accepts a client. Authority exists only when
 `BUILDDIR` resolves to an initialized build containing both configuration

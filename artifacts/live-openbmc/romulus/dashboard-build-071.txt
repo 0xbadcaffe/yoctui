@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.71  •  Project: openbmc  •  ▶ Parsing  •  Target: obmc-phosphor-image  •  Machine: romulus     Daemon: ✓ Connected/Local  •  BitBake: … Connecting│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Build environment───────────────────────────────────────────────────────────────────┐┌Inspector: Build environment────────────────┐
+│▾ OVERVIEW                ││Build environment                                                                   ││▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             ││                                                                                    ││Target: obmc-phosphor-image                 │
+│  ▱ Insights              ││Enter/e Configure paths  |  b Browse directories                                    ││Status: Parsing                             │
+│▾ CONTENT              ┌modal · Yoctui workflow guide · focus trapped─────────────────────────────────────────────────────────────────┐                       │
+│  ▱ Layers             │0/6 completed · opening/resuming starts no build or process                                                   │ workspace to inspect  │
+│  ▱ Recipes            └──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘                       │
+│  × Packages           ┌Six-step workbench path───────────────────────────────────────────────────────────────────────────────────────┐                       │
+│  ▱ Images             │Workflow step                                   State        Authoritative destination                        │                       │
+│  ▱ Kernel             │[>] Verify environment                          CURRENT      Build environment                                │                       │
+│  ▱ U-Boot / BIOS      │[-] Select a target                             BLOCKED      Image target picker                              │                       │
+│  ▱ SDK                │[-] Review the first build                      BLOCKED      Build options confirmation                       │                       │
+│▾ BUILD                │[-] Inspect logs and errors                     BLOCKED      Logs / Errors                                    │                       │
+│  ▱ Tasks              │[-] Explore artifacts and rootfs                BLOCKED      Images / Rootfs                                  │                       │
+│  ▱ Logs              L│[-] Use Terminal Sessions                       BLOCKED      Terminal Sessions                                │                       │
+│  ▱ Errors             │                                                                                                              │                       │
+│  ▱ Configuration      │                                                                                                              │                       │
+│  ▱ Dependencies       │                                                                                                              │                       │
+│▾ VALIDATE             │                                                                                                              │                       │
+│  ▱ Testing            │                                                                                                              │                       │
+│    Security           │                                                                                                              │                       │
+│  ▱ QA                 │                                                                                                              │                       │
+│▾ TOOLS                │                                                                                                              │                       │
+│  ▱ Raw Mode           │                                                                                                              │                       │
+│  ▱ Terminal Sessions  │                                                                                                              │                       │
+│  ▱ Devtool            │                                                                                                              │                       │
+│  ▱ QEMU / Wic         └──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘                       │
+│  ▱ Maintenance        ┌Selected step─────────────────────────────────────────────────────────────────────────────────────────────────┐                       │
+│  ▱ Build environment  │Configure source, build directory, and init script; verify before continuing.                                 │                       │
+│  ▱ Compatibility      │Prerequisite: Verified connected environment is current.                                                      │                       │
+│  ▱ Settings           │Enter opens Build environment. It does not bypass confirmation or create a process.                           │                       │
+│                       │                                                                                                              │                       │
+│                       │                                                                                                              │                       │
+│                       │                                                                                                              │                       │
+│                       └──────────────────────────────────────────────────────────────────────────────────────────────────────────────┘                       │
+│                       Esc dismiss · Enter open · n next · s skip · r restart · j/k select                                                                    │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Enter select/confirm   Esc cancel   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F1 Help   F10 Menu   q Quiti Build environment: press e to con…  20:02:56│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

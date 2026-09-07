@@ -1,0 +1,32 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.73 • Project: openbmc • – Idle • T:obmc-phosphor-image  •  Machine: romulus            D:✓ Connected/Local • BB:– Disconnected│
+┌Navigator · 2/30 ↓──┐┌Tasks: Build────────────────────────────────────────────────────────────────┐┌Inspector: Task───────────────────────┐
+│▾ OVERVIEW          ││Overall  build not started · 0%                                             ││No task selected.                     │
+│  ▱ Dashboard       ││A0 W0 !0 ✕0 --                                                              ││Task facts appear as typed BitBake    │
+│  ▱ Insights        ││Target: obmc-phosphor-image  Backend: bridge  Status: Idle  Exit code: none ││events arrive.                        │
+│▾ CONTENT           ││Parse progress: not parsing  Tasks: 0/—  Warnings: 0  Errors: 0  Release: no││Secondary facts, paths, and           │
+│  ▱ Layers          ││Task                                  Status        Progress                ││dependencies unavailable.             │
+│  ▱ Recipes         ││                                                                            ││                                      │
+│  × Packages        ││                                                                            ││                                      │
+│  ▱ Images          ││                                                                            ││                                      │
+│  ▱ Kernel          ││                                                                            ││                                      │
+│  ▱ U-Boot / BIOS   ││                                                                            ││                                      │
+│  ▱ SDK             ││                                                                            ││                                      │
+│▾ BUILD             ││                                                                            ││                                      │
+│  ▱ Tasks           ││                                                                            ││                                      │
+│  ▱ Logs        LIVE│└────────────────────────────────────────────────────────────────────────────┘│                                      │
+│  ▱ Errors          │┌Log Viewer — no task selected · ▶ Follow────────────────────────────────────┐│                                      │
+│  ▱ Configuration   ││No task-specific log is available.                                          ││                                      │
+│  ▱ Dependencies    ││                                                                            ││                                      │
+│▾ VALIDATE          ││                                                                            ││                                      │
+│  ▱ Testing         ││                                                                            ││                                      │
+│    Security        ││                                                                            │└──────────────────────────────────────┘
+│  ▱ QA              ││                                                                            │┌Contextual Actions────────────────────┐
+│▾ TOOLS             ││                                                                            ││× Cancel active build  [c] — Disabled │
+│  ▱ Raw Mode        │└────────────────────────────────────────────────────────────────────────────┘│  Reason: No active build can be cance│
+│  ▱ Terminal Session│┌Resources───────────────────────────────────────────────────────────────────┐│  Implementation: tinfoil.cancel      │
+│  ▱ Devtool         ││CPU 16%                  RAM 38%                   FS 90%                   ││✓ Open Logs            [l] — Local    │
+│  ▱ QEMU / Wic      ││▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫ ││✓ Build History        [h] — Local    │
+└────────────────────┘└────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────┘
+↑/↓ select   h/l groups   ←/→ focus   Enter open   Ctrl+B prefix   ←/→ Focus   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit  20:41:40
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

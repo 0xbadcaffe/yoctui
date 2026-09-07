@@ -38,9 +38,12 @@ retaining final-file alias safety. Fourteen focused tests, 1,543 workspace tests
 tool identities and package-list capability are verified; timed-out Devtool
 help probes remain Unknown. OPENBMC-LIVE-001 accepted Romulus image job 1;
 real task execution and compact 100x24 CPU/RAM/FS rendering are observed.
-OPENBMC-ATTACH-001 is IN_PROGRESS for the newly observed initial 250 ms snapshot
-timeout, which sends a healthy attached client into local environment setup.
-The image continues under the private daemon while this client-only fix is tested.
+OPENBMC-ATTACH-001 is DONE in v0.1.73: initial snapshot reads allow five seconds
+while socket discovery and in-loop reconnect remain capped at 250 ms. Both
+delayed-snapshot and missing-socket regressions pass; 1,545 workspace tests,
+49 bridge tests, strict Clippy, formatting, Python and docs checks pass. A real
+client without local build environment opens Dashboard directly. The image
+retry is now current, after cancellation of the first host-shim-stalled attempt.
 Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the
 candidate binary; 78 GiB is now free, with all Poky data untouched. See

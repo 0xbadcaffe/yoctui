@@ -14,7 +14,8 @@ submission tests are not image-build validation.
 The first real OpenBMC attempt exposed a host pyenv-shim recursion loop. The
 user-requested persistent host repair is complete (HOST-PYTHON-001), preserving
 managed interpreters while defaulting build shells to system Python. A separate
-initial-attachment timeout repair (OPENBMC-ATTACH-001) gates the image retry.
+initial-attachment timeout repair (OPENBMC-ATTACH-001) is complete in v0.1.73;
+the real image retry and subsequent inspection remain required.
 
 Yoctui is 100% complete only when:
 

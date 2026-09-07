@@ -208,7 +208,37 @@ Clippy, formatting, Ruff/mypy and documentation checks pass. Version-only
 goldens and six production rasters were refreshed. Another 58.3 GiB of agent
 Cargo debug outputs were cleaned before rebuilding; no Poky data was removed.
 
-### Image validation still required
+### Initial attached-client startup candidate v0.1.73
+
+A socket fixture delayed Attached by 400 ms and failed with the old 250 ms
+read timeout. It now passes with a five-second pre-terminal read budget,
+installing the daemon's build directory in a client with no local environment.
+A second regression found that using the same timeout for socket discovery
+delayed disconnected startup by five seconds; socket discovery is now separately
+capped at 250 ms. The interactive reconnect timeout remains unchanged.
+
+The [real attached terminal](../../artifacts/live-openbmc/romulus/initial-attach-fixed.txt)
+opens directly on Dashboard with no navigation before capture and with BUILDDIR,
+YOCTUI_BUILD_DIR and PYTHONPATH removed. It shows the daemon's OpenBMC identity
+and compact resource meters, not local environment setup. The
+[capture record](../../artifacts/live-openbmc/romulus/initial-attach-fixed.json)
+records the running client binary hash and 1.336 seconds to the first connected
+frame at 140x32. This one-shot startup observation is not an input-latency
+percentile or steady-state CPU result.
+
+After the persistent Python repair, the
+[daemon doctor report](../../artifacts/live-openbmc/romulus/doctor-system-python.json)
+records 84 Available capabilities, including Devtool status/modify and
+Recipetool create. The private daemon's running executable hash is
+`1240dc7e83c8f0bf5bcdfac282d6013539a42fdfa384687b6266c4e4e86f8b63`;
+report hash is `7d42406e1d787ca0d051e8edf44efd41d0b93b837be61d89c701fc991b2b3e70`.
+It is the v0.1.72 candidate and remains isolated from the normal user daemon.
+
+All 1,545 workspace tests (four existing ignored), 49 bridge tests, strict
+Clippy, formatting, Python and documentation checks pass. The 17 cell/text
+fixtures changed only version digits; six production rasters were regenerated.
+
+### Image retry acceptance
 
 The new workspace enables rm_work for completed package work directories,
 excluding obmc-phosphor-image so rootfs inspection remains possible. All Poky

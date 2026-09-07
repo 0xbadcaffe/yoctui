@@ -20,6 +20,9 @@ use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonCli
 
 pub(crate) const MAX_EVENTS_PER_POLL: usize = 64;
 pub(crate) const DAEMON_RECONNECT_INTERVAL: Duration = Duration::from_secs(1);
+// Before terminal setup, allow a healthy large snapshot to finish before choosing
+// local adapters. This must not be used by the blocking in-loop reconnect path.
+pub(crate) const INITIAL_DAEMON_ATTACH_TIMEOUT: Duration = Duration::from_secs(5);
 const MAX_POLL_DURATION: Duration = Duration::from_millis(8);
 
 pub struct InteractiveDaemonRuntime {

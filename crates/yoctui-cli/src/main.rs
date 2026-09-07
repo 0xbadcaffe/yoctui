@@ -11458,7 +11458,7 @@ async fn tui(
     #[cfg(unix)]
     let mut daemon_runtime = match client_runtime::InteractiveDaemonRuntime::connect(
         &mut app,
-        Duration::from_millis(250),
+        client_runtime::INITIAL_DAEMON_ATTACH_TIMEOUT,
     ) {
         Ok(runtime) => Some(runtime),
         Err(error) => {

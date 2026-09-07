@@ -1,0 +1,24 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.71 • Project: openbmc • ▶ Parsing • T:obmc-phosphor-D:✓ Connected/Local • BB:✓ Running│
+┌Navigator · 2/30 ↓──┐┌Tasks: Build────────────────────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││Overall  progress unknown ⠿  0/—                                            │
+│  ▱ Dashboard       ││A0 W0 !0 ✕0 00:00:03                                                        │
+│  ▱ Insights        ││Target: obmc-phosphor-image  Backend: bridge  Status: Parsing  Exit code: no│
+│▾ CONTENT           ││Parse progress: 44/100  Tasks: 0/—  Warnings: 0  Errors: 0  Release: nodistr│
+│  ▱ Layers          ││Task                                  Status        Progress                │
+│  ▱ Recipes         ││                                                                            │
+│  × Packages        ││                                                                            │
+│  ▱ Images          ││                                                                            │
+│  ▱ Kernel          │└────────────────────────────────────────────────────────────────────────────┘
+│  ▱ U-Boot / BIOS   │┌Log Viewer — no task selected · ▶ Follow────────────────────────────────────┐
+│  ▱ SDK             ││No task-specific log is available.                                          │
+│▾ BUILD             ││                                                                            │
+│  ▱ Tasks           ││                                                                            │
+│  ▱ Logs        LIVE││                                                                            │
+│  ▱ Errors          │└────────────────────────────────────────────────────────────────────────────┘
+│  ▱ Configuration   │┌Resources───────────────────────────────────────────────────────────────────┐
+│  ▱ Dependencies    ││CPU 34%                  RAM 43%                   FS 85%                   │
+│▾ VALIDATE          ││▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫ │
+└────────────────────┘└────────────────────────────────────────────────────────────────────────────┘
+↑/↓ select   h/l groups   ? Help   Ctrl+P Menu   q Quit                  ▶ BitBake parsing  20:04:20
+────────────────────────────────────────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 # Current Task
 
-**ID:** OPENBMC-ATTACH-001
-**Title:** Allow a healthy large daemon snapshot to complete initial client attachment
+**ID:** OPENBMC-LIVE-001
+**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
 **Status:** IN_PROGRESS
 
 All five required integration fixes are DONE through v0.1.71: direct capability
@@ -18,14 +18,13 @@ OpenBMC job 1 was cancelled with 282 ms acknowledgement after host recursion
 stalled it; no image success is claimed. The corrected-environment private
 daemon is now PID 3955092, with no active build. Verify identity before stopping.
 
-Newly observed: initial client attachment uses a 250 ms timeout and can reject
-a healthy large Romulus snapshot, then initialize the UI/local adapters as if
-no daemon environment exists. Give only pre-terminal attachment a five-second
-receive budget. Keep interactive reconnect waits short. Add a delayed socket
-regression first, check missing-socket behavior and installed workspace identity,
-then recheck the real client. The delayed snapshot test failed at 250 ms and
-passes at five seconds. The client-only implementation is not yet committed;
-finish the missing-socket test, complete checks, version bump and live capture.
+OPENBMC-ATTACH-001 is DONE in v0.1.73: initial snapshot reads get five seconds,
+with separate 250 ms discovery and in-loop reconnect limits. Both delayed and
+missing-socket regressions pass; all 1,545 workspace tests, 49 bridge tests,
+strict Clippy, formatting, Python and docs checks pass. Real attached capture
+without local build env opens Dashboard directly at 140x32 in 1.336 seconds.
+Retry the image through the corrected-environment daemon and inspect actual
+task/log/output behavior. Keep runtime evidence distinct from release performance.
 Verify identity before stopping. Private XDG paths are in the evidence.
 Source revision d4fd7d3f54e88e800c0284b753af68a13aabbef6, source
 /home/bspguy-dev/src/openbmc, build /home/bspguy-dev/src/build-openbmc-romulus,
@@ -34,9 +33,11 @@ MACHINE romulus, DISTRO openbmc-openpower, BitBake 2.19.0.
 Execute OPENBMC-LIVE-001 through Yoctui: build
 obmc-phosphor-image, inspect lifecycle/logs/outcomes, packages and rootfs, and
 register/fix real regressions. The image was accepted; no success is claimed yet.
-Preserve all Poky data. Root has about 67 GiB free after cleaning agent Cargo
+Preserve all Poky data. Root has about 42 GiB free after cleaning agent Cargo
 outputs and rebuilding. New OpenBMC guards stop scheduling at 15 GiB / halt at 8 GiB.
-Inspect the shallow checkout's os-release Git-tag warning during validation.
+The shallow checkout's os-release warning was resolved by fetching history/tags
+without changing HEAD. rm_work is enabled only in OpenBMC, excluding the image
+work directory so rootfs inspection remains possible. Parallelism is unchanged.
 
 Verification: real image build and inspection, docs/roadmap checks, followed by
 the full completion gate. Installed
