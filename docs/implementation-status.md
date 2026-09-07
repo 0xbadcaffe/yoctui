@@ -6,10 +6,14 @@ row geometry. 1,520 workspace tests, strict Clippy, formatting, 46 bridge tests
 and documentation checks pass. See [evidence](testing/compact-telemetry.md).
 Installed Yoctui remains v0.1.64; release performance evidence is not refreshed.
 M56 OPENBMC-ENV-001 is DONE: separate Romulus checkout, current live daemon
-authority and doctor evidence exist. OPENBMC-CAPABILITY-001 is IN_PROGRESS;
-OPENBMC-CLI-BUILD-001 and OPENBMC-LIVE-001 remain NOT_STARTED. Real attempts
-exposed absent direct backend probing for BitBake 2.19 and stale-generation
-CLI rejection with a false success exit code. No build was accepted yet.
+authority and doctor evidence exist. OPENBMC-CAPABILITY-001 is DONE in v0.1.67:
+real BitBake 2.19 build/cancel/event capabilities are Available from a bounded
+read-only probe, with no version-range widening. 1,523 workspace tests, 47
+bridge tests, Clippy, Ruff/mypy, formatting and docs pass.
+OPENBMC-STARTUP-001 is IN_PROGRESS after initial recipe parsing exceeded the
+180-second startup deadline and left an untracked daemon. CLI generation/error
+status and symlinked-tool discovery tasks remain NOT_STARTED before live build.
+No image build was accepted yet.
 Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the
 candidate binary; 78 GiB is now free, with all Poky data untouched. See

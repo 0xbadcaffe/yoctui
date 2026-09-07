@@ -1,0 +1,104 @@
+environment initialized: yes
+build directory: /home/bspguy-dev/src/build-openbmc-romulus (usable)
+bitbake: BitBake Build Tool version 2.19.0
+BitBake Python module: 2.19.0
+conf/local.conf: present
+conf/bblayers.conf: present
+bridge protocol: ok (bounded handshake and shutdown)
+compatibility report:
+  authority: Current
+  release support: Unknown (Runtime capability evidence is current; no live release-support claim is encoded yet.)
+  snapshot generation: 1
+  operating mode: Some(Degraded)
+  build directory: /home/bspguy-dev/src/build-openbmc-romulus [InitializedEnvironment]
+  BitBake: 2.19.0 [BitBakeVersionProbe]
+  OE-Core: blacksail unknown [BitBakeDatastore]
+  Poky: unknown
+  DISTRO: openbmc-openpower nodistro.0 [BitBakeDatastore]
+  MACHINE: romulus [BitBakeDatastore]
+  backend: unknown
+  protocol: yoctui-daemon 1.2 [ProtocolNegotiation]
+  capabilities: available=56 limited=1 unavailable=33 unknown=17 unsupported=0
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-aspeed [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-ibm/meta-romulus [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-openpower [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/meta-phosphor [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-networking [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-oe [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-perl [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/meta-openembedded/meta-python [ConfiguredLayerMetadata]
+  source root: layer=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta [ConfiguredLayerMetadata]
+  layer series: core=/home/bspguy-dev/src/openbmc/upstream-layers/openembedded-core/meta (blacksail, wrynose) [ConfiguredLayerMetadata]
+  available tool: bitbake=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake 2.19.0 [ExecutableProbe]
+  available tool: bitbake-diffsigs=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-diffsigs unknown [ExecutableProbe]
+  available tool: bitbake-dumpsig=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-dumpsig unknown [ExecutableProbe]
+  available tool: bitbake-getvar=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-getvar unknown [ExecutableProbe]
+  available tool: bitbake-layers=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-layers unknown [ExecutableProbe]
+  available tool: bitbake-prserv=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-prserv unknown [ExecutableProbe]
+  available tool: bitbake-selftest=/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/bin/bitbake-selftest unknown [ExecutableProbe]
+  missing tool: build-compare — build-compare is absent from the initialized environment
+  missing tool: buildhistory-diff — buildhistory-diff is absent from the initialized environment
+  missing tool: devtool — devtool is absent from the initialized environment
+  missing tool: oe-check-sstate — oe-check-sstate is absent from the initialized environment
+  missing tool: oe-find-native-sysroot — oe-find-native-sysroot is absent from the initialized environment
+  missing tool: oe-git-archive — oe-git-archive is absent from the initialized environment
+  missing tool: oe-pkgdata-util — oe-pkgdata-util is absent from the initialized environment
+  missing tool: oe-publish-sdk — oe-publish-sdk is absent from the initialized environment
+  missing tool: oe-selftest — oe-selftest is absent from the initialized environment
+  missing tool: recipetool — recipetool is absent from the initialized environment
+  missing tool: resulttool — resulttool is absent from the initialized environment
+  missing tool: runqemu — runqemu is absent from the initialized environment
+  missing tool: sstate-cache-management.sh — sstate-cache-management.sh is absent from the initialized environment
+  missing tool: wic — wic is absent from the initialized environment
+  missing tool: yocto-check-layer — yocto-check-layer is absent from the initialized environment
+  limited: bitbake.dependency_graph — The preferred implementation is unavailable; a maintained capability-backed fallback was selected. [fallback.available_capability]; limitations=Uses bitbake.graph_generation through implementation bitbake.graph.argv.; implementation=bitbake.graph.argv
+  unavailable: bitbake.raw.multiconfig — Connected environment does not expose Raw multiconfig target syntax. [environment.capability_unavailable]
+  unavailable: devtool.modify — Connected environment does not expose Devtool modify. [environment.capability_unavailable]
+  unavailable: devtool.status — Connected environment does not expose Devtool status. [environment.capability_unavailable]
+  unavailable: devtool.edit_recipe — Connected environment does not expose Devtool edit-recipe. [environment.capability_unavailable]
+  unavailable: devtool.update_recipe — Connected environment does not expose Devtool update-recipe. [environment.capability_unavailable]
+  unavailable: devtool.finish — Connected environment does not expose Devtool finish. [environment.capability_unavailable]
+  unavailable: devtool.deploy_target — Connected environment does not expose Devtool deploy-target. [environment.capability_unavailable]
+  unavailable: devtool.undeploy_target — Connected environment does not expose Devtool undeploy-target. [environment.capability_unavailable]
+  unavailable: devtool.reset — Connected environment does not expose Devtool reset. [environment.capability_unavailable]
+  unavailable: devtool.upgrade — Connected environment does not expose Devtool upgrade. [environment.capability_unavailable]
+  unavailable: recipetool.create — Connected environment does not expose Recipetool create. [environment.capability_unavailable]
+  unavailable: recipetool.create_outfile — Connected environment does not expose Recipetool create with explicit output. [environment.capability_unavailable]
+  unavailable: recipetool.appendfile — Connected environment does not expose Recipetool appendfile. [environment.capability_unavailable]
+  unavailable: pkgdata.lookup_pkg — Connected environment does not expose package-data package lookup. [environment.capability_unavailable]
+  unavailable: pkgdata.find_path — Connected environment does not expose package-data path lookup. [environment.capability_unavailable]
+  unavailable: pkgdata.generated — Connected environment does not expose generated package data. [environment.capability_unavailable]
+  unavailable: pkgdata.list_packages — Connected environment does not expose package-data package inventory. [environment.capability_unavailable]
+  unavailable: pkgdata.package_info — Connected environment does not expose package-data package information. [environment.capability_unavailable]
+  unavailable: pkgdata.list_package_files — Connected environment does not expose package-data file inventory. [environment.capability_unavailable]
+  unavailable: pkgdata.read_value — Connected environment does not expose package-data value query. [environment.capability_unavailable]
+  unavailable: wic.create — Connected environment does not expose Wic image creation. [environment.capability_unavailable]
+  unavailable: runqemu — Connected environment does not expose runqemu launch. [environment.capability_unavailable]
+  unavailable: sdk.publish — Connected environment does not expose SDK publication. [environment.capability_unavailable]
+  unavailable: sdk.native_tools — Connected environment does not expose native SDK tool execution. [environment.capability_unavailable]
+  unavailable: yocto_check_layer — Connected environment does not expose Yocto layer checking. [environment.capability_unavailable]
+  unavailable: resulttool — Connected environment does not expose resulttool operations. [environment.capability_unavailable]
+  unavailable: oe_selftest — Connected environment does not expose OpenEmbedded selftest. [environment.capability_unavailable]
+  unavailable: buildhistory.compare — Connected environment does not expose build history comparison. [environment.capability_unavailable]
+  unavailable: prserv.diagnostics — Connected environment does not expose PR service diagnostics. [environment.capability_unavailable]
+  unavailable: sstate.readiness — Connected environment does not expose shared-state readiness inspection. [environment.capability_unavailable]
+  unavailable: sstate.cleanup — Connected environment does not expose shared-state cache cleanup. [environment.capability_unavailable]
+  unavailable: build_compare — Connected environment does not expose build output comparison. [environment.capability_unavailable]
+  unavailable: git_archive — Connected environment does not expose OpenEmbedded Git archive. [environment.capability_unavailable]
+  unknown: bitbake_layers.create_and_add_layer — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: bitbake_layers.add_layer — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: bitbake_layers.remove_layer — Required capability probes were incomplete; partial positive evidence cannot enable the feature. [evidence.incomplete]
+  unknown: sdk.populate — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: sdk.extensible — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: cve.check — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: spdx.create — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: testimage — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: testsdk — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: testsdk_extensible — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: ptest — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: qa.task — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: menuconfig — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: devshell — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: buildhistory — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: locked_signatures — This capability does not declare a release/version fallback. [fallback.not_declared]
+  unknown: hashserv.diagnostics — Direct capability probes returned conflicting positive and negative evidence. [evidence.conflict]

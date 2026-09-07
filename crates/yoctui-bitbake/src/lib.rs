@@ -122,7 +122,7 @@ pub use compatibility_layers::{
 };
 pub use compatibility_probe::{
     CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,
-    CapabilityProbeRunner, CapabilityProbeStatus,
+    CapabilityProbeRunner, CapabilityProbeStatus, probe_bundled_backend_capabilities,
 };
 pub use compatibility_recipetool::{
     RECIPETOOL_APPEND_FILE_IMPLEMENTATION, RECIPETOOL_CREATE_IMPLEMENTATION,

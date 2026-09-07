@@ -341,6 +341,14 @@ second authoritative map.
 
 ## Evidence levels
 
+Bundled-backend startup now obtains direct read-only Tinfoil/server API evidence
+before applying the version fallback map. A successful probe can enable
+individual capabilities on a newer BitBake without labeling the release as
+supported. Failed or mismatched evidence remains unknown, and explicit custom
+bridge overrides do not inherit capabilities from the bundled implementation.
+The initial [OpenBMC Romulus investigation](testing/openbmc.md) uses BitBake
+2.19.0; its environment/probe evidence is separate from image-build validation.
+
 | Level | Meaning |
 |---|---|
 | Live observed | The production adapter was run against the exact recorded initialized Yocto build and the stated result was observed. |

@@ -28,12 +28,12 @@ notes = "OpenBMC d4fd7d3f54e88e800c0284b753af68a13aabbef6 downloaded to src/open
 id = "OPENBMC-CAPABILITY-001"
 milestone = "M56"
 title = "Probe actual backend capabilities before resolving newer BitBake environments"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1289
 required = true
 depends_on = ["OPENBMC-ENV-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui daemon_compatibility", "cargo test -p yoctui-bitbake compatibility", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Real OpenBMC BitBake 2.19 doctor reports bitbake.build unknown version.outside_fallback_map. DaemonCompatibilityRuntime::detect passes None for backend_capabilities, so existing direct-probe resolution cannot enable any future version. Add bounded read-only backend negotiation, preserving unknown on failed/incomplete probes and requiring real API evidence; do not simply widen the fallback map or bypass daemon authority. Audit symlinked OpenBMC tool probes too. Add tests first and verify live daemon authority before claiming support. Architecture/protocol/compatibility docs must match."
+notes = "v0.1.67: bounded read-only bundled Python probe prepares config, pings actual server and inspects Tinfoil/command APIs. Strict schema/build/version/catalog-token validation feeds the daemon resolver; failed/custom-bridge probes stay inconclusive, no fallback range expansion. Tests first reproduced missing probe; Python API-shape/read-only, Rust report/process and future-version daemon tests pass. 1523 workspace tests, 47 bridge tests, strict Clippy, fmt, Ruff/mypy and docs pass; version-only goldens/rasters refreshed. Real OpenBMC doctor now records build/cancel/native_events Available via backend negotiation; artifacts/live-openbmc/romulus contains probe/doctor evidence. Full recipe bootstrap exposed startup timeout, and tool audit proved symlinked PATH discovery wrongly omits executable tools; separate required tasks cover those. No image-build or release-performance success claimed."
 
 [[task]]
 id = "OPENBMC-CLI-BUILD-001"
@@ -47,13 +47,35 @@ verify = ["cargo test -p yoctui daemon_build", "cargo test --workspace --all-fea
 notes = "Two real daemon build attempts for obmc-phosphor-image rejected StaleGeneration (current generation 5 then 6) despite a new snapshot on each connection, and both exited status 0. Inspect attach/snapshot ordering and preserve generation correctness; bounded retries must never duplicate an accepted build. Rejected/failed commands must exit nonzero. Add fake-daemon or live-isolated regression tests before the smallest fix; recheck the OpenBMC invocation."
 
 [[task]]
+id = "OPENBMC-STARTUP-001"
+milestone = "M56"
+title = "Keep daemon startup responsive during large initial metadata scans"
+status = "IN_PROGRESS"
+priority = 1288
+required = true
+depends_on = ["OPENBMC-CAPABILITY-001"]
+verify = ["cargo test -p yoctui daemon_startup", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Real OpenBMC bootstrap enabled by direct probing waits for full recipe inventory before entering the IPC loop. daemon start exceeded 180 seconds while Cooker/parser processes continued; status then reports no runtime record despite foreground daemon 2353642 remaining alive. Make metadata startup nonblocking or defer inventory through an owned workflow without making recipe navigation empty/inert. Preserve authority, cancellation, lifecycle ownership and cache bounds; timeout must not leave an unmanageable daemon. Add slow-inventory/lifecycle tests and real startup evidence."
+
+[[task]]
+id = "OPENBMC-TOOLS-001"
+milestone = "M56"
+title = "Discover tools through canonicalized initialized PATH directories"
+status = "NOT_STARTED"
+priority = 1287
+required = true
+depends_on = ["OPENBMC-ENV-001"]
+verify = ["cargo test -p yoctui daemon_compatibility", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "OpenBMC scripts is a directory symlink to upstream-layers/openembedded-core/scripts. Both lexical and canonical devtool --help work in the initialized environment, yet doctor records executable_identity negative because discover_executable rejects noncanonical PATH directories. Canonicalize absolute PATH directories before resolving tool identity, retaining safe basename-sensitive sibling file aliases and rejecting relative/dangling/escaping file aliases. Tests first and live Devtool/Recipetool/pkgdata tool recheck; no broad safety bypass."
+
+[[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
 status = "NOT_STARTED"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-TOOLS-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. Record evidence in docs/testing/openbmc.md."
 

@@ -1,0 +1,1 @@
+{"schema": "yoctui.bridge-capability-probe.v1", "build_directory": "/home/bspguy-dev/src/build-openbmc-romulus", "bitbake_version": "2.19.0", "capabilities": ["build", "cancel", "layer_relationships", "layers", "native_events", "recipe_dependencies", "recipe_metadata", "recipe_sources", "recipes", "server_socket", "tasks", "variable_history", "workspace"]}

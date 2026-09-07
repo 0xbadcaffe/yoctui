@@ -1155,10 +1155,11 @@ Yoctui and inspect package/rootfs availability, task/log lifecycles and terminal
 outcomes. Register atomic regression fixes for observed defects; fixture tests
 alone do not establish OpenBMC compatibility. Storage is currently constrained
 and Poky generated output must not be removed without approval.
-Progress: OPENBMC-ENV-001 DONE; OPENBMC-CAPABILITY-001 IN_PROGRESS;
-OPENBMC-CLI-BUILD-001 and OPENBMC-LIVE-001 NOT_STARTED. Live doctor and build
-attempts exposed missing direct backend evidence and stale-generation CLI
-rejections with zero exit status. Fix these before claiming image-build support.
+Progress: OPENBMC-ENV-001 and OPENBMC-CAPABILITY-001 DONE;
+OPENBMC-STARTUP-001 IN_PROGRESS; CLI generation/error handling, symlinked-tool
+discovery and live image build remain NOT_STARTED. Direct API evidence now
+enables BitBake 2.19 correctly. Fix the observed lifecycle and tool-discovery
+defects before claiming image-build support.
 Storage preflight was unblocked by cleaning completed Cargo debug outputs,
 not Poky data; 78 GiB is available, subject to monitoring and a stop margin.
 See [live integration preflight](testing/openbmc.md).

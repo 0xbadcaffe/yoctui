@@ -1,8 +1,8 @@
 # OpenBMC live integration
 
-Status: environment initialized and live daemon doctor captured. No successful
-image build is claimed. OPENBMC-ENV-001 is complete; two observed Yoctui defects
-must be fixed before OPENBMC-LIVE-001 can run.
+Status: environment and direct-capability tasks complete; no successful image
+build is claimed. Startup, CLI generation/error status and symlinked tool
+discovery defects remain before OPENBMC-LIVE-001 can run.
 
 ## Planned machine and isolation
 
@@ -77,10 +77,35 @@ removing any user build output.
   evidence. BitBake 2.19 therefore cannot resolve build/API capabilities beyond
   the documented 2.18 version fallback. Fix direct probing with bounded real
   API evidence, not a permissive version assumption.
+  Fixed in v0.1.67: the [one-shot probe](../../artifacts/live-openbmc/romulus/backend-probe-v0.1.67.json)
+  reports 13 catalog API tokens. The [daemon JSON report](../../artifacts/live-openbmc/romulus/doctor-v0.1.67.json)
+  confirms build, cancellation and native events are Available through direct
+  backend negotiation. The fallback version range was not widened. Invalid
+  reports remain inconclusive; the first integration attempt correctly rejected
+  an extra noncatalog `getvar` token, which was removed from the probe.
 - OPENBMC-CLI-BUILD-001: two invocations of
   `yoctui daemon build obmc-phosphor-image` rejected StaleGeneration (current
   generation 5 then 6) despite fresh attaches. Both exited zero. No build was
   accepted. Test snapshot/attach ordering and rejected-command exit status.
+- OPENBMC-STARTUP-001: after direct probing enabled the metadata path, daemon
+  startup blocked on `list_recipes`/`parseFiles` and exceeded its 180-second
+  readiness deadline. The foreground daemon and Cooker/parser children kept
+  running; status reported an absent runtime record. Fix metadata scheduling
+  and startup-timeout lifecycle ownership before the image build.
+- OPENBMC-TOOLS-001: executable discovery rejects OpenBMC's symlinked `scripts`
+  PATH directory. Both lexical and canonical Devtool help invocations work, but
+  daemon evidence says the executable is absent. Canonicalize the directory
+  while retaining existing per-file alias checks.
+
+Capability-fix verification: 1,523 workspace tests (4 existing ignored), 47
+bridge tests, strict Clippy, formatting, Ruff/mypy and documentation checks pass.
+Focused coverage includes 12 daemon compatibility and 66 backend compatibility
+tests. The startup scan eventually finished and the private socket served
+Current authority, but this does not resolve the 180-second lifecycle defect.
+The live probe hash is
+`ece1d80f04608b795cb47b49288e25b5509dda3fa87c2e4638f330e2c3218bc2`;
+daemon JSON hash is
+`313528101babdad46f71dd366cee3cd4f40b7058ab8067ca34e05e35a3b8b540`.
 
 ## Required live evidence
 

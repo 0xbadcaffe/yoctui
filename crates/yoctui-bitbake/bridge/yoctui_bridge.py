@@ -70,6 +70,77 @@ class ServerUnavailable(Exception):
     pass
 
 
+def tinfoil_probe_capabilities(tinfoil):
+    """Inspect actual API endpoints after a read-only server ping; never run work."""
+    if (
+        not callable(getattr(tinfoil, "run_command", None))
+        or tinfoil.run_command("ping") != "Still alive!"
+    ):
+        raise CompatibilityError(
+            "BitBake capability probe could not verify server ping"
+        )
+    commands = importlib.import_module("bb.command")
+    sync = commands.CommandsSync
+    asynchronous = commands.CommandsAsync
+
+    def methods(obj, *names):
+        return all(callable(getattr(obj, name, None)) for name in names)
+
+    data = getattr(tinfoil, "config_data", None)
+    connection = getattr(tinfoil, "server_connection", None)
+    events = (
+        methods(tinfoil, "set_event_mask", "wait_event")
+        and methods(sync, "setEventMask")
+        and methods(getattr(connection, "events", None), "waitEvent")
+    )
+    metadata = methods(tinfoil, "parse_recipes", "parse_recipe") and methods(
+        sync, "parseRecipeFile"
+    )
+    layers = methods(data, "getVar") and methods(sync, "getLayerPriorities")
+    available = {
+        "workspace": layers,
+        "layers": layers,
+        "layer_relationships": layers,
+        "recipes": layers
+        and methods(tinfoil, "parse_recipes")
+        and methods(sync, "getRecipes", "getRecipeVersions"),
+        "recipe_dependencies": metadata and methods(data, "getVar"),
+        "recipe_sources": metadata and methods(tinfoil, "get_file_appends"),
+        "recipe_metadata": metadata
+        and methods(tinfoil, "get_file_appends", "parse_recipe_file"),
+        "tasks": metadata and methods(tinfoil, "get_file_appends", "parse_recipe_file"),
+        "build": events
+        and methods(data, "getVar")
+        and methods(asynchronous, "buildTargets"),
+        "cancel": methods(sync, "stateForceShutdown"),
+        "variable_history": metadata and methods(data, "getVar"),
+        "native_events": events,
+        "server_socket": methods(
+            getattr(connection, "connection", None), "terminateServer"
+        ),
+    }
+    return sorted(name for name, present in available.items() if present)
+
+
+def probe_backend_capabilities():
+    """One-shot daemon startup probe, separate from the normal NDJSON protocol."""
+    module = importlib.import_module("bb")
+    connection = TinfoilConnection(module)
+    try:
+        capabilities = tinfoil_probe_capabilities(connection.tinfoil)
+        build_directory = connection.tinfoil.config_data.getVar("TOPDIR")
+        if not build_directory or not os.path.isabs(build_directory):
+            raise CompatibilityError("BitBake did not report an absolute TOPDIR")
+        return {
+            "schema": "yoctui.bridge-capability-probe.v1",
+            "build_directory": os.path.realpath(build_directory),
+            "bitbake_version": getattr(module, "__version__", None),
+            "capabilities": capabilities,
+        }
+    finally:
+        connection.shutdown()
+
+
 class TinfoilConnection:
     """Thin production adapter around BitBake's supported Tinfoil API."""
 
@@ -2323,4 +2394,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if sys.argv[1:] == ["--probe-capabilities"]:
+        isolate_protocol_output()
+        try:
+            report = probe_backend_capabilities()
+        except Exception as exc:
+            print(f"backend capability probe failed: {exc}", file=sys.stderr)
+            sys.exit(1)
+        protocol_output.write(json.dumps(report) + "\n")
+        protocol_output.flush()
+    else:
+        main()

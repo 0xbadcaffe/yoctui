@@ -7,6 +7,8 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 
 
@@ -32,6 +34,69 @@ def run_bridge(
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_backend_probe_uses_real_api_shape_and_only_pings(self) -> None:
+        spec = importlib.util.spec_from_file_location("yoctui_probe_test", BRIDGE)
+        assert spec is not None and spec.loader is not None
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        calls: list[str] = []
+
+        def run_command(name: str) -> str:
+            calls.append(name)
+            self.assertEqual(name, "ping", "probe must not execute work")
+            return "Still alive!"
+
+        def noop(*args: object, **kwargs: object) -> None:
+            pass
+
+        tinfoil = SimpleNamespace(
+            run_command=run_command,
+            config_data=SimpleNamespace(getVar=lambda name: str(Path.cwd())),
+            parse_recipes=noop,
+            parse_recipe=noop,
+            parse_recipe_file=noop,
+            get_file_appends=noop,
+            set_event_mask=noop,
+            wait_event=noop,
+            server_connection=SimpleNamespace(
+                events=SimpleNamespace(waitEvent=noop),
+                connection=SimpleNamespace(terminateServer=noop),
+            ),
+        )
+        commands = SimpleNamespace(
+            CommandsSync=SimpleNamespace(
+                ping=noop,
+                getLayerPriorities=noop,
+                getRecipes=noop,
+                getRecipeVersions=noop,
+                parseRecipeFile=noop,
+                stateForceShutdown=noop,
+                setEventMask=noop,
+            ),
+            CommandsAsync=SimpleNamespace(buildTargets=noop),
+        )
+        with patch.object(bridge.importlib, "import_module", return_value=commands):
+            capabilities = bridge.tinfoil_probe_capabilities(tinfoil)
+            for expected in [
+                "workspace",
+                "recipes",
+                "layers",
+                "build",
+                "cancel",
+                "native_events",
+            ]:
+                self.assertIn(expected, capabilities)
+            commands.CommandsAsync.buildTargets = None
+            self.assertNotIn("build", bridge.tinfoil_probe_capabilities(tinfoil))
+            tinfoil.wait_event = None
+            self.assertNotIn(
+                "native_events", bridge.tinfoil_probe_capabilities(tinfoil)
+            )
+            tinfoil.run_command = lambda _: "wrong server"
+            with self.assertRaises(bridge.CompatibilityError):
+                bridge.tinfoil_probe_capabilities(tinfoil)
+        self.assertEqual(calls, ["ping", "ping", "ping"])
+
     def test_rootfs_sources_are_exact_expanded_bitbake_paths(self) -> None:
         result = run_bridge(
             b'{"protocol_version":1,"sequence":1,"message":{"type":"get_rootfs_sources","recipe":"core-image-minimal"}}',

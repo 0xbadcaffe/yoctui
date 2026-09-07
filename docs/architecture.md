@@ -2568,6 +2568,18 @@ capability. A daemon without authoritative initialized-environment context
 retains no snapshot rather than deriving support from its host PATH or a
 persisted version.
 
+M56 direct backend discovery runs one bounded, read-only bundled bridge probe
+from the daemon's initialized environment before capability resolution. It
+prepares configuration only, pings the server and inspects actual Tinfoil and
+command APIs; it must not parse all recipes, build targets, cancel work or
+change configuration. A versioned JSON result is accepted only for the exact
+canonical build directory and detected BitBake version, with bounded unique
+catalog tokens. Missing tools, failed connection, timeout, malformed/mismatched
+output or explicit custom bridge overrides retain inconclusive evidence.
+Successful probes do not classify a release as supported. Runtime operation
+handshake checks remain in force, and the version fallback map stays closed.
+The probe is not a new client authority path or a periodic UI operation.
+
 Commands use this flow:
 
 ```text

@@ -366,6 +366,7 @@ impl CapabilityProbeRunner {
                 success: _,
                 output: _,
                 truncated,
+                ..
             } if truncated => observation(
                 CapabilityProbeStatus::Inconclusive,
                 CapabilityEvidenceKind::DirectProbe,
@@ -430,10 +431,90 @@ enum ProbeProcessResult {
     Completed {
         success: bool,
         output: String,
+        stdout: String,
         truncated: bool,
     },
     TimedOut,
     Failed(String),
+}
+
+/// Read-only, bounded discovery for the bundled backend, not release/version inference.
+pub async fn probe_bundled_backend_capabilities(
+    python: &Path,
+    build_directory: &Path,
+    environment: &BTreeMap<String, String>,
+    bitbake_version: &str,
+) -> Result<BTreeSet<String>, String> {
+    // A custom bridge may implement different operations from the bundled one.
+    if environment.contains_key("YOCTUI_BRIDGE_PATH") {
+        return Err("custom bridge does not declare a startup capability probe".into());
+    }
+    let arguments = [
+        "-c".into(),
+        crate::BUNDLED_BRIDGE_SOURCE.into(),
+        "--probe-capabilities".into(),
+    ];
+    match run_read_only(
+        python,
+        &arguments,
+        build_directory,
+        environment,
+        Duration::from_secs(30),
+        DEFAULT_PROBE_OUTPUT_LIMIT,
+    )
+    .await
+    {
+        ProbeProcessResult::Completed {
+            success: true,
+            stdout,
+            truncated: false,
+            ..
+        } => parse_backend_capabilities(&stdout, build_directory, bitbake_version),
+        ProbeProcessResult::Completed { .. } => {
+            Err("backend capability probe failed or exceeded its output bound".into())
+        }
+        ProbeProcessResult::TimedOut => Err("backend capability probe timed out".into()),
+        ProbeProcessResult::Failed(error) => Err(error),
+    }
+}
+
+fn parse_backend_capabilities(
+    output: &str,
+    build_directory: &Path,
+    bitbake_version: &str,
+) -> Result<BTreeSet<String>, String> {
+    #[derive(serde::Deserialize)]
+    #[serde(deny_unknown_fields)]
+    struct Report {
+        schema: String,
+        build_directory: PathBuf,
+        bitbake_version: String,
+        capabilities: Vec<String>,
+    }
+    let report: Report = serde_json::from_str(output)
+        .map_err(|_| "backend capability probe returned an invalid report".to_owned())?;
+    if report.schema != "yoctui.bridge-capability-probe.v1"
+        || report.build_directory != build_directory
+        || !report.build_directory.is_absolute()
+        || report.bitbake_version != bitbake_version
+        || report.capabilities.len() > 64
+    {
+        return Err("backend capability probe identity or bounds mismatch".into());
+    }
+    let known = yoctui_model::CapabilityCatalog::builtin()
+        .entries
+        .into_iter()
+        .flat_map(|entry| entry.probes)
+        .filter_map(|probe| match probe {
+            CapabilityProbeSpec::BackendCapability { name } => Some(name),
+            _ => None,
+        })
+        .collect::<BTreeSet<_>>();
+    let capabilities = report.capabilities.iter().cloned().collect::<BTreeSet<_>>();
+    if capabilities.len() != report.capabilities.len() || !capabilities.is_subset(&known) {
+        return Err("backend capability probe contains duplicate or unknown tokens".into());
+    }
+    Ok(capabilities)
 }
 
 async fn run_read_only(
@@ -487,12 +568,18 @@ async fn run_read_only(
             String::from_utf8_lossy(&stdout_bytes),
             String::from_utf8_lossy(&stderr_bytes)
         );
-        Ok::<_, String>((status.success(), output, truncated))
+        Ok::<_, String>((
+            status.success(),
+            output,
+            String::from_utf8_lossy(&stdout_bytes).into_owned(),
+            truncated,
+        ))
     };
     match tokio::time::timeout(timeout, read).await {
-        Ok(Ok((success, output, truncated))) => ProbeProcessResult::Completed {
+        Ok(Ok((success, output, stdout, truncated))) => ProbeProcessResult::Completed {
             success,
             output,
+            stdout,
             truncated,
         },
         Ok(Err(message)) => ProbeProcessResult::Failed(message),
@@ -687,6 +774,96 @@ mod tests {
     use yoctui_model::{CapabilityCatalog, CapabilityId, IdentityAuthority, ToolIdentity};
 
     static NEXT: AtomicU64 = AtomicU64::new(1);
+
+    #[test]
+    fn backend_probe_report_requires_exact_identity_and_unique_known_tokens() {
+        let report = serde_json::json!({
+            "schema": "yoctui.bridge-capability-probe.v1",
+            "build_directory": "/build/romulus",
+            "bitbake_version": "2.19.0",
+            "capabilities": ["workspace", "build", "native_events"],
+        });
+        let parse = |value: &serde_json::Value| {
+            parse_backend_capabilities(&value.to_string(), Path::new("/build/romulus"), "2.19.0")
+        };
+        assert_eq!(parse(&report).unwrap().len(), 3);
+        for (key, value) in [
+            ("schema", serde_json::json!("future")),
+            ("build_directory", serde_json::json!("/other")),
+            ("bitbake_version", serde_json::json!("2.18.0")),
+            ("capabilities", serde_json::json!(["build", "build"])),
+            ("capabilities", serde_json::json!(["invented"])),
+            ("capabilities", serde_json::json!(vec!["build"; 65])),
+        ] {
+            let mut invalid = report.clone();
+            invalid[key] = value;
+            assert!(parse(&invalid).is_err(), "{invalid}");
+        }
+        let mut empty = report.clone();
+        empty["capabilities"] = serde_json::json!([]);
+        assert!(parse(&empty).unwrap().is_empty());
+        empty["unexpected"] = serde_json::json!(true);
+        assert!(parse(&empty).is_err());
+        assert!(
+            parse_backend_capabilities("not json", Path::new("/build/romulus"), "2.19.0").is_err()
+        );
+    }
+
+    #[tokio::test]
+    async fn backend_probe_process_ignores_stderr_and_fails_closed() {
+        let fixture = Fixture::new("#!/bin/sh\nexit 0\n");
+        let report = serde_json::json!({
+            "schema": "yoctui.bridge-capability-probe.v1",
+            "build_directory": fixture.root,
+            "bitbake_version": "99.0",
+            "capabilities": ["build", "native_events"],
+        });
+        let environment = BTreeMap::from([("PATH".into(), "/usr/bin:/bin".into())]);
+        write_executable(
+            &fixture.tool,
+            &format!("#!/bin/sh\nprintf '%s\\n' '{report}'\nprintf 'probe diagnostic\\n' >&2\n"),
+        );
+        let capabilities =
+            probe_bundled_backend_capabilities(&fixture.tool, &fixture.root, &environment, "99.0")
+                .await
+                .unwrap();
+        assert!(capabilities.contains("build"));
+        assert!(
+            probe_bundled_backend_capabilities(
+                &fixture.tool,
+                &fixture.root,
+                &environment,
+                "2.19.0"
+            )
+            .await
+            .is_err()
+        );
+        write_executable(
+            &fixture.tool,
+            &format!("#!/bin/sh\nprintf '%s\\n' '{report}' >&2\n"),
+        );
+        assert!(
+            probe_bundled_backend_capabilities(&fixture.tool, &fixture.root, &environment, "99.0")
+                .await
+                .is_err()
+        );
+        write_executable(&fixture.tool, "#!/bin/sh\nprintf '%70000s' x\n");
+        assert!(
+            probe_bundled_backend_capabilities(&fixture.tool, &fixture.root, &environment, "99.0")
+                .await
+                .is_err()
+        );
+        let overridden = BTreeMap::from([(
+            "YOCTUI_BRIDGE_PATH".into(),
+            fixture.tool.to_string_lossy().into_owned(),
+        )]);
+        assert!(
+            probe_bundled_backend_capabilities(&fixture.tool, &fixture.root, &overridden, "99.0")
+                .await
+                .unwrap_err()
+                .contains("custom bridge")
+        );
+    }
 
     struct Fixture {
         root: PathBuf,

@@ -6,6 +6,18 @@ Commands: `hello`, `inspect_workspace`, `start_build`, `cancel_build`, `list_rec
 
 ## Daemon compatibility snapshots
 
+Before resolving a bundled backend snapshot, the daemon may invoke the bridge
+as a separate one-shot `--probe-capabilities` process. This is not a new NDJSON
+or daemon IPC command. Its stdout contains only a bounded
+`yoctui.bridge-capability-probe.v1` JSON object with canonical `build_directory`,
+exact `bitbake_version` and unique catalog backend `capabilities` tokens.
+Diagnostics go to stderr. Configuration preparation, a server ping and API
+inspection are permitted; recipe parsing, builds and cancellation are not.
+The parent enforces a 30-second deadline and 64-KiB per-stream output bound.
+Failed, malformed, mismatched or custom-bridge probes remain inconclusive.
+Only the daemon resolves this evidence; normal operation handshakes still
+negotiate their actual capabilities against the resulting authority.
+
 The persistent daemon snapshot optionally carries compatibility schema v1. It
 contains the authoritative environment identity, a non-zero snapshot
 generation, and unique stable capability IDs. Each capability transmits one of
