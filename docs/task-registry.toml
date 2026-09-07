@@ -17,12 +17,34 @@ notes = "v0.1.65 candidate: four-row CPU/RAM/FS square-dot strip at short Dashbo
 id = "OPENBMC-ENV-001"
 milestone = "M56"
 title = "Provision an isolated supported OpenBMC machine workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1290
 required = true
 depends_on = ["COMPACT-TELEMETRY-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Initial storage blocker resolved without deleting Poky: after validation, saved the v0.1.65 candidate executable and cleaned regenerable Cargo workspace debug artifacts (79.1 GiB); root now has 78 GiB free. Separate Romulus checkout/build planned in docs/testing/openbmc.md. Establish a disk stop margin and monitor usage; do not assume this guarantees image completion. Preserve Poky source/conf/output/downloads/sstate. Done requires upstream revision, initialized machine configuration and current Yoctui doctor evidence; no download/build success claimed yet."
+notes = "OpenBMC d4fd7d3f54e88e800c0284b753af68a13aabbef6 downloaded to src/openbmc; setup romulus initialized separate src/build-openbmc-romulus. Ubuntu 26.04 prerequisites and namespace preflight pass; BitBake 2.19.0, MACHINE romulus, DISTRO openbmc-openpower, nine layers. Isolated v0.1.65 daemon doctor has Current authority and bounded bridge handshake. 78 GiB available after cleaning regenerable Cargo outputs; Poky untouched. New workspace stops scheduling below 15 GiB and halts below 8 GiB. Doctor evidence and exact reproduction in docs/testing/openbmc.md. Build capability is unknown because startup never supplies direct backend capabilities; daemon build also repeatedly rejects stale generation while exiting zero. Separate required fix tasks gate live build; no image success claimed."
+
+[[task]]
+id = "OPENBMC-CAPABILITY-001"
+milestone = "M56"
+title = "Probe actual backend capabilities before resolving newer BitBake environments"
+status = "IN_PROGRESS"
+priority = 1289
+required = true
+depends_on = ["OPENBMC-ENV-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo test -p yoctui daemon_compatibility", "cargo test -p yoctui-bitbake compatibility", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Real OpenBMC BitBake 2.19 doctor reports bitbake.build unknown version.outside_fallback_map. DaemonCompatibilityRuntime::detect passes None for backend_capabilities, so existing direct-probe resolution cannot enable any future version. Add bounded read-only backend negotiation, preserving unknown on failed/incomplete probes and requiring real API evidence; do not simply widen the fallback map or bypass daemon authority. Audit symlinked OpenBMC tool probes too. Add tests first and verify live daemon authority before claiming support. Architecture/protocol/compatibility docs must match."
+
+[[task]]
+id = "OPENBMC-CLI-BUILD-001"
+milestone = "M56"
+title = "Fix daemon build generation handshake and rejected-command exit status"
+status = "NOT_STARTED"
+priority = 1288
+required = true
+depends_on = ["OPENBMC-ENV-001"]
+verify = ["cargo test -p yoctui daemon_build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Two real daemon build attempts for obmc-phosphor-image rejected StaleGeneration (current generation 5 then 6) despite a new snapshot on each connection, and both exited status 0. Inspect attach/snapshot ordering and preserve generation correctness; bounded retries must never duplicate an accepted build. Rejected/failed commands must exit nonzero. Add fake-daemon or live-isolated regression tests before the smallest fix; recheck the OpenBMC invocation."
 
 [[task]]
 id = "OPENBMC-LIVE-001"
@@ -31,7 +53,7 @@ title = "Build one OpenBMC machine through Yoctui and investigate integration de
 status = "NOT_STARTED"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-ENV-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. Record evidence in docs/testing/openbmc.md."
 

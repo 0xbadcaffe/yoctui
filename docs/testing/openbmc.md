@@ -1,7 +1,8 @@
 # OpenBMC live integration
 
-Status: preflight only; no OpenBMC checkout, initialized workspace or successful
-image build is claimed. Follow-up tasks are OPENBMC-ENV-001 and OPENBMC-LIVE-001.
+Status: environment initialized and live daemon doctor captured. No successful
+image build is claimed. OPENBMC-ENV-001 is complete; two observed Yoctui defects
+must be fixed before OPENBMC-LIVE-001 can run.
 
 ## Planned machine and isolation
 
@@ -13,16 +14,35 @@ not a prebuilt SDK. The
 documents sourcing `setup` from the repository root with a machine and optional
 build directory.
 
-Planned paths, verified absent at preflight:
+Isolated paths (both were absent before setup):
 
 - Source: `/home/bspguy-dev/src/openbmc`
 - Build: `/home/bspguy-dev/src/build-openbmc-romulus`
 
-After resolving storage, clone upstream and record its exact commit and host
-prerequisites here. Initialize using `. setup romulus ../build-openbmc-romulus`.
-Use the current Yoctui executable from that initialized environment, with the
-new build directory explicitly selected. Never point an OpenBMC daemon at the
-Poky build directory. Do not change Poky configuration, parallelism or caches.
+Cloned upstream with `git clone --depth 1` at commit
+`d4fd7d3f54e88e800c0284b753af68a13aabbef6` (197 MiB checkout). Initialized with
+`. setup romulus /home/bspguy-dev/src/build-openbmc-romulus` from its source root.
+Host: Ubuntu 26.04, eight logical CPUs, approximately 15 GiB RAM. Required
+compiler/archive tools and `unshare -Ur true` preflight pass; no sysctl changed.
+Default build parallelism is unchanged.
+
+Live identity: BitBake 2.19.0, MACHINE romulus, DISTRO openbmc-openpower,
+OE-Core series blacksail/wrynose, nine configured layers. Yoctui daemon
+v0.1.65 uses private XDG config/state directories under
+`/home/bspguy-dev/.local/state/yoctui-openbmc-validation` and runtime directory
+`/run/user/1000/yoctui-openbmc-validation`. Its socket is in `yoctui/daemon.sock`
+under that runtime directory. It does not own the Poky workspace.
+
+The [doctor capture](../../artifacts/live-openbmc/romulus/doctor-v0.1.65.txt)
+has SHA-256 `0e138dcbf10e62725e0e5fb699dca7b26de50af3df285c2a164feaf1884789d9`.
+It confirms Current authority and a bounded bridge handshake, not full release
+support or a completed build. The debug candidate's hash is recorded in
+[compact telemetry evidence](compact-telemetry.md#delivery-boundary).
+
+Environment-task verification: 276 UI tests pass after the v0.1.66 governance
+version bump; all 17 cell/text fixture diffs are version-only. Six rasters were
+refreshed, and documentation and roadmap checks pass. Runtime investigation
+continues with the pinned v0.1.65 daemon until its replacement is verified.
 
 ## Storage dependency
 
@@ -45,10 +65,22 @@ The installed release, sources and all Poky data remain untouched. Rebuilding
 the Rust artifacts remains possible from the committed source. No permission
 to delete Poky output is needed for this route.
 
-The initial OpenBMC run must set a conservative disk-stop margin and monitor
-usage; 78 GiB is an initial budget, not a guarantee of full image completion.
+The new OpenBMC local.conf sets STOPTASKS at 15 GiB and HALT at 8 GiB for
+TMPDIR, DL_DIR and SSTATE_DIR; /tmp limits are 1 GiB and 500 MiB respectively.
+Monitor usage; 78 GiB is an initial budget, not a guarantee of full completion.
 If it proves insufficient, stop safely and request additional storage before
 removing any user build output.
+
+## Observed integration defects
+
+- OPENBMC-CAPABILITY-001: daemon startup always passes absent backend probe
+  evidence. BitBake 2.19 therefore cannot resolve build/API capabilities beyond
+  the documented 2.18 version fallback. Fix direct probing with bounded real
+  API evidence, not a permissive version assumption.
+- OPENBMC-CLI-BUILD-001: two invocations of
+  `yoctui daemon build obmc-phosphor-image` rejected StaleGeneration (current
+  generation 5 then 6) despite fresh attaches. Both exited zero. No build was
+  accepted. Test snapshot/attach ordering and rejected-command exit status.
 
 ## Required live evidence
 

@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** OPENBMC-ENV-001
-**Title:** Provision an isolated supported OpenBMC machine workspace
+**ID:** OPENBMC-CAPABILITY-001
+**Title:** Probe actual backend capabilities before resolving newer BitBake environments
 **Status:** IN_PROGRESS
 
-Depends on COMPACT-TELEMETRY-001 (DONE in the v0.1.65 candidate).
-Compact meters and shared task mouse geometry pass 1,520 workspace tests,
-strict Clippy, formatting, 46 bridge tests and documentation checks.
-See [compact telemetry evidence](testing/compact-telemetry.md).
+Depends on OPENBMC-ENV-001 (DONE). OpenBMC revision
+`d4fd7d3f54e88e800c0284b753af68a13aabbef6` is initialized for Romulus;
+an isolated v0.1.65 daemon has Current environment authority and a working
+bridge handshake. See [OpenBMC evidence](testing/openbmc.md).
 
 The initial storage blocker was resolved without deleting Poky: after tests,
 the candidate binary was saved and regenerable Cargo workspace debug artifacts
@@ -15,12 +15,18 @@ were cleaned (79.1 GiB). Root now has 78 GiB free. Preserve all Poky data.
 Establish a disk stop margin and monitor usage; this budget is not a guarantee
 that the full image will fit.
 
-Clone OpenBMC separately, record its revision, initialize Romulus, verify
-Yoctui doctor in that environment, and proceed to OPENBMC-LIVE-001 to build
-`obmc-phosphor-image` through Yoctui and investigate actual integration bugs.
-See [OpenBMC preflight](testing/openbmc.md). No OpenBMC build has run yet.
+Observed defect: `DaemonCompatibilityRuntime::detect` always supplies `None`
+for backend capabilities, leaving BitBake 2.19 build operations unknown outside
+the closed version fallback. Implement bounded read-only capability probing
+with real API evidence, tests first. Preserve unknown on inconclusive probes;
+do not widen the version map or bypass authority to make this build run.
 
-Verification: `./scripts/check-docs.sh`, `./scripts/verify-roadmap.sh`, live
-machine/environment evidence. Full completion also requires fresh source-bound
+Next, OPENBMC-CLI-BUILD-001 fixes repeated StaleGeneration rejections and the
+incorrect zero exit status of rejected `daemon build` commands. Then execute
+OPENBMC-LIVE-001 through Yoctui. No image build has started successfully yet.
+
+Verification: bridge tests, focused daemon compatibility/backend tests, full
+workspace/strict Clippy, docs/roadmap and live authoritative capability recheck.
+Full completion also requires fresh source-bound
 real-Poky performance evidence for the changed candidate. Installed Yoctui
 remains v0.1.64; no new release or successful full completion is claimed.

@@ -5,10 +5,15 @@ meters remain visible in short Dashboard/Tasks workspaces, with shared mouse
 row geometry. 1,520 workspace tests, strict Clippy, formatting, 46 bridge tests
 and documentation checks pass. See [evidence](testing/compact-telemetry.md).
 Installed Yoctui remains v0.1.64; release performance evidence is not refreshed.
-M56 OPENBMC-ENV-001 is IN_PROGRESS. Storage preflight was unblocked by cleaning
+M56 OPENBMC-ENV-001 is DONE: separate Romulus checkout, current live daemon
+authority and doctor evidence exist. OPENBMC-CAPABILITY-001 is IN_PROGRESS;
+OPENBMC-CLI-BUILD-001 and OPENBMC-LIVE-001 remain NOT_STARTED. Real attempts
+exposed absent direct backend probing for BitBake 2.19 and stale-generation
+CLI rejection with a false success exit code. No build was accepted yet.
+Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the
 candidate binary; 78 GiB is now free, with all Poky data untouched. See
-[preflight](testing/openbmc.md). No OpenBMC download/build has completed.
+[evidence](testing/openbmc.md). No OpenBMC image build has completed.
 Packages diagnosis: the
 previously connected v0.1.21 daemon advertised generation-1 negative pkgdata authority, while the generated
 qemux86-64 database is readable and lists 4,387 packages. The installed client
