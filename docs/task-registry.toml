@@ -39,12 +39,12 @@ notes = "v0.1.67: bounded read-only bundled Python probe prepares config, pings 
 id = "OPENBMC-CLI-BUILD-001"
 milestone = "M56"
 title = "Fix daemon build generation handshake and rejected-command exit status"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1288
 required = true
 depends_on = ["OPENBMC-ENV-001"]
 verify = ["cargo test -p yoctui daemon_build", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Two real daemon build attempts for obmc-phosphor-image rejected StaleGeneration (current generation 5 then 6) despite a new snapshot on each connection, and both exited status 0. Inspect attach/snapshot ordering and preserve generation correctness; bounded retries must never duplicate an accepted build. Rejected/failed commands must exit nonzero. Add fake-daemon or live-isolated regression tests before the smallest fix; recheck the OpenBMC invocation."
+notes = "v0.1.70: at most three submissions, refreshing the snapshot only after explicit StaleGeneration rejection and preserving daemon/workspace/compatibility identity. No retry on acceptance, ambiguous I/O, mismatched request IDs, other rejections or protocol errors. Receive phases service pings and bound time/events; detach failure cannot overwrite confirmed acceptance. Five regression tests failed before implementation; six production-CLI/socket test groups now cover retry success/exhaustion, context changes, errors, event flood and accepted-disconnect. 1541 workspace tests (4 existing ignored), 49 bridge tests, strict Clippy, formatting, Ruff/mypy and docs pass. Real v70 CLI against v69 OpenBMC daemon recovered stale generation then rejected invalid/target at attempt 2/3 with exit 1 and no jobs created; capture in artifacts/live-openbmc/romulus/cli-rejection-v0.1.70.json. Actual image remains gated on tool-discovery fix."
 
 [[task]]
 id = "OPENBMC-STARTUP-001"
@@ -72,7 +72,7 @@ notes = "v0.1.69: measured real Romulus inventory 4799 records/1051217 bytes, ju
 id = "OPENBMC-TOOLS-001"
 milestone = "M56"
 title = "Discover tools through canonicalized initialized PATH directories"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 1287
 required = true
 depends_on = ["OPENBMC-ENV-001"]

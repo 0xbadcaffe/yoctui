@@ -12,6 +12,15 @@ preserves each workflow's confirmation boundary.
 
 ## Architectural principles
 
+The daemon-build CLI retains optimistic generation checks. An explicit stale
+rejection permits at most two retries (three total submissions), each after
+refreshing the attached snapshot and confirming unchanged daemon instance,
+workspace identity and compatibility authority. Acceptance, ambiguous I/O,
+other rejections, mismatched request IDs and confirmation requirements never
+trigger automatic resubmission. Receive phases are time/event bounded; protocol
+pings remain serviced while ordinary updates pass through. Detach cleanup cannot
+turn a confirmed accepted build into a reported submission failure.
+
 Initial daemon recipe inventory is an owned, cancellable background scan, not
 part of IPC readiness. It has a ten-minute deadline and a single result slot.
 The daemon publishes the resulting typed Workspace through its bounded journal;

@@ -19,8 +19,12 @@ no owned processes remained. A second attached run exposed the independent
 1 MiB recipe-response overflow. OPENBMC-INVENTORY-001 is DONE in v0.1.69:
 bounded opt-in chunks delivered all 4,799 real OpenBMC recipes and nine layers to
 an attached client. 1,535 workspace tests, 49 bridge tests, strict Clippy,
-formatting, Ruff/mypy and docs pass. OPENBMC-CLI-BUILD-001 is IN_PROGRESS;
-symlinked-tool discovery remains NOT_STARTED before live build.
+formatting, Ruff/mypy and docs pass. OPENBMC-CLI-BUILD-001 is DONE in v0.1.70:
+bounded stale-generation refresh/retry, nonzero rejection status and no duplicate
+resubmission on ambiguous I/O or acceptance. Six real-CLI/socket test groups and
+a live invalid-target rejection pass; 1,541 workspace tests, 49 bridge tests,
+Clippy, formatting, Python checks and docs pass. OPENBMC-TOOLS-001 is IN_PROGRESS
+before the actual image build.
 No image build was accepted yet.
 Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the

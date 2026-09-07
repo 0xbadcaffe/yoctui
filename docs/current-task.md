@@ -1,39 +1,40 @@
 # Current Task
 
-**ID:** OPENBMC-CLI-BUILD-001
-**Title:** Fix daemon build generation handshake and rejected-command exit status
+**ID:** OPENBMC-TOOLS-001
+**Title:** Discover tools through canonicalized initialized PATH directories
 **Status:** IN_PROGRESS
 
-Depends on OPENBMC-ENV-001 (DONE). Startup/capability and large-inventory fixes
-are complete through v0.1.69. The real Romulus daemon delivered all 4,799 recipes
-and nine layers through bounded chunks. Full checks: 1,535 workspace tests,
-49 bridge tests, Clippy, formatting, Ruff/mypy and docs pass. See
-[OpenBMC validation](testing/openbmc.md).
+Depends on OPENBMC-ENV-001 (DONE). Capability, startup, inventory and CLI fixes
+are complete through v0.1.70. All 1,541 workspace tests, 49 bridge tests, Clippy,
+formatting, Ruff/mypy and docs pass. The real CLI recovered stale generation
+and rejected a deliberately invalid target with exit 1 and no jobs created.
+See [OpenBMC validation](testing/openbmc.md).
 
-Two real `yoctui daemon build obmc-phosphor-image` invocations returned
-StaleGeneration and exit status zero. `daemon_start_build` currently sends one
-request using its attached snapshot generation and returns success for any
-CommandResult. Telemetry can advance the journal between attach and command.
-Preserve generation checks: bounded refresh/retry only after explicit stale
-rejection, never after acceptance or ambiguous I/O. Verify unchanged environment
-authority before retrying; rejected/failed outcomes must return nonzero. Tests
-must prove no duplicate accepted builds, bounded retry exhaustion and errors.
-Daemon's command-processing `continue` is inside its inner receive loop, not
-the client-owner loop; do not assume it disconnects rejected clients.
+OpenBMC scripts is a directory symlink to upstream-layers/openembedded-core/scripts.
+Both lexical and canonical devtool --help work, but discover_executable rejects
+noncanonical PATH directories and incorrectly reports the tool absent. Require
+an absolute initialized PATH directory, canonicalize that directory, then join
+the requested tool basename. Preserve existing safe basename-sensitive sibling
+file aliases, executable/file checks and escaping/dangling/relative-path
+rejection. Add tests first; then verify real Devtool, Recipetool and pkgdata-tool
+evidence from a restarted private daemon. Do not widen the final-file alias
+safety policy or strip argv[0] aliases such as bitbake-dumpsig.
 
-The private OpenBMC v0.1.69 daemon PID 2445464 is idle, inventory loaded. Verify
-identity before stopping. Paths and XDG isolation are in the evidence. Source
-revision `d4fd7d3f54e88e800c0284b753af68a13aabbef6`, build
-`/home/bspguy-dev/src/build-openbmc-romulus`, MACHINE romulus, BitBake 2.19.0.
-Do not start the actual image until OPENBMC-TOOLS-001 also passes. Then perform
-OPENBMC-LIVE-001 through Yoctui and investigate real outcomes.
+Private OpenBMC v0.1.69 daemon PID 2445464 is idle, all 4,799 recipes/nine layers
+loaded. Verify identity before stopping. Private XDG paths are in the evidence.
+Source revision d4fd7d3f54e88e800c0284b753af68a13aabbef6, source
+/home/bspguy-dev/src/openbmc, build /home/bspguy-dev/src/build-openbmc-romulus,
+MACHINE romulus, DISTRO openbmc-openpower, BitBake 2.19.0.
 
-Preserve Poky data. Root has about 34 GiB free after compiler checks; clean only
-regenerable agent Cargo outputs after saving the tested binary when needed.
-New OpenBMC disk guards stop scheduling at 15 GiB / halt at 8 GiB free. A shallow
-checkout os-release Git-tag warning remains to inspect during image validation.
+After this fix, execute OPENBMC-LIVE-001 through Yoctui: build
+obmc-phosphor-image, inspect lifecycle/logs/outcomes, packages and rootfs, and
+register/fix real regressions. No image build has been accepted yet.
+Preserve all Poky data. Root has about 26 GiB free after compiler checks; save
+the tested candidate and clean regenerable agent Cargo workspace outputs before
+the image build. New OpenBMC guards stop scheduling at 15 GiB / halt at 8 GiB.
+Inspect the shallow checkout's os-release Git-tag warning during validation.
 
-Verification: `cargo test -p yoctui daemon_build`, full workspace, strict Clippy,
-docs/roadmap, then real image invocation after tool discovery is fixed. Installed
-release remains v0.1.64. Full completion still needs fresh source-bound real-Poky
-performance evidence; no image-build or release completion is claimed.
+Verification: daemon compatibility tests, full workspace, strict Clippy, bridge
+and docs/roadmap checks, and real tool identity/capability capture. Installed
+release remains v0.1.64. Full completion still requires fresh source-bound
+real-Poky performance evidence and all remaining tasks, not fixture-only claims.

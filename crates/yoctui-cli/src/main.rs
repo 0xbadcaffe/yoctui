@@ -127,6 +127,8 @@ mod client_transport;
 #[cfg(unix)]
 mod daemon_bitbake;
 #[cfg(unix)]
+mod daemon_build;
+#[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
 mod daemon_compatibility;
 #[cfg(unix)]
@@ -2266,30 +2268,10 @@ fn daemon_start_build(targets: Vec<String>) -> Result<()> {
         "daemon build requires at least one target"
     );
     let (mut connection, snapshot) = daemon_connection_with_snapshot()?;
-    use yoctui_protocol::daemon::{
-        ClientMessage, CommandRequest, DaemonCommand, RequestId, ServerMessage,
-    };
-    connection.send(&ClientMessage::Command(CommandRequest {
-        request_id: RequestId(1),
-        expected_generation: Some(snapshot.generation),
-        command: DaemonCommand::StartBuild {
-            targets,
-            task: None,
-            force: false,
-        },
-    }))?;
-    loop {
-        match connection.receive::<ServerMessage>()? {
-            ServerMessage::CommandResult(result) => {
-                println!("daemon build: {:?}", result.outcome);
-                break;
-            }
-            ServerMessage::Event(_) => {}
-            response => anyhow::bail!("unexpected daemon build response: {response:?}"),
-        }
-    }
-    connection.send(&ClientMessage::Detach)?;
-    let _ = connection.receive::<ServerMessage>()?;
+    let result = daemon_build::start(&mut connection, snapshot, targets);
+    // Closing this one-shot client is cleanup, not a second build outcome.
+    let _ = connection.send(&yoctui_protocol::daemon::ClientMessage::Detach);
+    println!("daemon build: {:?}", result?);
     Ok(())
 }
 

@@ -8,6 +8,13 @@ treated as proof that an operation or artifact exists.
 
 ## Start a workspace safely
 
+`yoctui daemon build <target>` returns success only after an accepted/completed
+submission, not when the image finishes. A stale snapshot is refreshed and
+retried at most twice while the daemon/workspace/compatibility identity stays
+unchanged. Rejections and transport failures return nonzero. After an ambiguous
+connection failure, inspect daemon status before retrying: the CLI never blindly
+resubmits a possibly accepted build.
+
 Without an initialized environment, start `yoctui` and open **Build environment**.
 Press `e` for the guided Source/Build/Script form. Select Source or Build with
 Tab, then `b` to browse directories, or `e` to type/paste a path. In the browser,

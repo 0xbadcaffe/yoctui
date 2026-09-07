@@ -1,0 +1,11 @@
+{
+  "client_version": "yoctui 0.1.70",
+  "daemon_version": "0.1.69",
+  "machine": "romulus",
+  "target": "invalid/target",
+  "purpose": "Validation rejects this target before allocating or spawning a build job",
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "Error: daemon build rejected (LimitExceeded): Configuration: invalid build target. pass one or more BitBake target names (attempt 2/3)\n",
+  "jobs_after": []
+}

@@ -1,8 +1,8 @@
 # OpenBMC live integration
 
-Status: environment, direct-capability, startup-responsiveness and bounded
-inventory tasks complete. No image build is claimed. CLI generation/error
-status and symlinked tool discovery remain before OPENBMC-LIVE-001 can run.
+Status: environment, direct-capability, startup-responsiveness, bounded
+inventory and CLI submission tasks complete. No image build is claimed.
+Symlinked tool discovery remains before OPENBMC-LIVE-001 can run.
 
 ## Planned machine and isolation
 
@@ -135,8 +135,6 @@ strict Clippy, formatting and documentation checks pass. The cleanup test's
 readiness marker was moved inside its Python try/finally to remove a test-only
 race between advertising readiness and installing the cleanup scope.
 
-### Image-build acceptance
-
 ### Bounded inventory candidate v0.1.69
 
 The [size measurement](../../artifacts/live-openbmc/romulus/inventory-size.json)
@@ -163,6 +161,30 @@ because this shallow checkout has no reachable Git tag; inspect this during
 image-build validation rather than hiding it.
 
 ### Remaining image-build acceptance
+
+### CLI submission candidate v0.1.70
+
+Five production-CLI regression cases failed before the change. Six socket-backed
+test groups now cover stale refresh/retry, exhaustion, rejection exit status,
+wrong request IDs, changed workspace, ambiguous I/O, protocol errors, bounded
+event flooding, pings, and accepted-build cleanup disconnects. The CLI permits
+three total submissions only after explicit stale rejection and an unchanged
+daemon/workspace/compatibility snapshot identity; other failure paths never
+automatically resubmit.
+
+The [live rejection capture](../../artifacts/live-openbmc/romulus/cli-rejection-v0.1.70.json)
+records v0.1.70 talking to the idle v0.1.69 OpenBMC daemon. `invalid/target` is
+rejected by BuildRequest validation before a job can be allocated. The first
+attempt encountered stale generation; after refresh, attempt 2/3 reported the
+validation error with exit code 1. The daemon retained zero jobs. This validates
+the real CLI dispatch/error path, not image-build acceptance.
+
+All 1,541 workspace tests (four existing ignored), 49 bridge tests, strict
+Clippy, formatting, Ruff/mypy and documentation checks pass. Fixture/raster
+changes are version-only. Actual obmc-phosphor-image submission follows the
+symlinked-tool discovery fix.
+
+### Image validation still required
 
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.
