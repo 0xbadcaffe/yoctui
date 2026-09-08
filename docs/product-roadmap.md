@@ -5,11 +5,17 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 ## Product completion rule
 
 v0.1.87 closes real OpenBMC integration with actual image/artifact/lifecycle/
-inspection evidence. RELEASE-PERF-REFRESH-001 is current: the unchanged
+inspection evidence. RELEASE-PERF-REFRESH-001 is pending: the unchanged
 real-Poky source validator rejects historical v0.1.64 measurements after runtime
 changes. Fresh supported-kernel saturation evidence must use an isolated build
 without cleaning any existing Poky data. All release thresholds remain in force;
 the complete repository gate has not passed.
+
+v0.1.88 fresh real-Poky evidence fails combined CPU at 1.0334662486% versus
+1.00% over 360 samples, while latency, saturation, continuity and cancellation
+pass. RELEASE-DAEMON-CPU-001 is current for separately measured profiling,
+a bounded correction and fresh unprofiled acceptance. The parent evidence
+refresh depends on it; failed evidence remains preserved and thresholds unchanged.
 
 v0.1.86 completes OPENBMC-ROOTFS-SOURCES-001: bounded asynchronous exact-image
 queries honor the daemon's selected command/API authority. Actual rootfs and
@@ -1222,6 +1228,7 @@ CLI submission, symlinked-tool discovery, host Python and initial attachment
 tasks are DONE through v0.1.73. Package mapping and attached rootfs-source
 repairs passed real UI rechecks in v0.1.85/v0.1.86; OPENBMC-LIVE-001 is DONE
 in v0.1.87. RELEASE-PERF-REFRESH-001 retains the source-bound release follow-up.
+Its v88 CPU finding is separately registered as RELEASE-DAEMON-CPU-001.
 OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76: typed aggregate counters survive
 task-event compaction, with baseline tests and real attached-counter verification.
 DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78: shared checked allocation preserves

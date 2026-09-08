@@ -1,5 +1,19 @@
 # Yoctui Implementation Status
 
+v0.1.88 preserves a failed fresh real-Poky performance observation and registers
+RELEASE-DAEMON-CPU-001 before runtime changes. Combined CPU is 1.0334662486%
+against the unchanged 1.00% ceiling over 360 samples; latency, saturation,
+continuity and cancellation pass. The historical canonical evidence remains
+unchanged. The capture harness now waits read-only for asynchronous workspace
+metadata; three failed-first regressions and actual no-command startup probes
+verify this correction. Exact source/binary provenance and results are in
+docs/performance.md. RELEASE-PERF-REFRESH-001 waits for the CPU task. Runtime
+profiling and correction are not yet implemented. All 1595 workspace tests/
+doc-tests, 52 bridge tests, seven readiness/version/regression script tests,
+strict Clippy, fmt, docs, 705-task roadmap, version policy and six rasters pass.
+All 17 golden diffs are version digits only. Exact workspace-tested debug and
+measured release candidates are separately preserved in docs/current-task.md.
+
 v0.1.87 finalizes OPENBMC-LIVE-001: the real image, artifacts and all separately
 registered integration repairs now have live evidence. No firmware boot is
 claimed; the upstream render-group warning remains disclosed. The completion

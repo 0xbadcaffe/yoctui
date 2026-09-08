@@ -1,0 +1,27 @@
+Role: functional read-only startup diagnostic, NOT performance evidence.
+Date: 2026-09-08
+Binary: /home/bspguy-dev/.local/state/yoctui-v87-validated.XKyMwk/yoctui
+SHA-256: e0736f32129210142a9409047047eea62f206e71f10761d508c9f485c5ba640c
+Build: /home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs
+Poky: /home/bspguy-dev/src/poky, supported 6.0.2 source repositories
+Probe: /tmp/yoctui-v88-readonly-capture-probe.py
+
+The probe imports the actual capture script. ProtocolClient.send rejects every
+message with type command before transmission. IPC.Observation construction is
+replaced by an intentional READ_ONLY_STOP exception, before preparatory/build
+commands. The capture's normal finally block closes its observer and stops its
+own private daemon. No benchmark, cleansstate, or build command was sent.
+
+Before readiness repair:
+  /tmp/yoctui-v88-readonly-capture-probe.log
+  RuntimeError: daemon workspace omitted BitBake parallelism variables
+
+After readiness repair:
+  /tmp/yoctui-v88-readonly-capture-probe-fixed.log
+  RuntimeError: READ_ONLY_STOP: startup metadata was ready; no command sent
+
+Both probe invocations deliberately exit nonzero. The second reaches the
+read-only stop boundary after successful metadata acquisition; it is not a
+failed CPU measurement. Three readiness tests first failed against immediate
+snapshot-only acquisition and now pass, including delayed metadata, identity,
+missing values, failure/EOF, timeout, heartbeat and message-bound cases.

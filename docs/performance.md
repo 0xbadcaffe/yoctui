@@ -151,6 +151,53 @@ labelled as fixture evidence or inferred from a deterministic generator.
 
 ### Supported real-Poky saturation evidence
 
+RELEASE-PERF-REFRESH-001 is refreshing the source-bound observation after the
+OpenBMC runtime repairs. Historical v0.1.64 evidence does not satisfy current
+source hashes; no threshold is relaxed. The new isolated fixture is
+`/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs`, initialized from the
+existing supported Poky checkout. Read-only `bitbake -e linux-yocto` confirms
+MACHINE `qemux86-64`, DISTRO `poky`, BitBake 2.18.0 and kernel 6.18.24+git.
+TOPDIR, TMPDIR, WORKDIR, DL_DIR, SSTATE_DIR and the sstate cleanup path pattern
+all resolve inside this new fixture. Existing source/sstate caches are read
+mirrors only; separate shared bare Git repositories read the old object pools.
+The normal build and the old `/tmp/yoctui-m52-poky.nHLLjU` fixture are preserved.
+Offline mode, eight build/make workers, STOPTASKS at 15 GiB and HALT at 8 GiB
+are configured only in the new fixture. The v0.1.88 release build passed;
+the exact preserved binary has SHA-256
+`be5fa7261cd3ebaf7f6f1786eabb46736419d043086d0e92224f3cc63f48b510`.
+
+The [fresh v88 capture](../artifacts/performance/real-poky/v88-linux-yocto-do-compile.json)
+completed 360 samples after ten seconds of warmup on September 8, 2026, but
+**failed** the unchanged combined CPU gate: 1.0334662486% > 1.00% of one
+logical CPU. Daemon and client independently trimmed means are 0.5872427701%
+and 0.4039586047%; adding those trimmed means is not the combined metric,
+which trims the per-sample sums. Host utilization was 99.791% of capacity and
+the BitBake tree used 304.048% of one logical CPU. Input-to-frame p95 was
+4.595 ms; build/cancel acknowledgements were 3.619/3.608 ms, fresh attachment
+40.886 ms. Queue maximum was 87/256 with no drops, resynchronization or backend
+disconnect; reconnect and owned-job cancellation passed. No Cargo or profiler
+ran during this measurement. The capture completed its own process cleanup.
+The [failed-candidate manifest](../artifacts/performance/real-poky/v88-failed-manifest.json)
+and [source patch](../artifacts/performance/real-poky/v88-source.patch) preserve
+exact provenance without replacing the historical canonical evidence.
+RELEASE-DAEMON-CPU-001 is the separately registered active investigation before
+runtime edits. Profiles are diagnostic only; acceptance requires a new
+unprofiled release observation. The old fixture used tmpfs and the new one
+uses ext4, so this comparison alone does not establish a code regression.
+
+The first read-only capture-startup probe (preserved v87 production code,
+all daemon commands prohibited) exposed a harness assumption: attachment can
+precede asynchronous initial workspace publication. The capture now waits for
+actual workspace variables with a 300-second deadline and 8192-message bound,
+responds to heartbeat pings, rejects changed instance snapshots, and surfaces
+metadata failure, missing variables, EOF and timeout. Three failed-first
+regression tests cover these cases and run in the real-Poky verifier. This
+readiness work occurs before any build command or measurement; warmup, workload
+trigger, sampling and all performance/source-validation thresholds are unchanged.
+The [actual read-only recheck](../artifacts/performance/real-poky/v88-readonly-startup-probe.txt)
+reached its intentional stop after metadata readiness and before any command.
+It is functional evidence only, not a release CPU or latency measurement.
+
 The retained release observation uses Poky 6.0.2, `qemux86-64`, distro
 `poky`, `BB_NUMBER_THREADS=8`, and `PARALLEL_MAKE=-j 8`. Through the isolated
 production daemon it runs `linux-yocto:do_cleansstate`, starts

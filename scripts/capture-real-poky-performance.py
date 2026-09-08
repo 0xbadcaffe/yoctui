@@ -223,6 +223,69 @@ def git_identity(path: Path) -> dict[str, object]:
     }
 
 
+def wait_for_initial_workspace(client, snapshot, timeout=300.0):
+    """Read-only readiness, outside measurement; never guess missing metadata."""
+    instance = snapshot.get("daemon_instance_id")
+
+    def workspace_variables(event):
+        if event.get("type") != "workspace":
+            return None
+        variables = event.get("data", {}).get("variables", {})
+        if not isinstance(variables, dict) or any(
+            not isinstance(variables.get(key), str) or not variables[key].strip()
+            for key in ("BB_NUMBER_THREADS", "PARALLEL_MAKE")
+        ):
+            raise RuntimeError("daemon workspace omitted BitBake parallelism variables")
+        return {key: value for key, value in variables.items() if isinstance(value, str)}
+
+    def check_log(log):
+        message = log.get("message", "")
+        if isinstance(message, str) and message.startswith("Initial metadata "):
+            raise RuntimeError(f"real-Poky startup metadata failed: {message[:1024]}")
+
+    def from_snapshot(current):
+        if current.get("daemon_instance_id") != instance:
+            raise RuntimeError("real-Poky daemon instance changed during metadata startup")
+        for event in current.get("build_events", []):
+            variables = workspace_variables(event)
+            if variables is not None:
+                return variables
+        for log in current.get("recent_logs", []):
+            check_log(log)
+        return None
+
+    variables = from_snapshot(snapshot)
+    if variables is not None:
+        return variables
+    deadline = time.monotonic() + timeout
+    remaining_messages = 8192
+    while remaining_messages:
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError("real-Poky initial workspace readiness timed out")
+        received = client.receive(min(0.5, remaining))
+        if received is None:
+            continue
+        remaining_messages -= 1
+        message = received[0]
+        kind = message.get("type")
+        if kind == "ping":
+            client.send({"type": "pong", "nonce": message["nonce"]})
+        elif kind in {"snapshot", "attached"}:
+            variables = from_snapshot(message["snapshot"] if kind == "attached" else message)
+        elif kind == "event":
+            event = message.get("event", {})
+            if event.get("type") == "build":
+                variables = workspace_variables(event.get("data", {}))
+            elif event.get("type") == "log":
+                check_log(event.get("data", {}))
+        elif kind in {"error", "resync_required", "detaching", "shutting_down"}:
+            raise RuntimeError(f"real-Poky metadata startup interrupted: {str(message)[:1024]}")
+        if variables is not None:
+            return variables
+    raise RuntimeError("real-Poky initial workspace readiness exceeded the message bound")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--binary", type=Path, required=True)
@@ -325,14 +388,9 @@ def main() -> int:
         generation = snapshot.get("generation")
         if not isinstance(generation, int):
             raise RuntimeError("daemon snapshot omitted generation")
-        workspace_variables: dict[str, str] = {}
-        for build_event in snapshot.get("build_events", []):
-            if build_event.get("type") == "workspace":
-                variables = build_event.get("data", {}).get("variables", {})
-                if isinstance(variables, dict):
-                    workspace_variables = {
-                        str(key): str(value) for key, value in variables.items()
-                    }
+        if snapshot.get("daemon_instance_id") != daemon_runtime_record["daemon_instance_id"]:
+            raise RuntimeError("real-Poky initial snapshot belongs to another daemon instance")
+        workspace_variables = wait_for_initial_workspace(observer, snapshot)
         parallelism = {
             key: workspace_variables.get(key)
             for key in ("BB_NUMBER_THREADS", "PARALLEL_MAKE")

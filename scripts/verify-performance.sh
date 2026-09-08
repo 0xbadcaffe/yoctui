@@ -1016,6 +1016,7 @@ PY
 }
 
 verify_real_poky() {
+  python3 -m unittest scripts/test_capture_real_poky_performance.py
   python3 - <<'PY'
 from pathlib import Path
 import hashlib

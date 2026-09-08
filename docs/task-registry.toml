@@ -204,12 +204,23 @@ notes = "v0.1.87 integration handoff: fifth real Romulus obmc-phosphor-image att
 id = "RELEASE-PERF-REFRESH-001"
 milestone = "M56"
 title = "Refresh source-bound real-Poky performance evidence after OpenBMC integration"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 1279
 required = true
-depends_on = ["OPENBMC-LIVE-001"]
+depends_on = ["OPENBMC-LIVE-001", "RELEASE-DAEMON-CPU-001"]
 verify = ["./scripts/verify-performance.sh --real-poky-evidence", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "v0.1.87 registration: retained real-Poky v64 evidence is historical after runtime changes; the unchanged verifier reports real-Poky source digest mismatch: crates/yoctui-app/src/lib.rs. Produce a fresh release-binary/source-bound supported Poky 6.0.2 linux-yocto do_compile capture with the existing warmup/window, saturation, one-percent CPU, latency, continuity, cancellation and source-provenance thresholds. Preserve prior evidence/history and every existing Poky build/cache. Use a newly initialized isolated build with its own writable TMPDIR/SSTATE_DIR, existing caches only as read sources, and explicit disk/memory headroom; daemon-owned cleansstate may target only that new fixture. Never clean the normal build or old performance fixture. Relevant files: real-poky evidence/manifest and docs/performance.md, docs/testing/openbmc.md, status/roadmap/current task; capture scripts only if an independently reproduced harness defect requires a scoped repair. DONE requires actual sustained live evidence and the unchanged verifier passing, not hash relabeling, mocked evidence or lowered thresholds. Then run the full completion gate; a clean worktree may be needed to preserve user-owned untracked captures without confusing version-baseline selection."
+
+[[task]]
+id = "RELEASE-DAEMON-CPU-001"
+milestone = "M56"
+title = "Profile and correct real-build runtime CPU above the release budget"
+status = "IN_PROGRESS"
+priority = 1280
+required = true
+depends_on = ["OPENBMC-LIVE-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-performance.sh --real-poky-evidence", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.88 split before runtime implementation: actual 360-second linux-yocto do_compile capture fails unchanged combined CPU gate at 1.0334662486% > 1.00%; daemon trimmed 0.5872427701%, client 0.4039586047%. Combined metric trims per-sample sums, not independently trimmed means. Preserve failed record, source patch and manifest under artifacts/performance/real-poky/v88-*. Readiness harness repair is failed-first tested and precedes measurement. Profile the preserved v88 release binary in a separately labeled real workload, identify a measured runtime hotspot, add focused failure/safety regressions and make one bounded correction in relevant daemon/backend scheduling or identified runtime source only. Do not assume code regression versus historical tmpfs evidence on a different fixture. DONE requires focused tests, full baseline and fresh unprofiled exact-release source-bound capture passing unchanged CPU, latency, continuity, saturation and cancellation gates. Use only new fixture /home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs for daemon-owned kernel cleansstate/compile. Preserve all original Poky/OpenBMC data, failed evidence and normal installation; no Cargo/profiler during acceptance measurement. Required docs: performance, architecture if changed, status, roadmap and current task. Parent release evidence refresh waits for this correction; no lowering thresholds or relabeling evidence."
 
 [[task]]
 id = "RELEASE-README-001"

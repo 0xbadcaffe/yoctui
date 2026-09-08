@@ -1,0 +1,451 @@
+diff --git a/Cargo.lock b/Cargo.lock
+index edacebb..87e5929 100644
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -2319 +2319 @@ name = "yoctui"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -2344 +2344 @@ name = "yoctui-app"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -2354 +2354 @@ name = "yoctui-bitbake"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -2370 +2370 @@ name = "yoctui-e2e"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -2382 +2382 @@ name = "yoctui-model"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -2395 +2395 @@ name = "yoctui-protocol"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -2407 +2407 @@ name = "yoctui-shell"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -2414 +2414 @@ name = "yoctui-ui"
+-version = "0.1.87"
++version = "0.1.88"
+diff --git a/Cargo.toml b/Cargo.toml
+index 14afc82..ec402f3 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -11 +11 @@ resolver = "2"
+-version = "0.1.87"
++version = "0.1.88"
+diff --git a/crates/yoctui-app/Cargo.toml b/crates/yoctui-app/Cargo.toml
+index d880ba3..cace9b1 100644
+--- a/crates/yoctui-app/Cargo.toml
++++ b/crates/yoctui-app/Cargo.toml
+@@ -13,3 +13,3 @@ publish = ["crates-io"]
+-yoctui-bitbake = { version = "0.1.87", path = "../yoctui-bitbake" }
+-yoctui-model = { version = "0.1.87", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.87", path = "../yoctui-protocol" }
++yoctui-bitbake = { version = "0.1.88", path = "../yoctui-bitbake" }
++yoctui-model = { version = "0.1.88", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.88", path = "../yoctui-protocol" }
+diff --git a/crates/yoctui-bitbake/Cargo.toml b/crates/yoctui-bitbake/Cargo.toml
+index fad59a8..6d92d42 100644
+--- a/crates/yoctui-bitbake/Cargo.toml
++++ b/crates/yoctui-bitbake/Cargo.toml
+@@ -16,2 +16,2 @@ async-trait.workspace = true
+-yoctui-model = { version = "0.1.87", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.87", path = "../yoctui-protocol" }
++yoctui-model = { version = "0.1.88", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.88", path = "../yoctui-protocol" }
+diff --git a/crates/yoctui-cli/Cargo.toml b/crates/yoctui-cli/Cargo.toml
+index b0b1924..3c4e248 100644
+--- a/crates/yoctui-cli/Cargo.toml
++++ b/crates/yoctui-cli/Cargo.toml
+@@ -20,5 +20,5 @@ regex.workspace = true
+-yoctui-app = { version = "0.1.87", path = "../yoctui-app" }
+-yoctui-bitbake = { version = "0.1.87", path = "../yoctui-bitbake" }
+-yoctui-model = { version = "0.1.87", path = "../yoctui-model" }
+-yoctui-protocol = { version = "0.1.87", path = "../yoctui-protocol" }
+-yoctui-ui = { version = "0.1.87", path = "../yoctui-ui" }
++yoctui-app = { version = "0.1.88", path = "../yoctui-app" }
++yoctui-bitbake = { version = "0.1.88", path = "../yoctui-bitbake" }
++yoctui-model = { version = "0.1.88", path = "../yoctui-model" }
++yoctui-protocol = { version = "0.1.88", path = "../yoctui-protocol" }
++yoctui-ui = { version = "0.1.88", path = "../yoctui-ui" }
+@@ -40 +40 @@ async-trait.workspace = true
+-yoctui-bitbake = { version = "0.1.87", path = "../yoctui-bitbake", features = ["test-fixtures"] }
++yoctui-bitbake = { version = "0.1.88", path = "../yoctui-bitbake", features = ["test-fixtures"] }
+diff --git a/crates/yoctui-e2e/Cargo.toml b/crates/yoctui-e2e/Cargo.toml
+index d9e6d86..feb12d9 100644
+--- a/crates/yoctui-e2e/Cargo.toml
++++ b/crates/yoctui-e2e/Cargo.toml
+@@ -14,3 +14,3 @@ ratatui.workspace = true
+-yoctui-app = { version = "0.1.87", path = "../yoctui-app" }
+-yoctui-model = { version = "0.1.87", path = "../yoctui-model" }
+-yoctui-ui = { version = "0.1.87", path = "../yoctui-ui" }
++yoctui-app = { version = "0.1.88", path = "../yoctui-app" }
++yoctui-model = { version = "0.1.88", path = "../yoctui-model" }
++yoctui-ui = { version = "0.1.88", path = "../yoctui-ui" }
+diff --git a/crates/yoctui-protocol/Cargo.toml b/crates/yoctui-protocol/Cargo.toml
+index f6daf62..ae15b72 100644
+--- a/crates/yoctui-protocol/Cargo.toml
++++ b/crates/yoctui-protocol/Cargo.toml
+@@ -20 +20 @@ proptest.workspace = true
+-yoctui-model = { version = "0.1.87", path = "../yoctui-model" }
++yoctui-model = { version = "0.1.88", path = "../yoctui-model" }
+diff --git a/crates/yoctui-ui/Cargo.toml b/crates/yoctui-ui/Cargo.toml
+index e1f28f5..bdf7afc 100644
+--- a/crates/yoctui-ui/Cargo.toml
++++ b/crates/yoctui-ui/Cargo.toml
+@@ -13,2 +13,2 @@ publish = ["crates-io"]
+-yoctui-app = { version = "0.1.87", path = "../yoctui-app" }
+-yoctui-model = { version = "0.1.87", path = "../yoctui-model" }
++yoctui-app = { version = "0.1.88", path = "../yoctui-app" }
++yoctui-model = { version = "0.1.88", path = "../yoctui-model" }
+@@ -25 +25 @@ tui-tree-widget.workspace = true
+-yoctui-protocol = { version = "0.1.87", path = "../yoctui-protocol" }
++yoctui-protocol = { version = "0.1.88", path = "../yoctui-protocol" }
+diff --git a/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells b/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells
+index 353f121..c598100 100644
+--- a/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✓1: 1:R1:u1:n1:n1:i1:n1:g3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✓1: 1:R1:u1:n1:n1:i1:n1:g3:│
+diff --git a/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.txt b/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.txt
+index aebc2d0..a0ee942 100644
+--- a/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.txt
++++ b/crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.txt
+@@ -2 +2 @@
+-│yoctui v0.1.87  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
++│yoctui v0.1.88  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+diff --git a/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells b/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells
+index fd3106b..036ccd9 100644
+--- a/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
+diff --git a/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt b/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt
+index eaebc90..f7239ca 100644
+--- a/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt
++++ b/crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.txt
+@@ -2 +2 @@
+-│yoctui v0.1.87  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
++│yoctui v0.1.88  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+diff --git a/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells b/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells
+index 59e5d60..8c93ff4 100644
+--- a/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:✕1: 1:F1:a1:i1:l1:e1:d1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✕1: 1:F1:a1:i1:l1:e1:d3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:✕1: 1:F1:a1:i1:l1:e1:d1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✕1: 1:F1:a1:i1:l1:e1:d3:│
+diff --git a/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt b/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt
+index 58c181a..658eb65 100644
+--- a/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt
++++ b/crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.txt
+@@ -2 +2 @@
+-│yoctui v0.1.87  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64          Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
++│yoctui v0.1.88  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64          Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
+diff --git a/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells b/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells
+index 55cb484..8ff981b 100644
+--- a/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
+diff --git a/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt b/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt
+index 20098d7..0bd92a8 100644
+--- a/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt
++++ b/crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.txt
+@@ -2 +2 @@
+-│yoctui v0.1.87  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
++│yoctui v0.1.88  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+diff --git a/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells b/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells
+index 778b0cd..c31b44e 100644
+--- a/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
+diff --git a/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt b/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt
+index 4eb18a0..7b22fd1 100644
+--- a/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt
++++ b/crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.txt
+@@ -2 +2 @@
+-│yoctui v0.1.87  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
++│yoctui v0.1.88  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+diff --git a/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells b/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells
+index 193a06b..755119a 100644
+--- a/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
+diff --git a/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt b/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt
+index 71b1911..0b09cbe 100644
+--- a/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt
++++ b/crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.txt
+@@ -2 +2 @@
+-│yoctui v0.1.87  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
++│yoctui v0.1.88  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+diff --git a/crates/yoctui-ui/tests/golden/literal-reference-160x48.cells b/crates/yoctui-ui/tests/golden/literal-reference-160x48.cells
+index ba0a683..605c727 100644
+--- a/crates/yoctui-ui/tests/golden/literal-reference-160x48.cells
++++ b/crates/yoctui-ui/tests/golden/literal-reference-160x48.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✓1: 1:R1:u1:n1:n1:i1:n1:g3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✓1: 1:R1:u1:n1:n1:i1:n1:g3:│
+diff --git a/crates/yoctui-ui/tests/golden/target-active-tasks-160x50.cells b/crates/yoctui-ui/tests/golden/target-active-tasks-160x50.cells
+index 8b95277..adc03fc 100644
+--- a/crates/yoctui-ui/tests/golden/target-active-tasks-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/target-active-tasks-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✓1: 1:R1:u1:n1:n1:i1:n1:g3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✓1: 1:R1:u1:n1:n1:i1:n1:g3:│
+diff --git a/crates/yoctui-ui/tests/golden/target-daemon-reconnecting-160x50.cells b/crates/yoctui-ui/tests/golden/target-daemon-reconnecting-160x50.cells
+index 020829b..1da4cff 100644
+--- a/crates/yoctui-ui/tests/golden/target-daemon-reconnecting-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/target-daemon-reconnecting-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:…1: 1:S1:y1:n1:c1:i1:n1:g1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:U1:n1:a1:v1:a1:i1:l1:a1:b1:l1:e3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:▶1: 1:R1:u1:n1:n1:i1:n1:g1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:…1: 1:S1:y1:n1:c1:i1:n1:g1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:U1:n1:a1:v1:a1:i1:l1:a1:b1:l1:e3:│
+diff --git a/crates/yoctui-ui/tests/golden/target-failed-task-160x50.cells b/crates/yoctui-ui/tests/golden/target-failed-task-160x50.cells
+index 1a59879..241edc4 100644
+--- a/crates/yoctui-ui/tests/golden/target-failed-task-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/target-failed-task-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:✕1: 1:F1:a1:i1:l1:e1:d1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✕1: 1:F1:a1:i1:l1:e1:d3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:✕1: 1:F1:a1:i1:l1:e1:d1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:✕1: 1:F1:a1:i1:l1:e1:d3:│
+diff --git a/crates/yoctui-ui/tests/golden/target-idle-dashboard-160x50.cells b/crates/yoctui-ui/tests/golden/target-idle-dashboard-160x50.cells
+index 68364b9..122f8c5 100644
+--- a/crates/yoctui-ui/tests/golden/target-idle-dashboard-160x50.cells
++++ b/crates/yoctui-ui/tests/golden/target-idle-dashboard-160x50.cells
+@@ -4 +4 @@ S|3:┌3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:─3:
+-S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:71: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
++S|3:│1:y1:o1:c1:t1:u1:i1: 1:v1:01:.1:11:.1:81:81: 1: 3:•1: 1: 1:P1:r1:o1:j1:e1:c1:t1::1: 1:y1:o1:c1:t1:o1: 1: 3:•1: 1: 3:–1: 1:I1:d1:l1:e1: 1: 3:•1: 1: 1:T1:a1:r1:g1:e1:t1::1: 1:c1:o1:r1:e1:-1:i1:m1:a1:g1:e1:-1:m1:i1:n1:i1:m1:a1:l1: 1: 3:•1: 1: 1:M1:a1:c1:h1:i1:n1:e1::1: 1:q1:e1:m1:u1:x1:81:61:-1:61:41: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1: 1:D1:a1:e1:m1:o1:n1::1: 3:✓1: 1:C1:o1:n1:n1:e1:c1:t1:e1:d1:/1:L1:o1:c1:a1:l1: 1: 3:•1: 1: 1:B1:i1:t1:B1:a1:k1:e1::1: 3:–1: 1:E1:x1:i1:t1:e1:d3:│
+diff --git a/fuzz/Cargo.lock b/fuzz/Cargo.lock
+index 9a0c566..910839a 100644
+--- a/fuzz/Cargo.lock
++++ b/fuzz/Cargo.lock
+@@ -347 +347 @@ name = "yoctui-model"
+-version = "0.1.87"
++version = "0.1.88"
+@@ -358 +358 @@ name = "yoctui-protocol"
+-version = "0.1.87"
++version = "0.1.88"
+diff --git a/fuzz/Cargo.toml b/fuzz/Cargo.toml
+index 80246e0..111e1d9 100644
+--- a/fuzz/Cargo.toml
++++ b/fuzz/Cargo.toml
+@@ -12,2 +12,2 @@ libfuzzer-sys = "0.4"
+-yoctui-model = { version = "0.1.87", path = "../crates/yoctui-model" }
+-yoctui-protocol = { version = "0.1.87", path = "../crates/yoctui-protocol" }
++yoctui-model = { version = "0.1.88", path = "../crates/yoctui-model" }
++yoctui-protocol = { version = "0.1.88", path = "../crates/yoctui-protocol" }
+diff --git a/scripts/capture-real-poky-performance.py b/scripts/capture-real-poky-performance.py
+index 95b3432..d81e1bc 100755
+--- a/scripts/capture-real-poky-performance.py
++++ b/scripts/capture-real-poky-performance.py
+@@ -225,0 +226,63 @@ def git_identity(path: Path) -> dict[str, object]:
++def wait_for_initial_workspace(client, snapshot, timeout=300.0):
++    """Read-only readiness, outside measurement; never guess missing metadata."""
++    instance = snapshot.get("daemon_instance_id")
++
++    def workspace_variables(event):
++        if event.get("type") != "workspace":
++            return None
++        variables = event.get("data", {}).get("variables", {})
++        if not isinstance(variables, dict) or any(
++            not isinstance(variables.get(key), str) or not variables[key].strip()
++            for key in ("BB_NUMBER_THREADS", "PARALLEL_MAKE")
++        ):
++            raise RuntimeError("daemon workspace omitted BitBake parallelism variables")
++        return {key: value for key, value in variables.items() if isinstance(value, str)}
++
++    def check_log(log):
++        message = log.get("message", "")
++        if isinstance(message, str) and message.startswith("Initial metadata "):
++            raise RuntimeError(f"real-Poky startup metadata failed: {message[:1024]}")
++
++    def from_snapshot(current):
++        if current.get("daemon_instance_id") != instance:
++            raise RuntimeError("real-Poky daemon instance changed during metadata startup")
++        for event in current.get("build_events", []):
++            variables = workspace_variables(event)
++            if variables is not None:
++                return variables
++        for log in current.get("recent_logs", []):
++            check_log(log)
++        return None
++
++    variables = from_snapshot(snapshot)
++    if variables is not None:
++        return variables
++    deadline = time.monotonic() + timeout
++    remaining_messages = 8192
++    while remaining_messages:
++        remaining = deadline - time.monotonic()
++        if remaining <= 0:
++            raise RuntimeError("real-Poky initial workspace readiness timed out")
++        received = client.receive(min(0.5, remaining))
++        if received is None:
++            continue
++        remaining_messages -= 1
++        message = received[0]
++        kind = message.get("type")
++        if kind == "ping":
++            client.send({"type": "pong", "nonce": message["nonce"]})
++        elif kind in {"snapshot", "attached"}:
++            variables = from_snapshot(message["snapshot"] if kind == "attached" else message)
++        elif kind == "event":
++            event = message.get("event", {})
++            if event.get("type") == "build":
++                variables = workspace_variables(event.get("data", {}))
++            elif event.get("type") == "log":
++                check_log(event.get("data", {}))
++        elif kind in {"error", "resync_required", "detaching", "shutting_down"}:
++            raise RuntimeError(f"real-Poky metadata startup interrupted: {str(message)[:1024]}")
++        if variables is not None:
++            return variables
++    raise RuntimeError("real-Poky initial workspace readiness exceeded the message bound")
++
++
+@@ -328,8 +391,3 @@ def main() -> int:
+-        workspace_variables: dict[str, str] = {}
+-        for build_event in snapshot.get("build_events", []):
+-            if build_event.get("type") == "workspace":
+-                variables = build_event.get("data", {}).get("variables", {})
+-                if isinstance(variables, dict):
+-                    workspace_variables = {
+-                        str(key): str(value) for key, value in variables.items()
+-                    }
++        if snapshot.get("daemon_instance_id") != daemon_runtime_record["daemon_instance_id"]:
++            raise RuntimeError("real-Poky initial snapshot belongs to another daemon instance")
++        workspace_variables = wait_for_initial_workspace(observer, snapshot)
+diff --git a/scripts/test_capture_real_poky_performance.py b/scripts/test_capture_real_poky_performance.py
+new file mode 100644
+index 0000000..a2a0550
+--- /dev/null
++++ b/scripts/test_capture_real_poky_performance.py
+@@ -0,0 +1,111 @@
++"""Readiness regressions; these fixtures never represent performance evidence."""
++
++from __future__ import annotations
++
++import importlib.util
++from pathlib import Path
++import unittest
++from unittest.mock import patch
++
++SPEC = importlib.util.spec_from_file_location(
++    "capture_real_poky", Path(__file__).with_name("capture-real-poky-performance.py")
++)
++assert SPEC and SPEC.loader
++CAPTURE = importlib.util.module_from_spec(SPEC)
++SPEC.loader.exec_module(CAPTURE)
++VARIABLES = {"BB_NUMBER_THREADS": "8", "PARALLEL_MAKE": "-j 8"}
++WORKSPACE = {"type": "workspace", "data": {"variables": VARIABLES}}
++
++
++class Client:
++    def __init__(self, messages=(), failure=None):
++        self.messages = iter(messages)
++        self.failure = failure
++        self.sent = []
++        self.reads = 0
++
++    def receive(self, timeout):
++        assert 0 < timeout <= 0.5
++        self.reads += 1
++        if self.failure:
++            raise self.failure
++        message = next(self.messages, None)
++        return (message, 0) if message else None
++
++    def send(self, message):
++        assert message["type"] == "pong", "readiness must never submit a build"
++        self.sent.append(message)
++
++
++class InitialWorkspaceTests(unittest.TestCase):
++    def snapshot(self, events=()):
++        return {"daemon_instance_id": [1] * 16, "build_events": list(events)}
++
++    def test_ready_snapshot_needs_no_read_and_delayed_workspace_is_awaited(self):
++        client = Client()
++        self.assertEqual(
++            CAPTURE.wait_for_initial_workspace(client, self.snapshot([WORKSPACE])),
++            VARIABLES,
++        )
++        self.assertEqual(client.reads, 0)
++        client = Client(
++            [
++                None,
++                {"type": "ping", "nonce": 9},
++                {"type": "event", "event": {"type": "telemetry", "data": {}}},
++                {"type": "event", "event": {"type": "build", "data": WORKSPACE}},
++            ]
++        )
++        self.assertEqual(
++            CAPTURE.wait_for_initial_workspace(client, self.snapshot()), VARIABLES
++        )
++        self.assertEqual(client.sent, [{"type": "pong", "nonce": 9}])
++
++    def test_snapshot_replacement_keeps_instance_and_rejects_missing_variables(self):
++        replacement = {"type": "snapshot", **self.snapshot([WORKSPACE])}
++        self.assertEqual(
++            CAPTURE.wait_for_initial_workspace(Client([replacement]), self.snapshot()),
++            VARIABLES,
++        )
++        replacement["daemon_instance_id"] = [2] * 16
++        with self.assertRaisesRegex(RuntimeError, "instance changed"):
++            CAPTURE.wait_for_initial_workspace(Client([replacement]), self.snapshot())
++        for variables in [{}, {"BB_NUMBER_THREADS": None, "PARALLEL_MAKE": "-j 8"}]:
++            malformed = {"type": "workspace", "data": {"variables": variables}}
++            with self.assertRaisesRegex(RuntimeError, "parallelism"):
++                CAPTURE.wait_for_initial_workspace(Client(), self.snapshot([malformed]))
++
++    def test_failure_disconnect_timeout_and_message_bound_do_not_submit_commands(self):
++        error_log = {"message": "Initial metadata scan failed: fixture failure"}
++        snapshot = self.snapshot()
++        snapshot["recent_logs"] = [error_log]
++        with self.assertRaisesRegex(RuntimeError, "fixture failure"):
++            CAPTURE.wait_for_initial_workspace(Client(), snapshot)
++        for message in [
++            {"type": "event", "event": {"type": "log", "data": error_log}},
++            {"type": "error", "message": "protocol failure"},
++            {"type": "shutting_down"},
++        ]:
++            with self.assertRaises(RuntimeError):
++                CAPTURE.wait_for_initial_workspace(Client([message]), self.snapshot())
++        with self.assertRaises(EOFError):
++            CAPTURE.wait_for_initial_workspace(
++                Client(failure=EOFError("lost")), self.snapshot()
++            )
++        with patch.object(CAPTURE.time, "monotonic", side_effect=[0, 0, 1]):
++            with self.assertRaisesRegex(RuntimeError, "timed out"):
++                CAPTURE.wait_for_initial_workspace(
++                    Client(), self.snapshot(), timeout=0.5
++                )
++        messages = (
++            {"type": "event", "event": {"type": "telemetry"}} for _ in range(8192)
++        )
++        client = Client(messages)
++        with patch.object(CAPTURE.time, "monotonic", return_value=0):
++            with self.assertRaisesRegex(RuntimeError, "message bound"):
++                CAPTURE.wait_for_initial_workspace(client, self.snapshot())
++        self.assertEqual(client.reads, 8192)
++
++
++if __name__ == "__main__":
++    unittest.main()
+diff --git a/scripts/verify-cratesio-package.sh b/scripts/verify-cratesio-package.sh
+index a9d2de5..8ae5393 100755
+--- a/scripts/verify-cratesio-package.sh
++++ b/scripts/verify-cratesio-package.sh
+@@ -7 +7 @@ cd "$repo_root"
+-version="0.1.87"
++version="0.1.88"
+diff --git a/scripts/verify-performance.sh b/scripts/verify-performance.sh
+index 9a95388..08f7130 100755
+--- a/scripts/verify-performance.sh
++++ b/scripts/verify-performance.sh
+@@ -1018,0 +1019 @@ verify_real_poky() {
++  python3 -m unittest scripts/test_capture_real_poky_performance.py
