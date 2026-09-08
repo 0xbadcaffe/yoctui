@@ -1177,6 +1177,9 @@ DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78: shared checked allocation preserves
 recovered history and cross-supervisor identity. All baseline checks and isolated
 real-daemon recovery/fake-bridge cancellation regressions pass. The real image
 continues on the preserved v0.1.76 daemon, without interruption for deployment.
+OPENBMC-ATTACH-TIMING-001 is current: fresh clients reset build/task clocks.
+OPENBMC-TASK-IDENTITY-001 follows for filename-derived ghost queue rows. Both
+are separate observed regressions, not completed implementation claims.
 The image retry reached 4,953/6,812 tasks without a terminal result before the
 September 8 host OOM and user-session shutdown. A third attempt was accepted
 through the preserved v0.1.73 candidate with OpenBMC-only concurrency reduced

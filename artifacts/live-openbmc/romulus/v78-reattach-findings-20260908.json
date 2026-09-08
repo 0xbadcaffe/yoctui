@@ -1,0 +1,24 @@
+{
+  "schema": "yoctui.openbmc.reattach-findings.v1",
+  "observed_unix_ms": 1788842951924,
+  "daemon_pid": 1302830,
+  "daemon_version": "0.1.76",
+  "daemon_instance": "7f104be5e67613b8bb221198aea44aaa",
+  "client_version": "0.1.78",
+  "client_sha256": "185d14449e85f0397c80c53ce1ed5f63ec04c7282c57ab5aa08ffa6d5c9740fb",
+  "snapshot_sequence": 3784,
+  "build_progress": {"completed": 2988, "total": 6812},
+  "task": {"recipe": "llvm-native", "task": "do_compile", "pid": 1304077},
+  "task_process_elapsed_seconds_before_capture": 2369,
+  "capture": "v78-reattach-timing-20260908.txt",
+  "visible_task_elapsed": "00:00:05",
+  "visible_build_elapsed": "00:00:05",
+  "visible_task_started": "04:49:13",
+  "retained_task_started_has_timestamp": false,
+  "stale_queued_rows": [
+    {"recipe": "llvm_git", "task": "do_compile"},
+    {"recipe": "stdplus_git", "task": "do_compile"},
+    {"recipe": "stdplus_git", "task": "do_configure"}
+  ],
+  "limits": "Read-only attach and process observation. Image remains running. Timing is not release-performance evidence."
+}

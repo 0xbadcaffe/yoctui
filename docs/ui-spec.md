@@ -1471,6 +1471,17 @@ Job IDs are unique across operation types. Cancelling a job affects only that
 job's live owner; a recovered terminal row grants no cancellation authority.
 If identity allocation is exhausted, rejection leaves existing job rows intact.
 
+Reattachment must not restart elapsed-time clocks or invent a new task start.
+Build/task start and terminal duration use typed daemon-observed lifecycle
+timestamps, retained through completed-row compaction. Live and freshly attached
+clients agree for the same observation time; completed durations remain frozen.
+Missing legacy timing is unavailable, not zero or time since attachment. Invalid
+or reversed timestamps never produce an invented positive duration or a panic.
+
+Queued and worker lifecycle rows must use the same authoritative recipe identity.
+Filename stems are not PN authority: git versions, native/multilib variants and
+PN overrides must not leave a second queued row after a task starts or completes.
+
 ---
 
 ## 12. BitBake output consumption

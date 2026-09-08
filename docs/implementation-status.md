@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+v0.1.79 governance registers two additional live findings. Current task
+OPENBMC-ATTACH-TIMING-001 fixes replay-created clocks: LLVM PID 1304077 had run
+2369 seconds while a fresh client showed five seconds. Next,
+OPENBMC-TASK-IDENTITY-001 addresses filename-derived llvm_git/stdplus_git queue
+rows that do not match worker PNs. Both have separate definitions/tests; no
+implementation is claimed yet. The image remains on the v0.1.76 daemon and
+will not be interrupted solely to deploy these fixes.
+
 DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78. A live restart
 recovered failed jobs 1 and 2, but the new image reused ID 1 and replaced its
 record. Independent non-Raw supervisor counters all begin at 1, while the

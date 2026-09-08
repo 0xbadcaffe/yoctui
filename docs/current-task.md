@@ -1,8 +1,25 @@
 # Current Task
 
-**ID:** OPENBMC-LIVE-001
-**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
+**ID:** OPENBMC-ATTACH-TIMING-001
+**Title:** Preserve observed build and task timing across daemon reattachment
 **Status:** IN_PROGRESS
+
+Live reattachment showed 00:00:05 for an LLVM task whose same PID had run 2369
+seconds. Lifecycle timestamps are absent from daemon events, and replay uses
+the new client's clock. Preserve bounded typed daemon-observed start/end times
+through event compaction and fresh/replacement/batched client state. Freeze
+terminal durations, reset between builds, and keep legacy missing timing
+unavailable. Cover invalid/reversed times and preserve screen/focus. Add failing
+protocol/app/TestBackend regressions, CLI timestamp publication and an isolated
+production reattachment check. Do not interrupt the real image for deployment.
+
+Verification: snapshot_timing tests in protocol/app/UI/CLI, plus full baseline
+(workspace tests, Clippy, fmt, bridge tests, docs and roadmap). After this task,
+OPENBMC-TASK-IDENTITY-001 is the next eligible correction: filename-derived queue
+names create ghost rows beside actual worker PNs. See recorded findings in
+docs/testing/openbmc.md. No implementation of these two fixes is claimed yet.
+
+## OpenBMC live handoff
 
 Continue the fifth `obmc-phosphor-image` attempt through the private Yoctui
 daemon. Inspect actual task transitions, logs, terminal outcome, packages and

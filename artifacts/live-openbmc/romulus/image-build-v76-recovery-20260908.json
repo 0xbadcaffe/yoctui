@@ -30,12 +30,12 @@
   },
   "binary_sha256": "93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f",
   "observed_from_unix": 1788840553.873128,
-  "observed_until_unix": 1788842901.1360934,
+  "observed_until_unix": 1788843419.592257,
   "note": "Fifth image attempt, daemon/client v0.1.76 after baseline tests, Clippy and docs passed. Fourth attempt explicitly cancelled for recovery of 23 old empty objects in function2/boost/fmt; preserved with relative paths under .local/state/yoctui-openbmc-object-recovery-23.bbZM2i. BB_NUMBER_THREADS=2, PARALLEL_MAKE=-j 2. Image success remains subject to terminal outcome.",
   "event_counts": {
-    "event": 3713,
-    "event.telemetry": 2307,
-    "event.build": 1018,
+    "event": 4293,
+    "event.telemetry": 2815,
+    "event.build": 1090,
     "build.parse_progress": 31,
     "event.log": 331,
     "event.bit_bake_changed": 1,
@@ -43,7 +43,7 @@
     "event.job_changed": 56,
     "build.task_queued": 55,
     "build.task_started": 55,
-    "build.task_progress": 823,
+    "build.task_progress": 895,
     "build.task_completed": 53
   },
   "jobs": {

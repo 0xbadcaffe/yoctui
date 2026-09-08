@@ -135,13 +135,35 @@ verify = ["cargo test -p yoctui daemon_job_identity", "cargo test --workspace --
 notes = "v0.1.78: all non-Raw supervisor constructors require one shared checked allocator, seeded beyond retained low-namespace IDs. Raw's namespace and live ownership maps remain separate; allocation exhaustion never wraps into reuse. The initial QA/Security regression reproduced JobId(1) for both owners. Six focused checks pass, including concurrent allocation, namespace/exhaustion, recovered snapshot reduction, two isolated fake BitBake bridges with exact-owner cancellation, and a real private daemon retaining failed jobs 1/2 while assigning QA/Security IDs 3/4. All 1556 workspace tests, 49 bridge tests, strict Clippy, fmt, docs, deterministic rasters and roadmap pass. UI/architecture/protocol and OpenBMC evidence updated. The running real image remains on preserved v0.1.76; no restart solely for deployment, image success or release-performance claim."
 
 [[task]]
+id = "OPENBMC-ATTACH-TIMING-001"
+milestone = "M56"
+title = "Preserve observed build and task timing across daemon reattachment"
+status = "IN_PROGRESS"
+priority = 1286
+required = true
+depends_on = ["OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001"]
+verify = ["cargo test -p yoctui-protocol snapshot_timing", "cargo test -p yoctui-app snapshot_timing", "cargo test -p yoctui-ui snapshot_timing", "cargo test -p yoctui snapshot_timing", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Live snapshot 3784 and v0.1.78 client attached to v0.1.76 daemon: llvm-native do_compile PID 1304077 had run 2369 seconds, but a fresh 160x50 client showed task/build elapsed 00:00:05 and a newly invented Started 04:49:13. Daemon lifecycle events carry no timestamps; app replay invokes local-clock reducers. Retain bounded typed daemon-observed start/end authority for current build and retained task rows, including compacted completions; fresh/replacement/batched consumption must agree and terminal durations must freeze. Reset between builds, preserve screen/focus, keep missing legacy timing unavailable, and handle invalid/reversed times without panic or invented duration. Cover protocol/app/TestBackend/CLI publication and isolated production reattachment with injected clocks. Do not interrupt the real image solely for deployment; final OpenBMC recheck remains under LIVE."
+
+[[task]]
+id = "OPENBMC-TASK-IDENTITY-001"
+milestone = "M56"
+title = "Use consistent authoritative recipe identities for queued and worker task events"
+status = "NOT_STARTED"
+priority = 1285
+required = true
+depends_on = ["OPENBMC-SNAPSHOT-PROGRESS-001", "OPENBMC-INVENTORY-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Live Tasks capture v78-reattach-timing-20260908 shows llvm-native running while llvm_git stays queued, plus stale stdplus_git queue rows. Bridge task_recipe falls back to filename stems and only strips underscore-digit versions; runQueueTaskStarted supplies taskfile while worker TaskStarted supplies actual PN. Reconcile queued/started/completed identities from bounded initialized metadata, including native/multilib variants, git versions and PN overrides. Do not guess PN by filename or parse metadata per high-rate event; unresolved identity must remain honest without creating ghost rows. Preserve statistics and PID-scoped log/progress correlation. Add failing bridge lifecycle fixtures and typed task reconciliation checks; record real recheck after a natural image stopping point without interrupting it solely for deployment."
+
+[[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
 status = "IN_PROGRESS"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001", "OPENBMC-TASK-IDENTITY-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. September 8 recovery: second attempt capture stopped at 4953/6812 with no terminal result; host journal records global OOM kills and user-session shutdown, and old daemon/workers are absent. Third attempt accepted through preserved v0.1.73 after OpenBMC-only BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, both verified via bitbake-getvar. About 46 GiB free at restart; all Poky data preserved. Current instance and bounded evidence in docs/testing/openbmc.md and image-build-resume-20260908.json. No image success or release gate claimed."
 

@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.78  •  Project: openbmc  •  ▶ Running  •  Target: obmc-phosphor-image  •  Machine: romulus        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2988 / 6812  |  Elapsed: 00:00:05  |  Workers: 0                             │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
+│▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  43%  2988/6812▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_compile                      │
+│  ▱ Dashboard             ││Active 2  Waiting 3811  Warnings 0  Errors 0  Elapsed 00:00:05                      ││Recipe      llvm-native                     │
+│  ▱ Insights              ││Target: obmc-phosphor-image  Backend: bridge  Status: Running  Exit code: none      ││PN          llvm-native                     │
+│▾ CONTENT                 ││Parse progress: not parsing  Tasks: 2988/6812  Warnings: 0  Errors: 0  Release: nodi││PV          22.1.8                          │
+│  ▱ Layers                ││Task           Recipe               Status        Time      Progress                ││PR          unavailable                     │
+│  ▱ Recipes               ││⣧ do_compile   llvm-native          ▶ Running     00:00:05  ▪▪▪▪▫▫▫▫▫▫ 37%          ││State       ▶ Running                       │
+│  ▱ Packages              ││⣧ do_compile   cli11                ▶ Running     00:00:05  ▪▫▫▫▫▫▫▫▫▫ 8%           ││Progress    37%                             │
+│  ▱ Images                ││  do_compile   llvm_git             · Queued      --        --                      ││                                            │
+│  ▱ Kernel                ││  do_compile   stdplus_git          · Queued      --        --                      ││                                            │
+│  ▱ U-Boot / BIOS         ││  do_configure stdplus_git          · Queued      --        --                      │└────────────────────────────────────────────┘
+│  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│▾ BUILD                   │┌Log Viewer — do_compile (llvm-native) · ▶ Follow────────────────────────────────────┐│Worker      unavailable                     │
+│  ▱ Tasks                2│││ VERBOSE=1 cmake --build                                                           ││PID         1304077                         │
+│  ▱ Logs              LIVE││/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/││Started     04:49:13                        │
+│  ▱ Errors                ││build --target all --                                                               ││Elapsed     00:00:05                        │
+│  ▱ Configuration         ││                                                                                    ││Workdir     unavailable                     │
+│  ▱ Dependencies          ││                                                                                    ││Log file                                    │
+│▾ VALIDATE                ││                                                                                    ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Testing               ││                                                                                    ││mp/work/x86_64-linux/llvm-native/22.1.8/temp│
+│    Security              ││                                                                                    ││/log.do_compile.1304077                     │
+│  ▱ QA                    ││                                                                                    │└────────────────────────────────────────────┘
+│▾ TOOLS                   ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
+│  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘││ VERBOSE=1 cmake --build                   │
+│  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐│/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││mp/work/x86_64-linux/llvm-native/22.1.8/buil│
+│  ▱ QEMU / Wic            ││▶ Running     BitBake build Build        2988/6812               --        --       │└────────────────────────────────────────────┘
+│  ▱ Maintenance           ││✕ Failed      BitBake build Build        daemon                  --        --       │┌Contextual Actions──────────────────────────┐
+│  ▱ Build environment     ││                                                                                    ││✓ Cancel active build  [c] — Available      │
+│  ▱ Compatibility         ││                                                                                    ││  Implementation: tinfoil.cancel            │
+│  ▱ Settings              ││                                                                                    ││✓ Open Logs            [l] — Local          │
+│                          ││                                                                                    ││✓ Build History        [h] — Local          │
+│                          ││                                                                                    ││✓ Build options        [B] — Available      │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│  Implementation: tinfoil.build             │
+│                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│                                            │
+│                          ││CPU Usage        90%│RAM Usage        71%│Build FS Usage   93%│SSTATE ! unavailable │└────────────────────────────────────────────┘
+│                          ││              ▆▆▆▅▅ │                  ▁ │             ▆▆▆▆▆▆ │                     │┌System Status───────────────────────────────┐
+│                          ││              █████ │             ██████ │             ██████ │                     ││✓ Daemon Connected · Local · version unavai…│
+│                          ││              █████ │             ██████ │             ██████ │                     ││✓ BitBake Running · v2.19.0 · Jobs 1        │
+│                          ││ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ │                     ││! Compat Degraded g1 · A86 L1 U5 ?15 · PTY …│
+│                          ││       8 cores      │    10.7/15.0 GiB   │    29.2 GiB free   │                     ││✕ Build FS 93% · 29.2/456.3 GiB free · Work…│
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   h/l groups   ←/→ focus   Enter open   Ctrl+B prefix   ←/→ Focus   F1 Help   F10 Menu   q Quit                ▶ Build running · 2 active  04:49:18│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

@@ -12,6 +12,19 @@ preserves each workflow's confirmation boundary.
 
 ## Architectural principles
 
+Daemon build/task lifecycle timing is typed observed authority, not a client's
+replay clock. Start/end evidence survives bounded task-event compaction and
+reinstalls consistently for fresh, replacement and batched replicas. Unknown
+legacy timing remains absent; conversion and elapsed arithmetic are checked.
+The CLI captures observation timestamps, protocol preserves bounded wire state,
+the app installs it, and the UI renders model timing without reading processes
+or parsing logs. OPENBMC-ATTACH-TIMING-001 owns this correction.
+
+Queue/worker task identity must come from initialized BitBake metadata rather
+than filename heuristics. Bounded identity lookup preserves recipe variants
+and PN overrides without a per-event metadata parse. Unknown identity cannot
+manufacture ghost queue rows. OPENBMC-TASK-IDENTITY-001 owns this correction.
+
 Daemon job IDs must be unique across all job-producing supervisors and retained
 recovery history. Non-Raw supervisors share one checked allocator initialized
 beyond retained IDs in the low 60-bit namespace; Raw retains its separate

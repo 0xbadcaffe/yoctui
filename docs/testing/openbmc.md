@@ -385,6 +385,22 @@ The tested v0.1.78 binary is preserved at
 `/home/bspguy-dev/.local/state/yoctui-v78-validated.RaKSXe/yoctui`, SHA-256
 `185d14449e85f0397c80c53ce1ed5f63ec04c7282c57ab5aa08ffa6d5c9740fb`.
 
+A later [reattachment capture](../../artifacts/live-openbmc/romulus/v78-reattach-timing-20260908.txt)
+and [bounded findings](../../artifacts/live-openbmc/romulus/v78-reattach-findings-20260908.json)
+confirm two separate defects. Snapshot 3784 still identifies LLVM do_compile
+PID 1304077, whose process had run 2369 seconds before capture. The newly
+attached v0.1.78 client shows 00:00:05 for both task and build and invents a
+Started time of 04:49:13. Daemon lifecycle events lack timestamp fields and
+app replay invokes local-clock reducers. OPENBMC-ATTACH-TIMING-001 owns the fix.
+
+The same capture retains llvm_git as queued beside running llvm-native, plus
+stale stdplus_git queue rows. The bridge's filename fallback strips only
+underscore-digit versions; queue events supply taskfile while worker events
+supply actual PN. Filename/version stripping cannot establish native/overridden
+PN authority. OPENBMC-TASK-IDENTITY-001 owns bounded metadata-based identity
+reconciliation and lifecycle regressions. Neither issue is an image-build
+failure, and neither fix justifies interrupting the current image for deployment.
+
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.
 Start the image through Yoctui, not a separate unobserved BitBake invocation.
