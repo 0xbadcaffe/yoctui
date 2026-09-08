@@ -1483,6 +1483,8 @@ to count after completion. A lost daemon authority does not supply a task end.
 Queued and worker lifecycle rows must use the same authoritative recipe identity.
 Filename stems are not PN authority: git versions, native/multilib variants and
 PN overrides must not leave a second queued row after a task starts or completes.
+If initialized metadata cannot resolve a queue identity, aggregate progress
+still updates, but no guessed recipe/task row or worker identity is displayed.
 
 ---
 

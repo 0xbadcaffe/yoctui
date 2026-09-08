@@ -1,20 +1,31 @@
 # Current Task
 
-**ID:** OPENBMC-TASK-IDENTITY-001
-**Title:** Use consistent authoritative recipe identities for queued and worker task events
+**ID:** OPENBMC-LIVE-001
+**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
 **Status:** IN_PROGRESS
 
-Filename-derived queue names such as llvm_git, stdplus_git and gpioplus_git
-create ghost rows beside actual worker PNs. Resolve queued/started/completed
-identities from bounded initialized BitBake metadata, including native/multilib
-variants, git versions and PN overrides. No per-event metadata parse or filename
-guessing. Unresolved identity stays honest without ghost rows; preserve task
-statistics and PID-scoped log/progress correlation. Add failing bridge lifecycle
-fixtures and typed task reconciliation checks. Do not interrupt the real image
-solely to deploy this fix; record its live recheck after a natural stopping point.
+Continue the real image and inspect its terminal outcome, packages and rootfs.
+All registered repair dependencies are DONE. After a natural stopping point,
+deploy the validated private candidate and recheck actual task identities,
+observed timing and recovered job IDs. Do not interrupt the image merely for
+deployment. Preserve all Poky data; do not infer image success from task counts.
 
-Verification: bridge tests, full workspace tests, strict Clippy, fmt, docs and
-roadmap. OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80: ten focused tests,
+OPENBMC-TASK-IDENTITY-001 is DONE in v0.1.81: exact bounded initialized metadata
+resolves native/multilib/git/overridden PNs once per build, without filename
+guessing or Tinfoil event loss. Unknown identities preserve aggregate statistics
+without ghost rows. Three new bridge tests and six Rust regressions pass,
+including lost authority and narrow UI behavior; all 1,572 workspace tests,
+52 bridge tests, strict Clippy, fmt, docs, rasters and roadmap pass. Ruff and
+Mypy pass; bridge coverage is 78.35% against the required 75%. A sequential
+full rerun passed after an overlapping Cargo documentation build invalidated
+dependency artifacts during an earlier doc-test run.
+
+The tested v0.1.81 binary is preserved at
+/home/bspguy-dev/.local/state/yoctui-v81-validated.18e7ox/yoctui, SHA-256
+0dcce028d77c7218d508914e1a3b02fc7828ffb7ed05b405b70bba8caaebd364.
+It has not replaced the running daemon or normal installed release.
+
+OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80: ten focused tests,
 all 1,566 workspace tests, 49 bridge tests and baseline checks pass. Its isolated
 production client preserves injected terminal duration across two attachments;
 the real v0.1.76 daemon correctly yields unavailable legacy timing. Earlier
@@ -39,6 +50,8 @@ Verification: real image build and generated package/rootfs inspection;
 The completion gate still requires fresh source-bound real-Poky performance
 evidence and every remaining task. Use one Cargo worker, debug=0 dev/test
 profiles and no incremental cache alongside OpenBMC to retain host headroom.
+Run Cargo checks sequentially: a concurrent default-profile documentation build
+can replace dependency artifacts while workspace doc-tests are still using them.
 
 ## Current live identity
 
@@ -56,9 +69,9 @@ profiles and no incremental cache alongside OpenBMC to retain host headroom.
 - Current evidence: artifacts/live-openbmc/romulus/image-build-v76-recovery-20260908.json
 
 The image was submitted through `yoctui daemon build obmc-phosphor-image` after
-initial metadata readiness, and Accepted. Last verified counters were 3842/6812;
+initial metadata readiness, and Accepted. Last verified counters were 4737/6812;
 the image remains running with no new recorded error. Root had about
-29 GiB free near the fresh attach; monitor disk and available memory. OpenBMC-only
+27 GiB free at this observation; monitor disk and available memory. OpenBMC-only
 local.conf limits BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, verified before
 submission. rm_work is enabled, excluding the image work directory for rootfs
 inspection. Scheduling stops at 15 GiB and halts at 8 GiB. The normal installed

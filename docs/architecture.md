@@ -31,6 +31,16 @@ than filename heuristics. Bounded identity lookup preserves recipe variants
 and PN overrides without a per-event metadata parse. Unknown identity cannot
 manufacture ghost queue rows. OPENBMC-TASK-IDENTITY-001 owns this correction.
 
+The bridge inverts the initialized getRecipes PN/file cache once after
+BuildStarted and resets that lookup for each build. Exact virtual paths retain
+native/multilib identity; ambiguous mappings remain unknown. Retention is capped
+at 16,384 path mappings and 3 MiB of name/path bytes. No task event parses a
+recipe or guesses its PN from a filename. Unresolved queue events carry typed
+aggregate statistics without a task row. The standalone reducer installs those
+counters; daemon publication uses existing running BitBake job progress and
+updates a current started-build aggregate checkpoint. Terminal/absent build
+authority and non-BitBake jobs do not update that checkpoint.
+
 Daemon job IDs must be unique across all job-producing supervisors and retained
 recovery history. Non-Raw supervisors share one checked allocator initialized
 beyond retained IDs in the low 60-bit namespace; Raw retains its separate

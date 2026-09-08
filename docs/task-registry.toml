@@ -149,12 +149,12 @@ notes = "v0.1.80 DONE: optional daemon-observed lifecycle timestamps, bounded st
 id = "OPENBMC-TASK-IDENTITY-001"
 milestone = "M56"
 title = "Use consistent authoritative recipe identities for queued and worker task events"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1285
 required = true
 depends_on = ["OPENBMC-SNAPSHOT-PROGRESS-001", "OPENBMC-INVENTORY-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Live Tasks capture v78-reattach-timing-20260908 shows llvm-native running while llvm_git stays queued, plus stale stdplus_git queue rows. Bridge task_recipe falls back to filename stems and only strips underscore-digit versions; runQueueTaskStarted supplies taskfile while worker TaskStarted supplies actual PN. Reconcile queued/started/completed identities from bounded initialized metadata, including native/multilib variants, git versions and PN overrides. Do not guess PN by filename or parse metadata per high-rate event; unresolved identity must remain honest without creating ghost rows. Preserve statistics and PID-scoped log/progress correlation. Add failing bridge lifecycle fixtures and typed task reconciliation checks; record real recheck after a natural image stopping point without interrupting it solely for deployment."
+notes = "v0.1.81 DONE: bounded initialized getRecipes PN/file index once per BuildStarted preserves native/multilib/git/overridden identities, disables Tinfoil event-draining cleanup, and leaves absent/conflicting/failed lookup unresolved. Unknown identity emits aggregate statistics without fake rows; daemon reuses existing running BitBake job progress only for current started-build authority. Three new bridge tests and six Rust regressions cover lifecycle/PID correlation, refresh, bounds, failure, aggregate-only model/app/CLI/protocol and narrow UI. All 1572 workspace tests and doc-tests, 52 bridge tests, Clippy, fmt, docs, six rasters and roadmap pass; Ruff/Mypy pass and bridge coverage is 78.35%. Sequential final baseline passed after concurrent docs compilation disrupted an earlier doc-test dependency artifact. First failing fixture reproduced llvm_git/vendor_git/not-the-pn instead of authoritative PNs. Original live evidence: v78-reattach-timing-20260908 shows llvm-native running beside ghost llvm_git and stdplus_git queue rows. Validated candidate preserved; no daemon replacement or image interruption. Real new-bridge recheck remains under OPENBMC-LIVE-001 after natural image completion."
 
 [[task]]
 id = "OPENBMC-LIVE-001"

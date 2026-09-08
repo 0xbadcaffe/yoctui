@@ -1,5 +1,42 @@
 # OpenBMC live integration
 
+## Queue identity repair (v0.1.81)
+
+OPENBMC-TASK-IDENTITY-001 is DONE. The failing bridge regression returned
+llvm_git, vendor_git and not-the-pn for authoritative llvm-native,
+lib32-actual-name and overridden-name metadata. The lookup now uses exact
+getRecipes PN/file pairs after BuildStarted, once per build, preserving virtual
+native/multilib paths. The local BitBake 2.19 source marks getRecipes read-only
+and fires BuildStarted after buildTaskData has initialized its recipe cache.
+No queue event parses metadata or derives PN from a filename. The lookup uses
+handle_events=False: Tinfoil's default command cleanup otherwise drains and
+discards native events. Tests require this flag and retain all queue/start/end
+events; updateCacheSync returns immediately for the initialized running cooker.
+
+Three new bridge tests cover metadata variants/overrides, limits and conflicts,
+per-build refresh, duplicate starts, lookup failure and unresolved statistics.
+All 52 bridge tests and six new Rust protocol/backend/model/app/CLI/TestBackend
+regressions pass. Unresolved identity carries aggregate-only task_stats;
+daemon publication reuses existing running BitBake job progress, without adding
+an incompatible daemon event tag. Only a current started-build aggregate takes
+those counters. The bounded lookup uses the initialized default-multiconfig
+cache; absent or nonmatching keys remain unresolved rather than guessed.
+
+This is fixture and local-source evidence. The real image continues on the
+preserved v0.1.76 daemon; validate the new bridge after a natural stopping point,
+without interrupting the image solely to deploy it.
+
+Python linting/type checks pass and bridge coverage is 78.35% (required 75%).
+The final full Rust run passes all 1,572 tests and doc-tests, including the
+event-drain flag and lost-authority guard. Strict Clippy, formatting, docs,
+six rasters and roadmap checks pass. Cargo checks now run
+sequentially: one overlapping default-profile docs build caused workspace
+doc-tests to fail resolving a dependency artifact while it was being replaced.
+The sequential rerun passed without weakening tests. The verified executable
+is /home/bspguy-dev/.local/state/yoctui-v81-validated.18e7ox/yoctui, SHA-256
+0dcce028d77c7218d508914e1a3b02fc7828ffb7ed05b405b70bba8caaebd364.
+It has not replaced the running image daemon or normal installed release.
+
 ## Reattachment timing repair (v0.1.80)
 
 OPENBMC-ATTACH-TIMING-001 is DONE with optional daemon-observed lifecycle

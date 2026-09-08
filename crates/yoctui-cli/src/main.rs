@@ -4207,6 +4207,9 @@ fn daemon_build_event_at(
             Some(DaemonBuildEvent::ParseProgress { current, total }),
             None,
         ),
+        // An unresolved recipe contributes aggregate authority, not a fake
+        // per-task row. Existing job progress keeps older clients decodable.
+        BackendEvent::TaskStats(stats) => (None, Some(running_job(stats))),
         BackendEvent::TaskQueued {
             recipe,
             task,
@@ -15366,6 +15369,24 @@ fn interactive_frame_interval(configured_refresh: Duration) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn task_identity_unknown_statistics_use_existing_job_progress_without_a_task_row() {
+        let (event, job) = daemon_build_event(
+            yoctui_bitbake::BackendEvent::TaskStats(yoctui_model::TaskStats {
+                completed: 2340,
+                total: 6812,
+                active: 1,
+                failed: 0,
+            }),
+            yoctui_protocol::daemon::JobId(42),
+        );
+        assert_eq!(event, None);
+        let job = job.unwrap();
+        assert_eq!(job.id.0, 42);
+        assert_eq!(job.progress_current, Some(2340));
+        assert_eq!(job.progress_total, Some(6812));
+    }
 
     #[test]
     fn snapshot_timing_publication_uses_injected_observation_clock() {

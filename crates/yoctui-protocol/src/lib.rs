@@ -311,6 +311,9 @@ pub enum Event {
         layers: Vec<LayerRelationshipData>,
     },
     BuildStarted,
+    TaskStats {
+        stats: TaskStatsData,
+    },
     ParseProgress {
         current: Option<u64>,
         total: Option<u64>,

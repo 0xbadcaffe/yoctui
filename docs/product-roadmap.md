@@ -20,7 +20,8 @@ the real image retry and subsequent inspection remain required.
 Live validation also exposed snapshot compaction and reattachment defects.
 Aggregate counters (v0.1.76), shared recovered job identities (v0.1.78), and
 observed lifecycle timing (v0.1.80) now pass their regressions and baseline
-checks. Queue/worker recipe identity remains current, and the real image still
+checks. Queue/worker recipe identity (v0.1.81) now passes bounded metadata,
+unknown-identity and cross-layer regressions plus the baseline. The real image still
 runs on the preserved v0.1.76 daemon. These fixes do not claim image completion
 or waive the source-bound performance and release gates.
 
@@ -1184,9 +1185,12 @@ DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78: shared checked allocation preserves
 recovered history and cross-supervisor identity. All baseline checks and isolated
 real-daemon recovery/fake-bridge cancellation regressions pass. The real image
 continues on the preserved v0.1.76 daemon, without interruption for deployment.
-OPENBMC-ATTACH-TIMING-001 is current: fresh clients reset build/task clocks.
-OPENBMC-TASK-IDENTITY-001 follows for filename-derived ghost queue rows. Both
-are separate observed regressions, not completed implementation claims.
+OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80: observed timestamps survive
+reattachment and terminal durations freeze. OPENBMC-TASK-IDENTITY-001 is DONE
+in v0.1.81: bounded initialized PN metadata replaces filename-derived ghost
+queue identities while unresolved events preserve only aggregate statistics.
+Both have full baseline and focused regression coverage; live new-daemon
+rechecks remain under OPENBMC-LIVE-001 after a natural image stopping point.
 The image retry reached 4,953/6,812 tasks without a terminal result before the
 September 8 host OOM and user-session shutdown. A third attempt was accepted
 through the preserved v0.1.73 candidate with OpenBMC-only concurrency reduced

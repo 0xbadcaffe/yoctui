@@ -6648,6 +6648,7 @@ pub enum Action {
         target: Option<String>,
     },
     BuildStarted,
+    TaskStats(TaskStats),
     ParseProgress {
         current: Option<u64>,
         total: Option<u64>,
@@ -16010,6 +16011,12 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             app.build.started = Some(SystemTime::now());
             app.build.parse_current = None;
             app.build.parse_total = None;
+        }
+        Action::TaskStats(stats) => {
+            mark_build_running_from_task_activity(app);
+            app.build.completed = app.build.completed.max(stats.completed);
+            app.build.total = (stats.total > 0).then_some(stats.total);
+            app.invalidate_task_projection();
         }
         Action::ParseProgress { current, total } => {
             if matches!(

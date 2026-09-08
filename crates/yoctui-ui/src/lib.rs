@@ -21931,6 +21931,29 @@ mod tests {
     }
 
     #[test]
+    fn task_identity_unresolved_statistics_render_without_invented_recipe_rows() {
+        let mut app = App::new(64, 64 * 1024);
+        app.screen = Screen::Tasks;
+        let _ = update(&mut app, Action::BuildStarted);
+        let _ = update(
+            &mut app,
+            Action::TaskStats(yoctui_model::TaskStats {
+                completed: 2340,
+                total: 6812,
+                active: 1,
+                failed: 0,
+            }),
+        );
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let text = rendered_text(&app, width, height);
+            assert!(text.contains("2340/6812"), "{text}");
+            assert!(!text.contains("unknown:do_compile"), "{text}");
+        }
+        assert!(app.tasks.is_empty());
+        assert!(app.completed_tasks.is_empty());
+    }
+
+    #[test]
     fn snapshot_timing_renders_observed_and_frozen_elapsed_at_all_sizes() {
         use yoctui_protocol::daemon::DaemonBuildEvent as B;
         let state = yoctui_model::DaemonGlobalState::new(

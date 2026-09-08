@@ -15,6 +15,15 @@ Each UTF-8 line is one JSON envelope: `protocol_version` (currently 1), monotoni
 
 Commands: `hello`, `inspect_workspace`, `start_build`, `cancel_build`, `list_recipes`, `list_layers`, `get_variable`, `shutdown`. Events: `hello_ack`, `workspace`, lifecycle/task/log events, `command_failed`, `protocol_error`, and `bridge_shutdown`. `build_completed` carries an optional `exit_code` when the backend supplies one. New optional fields are allowed; consumers must not reinterpret unknown events.
 
+## Unresolved queue statistics
+
+Native queue events without a resolved recipe identity emit `task_stats` with
+the existing typed `stats` fields, instead of a guessed `task_queued` recipe.
+Bridge consumers accept this aggregate-only event without creating a task row.
+Daemon IPC requires no new event tag: the CLI publishes existing running
+BitBake job progress; a current started-build checkpoint consumes those counters.
+Other job kinds and terminal/absent build authority cannot replace build totals.
+
 ## Daemon job identity
 
 Job IDs identify one daemon-owned operation across supervisor types and retained

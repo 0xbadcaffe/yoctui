@@ -1,5 +1,20 @@
 # Yoctui Implementation Status
 
+OPENBMC-TASK-IDENTITY-001 is DONE in v0.1.81. The first bridge regression
+reproduced llvm_git/vendor_git/not-the-pn
+instead of authoritative native, multilib and overridden PNs. A bounded lookup
+from initialized metadata now passes that case. Unknown identity produces only
+aggregate statistics, without a fake row. Reset, failure, conflicting metadata
+and typed cross-layer tests pass: six new Rust regressions, all 1,572 workspace
+tests, 52 bridge tests, strict Clippy, fmt, docs, rasters and roadmap. Ruff and
+Mypy pass; bridge coverage is 78.35%. The exact once-per-build getRecipes lookup
+disables Tinfoil's event-draining cleanup. A sequential final baseline passes
+after overlapping Cargo documentation compilation disrupted an earlier doc-test
+run. OPENBMC-LIVE-001 resumes; the image daemon stays v0.1.76, observed running
+at 4737/6812 without terminal success. The validated v0.1.81 binary is preserved
+at /home/bspguy-dev/.local/state/yoctui-v81-validated.18e7ox/yoctui, SHA-256
+0dcce028d77c7218d508914e1a3b02fc7828ffb7ed05b405b70bba8caaebd364.
+
 OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80. Optional observed lifecycle
 timestamps survive bounded journal compaction; typed model inputs keep legacy
 absence unknown and terminal durations frozen, including the header. Earlier
@@ -13,7 +28,7 @@ Read-only OpenBMC attachment correctly leaves v0.1.76's missing timing unknown.
 The tested binary is preserved at
 /home/bspguy-dev/.local/state/yoctui-v80-validated.GDZdkr/yoctui, SHA-256
 ba7bd5dc15cb886f9268daba79e1828c9860a3bff5cd3c57f86df363181f3ca3.
-OPENBMC-TASK-IDENTITY-001 is current. Real image completion and live new-daemon
+Real image completion and live new-daemon
 timing/identity rechecks remain pending; the running daemon is unchanged.
 
 v0.1.79 governance registered two additional live findings. The first,

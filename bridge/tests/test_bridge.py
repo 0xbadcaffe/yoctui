@@ -34,6 +34,185 @@ def run_bridge(
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_task_identity_uses_initialized_metadata_for_native_git_and_pn_overrides(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location("yoctui_task_identity", BRIDGE)
+        assert spec is not None and spec.loader is not None
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        identities = [
+            ("llvm-native", "virtual:native:/layers/llvm_git.bb"),
+            ("lib32-actual-name", "virtual:multilib:lib32:/layers/vendor_git.bb"),
+            ("overridden-name", "/layers/not-the-pn_1.0.bb"),
+        ]
+        stats = SimpleNamespace(completed=3, total=10, active=1, failed=0)
+
+        def event(name, **fields):
+            return type(name, (), fields)()
+
+        pending = [event("BuildStarted")]
+        for index, (pn, taskfile) in enumerate(identities):
+            pending.extend(
+                [
+                    event(
+                        "runQueueTaskStarted",
+                        taskfile=taskfile,
+                        taskname="do_compile",
+                        stats=stats,
+                    ),
+                    event("TaskStarted", pn=pn, task="do_compile", pid=42 + index),
+                    event(
+                        "TaskSucceeded", pn=pn, task="do_compile", taskpid=42 + index
+                    ),
+                ]
+            )
+        calls = []
+
+        def command(name, *args, **kwargs):
+            calls.append((name, args))
+            self.assertEqual(name, "getRecipes")
+            self.assertEqual(kwargs, {"handle_events": False})
+            return [(pn, [path]) for pn, path in identities]
+
+        connection = object.__new__(bridge.TinfoilConnection)
+        connection.active = True
+        connection.force_active = False
+        connection.task_recipe_identities = None
+        connection.tinfoil = SimpleNamespace(
+            run_command=command,
+            wait_event=lambda _: pending.pop(0) if pending else None,
+        )
+        by_pid: dict[int, tuple[str, str]] = {}
+        normalized = [
+            bridge.normalize_event(raw, by_pid) for raw in connection.drain_events()
+        ]
+        queued = [row for row in normalized if row and row["type"] == "task_queued"]
+        self.assertEqual(
+            [row["recipe"] for row in queued], [pn for pn, _ in identities]
+        )
+        self.assertTrue(all(row["stats"]["total"] == 10 for row in queued))
+        self.assertEqual(calls, [("getRecipes", ("",))])
+        self.assertEqual(by_pid, {})
+
+    def test_task_identity_bounds_conflicts_and_unresolved_statistics(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "yoctui_task_identity_bounds", BRIDGE
+        )
+        assert spec is not None and spec.loader is not None
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        index = bridge.task_recipe_identity_index(
+            [
+                ("one", ["/same.bb"]),
+                ("two", ["/same.bb"]),
+                ("one", ["/same.bb"]),
+            ]
+        )
+        self.assertIsNone(index["/same.bb"])
+        for invalid in [
+            None,
+            {"one": ["/one.bb"]},
+            [("", ["/one.bb"])],
+            [("one", [None])],
+            [("one", "not-path-list")],
+            [("one", ["/one.bb"])] * (bridge.MAX_RECIPE_INVENTORY_RECORDS + 1),
+            [("one", ["x" * (bridge.MAX_RECIPE_INVENTORY_BYTES + 1)])],
+        ]:
+            with self.assertRaises(ValueError):
+                bridge.task_recipe_identity_index(invalid)
+        stats = {"completed": 3, "total": 10, "active": 1, "failed": 0}
+        queued: dict[str, object] = {
+            "type": "runQueueTaskStarted",
+            "taskfile": "/missing_git.bb",
+            "taskname": "do_compile",
+            "stats": stats,
+        }
+        self.assertEqual(
+            bridge.normalize_event(queued), {"type": "task_stats", "stats": stats}
+        )
+        queued["stats"] = None
+        self.assertIsNone(bridge.normalize_event(queued))
+        queued["stats"] = {**stats, "completed": -1}
+        self.assertIsNone(bridge.normalize_event(queued))
+
+    def test_task_identity_cache_refreshes_per_build_and_failure_does_not_guess(
+        self,
+    ) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "yoctui_task_identity_refresh", BRIDGE
+        )
+        assert spec is not None and spec.loader is not None
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        pending = []
+        queried = []
+        build_number = 0
+
+        def event(name, **fields):
+            return type(name, (), fields)()
+
+        def command(name, *args, **kwargs):
+            nonlocal build_number
+            if name == "buildTargets":
+                build_number += 1
+                pending.extend(
+                    [
+                        event("BuildStarted"),
+                        event("BuildStarted"),
+                        event(
+                            "runQueueTaskStarted",
+                            taskfile="/vendor_git.bb",
+                            taskname="do_compile",
+                            stats=SimpleNamespace(
+                                completed=3, total=10, active=1, failed=0
+                            ),
+                        ),
+                        event("BuildCompleted"),
+                    ]
+                )
+            elif name == "getRecipes":
+                self.assertFalse(
+                    kwargs.get("handle_events", True),
+                    "Tinfoil must not drain and discard native events",
+                )
+                queried.append(build_number)
+                if build_number == 3:
+                    raise RuntimeError("fixture cache unavailable")
+                return [(f"actual-pn-{build_number}", ["/vendor_git.bb"])]
+            else:
+                self.fail(f"unexpected per-event command: {name}")
+
+        connection = object.__new__(bridge.TinfoilConnection)
+        connection.active = False
+        connection.force_active = False
+        connection.recipes_parsed = False
+        connection.task_recipe_identities = None
+        connection.tinfoil = SimpleNamespace(
+            run_command=command,
+            set_event_mask=lambda _: None,
+            wait_event=lambda _: pending.pop(0) if pending else None,
+        )
+        for number in [1, 2, 3]:
+            connection.start_build(["image"], "build")
+            self.assertEqual(
+                len(queried),
+                number - 1,
+                "no cache query before build metadata is ready",
+            )
+            with patch.object(bridge.sys.stderr, "write"):
+                rows = [
+                    bridge.normalize_event(raw) for raw in connection.drain_events()
+                ]
+            if number < 3:
+                self.assertEqual(rows[2]["recipe"], f"actual-pn-{number}")
+            else:
+                self.assertEqual(rows[2]["type"], "task_stats")
+                self.assertNotIn("recipe", rows[2])
+        self.assertEqual(
+            queried, [1, 2, 3], "duplicate starts do not repeat metadata lookup"
+        )
+
     def test_recipe_inventory_chunks_preserve_all_records_with_bounded_frames(
         self,
     ) -> None:
@@ -1061,7 +1240,7 @@ server = Server()
                 "parse_progress",
                 "log",
                 "log",
-                "task_queued",
+                "task_stats",
                 "task_started",
                 "task_completed",
                 "build_completed",
@@ -1071,7 +1250,7 @@ server = Server()
         self.assertEqual(messages[1]["total"], 20)
         self.assertEqual(messages[2]["level"], "warning")
         self.assertEqual(messages[3]["level"], "error")
-        self.assertEqual(messages[4]["recipe"], "busybox")
+        self.assertNotIn("recipe", messages[4])
         self.assertEqual(messages[4]["stats"]["total"], 10)
         self.assertEqual(messages[5]["pid"], 42)
         self.assertTrue(messages[6]["success"])

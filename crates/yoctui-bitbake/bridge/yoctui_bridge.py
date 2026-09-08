@@ -267,6 +267,7 @@ class TinfoilConnection:
         self.recipes_parsed = False
         self.active = False
         self.recipe_files = {}
+        self.task_recipe_identities = None
         self.force_active = False
 
     def _ensure_recipes(self):
@@ -638,6 +639,7 @@ class TinfoilConnection:
         if self.active:
             raise RuntimeError("a BitBake build is already active")
         self._reset_for_build()
+        self.task_recipe_identities = None
         self.tinfoil.set_event_mask(self.EVENT_MASK)
         selected_task = task or self.tinfoil.config_data.getVar("BB_DEFAULT_TASK")
         self.active = True
@@ -679,6 +681,34 @@ class TinfoilConnection:
             first = False
             if event is None:
                 break
+            if (
+                type(event).__name__ == "BuildStarted"
+                and self.task_recipe_identities is None
+            ):
+                # BuildStarted follows buildTaskData: the recipe cache is now
+                # initialized. getRecipes is a read-only cache query, not a
+                # parse or a per-task metadata operation. Keep virtual paths
+                # intact so native/multilib variants remain distinct.
+                # Disable run_command's default native-event drain.
+                try:
+                    self.task_recipe_identities = task_recipe_identity_index(
+                        self.tinfoil.run_command("getRecipes", "", handle_events=False)
+                    )
+                except Exception as error:
+                    self.task_recipe_identities = {}
+                    print(
+                        f"Runqueue recipe identity unavailable: {str(error)[:512]}. Aggregate task statistics remain available.",
+                        file=sys.stderr,
+                    )
+            if task_recipe(event) is None and self.task_recipe_identities:
+                task_file = event_value(event, "taskfile")
+                recipe = (
+                    self.task_recipe_identities.get(task_file)
+                    if isinstance(task_file, str)
+                    else None
+                )
+                if recipe is not None:
+                    event.recipe = recipe
             events.append(event)
             if type(event).__name__ == "BuildCompleted":
                 self.active = False
@@ -1114,6 +1144,7 @@ class BitBakeAdapter:
                 "build_started",
                 "parse_progress",
                 "task_queued",
+                "task_stats",
                 "task_started",
                 "task_progress",
                 "task_completed",
@@ -1919,15 +1950,48 @@ def normalized_task_stats(event):
     return values
 
 
+def task_recipe_identity_index(recipes):
+    """Invert initialized PN/file metadata without filename inference."""
+    if (
+        not isinstance(recipes, (list, tuple))
+        or len(recipes) > MAX_RECIPE_INVENTORY_RECORDS
+    ):
+        raise ValueError("recipe identity record limit or invalid response")
+    identities = {}
+    size = 0
+    count = 0
+    for row in recipes:
+        if not isinstance(row, (list, tuple)) or len(row) != 2:
+            raise ValueError("invalid recipe identity row")
+        recipe, paths = row
+        if (
+            not isinstance(recipe, str)
+            or not recipe
+            or not isinstance(paths, (list, tuple))
+        ):
+            raise ValueError("invalid recipe identity metadata")
+        for path in paths:
+            if not isinstance(path, str) or not path:
+                raise ValueError("invalid recipe identity path")
+            count += 1
+            size += len(recipe.encode()) + len(path.encode())
+            if (
+                count > MAX_RECIPE_INVENTORY_RECORDS
+                or size > MAX_RECIPE_INVENTORY_BYTES
+            ):
+                raise ValueError("recipe identity resource limit")
+            if path in identities and identities[path] != recipe:
+                identities[path] = None  # Conflicting authority is unknown.
+            else:
+                identities[path] = recipe
+    return identities
+
+
 def task_recipe(event):
     recipe = event_value(event, "recipe", "pn")
-    if isinstance(recipe, str):
+    if isinstance(recipe, str) and recipe:
         return recipe
-    task_file = event_value(event, "taskfile")
-    if not isinstance(task_file, str):
-        return None
-    stem = os.path.basename(task_file).removesuffix(".bb")
-    return re.sub(r"_[0-9].*$", "", stem) or None
+    return None
 
 
 def normalize_event(event, task_identities_by_pid=None):
@@ -2031,15 +2095,16 @@ def normalize_event(event, task_identities_by_pid=None):
             "log_path": event_value(event, "logfile"),
             "stats": normalized_task_stats(event),
         }
-    if normalized_kind in ("runqueuetaskstarted", "scenequeuetaskstarted") and all(
-        isinstance(value, str) for value in (recipe, task)
-    ):
+    if normalized_kind in ("runqueuetaskstarted", "scenequeuetaskstarted"):
+        stats = normalized_task_stats(event)
+        if not all(isinstance(value, str) and value for value in (recipe, task)):
+            return {"type": "task_stats", "stats": stats} if stats is not None else None
         return {
             "type": "task_queued",
             "recipe": recipe,
             "task": task,
             "worker": None,
-            "stats": normalized_task_stats(event),
+            "stats": stats,
         }
     if normalized_kind in ("taskprogress", "task_progress"):
         pid = normalized_nonnegative_integer(event_value(event, "pid"))
