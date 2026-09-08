@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.86  •  Project: openbmc  •  – Idle  •  Target: obmc-phosphor-image  •  Machine: romulus      Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
+│▾ OVERVIEW                ││ 1   │  2   │  3   │  4 systemd  │  5   │  6    Tab switches                        ││▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             ││┌Offline systemd service files · e edit · Enter/→ rootfs explorer──────────────────┐││Rootfs composition                          │
+│  ▱ Insights              │││Service                      Description                  BusName      Enablement │││View: systemd services                      │
+│▾ CONTENT                 │││autovt@.service              Getty on %I                  —            disabled/st│││State: partial · 1 limitation(s)            │
+│  ▱ Layers                │││avahi-daemon.service         Avahi mDNS/DNS-SD Stack      org.freedesk multi-user.│││Image: obmc-phosphor-image                  │
+│  ▱ Recipes               │││avsbus-disable@.service      Disable the AVS bus on the V —            obmc-chassi│││Path:                                       │
+│  ▱ Packages              │││avsbus-enable@.service       Enable the AVS bus on VRMs   —            obmc-chassi│││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Images                │││bmcweb.service               bmcweb server                —            network.tar│││mp/deploy/images/romulus/obmc-phosphor-image│
+│  ▱ Kernel                │││breakpoint-pre-basic.service Breakpoint Before basic.targ —            disabled/st│││-romulus-20260908040925.manifest            │
+│  ▱ U-Boot / BIOS         │││breakpoint-pre-mount.service Breakpoint Before Mounting t —            disabled/st│││Installed packages: available               │
+│  ▱ SDK                   │││breakpoint-pre-switch-root.s Breakpoint Before Switching  —            disabled/st│││Filesystem tree: partial · 1 limitation(s)  │
+│▾ BUILD                   │││breakpoint-pre-udev.service  Breakpoint Before Starting t —            disabled/st│││Offline system map: available               │
+│  ▱ Tasks                 │││busybox-klogd.service        Kernel Logging Service       —            multi-user.│││                                            │
+│  ▱ Logs              LIVE│││busybox-syslog.service       System Logging Service       —            multi-user.│││Exact totals                                │
+│  ▱ Errors                │││capsule@.service             Capsule Service Manager for  —            disabled/st│││Package bytes: 81062873                     │
+│  ▱ Configuration         │││cfam_override@.service       Applies user CFAM register o —            obmc-chassi│││Package files: 1778                         │
+│  ▱ Dependencies          │││clear-once.service           Clear one time boot override —            disabled/st│││Filesystem bytes: 81096497                  │
+│▾ VALIDATE                │││console-getty.service        Console Getty                —            disabled/st│││Entries: 2628 (files 1665 · dirs 257 ·      │
+│  ▱ Testing               │││dbus-broker.service          D-Bus System Message Bus     —            disabled/st│││symlinks 706 · special 0)                   │
+│    Security              │││dbus-org.freedesktop.hostnam Hostname Service             org.freedesk disabled/st│││Overflow: false                             │
+│  ▱ QA                    │││dbus-org.freedesktop.timedat Time & Date Service          org.freedesk disabled/st│││                                            │
+│▾ TOOLS                   │││debug-shell.service          Early root shell on /dev/tty —            disabled/st│││Selected service: autovt@.service           │
+│  ▱ Raw Mode              │││dropbear-migrate-key-locatio Migrate dropbear keys from / —            dropbearkey│││Description: Getty on %I                    │
+│  ▱ Terminal Sessions     │││dropbear@.service            SSH Per-Connection Server    —            disabled/st│││Unit file:                                  │
+│  ▱ Devtool               │││dropbearkey.service          SSH Key Generation           —            multi-user.│││/usr/lib/systemd/system/autovt@.service     │
+│  ▱ QEMU / Wic            │││emergency.service            Emergency Shell              —            disabled/st│││BusName: none                               │
+│  ▱ Maintenance           │││force-reboot.service         Force reboot of the BMC      —            disabled/st│││Enabled by: none (disabled, static,         │
+│  ▱ Build environment     │││fsi-disable.service          Disable FSI                  —            disabled/st│││indirect, or generated)                     │
+│  ▱ Compatibility         │││fsi-enable.service           Enable FSI                   —            disabled/st│││                                            │
+│  ▱ Settings              │││fsi-scan.service             Scan FSI devices             —            obmc-chassi│││Unit file preview                           │
+│                          │││getty@.service               Getty on %I                  —            disabled/st│││#  SPDX-License-Identifier:                 │
+│                          │││host-failure-reboots@.servic Enable reboot on host failur —            disabled/st│││LGPL-2.1-or-later                           │
+│                          │││host-failure-reboots@0.servi Enable reboot on host failur —            disabled/st│││#                                           │
+│                          │││id-button-pressed.service    ID Button Pressed Service    —            disabled/st│││#  This file is part of systemd.            │
+│                          │││initrd-cleanup.service       Cleaning Up and Shutting Dow —            disabled/st│││#                                           │
+│                          │││initrd-parse-etc.service     Mountpoints Configured in th —            disabled/st│││#  systemd is free software; you can        │
+│                          │││initrd-switch-root.service   Switch Root                  —            disabled/st│││redistribute it and/or modify it            │
+│                          │││initrd-udevadm-cleanup-db.se Cleanup udev Database        —            disabled/st│││#  under the terms of the GNU Lesser General│
+│                          │││mapper-subtree-remove@.servi mapper subtree-remove %I     —            disabled/st│││Public License as published by              │
+│                          ││└──────────────────────────────────────────────────────────────────────────────────┘││#  the Free Software Foundation; either     │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│j/k service   e edit unit   Enter/→ explore rootfs   r refresh   Tab view   ←/→ Focus   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit           10:31:37│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

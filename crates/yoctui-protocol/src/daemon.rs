@@ -817,6 +817,7 @@ pub enum Capability {
     TerminalMouse,
     EnvironmentCompatibility,
     RawExecution,
+    RootfsSources,
     GracefulShutdown,
     #[serde(other)]
     Unknown,
@@ -1391,6 +1392,9 @@ pub struct CommandRequest {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum DaemonCommand {
+    InspectRootfsSources {
+        query: crate::rootfs::RootfsSourcesRequestData,
+    },
     StartBuild {
         targets: Vec<String>,
         task: Option<String>,
@@ -3086,6 +3090,9 @@ pub struct CommandResult {
 pub enum CommandOutcome {
     Accepted,
     Completed,
+    RootfsSources {
+        sources: Box<crate::rootfs::RootfsSourcesData>,
+    },
     ConfirmationRequired {
         confirmation: ConfirmationLease,
         affected_jobs: Vec<JobId>,

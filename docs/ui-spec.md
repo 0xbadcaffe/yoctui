@@ -4953,6 +4953,15 @@ composition comes from the exact image manifest plus authoritative bounded
 pkgdata. Filesystem composition is optional and comes only from the exact
 BitBake-reported `IMAGE_ROOTFS` for the selected image/build identity.
 
+An attached client's source lookup runs asynchronously through current daemon
+metadata authority; the client shell need not be initialized. Loading preserves
+input/navigation responsiveness. Unsupported daemon capability, busy metadata,
+query failure/timeout, disconnected or replaced authority remain explicit
+unavailable/failed states with refresh, never guessed paths. A reported path
+that no longer exists is described as cleaned/unavailable, not unreported.
+Only a matching image/request and current daemon instance/compatibility may
+install the result. This acquisition correction does not change the layout.
+
 The Images workspace has six tabs: artifacts, installed packages, filesystem,
 systemd services, system D-Bus, and udev rules. `Enter` or `Right` in the filesystem and
 system views opens the exact reported `IMAGE_ROOTFS` in the lazy tree/preview

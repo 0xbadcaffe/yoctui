@@ -1,0 +1,143 @@
+{
+  "schema": "yoctui.openbmc.rootfs-sources.v1",
+  "daemon_identity": {
+    "pid": 2348480,
+    "daemon_instance_id": [
+      77,
+      30,
+      236,
+      152,
+      218,
+      118,
+      247,
+      128,
+      36,
+      88,
+      35,
+      210,
+      153,
+      145,
+      136,
+      101
+    ],
+    "started_unix_ms": 1788862732781,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "executable": "/home/bspguy-dev/.local/state/yoctui-v86-final-validated.SGCjtr/yoctui"
+  },
+  "binary_sha256": "35bf7d3afa85c454beaa0c23cbea602060f8cdb48a2cf8941f81f8bd2a837c14",
+  "workspace": {
+    "canonical_source": "/home/bspguy-dev/src/openbmc",
+    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "identity_hash": "b261670860dd0336"
+  },
+  "query": {
+    "request": {
+      "generation": 42,
+      "image": {
+        "machine": "romulus",
+        "image": "obmc-phosphor-image",
+        "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
+      }
+    },
+    "daemon_instance_id": [
+      77,
+      30,
+      236,
+      152,
+      218,
+      118,
+      247,
+      128,
+      36,
+      88,
+      35,
+      210,
+      153,
+      145,
+      136,
+      101
+    ],
+    "compatibility_generation": 1
+  },
+  "before_jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    },
+    {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    },
+    {
+      "id": 3,
+      "kind": "bit_bake_build",
+      "label": "BitBake build llvm-native stdplus",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    }
+  ],
+  "results": [
+    {
+      "type": "command_result",
+      "request_id": 8601,
+      "outcome": {
+        "type": "rejected",
+        "code": "stale_generation",
+        "message": "daemon generation changed; refresh and retry",
+        "current_generation": 11
+      }
+    },
+    {
+      "type": "command_result",
+      "request_id": 8602,
+      "outcome": {
+        "type": "rejected",
+        "code": "conflict",
+        "message": "rootfs metadata unavailable: compatibility API: capability BitBakeGetVar selected implementation bitbake_getvar.argv, not required API implementation tinfoil.getvar: capability BitBakeGetVar selected implementation bitbake_getvar.argv, not required API implementation tinfoil.getvar",
+        "current_generation": 11
+      }
+    }
+  ],
+  "elapsed_seconds": 1.282469609985128,
+  "after_jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    },
+    {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    },
+    {
+      "id": 3,
+      "kind": "bit_bake_build",
+      "label": "BitBake build llvm-native stdplus",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    }
+  ]
+}

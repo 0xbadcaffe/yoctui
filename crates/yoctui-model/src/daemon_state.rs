@@ -575,6 +575,7 @@ pub struct ClientDaemonPressureCounters {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClientDaemonView {
     pub status: ClientReplicaStatus,
+    pub instance_id: Option<DaemonModelInstanceId>,
     pub instance_identity: Option<String>,
     pub sequence: u64,
     pub generation: u64,
@@ -593,6 +594,7 @@ impl Default for ClientDaemonView {
     fn default() -> Self {
         Self {
             status: ClientReplicaStatus::Disconnected,
+            instance_id: None,
             instance_identity: None,
             sequence: 0,
             generation: 0,

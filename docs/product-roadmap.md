@@ -4,6 +4,15 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+v0.1.86 completes OPENBMC-ROOTFS-SOURCES-001: bounded asynchronous exact-image
+queries honor the daemon's selected command/API authority. Actual rootfs and
+services screens now work, with independently matched 2628 entries/81096497
+bytes and available package/offline system metadata. The only remaining partial
+limitation is unknown filesystem package ownership. All 1595 workspace tests/
+doc-tests and baseline checks pass. OPENBMC-LIVE-001 resumes for integration
+handoff and the completion gate, including fresh source-bound real-Poky
+performance evidence. No rebuild or firmware boot is claimed.
+
 v0.1.85 resolves all 40 renamed-package metadata gaps: the production image
 screen now reports 228 installed packages available, 81062873 bytes and 1778
 files. OPENBMC-PKGDATA-001 is DONE with four new regressions, all 1584 workspace

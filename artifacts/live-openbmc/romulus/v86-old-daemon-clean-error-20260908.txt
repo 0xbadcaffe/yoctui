@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.86  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
+│▾ OVERVIEW                ││ 1   │  2   │  3 Files  │  4   │  5   │  6    Tab switches                          ││▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             ││Rootfs composition failed.                                                          ││Rootfs composition                          │
+│  ▱ Insights              ││rootfs source lookup failed: daemon does not support rootfs source queries; upgrade ││View: Rootfs filesystem                     │
+│▾ CONTENT                 ││the daemon                                                                          ││State: failed · rootfs source lookup failed:│
+│  ▱ Layers                ││                                                                                    ││daemon does not support rootfs source       │
+│  ▱ Recipes               ││                                                                                    ││queries; upgrade the daemon                 │
+│  ▱ Packages              ││                                                                                    ││                                            │
+│  ▱ Images                ││                                                                                    ││Package and filesystem authority are        │
+│  ▱ Kernel                ││                                                                                    ││reported separately.                        │
+│  ▱ U-Boot / BIOS         ││                                                                                    ││                                            │
+│  ▱ SDK                   ││                                                                                    ││▾ RELATED PATHS                             │
+│▾ BUILD                   ││                                                                                    ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Tasks                 ││                                                                                    ││mp/deploy/images/romulus/obmc-phosphor-image│
+│  ▱ Logs              LIVE││                                                                                    ││-romulus-20260908040925.manifest            │
+│  ▱ Errors                ││                                                                                    ││                                            │
+│  ▱ Configuration         ││                                                                                    ││▾ CONTEXTUAL ACTIONS                        │
+│  ▱ Dependencies          ││             ┌modal · Message───────────────────────────────────────────────────────────┐uild selected image       [b] — Available│
+│▾ VALIDATE                ││             │Rootfs composition failed: rootfs source lookup failed: daemon does not   │mplementation: tinfoil.build             │
+│  ▱ Testing               ││             │support rootfs source queries; upgrade the daemon                         │aunch QEMU                [Q] — Available│
+│    Security              ││             │                                                                          │mplementation: runqemu.argv              │
+│  ▱ QA                    ││             │Esc dismiss                                                               │pen image console         [T] — Local    │
+│▾ TOOLS                   ││             └──────────────────────────────────────────────────────────────────────────┘reate Wic image           [W] —          │
+│  ▱ Raw Mode              ││                                                                                    ││Unavailable                                 │
+│  ▱ Terminal Sessions     ││                                                                                    ││  Reason: Connected environment does not    │
+│  ▱ Devtool               ││                                                                                    ││expose Wic image creation.                  │
+│  ▱ QEMU / Wic            ││                                                                                    ││✓ Write selected local dev…  [D] — Local    │
+│  ▱ Maintenance           ││                                                                                    ││✓ Scan/open deployed artif…  [R/o/O] — Local│
+│  ▱ Build environment     ││                                                                                    ││✓ Inspect selected rootfs …  [Enter/p/Tab] —│
+│  ▱ Compatibility         ││                                                                                    ││Local                                       │
+│  ▱ Settings              ││                                                                                    ││✓ Cancel owned image opera…  [x/c] — Local  │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+│                          ││                                                                                    ││                                            │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│j/k path   PgUp/PgDn   r refresh   Tab view   ←/→ Focus   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit   i Rootfs composition failed: rootfs…  10:14:06│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

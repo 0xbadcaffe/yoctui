@@ -1,0 +1,16 @@
+{
+  "binary_sha256": "35bf7d3afa85c454beaa0c23cbea602060f8cdb48a2cf8941f81f8bd2a837c14",
+  "local_build_env_removed": true,
+  "terminal_dimensions": [
+    160,
+    50
+  ],
+  "first_connected_frame_seconds": 0.2685008910484612,
+  "navigation_hex": "1b5b31397e",
+  "navigation_before_capture": true,
+  "followup_hex": [
+    "1b5b421b5b421b5b421b5b421b5b421b5b421b5b42",
+    "33"
+  ],
+  "settle_seconds": 0
+}

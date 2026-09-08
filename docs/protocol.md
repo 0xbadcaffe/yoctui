@@ -72,6 +72,29 @@ restore live process ownership across daemon restart.
 
 ## Daemon compatibility snapshots
 
+The optional daemon capability rootfs_sources advertises the read-only
+inspect_rootfs_sources command. Its query binds the full 128-bit daemon
+instance, compatibility generation and exact rootfs request/image identity.
+The request also carries the ordinary optimistic daemon generation. A typed
+rootfs_sources CommandOutcome returns those same identifiers and optional
+IMAGE_MANIFEST, PKGDATA_DIR and IMAGE_ROOTFS paths (4096 bytes per path).
+This result is sent only to its requesting connection, not journaled or
+broadcast. Normal command replies and snapshot schemas are unchanged, and
+old clients can decode the unknown optional capability without receiving the
+new outcome. Clients must not send the new command to an unadvertised daemon.
+
+One connection-owned metadata worker may run at a time; startup/active-build
+conflicts reject promptly. The worker uses daemon-initialized recipe-scoped
+queries through the selected authorized command or negotiated API, with
+bounded handshake/query/cleanup and cancellation on
+disconnect/shutdown. The client performs acquisition off its input loop,
+allows at most three explicit stale-generation retries, bounds interleaved
+messages, and never retries a lost reply. Returned paths remain subject to
+the existing exact manifest and canonical contained filesystem scan. Current
+replica/full-instance/compatibility checks gate result installation; presentation
+short IDs are not authority. Missing paths stay None; cleaned reported paths
+are retained so the adapter can explain their absence accurately.
+
 Before resolving a bundled backend snapshot, the daemon may invoke the bridge
 as a separate one-shot `--probe-capabilities` process. This is not a new NDJSON
 or daemon IPC command. Its stdout contains only a bounded

@@ -93,6 +93,9 @@ pub fn start(
             CommandOutcome::ConfirmationRequired { .. } => bail!(
                 "daemon build requires explicit interactive confirmation; no build was automatically confirmed"
             ),
+            CommandOutcome::RootfsSources { .. } => {
+                bail!("unexpected metadata reply to build command")
+            }
         }
     }
     unreachable!("the final rejection cannot retry")

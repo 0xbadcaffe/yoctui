@@ -22,6 +22,46 @@ pub struct RootfsCompositionRequestData {
     pub image: RootfsImageIdentityData,
 }
 
+/// A read-only query bound to the selected artifact and daemon authority.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RootfsSourcesRequestData {
+    pub request: RootfsCompositionRequestData,
+    pub daemon_instance_id: crate::daemon::DaemonInstanceId,
+    pub compatibility_generation: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RootfsSourcesData {
+    pub query: RootfsSourcesRequestData,
+    pub image_manifest: Option<String>,
+    pub pkgdata_dir: Option<String>,
+    pub image_rootfs: Option<String>,
+}
+
+impl RootfsSourcesRequestData {
+    pub fn validate(&self) -> Result<(), RootfsProtocolError> {
+        validate_request(&self.request)?;
+        if self.compatibility_generation == 0 || self.daemon_instance_id.0 == [0; 16] {
+            return Err(RootfsProtocolError::InvalidRequest);
+        }
+        Ok(())
+    }
+}
+
+impl RootfsSourcesData {
+    pub fn validate(&self) -> Result<(), RootfsProtocolError> {
+        self.query.validate()?;
+        if [&self.image_manifest, &self.pkgdata_dir, &self.image_rootfs]
+            .into_iter()
+            .flatten()
+            .any(|path| !valid_host_path(path) || path.chars().any(char::is_control))
+        {
+            return Err(RootfsProtocolError::InvalidRecord);
+        }
+        Ok(())
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct RootfsInstalledPackageData {
     pub name: String,
@@ -198,6 +238,7 @@ fn valid_text(value: &str) -> bool {
 fn valid_host_path(value: &str) -> bool {
     let path = Path::new(value);
     value.len() <= MAX_ROOTFS_WIRE_PATH_BYTES
+        && !value.chars().any(char::is_control)
         && path.is_absolute()
         && path != Path::new("/")
         && !path.components().any(|component| {
@@ -266,6 +307,67 @@ mod tests {
         assert_eq!(decoded, value);
         assert_eq!(decoded.request.generation, 9);
         assert_eq!(decoded.request.image.image, "core-image-minimal");
+    }
+
+    #[test]
+    fn rootfs_sources_roundtrip_preserves_missing_and_cleaned_paths() {
+        let sources = RootfsSourcesData {
+            query: RootfsSourcesRequestData {
+                request: data().request,
+                daemon_instance_id: crate::daemon::DaemonInstanceId([7; 16]),
+                compatibility_generation: 3,
+            },
+            image_manifest: None,
+            pkgdata_dir: Some("/build/pkgdata".into()),
+            image_rootfs: Some("/build/cleaned-rootfs".into()),
+        };
+        sources.validate().unwrap();
+        let outcome = crate::daemon::CommandOutcome::RootfsSources {
+            sources: Box::new(sources.clone()),
+        };
+        let decoded: crate::daemon::CommandOutcome =
+            serde_json::from_slice(&serde_json::to_vec(&outcome).unwrap()).unwrap();
+        assert_eq!(decoded, outcome);
+        let command = crate::daemon::DaemonCommand::InspectRootfsSources {
+            query: sources.query,
+        };
+        let decoded: crate::daemon::DaemonCommand =
+            serde_json::from_slice(&serde_json::to_vec(&command).unwrap()).unwrap();
+        assert_eq!(decoded, command);
+    }
+
+    #[test]
+    fn rootfs_sources_rejects_invalid_identity_paths_and_bounds() {
+        let sources = RootfsSourcesData {
+            query: RootfsSourcesRequestData {
+                request: data().request,
+                daemon_instance_id: crate::daemon::DaemonInstanceId([7; 16]),
+                compatibility_generation: 3,
+            },
+            image_manifest: None,
+            pkgdata_dir: None,
+            image_rootfs: None,
+        };
+        for path in [
+            "relative".to_owned(),
+            "/".to_owned(),
+            "/build/../escape".to_owned(),
+            "/build/bad\0path".to_owned(),
+            format!("/{}", "x".repeat(MAX_ROOTFS_WIRE_PATH_BYTES)),
+        ] {
+            let mut invalid = sources.clone();
+            invalid.image_rootfs = Some(path);
+            assert!(invalid.validate().is_err());
+        }
+        let mut invalid = sources.clone();
+        invalid.query.compatibility_generation = 0;
+        assert!(invalid.validate().is_err());
+        let mut invalid = sources.clone();
+        invalid.query.daemon_instance_id.0 = [0; 16];
+        assert!(invalid.validate().is_err());
+        let mut invalid = sources;
+        invalid.query.request.image.image = "image; command".into();
+        assert!(invalid.validate().is_err());
     }
 
     #[test]

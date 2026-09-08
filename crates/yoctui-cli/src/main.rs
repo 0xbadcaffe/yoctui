@@ -148,6 +148,8 @@ mod daemon_qemu;
 #[cfg(unix)]
 mod daemon_raw;
 #[cfg(unix)]
+mod daemon_rootfs;
+#[cfg(unix)]
 mod daemon_sdk;
 #[cfg(unix)]
 mod daemon_security;
@@ -2724,6 +2726,9 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         instance,
     };
     let startup_compatibility = daemon_state.compatibility.clone();
+    let rootfs_environment = startup_environment.clone();
+    let rootfs_query_permit = std::sync::Arc::new(tokio::sync::Semaphore::new(1));
+    let mut retired_rootfs_queries: Vec<daemon_rootfs::PendingQuery> = Vec::new();
     let startup_configured = startup_compatibility.is_some();
     let mut startup_metadata = daemon_metadata::StartupMetadata::spawn(|cancelled| async move {
         inspect_daemon_startup_workspace(&startup_environment, startup_compatibility, cancelled)
@@ -2739,7 +2744,14 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     // Connections are serviced in short, bounded slices.  Keeping the
     // negotiated state and replay cursor alongside each socket lets one idle
     // client yield to other clients while the daemon continues polling jobs.
-    let mut clients: Vec<(DaemonConnection, bool, bool, u64, ClientId)> = Vec::new();
+    let mut clients: Vec<(
+        DaemonConnection,
+        bool,
+        bool,
+        u64,
+        ClientId,
+        Option<daemon_rootfs::PendingQuery>,
+    )> = Vec::new();
     let mut shutting_down = false;
     let mut last_telemetry_ms = record.started_unix_ms;
     let mut maximum_client_backlog = 0_usize;
@@ -2751,14 +2763,18 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     // its time bound, so matching the 32-event supervisor ingress can still
     // fill the socket. Cursor expiry is recovered by a replacement Snapshot.
     while !shutting_down {
+        retired_rootfs_queries.retain(|query| !query.is_finished());
         let client_connections = clients
             .iter()
-            .map(|(connection, _, _, _, _)| connection)
+            .map(|(connection, _, _, _, _, _)| connection)
             .collect::<Vec<_>>();
         listener.wait_for_activity_with_additional_fd(
             &client_connections,
             bitbake_supervisor.notification_fd(),
-            daemon_service_wait(daemon_has_active_work(daemon_journal.snapshot())),
+            daemon_service_wait(
+                daemon_has_active_work(daemon_journal.snapshot())
+                    || rootfs_query_permit.available_permits() == 0,
+            ),
         )?;
         drop(client_connections);
         bitbake_supervisor.consume_notification();
@@ -2896,8 +2912,8 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         let active_work = daemon_has_active_work(daemon_journal.snapshot());
         let current_client_backlog = clients
             .iter()
-            .filter(|(_, _, attached, _, _)| *attached)
-            .map(|(_, _, _, sequence, _)| {
+            .filter(|(_, _, attached, _, _, _)| *attached)
+            .map(|(_, _, _, sequence, _, _)| {
                 usize::try_from(daemon_journal.snapshot().sequence.saturating_sub(*sequence))
                     .unwrap_or(usize::MAX)
                     .min(daemon_journal.retained_event_capacity())
@@ -2906,7 +2922,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         maximum_client_backlog = maximum_client_backlog.max(current_client_backlog);
         let attached_clients = clients
             .iter()
-            .filter(|(_, _, attached, _, _)| *attached)
+            .filter(|(_, _, attached, _, _, _)| *attached)
             .count();
         let telemetry_interval = daemon_telemetry_interval(attached_clients, active_work);
         if telemetry_interval.is_some_and(|interval| {
@@ -2983,6 +2999,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                     false,
                     daemon_journal.snapshot().sequence,
                     ClientId([0; 16]),
+                    None,
                 ));
             }
             Ok(_) => {
@@ -2994,10 +3011,46 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
 
         let mut remaining_clients = Vec::with_capacity(clients.len());
         let mut encoded_event_frames = HashMap::<u64, Vec<u8>>::new();
-        for (mut connection, mut negotiated, mut attached, mut last_sequence, mut client_id) in
-            clients.drain(..)
+        for (
+            mut connection,
+            mut negotiated,
+            mut attached,
+            mut last_sequence,
+            mut client_id,
+            mut rootfs_query,
+        ) in clients.drain(..)
         {
             let mut keep_client = true;
+            if let Some(result) = rootfs_query.as_mut().and_then(|query| query.try_result()) {
+                let query = rootfs_query.take().expect("completed rootfs query");
+                let result = result.and_then(|sources| {
+                    let compatibility = daemon_state
+                        .compatibility
+                        .as_ref()
+                        .context("rootfs compatibility authority was lost")?;
+                    daemon_rootfs::validate_authority(&query.query, instance, compatibility)?;
+                    Ok(sources)
+                });
+                let outcome = match result {
+                    Ok(sources) => CommandOutcome::RootfsSources {
+                        sources: Box::new(sources),
+                    },
+                    Err(error) => CommandOutcome::Rejected {
+                        code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
+                        message: format!("rootfs metadata unavailable: {error:#}"),
+                        current_generation: daemon_journal.snapshot().generation,
+                    },
+                };
+                if connection
+                    .send(&ServerMessage::CommandResult(CommandResult {
+                        request_id: query.request_id,
+                        outcome,
+                    }))
+                    .is_err()
+                {
+                    keep_client = false;
+                }
+            }
             if attached {
                 match daemon_journal.synchronize_bounded(
                     yoctui_protocol::daemon::ResumeCursor {
@@ -3052,6 +3105,10 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 }
             }
             if !keep_client {
+                if let Some(mut query) = rootfs_query.take() {
+                    query.cancel();
+                    retired_rootfs_queries.push(query);
+                }
                 continue;
             }
             loop {
@@ -3075,6 +3132,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             Capability::TerminalMouse,
                             Capability::EnvironmentCompatibility,
                             Capability::RawExecution,
+                            Capability::RootfsSources,
                             Capability::GracefulShutdown,
                         ],
                         limits: ProtocolLimits {
@@ -3312,6 +3370,30 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                         continue;
                     }
                     let outcome = match request.command {
+                        DaemonCommand::InspectRootfsSources { query } => {
+                            let result = (|| -> Result<daemon_rootfs::PendingQuery> {
+                                anyhow::ensure!(attached && request.expected_generation.is_some(), "rootfs queries require current attached authority");
+                                anyhow::ensure!(rootfs_query.is_none(), "this client already has a rootfs query");
+                                anyhow::ensure!(!startup_metadata.pending() && !daemon_journal.snapshot().jobs.iter().any(|job| job.kind == yoctui_protocol::daemon::JobKind::BitBakeBuild && matches!(job.lifecycle, yoctui_protocol::daemon::LifecycleState::Connecting | yoctui_protocol::daemon::LifecycleState::Running | yoctui_protocol::daemon::LifecycleState::Stopping)), "rootfs metadata is busy; retry after the active build finishes");
+                                let compatibility = daemon_state.compatibility.clone().context("rootfs query requires compatibility authority")?;
+                                daemon_rootfs::PendingQuery::start(request.request_id, query, instance, compatibility, rootfs_environment.clone(), rootfs_query_permit.clone())
+                            })();
+                            match result {
+                                Ok(pending) => { rootfs_query = Some(pending); continue; }
+                                Err(error) => CommandOutcome::Rejected {
+                                    code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
+                                    message: format!("rootfs metadata unavailable: {error:#}"),
+                                    current_generation: daemon_journal.snapshot().generation,
+                                },
+                            }
+                        }
+                        DaemonCommand::StartBuild { .. } if rootfs_query_permit.available_permits() == 0 => {
+                            CommandOutcome::Rejected {
+                                code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
+                                message: "Rootfs recipe metadata is still loading; retry the build when metadata is ready".into(),
+                                current_generation: daemon_journal.snapshot().generation,
+                            }
+                        }
                         DaemonCommand::StartBuild { .. } if startup_metadata.pending() => {
                             CommandOutcome::Rejected {
                                 code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
@@ -3895,7 +3977,11 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                     attached,
                     last_sequence,
                     client_id,
+                    rootfs_query,
                 ));
+            } else if let Some(mut query) = rootfs_query {
+                query.cancel();
+                retired_rootfs_queries.push(query);
             }
         }
         clients = remaining_clients;
@@ -3911,6 +3997,14 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         ),
     )?;
     startup_metadata.shutdown().await;
+    for (_, _, _, _, _, query) in &mut clients {
+        if let Some(query) = query {
+            query.shutdown().await;
+        }
+    }
+    for query in &mut retired_rootfs_queries {
+        query.shutdown().await;
+    }
     remove_runtime_record(&paths, instance)?;
     std::mem::forget(record_guard);
     drop(listener);
@@ -9894,8 +9988,16 @@ async fn poll_image_artifact_operation(
 
 struct RootfsCompositionBackgroundOperation {
     request: RootfsCompositionRequest,
+    #[cfg(unix)]
+    authority: Option<yoctui_protocol::rootfs::RootfsSourcesRequestData>,
     _cancellation: RootfsCompositionCancellation,
     handle: tokio::task::JoinHandle<BackendEvent>,
+}
+
+impl Drop for RootfsCompositionBackgroundOperation {
+    fn drop(&mut self) {
+        self._cancellation.cancel();
+    }
 }
 
 struct GlobalContentSearchOperation {
@@ -10008,6 +10110,8 @@ fn begin_rootfs_composition_operation_with_sources(
     });
     *operation = Some(RootfsCompositionBackgroundOperation {
         request,
+        #[cfg(unix)]
+        authority: None,
         _cancellation: cancellation,
         handle,
     });
@@ -10019,14 +10123,106 @@ async fn begin_rootfs_composition_operation(
     build_directory: &Path,
     operation: &mut Option<RootfsCompositionBackgroundOperation>,
     effect: Effect,
+    daemon_attached: bool,
 ) {
     let Effect::GetRootfsComposition(request) = effect else {
         return;
     };
     if operation.is_some() {
-        app.notification = Some("A rootfs composition operation is already running.".into());
+        if daemon_attached {
+            operation.as_ref().unwrap()._cancellation.cancel();
+            let _ = update(
+                app,
+                Action::RootfsCompositionFailed {
+                    request,
+                    message: "Previous rootfs lookup is stopping; refresh when it finishes.".into(),
+                },
+            );
+        } else {
+            app.notification = Some("A rootfs composition operation is already running.".into());
+        }
         return;
     }
+    #[cfg(unix)]
+    if daemon_attached {
+        let query = match daemon_rootfs::query_for_app(app, &request) {
+            Ok(query) => query,
+            Err(error) => {
+                let _ = update(
+                    app,
+                    Action::RootfsCompositionFailed {
+                        request,
+                        message: error.to_string(),
+                    },
+                );
+                return;
+            }
+        };
+        let fallback = client_rootfs_composition_sources(app, &request, None, None, None);
+        let build = build_directory.to_path_buf();
+        let cancellation = RootfsCompositionCancellation::default();
+        let worker_cancellation = cancellation.clone();
+        let worker_request = request.clone();
+        let worker_query = query.clone();
+        let handle = tokio::spawn(async move {
+            let query_build = build.clone();
+            let query_cancel = worker_cancellation.clone();
+            let result = tokio::task::spawn_blocking(move || {
+                daemon_rootfs::request_sources(&worker_query, &query_build, &query_cancel)
+            })
+            .await
+            .map_err(|error| format!("rootfs source worker was lost: {error}"))
+            .and_then(|result| {
+                result.map_err(|error| format!("rootfs source lookup failed: {error:#}"))
+            });
+            let sources = match result {
+                Ok(sources) => sources,
+                Err(message) => {
+                    return BackendEvent::RootfsCompositionFailed {
+                        request: worker_request,
+                        message,
+                    };
+                }
+            };
+            let sources = RootfsCompositionSources {
+                image: worker_request.image.clone(),
+                manifest: fallback
+                    .manifest
+                    .or_else(|| sources.image_manifest.map(PathBuf::from)),
+                pkgdata_directory: sources
+                    .pkgdata_dir
+                    .map(PathBuf::from)
+                    .or(fallback.pkgdata_directory),
+                image_rootfs: sources.image_rootfs.map(PathBuf::from),
+            };
+            match RootfsCompositionAdapter::new(build, sources, worker_request.generation)
+                .scan_with_cancellation(worker_request.clone(), worker_cancellation)
+                .await
+            {
+                Ok(response) if response.composition.is_unavailable() => {
+                    BackendEvent::RootfsCompositionUnavailable {
+                        request: response.request,
+                        reason: "the selected image manifest and IMAGE_ROOTFS are unavailable"
+                            .into(),
+                    }
+                }
+                Ok(response) => response.into(),
+                Err(error) => BackendEvent::RootfsCompositionFailed {
+                    request: worker_request,
+                    message: error.to_string(),
+                },
+            }
+        });
+        *operation = Some(RootfsCompositionBackgroundOperation {
+            request,
+            authority: Some(query),
+            _cancellation: cancellation,
+            handle,
+        });
+        return;
+    }
+    #[cfg(not(unix))]
+    let _ = daemon_attached;
     let recipe = request.image.image.clone();
     let manifest = backend
         .get_variable("IMAGE_MANIFEST".into(), Some(recipe.clone()))
@@ -10099,7 +10295,6 @@ fn client_rootfs_composition_sources(
             .get("PKGDATA_DIR")
             .map(PathBuf::from)
     });
-    let image_rootfs = image_rootfs.filter(|path| path.is_dir());
     RootfsCompositionSources {
         image: request.image.clone(),
         manifest,
@@ -10112,21 +10307,47 @@ async fn poll_rootfs_composition_operation(
     app: &mut App,
     operation: &mut Option<RootfsCompositionBackgroundOperation>,
 ) {
+    #[cfg(unix)]
+    if let Some(pending) = operation.as_ref()
+        && let Some(authority) = &pending.authority
+        && (app.rootfs_composition.request() != Some(&pending.request)
+            || daemon_rootfs::query_for_app(app, &pending.request)
+                .as_ref()
+                .ok()
+                != Some(authority))
+    {
+        pending._cancellation.cancel();
+    }
     if !operation
         .as_ref()
         .is_some_and(|operation| operation.handle.is_finished())
     {
         return;
     }
-    let Some(operation) = operation.take() else {
+    let Some(mut operation) = operation.take() else {
         return;
     };
-    let event = match operation.handle.await {
+    let event = match (&mut operation.handle).await {
         Ok(event) => event,
         Err(error) => BackendEvent::RootfsCompositionFailed {
-            request: operation.request,
+            request: operation.request.clone(),
             message: format!("rootfs composition background task was lost: {error}"),
         },
+    };
+    #[cfg(unix)]
+    let event = if let Some(authority) = &operation.authority
+        && (operation._cancellation.is_cancelled()
+            || daemon_rootfs::query_for_app(app, &operation.request)
+                .as_ref()
+                .ok()
+                != Some(authority))
+    {
+        BackendEvent::RootfsCompositionFailed {
+            request: operation.request.clone(),
+            message: "rootfs source authority changed; refresh and retry".into(),
+        }
+    } else {
+        event
     };
     if let Some(action) = model_action_from_backend_event(event) {
         let _ = update(app, action);
@@ -12109,6 +12330,7 @@ async fn tui(
                                 &session_build_dir,
                                 &mut rootfs_composition_operation,
                                 effect,
+                                daemon_attached,
                             )
                             .await;
                         }
@@ -12396,6 +12618,7 @@ async fn tui(
                             &session_build_dir,
                             &mut rootfs_composition_operation,
                             effect,
+                            daemon_attached,
                         )
                         .await;
                     } else if let Some(
@@ -13345,6 +13568,7 @@ async fn tui(
                             &session_build_dir,
                             &mut rootfs_composition_operation,
                             effect,
+                            daemon_attached,
                         )
                         .await;
                     } else if let Some(effect @ Effect::InspectSdkTools) = effect {
@@ -14055,6 +14279,7 @@ async fn tui(
                                 &session_build_dir,
                                 &mut rootfs_composition_operation,
                                 effect,
+                                daemon_attached,
                             )
                             .await
                         }
@@ -14863,6 +15088,7 @@ async fn tui(
                                     &session_build_dir,
                                     &mut rootfs_composition_operation,
                                     effect,
+                                    daemon_attached,
                                 )
                                 .await;
                             } else if !route_independent_security_effect(
@@ -22592,6 +22818,107 @@ esac"#,
             client_rootfs_composition_sources(&app, &request, None, None, Some("/gone".into()));
         assert_eq!(sources.manifest, Some(manifest));
         assert_eq!(sources.pkgdata_directory, Some(pkgdata));
-        assert_eq!(sources.image_rootfs, None);
+        assert_eq!(sources.image_rootfs, Some("/gone".into()));
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn rootfs_pending_refresh_cancels_without_stranding_new_loading_state() {
+        let mut app = App::new(16, 4096);
+        let request = RootfsCompositionRequest {
+            generation: 2,
+            image: yoctui_model::ImageArtifactIdentity {
+                machine: "machine".into(),
+                image: "image".into(),
+                path: "/build/image".into(),
+            },
+        };
+        app.rootfs_composition = yoctui_model::RootfsCompositionState::Loading {
+            request: request.clone(),
+        };
+        app.rootfs_request_generation = 2;
+        let cancellation = RootfsCompositionCancellation::default();
+        let mut operation = Some(RootfsCompositionBackgroundOperation {
+            request: RootfsCompositionRequest {
+                generation: 1,
+                ..request.clone()
+            },
+            authority: None,
+            _cancellation: cancellation.clone(),
+            handle: tokio::spawn(std::future::pending()),
+        });
+        let mut backend = ProcessBackend::new("/build".into());
+        tokio::time::timeout(
+            Duration::from_millis(100),
+            begin_rootfs_composition_operation(
+                &mut backend,
+                &mut app,
+                Path::new("/build"),
+                &mut operation,
+                Effect::GetRootfsComposition(request),
+                true,
+            ),
+        )
+        .await
+        .unwrap();
+        assert!(cancellation.is_cancelled());
+        assert!(matches!(
+            app.rootfs_composition,
+            yoctui_model::RootfsCompositionState::Failed { .. }
+        ));
+        operation.as_ref().unwrap().handle.abort();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn rootfs_completed_metadata_cannot_install_after_authority_loss() {
+        let mut app = App::new(16, 4096);
+        let request = RootfsCompositionRequest {
+            generation: 1,
+            image: yoctui_model::ImageArtifactIdentity {
+                machine: "machine".into(),
+                image: "image".into(),
+                path: "/build/image".into(),
+            },
+        };
+        app.rootfs_composition = yoctui_model::RootfsCompositionState::Loading {
+            request: request.clone(),
+        };
+        app.rootfs_request_generation = 1;
+        let result_request = request.clone();
+        let handle = tokio::spawn(async move {
+            BackendEvent::RootfsCompositionUnavailable {
+                request: result_request,
+                reason: "old result must not install".into(),
+            }
+        });
+        let mut operation = Some(RootfsCompositionBackgroundOperation {
+            request,
+            authority: Some(yoctui_protocol::rootfs::RootfsSourcesRequestData {
+                request: yoctui_protocol::rootfs::RootfsCompositionRequestData {
+                    generation: 1,
+                    image: yoctui_protocol::rootfs::RootfsImageIdentityData {
+                        machine: "machine".into(),
+                        image: "image".into(),
+                        path: "/build/image".into(),
+                    },
+                },
+                daemon_instance_id: yoctui_protocol::daemon::DaemonInstanceId([1; 16]),
+                compatibility_generation: 1,
+            }),
+            _cancellation: RootfsCompositionCancellation::default(),
+            handle,
+        });
+        tokio::time::timeout(Duration::from_secs(1), async {
+            while operation.is_some() {
+                poll_rootfs_composition_operation(&mut app, &mut operation).await;
+                tokio::task::yield_now().await;
+            }
+        })
+        .await
+        .unwrap();
+        assert!(
+            matches!(app.rootfs_composition, yoctui_model::RootfsCompositionState::Failed { ref message, .. } if message.contains("authority changed"))
+        );
     }
 }

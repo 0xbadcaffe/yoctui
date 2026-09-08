@@ -1,0 +1,180 @@
+{
+  "schema": "yoctui.openbmc.rootfs-sources.v1",
+  "daemon_identity": {
+    "pid": 2355755,
+    "daemon_instance_id": [
+      43,
+      159,
+      64,
+      10,
+      177,
+      234,
+      47,
+      123,
+      121,
+      55,
+      10,
+      104,
+      49,
+      112,
+      91,
+      67
+    ],
+    "started_unix_ms": 1788863229344,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "executable": "/home/bspguy-dev/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui"
+  },
+  "binary_sha256": "d24d35b2ea13af0bf28e82556b540148e80643dafea3a7b4e0aa3b4ce0a86f4b",
+  "workspace": {
+    "canonical_source": "/home/bspguy-dev/src/openbmc",
+    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "identity_hash": "b261670860dd0336"
+  },
+  "query": {
+    "request": {
+      "generation": 42,
+      "image": {
+        "machine": "romulus",
+        "image": "obmc-phosphor-image",
+        "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
+      }
+    },
+    "daemon_instance_id": [
+      43,
+      159,
+      64,
+      10,
+      177,
+      234,
+      47,
+      123,
+      121,
+      55,
+      10,
+      104,
+      49,
+      112,
+      91,
+      67
+    ],
+    "compatibility_generation": 1
+  },
+  "before_jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    },
+    {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    },
+    {
+      "id": 3,
+      "kind": "bit_bake_build",
+      "label": "BitBake build llvm-native stdplus",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    }
+  ],
+  "results": [
+    {
+      "type": "command_result",
+      "request_id": 8601,
+      "outcome": {
+        "type": "rejected",
+        "code": "stale_generation",
+        "message": "daemon generation changed; refresh and retry",
+        "current_generation": 10
+      }
+    },
+    {
+      "type": "command_result",
+      "request_id": 8602,
+      "outcome": {
+        "type": "rootfs_sources",
+        "sources": {
+          "query": {
+            "request": {
+              "generation": 42,
+              "image": {
+                "machine": "romulus",
+                "image": "obmc-phosphor-image",
+                "path": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/deploy/images/romulus/obmc-phosphor-image-romulus-20260908040925.manifest"
+              }
+            },
+            "daemon_instance_id": [
+              43,
+              159,
+              64,
+              10,
+              177,
+              234,
+              47,
+              123,
+              121,
+              55,
+              10,
+              104,
+              49,
+              112,
+              91,
+              67
+            ],
+            "compatibility_generation": 1
+          },
+          "image_manifest": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/deploy-obmc-phosphor-image-image-complete/obmc-phosphor-image-romulus-20260908102829.manifest",
+          "pkgdata_dir": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/pkgdata/romulus",
+          "image_rootfs": "/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/obmc-phosphor-image/1.0/rootfs"
+        }
+      }
+    }
+  ],
+  "source_path_exists": {
+    "image_manifest": false,
+    "pkgdata_dir": true,
+    "image_rootfs": true
+  },
+  "success": true,
+  "elapsed_seconds": 26.967277883086354,
+  "after_jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    },
+    {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    },
+    {
+      "id": 3,
+      "kind": "bit_bake_build",
+      "label": "BitBake build llvm-native stdplus",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    }
+  ]
+}

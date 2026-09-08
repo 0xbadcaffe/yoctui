@@ -3471,6 +3471,18 @@ records. Opening the rootfs reuses the existing lazy directory effects,
 64-KiB preview loader, and validated editor-save path; it never starts systemd,
 connects to D-Bus, or mounts a deploy artifact.
 
+Daemon-attached rootfs acquisition uses a capability-advertised, read-only
+InspectRootfsSources request and request-scoped typed command result, never
+broadcast metadata or guessed work paths. The daemon binds exact image,
+instance, build directory and compatibility generation, uses its initialized
+environment for recipe queries, and owns bounded asynchronous metadata workers.
+Only one metadata query may run at a time; startup inventory or active builds
+reject competing queries. Disconnect/timeout cancels and reaps the worker.
+The client acquires sources off the input loop, checks correlation/current
+authority before installation, then reuses the existing contained scan. Old
+daemons without the capability remain explicitly unavailable. Optional absent
+paths are distinct from reported paths that have since been cleaned.
+
 Schema v1 binds a non-zero request generation to one exact machine/image/path
 artifact identity. Installed-package and logical-filesystem authorities remain
 separate typed values, each independently available, partial, or unavailable.
@@ -3483,7 +3495,9 @@ exact members behind an explicit bounded `Other` identity. Reducers reject
 stale request generations and preserve category, package, and logical-path
 selection by stable identity across replacement.
 
-Acquisition never guesses work or deploy filenames. The bridge expands
+Acquisition never guesses work or deploy filenames. The selected compatibility
+implementation (authorized bitbake-getvar/environment command or negotiated
+Tinfoil API) expands
 `IMAGE_MANIFEST`, `PKGDATA_DIR`, and `IMAGE_ROOTFS` in the exact selected image
 recipe scope; the CLI carries those sources with the artifact identity and
 request generation into an off-thread adapter. The adapter canonicalizes every

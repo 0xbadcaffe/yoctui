@@ -1,5 +1,24 @@
 # Yoctui Implementation Status
 
+v0.1.86 OPENBMC-ROOTFS-SOURCES-001 is DONE. Attached clients obtain exact image
+sources asynchronously through a capability-advertised, instance/generation-
+bound daemon query. One bounded worker honors selected command or negotiated
+API authority, cancellation/reaping and contained scanning. The first real
+query exposed a command/API mismatch; a failed-first regression reproduced it
+before repair. All 1595 workspace tests/doc-tests, 52 bridge tests, strict
+Clippy, fmt, docs, version policy, 17 version-only goldens and six rasters pass.
+Corrected real metadata acquisition passes without job-history mutation.
+Actual filesystem totals match an independent scan: 2628 entries, 81096497
+bytes. Package metadata and offline system maps are available; systemd service
+rows and previews work. The sole remaining partial limitation is explicitly
+unknown filesystem package ownership, not missing sources. Private tested
+binary SHA-256 d24d35b2ea13af0bf28e82556b540148e80643dafea3a7b4e0aa3b4ce0a86f4b,
+/home/bspguy-dev/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui.
+OPENBMC-LIVE-001 is current for final handoff and completion-gate assessment.
+No image rebuild, firmware boot, normal installation replacement or Poky-data
+cleanup occurred. Details and actual failed-first/success captures are in
+docs/testing/openbmc.md. Earlier entries below describe their named versions.
+
 v0.1.85 OPENBMC-PKGDATA-001 is DONE. Contained single-hop runtime-reverse
 lookup preserves installed names, corroborates PKG and parses original scoped
 fields. Four new failed-first/safety/limit/control regressions, all 13 focused

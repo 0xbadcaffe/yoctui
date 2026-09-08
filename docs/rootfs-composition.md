@@ -74,6 +74,21 @@ checks. Traversal does not follow symlinks, deduplicates hard-linked regular
 file bytes, distinguishes special files, and is bounded by entry count, depth,
 input bytes, accounted bytes, elapsed time, and cancellation.
 
+Attached clients ask the daemon for recipe-scoped sources asynchronously,
+using its initialized environment rather than the client shell. The daemon
+honors the selected bitbake-getvar/environment command or Tinfoil API; a
+command selection is never relabeled as API authority. Commands run shell-free
+with 16 MiB per-stream bounds and one 120-second query deadline, and owned
+processes are interrupted and reaped on cancellation, timeout or output failure.
+The daemon
+must advertise rootfs_sources support. Queries and results bind the selected
+image, full daemon instance and current compatibility; stale/disconnected
+results cannot install. Busy metadata, unsupported daemons and query errors
+are explicit and can be refreshed after the cause clears. Repeated refresh
+cancels the previous lookup and reports that it is stopping, without leaving
+the new request stuck loading. A reported but cleaned rootfs path remains
+distinguishable from an unreported path. No image is mounted or rebuilt.
+
 Missing or cleaned work state is Unavailable. A reached bound is Partial and
 names the limitation. Package-reported sizes never substitute for filesystem
 bytes, and a Partial logical view is never presented as a complete total.

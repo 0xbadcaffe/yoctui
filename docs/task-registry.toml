@@ -182,18 +182,18 @@ notes = "v0.1.85 DONE: only contained generated ../runtime/<original-package> re
 id = "OPENBMC-ROOTFS-SOURCES-001"
 milestone = "M56"
 title = "Acquire exact image rootfs sources for daemon-attached clients"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1282
 required = true
 depends_on = ["OPENBMC-PKGDATA-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "v0.1.84 registration: real Images rootfs screen reports IMAGE_ROOTFS was not reported although the retained image rootfs exists. Attached clients instantiate ProcessBackend; its get_variable returns default None, so recipe-scoped source queries never reach initialized BitBake. Bridge get_rootfs_sources already exists. Supply bounded exact-recipe authoritative sources through an appropriate daemon-owned read-only path; retain instance/generation/capability checks, asynchronous input responsiveness and containment. Do not guess workdir paths or require local attach environment. Cover normal, stale/disconnected, absent/cleaned sources, errors, cancellation/timeouts and fake-process integration, then recheck real rootfs/services UI. No implementation claimed by registration."
+notes = "v0.1.86 DONE: optional rootfs_sources capability and request-scoped typed reply bind full instance, compatibility, selected image and request identity. One bounded asynchronous daemon worker honors authorized command or negotiated API selection; client work remains off the input loop with bounded explicit stale retries and stale-result rejection. Retains containment, absent/cleaned paths, cancellation/timeout/process reaping and busy states. First real query exposed command/API mismatch; failed-first regression reproduced it before selected-command dispatch repair. Ten focused CLI tests, two protocol tests, full-instance app test, all 1595 workspace tests/doc-tests, 52 bridge tests, strict Clippy, fmt, docs, version policy, 17 version-only goldens and six rasters pass. Real exact sources arrive in 26.967 seconds with no job-history mutation. Actual filesystem screen matches independent scan: 2628 entries, 81096497 bytes; package and offline system inventories available, real service rows/previews work. Sole partial limitation is unknown filesystem package ownership, not missing sources. Captured/deployed private binary d24d35b2ea13af0bf28e82556b540148e80643dafea3a7b4e0aa3b4ce0a86f4b preserved. No rebuild, boot or normal installation replacement. Evidence docs/testing/openbmc.md; LIVE resumes."
 
 [[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 1280
 required = true
 depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001", "OPENBMC-TASK-IDENTITY-001", "OPENBMC-WORKER-COUNT-001", "OPENBMC-PKGDATA-001", "OPENBMC-ROOTFS-SOURCES-001"]

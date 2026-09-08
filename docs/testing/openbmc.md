@@ -1,5 +1,62 @@
 # OpenBMC live integration
 
+## Attached rootfs source validation (v0.1.86)
+
+The [old-daemon production capture](../../artifacts/live-openbmc/romulus/v86-old-daemon-clean-error-20260908.txt)
+shows a clear unsupported-query/upgrade message. Its binary SHA-256 is
+35bf7d3afa85c454beaa0c23cbea602060f8cdb48a2cf8941f81f8bd2a837c14.
+The earlier v86-old-daemon-rootfs capture retains the first candidate's debug
+wrapper in that error; the clean-error capture verifies the presentation fix.
+After an exact executable/workspace/terminal-job preflight, the private v84
+daemon stopped normally; this candidate recovered jobs 1/2/3 unchanged and
+loaded all 4799 recipes. The normal installed release and build data were
+not changed.
+
+The [first real source query](../../artifacts/live-openbmc/romulus/v86-rootfs-sources-20260908.json)
+was rejected because the workspace selects bitbake_getvar.argv, not the assumed
+tinfoil.getvar API. It allocated no job and retained history unchanged. This
+is a failed-first integration result, not successful rootfs validation.
+A regression reproduced the exact mismatch before the worker was updated to
+use the existing capability-authorized command planner for command selections.
+Both command implementations now pass normal/absent/error/timeout/cancellation/
+oversized-output cases, including exact recipe arguments, daemon environment
+and child reaping. API selections retain negotiated bridge authority. All ten
+focused CLI rootfs tests and all 1595 workspace tests/doc-tests pass, as do
+strict Clippy, formatting and documentation checks.
+
+The [corrected real source query](../../artifacts/live-openbmc/romulus/v86-rootfs-sources-command-20260908.json)
+passes in 26.967 seconds, returning the exact retained IMAGE_ROOTFS and pkgdata
+directory, with all three historical jobs unchanged. The freshly parsed
+IMAGE_MANIFEST expands to a new timestamp which does not exist; the client
+retains the selected deployed artifact's manifest authority instead of guessing
+that new filename or rebuilding. Corrected workspace-tested/private binary:
+/home/bspguy-dev/.local/state/yoctui-v86-command-validated.mdKFIT/yoctui,
+SHA-256 d24d35b2ea13af0bf28e82556b540148e80643dafea3a7b4e0aa3b4ce0a86f4b.
+Private PID 2355755, instance 2b9f400ab1ea2f7b79370a6831705b43; always re-read
+the runtime identity before lifecycle actions.
+
+The [production filesystem screen](../../artifacts/live-openbmc/romulus/v86-image-filesystem-20260908.txt)
+reports 2628 entries: 1665 regular files, 257 directories including the root,
+706 symlinks and no special files, totaling 81096497 bytes. An independent
+bounded no-follow lstat traversal with inode deduplication matched every count
+and byte total. Package metadata remains independently available: 228 packages,
+81062873 bytes and 1778 files. The one remaining Partial limitation explicitly
+states that filesystem traversal cannot establish package ownership; it is not
+missing rootfs metadata or a truncated traversal.
+
+The [production services screen](../../artifacts/live-openbmc/romulus/v86-image-services-20260908.txt)
+now displays real service files, descriptions, D-Bus names, enablement links and
+contained unit previews, with Offline system map: available. Its navigation
+also leaves Images for Tasks during acquisition, returns and selects systemd;
+no build or service execution is requested. These 160x50 captures use the exact
+d24d candidate with local build environment removed. They are functional live
+evidence, not release-latency or hardware-boot measurements.
+
+OPENBMC-ROOTFS-SOURCES-001 is DONE. All 1595 workspace tests/doc-tests, 52 bridge
+tests, strict Clippy, fmt, documentation, version policy and roadmap pass;
+17 goldens are version-only and six production rasters verify. OPENBMC-LIVE-001
+resumes for the final integration handoff and completion-gate assessment.
+
 ## Installed package mapping repair (v0.1.85)
 
 The exact live libblkid1 regression first failed because installed-package
