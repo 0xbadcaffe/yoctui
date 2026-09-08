@@ -168,15 +168,37 @@ verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --a
 notes = "v0.1.83 DONE: typed observed active-worker count requires current replica/build authority, prefers complete positive PID sets, otherwise complete nonblank labels, deduplicates one namespace and excludes inactive rows. Incomplete/absent active identity and lost authority remain unavailable; current idle/terminal builds report zero. Eight focused model/app/UI cases cover duplicates, PID precedence, partial/mixed identity, terminal/reset, live/batch/snapshot and disconnect/reconnect. All 1580 workspace tests/doc-tests, 281 UI tests, 52 bridge tests, Clippy, fmt, docs, six rasters and roadmap pass. Failed-first 160x50 fixture reproduced Workers: 0 instead of 2 after test imports/geometry were corrected. Reviewed goldens only change version digits and terminal/reconnecting Workers fields. Real v83-worker-count-20260908 capture at 5936/6812 shows Workers: 2 matching PIDs 1618606 and 2077511, both without labels; binary preserved and isolated terminal-timing check passes. No image interruption or daemon replacement; LIVE resumes."
 
 [[task]]
+id = "OPENBMC-PKGDATA-001"
+milestone = "M56"
+title = "Resolve installed package names through bounded Yocto runtime-reverse metadata"
+status = "IN_PROGRESS"
+priority = 1283
+required = true
+depends_on = ["OPENBMC-WORKER-COUNT-001"]
+verify = ["cargo test -p yoctui-bitbake rootfs", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.84 registration: successful real Romulus image has 228 manifest packages; attached package screen reports 40 missing metadata records. runtime-reverse/libblkid1 is a generated link to ../runtime/util-linux-libblkid, but scan_manifest only tries runtime/<installed-name>. Resolve authoritative renamed identities without generally relaxing symlink containment or bounded parsing. Preserve installed package identity, use original scoped pkgdata keys, and cover direct/renamed, missing/conflicting/dangling/escaping/looped mappings, limits and cancellation. Require focused failed-first tests, baseline and real package UI recheck. No implementation claimed by registration."
+
+[[task]]
+id = "OPENBMC-ROOTFS-SOURCES-001"
+milestone = "M56"
+title = "Acquire exact image rootfs sources for daemon-attached clients"
+status = "NOT_STARTED"
+priority = 1282
+required = true
+depends_on = ["OPENBMC-PKGDATA-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.84 registration: real Images rootfs screen reports IMAGE_ROOTFS was not reported although the retained image rootfs exists. Attached clients instantiate ProcessBackend; its get_variable returns default None, so recipe-scoped source queries never reach initialized BitBake. Bridge get_rootfs_sources already exists. Supply bounded exact-recipe authoritative sources through an appropriate daemon-owned read-only path; retain instance/generation/capability checks, asynchronous input responsiveness and containment. Do not guess workdir paths or require local attach environment. Cover normal, stale/disconnected, absent/cleaned sources, errors, cancellation/timeouts and fake-process integration, then recheck real rootfs/services UI. No implementation claimed by registration."
+
+[[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
-status = "IN_PROGRESS"
+status = "NOT_STARTED"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001", "OPENBMC-TASK-IDENTITY-001", "OPENBMC-WORKER-COUNT-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001", "OPENBMC-TASK-IDENTITY-001", "OPENBMC-WORKER-COUNT-001", "OPENBMC-PKGDATA-001", "OPENBMC-ROOTFS-SOURCES-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
-notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. September 8 recovery: second attempt capture stopped at 4953/6812 with no terminal result; host journal records global OOM kills and user-session shutdown, and old daemon/workers are absent. Third attempt accepted through preserved v0.1.73 after OpenBMC-only BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, both verified via bitbake-getvar. About 46 GiB free at restart; all Poky data preserved. Current instance and bounded evidence in docs/testing/openbmc.md and image-build-resume-20260908.json. No image success or release gate claimed."
+notes = "v0.1.84: fifth real Romulus obmc-phosphor-image attempt SUCCEEDED through Yoctui, 6812/6812, job 1 exit 0 and successful typed terminal. Flash/SquashFS hashes, manifest 228 packages, retained rootfs and 274 service files inspected; one upstream render-group warning traced without suppression, runtime impact untested. Old daemon stopped normally after success. New private v84 daemon preserves jobs 1/2, actual native/git listtasks uses job 3 and completes 2/2 with correct identities and compacted observed timestamps; two fresh attachments freeze the measured 1814-ms build at 00:00:01. Actual Images UI exposes missing runtime-reverse mappings and attached recipe-scoped IMAGE_ROOTFS acquisition; separate OPENBMC-PKGDATA-001 and OPENBMC-ROOTFS-SOURCES-001 must be repaired/rechecked before LIVE is DONE. Preserve all Poky data and normal installed release. No firmware boot or completion-gate success claimed. Evidence in docs/testing/openbmc.md."
 
 [[task]]
 id = "RELEASE-README-001"

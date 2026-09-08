@@ -1,0 +1,98 @@
+{
+  "schema": "yoctui.openbmc.lifecycle-recheck.v1",
+  "daemon_identity": {
+    "pid": 2310652,
+    "daemon_instance_id": [
+      72,
+      50,
+      229,
+      216,
+      40,
+      84,
+      68,
+      165,
+      68,
+      82,
+      100,
+      218,
+      226,
+      144,
+      2,
+      57
+    ],
+    "started_unix_ms": 1788858071564,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "executable": "/home/bspguy-dev/.local/state/yoctui-v84-validated.Gh0uoK/yoctui"
+  },
+  "binary_sha256": "c1fd3f3ccd2c269d3c7d11d35e1f7b69deb1a6c5ff0a553b33621c0aa9f0d221",
+  "workspace": {
+    "canonical_source": "/home/bspguy-dev/src/openbmc",
+    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "identity_hash": "b261670860dd0336"
+  },
+  "targets": [
+    "llvm-native",
+    "stdplus"
+  ],
+  "task": "listtasks",
+  "before_jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    },
+    {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    }
+  ],
+  "before_generation": 11,
+  "observed_from_unix": 1788858221.0781279,
+  "observed_until_unix": 1788858221.1315942,
+  "command_result": {
+    "type": "command_result",
+    "request_id": 8301,
+    "outcome": {
+      "type": "rejected",
+      "code": "stale_generation",
+      "message": "daemon generation changed; refresh and retry",
+      "current_generation": 12
+    }
+  },
+  "build_events": [],
+  "jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    },
+    {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    }
+  ],
+  "recent_logs": [],
+  "critical": [],
+  "completed": null,
+  "after_build_events": null,
+  "after_build_progress": null,
+  "failure": "RuntimeError: submission was not accepted; do not infer a build"
+}

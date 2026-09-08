@@ -1,0 +1,77 @@
+{
+  "schema": "yoctui.openbmc.terminal-snapshot.v1",
+  "observed_unix_ms": 1788857843604,
+  "daemon_identity": {
+    "pid": 1302830,
+    "daemon_instance_id": [
+      127,
+      16,
+      75,
+      229,
+      230,
+      118,
+      19,
+      184,
+      187,
+      34,
+      17,
+      152,
+      174,
+      164,
+      74,
+      170
+    ],
+    "started_unix_ms": 1788840447388,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "executable": "/home/bspguy-dev/.local/state/yoctui-v76-validated.tWHDMp/yoctui"
+  },
+  "workspace": {
+    "canonical_source": "/home/bspguy-dev/src/openbmc",
+    "canonical_build": "/home/bspguy-dev/src/build-openbmc-romulus",
+    "identity_hash": "b261670860dd0336"
+  },
+  "sequence": 50002,
+  "build_progress": {
+    "completed": 6812,
+    "total": 6812
+  },
+  "jobs": [
+    {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "exited",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 0
+    },
+    {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    }
+  ],
+  "terminal": [
+    {
+      "type": "completed",
+      "success": true,
+      "exit_code": 0
+    }
+  ],
+  "warnings": [
+    {
+      "source": "bitbake",
+      "severity": "warning",
+      "message": "Group render has never been defined",
+      "unix_ms": 1788857703713,
+      "recipe": "obmc-phosphor-image",
+      "task": "do_rootfs",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    }
+  ]
+}

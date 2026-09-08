@@ -4,6 +4,19 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+v0.1.84 records successful real Romulus image completion: 6812/6812, job 1
+exit 0, generated flash/SquashFS artifacts, 228 packages and retained rootfs.
+New-daemon native/git lifecycle, recovered job IDs and frozen reattachment
+timing pass actual BitBake checks. Image UI inspection exposed two follow-ups:
+OPENBMC-PKGDATA-001 (current) resolves runtime-reverse package names;
+OPENBMC-ROOTFS-SOURCES-001 supplies exact recipe metadata to attached clients.
+OPENBMC-LIVE-001 waits for both and their real UI rechecks. The single upstream
+render-group warning was investigated, not suppressed; no firmware boot or
+completion-gate success is claimed.
+
+The following integration chronology describes the prerequisites at each
+version; its earlier pending image claims are superseded by the result above.
+
 M56 real OpenBMC validation additionally requires bounded large-inventory
 transfer (OPENBMC-INVENTORY-001): live Romulus parsing exposed a recipe response
 above the bridge's 1 MiB frame limit. v0.1.69 now transfers the complete real
@@ -27,7 +40,8 @@ or waive the source-bound performance and release gates. A subsequent real
 attachment exposed Workers: 0 beside two active tasks. OPENBMC-WORKER-COUNT-001
 is DONE in v0.1.83 with typed active-worker authority, eight focused regressions,
 the full baseline and real attached display matching two known active PIDs.
-OPENBMC-LIVE-001 remains current; image completion is still required.
+At v0.1.83 OPENBMC-LIVE-001 resumed; v0.1.84 records its successful image and
+the two remaining image-inspection repairs above.
 
 Yoctui is 100% complete only when:
 
@@ -1182,7 +1196,8 @@ alone do not establish OpenBMC compatibility. Storage is currently constrained
 and Poky generated output must not be removed without approval.
 Progress: environment, direct capabilities, responsive startup, bounded inventory,
 CLI submission, symlinked-tool discovery, host Python and initial attachment
-tasks are DONE through v0.1.73. OPENBMC-LIVE-001 remains IN_PROGRESS;
+tasks are DONE through v0.1.73. OPENBMC-LIVE-001 now waits for the package
+mapping and attached rootfs-source repairs registered in v0.1.84;
 OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76: typed aggregate counters survive
 task-event compaction, with baseline tests and real attached-counter verification.
 DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78: shared checked allocation preserves
@@ -1194,12 +1209,13 @@ reattachment and terminal durations freeze. OPENBMC-TASK-IDENTITY-001 is DONE
 in v0.1.81: bounded initialized PN metadata replaces filename-derived ghost
 queue identities while unresolved events preserve only aggregate statistics.
 Both have full baseline and focused regression coverage; live new-daemon
-rechecks remain under OPENBMC-LIVE-001 after a natural image stopping point.
+rechecks passed in v0.1.84 after successful natural image completion.
 The image retry reached 4,953/6,812 tasks without a terminal result before the
 September 8 host OOM and user-session shutdown. A third attempt was accepted
 through the preserved v0.1.73 candidate with OpenBMC-only concurrency reduced
-to two BitBake tasks and two compiler jobs. Image completion and package/rootfs
-inspection remain required.
+to two BitBake tasks and two compiler jobs. The fifth attempt succeeded;
+artifact/rootfs checks passed, while production UI inspection registered the
+two exact metadata integration defects described above.
 Root had about 46 GiB free at this restart, subject to disk and memory monitoring.
 The existing 15 GiB scheduling-stop and 8 GiB halt margins remain configured.
 See [live integration preflight](testing/openbmc.md).

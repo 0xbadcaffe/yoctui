@@ -1,5 +1,32 @@
 # Yoctui Implementation Status
 
+OPENBMC-PKGDATA-001 is current in v0.1.84; OPENBMC-LIVE-001 waits for it and
+OPENBMC-ROOTFS-SOURCES-001. Registration has a version-only baseline;
+no runtime behavior changes from v0.1.83. All
+1,580 workspace tests/doc-tests, 52 bridge tests, strict Clippy, fmt, docs,
+rasters, roadmap and version-policy checks/tests pass; all 17 golden diffs are
+version digits only. The workspace-tested candidate is preserved at
+/home/bspguy-dev/.local/state/yoctui-v84-validated.Gh0uoK/yoctui, SHA-256
+c1fd3f3ccd2c269d3c7d11d35e1f7b69deb1a6c5ff0a553b33621c0aa9f0d221. The
+image SUCCEEDED under the preserved v0.1.76 daemon: 6812/6812, job 1 exit 0,
+typed successful Completed event. The 32 MiB flash image and XZ SquashFS were
+inspected, with 228 manifest packages and matching archived/rootfs os-release
+and bmcweb bytes. The upstream render-group warning was traced to sysusers
+metadata; it was not suppressed. The old daemon stopped normally after success.
+v0.1.84 recovered historical jobs 1/2; real llvm-native/stdplus listtasks used
+job 3 and completed 2/2 with correct queue/start/completion identities and
+compacted timestamps. Two fresh production attachments preserve the measured
+1814-ms terminal duration as 00:00:01, with no active/waiting ghost rows.
+Images lists the deployed artifacts and all 228 manifest packages, but exposes
+two additional defects: 40 package metadata records require runtime-reverse
+renaming, and the attached ProcessBackend returns no recipe variables for the
+retained IMAGE_ROOTFS. Both are separately registered; neither is repaired by
+this governance commit. Actual image UI rechecks remain after those repairs.
+No firmware/hardware boot or completion-gate success is claimed.
+
+The following entries record historical state at each version, not current
+daemon authority or an assertion that the successful image is still running.
+
 OPENBMC-WORKER-COUNT-001 is DONE in v0.1.83. Eight focused model/app/UI tests,
 all 281 UI tests, all 1,580 workspace tests/doc-tests, 52 bridge tests, strict
 Clippy, fmt, docs, rasters and roadmap pass. The failed-first 160x50 fixture

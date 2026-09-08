@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.84  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Images──────────────────────────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
+│▾ OVERVIEW                ││ 1 Artifacts  │  2   │  3   │  4   │  5   │  6    Tab switches                      ││▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             ││MACHINE romulus | build target obmc-phosphor-image | 38 image recipe target(s)      ││Selected artifact                           │
+│  ▱ Insights              ││Recipe targets: phosphor-image-signing, nativesdk-genimage, genimage-native,        ││Machine: romulus                            │
+│▾ CONTENT                 ││genimage, libsdl2-image, core-image-kernel-dev, linux-yocto-fitimage,               ││Image: aspeed-bmc-opp                       │
+│  ▱ Layers                ││core-image-base                                                                     ││Kind: other                                 │
+│  ▱ Recipes               ││/ [IDLE] Query: <empty> · 1/21 · ↑/↓                                                ││Path:                                       │
+│  ▱ Packages              ││Image target                 Kind             Size       Timestamp    File          ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Images                ││aspeed-bmc-opp               other            33604      1788852776                 ││mp/deploy/images/romulus/aspeed-bmc-opp-romu│
+│  ▱ Kernel                ││aspeed-bmc-opp-romulus.dtb                                                          ││lus.dtb                                     │
+│  ▱ U-Boot / BIOS         ││bootloader                   bootloader       371406     1788852824                 ││                                            │
+│  ▱ SDK                   ││u-boot-romulus-v2019.04+git-r0.bin                                                  ││Terminal image preview                      │
+│▾ BUILD                   ││fit-image                    other            2197       1788853227   fit-image.its ││Native graphics: not offered · protocol     │
+│  ▱ Tasks                 ││fitImage                     other            4347532    1788853227   fitImage      ││probe skipped                               │
+│  ▱ Logs              LIVE││kernel                       kernel           371406     1788857727   image-u-boot  ││Fallback: exact artifact metadata and       │
+│  ▱ Errors                ││linux                        other            3080872    1788852776   linux.bin     ││existing workflows                          │
+│  ▱ Configuration         ││linux_comp                   other            4          1788852776   linux_comp    ││Reason: the deploy scanner has no           │
+│  ▱ Dependencies          ││obmc-phosphor-image          manifest         9527       1788857709                 ││authoritative raster MIME classification    │
+│▾ VALIDATE                ││obmc-phosphor-image-romulus-20260908040925.manifest                                 ││                                            │
+│  ▱ Testing               ││obmc-phosphor-image          other            1268       1788857713                 ││Deploy directory:                           │
+│    Security              ││obmc-phosphor-image-romulus-20260908040925.qemuboot.conf                            ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ QA                    ││obmc-phosphor-image          spdx/sbom        5330499    1788857744                 ││mp/deploy/images/romulus                    │
+│▾ TOOLS                   ││obmc-phosphor-image-romulus-20260908040925.spdx.json                                ││Size: 33604 bytes                           │
+│  ▱ Raw Mode              ││obmc-phosphor-image          other            23498752   1788857726                 ││Timestamp: 1788852776s since Unix epoch     │
+│  ▱ Terminal Sessions     ││obmc-phosphor-image-romulus-20260908040925.squashfs-xz                              ││Limitations:                                │
+│  ▱ Devtool               ││obmc-phosphor-image          other            33554432   1788857727                 ││! symlink deploy entry was not followed:    │
+│  ▱ QEMU / Wic            ││obmc-phosphor-image-romulus-20260908040925.static.mtd                               ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Maintenance           ││obmc-phosphor-image          root filesystem  33566720   1788857730                 ││mp/deploy/images/romulus/aspeed-bmc-opp-romu│
+│  ▱ Build environment     ││obmc-phosphor-image-romulus-20260908040925.static.mtd.all.tar                       ││lus--6.18.49+git0+c060b55d2f-r0-romulus-2026│
+│  ▱ Compatibility         ││obmc-phosphor-image          root filesystem  28231680   1788857729                 ││0908040925.dtb                              │
+│  ▱ Settings              ││obmc-phosphor-image-romulus-20260908040925.static.mtd.tar                           ││! symlink deploy entry was not followed:    │
+│                          ││obmc-phosphor-image          other            430839     1788857703                 ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│                          ││obmc-phosphor-image-romulus-20260908040925.testdata.json                            ││mp/deploy/images/romulus/aspeed-bmc-opp-romu│
+│                          ││obmc-phosphor-image          root filesystem  0          1788857714                 ││lus-romulus.dtb                             │
+│                          ││obmc-phosphor-image-romulus.jffs2                                                   ││! symlink deploy entry was not followed:    │
+│                          ││obmc-phosphor-initramfs      other            1231380    1788853224                 ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│                          ││obmc-phosphor-initramfs-romulus-20260908040925.cpio.xz                              ││mp/deploy/images/romulus/fitImage-its--6.18.│
+│                          ││obmc-phosphor-initramfs      manifest         219        1788852772                 ││49-c060b55-r0-romulus-20260908040925.its    │
+│                          ││obmc-phosphor-initramfs-romulus-20260908040925.manifest                             ││! symlink deploy entry was not followed:    │
+│                          ││obmc-phosphor-initramfs      other            1284       1788852776                 ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│                          ││obmc-phosphor-initramfs-romulus-20260908040925.qemuboot.conf                        ││mp/deploy/images/romulus/fitImage-its-obmc-p│
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   Enter/p rootfs   Tab view   Q QEMU   W create Wic   D write device   ←/→ Focus   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit     09:13:25│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

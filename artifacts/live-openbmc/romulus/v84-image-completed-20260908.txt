@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.84  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 6812 / 6812  |  Elapsed: --:--:--  |  Workers: 0                             │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
+│▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  100%  6812/6812▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪││Task        do_compile                      │
+│  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 1  Errors 0  Elapsed --                               ││Recipe      bmcweb_git                      │
+│  ▱ Insights              ││Target: obmc-phosphor-image  Backend: bridge  Status: Completed  Exit code: 0       ││PN          bmcweb_git                      │
+│▾ CONTENT                 ││Parse progress: not parsing  Tasks: 6812/6812  Warnings: 1  Errors: 0  Release: nodi││PV          unavailable                     │
+│  ▱ Layers                ││Task           Recipe               Status        Time      Progress                ││PR          unavailable                     │
+│  ▱ Recipes               ││  do_compile   bmcweb_git           ? Lost        --        --                      ││State       ? Lost                          │
+│  ▱ Packages              ││  do_configure bmcweb_git           ? Lost        --        --                      ││Progress    unknown                         │
+│  ▱ Images                ││  do_create_pa bmcweb_git           ? Lost        --        --                      ││                                            │
+│  ▱ Kernel                ││  do_create_sp bmcweb_git           ? Lost        --        --                      ││                                            │
+│  ▱ U-Boot / BIOS         ││  do_install   bmcweb_git           ? Lost        --        --                      │└────────────────────────────────────────────┘
+│  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│▾ BUILD                   │┌Log Viewer — do_compile (bmcweb_git) · ▶ Follow─────────────────────────────────────┐│Worker      unavailable                     │
+│  ▱ Tasks                 ││Waiting for typed log entries for the selected task.                                ││PID         unavailable                     │
+│  ▱ Logs              LIVE││                                                                                    ││Started     unavailable                     │
+│  ▱ Errors                ││                                                                                    ││Elapsed     unavailable                     │
+│  ▱ Configuration         ││                                                                                    ││Workdir     unavailable                     │
+│  ▱ Dependencies          ││                                                                                    ││Log file    unavailable                     │
+│▾ VALIDATE                ││                                                                                    ││Dependencies none reported                  │
+│  ▱ Testing               ││                                                                                    ││                                            │
+│    Security              ││                                                                                    ││                                            │
+│  ▱ QA                    ││                                                                                    │└────────────────────────────────────────────┘
+│▾ TOOLS                   ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
+│  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘│Waiting for typed log entries for the       │
+│  ▱ Terminal Sessions     │┌Job History · Active 0 · Queued 0 · Failed 1 · Recent complete 2 · Daemon-owned 2───┐│selected task.                              │
+│  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││                                            │
+│  ▱ QEMU / Wic            ││✕ Failed      BitBake build Build        daemon                  --        --       │└────────────────────────────────────────────┘
+│  ▱ Maintenance           ││✓ Succeeded   BitBake build Build        daemon                  --        --       │┌Contextual Actions──────────────────────────┐
+│  ▱ Build environment     ││                                                                                    ││× Cancel active build  [c] — Disabled       │
+│  ▱ Compatibility         ││                                                                                    ││  Reason: No active build can be cancelled. │
+│  ▱ Settings              ││                                                                                    ││  Implementation: tinfoil.cancel            │
+│                          ││                                                                                    ││✓ Open Logs            [l] — Local          │
+│                          ││                                                                                    ││✓ Build History        [h] — Local          │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│✓ Build options        [B] — Available      │
+│                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│  Implementation: tinfoil.build             │
+│                          ││CPU Usage         9%│RAM Usage        22%│Build FS Usage   91%│SSTATE ! unavailable │└────────────────────────────────────────────┘
+│                          ││                    │                    │                ▅▅▅ │                     │┌System Status───────────────────────────────┐
+│                          ││                    │                    │                ███ │                     ││✓ Daemon Connected · Local · version unavai…│
+│                          ││                 ▁▂ │                ▅▅▅ │                ███ │                     ││– BitBake Disconnected · v2.19.0 · Jobs 0   │
+│                          ││ ▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ │                     ││! Compat Degraded g1 · A86 L1 U5 ?15 · PTY …│
+│                          ││       8 cores      │    3.4/15.0 GiB    │    39.0 GiB free   │                     ││✕ Build FS 91% · 39.0/456.3 GiB free · Work…│
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   h/l groups   ←/→ focus   Enter open   Ctrl+B prefix   ←/→ Focus   F2 Tasks   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit          08:57:28│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

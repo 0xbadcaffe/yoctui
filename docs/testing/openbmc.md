@@ -1,5 +1,74 @@
 # OpenBMC live integration
 
+## Successful image and inspection findings (v0.1.84)
+
+The fifth obmc-phosphor-image attempt completed naturally through the private
+v0.1.76 Yoctui daemon: 6812/6812, job 1 Exited exit 0, successful typed Completed
+event at sequence 49999 and terminal snapshot 50002. The old daemon stopped
+normally only after success. See the [terminal record](../../artifacts/live-openbmc/romulus/image-terminal-v76-20260908.json),
+[completed production screen](../../artifacts/live-openbmc/romulus/v84-image-completed-20260908.txt)
+and [artifact report](../../artifacts/live-openbmc/romulus/image-artifacts-20260908.json).
+Source is clean OpenBMC d4fd7d3f54e88e800c0284b753af68a13aabbef6, MACHINE romulus,
+DISTRO openbmc-openpower, BitBake 2.19.0. All Poky data is preserved.
+
+The deployed obmc-phosphor-image-romulus-20260908040925.static.mtd is 33554432
+bytes, SHA-256 00c37b3aed9961a37d50a70afc3c670c50a25282c93784f7022b8e67d1c4f7f0.
+Its SquashFS-XZ is 23498752 bytes, SHA-256
+ebe8cca00405777d532bb8bc5573f30e7d3703c9f7758fcf2e7bdcf4a4a6cefe.
+unsquashfs verifies the filesystem, and archived os-release and bmcweb bytes
+match the retained rootfs. The manifest contains 228 packages; rootfs contains
+274 service files. bmcweb is a stripped ARM EABI5 ELF; its generated IPK has
+readable control metadata. Kernel, Romulus DTB, U-Boot and six-package initramfs
+are also deployed. These are build/artifact checks, not a firmware boot.
+
+One warning, zero errors: Group render has never been defined. The source's
+rootfs-postcommands.bbclass systemd_sysusers_check compares declarations with
+passwd/group. usr/lib/sysusers.d/basic.conf declares render but etc/group lacks
+it. This is investigated upstream image metadata, not a Yoctui build/protocol
+failure; nothing was patched or suppressed and runtime impact is untested.
+
+The exact workspace-tested v0.1.84 candidate is preserved at
+/home/bspguy-dev/.local/state/yoctui-v84-validated.Gh0uoK/yoctui, SHA-256
+c1fd3f3ccd2c269d3c7d11d35e1f7b69deb1a6c5ff0a553b33621c0aa9f0d221.
+Its private daemon PID 2310652, instance 4832e5d8285444a5445264dae2900239,
+loaded 4799 recipes and recovered jobs 1/2 unchanged. The real two-target
+llvm-native/stdplus listtasks recheck used new job 3, exited 0 and completed
+2/2. Exact PNs correlate queue/start/completion without ghost rows; observed
+timestamps survive terminal compaction. [Raw lifecycle evidence](../../artifacts/live-openbmc/romulus/v84-lifecycle-recheck-retry-20260908.json)
+retains the explicit stale-generation rejection and bounded safe refreshed
+submission; the initial harness rejection submitted no job. The actual build
+interval was 1788858340539 to 1788858342353, 1814 ms. Both
+[first](../../artifacts/live-openbmc/romulus/v84-observed-terminal-first-20260908.txt)
+and [second](../../artifacts/live-openbmc/romulus/v84-observed-terminal-second-20260908.txt)
+fresh production attachments show 00:00:01, Workers 0, Active 0 and Waiting 0.
+The isolated two-attachment 64-second fixture also passes.
+
+The [Images screen](../../artifacts/live-openbmc/romulus/v84-images-20260908.txt)
+lists 21 artifacts. Selecting the actual image manifest exposes two reproducible
+inspection gaps, registered as separate tasks before implementation:
+
+- OPENBMC-PKGDATA-001: [packages](../../artifacts/live-openbmc/romulus/v84-image-packages-20260908.txt)
+  lists all 228 installed names but 40 metadata records are unavailable.
+  pkgdata/runtime-reverse/libblkid1 points to ../runtime/util-linux-libblkid;
+  the scanner only tries runtime/libblkid1. Resolve contained generated name
+  mappings and original scoped keys without relaxing general symlink safety.
+- OPENBMC-ROOTFS-SOURCES-001: [filesystem](../../artifacts/live-openbmc/romulus/v84-image-rootfs-unavailable-20260908.txt)
+  reports IMAGE_ROOTFS was not reported although the retained rootfs exists.
+  Attached clients instantiate ProcessBackend whose get_variable returns None;
+  the existing bridge get_rootfs_sources is not connected to this path.
+  Acquire exact image sources through daemon-owned metadata authority, without
+  guessing workdir paths or requiring an initialized local attach environment.
+
+OPENBMC-LIVE-001 is not DONE until both fixes and actual UI rechecks pass.
+v0.1.84 registration changes no runtime code; baseline passes 1580 workspace
+tests/doc-tests, 52 bridge tests, strict Clippy, fmt, docs, rasters, roadmap
+and version policy. All 17 golden diffs are version digits only. The normal
+installed release stays v0.1.64. Full completion still requires fresh
+source-bound real-Poky performance evidence and the remaining release gates.
+
+Earlier sections below are historical observations at their named versions;
+pending-image statements there are superseded by this successful result.
+
 ## Active-worker repair (v0.1.83)
 
 OPENBMC-WORKER-COUNT-001 is DONE. Eight focused tests, all 281 UI tests and all

@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.84  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
+│▾ OVERVIEW                ││ 1   │  2   │  3 Files  │  4   │  5   │  6    Tab switches                          ││▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             ││Filesystem tree unavailable                                                         ││Rootfs composition                          │
+│  ▱ Insights              ││IMAGE_ROOTFS was not reported for the selected image                                ││View: Rootfs filesystem                     │
+│▾ CONTENT                 ││                                                                                    ││State: partial · 40 limitation(s)           │
+│  ▱ Layers                ││Installed-package evidence remains separate; press Shift-Tab.                       ││Image: obmc-phosphor-image                  │
+│  ▱ Recipes               ││                                                                                    ││Path:                                       │
+│  ▱ Packages              ││                                                                                    ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Images                ││                                                                                    ││mp/deploy/images/romulus/obmc-phosphor-image│
+│  ▱ Kernel                ││                                                                                    ││-romulus-20260908040925.manifest            │
+│  ▱ U-Boot / BIOS         ││                                                                                    ││Installed packages: partial · 40            │
+│  ▱ SDK                   ││                                                                                    ││limitation(s)                               │
+│▾ BUILD                   ││                                                                                    ││Filesystem tree: unavailable · IMAGE_ROOTFS │
+│  ▱ Tasks                 ││                                                                                    ││was not reported for the selected image     │
+│  ▱ Logs              LIVE││                                                                                    ││Offline system map: unavailable · offline   │
+│  ▱ Errors                ││                                                                                    ││system inventory requires IMAGE_ROOTFS      │
+│  ▱ Configuration         ││                                                                                    ││                                            │
+│  ▱ Dependencies          ││                                                                                    ││Exact totals                                │
+│▾ VALIDATE                ││                                                                                    ││Package bytes: 56717557                     │
+│  ▱ Testing               ││                                                                                    ││Package files: 1668                         │
+│    Security              ││                                                                                    ││Filesystem bytes: 0                         │
+│  ▱ QA                    ││                                                                                    ││Entries: 0 (files 0 · dirs 0 · symlinks 0 · │
+│▾ TOOLS                   ││                                                                                    ││special 0)                                  │
+│  ▱ Raw Mode              ││                                                                                    ││Overflow: false                             │
+│  ▱ Terminal Sessions     ││                                                                                    ││                                            │
+│  ▱ Devtool               ││                                                                                    ││Selected path: none                         │
+│  ▱ QEMU / Wic            ││                                                                                    ││                                            │
+│  ▱ Maintenance           ││                                                                                    ││Limitations                                 │
+│  ▱ Build environment     ││                                                                                    ││! generated pkgdata was unavailable for     │
+│  ▱ Compatibility         ││                                                                                    ││installed package libavahi-common3          │
+│  ▱ Settings              ││                                                                                    ││! generated pkgdata was unavailable for     │
+│                          ││                                                                                    ││installed package libavahi-core7            │
+│                          ││                                                                                    ││! generated pkgdata was unavailable for     │
+│                          ││                                                                                    ││installed package libblkid1                 │
+│                          ││                                                                                    ││! generated pkgdata was unavailable for     │
+│                          ││                                                                                    ││installed package libboost-context1.91.0    │
+│                          ││                                                                                    ││! generated pkgdata was unavailable for     │
+│                          ││                                                                                    ││installed package libc6                     │
+│                          ││                                                                                    ││! generated pkgdata was unavailable for     │
+│                          ││                                                                                    ││installed package libcrypt2                 │
+│                          ││                                                                                    ││! generated pkgdata was unavailable for     │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│j/k select path   Enter/→ explore actual IMAGE_ROOTFS   r refresh   Tab view   ←/→ Focus   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit        09:14:57│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

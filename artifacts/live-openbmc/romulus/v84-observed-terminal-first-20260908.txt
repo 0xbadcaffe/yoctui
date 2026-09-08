@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.84  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Tasks: obmc-phosphor-image · All────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
+│▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  100%  2/2▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪││Task        do_listtasks                    │
+│  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed 00:00:01                         ││Recipe      stdplus                         │
+│  ▱ Insights              ││Task           Recipe               Status        Time      Progress                ││PN          stdplus                         │
+│▾ CONTENT                 ││  do_listtasks stdplus              ✓ Succeeded   00:00:00  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PV          0.1+git                         │
+│  ▱ Layers                ││  do_listtasks llvm-native          ✓ Succeeded   00:00:00  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PR          unavailable                     │
+│  ▱ Recipes               ││                                                                                    ││State       ✓ Succeeded                     │
+│  ▱ Packages              ││                                                                                    ││Progress    100%                            │
+│  ▱ Images                ││                                                                                    ││                                            │
+│  ▱ Kernel                ││                                                                                    ││                                            │
+│  ▱ U-Boot / BIOS         ││                                                                                    │└────────────────────────────────────────────┘
+│  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│▾ BUILD                   │┌Log Viewer — do_listtasks (stdplus) · ▶ Follow──────────────────────────────────────┐│Worker      unavailable                     │
+│  ▱ Tasks                 │││ do_populate_sysroot                   Copies a subset of files installed by       ││PID         unavailable                     │
+│  ▱ Logs              LIVE││do_install into the sysroot in order to make them available to other recipes        ││Started     09:05:41                        │
+│  ▱ Errors                │││ do_populate_sysroot_setscene          Copies a subset of files installed by       ││Elapsed     00:00:00                        │
+│  ▱ Configuration         ││do_install into the sysroot in order to make them available to other recipes        ││Workdir     unavailable                     │
+│  ▱ Dependencies          ││(setscene version)                                                                  ││Log file    unavailable                     │
+│▾ VALIDATE                │││ do_prepare_recipe_sysroot                                                         ││Dependencies none reported                  │
+│  ▱ Testing               │││ do_pydevshell                         Starts an interactive Python shell for      ││                                            │
+│    Security              ││development/debugging                                                               ││                                            │
+│  ▱ QA                    │││ do_recipe_qa                                                                      │└────────────────────────────────────────────┘
+│▾ TOOLS                   │││ do_recipe_qa_setscene                  (setscene version)                         │┌Recent output · Recent Log (tail)───────────┐
+│  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘││ do_rm_work_all                            │
+│  ▱ Terminal Sessions     │┌Job History · Active 0 · Queued 0 · Failed 1 · Recent complete 3 · Daemon-owned 3───┐│Top-level task for removing work files after│
+│  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││the build system has finished with them     │
+│  ▱ QEMU / Wic            ││✓ Succeeded   BitBake build Build        daemon                  --        --       │└────────────────────────────────────────────┘
+│  ▱ Maintenance           ││✕ Failed      BitBake build Build        daemon                  --        --       │┌Contextual Actions──────────────────────────┐
+│  ▱ Build environment     ││✓ Succeeded   BitBake build Build        daemon                  --        --       ││× Cancel active build  [c] — Disabled       │
+│  ▱ Compatibility         ││✓ Succeeded   Build record  Build        llvm-native             --        00:00:01 ││  Reason: No active build can be cancelled. │
+│  ▱ Settings              ││                                                                                    ││  Implementation: tinfoil.cancel            │
+│                          ││                                                                                    ││✓ Open Logs            [l] — Local          │
+│                          ││                                                                                    ││✓ Build History        [h] — Local          │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│✓ Build options        [B] — Available      │
+│                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│  Implementation: tinfoil.build             │
+│                          ││CPU Usage         8%│RAM Usage        23%│Build FS Usage   91%│SSTATE ! unavailable │└────────────────────────────────────────────┘
+│                          ││                    │                    │        ▅▅▅▅▅▅▅▅▅▅▅ │                     │┌System Status───────────────────────────────┐
+│                          ││                    │                    │        ███████████ │                     ││✓ Daemon Connected · Local · version unavai…│
+│                          ││         ▂▁▁▁▂▁▁▂▁▁ │        ▅▅▅▅▅▅▅▅▅▅▅ │        ███████████ │                     ││– BitBake Disconnected · v2.19.0 · Jobs 0   │
+│                          ││ ▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ │                     ││! Compat Degraded g1 · A85 L1 U5 ?16 · PTY …│
+│                          ││       8 cores      │    3.5/15.0 GiB    │    39.0 GiB free   │                     ││✕ Build FS 91% · 39.0/456.3 GiB free · Work…│
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   f state   F field   / edit filter   d duration   c cancel   ←/→ Focus   F3 History   F4 Dashboard   F1 Help   F10 Menu   q Quit          09:08:14│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
