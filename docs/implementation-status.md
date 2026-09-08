@@ -1,5 +1,15 @@
 # Yoctui Implementation Status
 
+v0.1.97 RELEASE-CI-097 is DONE to align hosted Python quality tools
+with the validated release environment. Run 34257243104 passed all runtime,
+documentation and 52 Python tests, but floating Ruff 0.16.6 used different rules
+from local Ruff 0.15.22. Explicit Ruff/mypy/pytest/pytest-cov versions preserve
+the existing lint policy and coverage threshold. A fresh virtualenv passes
+Ruff lint/format, mypy and all 52 Python tests with 78.35% production coverage.
+CI contract, fmt, README/version, sixteen rasters and roadmap checks pass;
+all 21 golden changes are version digits only. All 714 tasks are DONE. Hosted
+success and locked package verification remain required before publication.
+
 v0.1.96 RELEASE-CI-096 is DONE: the test container now requests Docker's
 init reaper after run 34256365912 exposed an unreaped descendant in the process
 cancellation stress test. The exact test reproduces failure without --init and

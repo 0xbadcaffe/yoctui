@@ -30,6 +30,7 @@ required_workflow = (
     "image: ubuntu:26.04",
     "options: --init",
     "pycairo==1.27.0",
+    "ruff==0.15.22 mypy==2.3.0 pytest==9.1.1 pytest-cov==7.1.0",
     'git config --system --add safe.directory "$GITHUB_WORKSPACE"',
     'with: { components: "rustfmt, clippy" }',
     "python3 -m unittest scripts/test_version_bump.py",

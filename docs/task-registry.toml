@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "RELEASE-CI-097"
+milestone = "M57"
+title = "Pin Python quality tools to the validated release environment"
+status = "DONE"
+priority = 1504
+required = true
+depends_on = ["RELEASE-CI-096"]
+verify = ["./scripts/check-ci.sh", "cargo fmt --all --check", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.97 prepared: hosted run 34257243104 passes all runtime, terminal, stress, CLI, docs and 52 Python tests, then reports three additional Ruff 0.16.6 rules absent from the validated local Ruff 0.15.22 run. CI now pins Ruff 0.15.22, mypy 2.3.0, pytest 9.1.1 and pytest-cov 7.1.0 alongside PyCairo 1.27.0. A fresh virtualenv verifies the exact tool set: Ruff lint/format and mypy pass; 52 tests pass with 78.35% production-source coverage. Lint configuration, application source and the 75% threshold remain unchanged. CI contract, fmt, README/version, sixteen deterministic rasters, 21 version-only golden changes and roadmap pass. All six v0.1.96 locked publication dry-run verifications passed. Final v0.1.97 hosted success and locked archive verification are delivery gates before publication."
+
+[[task]]
 id = "RELEASE-CI-096"
 milestone = "M57"
 title = "Provide an init reaper for container process-lifecycle tests"

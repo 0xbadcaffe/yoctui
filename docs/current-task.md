@@ -1,8 +1,18 @@
 # Current Task
 
-**ID:** RELEASE-CI-096
-**Title:** Provide an init reaper for container process-lifecycle tests
+**ID:** RELEASE-CI-097
+**Title:** Pin Python quality tools to the validated release environment
 **Status:** DONE
+
+Run 34257243104 passes all runtime, docs and 52 Python tests. Its floating
+Ruff 0.16.6 differs from the locally validated Ruff 0.15.22 and reports three
+additional rules. Pin the Python quality-tool versions to the validated release
+environment, verify them in a fresh virtualenv and retain source, lint config
+and the 75% coverage requirement. A fresh virtualenv now passes Ruff
+lint/format, mypy and all 52 tests with 78.35% coverage. CI contract, fmt,
+README/version, both raster galleries and roadmap checks also pass. All 714
+tasks are DONE. Push v0.1.97 and require hosted success plus final locked
+package verification before publishing the candidate.
 
 Hosted v0.1.95 run 34256365912 passes three jobs, formatting and Clippy, but
 the container does not reap an orphaned cancellation fixture. The exact Rust

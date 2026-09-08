@@ -13,6 +13,12 @@ mounted checkout in system Git configuration. Docker's `--init` reaps orphaned
 fixture descendants so the process-cancellation tests retain their normal-host
 lifecycle requirements and unchanged deadlines.
 
+The Python quality tools are pinned to the release-validated versions:
+Ruff 0.15.22, mypy 2.3.0, pytest 9.1.1 and pytest-cov 7.1.0. CI previously
+installed floating versions, so Ruff 0.16.6 applied different rules from local
+verification. Keep tool upgrades explicit and validate their policy/formatting
+changes together; the production-source coverage requirement stays at 75%.
+
 The real PTY startup/keymap gates wait for the rendered onboarding footer,
 dismiss it, then observe the workbench. They keep draining output during exit
 and answer the displayed quit confirmation before requiring successful exit

@@ -4,6 +4,10 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+RELEASE-CI-097 pins the Python quality tools to the validated environment after
+the actual hosted tool-version drift. All 714 tasks are DONE; v0.1.97 is the
+candidate and hosted baseline/package verification gate publication.
+
 RELEASE-CI-096 supplies the test container's init reaper after a reproduced
 process-lifecycle failure. All 713 tasks are DONE; v0.1.96 is the candidate
 and hosted baseline/package verification remains required before publication.
