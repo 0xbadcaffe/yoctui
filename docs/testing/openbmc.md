@@ -1,5 +1,39 @@
 # OpenBMC live integration
 
+## Active-worker repair (v0.1.83)
+
+OPENBMC-WORKER-COUNT-001 is DONE. Eight focused tests, all 281 UI tests and all
+1,580 workspace tests including doc-tests pass, together with 52 bridge tests,
+strict Clippy, fmt, docs, rasters and roadmap. The preserved binary also passes
+the isolated terminal-timing reattachment check. The first
+test needed its imports and exact 160x50 context-header
+geometry corrected, then reproduced Workers: 0 instead of 2. The model now
+counts complete positive active PIDs, otherwise complete nonblank active labels,
+with deduplication inside a single namespace. Current replica/build authority
+is mandatory. Missing/partial identity and lost authority remain unavailable;
+current idle/terminal builds report zero. Aggregate task totals are not worker
+counts. Five model cases, one live/batched/snapshot/reconnect app integration
+and two responsive UI cases cover normal and missing-authority paths.
+
+Reviewed golden changes beyond version digits are confined to the Workers
+field: terminal 1 becomes 0 in the failed concept and failed target fixtures;
+reconnecting 1 becomes unavailable. All other symbols/styles/layout remain
+unchanged. Six deterministic rasters were refreshed and verified; the failed
+build raster was visually reviewed. The real image daemon remains untouched.
+
+The [real v0.1.83 capture](../../artifacts/live-openbmc/romulus/v83-worker-count-20260908.txt)
+now shows Workers: 2 and Active 2 at 5936/6812. A read-only typed snapshot
+confirms rust-native do_install PID 1618606 and qemu-system-native do_compile
+PID 2077511, both without worker labels. The selected QEMU task reports 59%
+progress. The first connected frame arrived in 4.873 seconds; legacy timing
+remains unavailable. This validates the client-only worker projection against
+the unchanged v0.1.76 daemon, not the undeployed queue/timing bridge repairs.
+
+The captured and workspace-tested binary is preserved at
+/home/bspguy-dev/.local/state/yoctui-v83-validated.O7H2jM/yoctui, SHA-256
+041e10543ec703d66031b8803e4809e33a0339cf7222d3ae9c63d5b868ce5713.
+No build was submitted, cancelled or restarted for this read-only check.
+
 ## Active-worker header finding (v0.1.82 registration)
 
 The [v0.1.81 production capture](../../artifacts/live-openbmc/romulus/v81-active-image-20260908.txt)

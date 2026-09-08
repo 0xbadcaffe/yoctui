@@ -156,6 +156,19 @@ No renderer may copy illustrative values from a design reference. Every value
 comes from typed model state; missing values read `unavailable`, `unknown`, or
 `--` according to the field contract.
 
+The context header's Workers field counts observed active worker identities,
+not active tasks or labels retained from earlier work. The model requires
+Current daemon authority and a non-lost build. For a running/cancelling build,
+count distinct positive PIDs when every active row has one; otherwise count
+distinct nonblank worker labels only when every active row has one. Never mix
+PID and label namespaces or guess that each task represents a different worker.
+An incomplete identity set, no observed active rows during a running build,
+loading/parsing state, or stale/disconnected/synchronizing authority displays
+`unavailable`. Current idle or terminal success/failure/cancellation displays
+zero. Queued, waiting and terminal task rows never enter the count. A complete
+PID set takes precedence over labels. Narrow headers may omit this context
+field according to the existing geometry; they must not substitute false zero.
+
 ### Next-generation layout contract
 
 This section is the normative responsive layout contract. M55 intentionally

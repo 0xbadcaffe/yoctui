@@ -1760,11 +1760,8 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         .map_or_else(|| "--:--:--".into(), format_duration);
     let task = format!("{} / {total}", app.build.completed);
     let workers = app
-        .tasks
-        .values()
-        .filter_map(|task| task.worker.as_deref())
-        .collect::<std::collections::HashSet<_>>()
-        .len();
+        .active_worker_count()
+        .map_or_else(|| "unavailable".into(), |count| count.to_string());
     let context = format!(
         "Workspace: {workspace}  |  Build: {}  |  Task: {task}  |  Elapsed: {elapsed}  |  Workers: {workers}",
         app.build.target.as_deref().unwrap_or("none")
@@ -21928,6 +21925,70 @@ mod tests {
 
     fn rendered_text(app: &App, width: u16, height: u16) -> String {
         rendered_text_at(app, width, height, SystemTime::now())
+    }
+
+    #[test]
+    fn worker_count_header_uses_active_pids_without_optional_labels() {
+        use yoctui_model::{TaskId, TaskInfo};
+
+        let mut app = App::new(64, 64 * 1024);
+        app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+        let _ = update(&mut app, Action::BuildStarted);
+        for (recipe, pid) in [("rust-native", 1618606), ("tar", 42)] {
+            let mut task = TaskInfo::active(
+                TaskId(format!("{recipe}:do_compile")),
+                recipe.into(),
+                "do_compile".into(),
+            );
+            task.pid = Some(pid);
+            let _ = update(&mut app, Action::TaskStarted(task));
+        }
+        for (width, height) in [(160, 50), (200, 50), (100, 30), (80, 24)] {
+            let text = rendered_text(&app, width, height);
+            if (width, height) == (160, 50) {
+                assert!(text.contains("Workers: 2"), "{text}");
+            }
+            assert!(!text.contains("Workers: 0"), "{text}");
+        }
+    }
+
+    #[test]
+    fn worker_count_header_keeps_partial_and_lost_identity_unavailable() {
+        use yoctui_model::{ClientReplicaStatus, TaskId, TaskInfo};
+
+        let mut app = App::new(64, 64 * 1024);
+        app.daemon.status = ClientReplicaStatus::Current;
+        let _ = update(&mut app, Action::BuildStarted);
+        let task = TaskInfo::active(
+            TaskId("unknown".into()),
+            "unknown".into(),
+            "do_compile".into(),
+        );
+        let _ = update(&mut app, Action::TaskStarted(task));
+        for authority in [
+            ClientReplicaStatus::Current,
+            ClientReplicaStatus::Stale,
+            ClientReplicaStatus::Disconnected,
+            ClientReplicaStatus::Synchronizing,
+        ] {
+            app.daemon.status = authority;
+            for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+                let text = rendered_text(&app, width, height);
+                if (width, height) == (160, 50) {
+                    assert!(text.contains("Workers: unavailable"), "{text}");
+                }
+                assert!(!text.contains("Workers: 0"), "{text}");
+            }
+        }
+        app.daemon.status = ClientReplicaStatus::Current;
+        let _ = update(
+            &mut app,
+            Action::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert!(rendered_text(&app, 160, 50).contains("Workers: 0"));
     }
 
     #[test]

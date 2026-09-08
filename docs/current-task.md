@@ -1,20 +1,30 @@
 # Current Task
 
-**ID:** OPENBMC-WORKER-COUNT-001
-**Title:** Render authoritative active-worker counts instead of retained label counts
+**ID:** OPENBMC-LIVE-001
+**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
 **Status:** IN_PROGRESS
 
-The v0.1.81 production capture shows Workers: 0 beside Active 2, with an
-authoritative rust-native PID but no worker label. The header counts labels
-across all retained tasks, including terminal ones. Add a typed active-worker
-projection using complete authoritative PID or label identities, deduplicating
-and excluding queued/completed rows. Partial/missing/lost authority must stay
-unavailable; task count is not worker count. Define the identity policy in
-ui-spec and architecture before implementing. Add failed-first model/app/UI
-tests for duplicates, partial identity, terminal/reset and lost replica; review
-goldens. Verify full workspace, Clippy, bridge, fmt, docs, rasters and roadmap.
-Recheck real read-only attachment without interrupting the image. This v0.1.82
-governance change registers the defect; it does not implement the correction.
+Continue the fifth image attempt through its actual terminal outcome, then
+inspect packages and rootfs. All registered repair dependencies are DONE.
+After a natural stopping point, upgrade only the private daemon to the preserved
+v0.1.83 candidate and recheck real recipe identities, observed timing and recovered
+job IDs. Actual native/git recipe listtasks runs can exercise lifecycle events
+without rebuilding the compiler. No image interruption solely for deployment.
+Keep all Poky data and run Cargo checks sequentially.
+
+OPENBMC-WORKER-COUNT-001 is DONE in v0.1.83. The model uses complete positive
+active PID sets, otherwise complete nonblank labels, never mixed namespaces or
+inactive rows. Missing/lost authority stays unavailable. Eight focused tests,
+all 281 UI tests, all 1,580 workspace tests/doc-tests, 52 bridge tests, strict
+Clippy, fmt, docs, rasters and roadmap pass. Golden review found only version
+digits and corrected terminal/reconnecting worker fields, with no layout change.
+Real v83-worker-count-20260908 capture shows Workers: 2 at 5936/6812,
+matching active PIDs 1618606 (rust-native) and 2077511 (qemu-system-native), with
+both optional labels absent. The isolated terminal-timing reattachment check
+also passes. No daemon was restarted or image job submitted for these checks.
+The exact captured binary is preserved at
+/home/bspguy-dev/.local/state/yoctui-v83-validated.O7H2jM/yoctui, SHA-256
+041e10543ec703d66031b8803e4809e33a0339cf7222d3ae9c63d5b868ce5713.
 
 The parent image remains running; its terminal outcome, package/rootfs
 inspection and new-daemon timing/identity rechecks are still required.
@@ -79,7 +89,7 @@ can replace dependency artifacts while workspace doc-tests are still using them.
 - Current evidence: artifacts/live-openbmc/romulus/image-build-v76-recovery-20260908.json
 
 The image was submitted through `yoctui daemon build obmc-phosphor-image` after
-initial metadata readiness, and Accepted. Last verified counters were 4737/6812;
+initial metadata readiness, and Accepted. Last verified counters were 5936/6812;
 the image remains running with no new recorded error. Root had about
 27 GiB free at this observation; monitor disk and available memory. OpenBMC-only
 local.conf limits BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, verified before

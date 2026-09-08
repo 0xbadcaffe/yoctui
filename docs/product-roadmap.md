@@ -24,8 +24,10 @@ checks. Queue/worker recipe identity (v0.1.81) now passes bounded metadata,
 unknown-identity and cross-layer regressions plus the baseline. The real image still
 runs on the preserved v0.1.76 daemon. These fixes do not claim image completion
 or waive the source-bound performance and release gates. A subsequent real
-attachment exposed Workers: 0 beside two active tasks: OPENBMC-WORKER-COUNT-001
-now owns a separate typed active-worker authority repair.
+attachment exposed Workers: 0 beside two active tasks. OPENBMC-WORKER-COUNT-001
+is DONE in v0.1.83 with typed active-worker authority, eight focused regressions,
+the full baseline and real attached display matching two known active PIDs.
+OPENBMC-LIVE-001 remains current; image completion is still required.
 
 Yoctui is 100% complete only when:
 

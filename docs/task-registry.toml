@@ -160,12 +160,12 @@ notes = "v0.1.81 DONE: bounded initialized getRecipes PN/file index once per Bui
 id = "OPENBMC-WORKER-COUNT-001"
 milestone = "M56"
 title = "Render authoritative active-worker counts instead of retained label counts"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1285
 required = true
 depends_on = ["OPENBMC-TASK-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Live v81-active-image-20260908 capture shows header Workers: 0 beside Active 2 and rust-native PID 1618606; worker labels are unavailable. Header currently counts unique optional labels across every retained task, including completed rows. Replace this with a typed current-active-worker projection: use complete authoritative active PID or worker-label identities, deduplicate, exclude queued/completed rows, and keep partial/missing/lost authority unavailable rather than zero. Do not equate task count with worker count. Define the exact identity policy in ui-spec and architecture, add failed-first model/app/TestBackend cases including empty, duplicates, partial identity, terminal/reset and lost replica, and review affected goldens. Recheck the real attached client without interrupting the image; final new-daemon validation remains under LIVE."
+notes = "v0.1.83 DONE: typed observed active-worker count requires current replica/build authority, prefers complete positive PID sets, otherwise complete nonblank labels, deduplicates one namespace and excludes inactive rows. Incomplete/absent active identity and lost authority remain unavailable; current idle/terminal builds report zero. Eight focused model/app/UI cases cover duplicates, PID precedence, partial/mixed identity, terminal/reset, live/batch/snapshot and disconnect/reconnect. All 1580 workspace tests/doc-tests, 281 UI tests, 52 bridge tests, Clippy, fmt, docs, six rasters and roadmap pass. Failed-first 160x50 fixture reproduced Workers: 0 instead of 2 after test imports/geometry were corrected. Reviewed goldens only change version digits and terminal/reconnecting Workers fields. Real v83-worker-count-20260908 capture at 5936/6812 shows Workers: 2 matching PIDs 1618606 and 2077511, both without labels; binary preserved and isolated terminal-timing check passes. No image interruption or daemon replacement; LIVE resumes."
 
 [[task]]
 id = "OPENBMC-LIVE-001"

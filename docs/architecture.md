@@ -1,5 +1,13 @@
 # Yoctui Architecture
 
+The model owns the header's observed active-worker projection. Current replica
+and build lifecycle gate its authority; complete positive active PID sets take
+precedence over complete nonblank active worker-label sets. Both are separately
+deduplicated, never mixed or inferred from task totals. Incomplete/absent active
+identity and lost authority produce None; authoritative idle/terminal builds
+produce zero. The UI formats this typed optional count and does not derive its
+own worker inventory from retained rows.
+
 ## Purpose
 
 Yoctui is a Rust/Ratatui terminal workbench for Yocto and BitBake. BitBake remains the authority for metadata and build state. Yoctui requests operations, normalizes events, stores bounded state, and renders typed views.

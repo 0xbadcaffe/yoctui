@@ -1,5 +1,22 @@
 # Yoctui Implementation Status
 
+OPENBMC-WORKER-COUNT-001 is DONE in v0.1.83. Eight focused model/app/UI tests,
+all 281 UI tests, all 1,580 workspace tests/doc-tests, 52 bridge tests, strict
+Clippy, fmt, docs, rasters and roadmap pass. The failed-first 160x50 fixture
+reproduced Workers: 0 instead
+of 2 for known active PIDs without optional labels. The model now gates on
+current replica/build authority, prefers complete positive PID sets, falls back
+only to complete nonblank label sets, and never mixes namespaces or counts
+inactive rows. Missing identity remains unavailable. Golden review found only
+version digits plus terminal worker counts 1 to 0 and reconnecting 1 to
+unavailable; all six rasters were refreshed and verified. The actual production
+client shows Workers: 2 at 5936/6812, matching rust-native and qemu-system-native
+PIDs without optional labels. The captured binary is preserved at
+/home/bspguy-dev/.local/state/yoctui-v83-validated.O7H2jM/yoctui, SHA-256
+041e10543ec703d66031b8803e4809e33a0339cf7222d3ae9c63d5b868ce5713.
+Its isolated terminal-timing reattachment check passes. OPENBMC-LIVE-001 resumes;
+the real image still uses v0.1.76 and has no terminal result.
+
 v0.1.82 governance registers OPENBMC-WORKER-COUNT-001 as current. The live
 v0.1.81 capture at 5083/6812 shows Workers: 0 beside two active tasks and an
 authoritative worker PID. The header counts all retained optional labels,

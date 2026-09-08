@@ -30,21 +30,21 @@
   },
   "binary_sha256": "93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f",
   "observed_from_unix": 1788840553.873128,
-  "observed_until_unix": 1788850815.028025,
+  "observed_until_unix": 1788852421.7762458,
   "note": "Fifth image attempt, daemon/client v0.1.76 after baseline tests, Clippy and docs passed. Fourth attempt explicitly cancelled for recovery of 23 old empty objects in function2/boost/fmt; preserved with relative paths under .local/state/yoctui-openbmc-object-recovery-23.bbZM2i. BB_NUMBER_THREADS=2, PARALLEL_MAKE=-j 2. Image success remains subject to terminal outcome.",
   "event_counts": {
-    "event": 27676,
-    "event.telemetry": 10086,
-    "event.build": 6046,
+    "event": 34475,
+    "event.telemetry": 11665,
+    "event.build": 9994,
     "build.parse_progress": 31,
-    "event.log": 10534,
+    "event.log": 11662,
     "event.bit_bake_changed": 1,
     "build.started": 1,
-    "event.job_changed": 1009,
-    "build.task_queued": 1008,
-    "build.task_started": 1008,
-    "build.task_progress": 2992,
-    "build.task_completed": 1006
+    "event.job_changed": 1153,
+    "build.task_queued": 1152,
+    "build.task_started": 1152,
+    "build.task_progress": 6508,
+    "build.task_completed": 1150
   },
   "jobs": {
     "1": {
@@ -52,7 +52,7 @@
       "kind": "bit_bake_build",
       "label": "BitBake build obmc-phosphor-image",
       "lifecycle": "running",
-      "progress_current": 5367,
+      "progress_current": 5936,
       "progress_total": 6812,
       "exit_code": null
     },
@@ -70,30 +70,70 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Not creating empty archive for udev-aspeed-vuart-doc-1.0-r1",
-      "unix_ms": 1788850780705,
-      "recipe": "udev-aspeed-vuart",
-      "task": "do_package_write_ipk",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/base-files/base-files_3.0.14.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/base-passwd/base-passwd_3.6.8.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/systemd/systemd-systemctl-native_259.5.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow-sysroot_4.6.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow_4.19.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow_4.19.4.bb:do_populate_sysroot']",
+      "unix_ms": 1788851083920,
+      "recipe": "p9-host-start",
+      "task": "do_install",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Not creating empty archive for udev-aspeed-vuart-staticdev-1.0-r1",
-      "unix_ms": 1788850781248,
-      "recipe": "udev-aspeed-vuart",
-      "task": "do_package_write_ipk",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788851084020,
+      "recipe": "p9-host-start",
+      "task": "do_install",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Not creating empty archive for udev-aspeed-vuart-src-1.0-r1",
-      "unix_ms": 1788850781284,
-      "recipe": "udev-aspeed-vuart",
-      "task": "do_package_write_ipk",
+      "message": "Skipping as already exists in sysroot: ['base-files', 'base-passwd', 'gettext-minimal-native', 'glibc', 'libxcrypt', 'systemd-systemctl-native', 'binutils-cross-arm', 'cmake-native', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'opkg-utils', 'quilt-native', 'libpam', 'shadow-sysroot', 'shadow', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'util-linux-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'patch-native', 'perl-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-jinja2-native', 'python3-markupsafe-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'shadow-native', 'unzip-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libbsd-native', 'libcap-ng-native', 'libcap-native', 'libffi-native', 'libmd-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 'sqlite3-native']",
+      "unix_ms": 1788851084020,
+      "recipe": "p9-host-start",
+      "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/base-files/base-files_3.0.14.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/base-passwd/base-passwd_3.6.8.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/systemd/systemd-systemctl-native_259.5.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow-sysroot_4.6.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow_4.19.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/dwarfsrcfiles/dwarfsrcfiles.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/rpm/rpm_4.20.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow_4.19.4.bb:do_populate_sysroot']",
+      "unix_ms": 1788851084753,
+      "recipe": "p9-host-start",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: ['readline-native', 'dwarfsrcfiles-native', 'elfutils-native', 'file-native', 'lua-native', 'rpm-native', 'libarchive-native', 'lzlib-native', 'acl-native', 'libgcrypt-native', 'libgpg-error-native', 'popt-native']",
+      "unix_ms": 1788851084853,
+      "recipe": "p9-host-start",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['base-files', 'base-passwd', 'gettext-minimal-native', 'glibc', 'libxcrypt', 'systemd-systemctl-native', 'binutils-cross-arm', 'cmake-native', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'opkg-utils', 'quilt-native', 'libpam', 'shadow-sysroot', 'shadow', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'util-linux-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'patch-native', 'perl-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-jinja2-native', 'python3-markupsafe-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'shadow-native', 'unzip-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libbsd-native', 'libcap-ng-native', 'libcap-native', 'libffi-native', 'libmd-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 'sqlite3-native']",
+      "unix_ms": 1788851084853,
+      "recipe": "p9-host-start",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into pkgdata-sysroot: ['gcc-runtime', 'base-passwd', 'glibc', 'shadow', 'base-files', 'libgcc', 'linux-libc-headers', 'opkg-utils', 'libxcrypt', 'libpam']",
+      "unix_ms": 1788851085505,
+      "recipe": "p9-host-start",
+      "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
@@ -101,28 +141,48 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850781681,
-      "recipe": "udev-aspeed-vuart",
-      "task": "do_package_write_ipk",
+      "unix_ms": 1788851085827,
+      "recipe": "p9-host-start",
+      "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-package_write_ipk/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-package_write_ipk/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850781717,
-      "recipe": "udev-aspeed-vuart",
-      "task": "do_package_write_ipk",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-package/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059199' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-package/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native:FIXME_PSEUDO_SYSROOT:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/:FIXME_PSEUDO_LOCALSTATEDIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059199:FIXME_LOGFIFO:g''",
+      "unix_ms": 1788851085927,
+      "recipe": "p9-host-start",
+      "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850782193,
-      "recipe": "udev-aspeed-vuart",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851086539,
+      "recipe": "p9-host-start",
+      "task": "do_packagedata",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-packagedata/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059278' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-packagedata/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native:FIXME_PSEUDO_SYSROOT:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/:FIXME_PSEUDO_LOCALSTATEDIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059278:FIXME_LOGFIFO:g''",
+      "unix_ms": 1788851086539,
+      "recipe": "p9-host-start",
+      "task": "do_packagedata",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/base-files/base-files_3.0.14.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/base-passwd/base-passwd_3.6.8.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/systemd/systemd-systemctl-native_259.5.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow-sysroot_4.6.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow_4.19.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-extended/shadow/shadow_4.19.4.bb:do_populate_sysroot']",
+      "unix_ms": 1788851086850,
+      "recipe": "p9-host-start",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -131,8 +191,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Installed into sysroot: []",
-      "unix_ms": 1788850782193,
-      "recipe": "udev-aspeed-vuart",
+      "unix_ms": 1788851086850,
+      "recipe": "p9-host-start",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -140,9 +200,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850782193,
-      "recipe": "udev-aspeed-vuart",
+      "message": "Skipping as already exists in sysroot: ['base-files', 'base-passwd', 'gettext-minimal-native', 'glibc', 'libxcrypt', 'systemd-systemctl-native', 'binutils-cross-arm', 'cmake-native', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'opkg-utils', 'quilt-native', 'libpam', 'shadow-sysroot', 'shadow', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'util-linux-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'patch-native', 'perl-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-jinja2-native', 'python3-markupsafe-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'shadow-native', 'unzip-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libbsd-native', 'libcap-ng-native', 'libcap-native', 'libffi-native', 'libmd-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 'sqlite3-native']",
+      "unix_ms": 1788851086850,
+      "recipe": "p9-host-start",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -151,8 +211,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "QA checking do_populate_sysroot",
-      "unix_ms": 1788850782293,
-      "recipe": "udev-aspeed-vuart",
+      "unix_ms": 1788851087172,
+      "recipe": "p9-host-start",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -161,8 +221,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850782294,
-      "recipe": "udev-aspeed-vuart",
+      "unix_ms": 1788851087172,
+      "recipe": "p9-host-start",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -170,9 +230,19 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-populate_sysroot/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850782294,
-      "recipe": "udev-aspeed-vuart",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-populate_sysroot/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059326' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native:FIXME_PSEUDO_SYSROOT:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/:FIXME_PSEUDO_LOCALSTATEDIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059326:FIXME_LOGFIFO:g''",
+      "unix_ms": 1788851087172,
+      "recipe": "p9-host-start",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Replacing absolute paths in fixmepath file: '['sed', '-i', '-e', 's:^/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-populate_sysroot/::g', '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-populate_sysroot/fixmepath']'",
+      "unix_ms": 1788851087172,
+      "recipe": "p9-host-start",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -181,8 +251,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850782815,
-      "recipe": "udev-aspeed-vuart",
+      "unix_ms": 1788851087693,
+      "recipe": "p9-host-start",
       "task": "do_create_spdx",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -190,9 +260,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-create_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850782815,
-      "recipe": "udev-aspeed-vuart",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-create_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059397' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-components/x86_64/pseudo-native:FIXME_PSEUDO_SYSROOT:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/pseudo/:FIXME_PSEUDO_LOCALSTATEDIR:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/p9-host-start/1.0/temp/fifo.2059397:FIXME_LOGFIFO:g''",
+      "unix_ms": 1788851087693,
+      "recipe": "p9-host-start",
       "task": "do_create_spdx",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -200,29 +270,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850783230,
-      "recipe": "udev-aspeed-vuart",
-      "task": "do_create_package_spdx",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-create_package_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-vuart/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850783513,
-      "recipe": "udev-aspeed-vuart",
-      "task": "do_create_package_spdx",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850784534,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-proto/xorgproto_2025.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-util/util-macros_1.20.2.bb:do_populate_sysroot']",
+      "unix_ms": 1788851088215,
+      "recipe": "libxext-native",
       "task": "do_prepare_recipe_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -230,9 +280,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Installed into sysroot: ['glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'm4-native', 'linux-libc-headers', 'zlib-native', 'flex-native', 'gnu-config-native', 'pseudo-native', 'zstd-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850784597,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Installed into sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'autoconf-native', 'automake-native', 'gnu-config-native', 'libedit-native', 'make-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 'sqlite3-native']",
+      "unix_ms": 1788851088567,
+      "recipe": "libxext-native",
       "task": "do_prepare_recipe_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -240,9 +290,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'texinfo-dummy-native', 'attr-native']",
-      "unix_ms": 1788850784598,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788851088567,
+      "recipe": "libxext-native",
       "task": "do_prepare_recipe_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -250,9 +300,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850784817,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-proto/xorgproto_2025.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-util/util-macros_1.20.2.bb:do_populate_sysroot']",
+      "unix_ms": 1788851088948,
+      "recipe": "libxext-native",
       "task": "do_configure",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -261,8 +311,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Installed into sysroot: []",
-      "unix_ms": 1788850784917,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "unix_ms": 1788851088948,
+      "recipe": "libxext-native",
       "task": "do_configure",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -270,9 +320,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850784917,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'autoconf-native', 'automake-native', 'gnu-config-native', 'libedit-native', 'make-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 'sqlite3-native']",
+      "unix_ms": 1788851088948,
+      "recipe": "libxext-native",
       "task": "do_configure",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -280,9 +330,49 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "nothing to compile",
-      "unix_ms": 1788850785228,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Executing ACLOCAL=\"aclocal --aclocal-path=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/share/aclocal/\" autoreconf -Wcross --verbose --install --force --exclude=autopoint",
+      "unix_ms": 1788851089050,
+      "recipe": "libxext-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Running ../sources/libXext-1.3.7/configure  --build=x86_64-linux \t\t  --host=x86_64-linux \t\t  --target=x86_64-linux \t\t  --prefix=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr \t\t  --exec_prefix=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr \t\t  --bindir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/bin \t\t  --sbindir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/sbin \t\t  --libexecdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/libexec \t\t  --datadir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/share \t\t  --sysconfdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/etc \t\t  --sharedstatedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/com \t\t  --localstatedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/var \t\t  --libdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/lib \t\t  --includedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/include \t\t  --oldincludedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/include \t\t  --infodir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/share/info \t\t  --mandir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native/usr/share/man \t\t  --disable-silent-rules \t\t  --disable-dependency-tracking --disable-specs --without-groff --without-ps2pdf --without-fop --disable-static   --without-xmlto ",
+      "unix_ms": 1788851097868,
+      "recipe": "libxext-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking autotools environment for common misconfiguration",
+      "unix_ms": 1788851105141,
+      "recipe": "libxext-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking configure output for unrecognised options",
+      "unix_ms": 1788851105141,
+      "recipe": "libxext-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "make -j 2",
+      "unix_ms": 1788851105552,
+      "recipe": "libxext-native",
       "task": "do_compile",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -290,410 +380,10 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850785640,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "make -j 2 DESTDIR=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/image install",
+      "unix_ms": 1788851109398,
+      "recipe": "libxext-native",
       "task": "do_install",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into sysroot: []",
-      "unix_ms": 1788850785641,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_install",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850785641,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_install",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/dwarfsrcfiles/dwarfsrcfiles.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/rpm/rpm_4.20.1.bb:do_populate_sysroot']",
-      "unix_ms": 1788850786162,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into sysroot: ['cmake-native', 'openssl-native', 'expat-native', 'ncurses-native', 'readline-native', 'util-linux-libuuid-native', 'dwarfsrcfiles-native', 'elfutils-native', 'file-native', 'libedit-native', 'lua-native', 'make-native', 'perl-native', 'python3-native', 'rpm-native', 'bzip2-native', 'libarchive-native', 'lzlib-native', 'xz-native', 'acl-native', 'gdbm-native', 'libcap-native', 'libffi-native', 'libgcrypt-native', 'libgpg-error-native', 'popt-native']",
-      "unix_ms": 1788850787556,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850787556,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into pkgdata-sysroot: ['gcc-runtime', 'glibc', 'libgcc', 'linux-libc-headers']",
-      "unix_ms": 1788850787913,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850788235,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-package/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-package/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850788337,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850788860,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_packagedata",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-packagedata/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-packagedata/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850788961,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_packagedata",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850789581,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into sysroot: []",
-      "unix_ms": 1788850789581,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'binutils-cross-arm', 'libtool-native', 'm4-native', 'texinfo-dummy-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'pseudo-native', 'attr-native', 'sqlite3-native']",
-      "unix_ms": 1788850789581,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Checking Package: udev-aspeed-mtd-partitions",
-      "unix_ms": 1788850789582,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Checking Package: udev-aspeed-mtd-partitions-locale",
-      "unix_ms": 1788850789582,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Checking Package: udev-aspeed-mtd-partitions-src",
-      "unix_ms": 1788850789584,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Checking Package: udev-aspeed-mtd-partitions-dbg",
-      "unix_ms": 1788850789584,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Checking Package: udev-aspeed-mtd-partitions-doc",
-      "unix_ms": 1788850789584,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Checking Package: udev-aspeed-mtd-partitions-staticdev",
-      "unix_ms": 1788850789585,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Checking Package: udev-aspeed-mtd-partitions-dev",
-      "unix_ms": 1788850789585,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850789585,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-package_qa/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-package_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850789585,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_qa",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/opkg-utils/opkg-utils_0.7.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-extended/zstd/zstd_1.5.7.bb:do_populate_sysroot']",
-      "unix_ms": 1788850790219,
-      "recipe": "packagegroup-base",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into sysroot: ['opkg-utils-native']",
-      "unix_ms": 1788850790219,
-      "recipe": "packagegroup-base",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'texinfo-dummy-native', 'zlib-native', 'make-native', 'perl-native', 'pseudo-native', 'bzip2-native', 'zstd-native', 'attr-native', 'gdbm-native', 'sqlite3-native']",
-      "unix_ms": 1788850790219,
-      "recipe": "packagegroup-base",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Not creating empty archive for packagegroup-base-src-1.0-r0",
-      "unix_ms": 1788850794132,
-      "recipe": "packagegroup-base",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850794454,
-      "recipe": "packagegroup-base",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-package_write_ipk/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-package_write_ipk/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850794490,
-      "recipe": "packagegroup-base",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/opkg-utils/opkg-utils_0.7.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-extended/zstd/zstd_1.5.7.bb:do_populate_sysroot']",
-      "unix_ms": 1788850795189,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into sysroot: ['opkg-utils-native']",
-      "unix_ms": 1788850795190,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'texinfo-dummy-native', 'zlib-native', 'make-native', 'perl-native', 'pseudo-native', 'bzip2-native', 'zstd-native', 'attr-native', 'gdbm-native', 'sqlite3-native']",
-      "unix_ms": 1788850795190,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Not creating empty archive for udev-aspeed-mtd-partitions-locale-1.0-r1",
-      "unix_ms": 1788850795292,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Not creating empty archive for udev-aspeed-mtd-partitions-doc-1.0-r1",
-      "unix_ms": 1788850795328,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Not creating empty archive for udev-aspeed-mtd-partitions-staticdev-1.0-r1",
-      "unix_ms": 1788850795783,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Not creating empty archive for udev-aspeed-mtd-partitions-src-1.0-r1",
-      "unix_ms": 1788850795825,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850796146,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-package_write_ipk/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-package_write_ipk/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850796146,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850796734,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_populate_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into sysroot: []",
-      "unix_ms": 1788850796769,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_populate_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850796769,
-      "recipe": "udev-aspeed-mtd-partitions",
-      "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
@@ -701,8 +391,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "QA checking do_populate_sysroot",
-      "unix_ms": 1788850796869,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "unix_ms": 1788851110141,
+      "recipe": "libxext-native",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -711,8 +401,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850796869,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "unix_ms": 1788851110141,
+      "recipe": "libxext-native",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -720,9 +410,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-populate_sysroot/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850796869,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/sstate-build-populate_sysroot/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851110141,
+      "recipe": "libxext-native",
       "task": "do_populate_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -731,8 +421,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850797284,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "unix_ms": 1788851110452,
+      "recipe": "libxext-native",
       "task": "do_create_spdx",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -740,9 +430,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-create_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850797385,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/sstate-build-create_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851110553,
+      "recipe": "libxext-native",
       "task": "do_create_spdx",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -751,8 +441,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850797907,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "unix_ms": 1788851110889,
+      "recipe": "libxext-native",
       "task": "do_create_package_spdx",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -760,9 +450,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-create_package_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/udev-aspeed-mtd-partitions/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850797907,
-      "recipe": "udev-aspeed-mtd-partitions",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/sstate-build-create_package_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxext-native/1.3.7/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851110889,
+      "recipe": "libxext-native",
       "task": "do_create_package_spdx",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -770,109 +460,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850799393,
-      "recipe": "packagegroup-base",
-      "task": "do_create_package_spdx",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-create_package_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-base/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850799393,
-      "recipe": "packagegroup-base",
-      "task": "do_create_package_spdx",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/opkg-utils/opkg-utils_0.7.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-extended/zstd/zstd_1.5.7.bb:do_populate_sysroot']",
-      "unix_ms": 1788850800015,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Installed into sysroot: ['opkg-utils-native']",
-      "unix_ms": 1788850800016,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'texinfo-dummy-native', 'zlib-native', 'make-native', 'perl-native', 'pseudo-native', 'bzip2-native', 'zstd-native', 'attr-native', 'gdbm-native', 'sqlite3-native']",
-      "unix_ms": 1788850800016,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Not creating empty archive for packagegroup-core-boot-src-1.0-r0",
-      "unix_ms": 1788850800561,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850800994,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-package_write_ipk/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-package_write_ipk/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850801095,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_package_write_ipk",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Using umask 2 (not 22) for sstate packaging",
-      "unix_ms": 1788850802063,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_create_package_spdx",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-create_package_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/romulus-openbmc-linux-gnueabi/packagegroup-core-boot/1.0/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
-      "unix_ms": 1788850802064,
-      "recipe": "packagegroup-core-boot",
-      "task": "do_create_package_spdx",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-connectivity/avahi/avahi_0.9.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-cross_2.5.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850802832,
-      "recipe": "avahi-libnss-mdns",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-proto/xorgproto_2025.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-util/util-macros_1.20.2.bb:do_populate_sysroot']",
+      "unix_ms": 1788851111159,
+      "recipe": "libxrender-native",
       "task": "do_prepare_recipe_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -880,9 +470,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Installed into sysroot: ['avahi', 'openssl', 'base-files', 'base-passwd', 'dbus', 'expat', 'glib-2.0', 'glibc', 'libxcrypt', 'libxml2', 'ncurses', 'systemd', 'util-linux-libuuid', 'util-linux', 'zlib', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libedit', 'libtool-cross', 'm4-native', 'opkg-utils', 'python3', 'bzip2', 'libpam', 'shadow-sysroot', 'shadow', 'xz', 'zstd', 'linux-libc-headers', 'bash-completion', 'gdbm', 'libcap-ng', 'libcap', 'libdaemon', 'libffi', 'libpcre2', 'shared-mime-info', 'sqlite3', 'zlib-native', 'autoconf-native', 'automake-native', 'flex-native', 'gnu-config-native', 'pkgconf-native', 'pseudo-native', 'shadow-native', 'zstd-native', 'gmp-native', 'libbsd-native', 'libmd-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850803128,
-      "recipe": "avahi-libnss-mdns",
+      "message": "Installed into sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'autoconf-native', 'automake-native', 'gnu-config-native', 'libedit-native', 'make-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 'sqlite3-native']",
+      "unix_ms": 1788851111480,
+      "recipe": "libxrender-native",
       "task": "do_prepare_recipe_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -890,9 +480,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'texinfo-dummy-native', 'attr-native']",
-      "unix_ms": 1788850803128,
-      "recipe": "avahi-libnss-mdns",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788851111480,
+      "recipe": "libxrender-native",
       "task": "do_prepare_recipe_sysroot",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -900,139 +490,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-base-passwd, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupadd\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupadd\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupadd\\nRunning groupadd commands...\\nNOTE: systemd: Performing groupadd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot -r systemd-journal]\\nNOTE: systemd: Performing groupadd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  -r empower]\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/useradd\\nRunning useradd commands...\\nNOTE: avahi: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot --system --home /run/avahi-daemon                               --no-create-home --shell /bin/false                               --user-group avahi]\\nNOTE: avahi: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system --home /run/avahi-autoipd                               --no-create-home --shell /bin/false                               --user-group                               -c \"Avahi autoip daemon\"                               avahi-autoipd]\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/useradd\\nRunning useradd commands...\\nNOTE: dbus: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot --system --home /var/lib/dbus                              --no-create-home --shell /bin/false                              --user-group messagebus]\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/useradd\\nRunning useradd commands...\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system -d / -M --shell /sbin/nologin systemd-coredump]\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot   --system -d / -M --shell /sbin/nologin systemd-resolve]\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system -d / -M --shell /sbin/nologin systemd-timesync]\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system -d / -M --shell /sbin/nologin systemd-network]\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/usermod\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/usermod\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/usermod\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupmems\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupmems\\n/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupmems\\n'",
-      "unix_ms": 1788850803893,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-01groupadd-avahi, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupadd\\n'",
-      "unix_ms": 1788850803893,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-01groupadd-dbus, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupadd\\n'",
-      "unix_ms": 1788850803893,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-01groupadd-systemd, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupadd\\nRunning groupadd commands...\\nNOTE: systemd: Performing groupadd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot -r systemd-journal]\\nNOTE: systemd: group systemd-journal already exists, not re-creating it\\nNOTE: systemd: Performing groupadd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  -r empower]\\nNOTE: systemd: group empower already exists, not re-creating it\\n'",
-      "unix_ms": 1788850803894,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-02useradd-avahi, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/useradd\\nRunning useradd commands...\\nNOTE: avahi: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot --system --home /run/avahi-daemon                               --no-create-home --shell /bin/false                               --user-group avahi]\\nNOTE: avahi: user avahi already exists, not re-creating it\\nNOTE: avahi: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system --home /run/avahi-autoipd                               --no-create-home --shell /bin/false                               --user-group                               -c \"Avahi autoip daemon\"                               avahi-autoipd]\\nNOTE: avahi: user avahi-autoipd already exists, not re-creating it\\n'",
-      "unix_ms": 1788850803894,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-02useradd-dbus, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/useradd\\nRunning useradd commands...\\nNOTE: dbus: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot --system --home /var/lib/dbus                              --no-create-home --shell /bin/false                              --user-group messagebus]\\nNOTE: dbus: user messagebus already exists, not re-creating it\\n'",
-      "unix_ms": 1788850803894,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-02useradd-systemd, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/useradd\\nRunning useradd commands...\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system -d / -M --shell /sbin/nologin systemd-coredump]\\nNOTE: systemd: user systemd-coredump already exists, not re-creating it\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot   --system -d / -M --shell /sbin/nologin systemd-resolve]\\nNOTE: systemd: user systemd-resolve already exists, not re-creating it\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system -d / -M --shell /sbin/nologin systemd-timesync]\\nNOTE: systemd: user systemd-timesync already exists, not re-creating it\\nNOTE: systemd: Performing useradd with [--prefix /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot  --system -d / -M --shell /sbin/nologin systemd-network]\\nNOTE: systemd: user systemd-network already exists, not re-creating it\\n'",
-      "unix_ms": 1788850803974,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-03usermod-avahi, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/usermod\\n'",
-      "unix_ms": 1788850803974,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-03usermod-dbus, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/usermod\\n'",
-      "unix_ms": 1788850804078,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-03usermod-systemd, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/usermod\\n'",
-      "unix_ms": 1788850804079,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-04groupmems-avahi, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupmems\\n'",
-      "unix_ms": 1788850804079,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-04groupmems-dbus, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupmems\\n'",
-      "unix_ms": 1788850804079,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Running postinst /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/bin/postinst-useradd-04groupmems-systemd, output:\nb'/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot-native/usr/sbin/groupmems\\n'",
-      "unix_ms": 1788850804079,
-      "recipe": "avahi-libnss-mdns",
-      "task": "do_prepare_recipe_sysroot",
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-connectivity/avahi/avahi_0.9.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-cross_2.5.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788850804901,
-      "recipe": "avahi-libnss-mdns",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-proto/xorgproto_2025.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-util/util-macros_1.20.2.bb:do_populate_sysroot']",
+      "unix_ms": 1788851111918,
+      "recipe": "libxrender-native",
       "task": "do_configure",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -1041,8 +501,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Installed into sysroot: []",
-      "unix_ms": 1788850804902,
-      "recipe": "avahi-libnss-mdns",
+      "unix_ms": 1788851111918,
+      "recipe": "libxrender-native",
       "task": "do_configure",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -1050,9 +510,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['avahi', 'openssl', 'base-files', 'base-passwd', 'dbus', 'expat', 'gettext-minimal-native', 'glib-2.0', 'glibc', 'libxcrypt', 'libxml2', 'ncurses', 'systemd', 'util-linux-libuuid', 'util-linux', 'zlib', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libedit', 'libtool-cross', 'libtool-native', 'm4-native', 'opkg-utils', 'python3', 'quilt-native', 'bzip2', 'libpam', 'shadow-sysroot', 'shadow', 'texinfo-dummy-native', 'xz', 'zstd', 'linux-libc-headers', 'bash-completion', 'gdbm', 'libcap-ng', 'libcap', 'libdaemon', 'libffi', 'libpcre2', 'shared-mime-info', 'sqlite3', 'zlib-native', 'autoconf-native', 'automake-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pkgconf-native', 'pseudo-native', 'shadow-native', 'zstd-native', 'attr-native', 'gmp-native', 'libbsd-native', 'libmd-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788850804902,
-      "recipe": "avahi-libnss-mdns",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'autoconf-native', 'automake-native', 'gnu-config-native', 'libedit-native', 'make-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 'sqlite3-native']",
+      "unix_ms": 1788851111918,
+      "recipe": "libxrender-native",
       "task": "do_configure",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -1060,10 +520,550 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Executing ACLOCAL=\"aclocal --aclocal-path=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/avahi-libnss-mdns/0.15.1/recipe-sysroot/usr/share/aclocal/\" autoreconf -Wcross --verbose --install --force --exclude=autopoint",
-      "unix_ms": 1788850805038,
-      "recipe": "avahi-libnss-mdns",
+      "message": "Executing ACLOCAL=\"aclocal --aclocal-path=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/share/aclocal/\" autoreconf -Wcross --verbose --install --force --exclude=autopoint",
+      "unix_ms": 1788851111993,
+      "recipe": "libxrender-native",
       "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Running ../sources/libXrender-0.9.12/configure  --build=x86_64-linux \t\t  --host=x86_64-linux \t\t  --target=x86_64-linux \t\t  --prefix=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr \t\t  --exec_prefix=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr \t\t  --bindir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/bin \t\t  --sbindir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/sbin \t\t  --libexecdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/libexec \t\t  --datadir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/share \t\t  --sysconfdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/etc \t\t  --sharedstatedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/com \t\t  --localstatedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/var \t\t  --libdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/lib \t\t  --includedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/include \t\t  --oldincludedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/include \t\t  --infodir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/share/info \t\t  --mandir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native/usr/share/man \t\t  --disable-silent-rules \t\t  --disable-dependency-tracking --disable-specs --without-groff --without-ps2pdf --without-fop --disable-static   --without-xmlto ",
+      "unix_ms": 1788851119819,
+      "recipe": "libxrender-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking autotools environment for common misconfiguration",
+      "unix_ms": 1788851125327,
+      "recipe": "libxrender-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking configure output for unrecognised options",
+      "unix_ms": 1788851125427,
+      "recipe": "libxrender-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "make -j 2",
+      "unix_ms": 1788851125638,
+      "recipe": "libxrender-native",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "make -j 2 DESTDIR=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/image install",
+      "unix_ms": 1788851128208,
+      "recipe": "libxrender-native",
+      "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "QA checking do_populate_sysroot",
+      "unix_ms": 1788851128778,
+      "recipe": "libxrender-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851128778,
+      "recipe": "libxrender-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/sstate-build-populate_sysroot/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851128814,
+      "recipe": "libxrender-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851129241,
+      "recipe": "libxrender-native",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/sstate-build-create_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851129241,
+      "recipe": "libxrender-native",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851129280,
+      "recipe": "libxrender-native",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/sstate-build-create_package_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrender-native/0.9.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851129380,
+      "recipe": "libxrender-native",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxext_1.3.7.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxrender_0.9.12.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-proto/xorgproto_2025.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-util/util-macros_1.20.2.bb:do_populate_sysroot']",
+      "unix_ms": 1788851129591,
+      "recipe": "libxrandr-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'autoconf-native', 'automake-native', 'gnu-config-native', 'libedit-native', 'make-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'libxext-native', 'libxrender-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 'sqlite3-native']",
+      "unix_ms": 1788851129812,
+      "recipe": "libxrandr-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788851129912,
+      "recipe": "libxrandr-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/libtool/libtool-native_2.5.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/autoconf/autoconf_2.73.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/automake/automake_1.18.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxext_1.3.7.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxrender_0.9.12.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-proto/xorgproto_2025.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-util/util-macros_1.20.2.bb:do_populate_sysroot']",
+      "unix_ms": 1788851130223,
+      "recipe": "libxrandr-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788851130223,
+      "recipe": "libxrandr-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'autoconf-native', 'automake-native', 'gnu-config-native', 'libedit-native', 'make-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'libxext-native', 'libxrender-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 'sqlite3-native']",
+      "unix_ms": 1788851130223,
+      "recipe": "libxrandr-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Executing ACLOCAL=\"aclocal --aclocal-path=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/share/aclocal/\" autoreconf -Wcross --verbose --install --force --exclude=autopoint",
+      "unix_ms": 1788851130324,
+      "recipe": "libxrandr-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Running ../sources/libXrandr-1.5.5/configure  --build=x86_64-linux \t\t  --host=x86_64-linux \t\t  --target=x86_64-linux \t\t  --prefix=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr \t\t  --exec_prefix=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr \t\t  --bindir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/bin \t\t  --sbindir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/sbin \t\t  --libexecdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/libexec \t\t  --datadir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/share \t\t  --sysconfdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/etc \t\t  --sharedstatedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/com \t\t  --localstatedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/var \t\t  --libdir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/lib \t\t  --includedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/include \t\t  --oldincludedir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/include \t\t  --infodir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/share/info \t\t  --mandir=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native/usr/share/man \t\t  --disable-silent-rules \t\t  --disable-dependency-tracking --disable-specs --without-groff --without-ps2pdf --without-fop --disable-static   --without-xmlto ",
+      "unix_ms": 1788851138147,
+      "recipe": "libxrandr-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking autotools environment for common misconfiguration",
+      "unix_ms": 1788851143551,
+      "recipe": "libxrandr-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking configure output for unrecognised options",
+      "unix_ms": 1788851143652,
+      "recipe": "libxrandr-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "make -j 2",
+      "unix_ms": 1788851143953,
+      "recipe": "libxrandr-native",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "make -j 2 DESTDIR=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/image install",
+      "unix_ms": 1788851146377,
+      "recipe": "libxrandr-native",
+      "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "QA checking do_populate_sysroot",
+      "unix_ms": 1788851146873,
+      "recipe": "libxrandr-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851146873,
+      "recipe": "libxrandr-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-populate_sysroot/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851146873,
+      "recipe": "libxrandr-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851147191,
+      "recipe": "libxrandr-native",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-create_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851147414,
+      "recipe": "libxrandr-native",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851147502,
+      "recipe": "libxrandr-native",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-create_package_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libxrandr-native/1.5.5/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851147502,
+      "recipe": "libxrandr-native",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/cmake/cmake-native_4.4.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxext_1.3.7.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxrandr_1.5.5.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxrender_0.9.12.bb:do_populate_sysroot']",
+      "unix_ms": 1788851147913,
+      "recipe": "libsdl2-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'libedit-native', 'make-native', 'ninja-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'libxext-native', 'libxrandr-native', 'libxrender-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788851148124,
+      "recipe": "libsdl2-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788851148124,
+      "recipe": "libsdl2-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/cmake/cmake-native_4.4.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libx11_1.8.13.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxext_1.3.7.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxrandr_1.5.5.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/libxrender_0.9.12.bb:do_populate_sysroot']",
+      "unix_ms": 1788851148435,
+      "recipe": "libsdl2-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788851148435,
+      "recipe": "libsdl2-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'quilt-native', 'texinfo-dummy-native', 'openssl-native', 'expat-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'libedit-native', 'make-native', 'ninja-native', 'perl-native', 'pkgconf-native', 'python3-native', 'bzip2-native', 'xz-native', 'zstd-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'libxext-native', 'libxrandr-native', 'libxrender-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'gdbm-native', 'libffi-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788851148435,
+      "recipe": "libsdl2-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "VERBOSE=1 cmake --build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/build --target all --",
+      "unix_ms": 1788851172138,
+      "recipe": "libsdl2-native",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "DESTDIR=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/image VERBOSE=1 cmake --install /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/build",
+      "unix_ms": 1788851335534,
+      "recipe": "libsdl2-native",
+      "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "QA checking do_populate_sysroot",
+      "unix_ms": 1788851336245,
+      "recipe": "libsdl2-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851336245,
+      "recipe": "libsdl2-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-populate_sysroot/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851336345,
+      "recipe": "libsdl2-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Replacing absolute paths in fixmepath file: '['sed', '-i', '-e', 's:^/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-populate_sysroot/::g', '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-populate_sysroot/fixmepath']'",
+      "unix_ms": 1788851336346,
+      "recipe": "libsdl2-native",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851337215,
+      "recipe": "libsdl2-native",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-create_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851337318,
+      "recipe": "libsdl2-native",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788851337839,
+      "recipe": "libsdl2-native",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'grep -Irl -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native -e /home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-create_package_spdx/ | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/libsdl2-native/2.32.10/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788851337839,
+      "recipe": "libsdl2-native",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/qemu-native_11.0.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-connectivity/slirp/libslirp_4.9.3.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-core/glib-2.0/glib-2.0_2.88.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-core/zlib/zlib_1.3.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/bison/bison_3.8.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/meson/meson_1.11.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/python/python3_3.14.6.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/python3-qemu-qmp_0.0.6.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/libsdl2/libsdl2_2.32.10.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/pixman_0.46.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-kernel/dtc/dtc_1.8.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-multimedia/alsa/alsa-lib_1.2.16.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-multimedia/libpng/libpng_1.6.58.bb:do_populate_sysroot']",
+      "unix_ms": 1788851338360,
+      "recipe": "qemu-system-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'qemu-native', 'texinfo-dummy-native', 'openssl-native', 'libslirp-native', 'expat-native', 'gettext-native', 'glib-2.0-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'bison-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'meson-native', 'ninja-native', 'perl-native', 'pkgconf-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-scm-native', 'python3-setuptools-native', 'python3-typing-extensions-native', 'python3-vcs-versioning-native', 'python3-wheel-native', 'python3-native', 'python3-qemu-qmp-native', 'bzip2-native', 'diffutils-native', 'unzip-native', 'xz-native', 'zstd-native', 'libsdl2-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'libxext-native', 'libxrandr-native', 'libxrender-native', 'pixman-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'dtc-native', 'alsa-lib-native', 'libpng-native', 'gdbm-native', 'libffi-native', 'libpcre2-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788851338902,
+      "recipe": "qemu-system-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: []",
+      "unix_ms": 1788851338938,
+      "recipe": "qemu-system-native",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/qemu-native_11.0.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-connectivity/slirp/libslirp_4.9.3.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-core/glib-2.0/glib-2.0_2.88.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-core/zlib/zlib_1.3.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/bison/bison_3.8.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/meson/meson_1.11.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/python/python3_3.14.6.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/python3-qemu-qmp_0.0.6.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/libsdl2/libsdl2_2.32.10.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-graphics/xorg-lib/pixman_0.46.4.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-kernel/dtc/dtc_1.8.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-multimedia/alsa/alsa-lib_1.2.16.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-multimedia/libpng/libpng_1.6.58.bb:do_populate_sysroot']",
+      "unix_ms": 1788851339315,
+      "recipe": "qemu-system-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788851339315,
+      "recipe": "qemu-system-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'cmake-native', 'libtool-native', 'm4-native', 'qemu-native', 'quilt-native', 'texinfo-dummy-native', 'openssl-native', 'libslirp-native', 'expat-native', 'gettext-native', 'glib-2.0-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'bison-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'meson-native', 'ninja-native', 'perl-native', 'pkgconf-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-scm-native', 'python3-setuptools-native', 'python3-typing-extensions-native', 'python3-vcs-versioning-native', 'python3-wheel-native', 'python3-native', 'python3-qemu-qmp-native', 'bzip2-native', 'diffutils-native', 'unzip-native', 'xz-native', 'zstd-native', 'libsdl2-native', 'libpthread-stubs-native', 'libx11-native', 'libxau-native', 'libxcb-native', 'libxdmcp-native', 'libxext-native', 'libxrandr-native', 'libxrender-native', 'pixman-native', 'xtrans-native', 'xcb-proto-native', 'xorgproto-native', 'util-macros-native', 'dtc-native', 'alsa-lib-native', 'libpng-native', 'gdbm-native', 'libffi-native', 'libpcre2-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788851339315,
+      "recipe": "qemu-system-native",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "make -j 2 LD=ld  AR=ar OBJCOPY=objcopy LDFLAGS=-L/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/usr/lib                         -L/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/lib                         -Wl,--enable-new-dtags                         -Wl,-rpath-link,/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/usr/lib                         -Wl,-rpath-link,/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/lib                         -Wl,-rpath,/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/usr/lib                         -Wl,-rpath,/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/qemu-system-native/11.0.2/recipe-sysroot-native/lib                         -Wl,-O1 -Wl,--allow-shlib-undefined -Wl,--dynamic-linker=/home/bspguy-dev/src/build-openbmc-romulus/tmp/sysroots-uninative/x86_64-linux/lib/ld-linux-x86-64.so.2 -pthread -fuse-ld=bfd",
+      "unix_ms": 1788851386060,
+      "recipe": "qemu-system-native",
+      "task": "do_compile",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     }

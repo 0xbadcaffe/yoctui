@@ -4617,6 +4617,58 @@ impl App {
             total.saturating_sub(self.build.completed.saturating_add(self.tasks.len()))
         })
     }
+    /// Count observed active workers only when one complete identity namespace is available.
+    pub fn active_worker_count(&self) -> Option<usize> {
+        if self.daemon.status != ClientReplicaStatus::Current {
+            return None;
+        }
+        match self.build.status {
+            BuildStatus::Idle
+            | BuildStatus::Completed
+            | BuildStatus::Cancelled
+            | BuildStatus::Failed => return Some(0),
+            BuildStatus::LoadingWorkspace | BuildStatus::Parsing | BuildStatus::Lost => {
+                return None;
+            }
+            BuildStatus::Running | BuildStatus::Cancelling => {}
+        }
+        let mut pids = std::collections::HashSet::new();
+        let mut labels = std::collections::HashSet::new();
+        let mut complete_pids = true;
+        let mut complete_labels = true;
+        let mut observed_active = false;
+        for task in self
+            .tasks
+            .values()
+            .filter(|task| task.state == TaskState::Active)
+        {
+            observed_active = true;
+            if let Some(pid) = task.pid.filter(|pid| *pid > 0) {
+                pids.insert(pid);
+            } else {
+                complete_pids = false;
+            }
+            if let Some(label) = task
+                .worker
+                .as_deref()
+                .filter(|label| !label.trim().is_empty())
+            {
+                labels.insert(label);
+            } else {
+                complete_labels = false;
+            }
+        }
+        if !observed_active {
+            None
+        } else if complete_pids {
+            Some(pids.len())
+        } else if complete_labels {
+            Some(labels.len())
+        } else {
+            None
+        }
+    }
+
     pub fn build_summary_at(&self, now: SystemTime) -> BuildSummary {
         let elapsed = match self.build.status {
             BuildStatus::Completed | BuildStatus::Cancelled | BuildStatus::Failed => {
