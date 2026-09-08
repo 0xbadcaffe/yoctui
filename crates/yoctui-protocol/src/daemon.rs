@@ -2513,10 +2513,15 @@ impl DaemonSnapshotJournal {
         let snapshot_bytes_upper_bound = if conservative_bytes <= self.limits.snapshot_bytes
             && matches!(
                 &sequenced.event,
-                DaemonEvent::Build(_) | DaemonEvent::Log(_) | DaemonEvent::JobChanged(_)
+                DaemonEvent::Build(_)
+                    | DaemonEvent::Log(_)
+                    | DaemonEvent::JobChanged(_)
+                    | DaemonEvent::Telemetry(_)
             ) {
-            // Build, log, and job reduction cannot reject a payload after the frame
-            // and sequence checks above. Apply these high-rate records in
+            // Build, log, job, and telemetry reduction cannot reject a payload
+            // after the frame and sequence checks above. Telemetry only advances
+            // the snapshot counters; its encoded event also covers their growth.
+            // Apply these recurring records in
             // place while the conservative size ledger proves that the
             // resulting snapshot remains bounded; validation-sensitive event
             // variants retain the transactional clone below.
@@ -4433,6 +4438,169 @@ mod tests {
         assert!(metrics.snapshot_serializations <= 2, "{metrics:?}");
         assert!(exact <= metrics.snapshot_bytes_upper_bound);
         assert_eq!(journal.snapshot().jobs[0].progress_current, Some(9_999));
+    }
+
+    fn journal_telemetry(uptime_seconds: u64) -> DaemonEvent {
+        DaemonEvent::Telemetry(DaemonTelemetry {
+            uptime_seconds,
+            bitbake: LifecycleState::Running,
+            connected_clients: 2,
+            active_jobs: 1,
+            pty_sessions: 0,
+            queue_depth: 1,
+            pressure: DaemonPressureCounters::default(),
+            memory_bytes: Some(24 * 1024 * 1024),
+            recovery: DaemonRecoveryState::CleanStart,
+        })
+    }
+
+    #[test]
+    fn daemon_journal_telemetry_replays_without_serializing_unchanged_snapshot() {
+        let mut snapshot = daemon_snapshot_fixture();
+        snapshot.recovery_warnings = vec!["retained metadata with \\".repeat(8_192)];
+        let mut replica = snapshot.clone();
+        let cursor = ResumeCursor {
+            daemon_instance_id: snapshot.daemon_instance_id,
+            last_sequence: snapshot.sequence,
+        };
+        let mut journal =
+            DaemonSnapshotJournal::new(snapshot.clone(), DaemonSnapshotLimits::default()).unwrap();
+        let initial_serializations = journal.ipc_metrics().snapshot_serializations;
+        for uptime in 1..=100 {
+            let published = journal.publish(journal_telemetry(uptime)).unwrap();
+            assert_eq!(published.sequence, uptime);
+            assert_eq!(published.generation, uptime);
+            assert_eq!(published.event, journal_telemetry(uptime));
+        }
+        assert_eq!(
+            journal.ipc_metrics().snapshot_serializations,
+            initial_serializations,
+            "telemetry must not serialize unchanged retained metadata while headroom exists"
+        );
+        let DaemonSnapshotSync::Replay {
+            events,
+            replayed_through,
+        } = journal.synchronize(Some(cursor))
+        else {
+            panic!("retained telemetry must replay incrementally");
+        };
+        assert_eq!(events.len(), 100);
+        assert_eq!(replayed_through, 100);
+        for event in events {
+            let frame = encode_frame(&ServerMessage::Event(event.clone())).unwrap();
+            assert_eq!(
+                decode_frame::<ServerMessage>(&frame).unwrap(),
+                ServerMessage::Event(event.clone())
+            );
+            apply_sequenced_event(&mut replica, &event).unwrap();
+        }
+        snapshot.sequence = 100;
+        snapshot.generation = 100;
+        assert_eq!(journal.snapshot(), &snapshot);
+        assert_eq!(replica, snapshot);
+        assert_eq!(journal.ipc_metrics().published_events, 100);
+        let exact = serde_json::to_vec(journal.snapshot()).unwrap().len();
+        assert!(exact <= journal.ipc_metrics().snapshot_bytes_upper_bound);
+        assert!(journal.ipc_metrics().snapshot_bytes_upper_bound <= MAX_FRAME_BYTES);
+    }
+
+    #[test]
+    fn daemon_journal_telemetry_remeasures_at_the_same_hard_byte_limit() {
+        let snapshot = daemon_snapshot_fixture();
+        let limit = serde_json::to_vec(&snapshot).unwrap().len() + 4_096;
+        let mut journal = DaemonSnapshotJournal::new(
+            snapshot,
+            DaemonSnapshotLimits {
+                snapshot_bytes: limit,
+                retained_events: 4,
+                ..DaemonSnapshotLimits::default()
+            },
+        )
+        .unwrap();
+        for uptime in 1..=100 {
+            journal.publish(journal_telemetry(uptime)).unwrap();
+            let exact = serde_json::to_vec(journal.snapshot()).unwrap().len();
+            assert!(exact <= journal.ipc_metrics().snapshot_bytes_upper_bound);
+            assert!(journal.ipc_metrics().snapshot_bytes_upper_bound <= limit);
+            assert!(journal.events.len() <= 4);
+        }
+        let serializations = journal.ipc_metrics().snapshot_serializations;
+        assert!(
+            serializations > 1,
+            "size ledger must eventually be remeasured"
+        );
+        assert!(serializations < 100, "headroom must amortize snapshot work");
+    }
+
+    #[test]
+    fn daemon_journal_telemetry_size_rejection_preserves_snapshot_and_replay() {
+        let mut snapshot = daemon_snapshot_fixture();
+        snapshot.sequence = 8;
+        snapshot.generation = 8;
+        let limit = serde_json::to_vec(&snapshot).unwrap().len() + 1;
+        let mut journal = DaemonSnapshotJournal::new(
+            snapshot,
+            DaemonSnapshotLimits {
+                snapshot_bytes: limit,
+                ..DaemonSnapshotLimits::default()
+            },
+        )
+        .unwrap();
+        journal.publish(journal_telemetry(1)).unwrap();
+        let before = journal.snapshot().clone();
+        let before_events = journal.events.clone();
+        let before_metrics = journal.ipc_metrics();
+        // Both sequence counters grow from one digit to two; the hard limit
+        // leaves only one byte, so even non-retained telemetry must fail.
+        assert!(matches!(
+            journal.publish(journal_telemetry(2)),
+            Err(DaemonSnapshotError::SnapshotTooLarge { .. })
+        ));
+        assert_eq!(journal.snapshot(), &before);
+        assert_eq!(journal.events, before_events);
+        assert_eq!(
+            journal.ipc_metrics().published_events,
+            before_metrics.published_events
+        );
+        assert_eq!(
+            journal.ipc_metrics().published_event_bytes,
+            before_metrics.published_event_bytes
+        );
+        assert_eq!(
+            journal.ipc_metrics().snapshot_bytes_upper_bound,
+            before_metrics.snapshot_bytes_upper_bound
+        );
+    }
+
+    #[test]
+    fn daemon_journal_telemetry_counter_exhaustion_is_transactional() {
+        for sequence_exhausted in [true, false] {
+            let mut snapshot = daemon_snapshot_fixture();
+            if sequence_exhausted {
+                snapshot.sequence = u64::MAX;
+            } else {
+                snapshot.generation = u64::MAX;
+            }
+            let mut journal =
+                DaemonSnapshotJournal::new(snapshot.clone(), DaemonSnapshotLimits::default())
+                    .unwrap();
+            let result = journal.publish(journal_telemetry(1));
+            if sequence_exhausted {
+                assert!(matches!(
+                    result,
+                    Err(DaemonSnapshotError::SequenceExhausted)
+                ));
+            } else {
+                assert!(matches!(
+                    result,
+                    Err(DaemonSnapshotError::GenerationExhausted)
+                ));
+            }
+            assert_eq!(journal.snapshot(), &snapshot);
+            assert!(journal.events.is_empty());
+            assert_eq!(journal.ipc_metrics().published_events, 0);
+            assert_eq!(journal.ipc_metrics().snapshot_serializations, 1);
+        }
     }
 
     #[test]

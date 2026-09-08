@@ -3794,12 +3794,15 @@ active detail could not be retained.
 
 Daemon IPC publication keeps one authoritative snapshot and one ordered
 bounded event journal. Snapshot size accounting uses a conservative byte
-ledger, so high-rate build/log publication does not serialize the complete
+ledger, so recurring build/log/job/telemetry publication does not serialize the complete
 snapshot on every event; an exact serialization and bounded log/screen trim is
 performed only when the ledger reaches the protocol ceiling. Safely bounded,
-infallible build/log reductions update the snapshot in place, while event
+infallible build/log/job/telemetry reductions update the snapshot in place, while event
 variants with validation failure paths retain transactional clone-before-apply
-semantics.
+semantics. Telemetry is journal-only and advances snapshot sequence/generation
+without retaining its payload. Its encoded event size conservatively covers
+counter growth; it does not bypass the hard snapshot ceiling or transactional
+remeasurement/rejection when the remaining ledger headroom is exhausted.
 
 An attached client consumes at most 32 journal records per daemon service
 slice. Falling behind within retained history therefore continues as bounded

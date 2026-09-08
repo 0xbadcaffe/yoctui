@@ -1,0 +1,124 @@
+{
+  "schema": "yoctui.performance.runtime-profile.v1",
+  "captured_at_utc": "2026-09-08T12:07:20.497334+00:00",
+  "scenario": "v88-real-poky-diagnostic",
+  "revision": "d2214e82974a5be708a7cc40f1532254d7c7de63",
+  "host": {
+    "kernel": "7.0.0-30-generic",
+    "machine": "x86_64"
+  },
+  "binary": {
+    "path": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui",
+    "sha256": "be5fa7261cd3ebaf7f6f1786eabb46736419d043086d0e92224f3cc63f48b510"
+  },
+  "sampling": {
+    "event": "cycles:u",
+    "frequency_hz": 499,
+    "call_graph": "lbr",
+    "duration_seconds": 60,
+    "samples": 275,
+    "unresolved_stack_lines": 0,
+    "dropped_unresolved_ppm": 0,
+    "maximum_dropped_unresolved_ppm": 5000
+  },
+  "processes": [
+    {
+      "role": "daemon",
+      "pid": 2433848,
+      "executable": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui",
+      "command": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui daemon foreground"
+    },
+    {
+      "role": "client",
+      "pid": 2457774,
+      "executable": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui",
+      "command": "/home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui attach"
+    }
+  ],
+  "artifacts": {
+    "svg_sha256": "3230fc54263c5689ebcf7857a644e7aba7db01f11b31e8af41451657038f3732",
+    "flat_report_sha256": "e354e0a8c57b377cd45c384a2f988e491b2b2a8d8d78fbfa9de07fad9fbe182a"
+  },
+  "top_self_symbols": [
+    {
+      "self_percent": 19.23,
+      "symbol": "serde_json::ser::format_escaped_str::<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter>"
+    },
+    {
+      "self_percent": 7.78,
+      "symbol": "__memmove_avx_unaligned_erms"
+    },
+    {
+      "self_percent": 6.66,
+      "symbol": "_int_malloc"
+    },
+    {
+      "self_percent": 4.43,
+      "symbol": "<ratatui_core::buffer::buffer::Buffer>::set_style::<ratatui_core::style::Style>"
+    },
+    {
+      "self_percent": 4.24,
+      "symbol": "__libc_malloc2"
+    },
+    {
+      "self_percent": 3.94,
+      "symbol": "<unicode_segmentation::grapheme::Graphemes as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 3.33,
+      "symbol": "<serde_json::ser::Compound<&mut alloc::vec::Vec<u8>, serde_json::ser::CompactFormatter> as serde_core::ser::SerializeStruct>::serialize_field::<core::option::Option<alloc::string::String>>"
+    },
+    {
+      "self_percent": 3.27,
+      "symbol": "yoctui::tui::{closure#0}"
+    },
+    {
+      "self_percent": 3.19,
+      "symbol": "_int_free_chunk"
+    },
+    {
+      "self_percent": 3.15,
+      "symbol": "_int_free_merge_chunk"
+    },
+    {
+      "self_percent": 2.46,
+      "symbol": "<core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}> as core::iter::traits::iterator::Iterator>::next"
+    },
+    {
+      "self_percent": 2.24,
+      "symbol": "<&ratatui_core::text::span::Span as ratatui_core::widgets::widget::Widget>::render"
+    },
+    {
+      "self_percent": 2.21,
+      "symbol": "<yoctui_protocol::daemon::DaemonSnapshotJournal>::synchronize_with_limit"
+    },
+    {
+      "self_percent": 2.19,
+      "symbol": "__syscall_cancel"
+    },
+    {
+      "self_percent": 1.54,
+      "symbol": "<ratatui_widgets::reflow::WordWrapper<core::iter::adapters::map::Map<core::slice::iter::Iter<ratatui_core::text::line::Line>, <ratatui_widgets::paragraph::Paragraph>::render_paragraph::{closure#0}>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<ratatui_core::text::span::Span>, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<unicode_segmentation::grapheme::Graphemes, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>, <ratatui_core::text::span::Span>::styled_graphemes<ratatui_core::style::Style>::{closure#1}>, <ratatui_core::text::line::Line>::styled_graphemes<ratatui_core::style::Style>::{closure#0}>> as ratatui_widgets::reflow::LineComposer>::next_line"
+    },
+    {
+      "self_percent": 1.49,
+      "symbol": "yoctui::run_daemon_foreground::{closure#0}"
+    },
+    {
+      "self_percent": 1.48,
+      "symbol": "malloc"
+    },
+    {
+      "self_percent": 1.47,
+      "symbol": "<ratatui_core::buffer::cell::Cell as core::cmp::PartialEq>::eq"
+    },
+    {
+      "self_percent": 1.31,
+      "symbol": "<core::str::iter::Chars as core::iter::traits::double_ended::DoubleEndedIterator>::rfold::<(usize, unicode_width::tables::WidthInfo), unicode_width::tables::str_width::{closure#0}>"
+    },
+    {
+      "self_percent": 1.23,
+      "symbol": "__memcmp_avx2_movbe"
+    }
+  ]
+}

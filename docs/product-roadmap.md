@@ -5,17 +5,19 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 ## Product completion rule
 
 v0.1.87 closes real OpenBMC integration with actual image/artifact/lifecycle/
-inspection evidence. RELEASE-PERF-REFRESH-001 is pending: the unchanged
-real-Poky source validator rejects historical v0.1.64 measurements after runtime
-changes. Fresh supported-kernel saturation evidence must use an isolated build
-without cleaning any existing Poky data. All release thresholds remain in force;
-the complete repository gate has not passed.
+inspection evidence. v0.1.89 completes RELEASE-DAEMON-CPU-001 and
+RELEASE-PERF-REFRESH-001 with a bounded telemetry publication repair and actual
+fresh source-bound idle/real-Poky acceptance. All 705 registry tasks are DONE.
+Combined real-build CPU is 0.5831% of one logical CPU over 360 samples; input
+p95 is 4.558 ms, and continuity/cancellation pass. The full real-Poky performance
+verification chain and baseline pass. All release thresholds remain in force;
+the complete repository gate is next and has not yet passed.
 
 v0.1.88 fresh real-Poky evidence fails combined CPU at 1.0334662486% versus
 1.00% over 360 samples, while latency, saturation, continuity and cancellation
-pass. RELEASE-DAEMON-CPU-001 is current for separately measured profiling,
-a bounded correction and fresh unprofiled acceptance. The parent evidence
-refresh depends on it; failed evidence remains preserved and thresholds unchanged.
+pass. RELEASE-DAEMON-CPU-001 was registered before profiling and runtime edits.
+That failed evidence remains preserved alongside the separate diagnostic
+profile and actual passing v89 observation; thresholds are unchanged.
 
 v0.1.86 completes OPENBMC-ROOTFS-SOURCES-001: bounded asynchronous exact-image
 queries honor the daemon's selected command/API authority. Actual rootfs and

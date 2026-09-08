@@ -1,93 +1,107 @@
 # Current Task
 
-**ID:** RELEASE-DAEMON-CPU-001
-**Title:** Profile and correct real-build runtime CPU above the release budget
-**Status:** IN_PROGRESS
+**ID:** RELEASE-PERF-REFRESH-001
+**Title:** Refresh source-bound real-Poky performance evidence after OpenBMC integration
+**Status:** DONE
 
-Dependency OPENBMC-LIVE-001 is DONE. Parent RELEASE-PERF-REFRESH-001 waits
-for this separately registered runtime investigation. Commit this v0.1.88
-split, harness repair and failed evidence before runtime implementation.
-All baseline checks now pass. No runtime hotspot or correction is established yet.
+All 705 registry tasks are DONE. The bounded telemetry correction and its
+source-evidence parent are verified together by the actual fresh capture.
+The complete ./scripts/verify-performance.sh --real-poky-evidence chain passed;
+session 8793 exited 0, log /tmp/yoctui-v89-performance-real-gate.log. This is
+the terminal task handoff, not a full completion claim. Finish final docs/
+roadmap/version checks, commit the coherent v0.1.89 change, then continue
+immediately to ./scripts/verify-completion.sh in an exact clean worktree as
+needed below. No required task implementation remains; the global gate must
+still pass before stopping. If it exposes a new defect, register it explicitly.
 
-## Observed failure and acceptance
+## Verified correction and measurements
 
-The actual v88 linux-yocto do_compile capture completed 360 samples after
-ten seconds of warmup. Combined CPU is 1.0334662486% > the unchanged 1.00%
-one-logical-CPU ceiling. Daemon/client independently trimmed means are
-0.5872427701%/0.4039586047%; never add those to claim a combined pass.
-The combined metric trims each sample's daemon-plus-client sum. Latency,
-saturation, continuity, reconnect and owned-job cancellation passed.
-Preserve artifacts/performance/real-poky/v88-linux-yocto-do-compile.json,
-v88-failed-manifest.json and v88-source.patch. Canonical historical v64
-evidence remains unchanged and fails current source hashes. The old tmpfs
-fixture differs from the new ext4 fixture; no code regression is established
-by these two observations alone. See docs/performance.md for exact metrics.
+v0.1.88's actual 360-sample real compile failed combined CPU at 1.0334662486%.
+Its separately labeled diagnostic profile contains 275 samples, zero lost
+samples and zero unresolved weight: full snapshot serialization is 26.90%
+inclusive cycle weight. The profile conversion exceeded the controller timeout
+after recording, completed later, and passed the unchanged summarizer separately.
+All diagnostic processes exited. Failed and profiled records remain distinct
+under artifacts/performance/real-poky/v88-* and profiles/v88-*.
 
-Profile the preserved v88 release binary under a separately labeled real
-workload. Identify a measured hotspot, add focused normal/failure/safety
-regressions, then make one bounded correction. Preserve event correctness,
-input/cancellation responsiveness, bounded work and backend lifecycle.
-Profiles never satisfy unprofiled CPU acceptance. DONE requires focused tests,
-full baseline and a fresh exact-release source-bound real-Poky capture passing
-all unchanged gates. No Cargo or profiler during acceptance measurement.
+The v89 correction adds only Telemetry to the existing conservative snapshot
+size-ledger path. It changes no timers, thresholds, event payloads or workload.
+Two failed-first tests reproduced 101 full serializations for 100 telemetry
+events and absent headroom amortization. Four regressions now pass: unchanged
+snapshot/ordered replay, exact remeasurement and bounds, atomic size rejection,
+and sequence/generation exhaustion. Actual source patch is retained at
+artifacts/performance/real-poky/v89-source.patch against d2214e8; reapply with
+git apply --unidiff-zero. No runtime source changed after the measured build.
 
-The v88 harness now waits read-only for asynchronous initial workspace
-metadata before any commands or measurement. Three failed-first regressions
-cover heartbeat, replacement authority, metadata failures, EOF and timeout;
-an actual guarded no-command probe reaches its intentional READ_ONLY_STOP.
-This is functional evidence only. Startup probe evidence is preserved in
-artifacts/performance/real-poky/v88-readonly-startup-probe.txt.
+Fresh unprofiled idle results pass unchanged limits: daemon 0.0416005%, client
+0.1247861%, combined 0.2703778% of one logical CPU. There are ten-second warmups
+and sixty samples per daemon/attached scenario, private XDG and no build env.
+Exact output under artifacts/performance/results/low-overhead-v89 is copied
+byte-for-byte to the canonical low-overhead directory after validation.
+
+Fresh unprofiled real compile: 360 samples after ten-second warmup, combined
+CPU 0.5831064335%, daemon 0.1788248486%, client 0.3959064743%. Host utilization
+99.7892%, BitBake tree 308.6674% of one logical CPU. Input p95 4.558337 ms;
+build/cancel acknowledgement 0.676482/6.060129 ms, fresh attach 50.053626 ms.
+Queue maximum 90/256, 1.289 fps, no drops, reliable waits, resynchronization
+or backend disconnect. Reconnect/cancellation passed and all owned processes
+exited. Session 47552 completed with exit 0; /tmp/yoctui-v89-real-poky.log.
+The unchanged full real-Poky Python validator passes exact source/binary
+provenance and all metrics. No Cargo or profiler ran during either capture.
+
+Canonical real-Poky record/manifest now match the exact retained
+v89-linux-yocto-do-compile.json, all runtime Rust/bundled bridge hashes and
+v89 source patch. v64 records remain in Git history, failed v88 evidence remains
+unchanged. The regenerated regression record/manifest passes 22 hard metrics
+and seven correctness checks; builder regressions pass. See docs/performance.md.
+
+## Candidates and baseline
+
+- Measured release: /home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui
+- SHA-256 261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd
+- Release build passed in 34m 44s, /tmp/yoctui-v89-release-build.log; session 69078 closed.
+- Workspace-tested debug: /home/bspguy-dev/.local/state/yoctui-v89-validated.mVei4c/yoctui
+- SHA-256 f93458734ee142a4f0b5535db003264ff2327f619466918b3422938a3c620e4e
+
+All 1599 workspace tests/doc-tests (four existing ignored), 52 bridge tests,
+strict Clippy, fmt, docs, version policy and 705-task roadmap pass. Seven
+readiness/version/regression script tests and three idle-harness tests pass.
+All 17 golden diffs are version digits only; six rasters regenerated/verified.
+Debug candidate was preserved before docs rebuilt the default-feature binary.
+
+Required baseline: cargo fmt --all --check; cargo test --workspace --all-features;
+cargo clippy --workspace --all-targets --all-features -- -D warnings;
+python3 -m pytest bridge/tests; ./scripts/check-docs.sh; ./scripts/verify-roadmap.sh.
+Every commit bumps patch version, 17 goldens and six rasters. All Cargo commands,
+including docs, run sequentially with CARGO_BUILD_JOBS=1,
+CARGO_PROFILE_DEV_DEBUG=0, CARGO_PROFILE_TEST_DEBUG=0, CARGO_INCREMENTAL=0,
+RUST_TEST_THREADS=2. Never run Cargo or profilers during acceptance measurement.
+
+The global gate requires a clean tracked checkout; its version checker also
+treats the four unrelated user-owned untracked captures as a pending commit.
+Preserve them: use an exact clean Git worktree for the final gate if needed,
+not removal/staging/hiding or weakened checks. This may rebuild artifacts due
+to source paths. Tools and stable/nightly toolchains are installed.
+If enabling final live smoke, set YOCTUI_LIVE_BUILD_DIR to the isolated fixture
+below and YOCTUI_OE_INIT_BUILD_ENV=/home/bspguy-dev/src/poky/oe-init-build-env.
+Review the smoke's owned target/cancellation behavior before running it.
 
 ## Exact private performance fixture
 
-- Build: /home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs
-- Poky: /home/bspguy-dev/src/poky, supported 6.0.2; qemux86-64/poky,
+- Build /home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs
+- Source /home/bspguy-dev/src/poky, supported 6.0.2; qemux86-64/poky,
   BitBake 2.18.0, linux-yocto 6.18.24+git
-- Private TMPDIR/DL_DIR/SSTATE_DIR; read-only source/sstate mirrors;
-  offline mode, eight build/make workers, STOPTASKS 15 GiB / HALT 8 GiB
-- Read-only bitbake -e confirms every writable work/cleanup path is inside
-  this exact fixture. Only mirror URLs and shared Git object pools read old caches.
-- local.conf SHA-256
-  009dc5ebdd43ce7f207d92a7ec24f8d88241abc88086d7c6e07f2ac3205f2e5f
-- bblayers.conf SHA-256
-  38e5a5753846f853f8adfb9db768b19cecbd36bce32058e39e7fb2f7ff3e3496
-- Exact v88 release: /home/bspguy-dev/.local/state/yoctui-v88-release.TBqp2N/yoctui
-- Binary SHA-256
-  be5fa7261cd3ebaf7f6f1786eabb46736419d043086d0e92224f3cc63f48b510
-- Release build passed (35m 26s), /tmp/yoctui-v88-release-build.log.
-  Unprofiled capture completed and cleaned up, /tmp/yoctui-v88-real-poky.log.
+- Private TMPDIR/DL_DIR/SSTATE_DIR; read-only source/sstate mirrors and shared
+  Git object pools; offline, eight build/make workers, STOPTASKS 15 GiB / HALT 8 GiB
+- Read-only bitbake -e verified every writable work/cleanup path inside this fixture.
+- local.conf SHA-256 009dc5ebdd43ce7f207d92a7ec24f8d88241abc88086d7c6e07f2ac3205f2e5f
+- bblayers.conf SHA-256 38e5a5753846f853f8adfb9db768b19cecbd36bce32058e39e7fb2f7ff3e3496
+- v89 preflight: exact hashes, no Cargo/BitBake jobs, 26 GiB disk/11 GiB RAM available.
 
-Only this newly created fixture may receive daemon-owned kernel
-cleansstate/compile. Never clean the original Poky build or old performance
-fixture. Recheck disk/memory, no competing Cargo, exact process identity and
-job ownership before each run or manual lifecycle action. Normally let the
-capture own cleanup. Preserve all original Poky/OpenBMC data and source edits.
-
-## Verification
-
-v88 release build, 52 bridge tests, three readiness tests, four version/
-regression-record tests, six raster tests and version policy pass. All 17
-golden edits were mechanically checked as version digits only. All 1595 v88
-workspace tests/doc-tests (four existing ignored), strict Clippy, fmt, docs,
-705-task roadmap and six production raster checks pass. The unchanged real-Poky
-validator accepts failed-candidate provenance and rejects its 1.0335% CPU result.
-Workspace-tested binary (preserved before docs):
-/home/bspguy-dev/.local/state/yoctui-v88-validated.fbKgcY/yoctui,
-SHA-256 8dfbdef0d752a7f20049bffd0f7c3f9552708ccd2f067e9f6a3b9531703d6709.
-This debug baseline candidate is distinct from the preserved release measurement.
-
-Required baseline: cargo fmt --all --check;
-cargo test --workspace --all-features;
-cargo clippy --workspace --all-targets --all-features -- -D warnings;
-python3 -m pytest bridge/tests; ./scripts/check-docs.sh;
-./scripts/verify-roadmap.sh. Runtime task additionally requires
-./scripts/verify-performance.sh --real-poky-evidence. Parent then runs
-./scripts/verify-completion.sh; no full-completion claim until it passes.
-Every commit bumps patch version, 17 goldens and six production rasters.
-All Cargo commands including docs run sequentially with CARGO_BUILD_JOBS=1,
-CARGO_PROFILE_DEV_DEBUG=0, CARGO_PROFILE_TEST_DEBUG=0, CARGO_INCREMENTAL=0,
-RUST_TEST_THREADS=2. Preserve exact workspace-tested executable before docs
-rebuilds target/debug/yoctui using default features.
+Only this newly created fixture may receive daemon-owned kernel cleansstate/
+compile. Never clean original Poky builds or old performance fixtures.
+Recheck exact identities and resource headroom before lifecycle actions.
+All original Poky/OpenBMC data and pre-existing source edits remain preserved.
 
 ## Preserved live authority
 

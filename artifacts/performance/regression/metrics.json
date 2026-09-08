@@ -79,9 +79,10 @@
       "warmup_seconds": 10,
       "window_seconds": 360,
       "workload_trigger": {
-        "log_path": "/tmp/yoctui-m52-poky.nHLLjU/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.1715082",
-        "pid": 1715082,
+        "log_path": "/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs/tmp/work/qemux86_64-poky-linux/linux-yocto/6.18.24+git/temp/log.do_compile.2503821",
+        "pid": 2503821,
         "recipe": "linux-yocto",
+        "started_unix_ms": 1788872454246,
         "stats": null,
         "task": "do_compile",
         "type": "task_started",
@@ -95,41 +96,41 @@
         "hard_maximum": 0.5,
         "passed": true,
         "unit": "% one logical CPU",
-        "value": 0.08320485382353776
+        "value": 0.12478610107031778
       },
       "idle_combined": {
         "hard_maximum": 1.0,
         "passed": true,
         "unit": "% one logical CPU",
-        "value": 0.18721054421705477
+        "value": 0.2703777543063137
       },
       "idle_daemon": {
         "hard_maximum": 0.2,
         "passed": true,
         "unit": "% one logical CPU",
-        "value": 0.0
+        "value": 0.041600517341577124
       },
       "real_poky_bitbake": {
         "unit": "% one logical CPU",
-        "value": 297.1415476738844
+        "value": 308.6674114661494
       },
       "real_poky_client": {
         "unit": "% one logical CPU",
-        "value": 0.43162401149188623
+        "value": 0.3959064742874149
       },
       "real_poky_combined": {
         "hard_maximum": 1.0,
         "passed": true,
         "unit": "% one logical CPU",
-        "value": 0.9332790539025281
+        "value": 0.5831064334901895
       },
       "real_poky_daemon": {
         "unit": "% one logical CPU",
-        "value": 0.4765066108989023
+        "value": 0.178824848564928
       },
       "real_poky_host": {
         "unit": "% total host capacity",
-        "value": 99.83927637141117
+        "value": 99.78915651040124
       }
     },
     "latency": {
@@ -173,13 +174,13 @@
         "hard_maximum": 100,
         "passed": true,
         "unit": "ms",
-        "value": 4.834914
+        "value": 6.060129
       },
       "real_poky_key_to_frame_p95": {
         "hard_maximum": 100,
         "passed": true,
         "unit": "ms",
-        "value": 4.681405
+        "value": 4.558337
       }
     },
     "memory": {
@@ -245,37 +246,37 @@
         "hard_maximum": 256,
         "passed": true,
         "unit": "events",
-        "value": 86
+        "value": 90
       }
     },
     "render": {
       "real_poky_coalesced_requests": {
         "unit": "requests",
-        "value": 1084
+        "value": 1085
       },
       "real_poky_frames": {
         "unit": "frames",
-        "value": 479
+        "value": 478
       },
       "real_poky_frames_per_second": {
         "hard_maximum": 10,
         "passed": true,
         "unit": "frames/s",
-        "value": 1.2917348297082802
+        "value": 1.2889549273768997
       }
     },
     "wakeups": {
       "idle_attached_daemon_voluntary_context_switches_per_second": {
         "unit": "context switches/s",
-        "value": 9.984285271232165
+        "value": 9.966557239829813
       },
       "idle_client_voluntary_context_switches_per_second": {
         "unit": "context switches/s",
-        "value": 19.549827673192414
+        "value": 19.567036547420717
       },
       "idle_daemon_voluntary_context_switches_per_second": {
         "unit": "context switches/s",
-        "value": 9.983781431000233
+        "value": 9.966241942822343
       }
     }
   },
@@ -296,15 +297,15 @@
   "source_artifacts": {
     "idle_attached": {
       "path": "artifacts/performance/results/low-overhead/idle-attached-client.json",
-      "sha256": "134954f334e76c9d0194772e288d6c4a3fc49c7d88d1d45e63b1eb951be9e000"
+      "sha256": "daae52bee3c1d9de0b57049b9bac850105c73e0b490e393621def5e994a5a780"
     },
     "idle_daemon": {
       "path": "artifacts/performance/results/low-overhead/idle-daemon.json",
-      "sha256": "c5a75363fd645d2e25a2700847d3b9b94da53b47a8dc12013059c2ca7c341cce"
+      "sha256": "0f0e08c02b3f2466f4b473526052fe6cfb9318af1037f1ab027545fe7b3422c1"
     },
     "idle_suite": {
       "path": "artifacts/performance/results/low-overhead/measurement.json",
-      "sha256": "882e862db0433d9a15fb0672e5ff3856cf29c9590f0ede03c0209ec04d5fa53c"
+      "sha256": "329e29e4750edd517ca6973a986a44590cac646b78afd4663bc53e097da16c44"
     },
     "input_latency": {
       "path": "artifacts/performance/input-latency/host-audit.json",
@@ -324,7 +325,7 @@
     },
     "real_poky": {
       "path": "artifacts/performance/real-poky/linux-yocto-do-compile.json",
-      "sha256": "a6b0be738b7f18555fce4818f27350015c0fb4b281009855cb043b7059659187"
+      "sha256": "ae23c4642d7689941232b06961dee7cce5f319d0a6691a4f186377b1d87da86a"
     }
   }
 }

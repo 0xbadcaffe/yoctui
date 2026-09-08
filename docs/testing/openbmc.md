@@ -1,5 +1,20 @@
 # OpenBMC live integration
 
+## Release performance follow-up (v0.1.89)
+
+The actual OpenBMC image and all integration fixes below remain verified.
+The separately isolated Poky release follow-up now passes: after retaining a
+failed v88 CPU observation and profiling it, one bounded telemetry-publication
+correction avoids recurring full-snapshot serialization. Four regressions,
+1599 workspace tests/doc-tests, baseline and the complete real-Poky performance
+verification chain pass. Fresh unprofiled combined CPU is 0.5831% over 360
+samples with 4.558 ms input p95 and successful continuity/cancellation; fresh
+idle combined CPU is 0.2704%. Exact records, failed/profiled evidence and
+source/binary provenance are in [the performance contract](../performance.md).
+All 705 registry tasks are DONE; the global completion gate is next, not yet
+claimed passing. No OpenBMC rebuild, boot, daemon replacement or normal
+installation change occurred. All original Poky/OpenBMC data are preserved.
+
 ## Final integration handoff (v0.1.87)
 
 OPENBMC-LIVE-001 is DONE: the image succeeded and every registered integration

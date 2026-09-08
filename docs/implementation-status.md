@@ -1,5 +1,34 @@
 # Yoctui Implementation Status
 
+v0.1.89 RELEASE-DAEMON-CPU-001 and RELEASE-PERF-REFRESH-001 are DONE.
+All 705 registry tasks are DONE; the repository-wide completion gate is next.
+A validated actual v88
+diagnostic profile identifies full snapshot serialization at 26.90% inclusive
+sampled cycle weight. Journal-only telemetry unnecessarily clones/serializes
+unchanged metadata once per second. The candidate extends the existing bounded
+size-ledger path to telemetry, preserving exact remeasurement and atomic
+rejection. Two failed-first tests reproduce the overhead; four focused tests
+cover replay, hard bounds and counter exhaustion. All four focused tests, 1599
+workspace tests/doc-tests, 52 bridge tests, seven script regressions, version
+policy and 705-task roadmap pass. All 17 goldens change only version digits;
+six rasters were regenerated and verified. Strict Clippy and docs pass; the
+workspace-tested debug candidate is preserved before the docs rebuild. The
+exact release build passed in 34m 44s; SHA-256
+261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd,
+preserved under yoctui-v89-release.N94Frh. Fresh unprofiled idle acceptance
+passes unchanged gates: daemon 0.0416%, client 0.1248%, combined 0.2704% of one
+logical CPU. The canonical idle records now contain this actual fresh output;
+v64 remains in Git history. The fresh 360-sample real-build capture passes the
+unchanged validator: combined CPU 0.5831064335%, input p95 4.558337 ms,
+build/cancel ack 0.676482/6.060129 ms, fresh attach 50.053626 ms, queue 90/256,
+host 99.7892%, BitBake tree 308.6674%. No disconnect/drop/resync/reliable wait;
+reconnect/cancellation and process cleanup pass. No Cargo or profiler ran
+during acceptance. Canonical source/binary-bound real evidence is refreshed,
+and the regenerated regression record passes 22 hard metrics/seven correctness
+checks. The complete verify-performance.sh --real-poky-evidence chain passes
+(session 8793 exit 0); global completion remains pending. Diagnostic evidence and the earlier
+unprofiled CPU failure are separately preserved, never relabeled.
+
 v0.1.88 preserves a failed fresh real-Poky performance observation and registers
 RELEASE-DAEMON-CPU-001 before runtime changes. Combined CPU is 1.0334662486%
 against the unchanged 1.00% ceiling over 360 samples; latency, saturation,

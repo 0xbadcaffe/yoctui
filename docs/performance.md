@@ -151,9 +151,37 @@ labelled as fixture evidence or inferred from a deterministic generator.
 
 ### Supported real-Poky saturation evidence
 
-RELEASE-PERF-REFRESH-001 is refreshing the source-bound observation after the
-OpenBMC runtime repairs. Historical v0.1.64 evidence does not satisfy current
-source hashes; no threshold is relaxed. The new isolated fixture is
+The [fresh v0.1.89 observation](../artifacts/performance/real-poky/v89-linux-yocto-do-compile.json)
+passes the unchanged real-Poky validator with 360 unprofiled samples after a
+ten-second warmup. Combined CPU is **0.5831064335% of one logical CPU**, down
+from the failed v88 observation at 1.0334662486%. Daemon/client independently
+trimmed CPU is 0.1788248486%/0.3959064743%. Host utilization is 99.7892% of
+capacity and BitBake tree CPU is 308.6674% of one logical CPU. Input-to-frame
+p95 is 4.558337 ms; build/cancel acknowledgement is 0.676482/6.060129 ms,
+fresh attachment 50.053626 ms. Queue maximum is 90/256, rendering 1.289 fps;
+there are no drops, reliable waits, resynchronizations or backend disconnects.
+Reconnect and owned-job cancellation passed, and all capture processes exited.
+No Cargo or profiler ran during either acceptance window.
+
+The exact release binary is preserved at
+`/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui`, SHA-256
+`261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd`.
+The [canonical manifest](../artifacts/performance/real-poky/manifest.json)
+binds the actual record, all runtime Rust/bundled bridge source hashes, and
+the [v89 source patch](../artifacts/performance/real-poky/v89-source.patch)
+to d2214e8. Reapply zero-context patches with `git apply --unidiff-zero`.
+Fresh [idle evidence](../artifacts/performance/results/low-overhead-v89/measurement.json)
+also passes unchanged limits: daemon 0.0416%, client 0.1248%, combined 0.2704%
+of one CPU. These actual records replace the canonical v64 real/idle results;
+historical records remain in Git and the failed v88 record remains separately
+preserved. The regenerated regression record passes 22 hard metrics and seven
+correctness checks. The complete `--real-poky-evidence` verification chain also
+passes, including production-path, saturation, scheduling and coexistence
+checks. The global completion gate remains a separate requirement, not a claim
+inferred from these measurements.
+
+RELEASE-PERF-REFRESH-001 tracks source-bound evidence after the OpenBMC repairs;
+historical v0.1.64 evidence cannot certify current sources. The isolated fixture is
 `/home/bspguy-dev/.local/state/yoctui-release-poky.xWaZbs`, initialized from the
 existing supported Poky checkout. Read-only `bitbake -e linux-yocto` confirms
 MACHINE `qemux86-64`, DISTRO `poky`, BitBake 2.18.0 and kernel 6.18.24+git.
@@ -162,7 +190,7 @@ all resolve inside this new fixture. Existing source/sstate caches are read
 mirrors only; separate shared bare Git repositories read the old object pools.
 The normal build and the old `/tmp/yoctui-m52-poky.nHLLjU` fixture are preserved.
 Offline mode, eight build/make workers, STOPTASKS at 15 GiB and HALT at 8 GiB
-are configured only in the new fixture. The v0.1.88 release build passed;
+are configured only in the new fixture. The initial v0.1.88 release build passed;
 the exact preserved binary has SHA-256
 `be5fa7261cd3ebaf7f6f1786eabb46736419d043086d0e92224f3cc63f48b510`.
 
@@ -179,11 +207,28 @@ disconnect; reconnect and owned-job cancellation passed. No Cargo or profiler
 ran during this measurement. The capture completed its own process cleanup.
 The [failed-candidate manifest](../artifacts/performance/real-poky/v88-failed-manifest.json)
 and [source patch](../artifacts/performance/real-poky/v88-source.patch) preserve
-exact provenance without replacing the historical canonical evidence.
-RELEASE-DAEMON-CPU-001 is the separately registered active investigation before
-runtime edits. Profiles are diagnostic only; acceptance requires a new
-unprofiled release observation. The old fixture used tmpfs and the new one
+exact provenance without being promoted as passing canonical evidence.
+RELEASE-DAEMON-CPU-001 was registered before runtime edits. Profiles are
+diagnostic only; acceptance requires a new unprofiled release observation.
+The old fixture used tmpfs and the new one
 uses ext4, so this comparison alone does not establish a code regression.
+
+The separately labeled [v88 diagnostic profile](../artifacts/performance/profiles/v88-diagnostic-notes.md)
+contains 275 actual userspace-cycle samples with no lost samples or unresolved
+stack weight. Full snapshot serialization accounts for 26.90% inclusive cycle
+weight; journal publication totals 43.81%. Filtering the raw flat report to
+the daemon retains all 19.23% self-weight JSON string escaping. Source tracing
+finds once-per-second telemetry cloning and serializing unchanged workspace
+metadata despite not retaining telemetry in the snapshot. The v89 candidate
+extends the existing conservative size-ledger fast path to telemetry only,
+retaining all bounds, exact remeasurement and transactional rejection. Two
+failed-first tests reproduce 101 serializations for 100 events and failure to
+amortize constrained headroom; four focused regressions additionally cover
+ordered wire replay, byte-limit rejection and exhausted sequence/generation.
+Fresh unprofiled v89 acceptance is recorded above; the profiled workload is
+never substituted for CPU evidence. Its conversion exceeded the external controller
+timeout after recording, completed afterward, and passed the unchanged
+summarizer's sample/quality checks separately. Diagnostic processes all exited.
 
 The first read-only capture-startup probe (preserved v87 production code,
 all daemon commands prohibited) exposed a harness assumption: attachment can
@@ -198,7 +243,7 @@ The [actual read-only recheck](../artifacts/performance/real-poky/v88-readonly-s
 reached its intentional stop after metadata readiness and before any command.
 It is functional evidence only, not a release CPU or latency measurement.
 
-The retained release observation uses Poky 6.0.2, `qemux86-64`, distro
+The historical v0.1.51 observation uses Poky 6.0.2, `qemux86-64`, distro
 `poky`, `BB_NUMBER_THREADS=8`, and `PARALLEL_MAKE=-j 8`. Through the isolated
 production daemon it runs `linux-yocto:do_cleansstate`, starts
 `linux-yocto:do_compile`, waits for that exact task-start event, attaches one
@@ -221,7 +266,11 @@ drops. Cancellation was acknowledged and accepted after the full window.
 
 The exact raw samples, host identity, repository revisions and dirty diff
 hash, process start identities, binary identity, pressure counters, and source
-hashes are retained under `artifacts/performance/real-poky/`. The verifier
+hashes are retained in Git history under `artifacts/performance/real-poky/`.
+The historical v0.1.64 observation instead contains 360 samples and 0.9333%
+combined CPU, with 4.6814 ms input p95 and 4.8349 ms cancellation acknowledgement.
+Neither historical version certifies the current runtime; fresh v89 acceptance
+and the failed v88 observation above remain explicit. The verifier
 rejects fixture roles, a non-kernel trigger, insufficient host/BitBake load,
 or any value outside the CPU, latency, rendering, queue, cancellation, and
 continuity contract.
@@ -578,7 +627,7 @@ Daemon/client IPC has a measured production-path audit. The pre-optimization
 task-event-heavy flamegraph attributed 34.09% self CPU to JSON string escaping,
 with full snapshot serialization on the publication path. The optimized
 journal keeps a conservative snapshot-size ledger, applies safely bounded
-build/log records without cloning the full snapshot, and performs exact full
+build/log/job/telemetry records without cloning the full snapshot, and performs exact full
 serialization only when the ledger reaches the protocol limit. Live clients
 receive bounded incremental replay rather than a new snapshot whenever they
 are more than one service slice behind; identical event frames are serialized
