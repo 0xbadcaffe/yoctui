@@ -193,12 +193,23 @@ notes = "v0.1.86 DONE: optional rootfs_sources capability and request-scoped typ
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1280
 required = true
 depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001", "OPENBMC-TASK-IDENTITY-001", "OPENBMC-WORKER-COUNT-001", "OPENBMC-PKGDATA-001", "OPENBMC-ROOTFS-SOURCES-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
-notes = "v0.1.84: fifth real Romulus obmc-phosphor-image attempt SUCCEEDED through Yoctui, 6812/6812, job 1 exit 0 and successful typed terminal. Flash/SquashFS hashes, manifest 228 packages, retained rootfs and 274 service files inspected; one upstream render-group warning traced without suppression, runtime impact untested. Old daemon stopped normally after success. New private v84 daemon preserves jobs 1/2, actual native/git listtasks uses job 3 and completes 2/2 with correct identities and compacted observed timestamps; two fresh attachments freeze the measured 1814-ms build at 00:00:01. Actual Images UI exposes missing runtime-reverse mappings and attached recipe-scoped IMAGE_ROOTFS acquisition; separate OPENBMC-PKGDATA-001 and OPENBMC-ROOTFS-SOURCES-001 must be repaired/rechecked before LIVE is DONE. Preserve all Poky data and normal installed release. No firmware boot or completion-gate success claimed. Evidence in docs/testing/openbmc.md."
+notes = "v0.1.87 integration handoff: fifth real Romulus obmc-phosphor-image attempt SUCCEEDED through Yoctui, 6812/6812, job 1 exit 0 and successful typed terminal. Flash/SquashFS, manifest 228 packages, retained rootfs and service files inspected; upstream render-group warning traced without suppression, runtime impact untested. All separately registered integration defects are repaired and actually rechecked: aggregate counters, recovered IDs, observed timing, native/git identities, active workers, runtime-reverse pkgdata and exact attached rootfs sources. v86 filesystem totals match independent traversal and real services/previews work; only intentionally unknown filesystem package ownership remains partial. Baseline and evidence in docs/testing/openbmc.md. The completion gate was invoked and first rejected this then-IN_PROGRESS task. Its exact real-Poky validator separately reproduces stale v64 source digest in crates/yoctui-app/src/lib.rs. That source-bound release follow-up is now RELEASE-PERF-REFRESH-001, not waived or mistaken for an image failure. Preserve all Poky data and normal installed release. No firmware boot or global completion-gate success claimed."
+
+[[task]]
+id = "RELEASE-PERF-REFRESH-001"
+milestone = "M56"
+title = "Refresh source-bound real-Poky performance evidence after OpenBMC integration"
+status = "IN_PROGRESS"
+priority = 1279
+required = true
+depends_on = ["OPENBMC-LIVE-001"]
+verify = ["./scripts/verify-performance.sh --real-poky-evidence", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.87 registration: retained real-Poky v64 evidence is historical after runtime changes; the unchanged verifier reports real-Poky source digest mismatch: crates/yoctui-app/src/lib.rs. Produce a fresh release-binary/source-bound supported Poky 6.0.2 linux-yocto do_compile capture with the existing warmup/window, saturation, one-percent CPU, latency, continuity, cancellation and source-provenance thresholds. Preserve prior evidence/history and every existing Poky build/cache. Use a newly initialized isolated build with its own writable TMPDIR/SSTATE_DIR, existing caches only as read sources, and explicit disk/memory headroom; daemon-owned cleansstate may target only that new fixture. Never clean the normal build or old performance fixture. Relevant files: real-poky evidence/manifest and docs/performance.md, docs/testing/openbmc.md, status/roadmap/current task; capture scripts only if an independently reproduced harness defect requires a scoped repair. DONE requires actual sustained live evidence and the unchanged verifier passing, not hash relabeling, mocked evidence or lowered thresholds. Then run the full completion gate; a clean worktree may be needed to preserve user-owned untracked captures without confusing version-baseline selection."
 
 [[task]]
 id = "RELEASE-README-001"

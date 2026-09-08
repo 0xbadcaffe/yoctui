@@ -1,5 +1,18 @@
 # Yoctui Implementation Status
 
+v0.1.87 finalizes OPENBMC-LIVE-001: the real image, artifacts and all separately
+registered integration repairs now have live evidence. No firmware boot is
+claimed; the upstream render-group warning remains disclosed. The completion
+gate was invoked and requires fresh source-bound release evidence. Its exact
+real-Poky validator rejects historical v0.1.64 hashes at yoctui-app/src/lib.rs.
+RELEASE-PERF-REFRESH-001 is current, explicitly requiring an isolated fixture
+with private writable build/sstate and preservation of all existing Poky data.
+No measurements or thresholds have been relabeled or waived. This registration
+changes only governance/version artifacts; full product completion is pending.
+All 1595 workspace tests/doc-tests, 52 bridge tests, strict Clippy, fmt, docs,
+roadmap and version policy pass. All 17 goldens are version-only; six rasters
+verify. The workspace-tested v87 candidate is preserved, not deployed.
+
 v0.1.86 OPENBMC-ROOTFS-SOURCES-001 is DONE. Attached clients obtain exact image
 sources asynchronously through a capability-advertised, instance/generation-
 bound daemon query. One bounded worker honors selected command or negotiated

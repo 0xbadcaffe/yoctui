@@ -4,6 +4,13 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+v0.1.87 closes real OpenBMC integration with actual image/artifact/lifecycle/
+inspection evidence. RELEASE-PERF-REFRESH-001 is current: the unchanged
+real-Poky source validator rejects historical v0.1.64 measurements after runtime
+changes. Fresh supported-kernel saturation evidence must use an isolated build
+without cleaning any existing Poky data. All release thresholds remain in force;
+the complete repository gate has not passed.
+
 v0.1.86 completes OPENBMC-ROOTFS-SOURCES-001: bounded asynchronous exact-image
 queries honor the daemon's selected command/API authority. Actual rootfs and
 services screens now work, with independently matched 2628 entries/81096497
@@ -1212,14 +1219,15 @@ alone do not establish OpenBMC compatibility. Storage is currently constrained
 and Poky generated output must not be removed without approval.
 Progress: environment, direct capabilities, responsive startup, bounded inventory,
 CLI submission, symlinked-tool discovery, host Python and initial attachment
-tasks are DONE through v0.1.73. OPENBMC-LIVE-001 now waits for the package
-mapping and attached rootfs-source repairs registered in v0.1.84;
+tasks are DONE through v0.1.73. Package mapping and attached rootfs-source
+repairs passed real UI rechecks in v0.1.85/v0.1.86; OPENBMC-LIVE-001 is DONE
+in v0.1.87. RELEASE-PERF-REFRESH-001 retains the source-bound release follow-up.
 OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76: typed aggregate counters survive
 task-event compaction, with baseline tests and real attached-counter verification.
 DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78: shared checked allocation preserves
 recovered history and cross-supervisor identity. All baseline checks and isolated
 real-daemon recovery/fake-bridge cancellation regressions pass. The real image
-continues on the preserved v0.1.76 daemon, without interruption for deployment.
+completed on the preserved v0.1.76 daemon without interruption for deployment.
 OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80: observed timestamps survive
 reattachment and terminal durations freeze. OPENBMC-TASK-IDENTITY-001 is DONE
 in v0.1.81: bounded initialized PN metadata replaces filename-derived ghost

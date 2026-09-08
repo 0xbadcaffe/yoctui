@@ -1,5 +1,23 @@
 # OpenBMC live integration
 
+## Final integration handoff (v0.1.87)
+
+OPENBMC-LIVE-001 is DONE: the image succeeded and every registered integration
+defect has a regression, baseline verification and actual live recheck below.
+Artifact and offline metadata inspection do not establish firmware boot or
+runtime safety of the upstream render-group warning.
+
+The full completion gate was invoked after v0.1.86 and stopped at the then-
+IN_PROGRESS integration task. The performance audit reached its event-loop
+tests before being stopped to avoid further default-debug Cargo builds; it
+did not pass. Running the unchanged real-Poky validation block directly then
+reproduced: real-Poky source digest mismatch: crates/yoctui-app/src/lib.rs.
+The v0.1.64 measurements remain valid historical observations, not measurements
+of v0.1.86. RELEASE-PERF-REFRESH-001 owns fresh actual evidence, with unchanged
+thresholds and an isolated writable build/sstate so no existing Poky data is
+cleaned. Root has about 33 GiB free and /tmp about 5 GiB at audit; recheck before
+allocation. No full completion claim is made.
+
 ## Attached rootfs source validation (v0.1.86)
 
 The [old-daemon production capture](../../artifacts/live-openbmc/romulus/v86-old-daemon-clean-error-20260908.txt)

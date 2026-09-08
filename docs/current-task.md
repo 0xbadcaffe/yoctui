@@ -1,16 +1,35 @@
 # Current Task
 
-**ID:** OPENBMC-LIVE-001
-**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
+**ID:** RELEASE-PERF-REFRESH-001
+**Title:** Refresh source-bound real-Poky performance evidence after OpenBMC integration
 **Status:** IN_PROGRESS
 
-All registered dependencies are DONE, including v0.1.86 exact-image daemon
+v0.1.87 registration passes all 1595 workspace tests/doc-tests, 52 bridge tests,
+strict Clippy, fmt, docs, roadmap and version-policy checks/tests. All 17 golden
+diffs are version digits only and six rasters verify. The
+workspace-tested candidate is preserved at
+/home/bspguy-dev/.local/state/yoctui-v87-validated.XKyMwk/yoctui,
+SHA-256 e0736f32129210142a9409047047eea62f206e71f10761d508c9f485c5ba640c.
+The OpenBMC daemon remains the separately validated v0.1.86 d24d candidate.
+No new performance fixture has been initialized yet.
+
+OPENBMC-LIVE-001 is DONE in v0.1.87. All integration repairs are DONE, including
+v0.1.86 exact-image daemon
 rootfs source acquisition and v0.1.85 runtime-reverse package identities.
 The real Romulus image SUCCEEDED: 6812/6812, image job 1 exit 0 and successful
 typed terminal. Generated flash/SquashFS artifacts, 228 packages, retained
 rootfs and services were inspected. All observed Yoctui integration findings
 now have tested repairs and actual live rechecks in docs/testing/openbmc.md.
-Finalize the integration handoff and run ./scripts/verify-completion.sh.
+Refresh actual supported Poky 6.0.2 linux-yocto do_compile release performance
+evidence, then run ./scripts/verify-completion.sh. The exact real-Poky validator
+currently rejects historical v64 source hashes at crates/yoctui-app/src/lib.rs.
+Use a new isolated fixture with its own writable TMPDIR and SSTATE_DIR, bounded
+disk/memory headroom and existing caches only as read sources. Daemon-owned
+cleansstate is permitted only for this newly created fixture, never existing
+Poky builds or old performance fixtures. Preserve historical evidence; update
+manifest/source provenance only from actual measured release-binary output.
+Keep all saturation/CPU/latency/continuity/cancellation thresholds unchanged.
+Do not run Cargo builds during the measured saturation window.
 Do not claim full completion until that gate passes. Fresh source-bound
 real-Poky performance evidence is still required; preserve all existing Poky
 data. Investigate safe alternatives before declaring an external blocker.
@@ -27,7 +46,8 @@ and offline system inventory are available; real services/previews work.
 Filesystem package ownership remains explicitly unknown, an intentional
 partial limitation distinct from acquisition/traversal failure.
 
-Verification: ./scripts/check-docs.sh; ./scripts/verify-roadmap.sh;
+Verification: ./scripts/verify-performance.sh --real-poky-evidence;
+./scripts/check-docs.sh; ./scripts/verify-roadmap.sh;
 ./scripts/verify-completion.sh and baseline cargo fmt --all --check;
 cargo test --workspace --all-features; cargo clippy --workspace --all-targets
 --all-features -- -D warnings; python3 -m pytest bridge/tests.
