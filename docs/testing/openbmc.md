@@ -361,6 +361,15 @@ the first run. Tests were not weakened. OPENBMC-SNAPSHOT-PROGRESS-001 is DONE.
 The image still runs; package/rootfs inspection and the complete release gate
 remain outstanding under OPENBMC-LIVE-001. No release-performance claim is made.
 
+The same restart exposed a separate job-identity defect: status after recovery
+contained failed jobs 1 and 2, but the accepted fifth attempt became job 1,
+replacing that historical record. The prior terminal evidence remains intact
+in the third/fourth-attempt artifacts. Source inspection confirms independent
+supervisor counters initialized at 1 and journal replacement by job ID alone;
+this also permits cross-operation collisions. DAEMON-JOB-IDENTITY-001 tracks
+checked shared allocation and isolated recovery/cancellation regression tests.
+The current image will not be interrupted solely to deploy that correction.
+
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.
 Start the image through Yoctui, not a separate unobserved BitBake invocation.

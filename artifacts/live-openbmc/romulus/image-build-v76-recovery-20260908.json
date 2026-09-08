@@ -30,20 +30,21 @@
   },
   "binary_sha256": "93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f",
   "observed_from_unix": 1788840553.873128,
-  "observed_until_unix": 1788840797.2882292,
+  "observed_until_unix": 1788841039.4174025,
   "note": "Fifth image attempt, daemon/client v0.1.76 after baseline tests, Clippy and docs passed. Fourth attempt explicitly cancelled for recovery of 23 old empty objects in function2/boost/fmt; preserved with relative paths under .local/state/yoctui-openbmc-object-recovery-23.bbZM2i. BB_NUMBER_THREADS=2, PARALLEL_MAKE=-j 2. Image success remains subject to terminal outcome.",
   "event_counts": {
-    "event": 372,
-    "event.telemetry": 239,
-    "event.build": 120,
+    "event": 696,
+    "event.telemetry": 478,
+    "event.build": 200,
     "build.parse_progress": 31,
-    "event.log": 9,
+    "event.log": 13,
     "event.bit_bake_changed": 1,
     "build.started": 1,
-    "event.job_changed": 3,
-    "build.task_queued": 2,
-    "build.task_started": 2,
-    "build.task_progress": 84
+    "event.job_changed": 4,
+    "build.task_queued": 3,
+    "build.task_started": 3,
+    "build.task_progress": 161,
+    "build.task_completed": 1
   },
   "jobs": {
     "1": {
@@ -51,7 +52,7 @@
       "kind": "bit_bake_build",
       "label": "BitBake build obmc-phosphor-image",
       "lifecycle": "running",
-      "progress_current": 2854,
+      "progress_current": 2855,
       "progress_total": 6812,
       "exit_code": null
     },
@@ -173,6 +174,46 @@
       "unix_ms": 1788840585077,
       "recipe": "boost",
       "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/zlib/zlib_1.3.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/bzip2/bzip2_1.0.8.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-support/boost/boost-build-native_1.91.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/dwarfsrcfiles/dwarfsrcfiles.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/rpm/rpm_4.20.1.bb:do_populate_sysroot']",
+      "unix_ms": 1788841002618,
+      "recipe": "boost",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: ['cmake-native', 'openssl-native', 'expat-native', 'ncurses-native', 'readline-native', 'util-linux-libuuid-native', 'dwarfsrcfiles-native', 'elfutils-native', 'file-native', 'libedit-native', 'lua-native', 'make-native', 'perl-native', 'python3-native', 'rpm-native', 'bzip2-native', 'libarchive-native', 'lzlib-native', 'xz-native', 'acl-native', 'gdbm-native', 'libcap-native', 'libffi-native', 'libgcrypt-native', 'libgpg-error-native', 'popt-native']",
+      "unix_ms": 1788841004251,
+      "recipe": "boost",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'zlib', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'opkg-utils', 'quilt-native', 'bzip2', 'texinfo-dummy-native', 'linux-libc-headers', 'boost-build-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
+      "unix_ms": 1788841004251,
+      "recipe": "boost",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into pkgdata-sysroot: ['gcc-runtime', 'bzip2', 'glibc', 'zlib', 'libgcc', 'opkg-utils', 'linux-libc-headers']",
+      "unix_ms": 1788841004951,
+      "recipe": "boost",
+      "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     }

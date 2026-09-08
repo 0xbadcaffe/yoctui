@@ -12,6 +12,14 @@ preserves each workflow's confirmation boundary.
 
 ## Architectural principles
 
+Daemon job IDs must be unique across all job-producing supervisors and retained
+recovery history. Non-Raw supervisors share one checked allocator initialized
+beyond retained IDs in the low 60-bit namespace; Raw retains its separate
+namespace. Exhaustion rejects before spawning work, never wraps or saturates
+into reuse. Session IDs and live-process ownership remain separate from job
+identity. Recovery does not restore cancellation authority for old jobs.
+DAEMON-JOB-IDENTITY-001 owns this correction.
+
 Daemon build snapshots must retain typed aggregate completed/total authority
 independently of the bounded per-task event projection. Queue/start replacement
 and completed-row eviction must not discard newer counters. The aggregate resets

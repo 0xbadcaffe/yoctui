@@ -1,8 +1,23 @@
 # Current Task
 
-**ID:** OPENBMC-LIVE-001
-**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
+**ID:** DAEMON-JOB-IDENTITY-001
+**Title:** Keep daemon job identities unique across supervisors and recovered history
 **Status:** IN_PROGRESS
+
+The v0.1.76 restart recovered failed jobs 1 and 2, then the new BitBake build
+reused ID 1 and replaced its history. Independent supervisor counters also
+collide across operation types. Introduce one checked shared allocator for
+non-Raw daemon jobs, seeded beyond recovered IDs and disjoint from Raw's
+namespace. Fail closed before spawning work on exhaustion. Cover recovery,
+cross-supervisor identity and exact cancellation with isolated process/bridge
+tests. Preserve the running real image; no restart solely for deployment.
+
+Verification: cargo test -p yoctui daemon_job_identity; baseline workspace
+tests, Clippy, fmt, bridge tests, docs and roadmap. Update architecture/UI/
+protocol, registry, implementation status and OpenBMC evidence. After the fix,
+return to OPENBMC-LIVE-001 and investigate remaining observed UI discrepancies.
+
+## OpenBMC live handoff
 
 Continue the fifth `obmc-phosphor-image` attempt through the private Yoctui
 daemon. Inspect actual task transitions, logs, terminal outcome, packages and

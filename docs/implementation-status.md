@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+DAEMON-JOB-IDENTITY-001 is IN_PROGRESS (v0.1.77 governance). A live restart
+recovered failed jobs 1 and 2, but the new image reused ID 1 and replaced its
+record. Independent non-Raw supervisor counters all begin at 1, while the
+journal keys updates by ID alone. The task requires checked shared allocation
+across supervisors and recovered history, with isolated recovery/cancellation
+regressions. No implementation or completion is claimed yet. The real image
+continues on the preserved v0.1.76 binary; do not interrupt it for deployment.
+
 OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76. Optional typed aggregate counters
 survive queue/start replacement and completed-row eviction; Current client state
 installs them independently of retained rows. The regression first reproduced

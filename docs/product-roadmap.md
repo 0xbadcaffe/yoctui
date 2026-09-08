@@ -1173,6 +1173,8 @@ CLI submission, symlinked-tool discovery, host Python and initial attachment
 tasks are DONE through v0.1.73. OPENBMC-LIVE-001 remains IN_PROGRESS;
 OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76: typed aggregate counters survive
 task-event compaction, with baseline tests and real attached-counter verification.
+DAEMON-JOB-IDENTITY-001 now owns the observed recovered-history ID collision;
+the real image continues while this separate atomic correction is developed.
 The image retry reached 4,953/6,812 tasks without a terminal result before the
 September 8 host OOM and user-session shutdown. A third attempt was accepted
 through the preserved v0.1.73 candidate with OpenBMC-only concurrency reduced

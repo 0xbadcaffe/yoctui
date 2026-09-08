@@ -1465,6 +1465,11 @@ rows or replacing queue/start metadata cannot erase a newer authoritative
 counter. Unknown totals remain unknown; starting a new build clears the previous
 build's counters. Retained row counts are never a substitute for build totals.
 
+Starting a new daemon-owned operation must not replace a different operation's
+job-history row, including terminal history recovered after daemon restart.
+Job IDs are unique across operation types. Cancelling a job affects only that
+job's live owner; a recovered terminal row grants no cancellation authority.
+
 ---
 
 ## 12. BitBake output consumption

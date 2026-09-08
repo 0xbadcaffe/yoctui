@@ -124,13 +124,24 @@ verify = ["cargo test -p yoctui-protocol snapshot_progress", "cargo test -p yoct
 notes = "v0.1.76 preserves optional typed aggregate counters independently of compacted rows and installs them with Current replica authority. Five protocol/app/TestBackend regressions cover fresh/replacement/batched consumption, eviction, duplicate completion, reset, legacy absence, malformed/unknown totals and terminal transitions. Regression first failed (1, unknown) versus (2340, 6812). Workspace tests, strict Clippy, 49 bridge tests, fmt, docs, deterministic rasters and roadmap pass; workspace retry with two test threads resolved the existing PTY resize test race without changes. Live fifth Romulus image attempt: production attach renders 2854/6812 matching snapshot/job counters at sequences 115 and 146 despite retained statistics only at 1731/6812. Exact binary/hash/captures in docs/testing/openbmc.md. Recovery cancellation preserved 23 old empty objects before restarting the verified private daemon. Image success and release performance are not claimed."
 
 [[task]]
+id = "DAEMON-JOB-IDENTITY-001"
+milestone = "M56"
+title = "Keep daemon job identities unique across supervisors and recovered history"
+status = "IN_PROGRESS"
+priority = 1287
+required = true
+depends_on = ["OPENBMC-SNAPSHOT-PROGRESS-001"]
+verify = ["cargo test -p yoctui daemon_job_identity", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Observed during the v0.1.76 real OpenBMC restart: recovered failed jobs 1 and 2 existed before submission; the fifth attempt reused ID 1 and replaced its historical record. Source inspection finds independent counters starting at 1 in BitBake, Devtool, SDK, QEMU, Wic, Testing, QA, Security and Maintenance supervisors; journal replacement keys only on JobId, and generic cancellation probes Devtool before BitBake. Introduce one checked shared non-Raw daemon job allocator initialized beyond retained IDs, retain Raw's existing disjoint namespace, fail closed on exhaustion before spawning work, and preserve recovered terminal records. Add allocator/recovery, cross-supervisor and exact cancellation regressions with isolated fake subprocesses/bridge; do not restart or interrupt the live image merely to deploy this fix. Update architecture/UI/protocol and OpenBMC evidence."
+
+[[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
 status = "IN_PROGRESS"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. September 8 recovery: second attempt capture stopped at 4953/6812 with no terminal result; host journal records global OOM kills and user-session shutdown, and old daemon/workers are absent. Third attempt accepted through preserved v0.1.73 after OpenBMC-only BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, both verified via bitbake-getvar. About 46 GiB free at restart; all Poky data preserved. Current instance and bounded evidence in docs/testing/openbmc.md and image-build-resume-20260908.json. No image success or release gate claimed."
 
