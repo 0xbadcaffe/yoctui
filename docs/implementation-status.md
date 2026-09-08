@@ -1,5 +1,16 @@
 # Yoctui Implementation Status
 
+v0.1.94 RELEASE-CI-094 is DONE after hosted run 34254696096 confirmed
+the compatibility and PTY repairs, then exposed two further CI environment
+issues: mounted checkout ownership and the snapshot loader import path.
+The new candidate scopes Git trust to the exact job checkout and explicitly
+loads sibling Python helpers. Container rejection-before/success-after,
+semantic snapshots, TUI performance, utility catalog, embedded shell, 1600
+workspace tests/doc-tests (four existing ignored), strict Clippy, fmt, docs,
+README/version/CI contracts and roadmap pass. All 711 registry tasks are DONE.
+All 21 golden changes are version-only; sixteen PNGs are refreshed. Publication
+remains pending hosted CI success and final locked package verification.
+
 v0.1.93 RELEASE-CI-093 is DONE: the README version, hosted CI prerequisites and
 PTY synchronization are repaired and locally verified. Run 34247832320 failed because shallow
 checkouts omit retained evidence ancestors, the documentation host lacks the

@@ -6,6 +6,7 @@ cargo build -p yoctui >/dev/null
 python3 - "$repo_root" <<'PY'
 import atexit, importlib.util, os, pty, select, struct, subprocess, sys, termios, fcntl, time, tempfile, re
 root = sys.argv[1]
+sys.path.insert(0, os.path.join(root, 'scripts'))
 artifact = os.path.join(root, 'artifacts', 'release-quality', 'snapshots')
 os.makedirs(artifact, exist_ok=True)
 screen_spec = importlib.util.spec_from_file_location(

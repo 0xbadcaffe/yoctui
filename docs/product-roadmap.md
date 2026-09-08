@@ -4,6 +4,11 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+RELEASE-CI-094 completes the follow-up to hosted v0.1.93 results: compatibility
+and PTY repairs pass; container checkout trust and snapshot imports are now
+corrected and verified locally. All 711 tasks are DONE. v0.1.94 is the current
+publication candidate, pending hosted CI and final locked package verification.
+
 RELEASE-CI-093 completes the user-requested v0.1.93 README/version update,
 hosted CI repair and publication-package verification. All 710 tasks are DONE;
 the candidate is ready for push, hosted CI observation and registry publication.

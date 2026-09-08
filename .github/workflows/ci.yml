@@ -36,6 +36,8 @@ jobs:
           echo /opt/yoctui-ci/bin >> "$GITHUB_PATH"
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+      - name: Trust the mounted checkout in the test container
+        run: git config --system --add safe.directory "$GITHUB_WORKSPACE"
       - uses: dtolnay/rust-toolchain@stable
       - run: python3 -m pip install ruff mypy pytest pytest-cov pycairo==1.27.0
       - run: python3 -m unittest scripts/test_version_bump.py

@@ -29,6 +29,7 @@ required_workflow = (
     "fetch-depth: 0",
     "container: ubuntu:26.04",
     "pycairo==1.27.0",
+    'git config --system --add safe.directory "$GITHUB_WORKSPACE"',
     "python3 -m unittest scripts/test_version_bump.py",
     "python3 scripts/check-version-bump.py",
     "compatibility-fast:",

@@ -1,8 +1,20 @@
 # Current Task
 
-**ID:** RELEASE-CI-093
-**Title:** Prepare v0.1.93 README and repair hosted release CI
+**ID:** RELEASE-CI-094
+**Title:** Finish container checkout and snapshot import CI integration
 **Status:** DONE
+
+Hosted v0.1.93 run 34254696096 passed compatibility and both corrected PTY
+gates. It next revealed container Git ownership rejection (action HOME differs
+from the step shell) and a missing scripts import path in the snapshot loader.
+Register the exact mounted checkout in the container's system Git config,
+add the snapshot loader's explicit import directory and verify the remaining
+release-quality chain. These changes now pass the actual container ownership
+reproduction, semantic snapshots, TUI performance, utility catalog, embedded
+shell, full 1600 workspace tests/doc-tests (four existing ignored), strict
+Clippy, fmt, docs, README/version/CI contracts and roadmap. All 711 registry
+tasks are DONE. Candidate version is v0.1.94; push it, verify the locked
+publication archives and publish only after hosted CI passes.
 
 User override: update the front README version, repair GitHub CI, commit/push
 and publish the current build to crates.io. CI run 34247832320 identifies
