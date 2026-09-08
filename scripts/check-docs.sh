@@ -255,6 +255,7 @@ done
 
 python3 scripts/render-next-generation-ui-screenshots.py --check
 ./scripts/render-m22-concept-screenshots.sh --check
+python3 scripts/render-readme-screenshots.py --check
 python3 scripts/test-m22-concept-raster.py
 python3 scripts/test-m22-live-design-gallery.py
 ./scripts/verify-live-m22-concept-evidence.sh

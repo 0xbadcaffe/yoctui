@@ -1,0 +1,82 @@
+schema_version = 1
+renderer = "yoctui-cairo-cell-raster-v1"
+authority = "production TestBackend cell/style goldens"
+pycairo_version = "1.27.0"
+cairo_version = "1.18.4"
+font_family = "DejaVu Sans Mono"
+regular_font_sha256 = "a54dca07c76d6289e717e75e0a58c0128f6d7269ef3faf76417c9d7d3bba37ab"
+bold_font_sha256 = "2d67eed9b325ee2e69f906ce4f3f6264d5105230a13352c8494daad4f17b12c8"
+logical_columns = 160
+logical_rows = 50
+pixel_width = 1600
+pixel_height = 1000
+
+[[artifact]]
+id = "active-build-tasks"
+source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
+source_sha256 = "a8b618916338ff734ec4259b0571ef2c35700cc50f71aca69e9e163df1db63ea"
+file = "docs/media/screenshots/01-active-build-tasks.png"
+sha256 = "e0a63d4d60814e75a912b80d39d81666d30d5217f2be444448ee72ee7d6ffb32"
+
+[[artifact]]
+id = "kernel-device-tree"
+source = "crates/yoctui-ui/tests/golden/readme-kernel-device-tree-160x50.cells"
+source_sha256 = "d19d00b6f58ea0b56a4e8c8d5ca813c4f07c86f339f0879b8202dbd1ca4e13f7"
+file = "docs/media/screenshots/02-kernel-device-tree.png"
+sha256 = "b917c53495a42a2bde67b5094b74e515570436a601008a1ce2e74b938a3335f7"
+
+[[artifact]]
+id = "uboot-device-tree"
+source = "crates/yoctui-ui/tests/golden/readme-uboot-device-tree-160x50.cells"
+source_sha256 = "9f0ad881afef62afb3bc267b14e3bc4de431e832372fb44eb11bfef0a2b22a07"
+file = "docs/media/screenshots/03-uboot-device-tree.png"
+sha256 = "daac6f980ab5bc5bda2c299932e57eb3ef8e5d6b6db11e45eb973e3d9c9b0a37"
+
+[[artifact]]
+id = "kernel-menuconfig"
+source = "crates/yoctui-ui/tests/golden/readme-kernel-menuconfig-160x50.cells"
+source_sha256 = "834d8d7c84a06b2fca08991925b3f75696b32d27b21191ee3192fb74ee53373c"
+file = "docs/media/screenshots/04-kernel-menuconfig.png"
+sha256 = "114829e7079976fb7e397d966546753f3b4bcfc701c03291d6c387cc274445bd"
+
+[[artifact]]
+id = "uboot-menuconfig"
+source = "crates/yoctui-ui/tests/golden/readme-uboot-menuconfig-160x50.cells"
+source_sha256 = "1a3e71658119cd5539971ec23cd08489a4cd5d25c13a19060a3a06db4b84ea81"
+file = "docs/media/screenshots/05-uboot-menuconfig.png"
+sha256 = "1b927bf29e08b244bf87f1a4ae3d0989814e494194b0225a230d4284ede411ba"
+
+[[artifact]]
+id = "rootfs-composition"
+source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
+source_sha256 = "0383860e37394b9865b9e3605d035a28a365b44f330a250a4534f30c11ed92b1"
+file = "docs/media/screenshots/06-rootfs-composition.png"
+sha256 = "e9fee80a85e743cfde679cb98f1bc4f9ff3b5b2dd1f0e07f80e6071bb00e42f2"
+
+[[artifact]]
+id = "idle-dashboard"
+source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
+source_sha256 = "c63f088a829274405ab8d436e74c2c71ffb209f3f6eef2ede653adcbe96c3485"
+file = "docs/media/screenshots/07-idle-dashboard.png"
+sha256 = "07fffe399096ecbf295077103c2896117ac6622a01d2a1973a9bf6cf8efd6b2e"
+
+[[artifact]]
+id = "failed-build-errors"
+source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
+source_sha256 = "2495b6e4378cfda93757140418a1fbc1a0e8a448ad3d9570ccbbaeb800c1f560"
+file = "docs/media/screenshots/08-failed-build-errors.png"
+sha256 = "8d6ed8029bc5dd9b8e431b3b9ac93b0e99d417589e37b92a25ee104ca87dd969"
+
+[[artifact]]
+id = "editor-application-menu"
+source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
+source_sha256 = "8d5715e05bf379cc569b2b89df98ee053a91420f0d96422455935b6303fb7af9"
+file = "docs/media/screenshots/09-editor-application-menu.png"
+sha256 = "0ce739055dd7b90f7859a99b1dd997f51cf391fbf548da785611f1072d6a846e"
+
+[[artifact]]
+id = "terminal-sessions"
+source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
+source_sha256 = "dae231322a4a05c94fdd191762234db548789fd66579aed6a7273869fb1e6200"
+file = "docs/media/screenshots/10-terminal-sessions.png"
+sha256 = "846cf03445e9c57a5bdd7167d0f00bf5bb54fd2edaecad004a42ba65299cb3d3"

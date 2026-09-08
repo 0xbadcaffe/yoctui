@@ -4,48 +4,28 @@
 **Title:** Wait for authoritative metadata readiness before performance fixture builds
 **Status:** IN_PROGRESS
 
-706 of 708 registry tasks are DONE. RELEASE-IPC-SOURCE-001 is verified; finish
-the coherent v0.1.90 checker/version/governance commit before implementing this
-separately registered harness task. Parent RELEASE-IPC-GATE-001 remains
-NOT_STARTED until the complete backpressure/CI path passes.
+707 of 709 registry tasks are DONE. README-SCREENSHOTS-001 is verified in
+v0.1.91 and will be pushed before this task's recoverable stash is restored.
+The four unrelated untracked OpenBMC retry captures remain user-owned and
+untouched. Parent RELEASE-IPC-GATE-001 stays NOT_STARTED until this child's
+complete source-bound backpressure/CI path passes.
 
-The actual event-flood fixture sends start_build before initial recipe inventory
-is ready. The daemon rejects it with conflict, then publishes workspace and
-the metadata-ready log. The harness ignores rejection and later says the
-generator report is absent. Preserve the daemon's correct startup guard.
-Introduce bounded read-only readiness synchronization with full instance and
-generation checks and explicit timeout/EOF/metadata-failure/rejection handling.
-Do not blindly sleep, replay accepted commands or change measurement limits.
-Review event-flood harness consumers (including measure-bounded-memory.py)
-before editing. IPC and memory manifests bind the harness source; preserve old
-records and obtain actual replacement observations, including the unchanged
-30-minute endurance requirement, rather than replacing historical source hashes.
-No harness implementation or fresh fixture evidence exists yet.
+Restore the retained bounded metadata-readiness implementation, failed-first
+tests, source-bound IPC/memory evidence changes, and actual 30-minute acceptance
+record. Rebase that coherent work from its pre-gallery v0.1.91 baseline to
+v0.1.92 without losing the new README gallery or altering old measurements.
+The retained 30-minute observation passed unchanged daemon/client RSS growth,
+final-window slope, stable thread, critical-event, ordering, and continuity
+requirements. Revalidate its exact source/binary provenance after restoration.
 
-Required: python3 -m unittest scripts/test_event_flood_harness.py;
-./scripts/verify-ipc-continuity.sh --backpressure;
-./scripts/verify-performance-ci-fast.sh; ./scripts/verify-bounded-memory.sh;
-the baseline below. Then mark the child DONE, verify the parent and resume
-./scripts/verify-completion.sh in an exact clean worktree. Do not stop at a commit.
+Required: `python3 -m unittest scripts/test_event_flood_harness.py`;
+`./scripts/verify-ipc-continuity.sh --backpressure`;
+`./scripts/verify-performance-ci-fast.sh`; `./scripts/verify-bounded-memory.sh`;
+the full workspace/Clippy/bridge/docs/roadmap/version baseline. Then mark the
+child DONE, verify RELEASE-IPC-GATE-001 and resume `./scripts/verify-completion.sh`
+in an exact clean worktree. Do not stop at the screenshot commit.
 
-v90 source repair baseline: 1599 workspace tests/doc-tests, four existing ignored,
-52 bridge tests, strict Clippy, fmt, docs, 13 script tests, version policy and
-708-task roadmap pass. All 17 golden changes are version digits only and six
-rasters regenerated/verified. Logs /tmp/yoctui-v90-{workspace,clippy,bridge,docs,
-script-tests,ui-goldens,rasters}.log; session 59897 exited 0. No runtime source
-or accepted real-Poky evidence digest changed.
-
-The exact v89 clean-worktree completion gate stopped in the IPC source checker:
-it splits on the removed Default
-implementation and raises IndexError. The explicit new(job_ids) constructor
-still creates bounded reliable/cosmetic/cancellation-terminal event queues.
-Five failed-first checker groups and the three focused Rust commands pass.
-Parent verification still requires actual backpressure and fast CI after
-readiness repair, followed by the unmodified full gate. Failure log:
-/tmp/yoctui-v89-completion.log, session 99674 exit 1.
-The UI performance gate passed all five scenarios at 0.505–1.096 ms/frame;
-all 1599 workspace tests, Clippy and source-bound real-Poky validation passed
-before the checker failure. No global completion success is claimed.
+## Preserved release background
 
 The v89 telemetry repair and source-evidence parent are committed at 11f3d8f.
 Their complete ./scripts/verify-performance.sh --real-poky-evidence chain

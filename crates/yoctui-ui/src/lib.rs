@@ -21392,6 +21392,190 @@ mod tests {
         app
     }
 
+    fn readme_platform_app(component: yoctui_model::PlatformComponent) -> App {
+        let mut app = concept_idle_dashboard_app();
+        app.focus = FocusTarget::Workspace;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        let (screen, navigator_selection, target, provider, root, files) = match component {
+            yoctui_model::PlatformComponent::Kernel => (
+                Screen::Kernel,
+                6,
+                "virtual/kernel",
+                "/home/user/yocto/meta-freescale/recipes-kernel/linux/linux-imx_6.6.bb",
+                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/source",
+                vec![
+                    (".config", yoctui_model::PlatformFileKind::DotConfig, 96_418),
+                    (
+                        "arch/arm64/boot/dts/freescale/imx8mp-evk.dts",
+                        yoctui_model::PlatformFileKind::Dts,
+                        18_304,
+                    ),
+                    (
+                        "arch/arm64/boot/dts/freescale/imx8mp.dtsi",
+                        yoctui_model::PlatformFileKind::Dtsi,
+                        37_812,
+                    ),
+                    (
+                        "deploy/imx8mp-evk.dtb",
+                        yoctui_model::PlatformFileKind::Dtb,
+                        41_996,
+                    ),
+                ],
+            ),
+            yoctui_model::PlatformComponent::UBoot => (
+                Screen::Firmware,
+                7,
+                "u-boot-fslc",
+                "/home/user/yocto/meta-freescale/recipes-bsp/u-boot/u-boot-fslc_2024.01.bb",
+                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/source",
+                vec![
+                    (".config", yoctui_model::PlatformFileKind::DotConfig, 51_202),
+                    (
+                        "arch/arm/dts/imx8mp-evk.dts",
+                        yoctui_model::PlatformFileKind::Dts,
+                        12_880,
+                    ),
+                    (
+                        "arch/arm/dts/imx8mp.dtsi",
+                        yoctui_model::PlatformFileKind::Dtsi,
+                        29_241,
+                    ),
+                    (
+                        "build/imx8mp-evk.dtb",
+                        yoctui_model::PlatformFileKind::Dtb,
+                        27_604,
+                    ),
+                ],
+            ),
+            _ => unreachable!("README gallery has explicit Kernel and U-Boot fixtures"),
+        };
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "imx8mp-lpddr4-evk".into());
+        let root = PathBuf::from(root);
+        let inventory = yoctui_model::PlatformInventory {
+            component,
+            target: target.into(),
+            provider: Some(provider.into()),
+            tasks: vec!["do_menuconfig".into(), "do_compile".into()],
+            roots: vec![root.clone()],
+            files: files
+                .into_iter()
+                .map(|(path, kind, size_bytes)| yoctui_model::PlatformFile {
+                    path: root.join(path),
+                    root: root.clone(),
+                    kind,
+                    size_bytes,
+                })
+                .collect(),
+            dtc: Some("/usr/bin/dtc".into()),
+            limitations: Vec::new(),
+        };
+        app.screen = screen;
+        app.navigator_selection = navigator_selection;
+        let workbench = if component == yoctui_model::PlatformComponent::Kernel {
+            &mut app.kernel
+        } else {
+            &mut app.firmware
+        };
+        workbench.view = yoctui_model::PlatformView::DeviceTrees;
+        workbench.inventory = PlatformInventoryState::Available(inventory);
+        app
+    }
+
+    fn readme_menuconfig_app(kernel: bool) -> App {
+        let mut app = concept_idle_dashboard_app();
+        app.screen = Screen::TerminalSessions;
+        app.navigator_selection = 18;
+        app.focus = FocusTarget::Workspace;
+        app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Running;
+        app.workspace
+            .variables
+            .insert("MACHINE".into(), "imx8mp-lpddr4-evk".into());
+        app.terminal.client_id = Some([1; 16]);
+        let (name, cwd, rows) = if kernel {
+            (
+                "menuconfig:virtual/kernel",
+                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/build",
+                vec![
+                    "┌─────────────── Linux/arm64 6.6 Kernel Configuration ───────────────┐",
+                    "│  Arrow keys navigate the menu.  <Enter> selects submenus --->      │",
+                    "│  Highlighted letters are hotkeys.  Press <Y>/<N>/<M> to change.    │",
+                    "│                                                                    │",
+                    "│  [*] 64-bit kernel                                                   │",
+                    "│      General setup  --->                                             │",
+                    "│      Processor type and features  --->                               │",
+                    "│      Power management and ACPI options  --->                         │",
+                    "│      Bus options (PCI etc.)  --->                                    │",
+                    "│      Device Drivers  --->                                             │",
+                    "│      File systems  --->                                               │",
+                    "│      Security options  --->                                           │",
+                    "│      Cryptographic API  --->                                          │",
+                    "│                                                                    │",
+                    "│       <Select>    < Exit >    < Help >    < Save >    < Load >       │",
+                    "└────────────────────────────────────────────────────────────────────┘",
+                ],
+            )
+        } else {
+            (
+                "menuconfig:u-boot-fslc",
+                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/build",
+                vec![
+                    "┌──────────────────── U-Boot 2024.01 Configuration ──────────────────┐",
+                    "│  Arrow keys navigate the menu.  <Enter> selects submenus --->      │",
+                    "│  Highlighted letters are hotkeys.  Press <Y>/<N> to change.        │",
+                    "│                                                                    │",
+                    "│      ARM architecture                                                │",
+                    "│      General setup  --->                                             │",
+                    "│      Boot options  --->                                              │",
+                    "│      Command line interface  --->                                    │",
+                    "│      Device Drivers  --->                                             │",
+                    "│      File systems  --->                                               │",
+                    "│      Networking support  --->                                        │",
+                    "│      Security support  --->                                          │",
+                    "│      Library routines  --->                                          │",
+                    "│                                                                    │",
+                    "│       <Select>    < Exit >    < Help >    < Save >    < Load >       │",
+                    "└────────────────────────────────────────────────────────────────────┘",
+                ],
+            )
+        };
+        app.daemon.pty_sessions = vec![yoctui_model::ClientDaemonPtySummary {
+            id: 1,
+            name: name.into(),
+            lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+            viewers: 1,
+        }];
+        app.daemon.pty_details = vec![yoctui_model::ClientDaemonPtyDetails {
+            id: 1,
+            kind: yoctui_model::ClientDaemonPtyKind::Menuconfig,
+            cwd: cwd.into(),
+            columns: 88,
+            rows: 18,
+            writer: Some([1; 16]),
+            writer_epoch: 3,
+            exit_code: None,
+            restartable: true,
+        }];
+        app.daemon.pty_screens = vec![yoctui_model::ClientDaemonPtyScreen {
+            session_id: 1,
+            columns: 88,
+            rows_count: 18,
+            cursor_column: 8,
+            cursor_row: 5,
+            cursor_hidden: false,
+            scrollback_offset: 0,
+            rows: rows.into_iter().map(str::to_owned).collect(),
+            cells: Vec::new(),
+            scrollback_lines: 0,
+            dropped_line_feeds_lower_bound: 0,
+        }];
+        if let Some(telemetry) = app.daemon.telemetry.as_mut() {
+            telemetry.pty_sessions = 1;
+        }
+        app
+    }
+
     fn concept_text_capture(terminal: &Terminal<TestBackend>) -> String {
         let buffer = terminal.backend().buffer();
         let mut output = String::new();
@@ -21554,6 +21738,96 @@ mod tests {
                     text_fixture, actual_text,
                     "concept screen {name} semantic capture changed; use the explicit update script only after reviewing the UI change"
                 );
+            }
+        }
+    }
+
+    #[test]
+    fn readme_gallery_requested_workbenches_render_through_production_renderer() {
+        let scenes = [
+            (
+                "kernel-device-tree",
+                readme_platform_app(yoctui_model::PlatformComponent::Kernel),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-kernel-device-tree-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-kernel-device-tree-160x50.cells"
+                )),
+                ["Kernel", "Device trees", "imx8mp-evk.dts"].as_slice(),
+            ),
+            (
+                "uboot-device-tree",
+                readme_platform_app(yoctui_model::PlatformComponent::UBoot),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-uboot-device-tree-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-uboot-device-tree-160x50.cells"
+                )),
+                ["U-Boot", "Device trees", "imx8mp-evk.dts"].as_slice(),
+            ),
+            (
+                "kernel-menuconfig",
+                readme_menuconfig_app(true),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-kernel-menuconfig-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-kernel-menuconfig-160x50.cells"
+                )),
+                [
+                    "menuconfig:virtual/kernel",
+                    "Kernel Configuration",
+                    "Device Drivers",
+                ]
+                .as_slice(),
+            ),
+            (
+                "uboot-menuconfig",
+                readme_menuconfig_app(false),
+                concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-uboot-menuconfig-160x50.cells"
+                ),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/golden/readme-uboot-menuconfig-160x50.cells"
+                )),
+                [
+                    "menuconfig:u-boot-fslc",
+                    "U-Boot 2024.01 Configuration",
+                    "Boot options",
+                ]
+                .as_slice(),
+            ),
+        ];
+        let update_goldens = std::env::var_os("YOCTUI_UPDATE_README_GOLDENS").is_some();
+        for (name, app, cell_path, cell_fixture, anchors) in scenes {
+            assert_eq!(app.navigator_screen(), app.screen);
+            let mut terminal =
+                Terminal::new(TestBackend::new(TARGET_GOLDEN_WIDTH, TARGET_GOLDEN_HEIGHT)).unwrap();
+            terminal
+                .draw(|frame| render_at(frame, &app, literal_now()))
+                .unwrap();
+            let actual_cells = literal_cells(&terminal);
+            let actual_text = concept_text_capture(&terminal);
+            for anchor in anchors {
+                assert!(
+                    actual_text.contains(anchor),
+                    "{name} missing {anchor}: {actual_text}"
+                );
+            }
+            if update_goldens {
+                fs::write(cell_path, serialize_target_golden(&actual_cells)).unwrap();
+            } else {
+                assert_target_golden(name, &parse_target_golden(cell_fixture), &actual_cells);
             }
         }
     }

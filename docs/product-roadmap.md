@@ -7,9 +7,10 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 RELEASE-IPC-GATE-001 waits for two atomic follow-ups after the exact v89
 completion gate exposed an obsolete Default-constructor IPC assertion and the
 repaired source check revealed premature fixture build startup. v0.1.90 child
-RELEASE-IPC-SOURCE-001 is DONE with failed-first tests and full baseline. Current
-RELEASE-FIXTURE-READY-001 synchronizes metadata readiness and refreshes affected
-source-bound fixture evidence. 706 of 708 registry tasks are DONE. No runtime
+RELEASE-IPC-SOURCE-001 is DONE with failed-first tests and full baseline. After
+the completed v0.1.91 README screenshot override, current
+RELEASE-FIXTURE-READY-001 resumes metadata readiness and affected source-bound
+fixture evidence. 707 of 709 registry tasks are DONE. No runtime
 or threshold change is authorized by these checker/harness repairs; the full
 completion gate must still pass.
 
@@ -1271,3 +1272,10 @@ links into the artwork. Contract: [README header](design/readme-header.md).
 README-HEADER-001 is DONE in v0.1.74: static header/link/asset checks, version,
 formatting, locked metadata and raster/gallery verification pass. No runtime
 source changed and no release is certified. OpenBMC validation resumes.
+
+The user-requested README production gallery is DONE in v0.1.91 under
+README-SCREENSHOTS-001. It adds current deterministic screenshots for Kernel
+and U-Boot device trees, both menuconfig sessions, the rootfs package pie, and
+the established representative screens. Fixture and live-capture authority
+remain explicitly distinct. RELEASE-FIXTURE-READY-001 resumes after the
+higher-priority documentation request is committed and pushed.

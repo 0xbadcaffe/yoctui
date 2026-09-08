@@ -34,12 +34,41 @@ images, and manages development terminals.
 This README describes the source checkout. The crates.io release may be older;
 check `yoctui --version` and the [release status](docs/implementation-status.md).
 
-![Yoctui Tasks and build logs](docs/media/yoctui-live-active-tasks.svg)
+<p align="center">
+  <a href="docs/media/screenshots/01-active-build-tasks.png"><img src="docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a>
+</p>
 
-Screenshot from the recorded Poky 5.2.4 / BitBake 2.12.1 test run.
-[Capture details](artifacts/release-quality/next-generation-ui/manifest.json) ·
-[Completed build](docs/media/yoctui-live-completion.svg) ·
-[Failed build](docs/media/yoctui-live-failed-task.svg)
+Current production-renderer screenshot. The deterministic gallery below is
+generated from reviewed `160x50` Ratatui cell/style captures; it demonstrates
+implemented UI flows without claiming a live build for the fixture values.
+[Raster provenance](docs/media/screenshots/manifest.toml) ·
+[Recorded live capture](artifacts/release-quality/next-generation-ui/manifest.json) ·
+[Completed live build](docs/media/yoctui-live-completion.svg) ·
+[Failed live build](docs/media/yoctui-live-failed-task.svg)
+
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/02-kernel-device-tree.png"><img src="docs/media/screenshots/02-kernel-device-tree.png" alt="Yoctui Kernel device-tree inventory"></a><br><strong>Kernel device trees</strong> — provider-aware DTS, DTSI and compiled DTB inventory.</td>
+    <td width="50%"><a href="docs/media/screenshots/03-uboot-device-tree.png"><img src="docs/media/screenshots/03-uboot-device-tree.png" alt="Yoctui U-Boot device-tree inventory"></a><br><strong>U-Boot device trees</strong> — bootloader sources and generated device-tree artifacts.</td>
+  </tr>
+  <tr>
+    <td><a href="docs/media/screenshots/04-kernel-menuconfig.png"><img src="docs/media/screenshots/04-kernel-menuconfig.png" alt="Linux kernel menuconfig inside a Yoctui terminal session"></a><br><strong>Kernel menuconfig</strong> — daemon-owned interactive configuration in the embedded terminal.</td>
+    <td><a href="docs/media/screenshots/05-uboot-menuconfig.png"><img src="docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — provider-specific bootloader configuration with reconnectable PTY ownership.</td>
+  </tr>
+  <tr>
+    <td><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="Yoctui root filesystem package composition pie chart and exact size table"></a><br><strong>Image composition</strong> — rootfs package pie chart, exact byte totals and filesystem drill-down.</td>
+    <td><a href="docs/media/screenshots/07-idle-dashboard.png"><img src="docs/media/screenshots/07-idle-dashboard.png" alt="Yoctui idle project dashboard with build and host status"></a><br><strong>Dashboard</strong> — workspace status, recent jobs, quick actions and host telemetry.</td>
+  </tr>
+  <tr>
+    <td><a href="docs/media/screenshots/08-failed-build-errors.png"><img src="docs/media/screenshots/08-failed-build-errors.png" alt="Yoctui failed BitBake task errors and correlated logs"></a><br><strong>Errors</strong> — retained diagnostics, task correlation and recovery actions.</td>
+    <td><a href="docs/media/screenshots/09-editor-application-menu.png"><img src="docs/media/screenshots/09-editor-application-menu.png" alt="Yoctui BitBake recipe editor and application action menu"></a><br><strong>Recipe editing</strong> — syntax-aware source editing, validation and contextual actions.</td>
+  </tr>
+  <tr>
+    <td colspan="2"><a href="docs/media/screenshots/10-terminal-sessions.png"><img src="docs/media/screenshots/10-terminal-sessions.png" alt="Yoctui split daemon-owned terminal sessions"></a><br><strong>Terminal sessions</strong> — split build shells and devshells with explicit writer control and scrollback.</td>
+  </tr>
+</table>
 
 ## Features
 

@@ -5398,3 +5398,21 @@ nodes before normalization. This makes `bitbake -g` task edges reachable from
 the recipe-rooted explorer while retaining the original task-to-task edges,
 cycle handling, limits, reverse traversal, and responsive topology/tree/table
 modes.
+
+## 44. README production screenshot gallery
+
+The front README presents ten ordered current-renderer screenshots: active
+Tasks, Kernel and U-Boot device-tree workbenches, Kernel and U-Boot menuconfig,
+Rootfs package composition, Dashboard, Errors, recipe editing, and Terminal
+Sessions. Kernel/U-Boot workbench captures use typed provider, task, source-root,
+configuration, DTS/DTSI/DTB, and `dtc` authority. Menuconfig captures use the
+same daemon-owned `ClientDaemonPtyScreen` path as live interactive sessions.
+The rootfs capture must retain both the Braille pie and exact size table.
+
+Every gallery image is rendered from a reviewed `160x50` Ratatui symbol/style
+cell golden through the pinned production raster pipeline. The manifest binds
+ordered scenario identity, input and output hashes, renderer/font identity,
+and `1600x1000` dimensions. README alternative text and ordering are checked.
+Fixture values are explicitly labeled as deterministic UI demonstrations;
+they cannot be described as live BitBake or OpenBMC evidence. Existing
+checksummed live-capture links remain separate and retain their own authority.

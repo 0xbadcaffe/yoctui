@@ -4074,3 +4074,21 @@ Rootfs package composition continues to use `tui-piechart` 1.0.2 with Braille
 resolution only when color, Unicode, automatic charts, width, and the complete
 three-pane height are available. Otherwise the exact installed-byte table is
 the production fallback, preserving package navigation and selection.
+
+## M57 README screenshot projection
+
+README screenshots are a documentation projection of production rendering,
+not a second UI implementation. Typed `App` fixtures call `render_at` through
+Ratatui's `TestBackend`; reviewed cell/style buffers are the source artifacts.
+`scripts/render-readme-screenshots.py` reuses the pinned Cairo/font cell raster
+implementation, writes only the ten declared PNG destinations, and records
+source/output hashes in `docs/media/screenshots/manifest.toml`. Check mode
+renders into a temporary directory, byte-compares every image and rejects a
+missing, extra, reordered, or stale artifact.
+
+The four platform additions exercise the existing platform-workbench and
+daemon PTY rendering boundaries. They do not parse README text into UI state,
+read host files while rendering, or substitute screenshots for live acceptance.
+The six established overview/error/image/editor/terminal fixtures remain shared
+with the exact production concept contract, so normal version and visual
+changes refresh both documentation and regression evidence coherently.

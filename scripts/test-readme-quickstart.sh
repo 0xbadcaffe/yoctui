@@ -11,8 +11,10 @@ python3 - <<'PY'
 from pathlib import Path
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
+import hashlib
 import re
 import struct
+import tomllib
 
 readme = Path("README.md").read_text(encoding="utf-8")
 header = readme.split("<!-- /yoctui-header -->", 1)[0]
@@ -66,7 +68,50 @@ width, height = struct.unpack(">II", png[16:24])
 assert 2 <= width / height <= 3.5, "Header must stay compact and wide"
 assert len(png) <= 2 * 1024 * 1024, "Header should remain under 2 MiB"
 print("README header checks passed")
+gallery_manifest = Path("docs/media/screenshots/manifest.toml")
+assert gallery_manifest.is_file(), "Missing README screenshot provenance"
+gallery = tomllib.loads(gallery_manifest.read_text(encoding="utf-8"))
+artifacts = gallery.get("artifact", [])
+expected_gallery_ids = (
+    "active-build-tasks", "kernel-device-tree", "uboot-device-tree",
+    "kernel-menuconfig", "uboot-menuconfig", "rootfs-composition",
+    "idle-dashboard", "failed-build-errors", "editor-application-menu",
+    "terminal-sessions",
+)
+assert tuple(item.get("id") for item in artifacts) == expected_gallery_ids
+assert gallery.get("authority") == "production TestBackend cell/style goldens"
+
+class GalleryImages(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.images = []
+
+    def handle_starttag(self, tag, attrs):
+        if tag != "img":
+            return
+        values = dict(attrs)
+        source = values.get("src", "")
+        if source.startswith("docs/media/screenshots/"):
+            assert values.get("alt", "").strip(), f"Gallery image needs alt text: {source}"
+            self.images.append(source)
+
+gallery_images = GalleryImages()
+gallery_images.feed(readme)
+expected_files = [item["file"] for item in artifacts]
+assert gallery_images.images == expected_files, "README gallery order differs from provenance"
+for item in artifacts:
+    image = Path(item["file"])
+    source = Path(item["source"])
+    assert image.is_file() and source.is_file(), f"Missing gallery input/output for {item['id']}"
+    assert hashlib.sha256(image.read_bytes()).hexdigest() == item["sha256"]
+    assert hashlib.sha256(source.read_bytes()).hexdigest() == item["source_sha256"]
+    png = image.read_bytes()
+    assert png.startswith(b"\x89PNG\r\n\x1a\n") and png[12:16] == b"IHDR"
+    assert struct.unpack(">II", png[16:24]) == (1600, 1000)
+assert "fixture values" in readme and "Recorded live capture" in readme
+print("README screenshot gallery checks passed")
 required_sections = (
+    "Screenshots",
     "Features",
     "Install",
     "Quickstart: Poky build environment",

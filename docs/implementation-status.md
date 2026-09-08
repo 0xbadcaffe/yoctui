@@ -1,5 +1,19 @@
 # Yoctui Implementation Status
 
+v0.1.91 README-SCREENSHOTS-001 is DONE. The front README now carries ten
+ordered current-renderer screenshots: active Tasks, Kernel/U-Boot device-tree
+workbenches, both menuconfig sessions, Rootfs composition with the Braille pie
+and exact table, Dashboard, Errors, recipe editing/menu, and Terminal Sessions.
+Four new typed production `render_at` cell goldens join the six established
+fixtures. The pinned deterministic raster manifest binds source/output/font/
+renderer hashes and dimensions; checks reject missing, extra, reordered, stale,
+or inaccessible gallery entries and preserve fixture/live-evidence labeling.
+Visual review, 1600 workspace tests/doc-tests (four existing ignored), 52 bridge
+tests, strict Clippy, fmt, docs, version policy, 709-task roadmap, ten gallery
+rasters and six established rasters pass. RELEASE-FIXTURE-READY-001 resumes
+from its recoverable stash; RELEASE-IPC-GATE-001 remains NOT_STARTED. 707 of
+709 tasks are DONE, so no global completion claim is made.
+
 v0.1.90 RELEASE-IPC-SOURCE-001 is DONE, split from RELEASE-IPC-GATE-001.
 The checker repair passes five failed-first/mutation-negative groups, three
 focused production Rust checks, all 1599 workspace tests/doc-tests (four
