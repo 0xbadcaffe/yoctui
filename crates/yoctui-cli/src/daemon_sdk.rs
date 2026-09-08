@@ -52,17 +52,17 @@ pub enum DaemonSdkEvent {
 }
 
 pub struct DaemonSdkSupervisor {
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: std::collections::HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonSdkEvent>,
     rx: mpsc::UnboundedReceiver<DaemonSdkEvent>,
 }
 
-impl Default for DaemonSdkSupervisor {
-    fn default() -> Self {
+impl DaemonSdkSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next_job_id: 1,
+            job_ids,
             active: std::collections::HashMap::new(),
             tx,
             rx,
@@ -80,11 +80,10 @@ impl DaemonSdkSupervisor {
         let (command, cwd) = sdk_command(operation.clone(), context.clone())?;
         let sdk_deploy_root = context.sdk_deploy_root.clone();
         let workspace_roots = context.workspace_roots.clone();
-        let job_id = JobId(self.next_job_id);
-        self.next_job_id = self
-            .next_job_id
-            .checked_add(1)
-            .ok_or(DaemonSdkError::JobSpaceExhausted)?;
+        let job_id = self
+            .job_ids
+            .allocate()
+            .map_err(|_| DaemonSdkError::JobSpaceExhausted)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(session_id, cancel_tx);
         let tx = self.tx.clone();

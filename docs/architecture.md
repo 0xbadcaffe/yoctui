@@ -18,7 +18,10 @@ beyond retained IDs in the low 60-bit namespace; Raw retains its separate
 namespace. Exhaustion rejects before spawning work, never wraps or saturates
 into reuse. Session IDs and live-process ownership remain separate from job
 identity. Recovery does not restore cancellation authority for old jobs.
-DAEMON-JOB-IDENTITY-001 owns this correction.
+Every non-Raw supervisor constructor requires the shared CLI-owned allocator;
+no supervisor-local default counter remains. Checked atomic allocation provides
+uniqueness without making IDs confer process ownership. DAEMON-JOB-IDENTITY-001
+verifies this correction in v0.1.78.
 
 Daemon build snapshots must retain typed aggregate completed/total authority
 independently of the bounded per-task event projection. Queue/start replacement

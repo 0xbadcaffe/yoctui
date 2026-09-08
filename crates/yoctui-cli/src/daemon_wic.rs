@@ -45,16 +45,16 @@ pub enum DaemonWicEvent {
     },
 }
 pub struct DaemonWicSupervisor {
-    next: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: std::collections::HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonWicEvent>,
     rx: mpsc::UnboundedReceiver<DaemonWicEvent>,
 }
-impl Default for DaemonWicSupervisor {
-    fn default() -> Self {
+impl DaemonWicSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next: 1,
+            job_ids,
             active: Default::default(),
             tx,
             rx,
@@ -80,8 +80,7 @@ impl DaemonWicSupervisor {
             },
             device,
         };
-        let id = JobId(self.next);
-        self.next += 1;
+        let id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(session_id, cancel_tx);
         let tx = self.tx.clone();
@@ -117,8 +116,7 @@ impl DaemonWicSupervisor {
         };
         let command =
             WicCreateCommandSpec::from_preview(&preview, &capability).map_err(|e| e.to_string())?;
-        let id = JobId(self.next);
-        self.next += 1;
+        let id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (tx_cancel, mut rx_cancel) = mpsc::unbounded_channel();
         self.active.insert(session_id, tx_cancel);
         let tx = self.tx.clone();

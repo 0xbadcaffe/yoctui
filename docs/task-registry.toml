@@ -127,12 +127,12 @@ notes = "v0.1.76 preserves optional typed aggregate counters independently of co
 id = "DAEMON-JOB-IDENTITY-001"
 milestone = "M56"
 title = "Keep daemon job identities unique across supervisors and recovered history"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1287
 required = true
 depends_on = ["OPENBMC-SNAPSHOT-PROGRESS-001"]
 verify = ["cargo test -p yoctui daemon_job_identity", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Observed during the v0.1.76 real OpenBMC restart: recovered failed jobs 1 and 2 existed before submission; the fifth attempt reused ID 1 and replaced its historical record. Source inspection finds independent counters starting at 1 in BitBake, Devtool, SDK, QEMU, Wic, Testing, QA, Security and Maintenance supervisors; journal replacement keys only on JobId, and generic cancellation probes Devtool before BitBake. Introduce one checked shared non-Raw daemon job allocator initialized beyond retained IDs, retain Raw's existing disjoint namespace, fail closed on exhaustion before spawning work, and preserve recovered terminal records. Add allocator/recovery, cross-supervisor and exact cancellation regressions with isolated fake subprocesses/bridge; do not restart or interrupt the live image merely to deploy this fix. Update architecture/UI/protocol and OpenBMC evidence."
+notes = "v0.1.78: all non-Raw supervisor constructors require one shared checked allocator, seeded beyond retained low-namespace IDs. Raw's namespace and live ownership maps remain separate; allocation exhaustion never wraps into reuse. The initial QA/Security regression reproduced JobId(1) for both owners. Six focused checks pass, including concurrent allocation, namespace/exhaustion, recovered snapshot reduction, two isolated fake BitBake bridges with exact-owner cancellation, and a real private daemon retaining failed jobs 1/2 while assigning QA/Security IDs 3/4. All 1556 workspace tests, 49 bridge tests, strict Clippy, fmt, docs, deterministic rasters and roadmap pass. UI/architecture/protocol and OpenBMC evidence updated. The running real image remains on preserved v0.1.76; no restart solely for deployment, image success or release-performance claim."
 
 [[task]]
 id = "OPENBMC-LIVE-001"

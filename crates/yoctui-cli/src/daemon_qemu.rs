@@ -45,16 +45,16 @@ pub enum DaemonQemuEvent {
 }
 
 pub struct DaemonQemuSupervisor {
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: std::collections::HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonQemuEvent>,
     rx: mpsc::UnboundedReceiver<DaemonQemuEvent>,
 }
-impl Default for DaemonQemuSupervisor {
-    fn default() -> Self {
+impl DaemonQemuSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next_job_id: 1,
+            job_ids,
             active: Default::default(),
             tx,
             rx,
@@ -71,8 +71,7 @@ impl DaemonQemuSupervisor {
     ) -> Result<JobId, String> {
         let (preview, cwd) = wire_preview(request, executable, build_directory)?;
         let command = QemuCommandSpec::from_preview(&preview).map_err(|e| e.to_string())?;
-        let id = JobId(self.next_job_id);
-        self.next_job_id += 1;
+        let id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(session_id, cancel_tx);
         let tx = self.tx.clone();

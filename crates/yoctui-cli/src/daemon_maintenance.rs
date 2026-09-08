@@ -47,17 +47,17 @@ pub enum DaemonMaintenanceEvent {
 }
 
 pub struct DaemonMaintenanceSupervisor {
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonMaintenanceEvent>,
     rx: mpsc::UnboundedReceiver<DaemonMaintenanceEvent>,
 }
 
-impl Default for DaemonMaintenanceSupervisor {
-    fn default() -> Self {
+impl DaemonMaintenanceSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next_job_id: 1,
+            job_ids,
             active: HashMap::new(),
             tx,
             rx,
@@ -146,8 +146,7 @@ impl DaemonMaintenanceSupervisor {
         session_id: u64,
         command: MaintenanceSstateCommandSpec,
     ) -> Result<JobId, String> {
-        let job_id = JobId(self.next_job_id);
-        self.next_job_id = self.next_job_id.saturating_add(1);
+        let job_id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(session_id, cancel_tx);
         let tx = self.tx.clone();
@@ -298,7 +297,7 @@ mod tests {
     #[test]
     fn client_runtime_maintenance_sstate_rejects_invalid_session() {
         assert!(
-            DaemonMaintenanceSupervisor::default()
+            DaemonMaintenanceSupervisor::new(Default::default())
                 .start_readiness(
                     0,
                     1,
@@ -338,7 +337,7 @@ mod tests {
     #[test]
     fn client_runtime_maintenance_release_rejects_invalid_session() {
         assert!(
-            DaemonMaintenanceSupervisor::default()
+            DaemonMaintenanceSupervisor::new(Default::default())
                 .start_external(
                     0,
                     "/missing/tool".into(),

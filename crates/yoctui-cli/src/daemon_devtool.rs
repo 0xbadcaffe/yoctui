@@ -43,19 +43,19 @@ pub enum DaemonDevtoolEvent {
 pub struct DaemonDevtoolSupervisor {
     compatibility: Option<DaemonCompatibilitySnapshot>,
     cancellation_timeout: Duration,
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: HashMap<JobId, mpsc::UnboundedSender<()>>,
     events_tx: mpsc::UnboundedSender<DaemonDevtoolEvent>,
     events_rx: mpsc::UnboundedReceiver<DaemonDevtoolEvent>,
 }
 
-impl Default for DaemonDevtoolSupervisor {
-    fn default() -> Self {
+impl DaemonDevtoolSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (events_tx, events_rx) = mpsc::unbounded_channel();
         Self {
             compatibility: None,
             cancellation_timeout: Duration::from_secs(5),
-            next_job_id: 1,
+            job_ids,
             active: HashMap::new(),
             events_tx,
             events_rx,
@@ -91,11 +91,10 @@ impl DaemonDevtoolSupervisor {
             compatibility.snapshot.generation,
             &build_directory,
         )?;
-        let job_id = JobId(self.next_job_id);
-        self.next_job_id = self
-            .next_job_id
-            .checked_add(1)
-            .ok_or(DaemonDevtoolError::JobSpaceExhausted)?;
+        let job_id = self
+            .job_ids
+            .allocate()
+            .map_err(|_| DaemonDevtoolError::JobSpaceExhausted)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(job_id, cancel_tx);
         let events = self.events_tx.clone();
@@ -313,7 +312,7 @@ mod tests {
         fs::set_permissions(&executable, fs::Permissions::from_mode(0o700)).unwrap();
         let executable = executable.canonicalize().unwrap();
         let build = root.canonicalize().unwrap();
-        let mut supervisor = DaemonDevtoolSupervisor::default();
+        let mut supervisor = DaemonDevtoolSupervisor::new(Default::default());
         supervisor
             .replace_compatibility(Some(compatibility(&build, &executable)))
             .unwrap();

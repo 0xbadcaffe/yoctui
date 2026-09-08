@@ -1469,6 +1469,7 @@ Starting a new daemon-owned operation must not replace a different operation's
 job-history row, including terminal history recovered after daemon restart.
 Job IDs are unique across operation types. Cancelling a job affects only that
 job's live owner; a recovered terminal row grants no cancellation authority.
+If identity allocation is exhausted, rejection leaves existing job rows intact.
 
 ---
 

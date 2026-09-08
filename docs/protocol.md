@@ -15,6 +15,16 @@ Each UTF-8 line is one JSON envelope: `protocol_version` (currently 1), monotoni
 
 Commands: `hello`, `inspect_workspace`, `start_build`, `cancel_build`, `list_recipes`, `list_layers`, `get_variable`, `shutdown`. Events: `hello_ack`, `workspace`, lifecycle/task/log events, `command_failed`, `protocol_error`, and `bridge_shutdown`. `build_completed` carries an optional `exit_code` when the backend supplies one. New optional fields are allowed; consumers must not reinterpret unknown events.
 
+## Daemon job identity
+
+Job IDs identify one daemon-owned operation across supervisor types and retained
+recovery history. Non-Raw jobs share checked allocation in IDs 1 through
+2^60 - 1; Raw retains its existing high-bit namespace. Recovery reserves all
+retained low-namespace IDs before accepting new work. Exhaustion rejects new
+work without spawning a worker or reusing an ID. No wire field or version changes
+are required. Session IDs remain distinct from job IDs, and recovered history
+does not restore a live process or cancellation authority.
+
 ## Daemon build counters
 
 Daemon snapshots may include `build_progress` with nonnegative `completed` and

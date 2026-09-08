@@ -66,17 +66,17 @@ pub enum DaemonTestEvent {
 }
 
 pub struct DaemonTestSupervisor {
-    next: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: std::collections::HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonTestEvent>,
     rx: mpsc::UnboundedReceiver<DaemonTestEvent>,
     pub cache: DaemonTestResultCache,
 }
-impl Default for DaemonTestSupervisor {
-    fn default() -> Self {
+impl DaemonTestSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next: 1,
+            job_ids,
             active: Default::default(),
             tx,
             rx,
@@ -92,8 +92,7 @@ impl DaemonTestSupervisor {
         )
         .map_err(str::to_owned)?;
         let adapter = TestResultAdapter::new(Vec::new());
-        let id = JobId(self.next);
-        self.next += 1;
+        let id = self.job_ids.allocate().map_err(str::to_owned)?;
         let tx = self.tx.clone();
         tokio::task::spawn_blocking(move || {
             let result = adapter.import(&request);
@@ -174,8 +173,7 @@ impl DaemonTestSupervisor {
         let command = adapter
             .junit_command(&preview, &result)
             .map_err(|e| e.to_string())?;
-        let id = JobId(self.next);
-        self.next += 1;
+        let id = self.job_ids.allocate().map_err(str::to_owned)?;
         let tx = self.tx.clone();
         tokio::spawn(async move {
             let mut runner = TestResultJob::new();
@@ -250,8 +248,7 @@ impl DaemonTestSupervisor {
             PtestCapability::default(),
         );
         let command = adapter.command(&request).map_err(|e| e.to_string())?;
-        let id = JobId(self.next);
-        self.next += 1;
+        let id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (tx_cancel, mut rx_cancel) = mpsc::unbounded_channel();
         self.active.insert(session_id, tx_cancel);
         let tx = self.tx.clone();
@@ -321,8 +318,7 @@ impl DaemonTestSupervisor {
             limitations: Vec::new(),
         }
         .bounded();
-        let id = JobId(self.next);
-        self.next += 1;
+        let id = self.job_ids.allocate().map_err(str::to_owned)?;
         let _ = self
             .tx
             .send(DaemonTestEvent::Comparison { job_id: id, diff });
@@ -403,7 +399,7 @@ mod tests {
     use super::*;
     #[test]
     fn client_runtime_test_session_rejects_unknown_family() {
-        let mut s = DaemonTestSupervisor::default();
+        let mut s = DaemonTestSupervisor::new(Default::default());
         let result = s.start(
             1,
             DaemonTestSelftestRequest {

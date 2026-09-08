@@ -1,12 +1,18 @@
 # Yoctui Implementation Status
 
-DAEMON-JOB-IDENTITY-001 is IN_PROGRESS (v0.1.77 governance). A live restart
+DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78. A live restart
 recovered failed jobs 1 and 2, but the new image reused ID 1 and replaced its
 record. Independent non-Raw supervisor counters all begin at 1, while the
-journal keys updates by ID alone. The task requires checked shared allocation
-across supervisors and recovered history, with isolated recovery/cancellation
-regressions. No implementation or completion is claimed yet. The real image
-continues on the preserved v0.1.76 binary; do not interrupt it for deployment.
+journal keys updates by ID alone. The correction provides checked shared
+allocation across supervisors and recovered history. All non-Raw supervisors receive
+the shared checked allocator; recovery seeds it past retained low-namespace
+IDs. The first regression reproduced JobId(1) in both QA and Security owners;
+all six focused tests pass, including real private-daemon recovery retaining
+old jobs 1/2 and assigning new QA/Security IDs 3/4, plus exact-owner cancellation
+between fake BitBake bridges. All 1,556 workspace tests, 49 bridge tests, strict
+Clippy, formatting, documentation, rasters and roadmap pass. OPENBMC-LIVE-001
+resumes; the real image continues on the preserved v0.1.76 binary. Do not
+interrupt it for deployment. Image success and the release gate remain pending.
 
 OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76. Optional typed aggregate counters
 survive queue/start replacement and completed-row eviction; Current client state

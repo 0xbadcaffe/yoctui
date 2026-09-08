@@ -32,7 +32,7 @@ pub enum DaemonSecurityEvent {
 }
 
 pub struct DaemonSecuritySupervisor {
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonSecurityEvent>,
     rx: mpsc::UnboundedReceiver<DaemonSecurityEvent>,
@@ -74,17 +74,17 @@ pub enum DaemonSecurityMapperEvent {
 }
 
 pub struct DaemonSecurityMapperSupervisor {
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonSecurityMapperEvent>,
     rx: mpsc::UnboundedReceiver<DaemonSecurityMapperEvent>,
 }
 
-impl Default for DaemonSecurityMapperSupervisor {
-    fn default() -> Self {
+impl DaemonSecurityMapperSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next_job_id: 1,
+            job_ids,
             active: HashMap::new(),
             tx,
             rx,
@@ -111,8 +111,7 @@ impl DaemonSecurityMapperSupervisor {
             report_roots.into_iter().map(Into::into).collect(),
         )
         .map_err(|error| error.to_string())?;
-        let job_id = JobId(self.next_job_id);
-        self.next_job_id = self.next_job_id.saturating_add(1);
+        let job_id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(session_id, cancel_tx);
         let tx = self.tx.clone();
@@ -178,11 +177,11 @@ impl DaemonSecurityMapperSupervisor {
     }
 }
 
-impl Default for DaemonSecuritySupervisor {
-    fn default() -> Self {
+impl DaemonSecuritySupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next_job_id: 1,
+            job_ids,
             active: HashMap::new(),
             tx,
             rx,
@@ -198,8 +197,7 @@ impl DaemonSecuritySupervisor {
         let request =
             SecurityReportRequest::new(generation, paths.into_iter().map(Into::into).collect())
                 .map_err(str::to_owned)?;
-        let job_id = JobId(self.next_job_id);
-        self.next_job_id = self.next_job_id.saturating_add(1);
+        let job_id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(generation, cancel_tx);
         let tx = self.tx.clone();
@@ -267,7 +265,7 @@ mod tests {
     #[test]
     fn client_runtime_security_rejects_invalid_generation() {
         assert!(
-            DaemonSecuritySupervisor::default()
+            DaemonSecuritySupervisor::new(Default::default())
                 .start(0, vec!["/tmp/report.json".into()])
                 .is_err()
         );
@@ -276,7 +274,7 @@ mod tests {
     #[test]
     fn client_runtime_security_mapper_rejects_invalid_session() {
         assert!(
-            DaemonSecurityMapperSupervisor::default()
+            DaemonSecurityMapperSupervisor::new(Default::default())
                 .start(
                     0,
                     "/missing/cve-check-map-pkgs".into(),

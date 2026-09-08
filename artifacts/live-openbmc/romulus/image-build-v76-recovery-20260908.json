@@ -30,21 +30,21 @@
   },
   "binary_sha256": "93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f",
   "observed_from_unix": 1788840553.873128,
-  "observed_until_unix": 1788841039.4174025,
+  "observed_until_unix": 1788842901.1360934,
   "note": "Fifth image attempt, daemon/client v0.1.76 after baseline tests, Clippy and docs passed. Fourth attempt explicitly cancelled for recovery of 23 old empty objects in function2/boost/fmt; preserved with relative paths under .local/state/yoctui-openbmc-object-recovery-23.bbZM2i. BB_NUMBER_THREADS=2, PARALLEL_MAKE=-j 2. Image success remains subject to terminal outcome.",
   "event_counts": {
-    "event": 696,
-    "event.telemetry": 478,
-    "event.build": 200,
+    "event": 3713,
+    "event.telemetry": 2307,
+    "event.build": 1018,
     "build.parse_progress": 31,
-    "event.log": 13,
+    "event.log": 331,
     "event.bit_bake_changed": 1,
     "build.started": 1,
-    "event.job_changed": 4,
-    "build.task_queued": 3,
-    "build.task_started": 3,
-    "build.task_progress": 161,
-    "build.task_completed": 1
+    "event.job_changed": 56,
+    "build.task_queued": 55,
+    "build.task_started": 55,
+    "build.task_progress": 823,
+    "build.task_completed": 53
   },
   "jobs": {
     "1": {
@@ -52,7 +52,7 @@
       "kind": "bit_bake_build",
       "label": "BitBake build obmc-phosphor-image",
       "lifecycle": "running",
-      "progress_current": 2855,
+      "progress_current": 2988,
       "progress_total": 6812,
       "exit_code": null
     },
@@ -68,91 +68,421 @@
   },
   "recent_logs": [
     {
-      "source": "daemon-metadata",
-      "severity": "info",
-      "message": "Loading initial workspace and recipe inventory",
-      "unix_ms": 1788840496236,
-      "recipe": null,
-      "task": null,
-      "path": null,
-      "build": null
-    },
-    {
-      "source": "daemon-metadata",
-      "severity": "info",
-      "message": "Initial workspace and recipe inventory ready",
-      "unix_ms": 1788840510744,
-      "recipe": null,
-      "task": null,
-      "path": null,
-      "build": null
-    },
-    {
       "source": "bitbake",
       "severity": "info",
-      "message": "Resolving any missing task queue dependencies",
-      "unix_ms": 1788840565808,
-      "recipe": null,
-      "task": null,
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/taskdata.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "\nBuild Configuration:\nBB_VERSION           = \"2.19.0\"\nBUILD_SYS            = \"x86_64-linux\"\nNATIVELSBSTRING      = \"universal\"\nTARGET_SYS           = \"arm-openbmc-linux-gnueabi\"\nMACHINE              = \"romulus\"\nSDKMACHINE           = \"x86_64\"\nDISTRO               = \"openbmc-openpower\"\nDISTRO_VERSION       = \"nodistro.0\"\nTUNE_FEATURES        = \"arm thumb arm1176jzs\"\nmeta                 \nmeta-oe              \nmeta-networking      \nmeta-perl            \nmeta-python          \nmeta-phosphor        \nmeta-aspeed          \nmeta-openpower       \nmeta-romulus         = \"master:d4fd7d3f54e88e800c0284b753af68a13aabbef6\"\n",
-      "unix_ms": 1788840569683,
-      "recipe": null,
-      "task": null,
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842500366,
+      "recipe": "liburing",
+      "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Sstate summary: Wanted 1081 Local 42 Mirrors 0 Missed 1039 Current 2495 (3% match, 70% complete)",
-      "unix_ms": 1788840576972,
-      "recipe": null,
-      "task": null,
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-package/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-package/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842500366,
+      "recipe": "liburing",
+      "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Executing Tasks",
-      "unix_ms": 1788840579454,
-      "recipe": null,
-      "task": null,
-      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/runqueue.py",
-      "build": null
-    },
-    {
-      "source": "bitbake",
-      "severity": "info",
-      "message": "Setscene tasks completed",
-      "unix_ms": 1788840579822,
-      "recipe": null,
-      "task": null,
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842501430,
+      "recipe": "liburing",
+      "task": "do_packagedata",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "VERBOSE=1 cmake --build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/build --target all --",
-      "unix_ms": 1788840582678,
-      "recipe": "llvm-native",
-      "task": "do_compile",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-packagedata/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-packagedata/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842501430,
+      "recipe": "liburing",
+      "task": "do_packagedata",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     },
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/zlib/zlib_1.3.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/bzip2/bzip2_1.0.8.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-support/boost/boost-build-native_1.91.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
-      "unix_ms": 1788840585076,
-      "recipe": "boost",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
+      "unix_ms": 1788842501957,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788842501957,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'binutils-cross-arm', 'libtool-native', 'm4-native', 'texinfo-dummy-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'pseudo-native', 'attr-native', 'sqlite3-native']",
+      "unix_ms": 1788842501957,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: liburing-locale",
+      "unix_ms": 1788842501957,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: liburing-dbg",
+      "unix_ms": 1788842501957,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing-dbg/usr/lib/.debug/liburing-ffi.so.2.12",
+      "unix_ms": 1788842502057,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing-dbg/usr/lib/.debug/liburing.so.2.12",
+      "unix_ms": 1788842502057,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing-dbg/usr/lib/.debug/liburing.so.2.12",
+      "unix_ms": 1788842502057,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing-dbg/usr/lib/.debug/liburing-ffi.so.2.12",
+      "unix_ms": 1788842502057,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: liburing-dev",
+      "unix_ms": 1788842502159,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: liburing-staticdev",
+      "unix_ms": 1788842502159,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: liburing-src",
+      "unix_ms": 1788842502159,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: liburing",
+      "unix_ms": 1788842502159,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing/usr/lib/liburing-ffi.so.2.12",
+      "unix_ms": 1788842502159,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing/usr/lib/liburing.so.2.12",
+      "unix_ms": 1788842502159,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing/usr/lib/liburing.so.2.12",
+      "unix_ms": 1788842502259,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/packages-split/liburing/usr/lib/liburing-ffi.so.2.12",
+      "unix_ms": 1788842502259,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: liburing-doc",
+      "unix_ms": 1788842502259,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842502581,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-package_qa/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-package_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842502581,
+      "recipe": "liburing",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
+      "unix_ms": 1788842503093,
+      "recipe": "liburing",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788842503093,
+      "recipe": "liburing",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
+      "unix_ms": 1788842503093,
+      "recipe": "liburing",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "QA checking do_populate_sysroot",
+      "unix_ms": 1788842503304,
+      "recipe": "liburing",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842503304,
+      "recipe": "liburing",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-populate_sysroot/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842503404,
+      "recipe": "liburing",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842504147,
+      "recipe": "liburing",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-create_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842504147,
+      "recipe": "liburing",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842505087,
+      "recipe": "liburing",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-create_package_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/liburing/2.12/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842505087,
+      "recipe": "liburing",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/function2/function2_4.2.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/liburing/liburing_2.12.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/fmt/fmt_12.2.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/qemu-native_11.0.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/meson/meson_1.11.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/python/python3_3.14.6.bb:do_populate_sysroot']",
+      "unix_ms": 1788842505538,
+      "recipe": "stdplus",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: ['function2', 'liburing', 'glibc', 'binutils-cross-arm', 'cmake-native', 'fmt', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'm4-native', 'qemu-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'gettext-native', 'glib-2.0-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'meson-native', 'ninja-native', 'perl-native', 'pkgconf-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'unzip-native', 'xz-native', 'zstd-native', 'gdbm-native', 'gmp-native', 'libffi-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788842506190,
+      "recipe": "stdplus",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'texinfo-dummy-native', 'attr-native']",
+      "unix_ms": 1788842506190,
+      "recipe": "stdplus",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/function2/function2_4.2.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/liburing/liburing_2.12.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/fmt/fmt_12.2.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/qemu-native_11.0.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/meson/meson_1.11.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/python/python3_3.14.6.bb:do_populate_sysroot']",
+      "unix_ms": 1788842506602,
+      "recipe": "stdplus",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788842506704,
+      "recipe": "stdplus",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['function2', 'liburing', 'gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'cmake-native', 'fmt', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'qemu-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'gettext-native', 'glib-2.0-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'meson-native', 'ninja-native', 'patch-native', 'perl-native', 'pkgconf-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'unzip-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libffi-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788842506704,
+      "recipe": "stdplus",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Executing meson -Dexamples=false -Dtests=disabled -Dgtest=disabled -Db_lto=true ...",
+      "unix_ms": 1788842506705,
+      "recipe": "stdplus",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/function2/function2_4.2.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/liburing/liburing_2.12.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/fmt/fmt_12.2.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/qemu-native_11.0.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/meson/meson_1.11.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/python/python3_3.14.6.bb:do_populate_sysroot']",
+      "unix_ms": 1788842599359,
+      "recipe": "stdplus",
       "task": "do_install",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -161,8 +491,8 @@
       "source": "bitbake",
       "severity": "info",
       "message": "Installed into sysroot: []",
-      "unix_ms": 1788840585077,
-      "recipe": "boost",
+      "unix_ms": 1788842599459,
+      "recipe": "stdplus",
       "task": "do_install",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -170,9 +500,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'zlib', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'opkg-utils', 'quilt-native', 'bzip2', 'texinfo-dummy-native', 'linux-libc-headers', 'boost-build-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788840585077,
-      "recipe": "boost",
+      "message": "Skipping as already exists in sysroot: ['function2', 'liburing', 'gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'cmake-native', 'fmt', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'qemu-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'gettext-native', 'glib-2.0-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'meson-native', 'ninja-native', 'patch-native', 'perl-native', 'pkgconf-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'unzip-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libffi-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788842599459,
+      "recipe": "stdplus",
       "task": "do_install",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -180,9 +510,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/zlib/zlib_1.3.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/bzip2/bzip2_1.0.8.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-support/boost/boost-build-native_1.91.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/dwarfsrcfiles/dwarfsrcfiles.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/rpm/rpm_4.20.1.bb:do_populate_sysroot']",
-      "unix_ms": 1788841002618,
-      "recipe": "boost",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/function2/function2_4.2.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/liburing/liburing_2.12.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/fmt/fmt_12.2.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/qemu-native_11.0.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/dwarfsrcfiles/dwarfsrcfiles.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/meson/meson_1.11.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/python/python3_3.14.6.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/rpm/rpm_4.20.1.bb:do_populate_sysroot']",
+      "unix_ms": 1788842601531,
+      "recipe": "stdplus",
       "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -190,9 +520,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Installed into sysroot: ['cmake-native', 'openssl-native', 'expat-native', 'ncurses-native', 'readline-native', 'util-linux-libuuid-native', 'dwarfsrcfiles-native', 'elfutils-native', 'file-native', 'libedit-native', 'lua-native', 'make-native', 'perl-native', 'python3-native', 'rpm-native', 'bzip2-native', 'libarchive-native', 'lzlib-native', 'xz-native', 'acl-native', 'gdbm-native', 'libcap-native', 'libffi-native', 'libgcrypt-native', 'libgpg-error-native', 'popt-native']",
-      "unix_ms": 1788841004251,
-      "recipe": "boost",
+      "message": "Installed into sysroot: ['readline-native', 'dwarfsrcfiles-native', 'elfutils-native', 'file-native', 'lua-native', 'rpm-native', 'libarchive-native', 'lzlib-native', 'acl-native', 'libcap-native', 'libgcrypt-native', 'libgpg-error-native', 'popt-native']",
+      "unix_ms": 1788842601808,
+      "recipe": "stdplus",
       "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -200,9 +530,9 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'zlib', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'opkg-utils', 'quilt-native', 'bzip2', 'texinfo-dummy-native', 'linux-libc-headers', 'boost-build-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
-      "unix_ms": 1788841004251,
-      "recipe": "boost",
+      "message": "Skipping as already exists in sysroot: ['function2', 'liburing', 'gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'cmake-native', 'fmt', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'qemu-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'gettext-native', 'glib-2.0-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'meson-native', 'ninja-native', 'patch-native', 'perl-native', 'pkgconf-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'unzip-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libffi-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788842601808,
+      "recipe": "stdplus",
       "task": "do_package",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
@@ -210,10 +540,530 @@
     {
       "source": "bitbake",
       "severity": "info",
-      "message": "Installed into pkgdata-sysroot: ['gcc-runtime', 'bzip2', 'glibc', 'zlib', 'libgcc', 'opkg-utils', 'linux-libc-headers']",
-      "unix_ms": 1788841004951,
-      "recipe": "boost",
+      "message": "Installed into pkgdata-sysroot: ['gcc-runtime', 'glibc', 'function2', 'fmt', 'liburing', 'libgcc', 'linux-libc-headers']",
+      "unix_ms": 1788842602288,
+      "recipe": "stdplus",
       "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "debian: renaming libstdplus-io_uring to libstdplus-io-uring0",
+      "unix_ms": 1788842604063,
+      "recipe": "stdplus",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "debian: renaming libstdplus-dl to libstdplus-dl0",
+      "unix_ms": 1788842604063,
+      "recipe": "stdplus",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "debian: renaming libstdplus to libstdplus0",
+      "unix_ms": 1788842604166,
+      "recipe": "stdplus",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842605268,
+      "recipe": "stdplus",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-package/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-package/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842605268,
+      "recipe": "stdplus",
+      "task": "do_package",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842607101,
+      "recipe": "stdplus",
+      "task": "do_packagedata",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-packagedata/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-packagedata/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842607137,
+      "recipe": "stdplus",
+      "task": "do_packagedata",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
+      "unix_ms": 1788842607623,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788842607725,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'binutils-cross-arm', 'libtool-native', 'm4-native', 'texinfo-dummy-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'pseudo-native', 'attr-native', 'sqlite3-native']",
+      "unix_ms": 1788842607947,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: libstdplus-io_uring",
+      "unix_ms": 1788842607947,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "QA Issue: libstdplus-io_uring doesn't match the [a-z0-9.+-]+ regex [pkgname]",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/libstdplus-io_uring/usr/lib/libstdplus-io_uring.so.0.1",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/libstdplus-io_uring/usr/lib/libstdplus-io_uring.so.0.1",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: stdplus",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: stdplus-doc",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: stdplus-dev",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: libstdplus-dl",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/libstdplus-dl/usr/lib/libstdplus-dl.so.0.1",
+      "unix_ms": 1788842607948,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/libstdplus-dl/usr/lib/libstdplus-dl.so.0.1",
+      "unix_ms": 1788842608027,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: stdplus-staticdev",
+      "unix_ms": 1788842608063,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: libstdplus",
+      "unix_ms": 1788842608063,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/libstdplus/usr/lib/libstdplus.so.0.1",
+      "unix_ms": 1788842608063,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/libstdplus/usr/lib/libstdplus.so.0.1",
+      "unix_ms": 1788842608130,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: stdplus-locale",
+      "unix_ms": 1788842608130,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: stdplus-dbg",
+      "unix_ms": 1788842608130,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/stdplus-dbg/usr/lib/.debug/libstdplus-io_uring.so.0.1",
+      "unix_ms": 1788842608130,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/stdplus-dbg/usr/lib/.debug/libstdplus.so.0.1",
+      "unix_ms": 1788842608130,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -p /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/stdplus-dbg/usr/lib/.debug/libstdplus-dl.so.0.1",
+      "unix_ms": 1788842608231,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/stdplus-dbg/usr/lib/.debug/libstdplus-dl.so.0.1",
+      "unix_ms": 1788842608231,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/stdplus-dbg/usr/lib/.debug/libstdplus.so.0.1",
+      "unix_ms": 1788842608231,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "arm-openbmc-linux-gnueabi-objdump -tw /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/packages-split/stdplus-dbg/usr/lib/.debug/libstdplus-io_uring.so.0.1",
+      "unix_ms": 1788842608331,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Checking Package: stdplus-src",
+      "unix_ms": 1788842608431,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842608533,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-package_qa/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-package_qa/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842608632,
+      "recipe": "stdplus",
+      "task": "do_package_qa",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/function2/function2_4.2.4.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-support/liburing/liburing_2.12.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/binutils/binutils-cross_2.46.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/fmt/fmt_12.2.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/qemu/qemu-native_11.0.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/meson/meson_1.11.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pkgconf/pkgconf_2.5.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/python/python3_3.14.6.bb:do_populate_sysroot']",
+      "unix_ms": 1788842609277,
+      "recipe": "stdplus",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788842609387,
+      "recipe": "stdplus",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['function2', 'liburing', 'gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'cmake-native', 'fmt', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'qemu-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'expat-native', 'gettext-native', 'glib-2.0-native', 'ncurses-native', 'util-linux-libuuid-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'libedit-native', 'make-native', 'meson-native', 'ninja-native', 'patch-native', 'perl-native', 'pkgconf-native', 'pseudo-native', 'python3-build-native', 'python3-flit-core-native', 'python3-installer-native', 'python3-packaging-native', 'python3-pyproject-hooks-native', 'python3-setuptools-native', 'python3-wheel-native', 'python3-native', 'bzip2-native', 'unzip-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libffi-native', 'libmpc-native', 'libpcre2-native', 'mpfr-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788842609387,
+      "recipe": "stdplus",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "QA checking do_populate_sysroot",
+      "unix_ms": 1788842609964,
+      "recipe": "stdplus",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842609964,
+      "recipe": "stdplus",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-populate_sysroot/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-populate_sysroot/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842609964,
+      "recipe": "stdplus",
+      "task": "do_populate_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842611001,
+      "recipe": "stdplus",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-create_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-create_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842611103,
+      "recipe": "stdplus",
+      "task": "do_create_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Using umask 2 (not 22) for sstate packaging",
+      "unix_ms": 1788842612041,
+      "recipe": "stdplus",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Removing hardcoded paths from sstate package: 'find /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-create_package_spdx/ \\( -name \"*.la\" -o -name \"*-config\" -o -name \"*_config\" -o -name \"postinst-*\" \\) -type f | xargs grep -l -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native' -e '/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools' | tee /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/sstate-build-create_package_spdx/fixmepath | xargs --no-run-if-empty sed -i -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot-native:FIXMESTAGINGDIRHOST:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/stdplus/0.1+git/recipe-sysroot:FIXMESTAGINGDIRTARGET:g' -e 's:/home/bspguy-dev/src/build-openbmc-romulus/tmp/hosttools:FIXME_HOSTTOOLS_DIR:g''",
+      "unix_ms": 1788842612041,
+      "recipe": "stdplus",
+      "task": "do_create_package_spdx",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-test/catch2/catch2_3.15.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/cmake/cmake-native_4.4.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
+      "unix_ms": 1788842612469,
+      "recipe": "cli11",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: ['catch2', 'glibc', 'binutils-cross-arm', 'cmake-native', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'm4-native', 'linux-libc-headers', 'openssl-native', 'ncurses-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'make-native', 'ninja-native', 'perl-native', 'pseudo-native', 'bzip2-native', 'xz-native', 'zstd-native', 'gdbm-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788842613233,
+      "recipe": "cli11",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'libtool-native', 'texinfo-dummy-native', 'attr-native']",
+      "unix_ms": 1788842613234,
+      "recipe": "cli11",
+      "task": "do_prepare_recipe_sysroot",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta-openembedded/meta-oe/recipes-test/catch2/catch2_3.15.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/cmake/cmake-native_4.4.0.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/ninja/ninja_1.13.2.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
+      "unix_ms": 1788842613747,
+      "recipe": "cli11",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788842613747,
+      "recipe": "cli11",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['catch2', 'gettext-minimal-native', 'glibc', 'binutils-cross-arm', 'cmake-native', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'quilt-native', 'texinfo-dummy-native', 'linux-libc-headers', 'openssl-native', 'ncurses-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'make-native', 'ninja-native', 'patch-native', 'perl-native', 'pseudo-native', 'bzip2-native', 'xz-native', 'zstd-native', 'attr-native', 'gdbm-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 're2c-native', 'sqlite3-native']",
+      "unix_ms": 1788842613747,
+      "recipe": "cli11",
+      "task": "do_configure",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "VERBOSE=1 cmake --build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/cli11/2.6.1/build --target all --",
+      "unix_ms": 1788842615712,
+      "recipe": "cli11",
+      "task": "do_compile",
       "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
       "build": null
     }

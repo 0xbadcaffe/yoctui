@@ -1,23 +1,8 @@
 # Current Task
 
-**ID:** DAEMON-JOB-IDENTITY-001
-**Title:** Keep daemon job identities unique across supervisors and recovered history
+**ID:** OPENBMC-LIVE-001
+**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
 **Status:** IN_PROGRESS
-
-The v0.1.76 restart recovered failed jobs 1 and 2, then the new BitBake build
-reused ID 1 and replaced its history. Independent supervisor counters also
-collide across operation types. Introduce one checked shared allocator for
-non-Raw daemon jobs, seeded beyond recovered IDs and disjoint from Raw's
-namespace. Fail closed before spawning work on exhaustion. Cover recovery,
-cross-supervisor identity and exact cancellation with isolated process/bridge
-tests. Preserve the running real image; no restart solely for deployment.
-
-Verification: cargo test -p yoctui daemon_job_identity; baseline workspace
-tests, Clippy, fmt, bridge tests, docs and roadmap. Update architecture/UI/
-protocol, registry, implementation status and OpenBMC evidence. After the fix,
-return to OPENBMC-LIVE-001 and investigate remaining observed UI discrepancies.
-
-## OpenBMC live handoff
 
 Continue the fifth `obmc-phosphor-image` attempt through the private Yoctui
 daemon. Inspect actual task transitions, logs, terminal outcome, packages and
@@ -47,13 +32,30 @@ profiles and no incremental cache alongside OpenBMC to retain host headroom.
 - Current evidence: artifacts/live-openbmc/romulus/image-build-v76-recovery-20260908.json
 
 The image was submitted through `yoctui daemon build obmc-phosphor-image` after
-initial metadata readiness, and Accepted. Last verified counters were 2854/6812;
-LLVM native compilation and Boost installation were running. Root had about
+initial metadata readiness, and Accepted. Last verified counters were 2988/6812;
+the image remains running with no new recorded error. Root had about
 35.6 GiB free at the fresh attach; monitor disk and available memory. OpenBMC-only
 local.conf limits BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, verified before
 submission. rm_work is enabled, excluding the image work directory for rootfs
 inspection. Scheduling stops at 15 GiB and halts at 8 GiB. The normal installed
 release remains v0.1.64; do not overwrite it merely to run this validation.
+
+## Completed job identity repair
+
+DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78. Every non-Raw supervisor constructor
+requires a shared checked allocator seeded beyond retained IDs. Raw's namespace
+and live ownership maps are unchanged. The initial QA/Security test reproduced
+JobId(1) in both owners; six focused regressions now pass, including real private
+daemon recovery retaining old jobs 1/2 while QA/Security get 3/4, and exact-owner
+cancellation between two fake BitBake bridges. All 1,556 workspace tests, 49
+bridge tests, strict Clippy, formatting, docs, rasters and roadmap pass.
+
+The tested v0.1.78 binary is preserved at
+/home/bspguy-dev/.local/state/yoctui-v78-validated.RaKSXe/yoctui, SHA-256
+185d14449e85f0397c80c53ce1ed5f63ec04c7282c57ab5aa08ffa6d5c9740fb.
+It has not replaced the running v0.1.76 daemon. Do not interrupt the image solely
+for deployment, and avoid unrelated job submissions on the old daemon while
+the image runs. Read-only attach and metadata inspection remain available.
 
 ## Completed counter repair
 

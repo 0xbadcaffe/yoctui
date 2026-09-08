@@ -48,17 +48,17 @@ pub enum DaemonQaEvent {
 }
 
 pub struct DaemonQaSupervisor {
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonQaEvent>,
     rx: mpsc::UnboundedReceiver<DaemonQaEvent>,
 }
 
-impl Default for DaemonQaSupervisor {
-    fn default() -> Self {
+impl DaemonQaSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next_job_id: 1,
+            job_ids,
             active: HashMap::new(),
             tx,
             rx,
@@ -95,8 +95,7 @@ impl DaemonQaSupervisor {
             report_roots.into_iter().map(Into::into).collect(),
         )
         .map_err(|error| error.to_string())?;
-        let job_id = JobId(self.next_job_id);
-        self.next_job_id = self.next_job_id.saturating_add(1);
+        let job_id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(session_id, cancel_tx);
         let tx = self.tx.clone();
@@ -189,17 +188,17 @@ pub enum DaemonQaReportEvent {
 }
 
 pub struct DaemonQaReportSupervisor {
-    next_job_id: u64,
+    job_ids: crate::daemon_job_ids::DaemonJobIds,
     active: HashMap<u64, mpsc::UnboundedSender<()>>,
     tx: mpsc::UnboundedSender<DaemonQaReportEvent>,
     rx: mpsc::UnboundedReceiver<DaemonQaReportEvent>,
 }
 
-impl Default for DaemonQaReportSupervisor {
-    fn default() -> Self {
+impl DaemonQaReportSupervisor {
+    pub fn new(job_ids: crate::daemon_job_ids::DaemonJobIds) -> Self {
         let (tx, rx) = mpsc::unbounded_channel();
         Self {
-            next_job_id: 1,
+            job_ids,
             active: HashMap::new(),
             tx,
             rx,
@@ -244,8 +243,7 @@ impl DaemonQaReportSupervisor {
             known_checks: vec![producer],
             known_scopes: vec![scope],
         };
-        let job_id = JobId(self.next_job_id);
-        self.next_job_id = self.next_job_id.saturating_add(1);
+        let job_id = self.job_ids.allocate().map_err(str::to_owned)?;
         let (cancel_tx, mut cancel_rx) = mpsc::unbounded_channel();
         self.active.insert(generation, cancel_tx);
         let tx = self.tx.clone();
@@ -367,7 +365,7 @@ mod tests {
 
     #[test]
     fn client_runtime_qa_task_runner_rejects_invalid_request() {
-        let mut supervisor = DaemonQaSupervisor::default();
+        let mut supervisor = DaemonQaSupervisor::new(Default::default());
         let result = supervisor.start(
             0,
             0,
@@ -383,7 +381,7 @@ mod tests {
 
     #[test]
     fn client_runtime_qa_report_rejects_invalid_generation() {
-        let mut supervisor = DaemonQaReportSupervisor::default();
+        let mut supervisor = DaemonQaReportSupervisor::new(Default::default());
         assert!(
             supervisor
                 .start(0, "/build".into(), vec!["/tmp/report.json".into()])

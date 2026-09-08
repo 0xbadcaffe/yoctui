@@ -370,6 +370,21 @@ this also permits cross-operation collisions. DAEMON-JOB-IDENTITY-001 tracks
 checked shared allocation and isolated recovery/cancellation regression tests.
 The current image will not be interrupted solely to deploy that correction.
 
+The v0.1.78 candidate now requires a shared checked allocator at construction
+for every non-Raw supervisor, seeded beyond retained IDs. The initial QA/
+Security test reproduced two JobId(1) values. Six focused tests now pass:
+cross-owner allocation, concurrent clones, namespace/exhaustion, persisted
+history reduction, two isolated fake-bridge cancellation owners, and a real
+private-daemon test that retains recovered jobs 1/2 while new QA/Security scans
+receive IDs 3/4. The last test clears inherited environment/configuration and
+uses only its private report fixture. All 1,556 workspace tests, 49 bridge tests,
+strict Clippy, formatting, documentation, rasters and roadmap checks pass.
+DAEMON-JOB-IDENTITY-001 is DONE. This is not a live image completion claim or
+a deployment to the running daemon, which still uses the preserved v0.1.76.
+The tested v0.1.78 binary is preserved at
+`/home/bspguy-dev/.local/state/yoctui-v78-validated.RaKSXe/yoctui`, SHA-256
+`185d14449e85f0397c80c53ce1ed5f63ec04c7282c57ab5aa08ffa6d5c9740fb`.
+
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.
 Start the image through Yoctui, not a separate unobserved BitBake invocation.

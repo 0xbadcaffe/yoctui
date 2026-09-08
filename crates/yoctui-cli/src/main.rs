@@ -134,6 +134,8 @@ mod daemon_compatibility;
 #[cfg(unix)]
 mod daemon_devtool;
 #[cfg(unix)]
+mod daemon_job_ids;
+#[cfg(unix)]
 mod daemon_maintenance;
 #[cfg(unix)]
 mod daemon_metadata;
@@ -2682,24 +2684,27 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         .unwrap_or(snapshot);
     let daemon_journal = DaemonSnapshotJournal::new(snapshot, DaemonSnapshotLimits::default())?;
     let mut daemon_journal = daemon_journal;
-    let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::default();
+    let job_ids = daemon_job_ids::DaemonJobIds::from_snapshot(daemon_journal.snapshot());
+    let mut devtool_supervisor = daemon_devtool::DaemonDevtoolSupervisor::new(job_ids.clone());
     devtool_supervisor.replace_compatibility(daemon_state.compatibility.clone())?;
     let mut raw_supervisor = daemon_raw::DaemonRawSupervisor::default();
     raw_supervisor.replace_compatibility(daemon_state.compatibility.clone())?;
     raw_supervisor.restore_snapshot(daemon_journal.snapshot())?;
-    let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::default();
+    let mut bitbake_supervisor = daemon_bitbake::DaemonBitBakeSupervisor::new(job_ids.clone());
     bitbake_supervisor
         .replace_compatibility(daemon_state.compatibility.clone())
         .map_err(anyhow::Error::msg)?;
-    let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::default();
-    let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::default();
-    let mut wic_supervisor = daemon_wic::DaemonWicSupervisor::default();
-    let mut test_supervisor = daemon_test::DaemonTestSupervisor::default();
-    let mut qa_supervisor = daemon_qa::DaemonQaSupervisor::default();
-    let mut qa_report_supervisor = daemon_qa::DaemonQaReportSupervisor::default();
-    let mut security_supervisor = daemon_security::DaemonSecuritySupervisor::default();
-    let mut security_mapper_supervisor = daemon_security::DaemonSecurityMapperSupervisor::default();
-    let mut maintenance_supervisor = daemon_maintenance::DaemonMaintenanceSupervisor::default();
+    let mut sdk_supervisor = daemon_sdk::DaemonSdkSupervisor::new(job_ids.clone());
+    let mut qemu_supervisor = daemon_qemu::DaemonQemuSupervisor::new(job_ids.clone());
+    let mut wic_supervisor = daemon_wic::DaemonWicSupervisor::new(job_ids.clone());
+    let mut test_supervisor = daemon_test::DaemonTestSupervisor::new(job_ids.clone());
+    let mut qa_supervisor = daemon_qa::DaemonQaSupervisor::new(job_ids.clone());
+    let mut qa_report_supervisor = daemon_qa::DaemonQaReportSupervisor::new(job_ids.clone());
+    let mut security_supervisor = daemon_security::DaemonSecuritySupervisor::new(job_ids.clone());
+    let mut security_mapper_supervisor =
+        daemon_security::DaemonSecurityMapperSupervisor::new(job_ids.clone());
+    let mut maintenance_supervisor =
+        daemon_maintenance::DaemonMaintenanceSupervisor::new(job_ids.clone());
     let mut pty_supervisor = daemon_pty::DaemonPtySupervisor::default();
     write_persisted_state(
         &persist_paths,
@@ -15338,6 +15343,23 @@ fn interactive_frame_interval(configured_refresh: Duration) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn daemon_job_identity_is_unique_across_report_supervisors() {
+        let job_ids = daemon_job_ids::DaemonJobIds::default();
+        let mut qa = daemon_qa::DaemonQaReportSupervisor::new(job_ids.clone());
+        let mut security = daemon_security::DaemonSecuritySupervisor::new(job_ids);
+        let paths = vec!["/yoctui-fixture-missing/report.json".to_owned()];
+        let qa_job = qa
+            .start(1, "/yoctui-fixture-missing".into(), paths.clone())
+            .unwrap();
+        let security_job = security.start(1, paths).unwrap();
+        assert_ne!(
+            qa_job, security_job,
+            "different owners cannot share a job ID"
+        );
+    }
 
     #[test]
     fn tokio_runtime_two_workers_isolate_a_bounded_blocking_poll() {
