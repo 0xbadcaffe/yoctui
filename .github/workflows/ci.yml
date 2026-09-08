@@ -15,6 +15,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
@@ -25,13 +26,18 @@ jobs:
         run: ./scripts/check-ci.sh
   test:
     runs-on: ubuntu-latest
+    container: ubuntu:26.04
     steps:
+      - name: Install pinned raster host prerequisites
+        run: |
+          apt-get update
+          apt-get install -y git curl build-essential pkg-config python3-dev python3-venv libcairo2-dev fontconfig fonts-dejavu-core
+          python3 -m venv /opt/yoctui-ci
+          echo /opt/yoctui-ci/bin >> "$GITHUB_PATH"
       - uses: actions/checkout@v4
-        with: { fetch-depth: 2 }
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
-      - uses: actions/setup-python@v5
-        with: { python-version: '3.12' }
-      - run: python3 -m pip install ruff mypy pytest pytest-cov
+      - run: python3 -m pip install ruff mypy pytest pytest-cov pycairo==1.27.0
       - run: python3 -m unittest scripts/test_version_bump.py
       - run: python3 scripts/check-version-bump.py
       - run: cargo fmt --all --check
@@ -42,16 +48,17 @@ jobs:
       - run: ./scripts/test-cli.sh
       - run: ./scripts/check-docs.sh
       - run: python3 -m unittest discover bridge/tests
-      - run: ruff check bridge
-      - run: ruff format --check bridge
-      - run: mypy bridge
-      - run: pytest bridge/tests --cov=bridge --cov-report=term-missing --cov-fail-under=75
+      - run: ruff check crates/yoctui-bitbake/bridge bridge/tests
+      - run: ruff format --check crates/yoctui-bitbake/bridge bridge/tests
+      - run: mypy crates/yoctui-bitbake/bridge bridge/tests
+      - run: pytest bridge/tests --cov=crates/yoctui-bitbake/bridge --cov-report=term-missing --cov-fail-under=75
   release-quality:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
       - name: Build release binary
         run: cargo build --locked -p yoctui
@@ -79,6 +86,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
@@ -102,6 +110,7 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
@@ -138,6 +147,7 @@ jobs:
       YOCTUI_PERF_POKY_ROOT: ${{ vars.YOCTUI_PERF_POKY_ROOT }}
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
       - name: Build release performance binary
         run: cargo build --release --locked -p yoctui --all-features
@@ -178,6 +188,7 @@ jobs:
         role: [older, latest]
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }

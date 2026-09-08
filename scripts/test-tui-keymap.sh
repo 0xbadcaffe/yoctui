@@ -6,8 +6,14 @@ cargo build -p yoctui >/dev/null
 python3 - "$repo_root" <<'PY'
 import os, pty, select, struct, subprocess, sys, termios, fcntl, time
 root = sys.argv[1]
+sys.path.insert(0, os.path.join(root, 'scripts'))
+from pty_acceptance import TerminalAcceptance
 with __import__('tempfile').TemporaryDirectory(prefix='yoctui-keymap-', dir='/tmp') as tmp:
     isolated_env = os.environ.copy()
+    isolated_env['TERM'] = 'xterm-256color'
+    for key in list(isolated_env):
+        if key.startswith('YOCTUI_') or key in {'BUILDDIR', 'BBPATH', 'BBSERVER', 'TEMPLATECONF'}:
+            isolated_env.pop(key)
     for variable, directory in (
         ('XDG_CONFIG_HOME', 'config'),
         ('XDG_STATE_HOME', 'state'),
@@ -24,37 +30,22 @@ with __import__('tempfile').TemporaryDirectory(prefix='yoctui-keymap-', dir='/tm
     proc = subprocess.Popen([os.path.join(root, 'target/debug/yoctui'), '--backend', 'process', '--no-color'], stdin=slave, stdout=slave, stderr=slave, preexec_fn=become_session_leader, env=isolated_env)
     os.close(slave)
     raw = bytearray()
-    deadline = time.monotonic() + 8
-    while time.monotonic() < deadline and b'yoctui' not in raw.lower():
-        ready, _, _ = select.select([master], [], [], .2)
-        if ready:
-            try: raw.extend(os.read(master, 65536))
-            except OSError: break
-    os.write(master, b'\x1b')
-    time.sleep(.2)
+    terminal = TerminalAcceptance(master, proc, raw, 100, 30)
+    terminal.dismiss_onboarding()
     keys = b'?\x1b[15~\x10/\t\x1b[Z\x1b q\x03\x1b[A\x1b[Bjk\r\x7f\x1b[C\x1b[DleoRr.gmdfFnNw sTBC L12cQxDiv\x13\x02'
     os.write(master, keys)
     matrix_deadline = time.monotonic() + 1
     while time.monotonic() < matrix_deadline:
-        ready, _, _ = select.select([master], [], [], .1)
-        if ready:
-            try: raw.extend(os.read(master, 65536))
-            except OSError: break
+        terminal.read()
     # Resolve a possible terminal-prefix wait, then unwind nested modal layers
     # with distinct Escape events so they cannot be decoded as Alt+q.
     os.write(master, b'\x02')
     for _ in range(4):
         os.write(master, b'\x1b')
-        time.sleep(.15)
-    os.write(master, b'q')
-    try: proc.wait(timeout=3)
-    except subprocess.TimeoutExpired:
-        proc.kill(); proc.wait(timeout=2)
-    while True:
-        ready, _, _ = select.select([master], [], [], .1)
-        if not ready: break
-        try: raw.extend(os.read(master, 65536))
-        except OSError: break
+        deadline = time.monotonic() + .15
+        while time.monotonic() < deadline:
+            terminal.read()
+    terminal.finish()
     os.close(master)
     if (b'yoctui' not in raw.lower() or b'\x1b[?1049h' not in raw
             or b'\x1b[?1049l' not in raw or b'\xef\xbf\xbd' in raw

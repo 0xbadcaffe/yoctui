@@ -1,5 +1,19 @@
 # Testing
 
+## Hosted CI environment
+
+Evidence validation jobs fetch full Git history so retained source commits can
+be checked for ancestry. The documentation/test job uses Ubuntu 26.04 with
+Cairo 1.18.4, PyCairo 1.27.0 and the manifest-pinned DejaVu fonts; both screenshot
+galleries must still reproduce byte-for-byte. Bridge lint and coverage target
+the bundled production bridge plus its tests.
+
+The real PTY startup/keymap gates wait for the rendered onboarding footer,
+dismiss it, then observe the workbench. They keep draining output during exit
+and answer the displayed quit confirmation before requiring successful exit
+and terminal restoration. The initial window-title escape sequence is not
+treated as a rendered frame.
+
 ## Environment path setup regression
 
 `cargo test --workspace environment_setup` covers the typed draft, Unicode and

@@ -25,14 +25,14 @@
 </p>
 <!-- /yoctui-header -->
 
-# Yoctui
+# Yoctui v0.1.93
 
 Yoctui is a terminal application for Yocto and BitBake development. It runs
 builds, shows tasks and logs, edits recipes and sources, inspects generated
 images, and manages development terminals.
 
-This README describes the source checkout. The crates.io release may be older;
-check `yoctui --version` and the [release status](docs/implementation-status.md).
+Current source version: **0.1.93**. Check the crates.io badge above for the
+published version and `yoctui --version` for your installed version.
 
 <p align="center">
   <a href="docs/media/screenshots/01-active-build-tasks.png"><img src="docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a>

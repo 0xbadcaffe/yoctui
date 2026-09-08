@@ -1,8 +1,27 @@
 # Current Task
 
-**ID:** RELEASE-IPC-GATE-001
-**Title:** Verify bounded IPC ingress through the explicit supervisor constructor
+**ID:** RELEASE-CI-093
+**Title:** Prepare v0.1.93 README and repair hosted release CI
 **Status:** DONE
+
+User override: update the front README version, repair GitHub CI, commit/push
+and publish the current build to crates.io. CI run 34247832320 identifies
+shallow checkout ancestry failures, missing pinned raster dependencies, and
+PTY startup/exit synchronization. Relevant files: README.md,
+.github/workflows/ci.yml, scripts/check-ci.sh, scripts/test-tui-{pty,keymap}.sh,
+version/golden/raster artifacts and release documentation. The CI contract,
+both real PTY gates, docs, README/version/roadmap checks and package graph
+verification passed, as did 1600 workspace tests/doc-tests (four existing
+ignored), strict Clippy, fmt and 52 bridge tests with 78.35% coverage. An actual
+Ubuntu 26.04 container reproduced all sixteen PNGs exactly. All 710 registry
+tasks are DONE. Delivery now requires pushing this verified candidate,
+observing hosted CI and publishing the six public crates. Keep the four
+user-owned OpenBMC retry captures untracked.
+
+The v0.1.92 clean-worktree completion run was stopped during compilation of
+the optimized UI benchmark to prioritize this request. It has not passed.
+
+## Previous completed task and retained evidence
 
 All 709 registry tasks are DONE. README-SCREENSHOTS-001 is verified in v0.1.91
 and pushed at 4b60d22 before the recoverable fixture-readiness work was
@@ -50,7 +69,7 @@ during acceptance. Logs /tmp/yoctui-v91-{readiness-same-binary,release-flood,
 memory-preflight}.log; failed-first readiness log
 /tmp/yoctui-v91-readiness-failed-first.log. Rebase version/governance artifacts
 to v0.1.92 without changing measured source or relabeling the v91 observations.
-Canonical memory/regression promotion and the full baseline remain pending.
+Canonical memory/regression promotion and the full baseline passed in v0.1.92.
 
 Required checks are complete: ten harness tests, actual IPC backpressure,
 performance CI fast, retained/dynamic bounded memory, workspace tests, strict

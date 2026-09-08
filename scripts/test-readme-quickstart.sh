@@ -17,6 +17,8 @@ import struct
 import tomllib
 
 readme = Path("README.md").read_text(encoding="utf-8")
+version = tomllib.loads(Path("Cargo.toml").read_text())["workspace"]["package"]["version"]
+assert f"# Yoctui v{version}\n" in readme, "README source version must match Cargo"
 header = readme.split("<!-- /yoctui-header -->", 1)[0]
 assert "<!-- yoctui-header -->" in header, "Missing branded README header"
 

@@ -26,7 +26,9 @@ required_workflow = (
     "pull_request:",
     "schedule:",
     "workflow_dispatch:",
-    "fetch-depth: 2",
+    "fetch-depth: 0",
+    "container: ubuntu:26.04",
+    "pycairo==1.27.0",
     "python3 -m unittest scripts/test_version_bump.py",
     "python3 scripts/check-version-bump.py",
     "compatibility-fast:",
@@ -45,6 +47,14 @@ required_workflow = (
 for value in required_workflow:
     if value not in workflow:
         raise SystemExit(f"CI contract: workflow lacks {value!r}")
+
+# Every job validating retained evidence needs the recorded source ancestors.
+checkouts = workflow.split("- uses: actions/checkout@v4\n")[1:]
+if not checkouts or any(
+    not block.startswith("        with: { fetch-depth: 0 }\n")
+    for block in checkouts
+):
+    raise SystemExit("CI contract: evidence checkouts must fetch complete history")
 
 live_job = workflow.split("  compatibility-live:\n", 1)[1]
 if "pull_request" in live_job.split("    steps:\n", 1)[0]:

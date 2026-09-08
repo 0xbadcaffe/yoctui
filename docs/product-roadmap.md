@@ -4,6 +4,12 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+RELEASE-CI-093 completes the user-requested v0.1.93 README/version update,
+hosted CI repair and publication-package verification. All 710 tasks are DONE;
+the candidate is ready for push, hosted CI observation and registry publication.
+The earlier completion run was stopped during its optimized UI benchmark;
+the final completion gate remains pending.
+
 All 709 registry tasks are DONE. RELEASE-IPC-GATE-001 is complete after its
 two atomic follow-ups: v0.1.90 RELEASE-IPC-SOURCE-001 repaired the obsolete
 fail-closed constructor assertion, and v0.1.92 RELEASE-FIXTURE-READY-001 added

@@ -8,10 +8,16 @@ python3 - "$repo_root" <<'PY'
 import os, pty, select, struct, subprocess, sys, tempfile, time, termios, fcntl
 
 root = sys.argv[1]
+sys.path.insert(0, os.path.join(root, "scripts"))
+from pty_acceptance import TerminalAcceptance
 artifact_root = os.path.join(root, "artifacts", "release-quality")
 os.makedirs(artifact_root, exist_ok=True)
 with tempfile.TemporaryDirectory(prefix="yoctui-pty-", dir="/tmp") as build:
     isolated_env = os.environ.copy()
+    isolated_env["TERM"] = "xterm-256color"
+    for key in list(isolated_env):
+        if key.startswith("YOCTUI_") or key in {"BUILDDIR", "BBPATH", "BBSERVER", "TEMPLATECONF"}:
+            isolated_env.pop(key)
     for variable, directory in (
         ("XDG_CONFIG_HOME", "config"),
         ("XDG_STATE_HOME", "state"),
@@ -28,25 +34,14 @@ with tempfile.TemporaryDirectory(prefix="yoctui-pty-", dir="/tmp") as build:
     proc = subprocess.Popen([os.path.join(root, "target/debug/yoctui"), "--backend", "process", "--no-color"], stdin=slave, stdout=slave, stderr=slave, preexec_fn=become_session_leader, env=isolated_env)
     os.close(slave)
     raw = bytearray()
-    deadline = time.monotonic() + 8
-    while time.monotonic() < deadline:
-        ready, _, _ = select.select([master], [], [], .2)
-        if ready:
-            try: raw.extend(os.read(master, 65536))
-            except OSError: break
-            if b"yoctui" in raw.lower(): break
-    os.write(master, b"\x1b")
-    time.sleep(.2)
-    os.write(master, b"q")
-    try: proc.wait(timeout=3)
-    except subprocess.TimeoutExpired:
-        proc.kill()
-        proc.wait(timeout=2)
-    while True:
-        ready, _, _ = select.select([master], [], [], .1)
-        if not ready: break
-        try: raw.extend(os.read(master, 65536))
-        except OSError: break
+    terminal = TerminalAcceptance(master, proc, raw, 80, 24)
+    try:
+        terminal.dismiss_onboarding()
+        terminal.finish()
+    finally:
+        if proc.poll() is None:
+            proc.kill()
+            proc.wait(timeout=2)
     os.close(master)
     text = bytes(raw).decode("utf-8", "replace")
     if b"yoctui" not in raw.lower() or proc.returncode != 0:

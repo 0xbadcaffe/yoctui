@@ -1,5 +1,20 @@
 # Yoctui Implementation Status
 
+v0.1.93 RELEASE-CI-093 is DONE: the README version, hosted CI prerequisites and
+PTY synchronization are repaired and locally verified. Run 34247832320 failed because shallow
+checkouts omit retained evidence ancestors, the documentation host lacks the
+pinned Cairo stack, and the PTY harness races startup and does not drain output
+while waiting for exit. The CI jobs now fetch full history; the test container
+supplies Ubuntu 26.04/Cairo 1.18.4/PyCairo 1.27.0 and verified fonts. Both real
+PTY gates, all 1600 workspace tests/doc-tests (four existing ignored), strict
+Clippy, fmt, 52 bridge tests (78.35% production-source coverage), Ruff/mypy,
+docs, README/version/CI contracts and the six-crate package graph/CLI/bridge
+smoke pass. All sixteen PNGs reproduce exactly in the actual CI container.
+All 710 registry tasks are DONE; hosted CI and publication follow the push.
+The earlier v0.1.92 completion run was stopped during
+its optimized UI benchmark to prioritize this request; no completion pass is
+claimed. Publication follows package verification and hosted CI.
+
 v0.1.92 completes RELEASE-FIXTURE-READY-001 and its parent
 RELEASE-IPC-GATE-001; all 709 registry tasks are DONE. The event-flood harness
 now waits boundedly and read-only for the exact daemon/workspace metadata

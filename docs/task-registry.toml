@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "RELEASE-CI-093"
+milestone = "M57"
+title = "Prepare v0.1.93 README and repair hosted release CI"
+status = "DONE"
+priority = 1500
+required = true
+depends_on = ["README-SCREENSHOTS-001", "RELEASE-IPC-GATE-001"]
+verify = ["./scripts/check-ci.sh", "./scripts/test-tui-pty.sh", "./scripts/test-tui-keymap.sh", "./scripts/check-docs.sh", "./scripts/verify-cratesio-package.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.93 prepared: README source version matches Cargo and all versioned cell/raster fixtures. Run 34247832320 diagnosed missing ancestry from shallow checkouts, absent PyCairo and PTY startup/exit synchronization. All evidence jobs now fetch complete history; the test job uses Ubuntu 26.04, Cairo 1.18.4 and PyCairo 1.27.0, with both galleries reproduced byte-for-byte in an actual container. PTY startup waits for the rendered onboarding/workbench and drains output through quit confirmation; both real PTY gates pass. Bridge lint/coverage targets bundled production source: 52 tests, 78.35% coverage, Ruff and mypy pass. All 1600 workspace tests/doc-tests (four existing ignored), strict Clippy, fmt, docs, README/version/CI contracts, roadmap and the six-crate archive compile/version/help/bundled-bridge verification pass. No runtime source or acceptance threshold changed. Hosted CI and registry publication are the remaining delivery operations after pushing this candidate; no full completion gate success is claimed."
+
+[[task]]
 id = "README-HEADER-001"
 milestone = "M57"
 title = "Present the supplied Yoctui wordmark with accurate clickable README badges"
