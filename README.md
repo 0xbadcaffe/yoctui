@@ -6,7 +6,7 @@
 <p align="center">
   <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI workflow status"></a>
   <a href="docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
-  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square" alt="Latest published crates.io version"></a>
+  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.97" alt="Latest published crates.io version"></a>
   <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
   <br>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
@@ -25,14 +25,11 @@
 </p>
 <!-- /yoctui-header -->
 
-# Yoctui v0.1.97
+# Yoctui
 
 Yoctui is a terminal application for Yocto and BitBake development. It runs
 builds, shows tasks and logs, edits recipes and sources, inspects generated
 images, and manages development terminals.
-
-Current source version: **0.1.97**. Check the crates.io badge above for the
-published version and `yoctui --version` for your installed version.
 
 <p align="center">
   <a href="docs/media/screenshots/01-active-build-tasks.png"><img src="docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a>

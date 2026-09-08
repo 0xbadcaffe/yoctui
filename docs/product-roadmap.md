@@ -4,6 +4,13 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+README-VERSION-BADGE-001 follows the user's correction: the README title is
+plain Yoctui and the release version lives only in the registry-backed badge.
+v0.1.97 passed hosted run 34258366108 and is published across all six crates;
+v0.1.98 is the documentation-only follow-up, not a new registry release.
+README, docs, version, fmt and deterministic raster checks pass; all 715 tasks
+are DONE.
+
 RELEASE-CI-097 pins the Python quality tools to the validated environment after
 the actual hosted tool-version drift. All 714 tasks are DONE; v0.1.97 is the
 candidate and hosted baseline/package verification gate publication.

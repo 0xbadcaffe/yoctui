@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+README-VERSION-BADGE-001 removes the README heading version and duplicate
+source-version paragraph, refreshing the dynamic crates.io badge URL instead.
+v0.1.97 is published: all four hosted jobs in run 34258366108 passed, all six
+locked package checks passed, and all six downloaded published archives match
+their verified checksums. The documentation-only follow-up uses source version
+v0.1.98 under the per-commit policy; it does not claim that version is published.
+The task is DONE: README, docs including CLI/headless/doctor checks, version,
+fmt and both deterministic raster sets pass. All 715 registry tasks are DONE.
+
 v0.1.97 RELEASE-CI-097 is DONE to align hosted Python quality tools
 with the validated release environment. Run 34257243104 passed all runtime,
 documentation and 52 Python tests, but floating Ruff 0.16.6 used different rules

@@ -1,8 +1,22 @@
 # Current Task
 
-**ID:** RELEASE-CI-097
-**Title:** Pin Python quality tools to the validated release environment
+**ID:** README-VERSION-BADGE-001
+**Title:** Keep the README version in the published-version badge only
 **Status:** DONE
+
+User correction: remove the version beside the Yoctui heading and refresh the
+stale crates.io badge. Remove the duplicate source-version paragraph, retain
+the registry-backed dynamic badge, and test the exact heading and badge URL.
+The previous v0.1.97 release passed all four jobs in run 34258366108 and all
+six locked publication archive checks. All six crates were published and their
+downloaded registry checksums matched the verified archives. This documentation
+commit requires a mechanical source-version bump to v0.1.98; the badge must
+continue to show the published release, not an unpublished checkout version.
+README, docs (including CLI/headless/doctor checks), roadmap, version, fmt and
+both deterministic raster sets pass. The live badge endpoint returns v0.1.97.
+All 715 tasks are DONE; application behavior is unchanged.
+
+## Previous release task
 
 Run 34257243104 passes all runtime, docs and 52 Python tests. Its floating
 Ruff 0.16.6 differs from the locally validated Ruff 0.15.22 and reports three

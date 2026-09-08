@@ -10,15 +10,15 @@ grep -Fq 'yoctui --backend bridge' README.md
 python3 - <<'PY'
 from pathlib import Path
 from html.parser import HTMLParser
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 import hashlib
 import re
 import struct
 import tomllib
 
 readme = Path("README.md").read_text(encoding="utf-8")
-version = tomllib.loads(Path("Cargo.toml").read_text())["workspace"]["package"]["version"]
-assert f"# Yoctui v{version}\n" in readme, "README source version must match Cargo"
+assert re.findall(r"^# (.+)$", readme, re.M) == ["Yoctui"], "README title must not contain a version"
+assert "Current source version:" not in readme, "Display the version in the crates.io badge only"
 header = readme.split("<!-- /yoctui-header -->", 1)[0]
 assert "<!-- yoctui-header -->" in header, "Missing branded README header"
 
@@ -56,7 +56,11 @@ for target in (
             slugs = {re.sub(r"[^\w -]", "", title.lower()).replace(" ", "-") for title in headings}
             assert parsed.fragment in slugs, f"Missing header anchor: {target}"
 assert any("/actions/workflows/ci.yml/badge.svg" in src for src in links.images)
-assert any("img.shields.io/crates/v/yoctui" in src for src in links.images)
+version_badges = [urlsplit(src) for src in links.images if urlsplit(src).netloc == "img.shields.io" and urlsplit(src).path == "/crates/v/yoctui"]
+assert len(version_badges) == 1, "Use one dynamic published-version badge"
+badge_query = parse_qs(version_badges[0].query)
+assert badge_query.get("cacheSeconds") == ["300"], "Limit published-version badge caching"
+assert re.fullmatch(r"\d+\.\d+\.\d+", badge_query.get("release", [""])[0]), "Provide a release cache-refresh key"
 assert any("rust-stable" in src for src in links.images)
 assert "codecov" not in header.lower(), "No configured Codecov integration"
 assert "discord" not in header.lower(), "No configured Discord invite"

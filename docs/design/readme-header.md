@@ -8,6 +8,11 @@ commands, screenshot evidence and compatibility qualifications remain intact.
 Badges and navigation are HTML links outside the image so they are clickable
 and can wrap on narrow displays. CI links to the real `ci.yml` workflow;
 crates.io uses a dynamic published-version badge, not the checkout version.
+The document title is exactly `Yoctui`, without an adjacent version or a
+duplicate source-version paragraph. The published version appears only in the
+crates.io badge. Its URL requests a 300-second cache lifetime and includes a
+release refresh key to invalidate an older GitHub image-proxy URL; that key
+does not override the version returned by crates.io.
 Coverage links to the documented verification gates without claiming an
 aggregate percentage or Codecov integration. Rust is labeled stable because
 there is no declared numeric MSRV. MIT, Linux and the operator guide are backed

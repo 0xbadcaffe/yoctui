@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "README-VERSION-BADGE-001"
+milestone = "M57"
+title = "Keep the README version in the published-version badge only"
+status = "DONE"
+priority = 1505
+required = true
+depends_on = ["RELEASE-CI-097"]
+verify = ["./scripts/test-readme-quickstart.sh", "./scripts/check-docs.sh", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "DONE: removed the heading version and duplicate source-version paragraph; refreshed the dynamic published-version badge URL and enforced the presentation contract. The live badge returns published v0.1.97. README, docs with CLI/headless/doctor checks, version, fmt, both deterministic raster sets and roadmap pass. Source v0.1.98 is the required per-commit bump; application behavior is unchanged."
+
+[[task]]
 id = "RELEASE-CI-097"
 milestone = "M57"
 title = "Pin Python quality tools to the validated release environment"
