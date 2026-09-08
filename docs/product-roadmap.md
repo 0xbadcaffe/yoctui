@@ -4,11 +4,18 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+v0.1.85 resolves all 40 renamed-package metadata gaps: the production image
+screen now reports 228 installed packages available, 81062873 bytes and 1778
+files. OPENBMC-PKGDATA-001 is DONE with four new regressions, all 1584 workspace
+tests/doc-tests, 281 UI tests, 52 bridge tests and full baseline verification.
+OPENBMC-ROOTFS-SOURCES-001 is current; its missing attached IMAGE_ROOTFS lookup
+still prevents complete image UI validation. No image rebuild was needed.
+
 v0.1.84 records successful real Romulus image completion: 6812/6812, job 1
 exit 0, generated flash/SquashFS artifacts, 228 packages and retained rootfs.
 New-daemon native/git lifecycle, recovered job IDs and frozen reattachment
 timing pass actual BitBake checks. Image UI inspection exposed two follow-ups:
-OPENBMC-PKGDATA-001 (current) resolves runtime-reverse package names;
+OPENBMC-PKGDATA-001 resolves runtime-reverse package names;
 OPENBMC-ROOTFS-SOURCES-001 supplies exact recipe metadata to attached clients.
 OPENBMC-LIVE-001 waits for both and their real UI rechecks. The single upstream
 render-group warning was investigated, not suppressed; no firmware boot or

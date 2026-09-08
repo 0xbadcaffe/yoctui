@@ -1,38 +1,46 @@
 # Current Task
 
-**ID:** OPENBMC-PKGDATA-001
-**Title:** Resolve installed package names through bounded Yocto runtime-reverse metadata
+**ID:** OPENBMC-ROOTFS-SOURCES-001
+**Title:** Acquire exact image rootfs sources for daemon-attached clients
 **Status:** IN_PROGRESS
 
-The real image SUCCEEDED through Yoctui: obmc-phosphor-image, Romulus,
-6812/6812, image job 1 exit 0. The v0.1.84 production package screen exposed
-40 missing package metadata records despite readable runtime-reverse mappings.
-For example libblkid1 maps to ../runtime/util-linux-libblkid. The adapter only
-tries runtime/<installed-name>. Register this separately from the attached
-client's missing recipe-scoped IMAGE_ROOTFS lookup (OPENBMC-ROOTFS-SOURCES-001).
-OPENBMC-LIVE-001 waits for both repairs and actual UI rechecks.
+OPENBMC-PKGDATA-001 is DONE in v0.1.85. Four new regressions, 13 focused rootfs
+tests, 281 UI tests, 1584 workspace tests/doc-tests, 52 bridge tests, strict
+Clippy, production build, fmt, docs, rasters, roadmap and version policy pass.
+All 17 golden diffs are version digits only. The actual production screen
+reports all 228 installed packages available, 81062873 bytes and 1778 files;
+all 40 missing metadata records are resolved. No daemon restart or rebuild.
+Captured tested candidate /home/bspguy-dev/.local/state/yoctui-v85-validated.YhRRZA/yoctui,
+SHA-256 cf19348c978d8e3810874d49cad4875aa5a1194bce0dd21871de1699f32bd9b0.
 
 ## Outcome and boundaries
 
-Resolve manifest package names using authoritative generated runtime-reverse
-metadata, retaining the installed identity and exact recipe/size/file fields.
-Accept only contained mappings to regular runtime files, with existing byte,
-line, time and cancellation bounds. Do not generally enable symlink traversal,
-guess names, double-count aliases, or hide missing/malformed metadata.
-Cover direct, renamed/scoped fields, conflict, missing/dangling/escaping/looped
-mappings and normal cancellation/bounds. Keep the current layout unchanged.
+The retained image rootfs exists, but attached clients instantiate ProcessBackend
+whose get_variable returns None. Recipe-scoped IMAGE_ROOTFS queries never reach
+initialized BitBake; manifest/pkgdata fallbacks mask part of the missing path.
+Bridge get_rootfs_sources already exists. Supply bounded exact-image source
+metadata through an appropriate daemon-owned read-only path. Bind recipe/image
+and request identity, current instance/generation/capability and workspace.
+Keep input responsive while metadata is acquired; preserve honest
+absent/cleaned, stale/disconnected, failed and timed-out states. Do not guess
+workdir paths, require local attach environment, mount images or rebuild.
 
-Files: crates/yoctui-bitbake/src/rootfs.rs and relevant adapter tests;
-docs/rootfs-composition.md, docs/architecture.md, docs/ui-spec.md,
-docs/testing/openbmc.md, registry, roadmap and implementation status.
+Update authoritative UI/architecture contracts before intentional behavior.
+Files include daemon protocol/CLI metadata and client routing, existing bridge
+API as needed, relevant app/model tests and docs/testing/openbmc.md.
+Cover normal exact-image sources, legacy/missing support, stale/replaced
+authority, malformed/absent/cleaned paths, query failure/cancellation/timeout,
+fake-process integration and production real rootfs/services screen recheck.
+Retain existing source/path containment and scan limits.
 
-Verification: focused failing-first rootfs tests; cargo test --workspace
---all-features; cargo clippy --workspace --all-targets --all-features -- -D warnings;
-cargo fmt --all --check; python3 -m pytest bridge/tests;
-./scripts/check-docs.sh; ./scripts/verify-roadmap.sh; production image UI recheck.
-Every commit bumps the patch version, goldens and six production rasters.
-Run all Cargo commands sequentially with one worker, dev/test debug=0,
-incremental disabled and RUST_TEST_THREADS=2.
+Verification: focused failed-first protocol/daemon/client tests; cargo test
+--workspace --all-features; cargo clippy --workspace --all-targets --all-features
+-- -D warnings; cargo fmt --all --check; python3 -m pytest bridge/tests;
+./scripts/check-docs.sh; ./scripts/verify-roadmap.sh; real rootfs UI recheck.
+Every commit bumps patch version, 17 goldens and six rasters. Run Cargo checks
+sequentially, one worker, dev/test debug=0, no incremental and RUST_TEST_THREADS=2.
+After this repair resume OPENBMC-LIVE-001, then verify-completion.sh; fresh
+source-bound real-Poky performance evidence is still required.
 
 ## Preserved live authority
 
@@ -60,9 +68,3 @@ warning was traced, not patched/suppressed; runtime impact is untested.
 No firmware boot or completion-gate success is claimed. Normal installed
 release stays v0.1.64. Preserve all Poky data and all four user-owned untracked
 retry-active-dashboard captures. No image rebuild is needed for metadata fixes.
-
-v0.1.84 registration baseline passes: 1,580 workspace tests/doc-tests,
-52 bridge tests, strict Clippy, fmt, docs, rasters, roadmap and version policy.
-All 17 golden diffs are version-only; no runtime source changes.
-After the two repairs, resume OPENBMC-LIVE-001 and the full completion gate,
-which still requires fresh source-bound real-Poky performance evidence.

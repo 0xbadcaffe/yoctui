@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.85  •  Project: openbmc  •  ✓ Completed  •  Target: obmc-phosphor-image  •  Machine: romulus Daemon: ✓ Connected/Local  •  BitBake: – Disconnected│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 2 / 2  |  Elapsed: 00:00:01  |  Workers: 0                                   │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Images · Rootfs composition─────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
+│▾ OVERVIEW                ││ 1   │  2 Rootfs packages  │  3   │  4   │  5   │  6    Tab switches                ││▾ PRIMARY FACTS                             │
+│  ▱ Dashboard             ││┌Rootfs packages · installed bytes───────────┐┌Exact composition table · 81062873 B┐││Rootfs composition                          │
+│  ▱ Insights              │││                                            ││Category   Pkgs  Exact bytes %      │││View: Rootfs packages                       │
+│▾ CONTENT                 │││                        ■ base 57.3%        ││base       181   46421904    57.26% │││State: partial · 1 limitation(s)            │
+│  ▱ Layers                │││                                            ││base/shell 10    16621413    20.50% │││Image: obmc-phosphor-image                  │
+│  ▱ Recipes               │││                        ■ base/shell 20.5%  ││libs       16    7208627     8.89%  │││Path:                                       │
+│  ▱ Packages              │││      ⣀⣤⣶⣶⣶⣷⣶⣶⣦⣄⡀                           ││libs/netwo 5     4615380     5.69%  │││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Images                │││   ⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄     ■ libs 8.9%         ││devel      3     2770930     3.41%  │││mp/deploy/images/romulus/obmc-phosphor-image│
+│  ▱ Kernel                │││  ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧                        ││base/utils 2     1744385     2.15%  │││-romulus-20260908040925.manifest            │
+│  ▱ U-Boot / BIOS         │││ ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧   ■ libs/network 5.7% ││console/ne 4     1129984     1.39%  │││Installed packages: available               │
+│  ▱ SDK                   │││ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿                       ││Other      7     550250      0.67%  │││Filesystem tree: unavailable · IMAGE_ROOTFS │
+│▾ BUILD                   │││ ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁  ■ devel 3.4%        ││                                    │││was not reported for the selected image     │
+│  ▱ Tasks                 │││ ⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿                       ││                                    │││Offline system map: unavailable · offline   │
+│  ▱ Logs              LIVE│││  ⠹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠁   ■ base/utils 2.2%   ││                                    │││system inventory requires IMAGE_ROOTFS      │
+│  ▱ Errors                │││   ⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠁                        ││                                    │││                                            │
+│  ▱ Configuration         │││     ⠉⠛⠿⣿⣿⣿⣿⣿⣿⡿⠟⠋⠁      ■ console/network 1.││                                    │││Exact totals                                │
+│  ▱ Dependencies          │││           ⠁                                ││                                    │││Package bytes: 81062873                     │
+│▾ VALIDATE                │││                        ■ Other 0.7%        ││                                    │││Package files: 1778                         │
+│  ▱ Testing               │││                                            ││                                    │││Filesystem bytes: 0                         │
+│    Security              │││                                            ││                                    │││Entries: 0 (files 0 · dirs 0 · symlinks 0 · │
+│  ▱ QA                    │││                                            ││                                    │││special 0)                                  │
+│▾ TOOLS                   ││└────────────────────────────────────────────┘└────────────────────────────────────┘││Overflow: false                             │
+│  ▱ Raw Mode              ││┌Accessible package selection · j/k moves checked row──────────────────────────────┐││                                            │
+│  ▱ Terminal Sessions     │││  ⊟ base group · 181 packages (indeterminate)                                     │││Selected group: base                        │
+│  ▱ Devtool               │││> ☑ avsbus-control · 2146 B · 7 files (checked)                                   │││Selected package: avsbus-control            │
+│  ▱ QEMU / Wic            │││  ☐ base-files · 4401 B · 15 files (unchecked)                                    │││Recipe: avsbus-control                      │
+│  ▱ Maintenance           │││  ☐ base-passwd · 0 B · 0 files (unchecked)                                       │││Category: base                              │
+│  ▱ Build environment     │││  ☐ bmcweb · 12618232 B · 238 files (unchecked)                                   │││Installed bytes: 2146                       │
+│  ▱ Compatibility         │││  ☐ busybox · 714852 B · 6 files (unchecked)                                      │││Reported files: 7                           │
+│  ▱ Settings              │││  ☐ Filesystem ownership (disabled) — partial; Tab for evidence                   │││                                            │
+│                          │││Other membership remains inspectable · exact bytes stay authoritative             │││Limitations                                 │
+│                          │││                                                                                  │││! One rootfs authority is partial or        │
+│                          ││└──────────────────────────────────────────────────────────────────────────────────┘││unavailable.                                │
+│                          ││┌Filesystem drill-down─────────────────────────────────────────────────────────────┐││                                            │
+│                          │││Filesystem tree unavailable · use Tab for authority details                       │││▾ RELATED PATHS                             │
+│                          │││                                                                                  │││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│                          │││                                                                                  │││mp/deploy/images/romulus/obmc-phosphor-image│
+│                          │││                                                                                  │││-romulus-20260908040925.manifest            │
+│                          │││                                                                                  │││                                            │
+│                          ││└──────────────────────────────────────────────────────────────────────────────────┘││▾ CONTEXTUAL ACTIONS                        │
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│h/l group   j/k package   PgUp/PgDn page   r refresh   Tab filesystem   Shift+Tab artifacts   ←/→ Focus   F2 Tasks   F1 Help   F10 Menu   q Quit      09:32:15│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

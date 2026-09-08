@@ -4,7 +4,7 @@ set -euo pipefail
 repo_root="$(git rev-parse --show-toplevel)"
 cd "$repo_root"
 
-version="0.1.84"
+version="0.1.85"
 public_crates=(
   yoctui-model
   yoctui-protocol

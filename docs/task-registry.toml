@@ -171,18 +171,18 @@ notes = "v0.1.83 DONE: typed observed active-worker count requires current repli
 id = "OPENBMC-PKGDATA-001"
 milestone = "M56"
 title = "Resolve installed package names through bounded Yocto runtime-reverse metadata"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1283
 required = true
 depends_on = ["OPENBMC-WORKER-COUNT-001"]
 verify = ["cargo test -p yoctui-bitbake rootfs", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "v0.1.84 registration: successful real Romulus image has 228 manifest packages; attached package screen reports 40 missing metadata records. runtime-reverse/libblkid1 is a generated link to ../runtime/util-linux-libblkid, but scan_manifest only tries runtime/<installed-name>. Resolve authoritative renamed identities without generally relaxing symlink containment or bounded parsing. Preserve installed package identity, use original scoped pkgdata keys, and cover direct/renamed, missing/conflicting/dangling/escaping/looped mappings, limits and cancellation. Require focused failed-first tests, baseline and real package UI recheck. No implementation claimed by registration."
+notes = "v0.1.85 DONE: only contained generated ../runtime/<original-package> reverse links are accepted, with non-symlink directories/regular targets and corroborating PKG identity. Original names scope size/file values while manifest names and deduplication remain authoritative. Four new regressions cover exact live libblkid1, missing/dangling/escaping/chained/conflicting/aliased mappings, file/total bounds, partial results, cancellation and deadline. Initial fixture reproduced Partial instead of Available. All 13 focused rootfs tests, 281 UI tests, 1584 workspace tests/doc-tests, 52 bridge tests, strict Clippy, production build, fmt, docs, rasters, roadmap and version policy pass. All 17 golden diffs are version-only. Actual v85-image-packages-20260908 capture reports all 228 packages available, 81062873 bytes and 1778 files, eliminating all 40 missing metadata records. Separate rootfs source-query limitation remains honestly partial; no daemon restart or image rebuild. Captured tested binary preserved; ROOTFS-SOURCES becomes current."
 
 [[task]]
 id = "OPENBMC-ROOTFS-SOURCES-001"
 milestone = "M56"
 title = "Acquire exact image rootfs sources for daemon-attached clients"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 1282
 required = true
 depends_on = ["OPENBMC-PKGDATA-001"]

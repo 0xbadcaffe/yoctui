@@ -1,5 +1,19 @@
 # Yoctui Implementation Status
 
+v0.1.85 OPENBMC-PKGDATA-001 is DONE. Contained single-hop runtime-reverse
+lookup preserves installed names, corroborates PKG and parses original scoped
+fields. Four new failed-first/safety/limit/control regressions, all 13 focused
+rootfs tests and 281 UI tests pass, together with 52 bridge tests and version
+policy. Seventeen golden diffs are version-only and six rasters verify.
+All 1584 workspace tests/doc-tests, strict Clippy, production build, fmt and
+documentation pass. The actual production package UI now reports all 228
+packages available, 81062873 bytes and 1778 files, with all 40 missing metadata
+warnings removed. OPENBMC-ROOTFS-SOURCES-001 is current: overall composition
+still correctly reports partial availability because IMAGE_ROOTFS acquisition
+is not connected. The daemon stays v0.1.84; no image rebuild occurred.
+Captured tested candidate: /home/bspguy-dev/.local/state/yoctui-v85-validated.YhRRZA/yoctui,
+SHA-256 cf19348c978d8e3810874d49cad4875aa5a1194bce0dd21871de1699f32bd9b0.
+
 OPENBMC-PKGDATA-001 is current in v0.1.84; OPENBMC-LIVE-001 waits for it and
 OPENBMC-ROOTFS-SOURCES-001. Registration has a version-only baseline;
 no runtime behavior changes from v0.1.83. All

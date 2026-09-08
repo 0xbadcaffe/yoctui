@@ -1,5 +1,35 @@
 # OpenBMC live integration
 
+## Installed package mapping repair (v0.1.85)
+
+The exact live libblkid1 regression first failed because installed-package
+authority was Partial. The adapter now resolves generated runtime-reverse
+links only in the single-hop ../runtime/<original-package> form, with contained
+non-symlink directories and regular runtime records. PKG corroborates renamed
+installed identity; original names scope PKGSIZE/FILES_INFO. Missing indexes
+retain direct-name compatibility, but invalid mappings do not silently fall
+back. Four new cases cover installed identity/deduplication, unsafe and
+conflicting mappings, byte limits, partial results, cancellation and deadline.
+All 13 focused rootfs tests and 281 UI tests pass. All 1584 workspace tests and
+doc-tests, 52 bridge tests, version-policy tests/checks and roadmap pass.
+Strict Clippy, production build, fmt and documentation also pass; the task
+is DONE and OPENBMC-ROOTFS-SOURCES-001 becomes current.
+Seventeen golden diffs are version digits only; six rasters verify unchanged
+apart from that version label.
+
+The [actual v0.1.85 package screen](../../artifacts/live-openbmc/romulus/v85-image-packages-20260908.txt)
+now reports Installed packages: available. All 228 installed packages have
+metadata: 81062873 installed bytes and 1778 files, versus the earlier partial
+56717557 bytes and 1668 files. All 40 missing-pkgdata warnings are gone. Overall
+composition remains Partial solely because the separate IMAGE_ROOTFS source
+query is not connected; that finding is OPENBMC-ROOTFS-SOURCES-001, not waived.
+The first connected frame arrived in 0.369 seconds; this single read-only
+capture is not a release-performance claim. No daemon restart or image rebuild
+occurred. Exact captured/workspace-tested binary:
+/home/bspguy-dev/.local/state/yoctui-v85-validated.YhRRZA/yoctui, SHA-256
+cf19348c978d8e3810874d49cad4875aa5a1194bce0dd21871de1699f32bd9b0.
+Private daemon remains v0.1.84; installed release stays v0.1.64.
+
 ## Successful image and inspection findings (v0.1.84)
 
 The fifth obmc-phosphor-image attempt completed naturally through the private

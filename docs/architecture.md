@@ -2315,6 +2315,18 @@ and selected SDK context roots. The daemon reconstructs the existing
 terminal state. Client disconnect has no effect on the runner; output is
 converted into bounded sequenced daemon logs/job events.
 
+### Installed package name authority
+
+RootfsCompositionAdapter resolves a manifest name through the generated
+PKGDATA_DIR/runtime-reverse index when present. Its only symlink exception is
+one relative ../runtime/<original-package> hop: index/runtime directories must
+be contained non-symlinks and the target a contained regular runtime file.
+The original name scopes PKG/PKGSIZE/FILES_INFO; PKG must corroborate a renamed
+installed identity. Absent indexes retain direct-record compatibility, while
+malformed/dangling/conflicting mappings do not silently fall back. Manifest
+deduplication and existing parsing/scan limits remain enforced. This adapter
+exception does not relax general canonical file or rootfs traversal rules.
+
 ### Security and trust
 
 The daemon runs as the invoking user and never escalates privilege. Local-only

@@ -45,6 +45,15 @@ authoritative runtime pkgdata. The package view can group and drill into those
 records, including a bounded, inspectable `Other` group. It does not infer
 installation from recipe metadata, deploy filenames, or filesystem contents.
 
+Installed names use Yocto's generated runtime-reverse index when present.
+Only a single relative link of the form ../runtime/<original-package> is
+accepted, with non-symlink contained index/runtime directories and a regular
+runtime record. The record's PKG field must corroborate a renamed installed
+identity; scoped size/file fields use the original record name. A missing
+index permits direct-name metadata, but malformed, conflicting or dangling
+mappings remain explicit Partial evidence, not a guessed fallback. Duplicate
+manifest names are counted once. General file/rootfs symlink rules are unchanged.
+
 Runtime pkgdata is read incrementally under separate per-file, per-line, and
 aggregate byte limits. Current recipe-scoped fields such as
 `PKGSIZE:<package>` and `FILES_INFO:<package>` are parsed without retaining the
@@ -84,6 +93,14 @@ Yoctui does not probe them for graphical preview. Exact metadata and Rootfs
 composition are the terminal-safe fallback.
 
 ## Recorded live boundary
+
+On 2026-09-08 the v0.1.85 production client inspected the successfully built
+Romulus obmc-phosphor-image manifest: all 228 packages have available generated
+metadata, 81062873 installed bytes and 1778 files. The bounded runtime-reverse
+repair removes 40 previously missing renamed-package records. The separate
+attached IMAGE_ROOTFS source-query defect remains explicitly unavailable under
+OPENBMC-ROOTFS-SOURCES-001; retained filesystem existence alone is not UI
+authority. See [OpenBMC evidence](testing/openbmc.md).
 
 An opt-in live adapter regression also scans the exact deployed manifest and
 machine-scoped pkgdata directory from a completed image. On 2026-09-01 it

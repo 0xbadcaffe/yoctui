@@ -571,8 +571,7 @@ fn scan_manifest(
             file_count: 0,
         };
         if let Some(pkgdata) = &pkgdata {
-            let candidate = pkgdata.join("runtime").join(&name);
-            match read_pkgdata(candidate.as_path(), pkgdata, &name, &mut pkgdata_bytes) {
+            match read_installed_pkgdata(pkgdata, &name, &mut pkgdata_bytes) {
                 Ok(values) => populate_package(&mut package, &values, &mut package_limitations),
                 Err(RootfsCompositionAdapterError::InvalidSource(_)) => push_limitation(
                     &mut package_limitations,
@@ -599,6 +598,57 @@ fn scan_manifest(
             limitations: package_limitations,
         })
     }
+}
+
+fn read_installed_pkgdata(
+    root: &Path,
+    installed_name: &str,
+    total_bytes: &mut u64,
+) -> Result<PkgdataValues, RootfsCompositionAdapterError> {
+    // Only Yocto's generated, single-hop reverse mapping may be a symlink.
+    // Never canonicalize an arbitrary link before checking its target shape.
+    let runtime = canonical_directory(&root.join("runtime"), Some(root))?;
+    let reverse = root.join("runtime-reverse");
+    let mut package_name = installed_name.to_owned();
+    if !source_is_missing(&reverse)? {
+        let reverse = canonical_directory(&reverse, Some(root))?;
+        let mapping = reverse.join(installed_name);
+        if !source_is_missing(&mapping)? {
+            let invalid = || RootfsCompositionAdapterError::InvalidSource(mapping.clone());
+            let target = fs::read_link(&mapping).map_err(|_| invalid())?;
+            let parts: Vec<_> = target.components().collect();
+            use std::path::Component;
+            let [
+                Component::ParentDir,
+                Component::Normal(directory),
+                Component::Normal(name),
+            ] = parts.as_slice()
+            else {
+                return Err(invalid());
+            };
+            if *directory != std::ffi::OsStr::new("runtime") {
+                return Err(invalid());
+            }
+            package_name = name.to_str().ok_or_else(invalid)?.to_owned();
+            PackageIdentity::new(&package_name)
+                .validate()
+                .map_err(|_| invalid())?;
+        }
+    }
+    let path = runtime.join(&package_name);
+    let values = read_pkgdata(&path, &runtime, &package_name, total_bytes)?;
+    // PKG is expressed in the original runtime-record namespace. A renamed
+    // mapping must corroborate the manifest identity; absence is not a guess.
+    if values.conflicting_package_name
+        || values
+            .package_name
+            .as_deref()
+            .is_some_and(|name| name != installed_name)
+        || (package_name != installed_name && values.package_name.is_none())
+    {
+        return Err(RootfsCompositionAdapterError::InvalidSource(path));
+    }
+    Ok(values)
 }
 
 fn read_pkgdata(
@@ -647,6 +697,17 @@ fn read_pkgdata(
         };
         match key.trim() {
             "PN" => values.recipe = Some(raw_value.trim().to_owned()),
+            "PKG" => {
+                let name = scoped_pkgdata_value(raw_value, package_name);
+                if values
+                    .package_name
+                    .as_deref()
+                    .is_some_and(|old| old != name)
+                {
+                    values.conflicting_package_name = true;
+                }
+                values.package_name = Some(name.to_owned());
+            }
             "SECTION" => values.category = Some(raw_value.trim().to_owned()),
             "PKGSIZE" => {
                 values.installed_size = scoped_pkgdata_value(raw_value, package_name)
@@ -667,6 +728,8 @@ fn read_pkgdata(
 #[derive(Debug, Default, PartialEq, Eq)]
 struct PkgdataValues {
     recipe: Option<String>,
+    package_name: Option<String>,
+    conflicting_package_name: bool,
     category: Option<String>,
     installed_size: Option<u64>,
     file_count: Option<u64>,
@@ -1126,6 +1189,196 @@ mod tests {
         assert_eq!(values.file_count, Some(20_000));
         assert!(values.files_info_seen);
         assert_eq!(total, fs::metadata(path).unwrap().len());
+        fs::remove_dir_all(build).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn rootfs_runtime_reverse_preserves_installed_identity_and_scoped_fields() {
+        let (build, request, sources) = fixture();
+        let pkgdata = sources.pkgdata_directory.as_ref().unwrap();
+        fs::create_dir(pkgdata.join("runtime-reverse")).unwrap();
+        fs::write(
+            sources.manifest.as_ref().unwrap(),
+            "libblkid1 arm1176jzs 1.0\nlibblkid1 arm1176jzs 1.0\nbusybox arm1176jzs 1.0\n",
+        )
+        .unwrap();
+        fs::write(
+            pkgdata.join("runtime/util-linux-libblkid"),
+            "PN: util-linux\nPKG:util-linux-libblkid: libblkid1\nSECTION: base\nPKGSIZE:util-linux-libblkid: 354189\nFILES_INFO:util-linux-libblkid: {\"/usr/lib/libblkid.so.1\":17,\"/usr/lib/libblkid.so.1.1.0\":354172}\n",
+        ).unwrap();
+        std::os::unix::fs::symlink(
+            "../runtime/util-linux-libblkid",
+            pkgdata.join("runtime-reverse/libblkid1"),
+        )
+        .unwrap();
+        let response = RootfsCompositionAdapter::new(build.clone(), sources, 4)
+            .scan(request)
+            .await
+            .unwrap();
+        assert!(matches!(
+            response.composition.installed_packages,
+            RootfsAuthority::Available(_)
+        ));
+        let packages = &response.composition.package_inventory().unwrap().packages;
+        assert_eq!(packages.len(), 2);
+        let renamed = packages
+            .iter()
+            .find(|p| p.identity.name == "libblkid1")
+            .unwrap();
+        assert_eq!(renamed.recipe.as_deref(), Some("util-linux"));
+        assert_eq!(renamed.installed_size_bytes, 354189);
+        assert_eq!(renamed.file_count, 2);
+        fs::remove_dir_all(build).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rootfs_runtime_reverse_rejects_unsafe_missing_and_conflicting_mappings() {
+        use std::os::unix::fs::symlink;
+        let (build, _, sources) = fixture();
+        let pkgdata = sources.pkgdata_directory.unwrap();
+        let reverse = pkgdata.join("runtime-reverse");
+        fs::create_dir(&reverse).unwrap();
+        let runtime = pkgdata.join("runtime");
+        fs::write(
+            runtime.join("internal"),
+            "PKG:internal: renamed\nPKGSIZE:internal: 8\nFILES_INFO:internal: {}\n",
+        )
+        .unwrap();
+        for (name, target) in [
+            ("absolute", runtime.join("internal")),
+            ("escape", PathBuf::from("../../outside")),
+            ("nested", PathBuf::from("../runtime/sub/internal")),
+            ("dangling", PathBuf::from("../runtime/missing")),
+            ("loop", PathBuf::from("loop")),
+            ("wrong-pkg", PathBuf::from("../runtime/internal")),
+        ] {
+            symlink(target, reverse.join(name)).unwrap();
+            let mut bytes = 0;
+            assert!(
+                read_installed_pkgdata(&pkgdata, name, &mut bytes).is_err(),
+                "{name}"
+            );
+        }
+        // A reverse entry cannot itself be an arbitrary regular metadata file.
+        fs::write(reverse.join("regular"), "PKGSIZE: 99\n").unwrap();
+        assert!(read_installed_pkgdata(&pkgdata, "regular", &mut 0).is_err());
+        symlink("internal", runtime.join("chain")).unwrap();
+        symlink("../runtime/chain", reverse.join("chain")).unwrap();
+        assert!(read_installed_pkgdata(&pkgdata, "chain", &mut 0).is_err());
+        // A conflicting direct record does not override the final-name index.
+        fs::write(runtime.join("renamed"), "PKG: different\nPKGSIZE: 999\n").unwrap();
+        symlink("../runtime/internal", reverse.join("renamed")).unwrap();
+        assert_eq!(
+            read_installed_pkgdata(&pkgdata, "renamed", &mut 0)
+                .unwrap()
+                .installed_size,
+            Some(8)
+        );
+        // Mapped aliases cannot count the same record under a second identity.
+        symlink("../runtime/internal", reverse.join("alias")).unwrap();
+        assert!(read_installed_pkgdata(&pkgdata, "alias", &mut 0).is_err());
+        fs::write(
+            runtime.join("internal"),
+            "PKG:internal: renamed\nPKG:internal: conflict\nPKG:internal: renamed\n",
+        )
+        .unwrap();
+        assert!(read_installed_pkgdata(&pkgdata, "renamed", &mut 0).is_err());
+        fs::write(runtime.join("internal"), "PKGSIZE:internal: 8\n").unwrap();
+        assert!(read_installed_pkgdata(&pkgdata, "renamed", &mut 0).is_err());
+        fs::remove_dir_all(build).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rootfs_runtime_reverse_preserves_file_and_total_byte_limits() {
+        let (build, _, sources) = fixture();
+        let pkgdata = sources.pkgdata_directory.unwrap();
+        fs::create_dir(pkgdata.join("runtime-reverse")).unwrap();
+        std::os::unix::fs::symlink(
+            "../runtime/busybox",
+            pkgdata.join("runtime-reverse/busybox"),
+        )
+        .unwrap();
+        let mut total_bytes = MAX_PKGDATA_TOTAL_BYTES;
+        assert!(matches!(
+            read_installed_pkgdata(&pkgdata, "busybox", &mut total_bytes),
+            Err(RootfsCompositionAdapterError::ResourceLimit(_))
+        ));
+        fs::File::create(pkgdata.join("runtime/busybox"))
+            .unwrap()
+            .set_len(MAX_PKGDATA_FILE_BYTES + 1)
+            .unwrap();
+        assert!(matches!(
+            read_installed_pkgdata(&pkgdata, "busybox", &mut 0),
+            Err(RootfsCompositionAdapterError::ResourceLimit(_))
+        ));
+        fs::remove_dir_all(build).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn rootfs_runtime_reverse_partial_scan_retains_control_and_containment() {
+        let (build, request, sources) = fixture();
+        let pkgdata = sources.pkgdata_directory.as_ref().unwrap();
+        fs::create_dir(pkgdata.join("runtime-reverse")).unwrap();
+        std::os::unix::fs::symlink(
+            "../runtime/missing",
+            pkgdata.join("runtime-reverse/busybox"),
+        )
+        .unwrap();
+        let response = RootfsCompositionAdapter::new(build.clone(), sources.clone(), 4)
+            .scan(request.clone())
+            .await
+            .unwrap();
+        assert!(matches!(
+            response.composition.installed_packages,
+            RootfsAuthority::Partial { .. }
+        ));
+        let packages = &response.composition.package_inventory().unwrap().packages;
+        assert_eq!(packages.len(), 2);
+        assert_eq!(
+            packages
+                .iter()
+                .find(|p| p.identity.name == "base-files")
+                .unwrap()
+                .installed_size_bytes,
+            5
+        );
+        assert_eq!(
+            packages
+                .iter()
+                .find(|p| p.identity.name == "busybox")
+                .unwrap()
+                .installed_size_bytes,
+            0
+        );
+        let cancellation = RootfsCompositionCancellation::default();
+        cancellation.cancel();
+        assert_eq!(
+            RootfsCompositionAdapter::new(build.clone(), sources.clone(), 4)
+                .scan_with_cancellation(request.clone(), cancellation)
+                .await,
+            Err(RootfsCompositionAdapterError::Cancelled)
+        );
+        assert!(matches!(
+            scan_sources(
+                request,
+                build.clone(),
+                sources.clone(),
+                RootfsCompositionCancellation::default(),
+                Instant::now()
+            ),
+            Err(RootfsCompositionAdapterError::Timeout(_))
+        ));
+        fs::rename(
+            pkgdata.join("runtime-reverse"),
+            pkgdata.join("saved-reverse"),
+        )
+        .unwrap();
+        std::os::unix::fs::symlink("saved-reverse", pkgdata.join("runtime-reverse")).unwrap();
+        assert!(read_installed_pkgdata(pkgdata, "busybox", &mut 0).is_err());
         fs::remove_dir_all(build).unwrap();
     }
 

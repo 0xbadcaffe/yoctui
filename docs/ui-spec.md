@@ -4941,6 +4941,13 @@ operation requires its ordinary action and confirmation sequence.
 
 ### Rootfs composition
 
+Manifest package names may differ from generated runtime-record names. The
+adapter resolves the bounded contained runtime-reverse mapping, corroborates
+the installed PKG identity, and renders the original installed name with exact
+size/file/recipe values. Missing or conflicting mapping remains Partial with
+an explicit limitation. No name guessing, duplicate alias accounting or layout
+change is authorized by this correction.
+
 Images gains an image-correlated Rootfs composition subview. Installed-package
 composition comes from the exact image manifest plus authoritative bounded
 pkgdata. Filesystem composition is optional and comes only from the exact
@@ -4964,7 +4971,7 @@ configuration map; live ownership, activation state, jobs, and the running
 bus cannot exist until the image boots. `e` edits the selected unit or
 activation descriptor.
 
-The adapter requires canonical build containment, never follows symlinks,
+The filesystem traversal requires canonical build containment, never follows symlinks,
 deduplicates hard links, identifies special files, and enforces entry, depth,
 byte, time, and cancellation bounds. Missing or cleaned work state is
 Unavailable; hitting a bound is Partial with the exact limitation.
