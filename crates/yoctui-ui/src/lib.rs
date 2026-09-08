@@ -21931,6 +21931,48 @@ mod tests {
         rendered_text_at(app, width, height, SystemTime::now())
     }
 
+    #[test]
+    fn snapshot_progress_renders_aggregate_instead_of_retained_row_count() {
+        use yoctui_protocol::daemon::{DaemonBuildEvent, DaemonBuildProgress};
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = yoctui_app::daemon_protocol_snapshot(&state);
+        snapshot.build_events = vec![
+            DaemonBuildEvent::Reset {
+                targets: vec!["obmc-phosphor-image".into()],
+            },
+            DaemonBuildEvent::Started,
+            DaemonBuildEvent::TaskCompleted {
+                recipe: "util-linux".into(),
+                task: "do_compile".into(),
+                success: true,
+            },
+        ];
+        snapshot.build_progress = Some(DaemonBuildProgress {
+            completed: 2_340,
+            total: Some(6_812),
+        });
+        let mut app = App::new(64, 64 * 1024);
+        app.screen = Screen::Tasks;
+        app.focus = yoctui_model::FocusTarget::Workspace;
+        let mut replica = yoctui_app::DaemonClientSnapshot::default();
+        replica.replace_app(&mut app, snapshot.clone());
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let text = rendered_text(&app, width, height);
+            assert!(text.contains("2340/6812"), "{width}x{height}: {text}");
+        }
+        snapshot.build_progress.as_mut().unwrap().total = None;
+        replica.replace_app(&mut app, snapshot);
+        let text = rendered_text(&app, 160, 50);
+        assert!(text.contains("2340/—"), "{text}");
+        assert!(text.contains("progress unknown"), "{text}");
+    }
+
     fn rendered_text_at(app: &App, width: u16, height: u16, now: SystemTime) -> String {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         terminal.draw(|frame| render_at(frame, app, now)).unwrap();

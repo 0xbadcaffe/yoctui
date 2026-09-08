@@ -1254,6 +1254,7 @@ mod tests {
             clients: Vec::new(),
             recent_logs: Vec::new(),
             build_events: Vec::new(),
+            build_progress: None,
             recovery_warnings: Vec::new(),
         };
         let mut recovered = DaemonRawSupervisor::default();

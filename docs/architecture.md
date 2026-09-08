@@ -18,7 +18,9 @@ and completed-row eviction must not discard newer counters. The aggregate resets
 with the build, preserves unknown totals, and installs into the model alongside
 task rows so fresh attachment and uninterrupted consumption agree. Legacy
 snapshots without aggregate authority remain decodable and cannot manufacture
-missing backend statistics. OPENBMC-SNAPSHOT-PROGRESS-001 owns this correction.
+missing backend statistics. Protocol snapshots carry optional build_progress;
+the app installs it only with Current replica authority. This correction is
+verified under OPENBMC-SNAPSHOT-PROGRESS-001 in v0.1.76.
 
 Executable discovery canonicalizes absolute initialized PATH directories before
 joining the requested tool basename. Directory symlinks (for example OpenBMC's

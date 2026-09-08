@@ -1,88 +1,78 @@
 # Current Task
 
-**ID:** OPENBMC-SNAPSHOT-PROGRESS-001
-**Title:** Preserve authoritative build counters across compacted daemon snapshots
+**ID:** OPENBMC-LIVE-001
+**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
 **Status:** IN_PROGRESS
 
-Live attachment exposed a reproducible progress discrepancy: daemon job progress
-was 2,339/6,812 while the retained build snapshot kept only an older 1,731-task
-statistic and eight completed rows. Snapshot compaction removes the newer
-statistics together with completed task start/queue events. Preserve bounded
-typed aggregate counters independently of retained task rows; fresh attachment
-and replacement snapshots must agree with uninterrupted event consumption.
-Keep unknown totals unknown and reset authority between builds. Add focused
-protocol/app and TestBackend regressions, run baseline checks, and return to
-OPENBMC-LIVE-001 after verification. Do not interrupt the current image merely
-to deploy the candidate; record its separate binary/version and live recheck.
+Continue the fifth `obmc-phosphor-image` attempt through the private Yoctui
+daemon. Inspect actual task transitions, logs, terminal outcome, packages and
+rootfs. Register separate atomic tasks for reproducible Yoctui defects. Preserve
+all Poky data. Image success has not yet occurred; do not claim completion from
+submission, cached task counts or fixture-only evidence.
 
-Verification: cargo test -p yoctui-protocol snapshot_progress;
-cargo test -p yoctui-app snapshot_progress; cargo test -p yoctui-ui snapshot_progress;
-cargo fmt --all --check; cargo test --workspace --all-features;
-cargo clippy --workspace --all-targets --all-features -- -D warnings;
-python3 -m pytest bridge/tests; ./scripts/check-docs.sh; ./scripts/verify-roadmap.sh.
-Use bounded Cargo compilation concurrency alongside the OpenBMC build.
+Verification: real image build and generated package/rootfs inspection;
+./scripts/check-docs.sh; ./scripts/verify-roadmap.sh; ./scripts/verify-completion.sh.
+The completion gate still requires fresh source-bound real-Poky performance
+evidence and every remaining task. Use one Cargo worker, debug=0 dev/test
+profiles and no incremental cache alongside OpenBMC to retain host headroom.
 
-## OpenBMC live handoff
+## Current live identity
 
-README-HEADER-001 is DONE in v0.1.74: supplied artwork adapted into a compact
-header with accurate clickable badges and navigation. Static README/link,
-version, formatting, locked metadata and raster/gallery checks pass. No runtime
-source changed or release gate rerun. Resume the existing OpenBMC validation.
+- Source: /home/bspguy-dev/src/openbmc
+- Revision: d4fd7d3f54e88e800c0284b753af68a13aabbef6
+- Build: /home/bspguy-dev/src/build-openbmc-romulus
+- MACHINE romulus; DISTRO openbmc-openpower; BitBake 2.19.0
+- Private daemon PID 1302830, instance 7f104be5e67613b8bb221198aea44aaa
+- Running image job 1; verify live identity before lifecycle actions
+- Binary: /home/bspguy-dev/.local/state/yoctui-v76-validated.tWHDMp/yoctui
+- Version 0.1.76; SHA-256 93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f
+- XDG config: /home/bspguy-dev/.local/state/yoctui-openbmc-validation/config
+- XDG state: /home/bspguy-dev/.local/state/yoctui-openbmc-validation/state
+- XDG runtime: /run/user/1000/yoctui-openbmc-validation
+- Current evidence: artifacts/live-openbmc/romulus/image-build-v76-recovery-20260908.json
 
-All five required integration fixes are DONE through v0.1.71: direct capability
-probing, responsive startup, bounded inventory, CLI stale retries/rejections,
-and symlinked PATH tool discovery. All 1,543 workspace tests, 49 bridge tests,
-strict Clippy, formatting, Python checks and docs pass. See
-[OpenBMC validation](testing/openbmc.md).
+The image was submitted through `yoctui daemon build obmc-phosphor-image` after
+initial metadata readiness, and Accepted. Last verified counters were 2854/6812;
+LLVM native compilation and Boost installation were running. Root had about
+35.6 GiB free at the fresh attach; monitor disk and available memory. OpenBMC-only
+local.conf limits BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, verified before
+submission. rm_work is enabled, excluding the image work directory for rootfs
+inspection. Scheduling stops at 15 GiB and halts at 8 GiB. The normal installed
+release remains v0.1.64; do not overwrite it merely to run this validation.
 
-HOST-PYTHON-001 is DONE: persistent default shells use system Python, pyenv
-2.8.5 prevents shim-alias loops, both managed interpreters are preserved and
-inactive OpenBMC hosttools/python3 is repaired. Shell, restricted-PATH and
-managed-version tests pass; backup and scope in testing/host-python.md.
-OpenBMC job 1 was cancelled with 282 ms acknowledgement after host recursion
-stalled it; no image success is claimed. The corrected-environment retry reached
-4,953/6,812 tasks in its saved capture, without a terminal result. On September 8
-the old daemon PID 3955092 and all workers were absent. The kernel recorded host
-OOM kills at 03:50 and the user session then shut down; this is not image success.
-The third attempt was accepted through the preserved v0.1.73 candidate after
-limiting the isolated OpenBMC build to two BitBake tasks and two compiler jobs.
-Its private daemon is PID 1195382, instance eceb92e7253969e488f7156c31d35d0f.
-Verify live identity before stopping. The third attempt failed util-linux linking
-because text-utils/more-more.o was zero bytes, then was cancelled through Yoctui
-(terminal failure retained). Only that object was moved to a recoverable backup
-at /home/bspguy-dev/.local/state/yoctui-openbmc-object-recovery.plNE35/more-more.o.
-The fourth attempt is job 2 in the same daemon instance. It rebuilt more with
-the main symbol and completed util-linux compilation and subsequent package tasks.
-Current bounded evidence is
-artifacts/live-openbmc/romulus/image-build-object-recovery-20260908.json.
+## Completed counter repair
 
-OPENBMC-ATTACH-001 is DONE in v0.1.73: initial snapshot reads get five seconds,
-with separate 250 ms discovery and in-loop reconnect limits. Both delayed and
-missing-socket regressions pass; all 1,545 workspace tests, 49 bridge tests,
-strict Clippy, formatting, Python and docs checks pass. Real attached capture
-without local build env opens Dashboard directly at 140x32 in 1.336 seconds.
-Continue the image through the corrected-environment daemon and inspect actual
-task/log/output behavior. Keep runtime evidence distinct from release performance.
-Verify identity before stopping. Private XDG paths are in the evidence.
-Source revision d4fd7d3f54e88e800c0284b753af68a13aabbef6, source
-/home/bspguy-dev/src/openbmc, build /home/bspguy-dev/src/build-openbmc-romulus,
-MACHINE romulus, DISTRO openbmc-openpower, BitBake 2.19.0.
+OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76. Optional typed build_progress
+survives queue/start replacement and completed-row eviction independently of
+retained rows. Only Current replica authority installs it. Five regressions
+cover fresh/replacement/batched consumption, eviction, duplicate completion,
+reset, legacy absence, malformed fields, unknown totals and terminal outcomes.
+The first regression failed at (1, None) versus (2340, Some(6812)). All baseline
+checks pass: workspace tests, strict Clippy, formatting, 49 bridge tests,
+documentation, rasters and roadmap. The initial workspace run hit the existing
+PTY resize race; retry with RUST_TEST_THREADS=2 passed without changing tests.
 
-Execute OPENBMC-LIVE-001 through Yoctui: build
-obmc-phosphor-image, inspect lifecycle/logs/outcomes, packages and rootfs, and
-register/fix real regressions. The image was accepted; no success is claimed yet.
-Preserve all Poky data. Root had about 46 GiB free at the September 8 restart;
-monitor disk growth and available memory. The preserved candidate is
-/tmp/yoctui-v73-validated.vMBk6H/yoctui, SHA-256
-f34b9b26fb6d60d1503b20674bf194252552159ca63953b37000eb3e0b817a26.
-New OpenBMC guards stop scheduling at 15 GiB / halt at 8 GiB.
-The shallow checkout's os-release warning was resolved by fetching history/tags
-without changing HEAD. rm_work is enabled only in OpenBMC, excluding the image
-work directory so rootfs inspection remains possible. Only OpenBMC local.conf
-now sets BB_NUMBER_THREADS = "2" and PARALLEL_MAKE = "-j 2"; both were verified
-with bitbake-getvar before submission. Source revision and Poky remain unchanged.
+Fresh 160x50 production attach displays 2854/6812, matching aggregate/job
+counters in snapshots 115 and 146, while retained task statistics contain only
+1731/6812. Evidence and limits are in [OpenBMC validation](testing/openbmc.md).
 
-Verification: real image build and inspection, docs/roadmap checks, followed by
-the full completion gate. Installed
-release remains v0.1.64. Full completion still requires fresh source-bound
-real-Poky performance evidence and all remaining tasks, not fixture-only claims.
+## Recovery history
+
+The second attempt reached 4953/6812 without terminal success before global host
+OOM kills and user-session shutdown on September 8. The third attempt failed
+linking util-linux because more-more.o was zero bytes. After Yoctui cancellation,
+that object was preserved at
+/home/bspguy-dev/.local/state/yoctui-openbmc-object-recovery.plNE35/more-more.o.
+The fourth attempt rebuilt a valid object/main symbol and passed util-linux.
+It reached 2854/6812 before explicit recovery cancellation (235 ms acknowledgement,
+terminal failure recorded). After workers and daemon stopped, 23 old empty
+compiled objects from function2 (8), Boost (7) and fmt (8) were moved to
+/home/bspguy-dev/.local/state/yoctui-openbmc-object-recovery-23.bbZM2i with their
+relative paths. They are recoverable. No empty objects remained in those three
+build trees; sources, sysroots and Poky were not changed.
+
+All earlier required capability/startup/inventory/CLI/tool-discovery fixes,
+HOST-PYTHON-001, OPENBMC-ATTACH-001 and README-HEADER-001 remain DONE. Historical
+versions and evidence are retained in docs/testing/openbmc.md and
+docs/implementation-status.md. Do not confuse cancelled attempts or old daemon
+identities with the current build.

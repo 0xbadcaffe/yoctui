@@ -27,6 +27,7 @@ fn snapshot() -> DaemonSnapshot {
         clients: vec![],
         recent_logs: vec![],
         build_events: vec![],
+        build_progress: None,
         recovery_warnings: vec![],
     }
 }

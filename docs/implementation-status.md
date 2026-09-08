@@ -1,5 +1,20 @@
 # Yoctui Implementation Status
 
+OPENBMC-SNAPSHOT-PROGRESS-001 is DONE in v0.1.76. Optional typed aggregate counters
+survive queue/start replacement and completed-row eviction; Current client state
+installs them independently of retained rows. The regression first reproduced
+(1, unknown) on fresh attach versus (2340, 6812) uninterrupted. Five focused
+protocol/app/TestBackend cases now pass, including row eviction, duplicate
+completion, reset, legacy absence, malformed fields and unknown totals; 49
+bridge tests pass. Workspace tests (two test threads), strict Clippy, formatting,
+documentation, deterministic rasters and roadmap checks pass. The first full
+test run hit the existing PTY resize race; retry passed without changing it.
+The old image job was cancelled for recoverable object-file repair. The tested
+v0.1.76 private daemon accepted the fifth image attempt. Fresh production attach
+shows 2854/6812, matching aggregate/job counters at snapshot sequences 115 and
+146 while retained task statistics remain only 1731/6812. Evidence is recorded
+in docs/testing/openbmc.md. OPENBMC-LIVE-001 resumes; no image success is claimed.
+
 September 8 governance recovery (v0.1.75): OpenBMC's third image attempt exposed
 a zero-byte util-linux more-more.o from the interrupted build. After acknowledged
 Yoctui cancellation, that one object was moved to a recovery backup. Job 2 in the

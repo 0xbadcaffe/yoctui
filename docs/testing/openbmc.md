@@ -323,15 +323,43 @@ and completed util-linux compilation and subsequent package tasks. The
 [fourth-attempt observation](../../artifacts/live-openbmc/romulus/image-build-object-recovery-20260908.json)
 records this ongoing build separately. No image success is claimed.
 
+The fourth attempt reached 2,854/6,812 before explicit recovery cancellation.
+A read-only scan excluding sources and sysroots found 23 further zero-byte
+compiled objects predating 06:00: function2 (8), boost (7), and fmt (8).
+After confirming the exact private instance and running job 2, Yoctui accepted
+cancellation in 235 ms and retained terminal failure. The workers stopped and
+the idle daemon was stopped normally. Only those 23 objects were moved into
+`/home/bspguy-dev/.local/state/yoctui-openbmc-object-recovery-23.bbZM2i`, preserving
+their relative paths. They are recoverable; a subsequent check found no empty
+objects in those three build trees. Source, sysroots and Poky were not changed.
+
 A [real attached Tasks capture](../../artifacts/live-openbmc/romulus/resume-dashboard-20260908.txt)
 also exposed an independent counter discrepancy. In a later job-2 snapshot at
 sequence 1883, the job reported 2,339/6,812 but the retained build events held
 only an older queued llvm_git statistic at 1,731 completed plus eight completed
 rows. Task-event compaction drops newer aggregate statistics, so fresh client
 replay undercounts completion. OPENBMC-SNAPSHOT-PROGRESS-001 owns the bounded
-typed snapshot repair and regression tests. Until that repair, image success
-and generated package/rootfs inspection pass, OPENBMC-LIVE-001 remains
-IN_PROGRESS. No release-performance claim is made.
+typed snapshot repair and regression tests, now verified in v0.1.76.
+
+The tested candidate is preserved at
+`/home/bspguy-dev/.local/state/yoctui-v76-validated.tWHDMp/yoctui`, SHA-256
+`93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f`.
+Private daemon PID 1302830, instance `7f104be5e67613b8bb221198aea44aaa`, accepted
+the fifth image attempt as job 1 after metadata readiness. Verify identity before
+lifecycle actions. The normal installed release remains unchanged. The
+[fifth-attempt observation](../../artifacts/live-openbmc/romulus/image-build-v76-recovery-20260908.json)
+retains its own runtime evidence.
+
+[Counter verification](../../artifacts/live-openbmc/romulus/v76-counter-verification-20260908.json)
+brackets a [fresh production attach](../../artifacts/live-openbmc/romulus/v76-counter-attach-20260908.txt)
+with snapshots 115 and 146. Both report aggregate and running-job counters of
+2854/6812, exactly as the 160x50 UI renders, despite retaining only an older
+1731/6812 task statistic. The client had no local build environment. Five focused
+protocol/app/TestBackend regressions and all baseline checks pass; the full
+workspace retry used two test threads after the existing PTY resize race failed
+the first run. Tests were not weakened. OPENBMC-SNAPSHOT-PROGRESS-001 is DONE.
+The image still runs; package/rootfs inspection and the complete release gate
+remain outstanding under OPENBMC-LIVE-001. No release-performance claim is made.
 
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.

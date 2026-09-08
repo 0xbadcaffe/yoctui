@@ -1,0 +1,183 @@
+{
+  "schema": "yoctui.openbmc.observation.v1",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "machine": "romulus",
+  "target": "obmc-phosphor-image",
+  "daemon_pid": 1302830,
+  "runtime_identity": {
+    "pid": 1302830,
+    "daemon_instance_id": [
+      127,
+      16,
+      75,
+      229,
+      230,
+      118,
+      19,
+      184,
+      187,
+      34,
+      17,
+      152,
+      174,
+      164,
+      74,
+      170
+    ],
+    "started_unix_ms": 1788840447388,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "executable": "/home/bspguy-dev/.local/state/yoctui-v76-validated.tWHDMp/yoctui"
+  },
+  "binary_sha256": "93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f",
+  "observed_from_unix": 1788840553.873128,
+  "observed_until_unix": 1788840797.2882292,
+  "note": "Fifth image attempt, daemon/client v0.1.76 after baseline tests, Clippy and docs passed. Fourth attempt explicitly cancelled for recovery of 23 old empty objects in function2/boost/fmt; preserved with relative paths under .local/state/yoctui-openbmc-object-recovery-23.bbZM2i. BB_NUMBER_THREADS=2, PARALLEL_MAKE=-j 2. Image success remains subject to terminal outcome.",
+  "event_counts": {
+    "event": 372,
+    "event.telemetry": 239,
+    "event.build": 120,
+    "build.parse_progress": 31,
+    "event.log": 9,
+    "event.bit_bake_changed": 1,
+    "build.started": 1,
+    "event.job_changed": 3,
+    "build.task_queued": 2,
+    "build.task_started": 2,
+    "build.task_progress": 84
+  },
+  "jobs": {
+    "1": {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "running",
+      "progress_current": 2854,
+      "progress_total": 6812,
+      "exit_code": null
+    },
+    "2": {
+      "id": 2,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    }
+  },
+  "recent_logs": [
+    {
+      "source": "daemon-metadata",
+      "severity": "info",
+      "message": "Loading initial workspace and recipe inventory",
+      "unix_ms": 1788840496236,
+      "recipe": null,
+      "task": null,
+      "path": null,
+      "build": null
+    },
+    {
+      "source": "daemon-metadata",
+      "severity": "info",
+      "message": "Initial workspace and recipe inventory ready",
+      "unix_ms": 1788840510744,
+      "recipe": null,
+      "task": null,
+      "path": null,
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Resolving any missing task queue dependencies",
+      "unix_ms": 1788840565808,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/taskdata.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "\nBuild Configuration:\nBB_VERSION           = \"2.19.0\"\nBUILD_SYS            = \"x86_64-linux\"\nNATIVELSBSTRING      = \"universal\"\nTARGET_SYS           = \"arm-openbmc-linux-gnueabi\"\nMACHINE              = \"romulus\"\nSDKMACHINE           = \"x86_64\"\nDISTRO               = \"openbmc-openpower\"\nDISTRO_VERSION       = \"nodistro.0\"\nTUNE_FEATURES        = \"arm thumb arm1176jzs\"\nmeta                 \nmeta-oe              \nmeta-networking      \nmeta-perl            \nmeta-python          \nmeta-phosphor        \nmeta-aspeed          \nmeta-openpower       \nmeta-romulus         = \"master:d4fd7d3f54e88e800c0284b753af68a13aabbef6\"\n",
+      "unix_ms": 1788840569683,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Sstate summary: Wanted 1081 Local 42 Mirrors 0 Missed 1039 Current 2495 (3% match, 70% complete)",
+      "unix_ms": 1788840576972,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Executing Tasks",
+      "unix_ms": 1788840579454,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/runqueue.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Setscene tasks completed",
+      "unix_ms": 1788840579822,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "VERBOSE=1 cmake --build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/build --target all --",
+      "unix_ms": 1788840582678,
+      "recipe": "llvm-native",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Direct dependencies are ['/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-core/zlib/zlib_1.3.2.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-runtime_16.1.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-devtools/quilt/quilt-native_0.69.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-extended/bzip2/bzip2_1.0.8.bb:do_populate_sysroot', '/home/bspguy-dev/src/openbmc/meta/recipes-support/boost/boost-build-native_1.91.0.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/patch/patch_2.8.bb:do_populate_sysroot', 'virtual:native:/home/bspguy-dev/src/openbmc/meta/recipes-devtools/pseudo/pseudo_git.bb:do_populate_sysroot']",
+      "unix_ms": 1788840585076,
+      "recipe": "boost",
+      "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Installed into sysroot: []",
+      "unix_ms": 1788840585077,
+      "recipe": "boost",
+      "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Skipping as already exists in sysroot: ['gettext-minimal-native', 'glibc', 'zlib', 'binutils-cross-arm', 'gcc-cross-arm', 'gcc-runtime', 'libgcc', 'libtool-native', 'm4-native', 'opkg-utils', 'quilt-native', 'bzip2', 'texinfo-dummy-native', 'linux-libc-headers', 'boost-build-native', 'zlib-native', 'flex-native', 'gnu-config-native', 'patch-native', 'pseudo-native', 'zstd-native', 'attr-native', 'gmp-native', 'libmpc-native', 'mpfr-native', 'sqlite3-native']",
+      "unix_ms": 1788840585077,
+      "recipe": "boost",
+      "task": "do_install",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    }
+  ],
+  "critical": [],
+  "terminal": null,
+  "connection_error": null
+}

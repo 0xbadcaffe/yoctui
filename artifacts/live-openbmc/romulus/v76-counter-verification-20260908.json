@@ -1,0 +1,27 @@
+{
+  "schema": "yoctui.openbmc.snapshot-progress-verification.v1",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "machine": "romulus",
+  "target": "obmc-phosphor-image",
+  "binary_version": "0.1.76",
+  "binary_sha256": "93515b28b1e5bd041ce9b486f376b0dde9a006b0d334d6ce5f2ff23851061d9f",
+  "daemon_pid": 1302830,
+  "daemon_instance": "7f104be5e67613b8bb221198aea44aaa",
+  "snapshot_sequences_before_and_after_capture": [115, 146],
+  "build_progress_both_snapshots": {"completed": 2854, "total": 6812},
+  "running_job": {"id": 1, "progress_current": 2854, "progress_total": 6812},
+  "retained_event_counts_both_snapshots": {
+    "reset": 1, "workspace": 1, "started": 1, "parse_progress": 1,
+    "task_started": 2, "task_queued": 1, "task_progress": 1
+  },
+  "only_retained_task_statistics_both_snapshots": {
+    "recipe": "llvm_git", "task": "do_compile",
+    "completed": 1731, "total": 6812, "active": 0, "failed": 0
+  },
+  "attached_production_capture": "v76-counter-attach-20260908.txt",
+  "terminal_dimensions": [160, 50],
+  "visible_completed_total": "2854/6812",
+  "local_build_environment_removed": true,
+  "result": "pass",
+  "limits": "Counter verification only; image remains running. Capture timing is not release-performance evidence."
+}

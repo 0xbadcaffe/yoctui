@@ -15,6 +15,23 @@ Each UTF-8 line is one JSON envelope: `protocol_version` (currently 1), monotoni
 
 Commands: `hello`, `inspect_workspace`, `start_build`, `cancel_build`, `list_recipes`, `list_layers`, `get_variable`, `shutdown`. Events: `hello_ack`, `workspace`, lifecycle/task/log events, `command_failed`, `protocol_error`, and `bridge_shutdown`. `build_completed` carries an optional `exit_code` when the backend supplies one. New optional fields are allowed; consumers must not reinterpret unknown events.
 
+## Daemon build counters
+
+Daemon snapshots may include `build_progress` with nonnegative `completed` and
+an optional nonzero `total`. These aggregate values are reduced from typed build
+events before task-row compaction, rather than reconstructed from retained row
+counts. Reset clears both counters; queued/started task statistics update their
+authority; completion advances the observed count once per retained task
+identity; successful build completion reconciles to a known total. Unknown totals
+stay absent. Arithmetic is bounded, and duplicate completions do not advance the
+aggregate unless that task was queued or started again.
+
+The optional field is omitted when no aggregate checkpoint exists. Older
+snapshots remain decodable and use their legacy event projection; a partial
+legacy snapshot does not become a complete aggregate merely because a later
+completion arrives. The 4 MiB frame and 2,048 retained build-event limits are
+unchanged. Clients install these counters only with Current snapshot authority.
+
 ## Daemon compatibility snapshots
 
 Before resolving a bundled backend snapshot, the daemon may invoke the bridge

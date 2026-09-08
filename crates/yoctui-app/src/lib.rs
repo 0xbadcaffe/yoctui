@@ -1292,6 +1292,7 @@ pub fn daemon_protocol_snapshot(
         clients: Vec::<ClientSummary>::new(),
         recent_logs,
         build_events: Vec::new(),
+        build_progress: None,
         recovery_warnings: state.session.recovery_warnings.clone(),
     }
 }
@@ -1993,6 +1994,19 @@ impl DaemonClientSnapshot {
 
     pub fn install_app(&mut self, app: &mut yoctui_model::App) {
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
+        if self.status == yoctui_model::ClientReplicaStatus::Current
+            && let Some(progress) = self
+                .snapshot
+                .as_ref()
+                .and_then(|snapshot| snapshot.build_progress)
+        {
+            let total = progress.total.filter(|total| *total > 0);
+            if (app.build.completed, app.build.total) != (progress.completed, total) {
+                app.build.completed = progress.completed;
+                app.build.total = total;
+                app.invalidate_task_projection();
+            }
+        }
         let wire = (self.status == yoctui_model::ClientReplicaStatus::Current)
             .then(|| {
                 self.snapshot
@@ -14023,6 +14037,145 @@ mod tests {
                 Input::Tab
             ),
             None
+        );
+    }
+
+    #[test]
+    fn snapshot_progress_matches_live_batches_after_eviction_and_reset() {
+        use yoctui_protocol::daemon::{
+            DaemonBuildEvent, DaemonEvent, DaemonSnapshotJournal, DaemonSnapshotLimits,
+            MAX_DAEMON_BUILD_EVENTS,
+        };
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let initial = daemon_protocol_snapshot(&state);
+        let mut journal =
+            DaemonSnapshotJournal::new(initial.clone(), DaemonSnapshotLimits::default()).unwrap();
+        let mut app = yoctui_model::App::new(64, 64 * 1024);
+        let mut replica = DaemonClientSnapshot::default();
+        replica.replace_app(&mut app, initial);
+        for build in [
+            DaemonBuildEvent::Reset {
+                targets: vec!["image".into()],
+            },
+            DaemonBuildEvent::Started,
+            DaemonBuildEvent::TaskQueued {
+                recipe: "seed".into(),
+                task: "do_compile".into(),
+                worker: None,
+                stats: Some(yoctui_protocol::TaskStatsData {
+                    completed: 2_339,
+                    total: 6_812,
+                    active: 1,
+                    failed: 0,
+                }),
+            },
+        ] {
+            let event = journal.publish(DaemonEvent::Build(build)).unwrap();
+            replica.apply_event_to_app(&mut app, &event).unwrap();
+        }
+        let count = MAX_DAEMON_BUILD_EVENTS + 8;
+        for index in 0..count {
+            let event = journal
+                .publish(DaemonEvent::Build(DaemonBuildEvent::TaskCompleted {
+                    recipe: format!("recipe-{index}"),
+                    task: "do_compile".into(),
+                    success: true,
+                }))
+                .unwrap();
+            replica
+                .apply_task_events_to_app(&mut app, &[event])
+                .unwrap();
+        }
+        let expected = (2_339 + count, Some(6_812));
+        assert_eq!((app.build.completed, app.build.total), expected);
+        replica.replace_app(&mut app, journal.snapshot().clone());
+        assert_eq!((app.build.completed, app.build.total), expected);
+        let event = journal
+            .publish(DaemonEvent::Build(DaemonBuildEvent::Reset {
+                targets: vec!["next".into()],
+            }))
+            .unwrap();
+        replica.apply_event_to_app(&mut app, &event).unwrap();
+        assert_eq!((app.build.completed, app.build.total), (0, None));
+        assert!(app.completed_tasks.is_empty());
+    }
+
+    #[test]
+    fn snapshot_progress_survives_completed_task_compaction() {
+        use yoctui_protocol::daemon::{
+            DaemonBuildEvent, DaemonEvent, DaemonSnapshotJournal, DaemonSnapshotLimits,
+        };
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            123,
+            "boot-id".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let snapshot = daemon_protocol_snapshot(&state);
+        let mut journal =
+            DaemonSnapshotJournal::new(snapshot.clone(), DaemonSnapshotLimits::default()).unwrap();
+        let mut uninterrupted = yoctui_model::App::new(64, 64 * 1024);
+        let mut replica = DaemonClientSnapshot::default();
+        replica.replace_app(&mut uninterrupted, snapshot);
+        for event in [
+            DaemonBuildEvent::Reset {
+                targets: vec!["obmc-phosphor-image".into()],
+            },
+            DaemonBuildEvent::Started,
+            DaemonBuildEvent::TaskQueued {
+                recipe: "util-linux".into(),
+                task: "do_compile".into(),
+                worker: None,
+                stats: Some(yoctui_protocol::TaskStatsData {
+                    completed: 2_339,
+                    total: 6_812,
+                    active: 2,
+                    failed: 0,
+                }),
+            },
+            DaemonBuildEvent::TaskStarted {
+                recipe: "util-linux".into(),
+                task: "do_compile".into(),
+                pid: Some(42),
+                worker: None,
+                log_path: None,
+                stats: None,
+            },
+            DaemonBuildEvent::TaskCompleted {
+                recipe: "util-linux".into(),
+                task: "do_compile".into(),
+                success: true,
+            },
+        ] {
+            let event = journal.publish(DaemonEvent::Build(event)).unwrap();
+            replica
+                .apply_event_to_app(&mut uninterrupted, &event)
+                .unwrap();
+        }
+        assert_eq!(
+            (uninterrupted.build.completed, uninterrupted.build.total),
+            (2_340, Some(6_812))
+        );
+        let mut attached = yoctui_model::App::new(64, 64 * 1024);
+        attached.screen = Screen::Recipes;
+        DaemonClientSnapshot::default().replace_app(&mut attached, journal.snapshot().clone());
+        assert_eq!(
+            (attached.build.completed, attached.build.total),
+            (2_340, Some(6_812))
+        );
+        assert_eq!(attached.screen, Screen::Recipes);
+        assert_eq!(attached.completed_tasks.len(), 1);
+        replica.replace_app(&mut uninterrupted, journal.snapshot().clone());
+        assert_eq!(
+            (uninterrupted.build.completed, uninterrupted.build.total),
+            (2_340, Some(6_812))
         );
     }
 

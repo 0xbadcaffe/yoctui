@@ -116,12 +116,12 @@ notes = "v0.1.73 gives initial pre-terminal attachment a five-second receive bud
 id = "OPENBMC-SNAPSHOT-PROGRESS-001"
 milestone = "M56"
 title = "Preserve authoritative build counters across compacted daemon snapshots"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1288
 required = true
 depends_on = ["OPENBMC-ATTACH-001"]
 verify = ["cargo test -p yoctui-protocol snapshot_progress", "cargo test -p yoctui-app snapshot_progress", "cargo test -p yoctui-ui snapshot_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Live v0.1.73 Romulus attachment: snapshot sequence 1883 reports job 2 at 2339/6812 but retains only queued llvm_git statistics at 1731 completed plus eight completed rows. Completing/replacing task events removes their newer aggregate statistics; replay then understates build completion. Preserve bounded typed aggregate counters independently of retained rows, reset between builds, keep unknown totals unknown, and prove fresh/replacement snapshots agree with uninterrupted consumption. Cover task completion, row eviction, duplicate completion, malformed/unknown totals and terminal transitions with protocol/app/TestBackend tests. Live recheck remains required; do not stop the current image solely to replace its daemon. Update UI/architecture contracts and OpenBMC evidence."
+notes = "v0.1.76 preserves optional typed aggregate counters independently of compacted rows and installs them with Current replica authority. Five protocol/app/TestBackend regressions cover fresh/replacement/batched consumption, eviction, duplicate completion, reset, legacy absence, malformed/unknown totals and terminal transitions. Regression first failed (1, unknown) versus (2340, 6812). Workspace tests, strict Clippy, 49 bridge tests, fmt, docs, deterministic rasters and roadmap pass; workspace retry with two test threads resolved the existing PTY resize test race without changes. Live fifth Romulus image attempt: production attach renders 2854/6812 matching snapshot/job counters at sequences 115 and 146 despite retained statistics only at 1731/6812. Exact binary/hash/captures in docs/testing/openbmc.md. Recovery cancellation preserved 23 old empty objects before restarting the verified private daemon. Image success and release performance are not claimed."
 
 [[task]]
 id = "OPENBMC-LIVE-001"

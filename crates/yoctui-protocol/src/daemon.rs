@@ -2025,7 +2025,17 @@ pub struct DaemonSnapshot {
     pub recent_logs: Vec<LogRecord>,
     #[serde(default)]
     pub build_events: Vec<DaemonBuildEvent>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build_progress: Option<DaemonBuildProgress>,
     pub recovery_warnings: Vec<String>,
+}
+
+/// Aggregate build authority is independent of the retained per-task rows.
+/// Absence supports legacy snapshots; it is not a zero-completed checkpoint.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct DaemonBuildProgress {
+    pub completed: usize,
+    pub total: Option<usize>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -2723,6 +2733,7 @@ pub fn apply_sequenced_event(
 }
 
 fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
+    update_build_progress(snapshot, &event);
     if matches!(event, DaemonBuildEvent::Reset { .. }) {
         snapshot.build_events.clear();
     }
@@ -2786,6 +2797,57 @@ fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
             })
         });
         snapshot.build_events.remove(removable.unwrap_or(0));
+    }
+}
+
+fn update_build_progress(snapshot: &mut DaemonSnapshot, event: &DaemonBuildEvent) {
+    match event {
+        DaemonBuildEvent::Reset { .. } => {
+            snapshot.build_progress = Some(DaemonBuildProgress::default());
+        }
+        DaemonBuildEvent::Started => {
+            snapshot.build_progress.get_or_insert_with(Default::default);
+        }
+        DaemonBuildEvent::TaskQueued {
+            stats: Some(stats), ..
+        }
+        | DaemonBuildEvent::TaskStarted {
+            stats: Some(stats), ..
+        } => {
+            let progress = snapshot.build_progress.get_or_insert_with(Default::default);
+            progress.completed = progress.completed.max(stats.completed);
+            progress.total = (stats.total > 0).then_some(stats.total);
+        }
+        DaemonBuildEvent::TaskCompleted { recipe, task, .. } => {
+            // Inspect identity before compaction removes the active task. A
+            // repeated completion is inert, but a newly started same-ID task
+            // may complete again. Never count a legacy snapshot's partial
+            // replay as a complete aggregate without a start/stat checkpoint.
+            let active = snapshot.build_events.iter().any(|event| {
+                matches!(event,
+                DaemonBuildEvent::TaskQueued { recipe: old_recipe, task: old_task, .. }
+                | DaemonBuildEvent::TaskStarted { recipe: old_recipe, task: old_task, .. }
+                if old_recipe == recipe && old_task == task)
+            });
+            let completed = snapshot.build_events.iter().any(|event| {
+                matches!(event,
+                DaemonBuildEvent::TaskCompleted { recipe: old_recipe, task: old_task, .. }
+                if old_recipe == recipe && old_task == task)
+            });
+            if (active || !completed)
+                && let Some(progress) = &mut snapshot.build_progress
+            {
+                progress.completed = progress.completed.saturating_add(1);
+            }
+        }
+        DaemonBuildEvent::Completed { success: true, .. } => {
+            if let Some(progress) = &mut snapshot.build_progress
+                && let Some(total) = progress.total.filter(|total| *total > 0)
+            {
+                progress.completed = total;
+            }
+        }
+        _ => {}
     }
 }
 
@@ -3086,6 +3148,7 @@ mod tests {
             clients: Vec::new(),
             recent_logs: Vec::new(),
             build_events: Vec::new(),
+            build_progress: None,
             recovery_warnings: Vec::new(),
         }
     }
@@ -3325,6 +3388,7 @@ mod tests {
             }],
             recent_logs: Vec::new(),
             build_events: Vec::new(),
+            build_progress: None,
             recovery_warnings: Vec::new(),
         };
         let message = ServerMessage::Attached {
@@ -3721,6 +3785,141 @@ mod tests {
             Err(DaemonSnapshotError::EventTooLarge { .. })
         ));
         assert_eq!(journal.snapshot().sequence, 0);
+    }
+
+    #[test]
+    fn snapshot_progress_keeps_counts_after_eviction_and_duplicate_completion() {
+        let mut snapshot = daemon_snapshot_fixture();
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::Reset {
+                targets: vec!["image".into()],
+            },
+        );
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::TaskQueued {
+                recipe: "seed".into(),
+                task: "do_compile".into(),
+                worker: None,
+                stats: Some(TaskStatsData {
+                    completed: 2_339,
+                    total: 6_812,
+                    active: 1,
+                    failed: 0,
+                }),
+            },
+        );
+        let count = MAX_DAEMON_BUILD_EVENTS + 8;
+        for index in 0..count {
+            let event = DaemonBuildEvent::TaskCompleted {
+                recipe: format!("recipe-{index}"),
+                task: "do_compile".into(),
+                success: index % 2 == 0,
+            };
+            apply_build_event(&mut snapshot, event.clone());
+            apply_build_event(&mut snapshot, event);
+        }
+        assert_eq!(snapshot.build_events.len(), MAX_DAEMON_BUILD_EVENTS);
+        assert_eq!(
+            snapshot.build_progress,
+            Some(DaemonBuildProgress {
+                completed: 2_339 + count,
+                total: Some(6_812)
+            })
+        );
+        assert!(!snapshot.build_events.iter().any(|event| matches!(event,
+            DaemonBuildEvent::TaskCompleted { recipe, .. } if recipe == "recipe-0")));
+        let encoded = encode_frame(&ServerMessage::Snapshot(snapshot.clone())).unwrap();
+        assert!(encoded.len() < MAX_FRAME_BYTES);
+        assert_eq!(
+            decode_frame::<ServerMessage>(&encoded).unwrap(),
+            ServerMessage::Snapshot(snapshot.clone())
+        );
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::Completed {
+                success: false,
+                exit_code: Some(1),
+            },
+        );
+        assert_eq!(snapshot.build_progress.unwrap().completed, 2_339 + count);
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::Completed {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert_eq!(snapshot.build_progress.unwrap().completed, 6_812);
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::Reset {
+                targets: vec!["next".into()],
+            },
+        );
+        assert_eq!(
+            snapshot.build_progress,
+            Some(DaemonBuildProgress::default())
+        );
+    }
+
+    #[test]
+    fn snapshot_progress_preserves_unknown_totals_and_legacy_absence() {
+        let mut snapshot = daemon_snapshot_fixture();
+        let encoded = serde_json::to_value(&snapshot).unwrap();
+        assert!(encoded.get("build_progress").is_none());
+        let legacy: DaemonSnapshot = serde_json::from_value(encoded).unwrap();
+        assert_eq!(legacy.build_progress, None);
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::TaskCompleted {
+                recipe: "legacy".into(),
+                task: "do_compile".into(),
+                success: true,
+            },
+        );
+        assert_eq!(snapshot.build_progress, None);
+        apply_build_event(&mut snapshot, DaemonBuildEvent::Started);
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::TaskQueued {
+                recipe: "current".into(),
+                task: "do_compile".into(),
+                worker: None,
+                stats: Some(TaskStatsData {
+                    completed: 42,
+                    total: 0,
+                    active: 1,
+                    failed: 0,
+                }),
+            },
+        );
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::Completed {
+                success: true,
+                exit_code: Some(0),
+            },
+        );
+        assert_eq!(
+            snapshot.build_progress,
+            Some(DaemonBuildProgress {
+                completed: 42,
+                total: None
+            })
+        );
+        for invalid in [
+            r#"{"completed":-1,"total":6812}"#,
+            r#"{"completed":1,"total":-1}"#,
+            r#"{"completed":1,"total":"unknown"}"#,
+            r#"{"completed":1.5,"total":6812}"#,
+        ] {
+            assert!(
+                serde_json::from_str::<DaemonBuildProgress>(invalid).is_err(),
+                "{invalid}"
+            );
+        }
     }
 
     #[test]

@@ -661,6 +661,7 @@ mod tests {
                 build: None,
             }],
             build_events: Vec::new(),
+            build_progress: None,
             recovery_warnings: Vec::new(),
         }
     }
