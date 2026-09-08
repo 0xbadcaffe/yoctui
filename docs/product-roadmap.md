@@ -4,6 +4,10 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+RELEASE-CI-095 explicitly provisions rustfmt and Clippy in the minimal test
+container after the actual v0.1.94 hosted result. All 712 tasks are DONE;
+v0.1.95 is verified locally and awaits hosted CI and final package validation.
+
 RELEASE-CI-094 completes the follow-up to hosted v0.1.93 results: compatibility
 and PTY repairs pass; container checkout trust and snapshot imports are now
 corrected and verified locally. All 711 tasks are DONE. v0.1.94 is the current

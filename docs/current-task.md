@@ -1,8 +1,19 @@
 # Current Task
 
-**ID:** RELEASE-CI-094
-**Title:** Finish container checkout and snapshot import CI integration
+**ID:** RELEASE-CI-095
+**Title:** Install explicit Rust quality components in the minimal CI container
 **Status:** DONE
+
+Run 34255958841 confirms mounted Git trust and version checks, then exposes
+missing cargo-fmt in the container's minimal rustup installation. Explicitly
+request rustfmt and clippy in the test job, validate the workflow contract,
+and refresh the version to v0.1.95. No application or test behavior changes.
+The CI contract, fmt, version, README, both deterministic raster galleries and
+roadmap checks pass; all 21 golden changes are version digits only. All 712
+registry tasks are DONE. Push v0.1.95, then require the complete hosted baseline
+and final locked package verification before publishing. The application/test
+baseline passed locally for v0.1.94; this follow-up changes workflow provisioning
+and version artifacts only.
 
 Hosted v0.1.93 run 34254696096 passed compatibility and both corrected PTY
 gates. It next revealed container Git ownership rejection (action HOME differs

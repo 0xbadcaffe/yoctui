@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "RELEASE-CI-095"
+milestone = "M57"
+title = "Install explicit Rust quality components in the minimal CI container"
+status = "DONE"
+priority = 1502
+required = true
+depends_on = ["RELEASE-CI-094"]
+verify = ["./scripts/check-ci.sh", "cargo fmt --all --check", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.95 prepared: hosted run 34255958841 passes compatibility and release-quality, confirms container Git trust/version validation, then shows cargo-fmt absent from the minimal rustup profile. The test job now explicitly requests both rustfmt and clippy, enforced by the CI contract. CI contract, fmt, version policy, README checks, all sixteen deterministic rasters, 21 version-only golden diffs and roadmap pass. No application or test behavior changes; full local baseline passed for v0.1.94 and all six v0.1.94 locked publication dry-run verifications passed. The full hosted v0.1.95 baseline and final locked Cargo archive verification remain required delivery operations before publication."
+
+[[task]]
 id = "RELEASE-CI-094"
 milestone = "M57"
 title = "Finish container checkout and snapshot import CI integration"

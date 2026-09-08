@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+v0.1.95 RELEASE-CI-095 provisions rustfmt and Clippy explicitly after hosted
+run 34255958841 passed the container trust/version checks but found cargo-fmt
+missing from the minimal rustup profile. This workflow-only correction is
+DONE with CI contract, fmt, version, README, sixteen deterministic raster and
+roadmap checks passing. All 21 golden changes are version digits only. All 712
+tasks are DONE; the hosted v0.1.95 baseline and final locked package verification
+remain publication requirements. No application behavior changes.
+
 v0.1.94 RELEASE-CI-094 is DONE after hosted run 34254696096 confirmed
 the compatibility and PTY repairs, then exposed two further CI environment
 issues: mounted checkout ownership and the snapshot loader import path.
