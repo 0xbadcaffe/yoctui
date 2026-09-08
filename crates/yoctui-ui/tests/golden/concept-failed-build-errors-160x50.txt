@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.79  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64          Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
+│yoctui v0.1.80  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64          Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
+│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: --:--:--  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Failed build summary────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
 │▾ OVERVIEW                ││Target: core-image-minimal  ·  Result: Failed (exit 1)                              ││▾ PRIMARY FACTS                             │

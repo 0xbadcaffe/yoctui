@@ -18,7 +18,13 @@ reinstalls consistently for fresh, replacement and batched replicas. Unknown
 legacy timing remains absent; conversion and elapsed arithmetic are checked.
 The CLI captures observation timestamps, protocol preserves bounded wire state,
 the app installs it, and the UI renders model timing without reading processes
-or parsing logs. OPENBMC-ATTACH-TIMING-001 owns this correction.
+or parsing logs. Optional Unix-millisecond fields on Started, TaskStarted,
+TaskCompleted and Completed preserve legacy decoding. Before compaction the
+journal carries the retained task start into its completion and preserves the
+first terminal timestamp on duplicates. ObservedTaskTiming reducer inputs
+never substitute a client clock for missing evidence. Values outside the UI's
+supported date domain and reversed elapsed intervals remain unavailable.
+OPENBMC-ATTACH-TIMING-001 owns this correction.
 
 Queue/worker task identity must come from initialized BitBake metadata rather
 than filename heuristics. Bounded identity lookup preserves recipe variants
@@ -2254,8 +2260,9 @@ Replica installation converts protocol-owned snapshots into a protocol-free
 `ClientDaemonView` in `yoctui-model` and installs the snapshot's typed build
 replica through `yoctui-app`. The daemon view carries revision, daemon identity,
 BitBake lifecycle, bounded job/PTY summaries, client count, logs and recovery
-warnings. Ordered build events use the existing backend-event-to-action mapping
-and model reducer; Ratatui renders typed state and never inspects wire messages
+warnings. Ordered build events use the existing backend-event-to-action mapping,
+with explicit observed-time task reducer inputs for daemon lifecycle timing;
+Ratatui renders typed state and never inspects wire messages
 or raw BitBake text. Screen, focus, Navigator selection, theme, dialogs, editor
 state, layout and other presentation fields are never part of replica
 replacement; disconnect changes connection status without discarding the last

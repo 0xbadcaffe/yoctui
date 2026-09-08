@@ -816,7 +816,9 @@ impl TaskInfo {
         }
     }
     pub fn elapsed_at(&self, now: SystemTime) -> Option<Duration> {
-        let end = self.finished.unwrap_or(now);
+        let end = self
+            .finished
+            .or_else(|| (self.state == TaskState::Active).then_some(now))?;
         self.started
             .and_then(|started| end.duration_since(started).ok())
     }
@@ -3660,7 +3662,7 @@ pub struct ImagePicker {
     pub images: Vec<String>,
     pub selection: usize,
 }
-const MAX_BUILD_HISTORY: usize = 50;
+pub const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {
         Self {
@@ -5779,9 +5781,26 @@ fn task_state_order(state: TaskState) -> u8 {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TaskEvent {
     Started(TaskInfo),
+    ObservedStarted(TaskInfo),
     Queued(TaskInfo),
-    Progress { id: TaskId, progress: Option<u8> },
-    Completed { id: TaskId, success: bool },
+    Progress {
+        id: TaskId,
+        progress: Option<u8>,
+    },
+    Completed {
+        id: TaskId,
+        success: bool,
+    },
+    ObservedCompleted {
+        id: TaskId,
+        success: bool,
+        timing: ObservedTaskTiming,
+    },
+}
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ObservedTaskTiming {
+    pub started: Option<SystemTime>,
+    pub finished: Option<SystemTime>,
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
@@ -7103,14 +7122,21 @@ fn clamp_task_selection(app: &mut App) {
 
 fn apply_task_event(app: &mut App, event: TaskEvent) {
     mark_build_running_from_task_activity(app);
+    let observed_start = matches!(&event, TaskEvent::ObservedStarted(_));
+    let observed_timing = match &event {
+        TaskEvent::ObservedCompleted { timing, .. } => Some(*timing),
+        _ => None,
+    };
     match event {
-        TaskEvent::Started(mut task) => {
+        TaskEvent::Started(mut task) | TaskEvent::ObservedStarted(mut task) => {
             if let Some(stats) = task.stats {
                 app.build.completed = app.build.completed.max(stats.completed);
                 app.build.total = (stats.total > 0).then_some(stats.total);
             }
             task.state = TaskState::Active;
-            task.started.get_or_insert_with(SystemTime::now);
+            if !observed_start {
+                task.started.get_or_insert_with(SystemTime::now);
+            }
             if app.tasks.contains_key(&task.id) || app.tasks.len() < MAX_ACTIVE_TASKS {
                 app.tasks.insert(task.id.clone(), task);
             } else {
@@ -7137,7 +7163,7 @@ fn apply_task_event(app: &mut App, event: TaskEvent) {
                 task.progress = progress.map(|value| value.min(100));
             }
         }
-        TaskEvent::Completed { id, success } => {
+        TaskEvent::Completed { id, success } | TaskEvent::ObservedCompleted { id, success, .. } => {
             let mut task = if let Some(task) = app.tasks.remove(&id) {
                 task
             } else {
@@ -7164,7 +7190,12 @@ fn apply_task_event(app: &mut App, event: TaskEvent) {
             } else {
                 TaskState::Failed
             };
-            task.finished = Some(SystemTime::now());
+            task.finished = if let Some(timing) = observed_timing {
+                task.started = timing.started;
+                timing.finished
+            } else {
+                Some(SystemTime::now())
+            };
             app.completed_tasks
                 .push_back(CompletedTask { task, success });
             if app.completed_tasks.len() > MAX_COMPLETED_TASKS {
@@ -19245,6 +19276,50 @@ impl fmt::Display for BuildStatus {
 }
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn snapshot_timing_observed_reducer_does_not_fall_back_to_local_clock() {
+        use super::*;
+        let mut app = App::new(64, 64 * 1024);
+        let task = TaskInfo {
+            id: TaskId("llvm-native:do_compile".into()),
+            recipe: "llvm-native".into(),
+            task: "do_compile".into(),
+            ..TaskInfo::default()
+        };
+        let _ = update(
+            &mut app,
+            Action::TaskEvents(vec![TaskEvent::ObservedStarted(task.clone())]),
+        );
+        assert_eq!(app.tasks[&task.id].started, None);
+        let _ = update(
+            &mut app,
+            Action::TaskEvents(vec![TaskEvent::ObservedCompleted {
+                id: task.id.clone(),
+                success: true,
+                timing: ObservedTaskTiming {
+                    started: Some(SystemTime::UNIX_EPOCH),
+                    finished: None,
+                },
+            }]),
+        );
+        assert_eq!(
+            app.completed_tasks[0].task.elapsed_at(SystemTime::now()),
+            None
+        );
+        let _ = update(
+            &mut app,
+            Action::TaskEvents(vec![TaskEvent::ObservedCompleted {
+                id: task.id,
+                success: true,
+                timing: ObservedTaskTiming {
+                    started: Some(SystemTime::UNIX_EPOCH),
+                    finished: Some(SystemTime::now()),
+                },
+            }]),
+        );
+        assert_eq!(app.completed_tasks.len(), 1);
+        assert_eq!(app.completed_tasks[0].task.finished, None);
+    }
     use super::*;
     use proptest::prelude::*;
 

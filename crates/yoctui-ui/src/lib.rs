@@ -1755,9 +1755,8 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
         .total
         .map_or_else(|| "—".into(), |total| total.to_string());
     let elapsed = app
-        .build
-        .started
-        .and_then(|started| now.duration_since(started).ok())
+        .build_summary_at(now)
+        .elapsed
         .map_or_else(|| "--:--:--".into(), format_duration);
     let task = format!("{} / {total}", app.build.completed);
     let workers = app
@@ -21932,6 +21931,77 @@ mod tests {
     }
 
     #[test]
+    fn snapshot_timing_renders_observed_and_frozen_elapsed_at_all_sizes() {
+        use yoctui_protocol::daemon::DaemonBuildEvent as B;
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            1,
+            "boot".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = yoctui_app::daemon_protocol_snapshot(&state);
+        snapshot.build_events = vec![
+            B::Reset {
+                targets: vec!["image".into()],
+            },
+            B::Started {
+                started_unix_ms: Some(1000),
+            },
+            B::TaskStarted {
+                recipe: "llvm-native".into(),
+                task: "do_compile".into(),
+                started_unix_ms: Some(2000),
+                pid: Some(42),
+                worker: None,
+                log_path: None,
+                stats: None,
+            },
+        ];
+        let mut app = App::new(64, 64 * 1024);
+        app.screen = Screen::Tasks;
+        app.focus = yoctui_model::FocusTarget::Workspace;
+        let mut replica = yoctui_app::DaemonClientSnapshot::default();
+        replica.replace_app(&mut app, snapshot.clone());
+        assert_eq!(
+            app.tasks[&yoctui_model::TaskId("llvm-native:do_compile".into())]
+                .elapsed_at(UNIX_EPOCH + Duration::from_secs(3602)),
+            Some(Duration::from_secs(3600))
+        );
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            let text =
+                rendered_text_at(&app, width, height, UNIX_EPOCH + Duration::from_secs(3602));
+            assert!(text.contains("01:00:01"), "{width}x{height}: {text}");
+        }
+        snapshot.build_events.push(B::Completed {
+            success: true,
+            exit_code: Some(0),
+            finished_unix_ms: Some(65000),
+        });
+        replica.replace_app(&mut app, snapshot.clone());
+        for (width, height) in [(160, 50), (100, 30), (80, 24)] {
+            for now in [3602, 9999] {
+                let text =
+                    rendered_text_at(&app, width, height, UNIX_EPOCH + Duration::from_secs(now));
+                assert!(text.contains("00:01:04"), "{width}x{height}: {text}");
+                if width == 160 {
+                    assert!(text.contains("Elapsed: 00:01:04"), "{text}");
+                }
+            }
+        }
+        snapshot.build_events[1] = B::Started {
+            started_unix_ms: None,
+        };
+        replica.replace_app(&mut app, snapshot);
+        assert_eq!(app.build_summary_at(UNIX_EPOCH).elapsed, None);
+        let text = rendered_text_at(&app, 160, 50, UNIX_EPOCH + Duration::from_secs(9999));
+        // Earlier build-history rows may retain their known duration; the
+        // current snapshot's header must not borrow it for missing timing.
+        assert!(text.contains("Elapsed: --:--:--"), "{text}");
+        assert!(!text.contains("Elapsed: 00:01:04"), "{text}");
+    }
+
+    #[test]
     fn snapshot_progress_renders_aggregate_instead_of_retained_row_count() {
         use yoctui_protocol::daemon::{DaemonBuildEvent, DaemonBuildProgress};
         let state = yoctui_model::DaemonGlobalState::new(
@@ -21946,11 +22016,15 @@ mod tests {
             DaemonBuildEvent::Reset {
                 targets: vec!["obmc-phosphor-image".into()],
             },
-            DaemonBuildEvent::Started,
+            DaemonBuildEvent::Started {
+                started_unix_ms: None,
+            },
             DaemonBuildEvent::TaskCompleted {
                 recipe: "util-linux".into(),
                 task: "do_compile".into(),
                 success: true,
+                started_unix_ms: None,
+                finished_unix_ms: None,
             },
         ];
         snapshot.build_progress = Some(DaemonBuildProgress {

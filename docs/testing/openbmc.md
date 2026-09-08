@@ -1,5 +1,49 @@
 # OpenBMC live integration
 
+## Reattachment timing repair (v0.1.80)
+
+OPENBMC-ATTACH-TIMING-001 is DONE with optional daemon-observed lifecycle
+timestamps. Ten focused tests and all 1,566 workspace tests pass, together with
+49 bridge tests, strict Clippy, fmt, docs, rasters and roadmap. The legacy app regression first failed because
+replay produced a local SystemTime instead of None, then passed after explicit
+observed-time reducer inputs were added. Protocol regressions cover completion
+compaction, bounded eviction, duplicate terminal timestamps and legacy wire
+decoding. App/UI tests inject observation times rather than sleeping to infer
+durations.
+
+`python3 scripts/test-snapshot-timing.py <candidate-binary>` uses a private
+temporary socket and the actual production PTY client, without touching the
+OpenBMC daemon. Its injected terminal snapshot starts at Unix millisecond 1000
+and ends at 65000. The preserved v0.1.78 binary reproducibly displayed 00:00:00,
+not 00:01:04. The regression requires two fresh clients to retain the latter
+duration across subsequent frames. This is isolated client integration evidence,
+not a real BitBake lifecycle-timestamp validation. The running image stays on
+v0.1.76; final live timing validation remains under OPENBMC-LIVE-001 after a
+natural stopping point.
+
+The first v0.1.80 production check exposed a second path: the header directly
+subtracted the build start from the current clock, bypassing the terminal-aware
+model summary. It displayed 496901 hours for the injected epoch timestamp.
+The header now consumes the same summary as the other views; the rendering
+test also checks the header's explicit Elapsed label. The initial full workspace
+run stopped on this integration regression; the final full rerun passes.
+
+The corrected production client passes both isolated attachments. A read-only
+[v0.1.80 client capture](../../artifacts/live-openbmc/romulus/v80-legacy-timing-20260908.txt)
+against the still-running v0.1.76 OpenBMC daemon shows 3842/6812, task/build
+elapsed unavailable and Started unavailable, rather than newly invented
+five-second clocks. net-snmp and rust-native installation tasks are active;
+this does not claim that the older daemon now publishes timing. The binary hash is recorded in the
+[capture metadata](../../artifacts/live-openbmc/romulus/v80-legacy-timing-20260908.json).
+No image job was submitted, cancelled or restarted by this check.
+
+Verification also corrected two test issues without relaxing timing authority:
+the UI assertion now distinguishes current-header timing from valid retained
+history, and the private socket fixture tolerates a peer closing before its
+post-capture detach acknowledgement. Snapshot delivery and both screen-duration
+checks remain mandatory. Three consecutive standalone production-client checks
+pass after the cleanup-race correction.
+
 Status: environment, direct-capability, startup-responsiveness, bounded
 inventory, CLI submission, symlinked tool discovery, host Python and initial
 attachment tasks complete. The third Romulus image attempt was accepted through

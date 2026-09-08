@@ -1,23 +1,30 @@
 # Current Task
 
-**ID:** OPENBMC-ATTACH-TIMING-001
-**Title:** Preserve observed build and task timing across daemon reattachment
+**ID:** OPENBMC-TASK-IDENTITY-001
+**Title:** Use consistent authoritative recipe identities for queued and worker task events
 **Status:** IN_PROGRESS
 
-Live reattachment showed 00:00:05 for an LLVM task whose same PID had run 2369
-seconds. Lifecycle timestamps are absent from daemon events, and replay uses
-the new client's clock. Preserve bounded typed daemon-observed start/end times
-through event compaction and fresh/replacement/batched client state. Freeze
-terminal durations, reset between builds, and keep legacy missing timing
-unavailable. Cover invalid/reversed times and preserve screen/focus. Add failing
-protocol/app/TestBackend regressions, CLI timestamp publication and an isolated
-production reattachment check. Do not interrupt the real image for deployment.
+Filename-derived queue names such as llvm_git, stdplus_git and gpioplus_git
+create ghost rows beside actual worker PNs. Resolve queued/started/completed
+identities from bounded initialized BitBake metadata, including native/multilib
+variants, git versions and PN overrides. No per-event metadata parse or filename
+guessing. Unresolved identity stays honest without ghost rows; preserve task
+statistics and PID-scoped log/progress correlation. Add failing bridge lifecycle
+fixtures and typed task reconciliation checks. Do not interrupt the real image
+solely to deploy this fix; record its live recheck after a natural stopping point.
 
-Verification: snapshot_timing tests in protocol/app/UI/CLI, plus full baseline
-(workspace tests, Clippy, fmt, bridge tests, docs and roadmap). After this task,
-OPENBMC-TASK-IDENTITY-001 is the next eligible correction: filename-derived queue
-names create ghost rows beside actual worker PNs. See recorded findings in
-docs/testing/openbmc.md. No implementation of these two fixes is claimed yet.
+Verification: bridge tests, full workspace tests, strict Clippy, fmt, docs and
+roadmap. OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80: ten focused tests,
+all 1,566 workspace tests, 49 bridge tests and baseline checks pass. Its isolated
+production client preserves injected terminal duration across two attachments;
+the real v0.1.76 daemon correctly yields unavailable legacy timing. Earlier
+build history, screen and focus survive replacement. Evidence and failed-first
+regressions are recorded in docs/testing/openbmc.md.
+
+The tested v0.1.80 binary is preserved at
+/home/bspguy-dev/.local/state/yoctui-v80-validated.GDZdkr/yoctui, SHA-256
+ba7bd5dc15cb886f9268daba79e1828c9860a3bff5cd3c57f86df363181f3ca3.
+It has not replaced the running daemon or normal installed release.
 
 ## OpenBMC live handoff
 
@@ -49,9 +56,9 @@ profiles and no incremental cache alongside OpenBMC to retain host headroom.
 - Current evidence: artifacts/live-openbmc/romulus/image-build-v76-recovery-20260908.json
 
 The image was submitted through `yoctui daemon build obmc-phosphor-image` after
-initial metadata readiness, and Accepted. Last verified counters were 2988/6812;
+initial metadata readiness, and Accepted. Last verified counters were 3842/6812;
 the image remains running with no new recorded error. Root had about
-35.6 GiB free at the fresh attach; monitor disk and available memory. OpenBMC-only
+29 GiB free near the fresh attach; monitor disk and available memory. OpenBMC-only
 local.conf limits BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, verified before
 submission. rm_work is enabled, excluding the image work directory for rootfs
 inspection. Scheduling stops at 15 GiB and halts at 8 GiB. The normal installed

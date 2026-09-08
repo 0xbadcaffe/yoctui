@@ -2248,7 +2248,9 @@ fn daemon_status() -> Result<()> {
                 yoctui_protocol::daemon::DaemonBuildEvent::CommandFailed { code, message } => {
                     println!("build error {code}: {message}");
                 }
-                yoctui_protocol::daemon::DaemonBuildEvent::Completed { success, exit_code } => {
+                yoctui_protocol::daemon::DaemonBuildEvent::Completed {
+                    success, exit_code, ..
+                } => {
                     println!("build completed success={success} exit_code={exit_code:?}");
                 }
                 _ => {}
@@ -4121,6 +4123,18 @@ fn daemon_build_event(
     Option<yoctui_protocol::daemon::DaemonBuildEvent>,
     Option<yoctui_protocol::daemon::JobSummary>,
 ) {
+    daemon_build_event_at(event, job_id, unix_ms())
+}
+
+#[cfg(unix)]
+fn daemon_build_event_at(
+    event: yoctui_bitbake::BackendEvent,
+    job_id: yoctui_protocol::daemon::JobId,
+    observed_unix_ms: u64,
+) -> (
+    Option<yoctui_protocol::daemon::DaemonBuildEvent>,
+    Option<yoctui_protocol::daemon::JobSummary>,
+) {
     use yoctui_bitbake::BackendEvent;
     use yoctui_protocol::daemon::{DaemonBuildEvent, JobKind, JobSummary, LifecycleState};
     use yoctui_protocol::{LayerData, RecipeData, TaskStatsData, WorkspaceData};
@@ -4176,7 +4190,9 @@ fn daemon_build_event(
             None,
         ),
         BackendEvent::BuildStarted => (
-            Some(DaemonBuildEvent::Started),
+            Some(DaemonBuildEvent::Started {
+                started_unix_ms: Some(observed_unix_ms),
+            }),
             Some(JobSummary {
                 id: job_id,
                 kind: JobKind::BitBakeBuild,
@@ -4225,6 +4241,7 @@ fn daemon_build_event(
                     worker,
                     log_path: log_path.map(|path| path.display().to_string()),
                     stats: task_stats.map(stats),
+                    started_unix_ms: Some(observed_unix_ms),
                 }),
                 job,
             )
@@ -4250,11 +4267,17 @@ fn daemon_build_event(
                 recipe,
                 task,
                 success,
+                started_unix_ms: None,
+                finished_unix_ms: Some(observed_unix_ms),
             }),
             None,
         ),
         BackendEvent::BuildCompleted { success, exit_code } => (
-            Some(DaemonBuildEvent::Completed { success, exit_code }),
+            Some(DaemonBuildEvent::Completed {
+                success,
+                exit_code,
+                finished_unix_ms: Some(observed_unix_ms),
+            }),
             Some(JobSummary {
                 id: job_id,
                 kind: JobKind::BitBakeBuild,
@@ -15343,6 +15366,53 @@ fn interactive_frame_interval(configured_refresh: Duration) -> Duration {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn snapshot_timing_publication_uses_injected_observation_clock() {
+        use yoctui_bitbake::BackendEvent as B;
+        use yoctui_protocol::daemon::{DaemonBuildEvent as D, JobId};
+        let events = [
+            B::BuildStarted,
+            B::TaskStarted {
+                recipe: "llvm-native".into(),
+                task: "do_compile".into(),
+                pid: Some(42),
+                worker: None,
+                log_path: None,
+                stats: None,
+            },
+            B::TaskCompleted {
+                recipe: "llvm-native".into(),
+                task: "do_compile".into(),
+                success: true,
+            },
+            B::BuildCompleted {
+                success: true,
+                exit_code: Some(0),
+            },
+        ];
+        for event in events {
+            let (event, _) = daemon_build_event_at(event, JobId(1), 123456);
+            match event.unwrap() {
+                D::Started { started_unix_ms }
+                | D::TaskStarted {
+                    started_unix_ms, ..
+                } => assert_eq!(started_unix_ms, Some(123456)),
+                D::TaskCompleted {
+                    started_unix_ms,
+                    finished_unix_ms,
+                    ..
+                } => {
+                    assert_eq!(started_unix_ms, None);
+                    assert_eq!(finished_unix_ms, Some(123456));
+                }
+                D::Completed {
+                    finished_unix_ms, ..
+                } => assert_eq!(finished_unix_ms, Some(123456)),
+                event => panic!("unexpected {event:?}"),
+            }
+        }
+    }
 
     #[cfg(unix)]
     #[tokio::test]

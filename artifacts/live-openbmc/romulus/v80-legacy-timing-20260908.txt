@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.80  •  Project: openbmc  •  ▶ Running  •  Target: obmc-phosphor-image  •  Machine: romulus        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 3842 / 6812  |  Elapsed: --:--:--  |  Workers: 0                             │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
+│▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  56%  3842/6812▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_install                      │
+│  ▱ Dashboard             ││Active 2  Waiting 2846  Warnings 0  Errors 0  Elapsed --                            ││Recipe      net-snmp                        │
+│  ▱ Insights              ││Target: obmc-phosphor-image  Backend: bridge  Status: Running  Exit code: none      ││PN          net-snmp                        │
+│▾ CONTENT                 ││Parse progress: not parsing  Tasks: 3842/6812  Warnings: 0  Errors: 0  Release: nodi││PV          5.9.5.2                         │
+│  ▱ Layers                ││Task           Recipe               Status        Time      Progress                ││PR          unavailable                     │
+│  ▱ Recipes               ││⢻ do_install   net-snmp             ▶ Running     --        progress unknown ⢻      ││State       ▶ Running                       │
+│  ▱ Packages              ││⢻ do_install   rust-native          ▶ Running     --        progress unknown ⢻      ││Progress    unknown                         │
+│  ▱ Images                ││  do_compile   gpioplus_git         · Queued      --        --                      ││                                            │
+│  ▱ Kernel                ││  do_configure gpioplus_git         · Queued      --        --                      ││                                            │
+│  ▱ U-Boot / BIOS         ││  do_create_pa gpioplus_git         · Queued      --        --                      │└────────────────────────────────────────────┘
+│  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│▾ BUILD                   │┌Log Viewer — do_install (net-snmp) · ▶ Follow───────────────────────────────────────┐│Worker      unavailable                     │
+│  ▱ Tasks                2│││ Direct dependencies are                                                           ││PID         1631197                         │
+│  ▱ Logs              LIVE││['/home/bspguy-dev/src/openbmc/meta/recipes-bsp/pciutils/pciutils_3.15.0.bb:do_popul││Started     unavailable                     │
+│  ▱ Errors                ││ate_sysroot',                                                                       ││Elapsed     unavailable                     │
+│  ▱ Configuration         ││'/home/bspguy-dev/src/openbmc/meta/recipes-connectivity/openssl/openssl_3.5.7.bb:do_││Workdir     unavailable                     │
+│  ▱ Dependencies          ││populate_sysroot',                                                                  ││Log file                                    │
+│▾ VALIDATE                ││'/home/bspguy-dev/src/openbmc/meta/recipes-core/glibc/glibc_2.43.bb:do_populate_sysr││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Testing               ││oot',                                                                               ││mp/work/arm1176jzs-openbmc-linux-gnueabi/net│
+│    Security              ││'/home/bspguy-dev/src/openbmc/meta/recipes-core/systemd/systemd-systemctl-native_259││-snmp/5.9.5.2/temp/log.do_install.1631197   │
+│  ▱ QA                    ││.5.bb:do_populate_sysroot',                                                         │└────────────────────────────────────────────┘
+│▾ TOOLS                   ││'/home/bspguy-dev/src/openbmc/meta/recipes-devtools/gcc/gcc-cross_16.1.bb:do_populat│┌Recent output · Recent Log (tail)───────────┐
+│  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘││ Installed into sysroot: []                │
+│  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐││ Skipping as already exists in sysroot:    │
+│  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││['pciutils', 'openssl', 'base-files',       │
+│  ▱ QEMU / Wic            ││▶ Running     BitBake build Build        3842/6812               --        --       │└────────────────────────────────────────────┘
+│  ▱ Maintenance           ││✕ Failed      BitBake build Build        daemon                  --        --       │┌Contextual Actions──────────────────────────┐
+│  ▱ Build environment     ││                                                                                    ││✓ Cancel active build  [c] — Available      │
+│  ▱ Compatibility         ││                                                                                    ││  Implementation: tinfoil.cancel            │
+│  ▱ Settings              ││                                                                                    ││✓ Open Logs            [l] — Local          │
+│                          ││                                                                                    ││✓ Build History        [h] — Local          │
+│                          ││                                                                                    ││✓ Build options        [B] — Available      │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│  Implementation: tinfoil.build             │
+│                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│                                            │
+│                          ││CPU Usage        58%│RAM Usage        34%│Build FS Usage   93%│SSTATE ! unavailable │└────────────────────────────────────────────┘
+│                          ││                    │                    │              ▆▆▆▆▆ │                     │┌System Status───────────────────────────────┐
+│                          ││               ▇▇▆▅ │                    │              █████ │                     ││✓ Daemon Connected · Local · version unavai…│
+│                          ││               ████ │              █████ │              █████ │                     ││✓ BitBake Running · v2.19.0 · Jobs 1        │
+│                          ││ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ │                     ││! Compat Degraded g1 · A86 L1 U5 ?15 · PTY …│
+│                          ││       8 cores      │    5.2/15.0 GiB    │    28.4 GiB free   │                     ││✕ Build FS 93% · 28.4/456.3 GiB free · Work…│
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   h/l groups   ←/→ focus   Enter open   Ctrl+B prefix   ←/→ Focus   F1 Help   F10 Menu   q Quit                ▶ Build running · 2 active  05:55:31│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

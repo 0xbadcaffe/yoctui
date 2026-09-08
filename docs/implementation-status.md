@@ -1,11 +1,27 @@
 # Yoctui Implementation Status
 
-v0.1.79 governance registers two additional live findings. Current task
+OPENBMC-ATTACH-TIMING-001 is DONE in v0.1.80. Optional observed lifecycle
+timestamps survive bounded journal compaction; typed model inputs keep legacy
+absence unknown and terminal durations frozen, including the header. Earlier
+history, screen and focus survive replacement. Ten focused tests and all 1,566
+workspace tests pass, as do 49 bridge tests, strict Clippy, formatting, docs,
+six deterministic rasters and roadmap checks. Failed-first tests exposed both
+replay-created starts and the header's direct clock calculation. The production
+client now retains an injected 64-second duration across two fresh attachments;
+three consecutive harness runs pass after correcting a detach-cleanup race.
+Read-only OpenBMC attachment correctly leaves v0.1.76's missing timing unknown.
+The tested binary is preserved at
+/home/bspguy-dev/.local/state/yoctui-v80-validated.GDZdkr/yoctui, SHA-256
+ba7bd5dc15cb886f9268daba79e1828c9860a3bff5cd3c57f86df363181f3ca3.
+OPENBMC-TASK-IDENTITY-001 is current. Real image completion and live new-daemon
+timing/identity rechecks remain pending; the running daemon is unchanged.
+
+v0.1.79 governance registered two additional live findings. The first,
 OPENBMC-ATTACH-TIMING-001 fixes replay-created clocks: LLVM PID 1304077 had run
 2369 seconds while a fresh client showed five seconds. Next,
 OPENBMC-TASK-IDENTITY-001 addresses filename-derived llvm_git/stdplus_git queue
-rows that do not match worker PNs. Both have separate definitions/tests; no
-implementation is claimed yet. The image remains on the v0.1.76 daemon and
+rows that do not match worker PNs. Both received separate definitions/tests;
+neither was implemented in that governance commit. The image remains on the v0.1.76 daemon and
 will not be interrupted solely to deploy these fixes.
 
 DAEMON-JOB-IDENTITY-001 is DONE in v0.1.78. A live restart

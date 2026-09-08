@@ -2091,11 +2091,33 @@ impl DaemonClientSnapshot {
             let _ = yoctui_model::update(&mut build, daemon_log_action(record));
         }
         preserve_log_presentation(&app.logs, &mut build.logs);
+        let replaces_terminal_record = matches!(
+            app.build.status,
+            yoctui_model::BuildStatus::Completed
+                | yoctui_model::BuildStatus::Cancelled
+                | yoctui_model::BuildStatus::Failed
+        ) && app.build.started == build.build.started
+            && app.build.target == build.build.target;
         app.backend = build.backend;
         app.workspace = build.workspace;
         app.build = build.build;
         app.tasks = build.tasks;
         app.completed_tasks = build.completed_tasks;
+        if let Some(record) = build.build_history.pop_back() {
+            // Terminal summary timing belongs to this authoritative replay,
+            // not an older client-local record (or its attachment clock).
+            if replaces_terminal_record && !app.build_history.is_empty() {
+                *app.build_history.back_mut().unwrap() = record;
+            } else {
+                app.build_history.push_back(record);
+                while app.build_history.len() > yoctui_model::MAX_BUILD_HISTORY {
+                    app.build_history.pop_front();
+                }
+            }
+            app.build_history_selection = app
+                .build_history_selection
+                .min(app.build_history.len().saturating_sub(1));
+        }
         app.invalidate_task_projection();
         app.logs = build.logs;
         install_daemon_build_environment(app);
@@ -2186,6 +2208,31 @@ fn apply_daemon_build_event(
     event: yoctui_protocol::daemon::DaemonBuildEvent,
 ) {
     use yoctui_protocol::daemon::DaemonBuildEvent;
+    if matches!(
+        &event,
+        DaemonBuildEvent::TaskQueued { .. }
+            | DaemonBuildEvent::TaskStarted { .. }
+            | DaemonBuildEvent::TaskProgress { .. }
+            | DaemonBuildEvent::TaskCompleted { .. }
+    ) {
+        if let Some(task) = model_task_event_from_daemon(&event) {
+            let _ = yoctui_model::update(app, yoctui_model::Action::TaskEvents(vec![task]));
+        }
+        return;
+    }
+    let started = match &event {
+        DaemonBuildEvent::Started { started_unix_ms } => {
+            Some(observed_daemon_time(*started_unix_ms))
+        }
+        _ => None,
+    };
+    let finished = match &event {
+        DaemonBuildEvent::Completed {
+            finished_unix_ms, ..
+        } => Some(observed_daemon_time(*finished_unix_ms)),
+        _ => None,
+    };
+    let disconnected = matches!(&event, DaemonBuildEvent::Disconnected);
     let action = match event {
         DaemonBuildEvent::Reset { targets } => yoctui_model::Action::BuildRequested {
             target: targets.into_iter().next(),
@@ -2193,6 +2240,7 @@ fn apply_daemon_build_event(
         DaemonBuildEvent::Completed {
             success: false,
             exit_code,
+            ..
         } if app.build.status == yoctui_model::BuildStatus::Cancelling => {
             yoctui_model::Action::BuildCancelled { exit_code }
         }
@@ -2205,19 +2253,77 @@ fn apply_daemon_build_event(
         },
     };
     let _ = yoctui_model::update(app, action);
+    if let Some(started) = started {
+        app.build.started = started;
+    }
+    if let Some(finished) = finished {
+        if let Some(record) = app.build_history.back_mut() {
+            record.elapsed = app
+                .build
+                .started
+                .and_then(|start| finished?.duration_since(start).ok());
+        }
+        for completed in &mut app.completed_tasks {
+            if matches!(
+                completed.task.cancellation.as_deref(),
+                Some("build ended" | "cancelled")
+            ) {
+                completed.task.finished = finished;
+            }
+        }
+        app.invalidate_task_projection();
+    } else if disconnected && app.build.status == yoctui_model::BuildStatus::Lost {
+        for completed in &mut app.completed_tasks {
+            if completed.task.cancellation.as_deref() == Some("build authority lost") {
+                completed.task.finished = None;
+            }
+        }
+        app.invalidate_task_projection();
+    }
+}
+
+fn observed_daemon_time(unix_ms: Option<u64>) -> Option<SystemTime> {
+    // The UI's date formatter supports years through 9999. An unsupported
+    // numeric timestamp is missing timing, never an overflowing clock value.
+    let unix_ms = unix_ms.filter(|value| *value <= 253_402_300_799_999)?;
+    SystemTime::UNIX_EPOCH.checked_add(std::time::Duration::from_millis(unix_ms))
 }
 
 fn model_task_event_from_daemon(
     event: &yoctui_protocol::daemon::DaemonBuildEvent,
 ) -> Option<yoctui_model::TaskEvent> {
     match model_action_from_backend_event(backend_event_from_daemon(event.clone())?)? {
-        yoctui_model::Action::TaskStarted(task) => Some(yoctui_model::TaskEvent::Started(task)),
+        yoctui_model::Action::TaskStarted(mut task) => {
+            let yoctui_protocol::daemon::DaemonBuildEvent::TaskStarted {
+                started_unix_ms, ..
+            } = event
+            else {
+                return None;
+            };
+            task.started = observed_daemon_time(*started_unix_ms);
+            Some(yoctui_model::TaskEvent::ObservedStarted(task))
+        }
         yoctui_model::Action::TaskQueued(task) => Some(yoctui_model::TaskEvent::Queued(task)),
         yoctui_model::Action::TaskProgress { id, progress } => {
             Some(yoctui_model::TaskEvent::Progress { id, progress })
         }
         yoctui_model::Action::TaskCompleted { id, success } => {
-            Some(yoctui_model::TaskEvent::Completed { id, success })
+            let yoctui_protocol::daemon::DaemonBuildEvent::TaskCompleted {
+                started_unix_ms,
+                finished_unix_ms,
+                ..
+            } = event
+            else {
+                return None;
+            };
+            Some(yoctui_model::TaskEvent::ObservedCompleted {
+                id,
+                success,
+                timing: yoctui_model::ObservedTaskTiming {
+                    started: observed_daemon_time(*started_unix_ms),
+                    finished: observed_daemon_time(*finished_unix_ms),
+                },
+            })
         }
         _ => None,
     }
@@ -2259,7 +2365,7 @@ fn backend_event_from_daemon(
                 })
                 .collect(),
         }),
-        DaemonBuildEvent::Started => BackendEvent::BuildStarted,
+        DaemonBuildEvent::Started { .. } => BackendEvent::BuildStarted,
         DaemonBuildEvent::ParseProgress { current, total } => {
             BackendEvent::ParseProgress { current, total }
         }
@@ -2281,6 +2387,7 @@ fn backend_event_from_daemon(
             worker,
             log_path,
             stats,
+            ..
         } => BackendEvent::TaskStarted {
             recipe,
             task,
@@ -2302,14 +2409,15 @@ fn backend_event_from_daemon(
             recipe,
             task,
             success,
+            ..
         } => BackendEvent::TaskCompleted {
             recipe,
             task,
             success,
         },
-        DaemonBuildEvent::Completed { success, exit_code } => {
-            BackendEvent::BuildCompleted { success, exit_code }
-        }
+        DaemonBuildEvent::Completed {
+            success, exit_code, ..
+        } => BackendEvent::BuildCompleted { success, exit_code },
         DaemonBuildEvent::CommandFailed { code, message } => {
             BackendEvent::CommandFailed { code, message }
         }
@@ -8864,6 +8972,7 @@ mod tests {
                     worker: None,
                     log_path: None,
                     stats: None,
+                    started_unix_ms: None,
                 },
             ),
             task(
@@ -8888,6 +8997,8 @@ mod tests {
                     recipe: "busybox".into(),
                     task: "do_compile".into(),
                     success: false,
+                    started_unix_ms: None,
+                    finished_unix_ms: None,
                 },
             ),
         ];
@@ -9036,6 +9147,7 @@ mod tests {
             yoctui_protocol::daemon::DaemonBuildEvent::Completed {
                 success: false,
                 exit_code: Some(130),
+                finished_unix_ms: None,
             },
         );
         assert_eq!(app.build.status, yoctui_model::BuildStatus::Cancelled);
@@ -14063,7 +14175,9 @@ mod tests {
             DaemonBuildEvent::Reset {
                 targets: vec!["image".into()],
             },
-            DaemonBuildEvent::Started,
+            DaemonBuildEvent::Started {
+                started_unix_ms: None,
+            },
             DaemonBuildEvent::TaskQueued {
                 recipe: "seed".into(),
                 task: "do_compile".into(),
@@ -14086,6 +14200,8 @@ mod tests {
                     recipe: format!("recipe-{index}"),
                     task: "do_compile".into(),
                     success: true,
+                    started_unix_ms: None,
+                    finished_unix_ms: None,
                 }))
                 .unwrap();
             replica
@@ -14128,7 +14244,9 @@ mod tests {
             DaemonBuildEvent::Reset {
                 targets: vec!["obmc-phosphor-image".into()],
             },
-            DaemonBuildEvent::Started,
+            DaemonBuildEvent::Started {
+                started_unix_ms: None,
+            },
             DaemonBuildEvent::TaskQueued {
                 recipe: "util-linux".into(),
                 task: "do_compile".into(),
@@ -14147,11 +14265,14 @@ mod tests {
                 worker: None,
                 log_path: None,
                 stats: None,
+                started_unix_ms: None,
             },
             DaemonBuildEvent::TaskCompleted {
                 recipe: "util-linux".into(),
                 task: "do_compile".into(),
                 success: true,
+                started_unix_ms: None,
+                finished_unix_ms: None,
             },
         ] {
             let event = journal.publish(DaemonEvent::Build(event)).unwrap();
@@ -14177,6 +14298,222 @@ mod tests {
             (uninterrupted.build.completed, uninterrupted.build.total),
             (2_340, Some(6_812))
         );
+    }
+
+    #[test]
+    fn snapshot_timing_legacy_never_invents_attachment_start() {
+        use yoctui_protocol::daemon::DaemonBuildEvent;
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            1,
+            "fixture-boot".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut snapshot = daemon_protocol_snapshot(&state);
+        snapshot.build_events = vec![
+            DaemonBuildEvent::Reset {
+                targets: vec!["image".into()],
+            },
+            DaemonBuildEvent::Started {
+                started_unix_ms: None,
+            },
+            DaemonBuildEvent::TaskStarted {
+                recipe: "llvm-native".into(),
+                task: "do_compile".into(),
+                pid: Some(42),
+                worker: None,
+                log_path: None,
+                stats: None,
+                started_unix_ms: None,
+            },
+        ];
+        let mut app = yoctui_model::App::new(64, 64 * 1024);
+        DaemonClientSnapshot::default().replace_app(&mut app, snapshot);
+        assert_eq!(
+            app.build.started, None,
+            "legacy snapshots carry no start authority"
+        );
+        assert_eq!(
+            app.tasks[&TaskId("llvm-native:do_compile".into())].started,
+            None
+        );
+    }
+
+    #[test]
+    fn snapshot_timing_matches_live_batch_replacement_and_terminal_replay() {
+        use std::time::{Duration, UNIX_EPOCH};
+        use yoctui_protocol::daemon::{
+            DaemonBuildEvent as B, DaemonEvent, DaemonSnapshotJournal, DaemonSnapshotLimits,
+        };
+        let state = yoctui_model::DaemonGlobalState::new(
+            yoctui_model::DaemonModelInstanceId([9; 16]),
+            1,
+            "boot".into(),
+            yoctui_model::DaemonStateLimits::default(),
+        )
+        .unwrap();
+        let mut journal = DaemonSnapshotJournal::new(
+            daemon_protocol_snapshot(&state),
+            DaemonSnapshotLimits::default(),
+        )
+        .unwrap();
+        let mut live = yoctui_model::App::new(64, 64 * 1024);
+        let mut replica = DaemonClientSnapshot::default();
+        replica.replace_app(&mut live, journal.snapshot().clone());
+        for event in [
+            B::Reset {
+                targets: vec!["image".into()],
+            },
+            B::Started {
+                started_unix_ms: Some(1000),
+            },
+        ] {
+            let event = journal.publish(DaemonEvent::Build(event)).unwrap();
+            replica.apply_event_to_app(&mut live, &event).unwrap();
+        }
+        let mut batch = yoctui_model::App::new(64, 64 * 1024);
+        let mut batch_replica = DaemonClientSnapshot::default();
+        batch_replica.replace_app(&mut batch, journal.snapshot().clone());
+        let mut events = Vec::new();
+        for recipe in ["llvm-native", "cli11"] {
+            for event in [
+                B::TaskStarted {
+                    recipe: recipe.into(),
+                    task: "do_compile".into(),
+                    pid: Some(42),
+                    worker: None,
+                    log_path: None,
+                    stats: None,
+                    started_unix_ms: Some(2000),
+                },
+                B::TaskCompleted {
+                    recipe: recipe.into(),
+                    task: "do_compile".into(),
+                    success: true,
+                    started_unix_ms: None,
+                    finished_unix_ms: Some(5000),
+                },
+                B::TaskCompleted {
+                    recipe: recipe.into(),
+                    task: "do_compile".into(),
+                    success: true,
+                    started_unix_ms: None,
+                    finished_unix_ms: Some(9000),
+                },
+            ] {
+                let event = journal.publish(DaemonEvent::Build(event)).unwrap();
+                replica.apply_event_to_app(&mut live, &event).unwrap();
+                events.push(event);
+            }
+        }
+        batch_replica
+            .apply_task_events_to_app(&mut batch, &events)
+            .unwrap();
+        let mut fresh = yoctui_model::App::new(64, 64 * 1024);
+        fresh.screen = Screen::Recipes;
+        fresh.focus = FocusTarget::Inspector;
+        DaemonClientSnapshot::default().replace_app(&mut fresh, journal.snapshot().clone());
+        let now = UNIX_EPOCH + Duration::from_secs(100);
+        for app in [&live, &batch, &fresh] {
+            assert_eq!(
+                app.build_summary_at(now).elapsed,
+                Some(Duration::from_secs(99))
+            );
+            assert_eq!(app.completed_tasks.len(), 2);
+            for row in &app.completed_tasks {
+                assert_eq!(row.task.elapsed_at(now), Some(Duration::from_secs(3)));
+            }
+        }
+        assert_eq!(fresh.screen, Screen::Recipes);
+        assert_eq!(fresh.focus, FocusTarget::Inspector);
+        let previous_record = yoctui_model::BuildRecord {
+            target: Some("previous-image".into()),
+            success: true,
+            exit_code: Some(0),
+            elapsed: Some(Duration::from_secs(12)),
+            completed_tasks: 1,
+            warnings: 0,
+            errors: 0,
+        };
+        fresh.build_history.push_back(previous_record.clone());
+        for finished in [6000, 99000] {
+            let event = journal
+                .publish(DaemonEvent::Build(B::Completed {
+                    success: true,
+                    exit_code: Some(0),
+                    finished_unix_ms: Some(finished),
+                }))
+                .unwrap();
+            replica.apply_event_to_app(&mut live, &event).unwrap();
+        }
+        DaemonClientSnapshot::default().replace_app(&mut fresh, journal.snapshot().clone());
+        DaemonClientSnapshot::default().replace_app(&mut fresh, journal.snapshot().clone());
+        assert_eq!(fresh.build_history.len(), 2);
+        assert_eq!(fresh.build_history[0], previous_record);
+        replica.replace_app(&mut live, journal.snapshot().clone());
+        for app in [&live, &fresh] {
+            assert_eq!(
+                app.build_summary_at(now).elapsed,
+                Some(Duration::from_secs(5))
+            );
+            assert_eq!(
+                app.build_summary_at(now + Duration::from_secs(900)).elapsed,
+                Some(Duration::from_secs(5))
+            );
+        }
+        let event = journal
+            .publish(DaemonEvent::Build(B::Reset {
+                targets: vec!["next".into()],
+            }))
+            .unwrap();
+        replica.apply_event_to_app(&mut live, &event).unwrap();
+        assert_eq!(live.build.started, None);
+        assert!(live.completed_tasks.is_empty());
+    }
+
+    #[test]
+    fn snapshot_timing_invalid_reversed_and_missing_times_are_unavailable() {
+        use std::time::{Duration, UNIX_EPOCH};
+        use yoctui_protocol::daemon::DaemonBuildEvent as B;
+        for (start, end) in [
+            (None, Some(5000)),
+            (Some(2000), None),
+            (Some(6000), Some(5000)),
+            (Some(u64::MAX), Some(u64::MAX)),
+        ] {
+            let mut app = yoctui_model::App::new(64, 64 * 1024);
+            for event in [
+                B::Started {
+                    started_unix_ms: start,
+                },
+                B::TaskCompleted {
+                    recipe: "llvm-native".into(),
+                    task: "do_compile".into(),
+                    success: true,
+                    started_unix_ms: start,
+                    finished_unix_ms: end,
+                },
+                B::Completed {
+                    success: true,
+                    exit_code: Some(0),
+                    finished_unix_ms: end,
+                },
+            ] {
+                apply_daemon_build_event(&mut app, event);
+            }
+            let now = UNIX_EPOCH + Duration::from_secs(100);
+            assert_eq!(app.build_summary_at(now).elapsed, None);
+            assert_eq!(app.completed_tasks[0].task.elapsed_at(now), None);
+        }
+        let mut app = yoctui_model::App::new(64, 64 * 1024);
+        apply_daemon_build_event(
+            &mut app,
+            B::Started {
+                started_unix_ms: Some(2000),
+            },
+        );
+        assert_eq!(app.build_summary_at(UNIX_EPOCH).elapsed, None);
     }
 
     #[test]
@@ -14213,7 +14550,9 @@ mod tests {
                     recipes: Vec::new(),
                 },
             },
-            DaemonBuildEvent::Started,
+            DaemonBuildEvent::Started {
+                started_unix_ms: None,
+            },
             DaemonBuildEvent::TaskStarted {
                 recipe: "busybox".into(),
                 task: "do_compile".into(),
@@ -14226,6 +14565,7 @@ mod tests {
                     active: 8,
                     failed: 0,
                 }),
+                started_unix_ms: None,
             },
             DaemonBuildEvent::TaskProgress {
                 recipe: "busybox".into(),

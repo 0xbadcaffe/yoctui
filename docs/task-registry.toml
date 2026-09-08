@@ -138,18 +138,18 @@ notes = "v0.1.78: all non-Raw supervisor constructors require one shared checked
 id = "OPENBMC-ATTACH-TIMING-001"
 milestone = "M56"
 title = "Preserve observed build and task timing across daemon reattachment"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1286
 required = true
 depends_on = ["OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001"]
 verify = ["cargo test -p yoctui-protocol snapshot_timing", "cargo test -p yoctui-app snapshot_timing", "cargo test -p yoctui-ui snapshot_timing", "cargo test -p yoctui snapshot_timing", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Live snapshot 3784 and v0.1.78 client attached to v0.1.76 daemon: llvm-native do_compile PID 1304077 had run 2369 seconds, but a fresh 160x50 client showed task/build elapsed 00:00:05 and a newly invented Started 04:49:13. Daemon lifecycle events carry no timestamps; app replay invokes local-clock reducers. Retain bounded typed daemon-observed start/end authority for current build and retained task rows, including compacted completions; fresh/replacement/batched consumption must agree and terminal durations must freeze. Reset between builds, preserve screen/focus, keep missing legacy timing unavailable, and handle invalid/reversed times without panic or invented duration. Cover protocol/app/TestBackend/CLI publication and isolated production reattachment with injected clocks. Do not interrupt the real image solely for deployment; final OpenBMC recheck remains under LIVE."
+notes = "v0.1.80 DONE: optional daemon-observed lifecycle timestamps, bounded start-to-completion retention, duplicate terminal freeze, explicit observed-time reducer inputs and terminal-aware header. Ten focused tests, all 1566 workspace tests, 49 bridge tests, Clippy, fmt, docs, six rasters and roadmap pass. Isolated production PTY attachments preserve injected 64-second duration; three repeated checks pass after fixing post-capture detach cleanup. Read-only v80 client on the untouched v76 OpenBMC daemon leaves legacy timing unavailable. Original evidence: Live snapshot 3784 and v0.1.78 client attached to v0.1.76 daemon: llvm-native do_compile PID 1304077 had run 2369 seconds, but a fresh 160x50 client showed task/build elapsed 00:00:05 and a newly invented Started 04:49:13. Daemon lifecycle events carry no timestamps; app replay invokes local-clock reducers. Retain bounded typed daemon-observed start/end authority for current build and retained task rows, including compacted completions; fresh/replacement/batched consumption must agree and terminal durations must freeze. Reset between builds, preserve screen/focus, keep missing legacy timing unavailable, and handle invalid/reversed times without panic or invented duration. Cover protocol/app/TestBackend/CLI publication and isolated production reattachment with injected clocks. Do not interrupt the real image solely for deployment; final OpenBMC recheck remains under LIVE."
 
 [[task]]
 id = "OPENBMC-TASK-IDENTITY-001"
 milestone = "M56"
 title = "Use consistent authoritative recipe identities for queued and worker task events"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 1285
 required = true
 depends_on = ["OPENBMC-SNAPSHOT-PROGRESS-001", "OPENBMC-INVENTORY-001"]

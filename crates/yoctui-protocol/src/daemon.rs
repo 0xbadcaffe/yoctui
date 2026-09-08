@@ -2047,7 +2047,10 @@ pub enum DaemonBuildEvent {
     Workspace {
         data: WorkspaceData,
     },
-    Started,
+    Started {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        started_unix_ms: Option<u64>,
+    },
     ParseProgress {
         current: Option<u64>,
         total: Option<u64>,
@@ -2061,6 +2064,8 @@ pub enum DaemonBuildEvent {
     TaskStarted {
         recipe: String,
         task: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        started_unix_ms: Option<u64>,
         pid: Option<u32>,
         worker: Option<String>,
         log_path: Option<String>,
@@ -2075,10 +2080,16 @@ pub enum DaemonBuildEvent {
         recipe: String,
         task: String,
         success: bool,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        started_unix_ms: Option<u64>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        finished_unix_ms: Option<u64>,
     },
     Completed {
         success: bool,
         exit_code: Option<i32>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        finished_unix_ms: Option<u64>,
     },
     CommandFailed {
         code: String,
@@ -2467,7 +2478,11 @@ impl DaemonSnapshotJournal {
         }
     }
 
-    pub fn publish(&mut self, event: DaemonEvent) -> Result<SequencedEvent, DaemonSnapshotError> {
+    pub fn publish(
+        &mut self,
+        mut event: DaemonEvent,
+    ) -> Result<SequencedEvent, DaemonSnapshotError> {
+        preserve_build_timing(&self.snapshot, &mut event);
         let sequence = self
             .snapshot
             .sequence
@@ -2732,6 +2747,89 @@ pub fn apply_sequenced_event(
     Ok(())
 }
 
+fn preserve_build_timing(snapshot: &DaemonSnapshot, event: &mut DaemonEvent) {
+    let DaemonEvent::Build(event) = event else {
+        return;
+    };
+    match event {
+        DaemonBuildEvent::Started { started_unix_ms } => {
+            for previous in snapshot.build_events.iter().rev() {
+                match previous {
+                    DaemonBuildEvent::Reset { .. } => break,
+                    DaemonBuildEvent::Started {
+                        started_unix_ms: first,
+                    } => {
+                        *started_unix_ms = *first;
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        DaemonBuildEvent::TaskCompleted {
+            recipe,
+            task,
+            started_unix_ms,
+            finished_unix_ms,
+            ..
+        } => {
+            // Complete records retain their observed start before row compaction
+            // removes the matching TaskStarted. Repeated terminal records must
+            // retain the first end; a new queue/start is a new observation.
+            for previous in snapshot.build_events.iter().rev() {
+                match previous {
+                    DaemonBuildEvent::TaskStarted {
+                        recipe: old_recipe,
+                        task: old_task,
+                        started_unix_ms: start,
+                        ..
+                    } if old_recipe == recipe && old_task == task => {
+                        if started_unix_ms.is_none() {
+                            *started_unix_ms = *start;
+                        }
+                        break;
+                    }
+                    DaemonBuildEvent::TaskQueued {
+                        recipe: old_recipe,
+                        task: old_task,
+                        ..
+                    } if old_recipe == recipe && old_task == task => break,
+                    DaemonBuildEvent::TaskCompleted {
+                        recipe: old_recipe,
+                        task: old_task,
+                        started_unix_ms: first_start,
+                        finished_unix_ms: first_end,
+                        ..
+                    } if old_recipe == recipe && old_task == task => {
+                        *started_unix_ms = *first_start;
+                        *finished_unix_ms = *first_end;
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        DaemonBuildEvent::Completed {
+            finished_unix_ms, ..
+        } => {
+            for previous in snapshot.build_events.iter().rev() {
+                match previous {
+                    DaemonBuildEvent::Reset { .. } | DaemonBuildEvent::Started { .. } => break,
+                    DaemonBuildEvent::Completed {
+                        finished_unix_ms: first,
+                        ..
+                    } => {
+                        *finished_unix_ms = *first;
+                        break;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
 fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
     update_build_progress(snapshot, &event);
     if matches!(event, DaemonBuildEvent::Reset { .. }) {
@@ -2792,7 +2890,7 @@ fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
                     item,
                     DaemonBuildEvent::Reset { .. }
                         | DaemonBuildEvent::Workspace { .. }
-                        | DaemonBuildEvent::Started
+                        | DaemonBuildEvent::Started { .. }
                 )
             })
         });
@@ -2805,7 +2903,7 @@ fn update_build_progress(snapshot: &mut DaemonSnapshot, event: &DaemonBuildEvent
         DaemonBuildEvent::Reset { .. } => {
             snapshot.build_progress = Some(DaemonBuildProgress::default());
         }
-        DaemonBuildEvent::Started => {
+        DaemonBuildEvent::Started { .. } => {
             snapshot.build_progress.get_or_insert_with(Default::default);
         }
         DaemonBuildEvent::TaskQueued {
@@ -3816,6 +3914,8 @@ mod tests {
                 recipe: format!("recipe-{index}"),
                 task: "do_compile".into(),
                 success: index % 2 == 0,
+                started_unix_ms: None,
+                finished_unix_ms: None,
             };
             apply_build_event(&mut snapshot, event.clone());
             apply_build_event(&mut snapshot, event);
@@ -3841,6 +3941,7 @@ mod tests {
             DaemonBuildEvent::Completed {
                 success: false,
                 exit_code: Some(1),
+                finished_unix_ms: None,
             },
         );
         assert_eq!(snapshot.build_progress.unwrap().completed, 2_339 + count);
@@ -3849,6 +3950,7 @@ mod tests {
             DaemonBuildEvent::Completed {
                 success: true,
                 exit_code: Some(0),
+                finished_unix_ms: None,
             },
         );
         assert_eq!(snapshot.build_progress.unwrap().completed, 6_812);
@@ -3877,10 +3979,17 @@ mod tests {
                 recipe: "legacy".into(),
                 task: "do_compile".into(),
                 success: true,
+                started_unix_ms: None,
+                finished_unix_ms: None,
             },
         );
         assert_eq!(snapshot.build_progress, None);
-        apply_build_event(&mut snapshot, DaemonBuildEvent::Started);
+        apply_build_event(
+            &mut snapshot,
+            DaemonBuildEvent::Started {
+                started_unix_ms: None,
+            },
+        );
         apply_build_event(
             &mut snapshot,
             DaemonBuildEvent::TaskQueued {
@@ -3900,6 +4009,7 @@ mod tests {
             DaemonBuildEvent::Completed {
                 success: true,
                 exit_code: Some(0),
+                finished_unix_ms: None,
             },
         );
         assert_eq!(
@@ -3918,6 +4028,203 @@ mod tests {
             assert!(
                 serde_json::from_str::<DaemonBuildProgress>(invalid).is_err(),
                 "{invalid}"
+            );
+        }
+    }
+
+    #[test]
+    fn snapshot_timing_compacts_start_into_completion_and_freezes_duplicates() {
+        let mut journal =
+            DaemonSnapshotJournal::new(daemon_snapshot_fixture(), DaemonSnapshotLimits::default())
+                .unwrap();
+        let publish = |journal: &mut DaemonSnapshotJournal, event| {
+            journal.publish(DaemonEvent::Build(event)).unwrap()
+        };
+        publish(
+            &mut journal,
+            DaemonBuildEvent::Started {
+                started_unix_ms: Some(1000),
+            },
+        );
+        publish(
+            &mut journal,
+            DaemonBuildEvent::Started {
+                started_unix_ms: Some(9000),
+            },
+        );
+        let started = DaemonBuildEvent::TaskStarted {
+            recipe: "recipe".into(),
+            task: "do_compile".into(),
+            started_unix_ms: Some(2000),
+            pid: None,
+            worker: None,
+            log_path: None,
+            stats: None,
+        };
+        publish(&mut journal, started);
+        let completed = |finished| DaemonBuildEvent::TaskCompleted {
+            recipe: "recipe".into(),
+            task: "do_compile".into(),
+            success: true,
+            started_unix_ms: None,
+            finished_unix_ms: Some(finished),
+        };
+        let first = publish(&mut journal, completed(2500));
+        let repeated = publish(&mut journal, completed(9900));
+        assert_eq!(first.event, repeated.event);
+        assert!(matches!(
+            first.event,
+            DaemonEvent::Build(DaemonBuildEvent::TaskCompleted {
+                started_unix_ms: Some(2000),
+                finished_unix_ms: Some(2500),
+                ..
+            })
+        ));
+        assert!(
+            !journal
+                .snapshot()
+                .build_events
+                .iter()
+                .any(|event| matches!(event, DaemonBuildEvent::TaskStarted { .. }))
+        );
+        let terminal = |finished| DaemonBuildEvent::Completed {
+            success: true,
+            exit_code: Some(0),
+            finished_unix_ms: Some(finished),
+        };
+        let first = publish(&mut journal, terminal(5000));
+        let repeated = publish(&mut journal, terminal(10000));
+        assert_eq!(first.event, repeated.event);
+        assert!(
+            journal
+                .snapshot()
+                .build_events
+                .iter()
+                .filter(|event| matches!(event, DaemonBuildEvent::Started { .. }))
+                .all(|event| matches!(
+                    event,
+                    DaemonBuildEvent::Started {
+                        started_unix_ms: Some(1000)
+                    }
+                ))
+        );
+        publish(
+            &mut journal,
+            DaemonBuildEvent::Reset {
+                targets: vec!["next".into()],
+            },
+        );
+        let next = publish(
+            &mut journal,
+            DaemonBuildEvent::Started {
+                started_unix_ms: Some(20000),
+            },
+        );
+        assert!(matches!(
+            next.event,
+            DaemonEvent::Build(DaemonBuildEvent::Started {
+                started_unix_ms: Some(20000)
+            })
+        ));
+    }
+
+    #[test]
+    fn snapshot_timing_retained_rows_stay_bounded_after_eviction() {
+        let mut journal =
+            DaemonSnapshotJournal::new(daemon_snapshot_fixture(), DaemonSnapshotLimits::default())
+                .unwrap();
+        journal
+            .publish(DaemonEvent::Build(DaemonBuildEvent::Started {
+                started_unix_ms: Some(0),
+            }))
+            .unwrap();
+        let count = MAX_DAEMON_BUILD_EVENTS + 4;
+        for index in 0..count {
+            journal
+                .publish(DaemonEvent::Build(DaemonBuildEvent::TaskStarted {
+                    recipe: format!("recipe-{index}"),
+                    task: "do_compile".into(),
+                    started_unix_ms: Some(index as u64),
+                    pid: None,
+                    worker: None,
+                    log_path: None,
+                    stats: None,
+                }))
+                .unwrap();
+            journal
+                .publish(DaemonEvent::Build(DaemonBuildEvent::TaskCompleted {
+                    recipe: format!("recipe-{index}"),
+                    task: "do_compile".into(),
+                    success: true,
+                    started_unix_ms: None,
+                    finished_unix_ms: Some(index as u64 + 100),
+                }))
+                .unwrap();
+        }
+        assert_eq!(
+            journal.snapshot().build_events.len(),
+            MAX_DAEMON_BUILD_EVENTS
+        );
+        assert!(
+            matches!(journal.snapshot().build_events.last(), Some(DaemonBuildEvent::TaskCompleted {
+            started_unix_ms: Some(start), finished_unix_ms: Some(end), ..
+        }) if *start == (count - 1) as u64 && *end == (count - 1) as u64 + 100)
+        );
+        let message = ServerMessage::Snapshot(journal.snapshot().clone());
+        let frame = encode_frame(&message).unwrap();
+        assert!(frame.len() < MAX_FRAME_BYTES);
+        assert_eq!(decode_frame::<ServerMessage>(&frame).unwrap(), message);
+    }
+
+    #[test]
+    fn snapshot_timing_keeps_legacy_wire_shapes_and_rejects_malformed_times() {
+        let legacy = r#"{"type":"started"}"#;
+        let decoded: DaemonBuildEvent = serde_json::from_str(legacy).unwrap();
+        assert_eq!(
+            decoded,
+            DaemonBuildEvent::Started {
+                started_unix_ms: None
+            }
+        );
+        assert_eq!(serde_json::to_string(&decoded).unwrap(), legacy);
+        #[derive(Debug, PartialEq, serde::Deserialize)]
+        #[serde(tag = "type", rename_all = "snake_case")]
+        enum LegacyEvent {
+            Started,
+            Completed {
+                success: bool,
+                exit_code: Option<i32>,
+            },
+        }
+        let started = DaemonBuildEvent::Started {
+            started_unix_ms: Some(123),
+        };
+        assert_eq!(
+            serde_json::from_value::<LegacyEvent>(serde_json::to_value(started).unwrap()).unwrap(),
+            LegacyEvent::Started
+        );
+        let completed = DaemonBuildEvent::Completed {
+            success: true,
+            exit_code: Some(0),
+            finished_unix_ms: Some(456),
+        };
+        assert_eq!(
+            serde_json::from_value::<LegacyEvent>(serde_json::to_value(completed).unwrap())
+                .unwrap(),
+            LegacyEvent::Completed {
+                success: true,
+                exit_code: Some(0)
+            }
+        );
+        for malformed in [
+            r#"{"type":"started","started_unix_ms":-1}"#,
+            r#"{"type":"started","started_unix_ms":1.5}"#,
+            r#"{"type":"started","started_unix_ms":"now"}"#,
+            r#"{"type":"started","started_unix_ms":18446744073709551616}"#,
+        ] {
+            assert!(
+                serde_json::from_str::<DaemonBuildEvent>(malformed).is_err(),
+                "{malformed}"
             );
         }
     }
@@ -3945,6 +4252,7 @@ mod tests {
                     active: 8,
                     failed: 0,
                 }),
+                started_unix_ms: None,
             }))
             .unwrap();
         journal
@@ -3979,6 +4287,7 @@ mod tests {
                 worker: None,
                 log_path: None,
                 stats: None,
+                started_unix_ms: None,
             }))
             .unwrap();
         for progress in (0..100).cycle().take(10_000) {

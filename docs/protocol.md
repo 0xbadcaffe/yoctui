@@ -42,6 +42,25 @@ legacy snapshot does not become a complete aggregate merely because a later
 completion arrives. The 4 MiB frame and 2,048 retained build-event limits are
 unchanged. Clients install these counters only with Current snapshot authority.
 
+## Daemon build timing
+
+Daemon Started and TaskStarted events optionally carry `started_unix_ms`.
+TaskCompleted carries optional `started_unix_ms` and `finished_unix_ms`;
+Completed carries optional `finished_unix_ms`. These unsigned Unix-millisecond
+values are observations captured by the daemon CLI, not historical timestamps
+inferred from filenames, logs, or a client's attachment time. Missing fields
+remain absent and are omitted from serialization. Existing wire tags and
+protocol versions are unchanged; older clients can ignore the added fields.
+
+Before completion replaces the retained task start, the bounded journal copies
+its timestamp into that completion. Duplicate completion events retain the
+first observed end; reset discards the previous build's lifecycle rows. No
+unbounded task-timing index is added, and the 2,048-event/4-MiB limits remain.
+Clients use explicit observed-time reducer inputs, checked date conversion and
+elapsed arithmetic. Missing or invalid evidence is unavailable; terminal
+durations never use a later client clock. These fields do not persist or
+restore live process ownership across daemon restart.
+
 ## Daemon compatibility snapshots
 
 Before resolving a bundled backend snapshot, the daemon may invoke the bridge

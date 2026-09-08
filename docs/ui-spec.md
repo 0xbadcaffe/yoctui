@@ -1477,6 +1477,8 @@ timestamps, retained through completed-row compaction. Live and freshly attached
 clients agree for the same observation time; completed durations remain frozen.
 Missing legacy timing is unavailable, not zero or time since attachment. Invalid
 or reversed timestamps never produce an invented positive duration or a panic.
+Terminal rows without an observed end stay unavailable rather than continuing
+to count after completion. A lost daemon authority does not supply a task end.
 
 Queued and worker lifecycle rows must use the same authoritative recipe identity.
 Filename stems are not PN authority: git versions, native/multilib variants and

@@ -17,6 +17,13 @@ managed interpreters while defaulting build shells to system Python. A separate
 initial-attachment timeout repair (OPENBMC-ATTACH-001) is complete in v0.1.73;
 the real image retry and subsequent inspection remain required.
 
+Live validation also exposed snapshot compaction and reattachment defects.
+Aggregate counters (v0.1.76), shared recovered job identities (v0.1.78), and
+observed lifecycle timing (v0.1.80) now pass their regressions and baseline
+checks. Queue/worker recipe identity remains current, and the real image still
+runs on the preserved v0.1.76 daemon. These fixes do not claim image completion
+or waive the source-bound performance and release gates.
+
 Yoctui is 100% complete only when:
 
 - every required task in `docs/task-registry.toml` is `DONE`
