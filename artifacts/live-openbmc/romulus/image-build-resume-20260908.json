@@ -1,0 +1,243 @@
+{
+  "schema": "yoctui.openbmc.observation.v1",
+  "source_revision": "d4fd7d3f54e88e800c0284b753af68a13aabbef6",
+  "machine": "romulus",
+  "target": "obmc-phosphor-image",
+  "daemon_pid": 1195382,
+  "runtime_identity": {
+    "pid": 1195382,
+    "daemon_instance_id": [
+      236,
+      235,
+      146,
+      231,
+      37,
+      57,
+      105,
+      228,
+      136,
+      247,
+      21,
+      108,
+      49,
+      211,
+      93,
+      15
+    ],
+    "started_unix_ms": 1788837278041,
+    "boot_id": "aa9bf167-ac27-45ea-8dca-843ff5641311",
+    "executable": "/tmp/yoctui-v73-validated.vMBk6H/yoctui"
+  },
+  "binary_sha256": "f34b9b26fb6d60d1503b20674bf194252552159ca63953b37000eb3e0b817a26",
+  "observed_from_unix": 1788837412.6737075,
+  "observed_until_unix": 1788837765.0497203,
+  "note": "Third image attempt after host OOM/session shutdown; daemon/client v0.1.73. BB_NUMBER_THREADS=2, PARALLEL_MAKE=-j 2. Prior saved retry had no terminal result.",
+  "event_counts": {
+    "event": 626,
+    "event.telemetry": 347,
+    "event.build": 227,
+    "build.parse_progress": 1,
+    "event.log": 6,
+    "build.task_queued": 44,
+    "event.job_changed": 45,
+    "build.task_started": 44,
+    "build.task_completed": 43,
+    "build.task_progress": 94,
+    "event.bit_bake_changed": 1,
+    "build.completed": 1
+  },
+  "jobs": {
+    "1": {
+      "id": 1,
+      "kind": "bit_bake_build",
+      "label": "BitBake build obmc-phosphor-image",
+      "lifecycle": "failed",
+      "progress_current": null,
+      "progress_total": null,
+      "exit_code": 1
+    }
+  },
+  "recent_logs": [
+    {
+      "source": "daemon-metadata",
+      "severity": "info",
+      "message": "Loading initial workspace and recipe inventory",
+      "unix_ms": 1788837339113,
+      "recipe": null,
+      "task": null,
+      "path": null,
+      "build": null
+    },
+    {
+      "source": "daemon-metadata",
+      "severity": "info",
+      "message": "Initial workspace and recipe inventory ready",
+      "unix_ms": 1788837352047,
+      "recipe": null,
+      "task": null,
+      "path": null,
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Resolving any missing task queue dependencies",
+      "unix_ms": 1788837400237,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/taskdata.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "\nBuild Configuration:\nBB_VERSION           = \"2.19.0\"\nBUILD_SYS            = \"x86_64-linux\"\nNATIVELSBSTRING      = \"universal\"\nTARGET_SYS           = \"arm-openbmc-linux-gnueabi\"\nMACHINE              = \"romulus\"\nSDKMACHINE           = \"x86_64\"\nDISTRO               = \"openbmc-openpower\"\nDISTRO_VERSION       = \"nodistro.0\"\nTUNE_FEATURES        = \"arm thumb arm1176jzs\"\nmeta                 \nmeta-oe              \nmeta-networking      \nmeta-perl            \nmeta-python          \nmeta-phosphor        \nmeta-aspeed          \nmeta-openpower       \nmeta-romulus         = \"master:d4fd7d3f54e88e800c0284b753af68a13aabbef6\"\n",
+      "unix_ms": 1788837404205,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Sstate summary: Wanted 1153 Local 84 Mirrors 0 Missed 1069 Current 2423 (7% match, 70% complete)",
+      "unix_ms": 1788837411946,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Executing Tasks",
+      "unix_ms": 1788837414365,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/runqueue.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "Setscene tasks completed",
+      "unix_ms": 1788837422337,
+      "recipe": null,
+      "task": null,
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "VERBOSE=1 cmake --build /home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native/22.1.8/build --target all --",
+      "unix_ms": 1788837425177,
+      "recipe": "llvm-native",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "info",
+      "message": "make -j 2 ARCH=arm CPU= CPUOPT= OPT= -O2 -g -fcanon-prefix-map  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/sources/util-linux-2.42.2=/usr/src/debug/util-linux/2.42.2  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/build=/usr/src/debug/util-linux/2.42.2  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/recipe-sysroot=  -ffile-prefix-map=/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/recipe-sysroot-native=  -pipe",
+      "unix_ms": 1788837425709,
+      "recipe": "util-linux",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "error",
+      "message": "oe_runmake failed",
+      "unix_ms": 1788837548222,
+      "recipe": "util-linux",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+      "build": null
+    },
+    {
+      "source": "bitbake",
+      "severity": "error",
+      "message": "Execution of '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/temp/run.do_compile.1198195' failed with exit code 1",
+      "unix_ms": 1788837548223,
+      "recipe": "util-linux",
+      "task": "do_compile",
+      "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/build.py",
+      "build": null
+    }
+  ],
+  "critical": [
+    {
+      "type": "event",
+      "sequence": 390,
+      "generation": 390,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "error",
+          "message": "oe_runmake failed",
+          "unix_ms": 1788837548222,
+          "recipe": "util-linux",
+          "task": "do_compile",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/__init__.py",
+          "build": null
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 391,
+      "generation": 391,
+      "event": {
+        "type": "log",
+        "data": {
+          "source": "bitbake",
+          "severity": "error",
+          "message": "Execution of '/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/arm1176jzs-openbmc-linux-gnueabi/util-linux/2.42.2/temp/run.do_compile.1198195' failed with exit code 1",
+          "unix_ms": 1788837548223,
+          "recipe": "util-linux",
+          "task": "do_compile",
+          "path": "/home/bspguy-dev/src/openbmc/upstream-layers/bitbake/lib/bb/build.py",
+          "build": null
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 392,
+      "generation": 392,
+      "event": {
+        "type": "build",
+        "data": {
+          "type": "task_completed",
+          "recipe": "util-linux",
+          "task": "do_compile",
+          "success": false
+        }
+      }
+    },
+    {
+      "type": "event",
+      "sequence": 676,
+      "generation": 676,
+      "event": {
+        "type": "build",
+        "data": {
+          "type": "completed",
+          "success": false,
+          "exit_code": 1
+        }
+      }
+    }
+  ],
+  "terminal": {
+    "type": "completed",
+    "success": false,
+    "exit_code": 1
+  },
+  "connection_error": null
+}

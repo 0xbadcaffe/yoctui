@@ -12,6 +12,14 @@ preserves each workflow's confirmation boundary.
 
 ## Architectural principles
 
+Daemon build snapshots must retain typed aggregate completed/total authority
+independently of the bounded per-task event projection. Queue/start replacement
+and completed-row eviction must not discard newer counters. The aggregate resets
+with the build, preserves unknown totals, and installs into the model alongside
+task rows so fresh attachment and uninterrupted consumption agree. Legacy
+snapshots without aggregate authority remain decodable and cannot manufacture
+missing backend statistics. OPENBMC-SNAPSHOT-PROGRESS-001 owns this correction.
+
 Executable discovery canonicalizes absolute initialized PATH directories before
 joining the requested tool basename. Directory symlinks (for example OpenBMC's
 scripts link) are valid search roots; relative/missing roots are not. Final-file

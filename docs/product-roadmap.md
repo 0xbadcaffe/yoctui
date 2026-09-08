@@ -1168,13 +1168,17 @@ Yoctui and inspect package/rootfs availability, task/log lifecycles and terminal
 outcomes. Register atomic regression fixes for observed defects; fixture tests
 alone do not establish OpenBMC compatibility. Storage is currently constrained
 and Poky generated output must not be removed without approval.
-Progress: OPENBMC-ENV-001 and OPENBMC-CAPABILITY-001 DONE;
-OPENBMC-STARTUP-001 IN_PROGRESS; CLI generation/error handling, symlinked-tool
-discovery and live image build remain NOT_STARTED. Direct API evidence now
-enables BitBake 2.19 correctly. Fix the observed lifecycle and tool-discovery
-defects before claiming image-build support.
-Storage preflight was unblocked by cleaning completed Cargo debug outputs,
-not Poky data; 78 GiB is available, subject to monitoring and a stop margin.
+Progress: environment, direct capabilities, responsive startup, bounded inventory,
+CLI submission, symlinked-tool discovery, host Python and initial attachment
+tasks are DONE through v0.1.73. OPENBMC-LIVE-001 remains IN_PROGRESS;
+OPENBMC-SNAPSHOT-PROGRESS-001 now owns the observed attach counter regression.
+The image retry reached 4,953/6,812 tasks without a terminal result before the
+September 8 host OOM and user-session shutdown. A third attempt was accepted
+through the preserved v0.1.73 candidate with OpenBMC-only concurrency reduced
+to two BitBake tasks and two compiler jobs. Image completion and package/rootfs
+inspection remain required.
+Root had about 46 GiB free at this restart, subject to disk and memory monitoring.
+The existing 15 GiB scheduling-stop and 8 GiB halt margins remain configured.
 See [live integration preflight](testing/openbmc.md).
 
 ## M57 — README visual identity

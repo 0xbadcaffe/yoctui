@@ -1,0 +1,32 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.73 • Project: openbmc • ▶ Running • T:obmc-phosphor-image  •  Machine: romulus              D:✓ Connected/Local • BB:✓ Running│
+┌Navigator · 2/30 ↓──┐┌Tasks: Build────────────────────────────────────────────────────────────────┐┌Inspector: Task───────────────────────┐
+│▾ OVERVIEW          ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫Overall  25%  1732/6812▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_compile                │
+│  ▱ Dashboard       ││A1 W5077 !0 ✕2 00:00:11                                                     ││Recipe      llvm-native               │
+│  ▱ Insights        ││Target: obmc-phosphor-image  Backend: bridge  Status: Running  Exit code: no││PN          llvm-native               │
+│▾ CONTENT           ││Parse progress: not parsing  Tasks: 1732/6812  Warnings: 0  Errors: 2  Relea││PV          22.1.8                    │
+│  ▱ Layers          ││Task                                  Status        Progress                ││PR          unavailable               │
+│  ▱ Recipes         ││⣧ do_compile                          ▶ Running     ▪▫▫▫▫▫▫▫▫▫ 2%           ││State       ▶ Running                 │
+│  ▱ Packages        ││  do_compile                          · Queued      --                      ││Progress    2%                        │
+│  ▱ Images          ││  do_package_write_ipk_setscene       · Queued      --                      ││Worker      unavailable               │
+│  ▱ Kernel          ││  do_compile                          ✕ Failed      ▪▪▪▪▪▪▪▪▪▪ 100%         ││PID         1198191                   │
+│  ▱ U-Boot / BIOS   ││  do_package_write_ipk_setscene       ✓ Succeeded   ▪▪▪▪▪▪▪▪▪▪ 100%         ││Started     03:20:33                  │
+│  ▱ SDK             ││  do_package_write_ipk_setscene       ✓ Succeeded   ▪▪▪▪▪▪▪▪▪▪ 100%         ││Elapsed     00:00:11                  │
+│▾ BUILD             ││  do_package_write_ipk_setscene       ✓ Succeeded   ▪▪▪▪▪▪▪▪▪▪ 100%         ││Workdir     unavailable               │
+│  ▱ Tasks          1││  do_package_write_ipk_setscene       ✓ Succeeded   ▪▪▪▪▪▪▪▪▪▪ 100%         ││Log file                              │
+│  ▱ Logs        LIVE│└────────────────────────────────────────────────────────────────────────────┘│/home/bspguy-dev/src/build-openbmc-rom│
+│  ▱ Errors         2│┌Log Viewer — do_compile (llvm-native) · ▶ Follow────────────────────────────┐│ulus/tmp/work/x86_64-linux/llvm-native│
+│  ▱ Configuration   │││ VERBOSE=1 cmake --build                                                   ││/22.1.8/temp/log.do_compile.1198191   │
+│  ▱ Dependencies    ││/home/bspguy-dev/src/build-openbmc-romulus/tmp/work/x86_64-linux/llvm-native││Dependencies none reported            │
+│▾ VALIDATE          ││/22.1.8/build --target all --                                               ││                                      │
+│  ▱ Testing         ││                                                                            ││                                      │
+│    Security        ││                                                                            │└──────────────────────────────────────┘
+│  ▱ QA              ││                                                                            │┌Contextual Actions────────────────────┐
+│▾ TOOLS             ││                                                                            ││✓ Cancel active build  [c] — Available│
+│  ▱ Raw Mode        │└────────────────────────────────────────────────────────────────────────────┘│  Implementation: tinfoil.cancel      │
+│  ▱ Terminal Session│┌Resources───────────────────────────────────────────────────────────────────┐│✓ Open Logs            [l] — Local    │
+│  ▱ Devtool         ││CPU 64%                  RAM 34%                   FS 90%                   ││✓ Build History        [h] — Local    │
+│  ▱ QEMU / Wic      ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫ ││✓ Build options        [B] — Available│
+└────────────────────┘└────────────────────────────────────────────────────────────────────────────┘└──────────────────────────────────────┘
+↑/↓ select   h/l groups   ←/→ focus   Enter open   ? Help   Ctrl+P Menu   q Quit                        ▶ Build running · 1 active  03:20:45
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────

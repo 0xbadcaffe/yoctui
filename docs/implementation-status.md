@@ -1,5 +1,17 @@
 # Yoctui Implementation Status
 
+September 8 governance recovery (v0.1.75): OpenBMC's third image attempt exposed
+a zero-byte util-linux more-more.o from the interrupted build. After acknowledged
+Yoctui cancellation, that one object was moved to a recovery backup. Job 2 in the
+same daemon is the fourth attempt; it regenerated a valid main symbol and passed
+util-linux compilation. OPENBMC-SNAPSHOT-PROGRESS-001 is active because compacted
+daemon snapshots discard newer task-count statistics and fresh clients undercount
+completed tasks. The image continues under the preserved v0.1.73 daemon while
+the separate repair is implemented. Static documentation/version checks, locked
+metadata, formatting, roadmap, 17 version-only golden diffs, six raster tests,
+four gallery tests and deterministic screenshot checks pass. No runtime source
+changed in this governance step and full runtime/release gates were not rerun.
+
 M57 README-HEADER-001 is DONE in v0.1.74. The supplied circuit-style artwork
 forms a compact banner; CI and crates.io badges stay live and other labels
 reflect the actual Rust/coverage/license/platform policies. Links are clickable,
@@ -10,7 +22,14 @@ six raster tests, four gallery tests and independent review pass. All 17 termina
 fixture diffs are version-only; six rasters refreshed. No runtime source changed
 and no full workspace or release gate is claimed for this documentation change.
 See [header contract and artwork prompt](design/readme-header.md).
-OpenBMC retry remains active; no image success is claimed.
+OpenBMC live validation remains IN_PROGRESS; no image success is claimed.
+On September 8, the saved second attempt had reached 4,953/6,812 tasks with no
+terminal result. Its daemon and workers were absent following host OOM kills
+and user-session shutdown at 03:50. The third attempt was accepted through the
+preserved v0.1.73 binary, with only OpenBMC local.conf limited to two BitBake
+tasks and two compiler jobs; bitbake-getvar confirms both values. Root had
+about 46 GiB free. Current identity and evidence are in
+[OpenBMC validation](testing/openbmc.md#september-8-host-memory-recovery).
 
 HOST-PYTHON-001 is DONE: default account shells now
 use unshimmed system Python; pyenv was upgraded to v2.8.5 with upstream alias-loop
@@ -58,7 +77,7 @@ client without local build environment opens Dashboard directly. The image
 retry is now current, after cancellation of the first host-shim-stalled attempt.
 Storage preflight was unblocked by cleaning
 79.1 GiB of regenerable Cargo workspace debug artifacts after preserving the
-candidate binary; 78 GiB is now free, with all Poky data untouched. See
+candidate binary; 78 GiB was free at that earlier preflight, with all Poky data untouched. See
 [evidence](testing/openbmc.md). No OpenBMC image build has completed.
 Packages diagnosis: the
 previously connected v0.1.21 daemon advertised generation-1 negative pkgdata authority, while the generated
@@ -66,7 +85,7 @@ qemux86-64 database is readable and lists 4,387 packages. The installed client
 is v0.1.64. The user subsequently requested cancellation and daemon shutdown:
 job 3 acknowledged cancellation and terminated, daemon stop succeeded, and no
 BitBake workers remained. A fresh daemon capability check is still needed.
-OpenBMC live validation is queued next, subject to disk-space preflight.
+OpenBMC live validation is active, with the September 8 recovery recorded above.
 
 Release validation resumed for v0.1.64: on 2026-09-06 the user approved the
 reviewed bounded tui-logger/Jiff cache exception and crates.io publication.

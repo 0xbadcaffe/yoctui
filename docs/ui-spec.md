@@ -1458,6 +1458,13 @@ workspace shows one honest aggregate waiting row. It must not invent recipe,
 task, worker, or timing metadata for those waiting tasks. The Inspector labels
 unavailable task fields explicitly.
 
+Build completion counters survive task-row compaction and replacement snapshots.
+A freshly attached client and an uninterrupted client must show the same typed
+aggregate completed/total values for the same daemon state. Evicting completed
+rows or replacing queue/start metadata cannot erase a newer authoritative
+counter. Unknown totals remain unknown; starting a new build clears the previous
+build's counters. Retained row counts are never a substitute for build totals.
+
 ---
 
 ## 12. BitBake output consumption

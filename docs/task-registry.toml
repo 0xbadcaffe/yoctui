@@ -113,15 +113,26 @@ verify = ["cargo test -p yoctui initial_daemon_attach", "cargo test --workspace 
 notes = "v0.1.73 gives initial pre-terminal attachment a five-second receive budget, separately retaining 250 ms socket discovery and in-loop reconnect limits. Delayed 400 ms Attached fixture first failed, then passed with daemon workspace identity installed; a second regression caught a five-second missing-socket delay, fixed by separating discovery/read budgets. 1545 workspace tests (4 existing ignored), 49 bridge tests, strict Clippy, fmt, Python and docs checks pass. Real client with local build env removed opens Dashboard without navigation, first connected frame 1.336s at 140x32. Hash/cells/ANSI in artifacts/live-openbmc/romulus/initial-attach-fixed; not a steady-state CPU or latency-percentile claim. Version-only goldens and six rasters refreshed."
 
 [[task]]
+id = "OPENBMC-SNAPSHOT-PROGRESS-001"
+milestone = "M56"
+title = "Preserve authoritative build counters across compacted daemon snapshots"
+status = "IN_PROGRESS"
+priority = 1288
+required = true
+depends_on = ["OPENBMC-ATTACH-001"]
+verify = ["cargo test -p yoctui-protocol snapshot_progress", "cargo test -p yoctui-app snapshot_progress", "cargo test -p yoctui-ui snapshot_progress", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Live v0.1.73 Romulus attachment: snapshot sequence 1883 reports job 2 at 2339/6812 but retains only queued llvm_git statistics at 1731 completed plus eight completed rows. Completing/replacing task events removes their newer aggregate statistics; replay then understates build completion. Preserve bounded typed aggregate counters independently of retained rows, reset between builds, keep unknown totals unknown, and prove fresh/replacement snapshots agree with uninterrupted consumption. Cover task completion, row eviction, duplicate completion, malformed/unknown totals and terminal transitions with protocol/app/TestBackend tests. Live recheck remains required; do not stop the current image solely to replace its daemon. Update UI/architecture contracts and OpenBMC evidence."
+
+[[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
 status = "IN_PROGRESS"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
-notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. Record evidence in docs/testing/openbmc.md."
+notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. September 8 recovery: second attempt capture stopped at 4953/6812 with no terminal result; host journal records global OOM kills and user-session shutdown, and old daemon/workers are absent. Third attempt accepted through preserved v0.1.73 after OpenBMC-only BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, both verified via bitbake-getvar. About 46 GiB free at restart; all Poky data preserved. Current instance and bounded evidence in docs/testing/openbmc.md and image-build-resume-20260908.json. No image success or release gate claimed."
 
 [[task]]
 id = "RELEASE-README-001"

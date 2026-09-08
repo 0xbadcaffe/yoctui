@@ -1,9 +1,10 @@
 # OpenBMC live integration
 
 Status: environment, direct-capability, startup-responsiveness, bounded
-inventory, CLI submission and symlinked tool discovery tasks complete. Romulus
-image job 1 was accepted through Yoctui v0.1.71 and is executing real tasks.
-No completed image is claimed. Initial attachment exposed OPENBMC-ATTACH-001.
+inventory, CLI submission, symlinked tool discovery, host Python and initial
+attachment tasks complete. The third Romulus image attempt was accepted through
+the preserved Yoctui v0.1.73 candidate after host memory recovery on September 8.
+No completed image is claimed. See the current recovery record below.
 
 ## Planned machine and isolation
 
@@ -255,6 +256,82 @@ took 767 ms including detach (not an isolated latency percentile). This is
 OPENBMC-ATTACH-001. The first capture also demonstrated that the older generic
 capture script starts a local bridge unless the environment is sourced; the
 subsequent captures explicitly use yoctui attach and are not fixture renders.
+
+### September 8 host memory recovery
+
+The [second-attempt observation](../../artifacts/live-openbmc/romulus/image-build-retry-073.json)
+ends at 4,953/6,812 tasks with `terminal: null`. At resumption, daemon PID
+3955092, its runtime socket and all build workers were absent; no Romulus
+image deployment directory existed. The host did not reboot. Kernel journal
+entries record global OOM kills at 03:50:32–33 local time, followed by the user
+manager shutting down at 03:50:42. These prove host memory exhaustion and
+session loss, not which process caused the exhaustion or an image-build result.
+Reproduce the relevant read-only checks with:
+
+```sh
+journalctl -k --since '2026-09-08 03:00:00' --until '2026-09-08 03:55:00' \
+  --no-pager -g 'Out of memory: Killed process'
+journalctl --user --since '2026-09-08 03:50:40' --until '2026-09-08 03:50:45' \
+  --no-pager
+```
+
+The old durable daemon checkpoint predates that second attempt. Its historical
+Failed job must not be interpreted as the terminal result of the interrupted
+retry. Job numbers can repeat across daemon instances; correlate every capture
+with its recorded instance and executable hash.
+
+The preserved candidate `/tmp/yoctui-v73-validated.vMBk6H/yoctui` reports
+v0.1.73 and SHA-256
+`f34b9b26fb6d60d1503b20674bf194252552159ca63953b37000eb3e0b817a26`.
+An initial recovery daemon was stopped while idle, then only
+`/home/bspguy-dev/src/build-openbmc-romulus/conf/local.conf` gained:
+
+```bitbake
+# Bound this validation build after the host OOM on 2026-09-08.
+BB_NUMBER_THREADS = "2"
+PARALLEL_MAKE = "-j 2"
+```
+
+Both values were verified through `bitbake-getvar --value` before submission.
+No source revision, Poky data, swap configuration or system service was changed.
+Removing these two assignments restores the original concurrency defaults;
+do that only after stopping the associated build. Existing rm_work exclusions
+and disk margins remain in force. Root had about 46 GiB free and the host about
+9.6 GiB available RAM at recovery preflight; these are observations, not resource
+guarantees.
+
+The private daemon restarted from the initialized OpenBMC setup environment
+with the same XDG paths documented above. The third attempt was submitted using
+`yoctui daemon build obmc-phosphor-image`, which returned `Accepted`.
+Daemon PID 1195382 and instance `eceb92e7253969e488f7156c31d35d0f` identify this
+attempt; verify the runtime record before any lifecycle action.
+The [bounded current observation](../../artifacts/live-openbmc/romulus/image-build-resume-20260908.json)
+records its jobs, typed events, retained warnings/errors and eventual terminal
+result. This attempt failed util-linux linking: `more` had an undefined `main`
+because `build/text-utils/more-more.o` was a zero-byte regular file dated 02:47.
+The recipe source still defined main, and this was the only empty object in
+that failed recipe's build directory. Yoctui retained both error log records
+and the failed task. Cancellation through the exact instance/job was accepted
+in 0.553 ms and produced a failed terminal result; this is an acknowledgement
+observation, not a cleanup or release-performance measurement.
+
+After the task was inactive, only that damaged object was moved to
+`/home/bspguy-dev/.local/state/yoctui-openbmc-object-recovery.plNE35/more-more.o`.
+It remains recoverable. The next image submission was accepted as job 2 in the
+same daemon. It generated a 140 KiB object containing `T main`, linked `more`,
+and completed util-linux compilation and subsequent package tasks. The
+[fourth-attempt observation](../../artifacts/live-openbmc/romulus/image-build-object-recovery-20260908.json)
+records this ongoing build separately. No image success is claimed.
+
+A [real attached Tasks capture](../../artifacts/live-openbmc/romulus/resume-dashboard-20260908.txt)
+also exposed an independent counter discrepancy. In a later job-2 snapshot at
+sequence 1883, the job reported 2,339/6,812 but the retained build events held
+only an older queued llvm_git statistic at 1,731 completed plus eight completed
+rows. Task-event compaction drops newer aggregate statistics, so fresh client
+replay undercounts completion. OPENBMC-SNAPSHOT-PROGRESS-001 owns the bounded
+typed snapshot repair and regression tests. Until that repair, image success
+and generated package/rootfs inspection pass, OPENBMC-LIVE-001 remains
+IN_PROGRESS. No release-performance claim is made.
 
 Record source revision, MACHINE/DISTRO, BitBake version, initialization command,
 Yoctui version/hash, workspace paths, start/end timestamps and terminal outcome.
