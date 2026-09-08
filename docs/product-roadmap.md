@@ -4,6 +4,15 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+RELEASE-IPC-GATE-001 waits for two atomic follow-ups after the exact v89
+completion gate exposed an obsolete Default-constructor IPC assertion and the
+repaired source check revealed premature fixture build startup. v0.1.90 child
+RELEASE-IPC-SOURCE-001 is DONE with failed-first tests and full baseline. Current
+RELEASE-FIXTURE-READY-001 synchronizes metadata readiness and refreshes affected
+source-bound fixture evidence. 706 of 708 registry tasks are DONE. No runtime
+or threshold change is authorized by these checker/harness repairs; the full
+completion gate must still pass.
+
 v0.1.87 closes real OpenBMC integration with actual image/artifact/lifecycle/
 inspection evidence. v0.1.89 completes RELEASE-DAEMON-CPU-001 and
 RELEASE-PERF-REFRESH-001 with a bounded telemetry publication repair and actual

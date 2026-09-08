@@ -721,6 +721,25 @@ The complete offline CI contract and fast execution path are verified with:
 ./scripts/verify-performance.sh --ci
 ```
 
+## Completion-checker follow-ups after v0.1.89
+
+The exact clean-worktree completion run accepted the v89 real-Poky evidence,
+all 22 regression limits and seven correctness checks, then failed fast CI on
+an obsolete `Default` constructor assertion in the IPC verifier. The v90
+checker repair inspects `new(job_ids)`, requires the exact bounded reliable,
+cosmetic and cancellation-terminal ingress assignments, and fails clearly if
+that source shape changes. Five regression groups reproduce the old crash and
+exercise rejection of unbounded or incorrectly sized channels. Runtime sources
+and the accepted v89 measurement identities remain unchanged.
+
+The next actual flood check exposed premature startup: the fixture sends a
+build request before initial metadata is ready and ignores its typed conflict.
+This separate harness/evidence repair is RELEASE-FIXTURE-READY-001; parent
+RELEASE-IPC-GATE-001 remains incomplete. The [failed diagnostics and exact
+binary identity](../artifacts/performance/ci/v89-ipc-gate-failures.md) are
+retained separately. Neither the full IPC gate nor global completion is claimed
+from the passing source-checker tests.
+
 ## Operator and developer quick reference
 
 | Question | Implemented behavior | Verification |

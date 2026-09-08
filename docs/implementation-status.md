@@ -1,5 +1,24 @@
 # Yoctui Implementation Status
 
+v0.1.90 RELEASE-IPC-SOURCE-001 is DONE, split from RELEASE-IPC-GATE-001.
+The checker repair passes five failed-first/mutation-negative groups, three
+focused production Rust checks, all 1599 workspace tests/doc-tests (four
+existing ignored), 52 bridge tests, strict Clippy, fmt, docs, version policy
+and 13 script tests. All 17 goldens differ only in version digits; six rasters
+regenerated and verified. No runtime source or measured-evidence digest changed.
+Actual flood startup exposes another stale
+assumption: the harness sends start_build while metadata is loading and ignores
+the typed conflict. RELEASE-FIXTURE-READY-001 is registered before that separate
+harness/source-evidence repair and is now current; the parent remains
+NOT_STARTED. 706 of 708 tasks are DONE. No backpressure/global success is
+claimed. The v89 clean-worktree gate
+passed UI performance (five scenarios, 0.505–1.096 ms/frame), workspace tests,
+strict Clippy and source-bound real-Poky evidence, then exposed an obsolete
+Default-constructor source assertion in the IPC checker. The new(job_ids)
+constructor still uses bounded event queues. Exact failed diagnostics and the
+preserved reproduction binary are recorded in
+artifacts/performance/ci/v89-ipc-gate-failures.md. Full completion remains pending.
+
 v0.1.89 RELEASE-DAEMON-CPU-001 and RELEASE-PERF-REFRESH-001 are DONE.
 All 705 registry tasks are DONE; the repository-wide completion gate is next.
 A validated actual v88

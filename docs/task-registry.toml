@@ -223,6 +223,39 @@ verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --a
 notes = "v0.1.89 DONE: actual v88 unprofiled CPU failure 1.0334662486% was preserved and diagnosed with a separately labeled 275-sample/zero-unresolved real workload profile. Full snapshot serialization was 26.90% inclusive cycle weight during journal-only telemetry. One bounded correction admits Telemetry to the existing conservative size-ledger fast path, preserving payloads, cadence, limits, exact remeasurement and atomic rejection. Two failed-first regressions reproduced 101 serializations for 100 events; four focused safety/replay/bound/exhaustion tests pass. All 1599 workspace tests/doc-tests, 52 bridge tests, strict Clippy, fmt, docs, version policy, 17 version-only goldens/six rasters and full verify-performance.sh --real-poky-evidence chain pass. Exact preserved v89 release SHA-256 261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd. Fresh unprofiled 360-sample real compile passes combined CPU 0.5831064335%, input p95 4.558337 ms, cancel ack 6.060129 ms, fresh attach 50.053626 ms; no drops/disconnect/resync/reliable waits, successful reconnect/cancellation/cleanup. Idle combined 0.2703778% also passes. No thresholds, workload or timers changed; no Cargo/profiler during acceptance. Exact source/binary-bound records, failed/profiled evidence and reproduction in docs/performance.md. All original Poky/OpenBMC data and normal installation preserved. Parent source-evidence refresh is satisfied by this same verified capture."
 
 [[task]]
+id = "RELEASE-IPC-GATE-001"
+milestone = "M56"
+title = "Verify bounded IPC ingress through the explicit supervisor constructor"
+status = "NOT_STARTED"
+priority = 1281
+required = true
+depends_on = ["RELEASE-PERF-REFRESH-001", "RELEASE-IPC-SOURCE-001", "RELEASE-FIXTURE-READY-001"]
+verify = ["python3 -m unittest scripts/test_ipc_source_contracts.py", "./scripts/verify-ipc-continuity.sh --backpressure", "./scripts/verify-performance-ci-fast.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Registered after the exact v89 clean-worktree completion gate failed in verify_source_and_unit_contracts with IndexError at the obsolete impl Default for DaemonBitBakeSupervisor split. Production new(job_ids) retains bounded reliable/cosmetic/cancellation-terminal ingress. Repair only the source checker, add failed-first positive and mutation-negative regressions with clear fail-closed diagnostics, preserve runtime source and every acceptance threshold, then rerun the full gate. Relevant files: scripts/verify-ipc-continuity.sh, scripts/test_ipc_source_contracts.py and governance/version artifacts. Done requires focused tests, actual production backpressure/CI checks and baseline verification; global completion remains separate. Log /tmp/yoctui-v89-completion.log; clean worktree yoctui-v89-completion.QlFQ43 at 11f3d8f."
+
+[[task]]
+id = "RELEASE-IPC-SOURCE-001"
+milestone = "M56"
+title = "Repair the IPC constructor source assertion with fail-closed regression tests"
+status = "DONE"
+priority = 1282
+required = true
+depends_on = ["RELEASE-PERF-REFRESH-001"]
+verify = ["python3 -m unittest scripts/test_ipc_source_contracts.py", "cargo test -p yoctui --bin yoctui bounded_priority_ingress_drops_only_cosmetic_events", "cargo test -p yoctui --bin yoctui daemon_compatibility_cancellation_preempts_event_flood_and_terminates_once", "cargo test -p yoctui-protocol daemon_ipc_readiness_is_nonblocking_and_observes_peer_input", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.90 DONE: atomic source-checker child split before changing the separate event-flood startup/evidence path. Five regression groups reproduce the old IndexError then pass: actual constructor, exact reliable/cosmetic/cancellation-terminal capacities, removed constructor, out-of-constructor decoy, transport/slow-client checks. Production constructor and queue behavior remain untouched. The actual backpressure command passes source and three Rust checks, then reveals a separate startup-readiness failure tracked by RELEASE-FIXTURE-READY-001; parent remains NOT_STARTED until the complete path passes. All 1599 workspace tests/doc-tests, 52 bridge tests, strict Clippy, fmt, docs, 13 script tests, version policy, 708-task roadmap, 17 version-only goldens and six rasters pass. No accepted v89 real-Poky source digest changed. Files scripts/verify-ipc-continuity.sh and scripts/test_ipc_source_contracts.py plus version/governance; actual failed diagnostics and preserved binary identity in artifacts/performance/ci/v89-ipc-gate-failures.md. No full IPC or global completion success claim."
+
+[[task]]
+id = "RELEASE-FIXTURE-READY-001"
+milestone = "M56"
+title = "Wait for authoritative metadata readiness before performance fixture builds"
+status = "IN_PROGRESS"
+priority = 1283
+required = true
+depends_on = ["RELEASE-IPC-SOURCE-001"]
+verify = ["python3 -m unittest scripts/test_event_flood_harness.py", "./scripts/verify-ipc-continuity.sh --backpressure", "./scripts/verify-performance-ci-fast.sh", "./scripts/verify-bounded-memory.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Registered before harness implementation. Actual v89 binary returns conflict Initial recipe inventory is still loading to the event-flood harness start_build, then publishes workspace and Initial workspace and recipe inventory ready. The harness ignores command rejection and later says generator report absent; logs /tmp/yoctui-v90-ipc-backpressure.log and /tmp/yoctui-v90-flood-diagnostic.log. Introduce bounded read-only startup synchronization using authoritative protocol state, full identity/generation checks and fail-fast rejection/EOF/metadata-failure diagnostics; no blind sleeps, retries of accepted commands, runtime guards weakened or measurement/threshold changes. Relevant files scripts/event-flood-harness.py, its tests, dependent performance fixtures and source-bound IPC/memory evidence. Review consumers before edits; preserve old measured records and refresh affected evidence with actual captures, never relabel old hashes. Done requires failed-first readiness/failure tests, actual flood/backpressure/CI and affected evidence gates. Only disposable offline fixtures; no original Poky/OpenBMC or normal daemon changes."
+
+[[task]]
 id = "RELEASE-README-001"
 milestone = "M54"
 title = "Replace README promotion with feature coverage and operator how-tos"

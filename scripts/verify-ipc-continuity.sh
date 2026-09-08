@@ -146,14 +146,39 @@ PY
 }
 
 verify_source_and_unit_contracts() {
+  python3 -m unittest scripts/test_ipc_source_contracts.py
   python3 - <<'PY'
 from pathlib import Path
+import re
 
 supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
 transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
 daemon = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
-if "mpsc::unbounded_channel()" in supervisor.split("impl Default for DaemonBitBakeSupervisor", 1)[1].split("impl DaemonBitBakeSupervisor", 1)[0]:
-    raise SystemExit("BitBake event ingress regressed to an unbounded channel")
+# The supervisor now receives shared job IDs through new(), not Default.
+# Inspect only its rustfmt-delimited constructor: the per-job cancellation
+# signal channel elsewhere is not event ingress. Fail closed if this shape
+# changes, rather than crashing or accidentally checking an empty section.
+constructor = re.search(
+    r"impl DaemonBitBakeSupervisor\s*\{\s*pub fn new\([^)]*\)\s*->\s*Self\s*\{"
+    r"(?P<body>.*?)^    \}",
+    supervisor, re.DOTALL | re.MULTILINE,
+)
+if constructor is None:
+    raise SystemExit("bounded supervisor constructor is missing or changed; update its source contract")
+ingress = constructor.group("body")
+if "unbounded_channel" in ingress:
+    raise SystemExit("bounded BitBake event ingress regressed to an unbounded channel")
+for name, capacity in (
+    ("reliable", "BITBAKE_RELIABLE_EVENT_CAPACITY"),
+    ("cosmetic", "BITBAKE_COSMETIC_EVENT_CAPACITY"),
+    ("cancellation_terminal", "1"),
+):
+    assignment = (
+        rf"let\s*\(\s*{name}_tx\s*,\s*{name}_rx\s*\)\s*=\s*"
+        rf"mpsc::channel\(\s*{capacity}\s*\)\s*;"
+    )
+    if re.search(assignment, ingress) is None:
+        raise SystemExit(f"bounded BitBake {name} ingress capacity is missing or changed")
 for required in (
     "BITBAKE_RELIABLE_EVENT_CAPACITY", "BITBAKE_COSMETIC_EVENT_CAPACITY",
     "cosmetic_dropped", "reliable_waits", "bitbake_event_is_cosmetic",
