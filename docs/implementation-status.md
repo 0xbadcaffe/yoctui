@@ -1,5 +1,17 @@
 # Yoctui Implementation Status
 
+v0.1.82 governance registers OPENBMC-WORKER-COUNT-001 as current. The live
+v0.1.81 capture at 5083/6812 shows Workers: 0 beside two active tasks and an
+authoritative worker PID. The header counts all retained optional labels,
+including terminal rows; missing labels become a false zero. The next atomic
+repair will project only authoritative active worker identities and preserve
+unknown/lost authority. No runtime correction is claimed in this registration.
+The real image remains on v0.1.76, without interruption for deployment.
+Governance verification passes: 279 UI tests, fmt, documentation, roadmap,
+version checks and two version-policy tests. All 17 golden diffs are version
+digits only; six production rasters refreshed. No runtime source changed,
+and the full workspace/release gates were not rerun for this registration.
+
 OPENBMC-TASK-IDENTITY-001 is DONE in v0.1.81. The first bridge regression
 reproduced llvm_git/vendor_git/not-the-pn
 instead of authoritative native, multilib and overridden PNs. A bounded lookup

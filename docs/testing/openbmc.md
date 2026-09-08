@@ -1,5 +1,25 @@
 # OpenBMC live integration
 
+## Active-worker header finding (v0.1.82 registration)
+
+The [v0.1.81 production capture](../../artifacts/live-openbmc/romulus/v81-active-image-20260908.txt)
+shows 5083/6812 and Active 2, but Workers: 0. The rust-native task has PID
+1618606 and no worker label; tar configuration is also active. The header's
+HashSet counts optional labels across all retained task states, so absent
+labels become zero and completed labels can inflate the result. This is an
+observed display defect, not evidence that BitBake stopped executing workers.
+OPENBMC-WORKER-COUNT-001 registers a typed authoritative active-worker repair;
+no implementation is claimed by the v0.1.82 governance change.
+Registration checks pass: 279 UI tests, formatting, docs, roadmap and version
+policy checks/tests; 17 version-only goldens and six refreshed rasters. No
+runtime source changed, so no full workspace or release-gate claim is made.
+
+The capture's first connected frame arrived in 2.669 seconds. Counts agree
+with the observer and legacy timing remains unavailable. Ghost git queue rows
+remain expected from the unchanged v0.1.76 bridge. The image has no terminal
+result. BusyBox 1.38.0-r0 is present as an arm1176jzs IPK with readable control
+metadata; package production alone does not establish a complete image/rootfs.
+
 ## Queue identity repair (v0.1.81)
 
 OPENBMC-TASK-IDENTITY-001 is DONE. The failing bridge regression returned

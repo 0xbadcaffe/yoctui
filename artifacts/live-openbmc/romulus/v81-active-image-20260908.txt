@@ -1,0 +1,50 @@
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│yoctui v0.1.81  •  Project: openbmc  •  ▶ Running  •  Target: obmc-phosphor-image  •  Machine: romulus        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│Workspace: /home/bspguy-dev/src/openbmc  |  Build: obmc-phosphor-image  |  Task: 5083 / 6812  |  Elapsed: --:--:--  |  Workers: 0                             │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
+│▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  74%  5083/6812▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_install                      │
+│  ▱ Dashboard             ││Active 2  Waiting 1581  Warnings 0  Errors 0  Elapsed --                            ││Recipe      rust-native                     │
+│  ▱ Insights              ││Target: obmc-phosphor-image  Backend: bridge  Status: Running  Exit code: none      ││PN          rust-native                     │
+│▾ CONTENT                 ││Parse progress: not parsing  Tasks: 5083/6812  Warnings: 0  Errors: 0  Release: nodi││PV          1.96.1                          │
+│  ▱ Layers                ││Task           Recipe               Status        Time      Progress                ││PR          unavailable                     │
+│  ▱ Recipes               ││⣏ do_install   rust-native          ▶ Running     --        progress unknown ⣏      ││State       ▶ Running                       │
+│  ▱ Packages              ││⣏ do_configure tar                  ▶ Running     --        progress unknown ⣏      ││Progress    unknown                         │
+│  ▱ Images                ││  do_compile   gpioplus_git         · Queued      --        --                      ││                                            │
+│  ▱ Kernel                ││  do_configure gpioplus_git         · Queued      --        --                      ││                                            │
+│  ▱ U-Boot / BIOS         ││  do_create_pa gpioplus_git         · Queued      --        --                      │└────────────────────────────────────────────┘
+│  ▱ SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
+│▾ BUILD                   │┌Log Viewer — do_install (rust-native) · ▶ Follow────────────────────────────────────┐│Worker      unavailable                     │
+│  ▱ Tasks                2││Waiting for typed log entries for the selected task.                                ││PID         1618606                         │
+│  ▱ Logs              LIVE││                                                                                    ││Started     unavailable                     │
+│  ▱ Errors                ││                                                                                    ││Elapsed     unavailable                     │
+│  ▱ Configuration         ││                                                                                    ││Workdir     unavailable                     │
+│  ▱ Dependencies          ││                                                                                    ││Log file                                    │
+│▾ VALIDATE                ││                                                                                    ││/home/bspguy-dev/src/build-openbmc-romulus/t│
+│  ▱ Testing               ││                                                                                    ││mp/work/x86_64-linux/rust-native/1.96.1/temp│
+│    Security              ││                                                                                    ││/log.do_install.1618606                     │
+│  ▱ QA                    ││                                                                                    │└────────────────────────────────────────────┘
+│▾ TOOLS                   ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
+│  ▱ Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘│Waiting for typed log entries for the       │
+│  ▱ Terminal Sessions     │┌Job History · Active 1 · Queued 0 · Failed 1 · Recent complete 1 · Daemon-owned 2───┐│selected task.                              │
+│  ▱ Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││                                            │
+│  ▱ QEMU / Wic            ││▶ Running     BitBake build Build        5083/6812               --        --       │└────────────────────────────────────────────┘
+│  ▱ Maintenance           ││✕ Failed      BitBake build Build        daemon                  --        --       │┌Contextual Actions──────────────────────────┐
+│  ▱ Build environment     ││                                                                                    ││✓ Cancel active build  [c] — Available      │
+│  ▱ Compatibility         ││                                                                                    ││  Implementation: tinfoil.cancel            │
+│  ▱ Settings              ││                                                                                    ││✓ Open Logs            [l] — Local          │
+│                          ││                                                                                    ││✓ Build History        [h] — Local          │
+│                          ││                                                                                    ││✓ Build options        [B] — Available      │
+│                          │└────────────────────────────────────────────────────────────────────────────────────┘│  Implementation: tinfoil.build             │
+│                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│                                            │
+│                          ││CPU Usage        62%│RAM Usage        39%│Build FS Usage   94%│SSTATE ! unavailable │└────────────────────────────────────────────┘
+│                          ││                    │                    │               ▆▆▆▆ │                     │┌System Status───────────────────────────────┐
+│                          ││                ▆▅▆ │               ▁▁▁▁ │               ████ │                     ││✓ Daemon Connected · Local · version unavai…│
+│                          ││                ███ │               ████ │               ████ │                     ││✓ BitBake Running · v2.19.0 · Jobs 1        │
+│                          ││ ▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫ │                     ││! Compat Degraded g1 · A86 L1 U5 ?15 · PTY …│
+│                          ││       8 cores      │    5.9/15.0 GiB    │    26.4 GiB free   │                     ││✕ Build FS 94% · 26.4/456.3 GiB free · Work…│
+└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│↑/↓ select   h/l groups   ←/→ focus   Enter open   Ctrl+B prefix   ←/→ Focus   F1 Help   F10 Menu   q Quit                ▶ Build running · 2 active  06:52:19│
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

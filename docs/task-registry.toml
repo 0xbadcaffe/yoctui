@@ -157,13 +157,24 @@ verify = ["python3 -m pytest bridge/tests", "cargo test --workspace --all-featur
 notes = "v0.1.81 DONE: bounded initialized getRecipes PN/file index once per BuildStarted preserves native/multilib/git/overridden identities, disables Tinfoil event-draining cleanup, and leaves absent/conflicting/failed lookup unresolved. Unknown identity emits aggregate statistics without fake rows; daemon reuses existing running BitBake job progress only for current started-build authority. Three new bridge tests and six Rust regressions cover lifecycle/PID correlation, refresh, bounds, failure, aggregate-only model/app/CLI/protocol and narrow UI. All 1572 workspace tests and doc-tests, 52 bridge tests, Clippy, fmt, docs, six rasters and roadmap pass; Ruff/Mypy pass and bridge coverage is 78.35%. Sequential final baseline passed after concurrent docs compilation disrupted an earlier doc-test dependency artifact. First failing fixture reproduced llvm_git/vendor_git/not-the-pn instead of authoritative PNs. Original live evidence: v78-reattach-timing-20260908 shows llvm-native running beside ghost llvm_git and stdplus_git queue rows. Validated candidate preserved; no daemon replacement or image interruption. Real new-bridge recheck remains under OPENBMC-LIVE-001 after natural image completion."
 
 [[task]]
+id = "OPENBMC-WORKER-COUNT-001"
+milestone = "M56"
+title = "Render authoritative active-worker counts instead of retained label counts"
+status = "IN_PROGRESS"
+priority = 1285
+required = true
+depends_on = ["OPENBMC-TASK-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Live v81-active-image-20260908 capture shows header Workers: 0 beside Active 2 and rust-native PID 1618606; worker labels are unavailable. Header currently counts unique optional labels across every retained task, including completed rows. Replace this with a typed current-active-worker projection: use complete authoritative active PID or worker-label identities, deduplicate, exclude queued/completed rows, and keep partial/missing/lost authority unavailable rather than zero. Do not equate task count with worker count. Define the exact identity policy in ui-spec and architecture, add failed-first model/app/TestBackend cases including empty, duplicates, partial identity, terminal/reset and lost replica, and review affected goldens. Recheck the real attached client without interrupting the image; final new-daemon validation remains under LIVE."
+
+[[task]]
 id = "OPENBMC-LIVE-001"
 milestone = "M56"
 title = "Build one OpenBMC machine through Yoctui and investigate integration defects"
 status = "IN_PROGRESS"
 priority = 1280
 required = true
-depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001", "OPENBMC-TASK-IDENTITY-001"]
+depends_on = ["OPENBMC-CAPABILITY-001", "OPENBMC-CLI-BUILD-001", "OPENBMC-STARTUP-001", "OPENBMC-INVENTORY-001", "OPENBMC-TOOLS-001", "OPENBMC-ATTACH-001", "HOST-PYTHON-001", "OPENBMC-SNAPSHOT-PROGRESS-001", "DAEMON-JOB-IDENTITY-001", "OPENBMC-ATTACH-TIMING-001", "OPENBMC-TASK-IDENTITY-001", "OPENBMC-WORKER-COUNT-001"]
 verify = ["./scripts/check-docs.sh", "./scripts/verify-roadmap.sh", "./scripts/verify-completion.sh"]
 notes = "Launch obmc-phosphor-image for the documented machine through Yoctui; retain real logs and terminal result. Inspect tasks, logs, cancellation/connection, generated packages and rootfs. Register separate atomic regression-fix tasks for actual Yoctui defects, with failing tests and live recheck. Distinguish upstream/host build errors from Yoctui bugs. Done requires image success and investigated findings resolved, not fixture-only compatibility claims. September 8 recovery: second attempt capture stopped at 4953/6812 with no terminal result; host journal records global OOM kills and user-session shutdown, and old daemon/workers are absent. Third attempt accepted through preserved v0.1.73 after OpenBMC-only BB_NUMBER_THREADS=2 and PARALLEL_MAKE=-j 2, both verified via bitbake-getvar. About 46 GiB free at restart; all Poky data preserved. Current instance and bounded evidence in docs/testing/openbmc.md and image-build-resume-20260908.json. No image success or release gate claimed."
 

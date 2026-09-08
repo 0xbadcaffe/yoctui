@@ -1,14 +1,24 @@
 # Current Task
 
-**ID:** OPENBMC-LIVE-001
-**Title:** Build one OpenBMC machine through Yoctui and investigate integration defects
+**ID:** OPENBMC-WORKER-COUNT-001
+**Title:** Render authoritative active-worker counts instead of retained label counts
 **Status:** IN_PROGRESS
 
-Continue the real image and inspect its terminal outcome, packages and rootfs.
-All registered repair dependencies are DONE. After a natural stopping point,
-deploy the validated private candidate and recheck actual task identities,
-observed timing and recovered job IDs. Do not interrupt the image merely for
-deployment. Preserve all Poky data; do not infer image success from task counts.
+The v0.1.81 production capture shows Workers: 0 beside Active 2, with an
+authoritative rust-native PID but no worker label. The header counts labels
+across all retained tasks, including terminal ones. Add a typed active-worker
+projection using complete authoritative PID or label identities, deduplicating
+and excluding queued/completed rows. Partial/missing/lost authority must stay
+unavailable; task count is not worker count. Define the identity policy in
+ui-spec and architecture before implementing. Add failed-first model/app/UI
+tests for duplicates, partial identity, terminal/reset and lost replica; review
+goldens. Verify full workspace, Clippy, bridge, fmt, docs, rasters and roadmap.
+Recheck real read-only attachment without interrupting the image. This v0.1.82
+governance change registers the defect; it does not implement the correction.
+
+The parent image remains running; its terminal outcome, package/rootfs
+inspection and new-daemon timing/identity rechecks are still required.
+Preserve all Poky data and do not infer image success from task counts.
 
 OPENBMC-TASK-IDENTITY-001 is DONE in v0.1.81: exact bounded initialized metadata
 resolves native/multilib/git/overridden PNs once per build, without filename
