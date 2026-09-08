@@ -35,11 +35,16 @@ COALESCIBLE_NAMES = {"critical_task_progress"}
 
 class ProtocolClient:
     def __init__(
-        self, socket_path: Path, client_byte: int = 9, receive_buffer_bytes: int | None = None
+        self,
+        socket_path: Path,
+        client_byte: int = 9,
+        receive_buffer_bytes: int | None = None,
     ) -> None:
         self.socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         if receive_buffer_bytes is not None:
-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, receive_buffer_bytes)
+            self.socket.setsockopt(
+                socket.SOL_SOCKET, socket.SO_RCVBUF, receive_buffer_bytes
+            )
         self.socket.settimeout(0.25)
         self.socket.connect(str(socket_path))
         self.client_id = [client_byte] * 16
@@ -49,6 +54,7 @@ class ProtocolClient:
         self.frames_received = 0
         self.frame_bytes_received = 0
         self.received_by_type: dict[str, dict[str, int]] = {}
+        self.daemon_instance_id: list[int] | None = None
 
     def send(self, message: dict[str, object]) -> None:
         payload = json.dumps(message, separators=(",", ":")).encode()
@@ -73,8 +79,12 @@ class ProtocolClient:
                     kind = str(message.get("type", "unknown"))
                     metrics = self.received_by_type.setdefault(
                         kind,
-                        {"frames": 0, "frame_bytes": 0, "minimum_frame_bytes": frame_length,
-                         "maximum_frame_bytes": frame_length},
+                        {
+                            "frames": 0,
+                            "frame_bytes": 0,
+                            "minimum_frame_bytes": frame_length,
+                            "maximum_frame_bytes": frame_length,
+                        },
                     )
                     metrics["frames"] += 1
                     metrics["frame_bytes"] += frame_length
@@ -117,6 +127,7 @@ class ProtocolClient:
         hello = self.receive(5)
         if hello is None or hello.get("type") != "hello":
             raise RuntimeError(f"unexpected daemon hello: {hello}")
+        self.daemon_instance_id = checked_instance(hello.get("daemon_instance_id"))
         self.send(
             {
                 "type": "attach",
@@ -136,6 +147,13 @@ class ProtocolClient:
         snapshot = attached.get("snapshot")
         if not isinstance(snapshot, dict):
             raise RuntimeError("daemon attach omitted snapshot")
+        if (
+            checked_instance(snapshot.get("daemon_instance_id"))
+            != self.daemon_instance_id
+        ):
+            raise RuntimeError(
+                "daemon attach instance differs from negotiated identity"
+            )
         return snapshot
 
     def close(self) -> None:
@@ -145,6 +163,127 @@ class ProtocolClient:
         except (BrokenPipeError, EOFError, OSError, TimeoutError):
             pass
         self.socket.close()
+
+
+def checked_instance(value: object) -> list[int]:
+    if (
+        not isinstance(value, list)
+        or len(value) != 16
+        or any(type(byte) is not int or not 0 <= byte <= 255 for byte in value)
+    ):
+        raise RuntimeError("daemon instance must contain the full 16-byte identity")
+    return value
+
+
+def wait_for_metadata_ready(
+    client: ProtocolClient,
+    snapshot: dict[str, object],
+    build_dir: Path,
+    timeout: float = 20.0,
+    max_messages: int = 8192,
+) -> int:
+    """Read only, before measurement: require exact workspace and startup completion."""
+    instance = checked_instance(client.daemon_instance_id)
+    sequence = generation = -1
+    workspace_seen = ready_seen = False
+
+    def counter(value: object, name: str) -> int:
+        if type(value) is not int or not 0 <= value < 2**64:
+            raise RuntimeError(f"metadata readiness omitted a valid {name}")
+        return value
+
+    def workspace(event: dict[str, object]) -> None:
+        nonlocal workspace_seen
+        if event.get("type") != "workspace":
+            return
+        data = event.get("data")
+        directory = data.get("build_dir") if isinstance(data, dict) else None
+        if (
+            not isinstance(directory, str)
+            or Path(directory).resolve() != build_dir.resolve()
+        ):
+            raise RuntimeError("metadata workspace has the wrong build directory")
+        workspace_seen = True
+
+    def log(record: dict[str, object]) -> None:
+        nonlocal ready_seen
+        if record.get("source") != "daemon-metadata":
+            return
+        message = record.get("message", "")
+        if not isinstance(message, str):
+            raise RuntimeError("metadata readiness log is malformed")
+        if message.startswith("Initial metadata ") or record.get("severity") == "error":
+            raise RuntimeError(f"fixture startup metadata failed: {message[:1024]}")
+        if message == "Initial workspace and recipe inventory ready":
+            ready_seen = True
+
+    def replacement(current: dict[str, object]) -> None:
+        nonlocal sequence, generation, workspace_seen, ready_seen
+        if checked_instance(current.get("daemon_instance_id")) != instance:
+            raise RuntimeError("daemon instance changed during metadata readiness")
+        next_sequence = counter(current.get("sequence"), "sequence")
+        next_generation = counter(current.get("generation"), "generation")
+        if next_sequence < sequence or next_generation < generation:
+            raise RuntimeError("metadata snapshot sequence/generation regressed")
+        sequence, generation = next_sequence, next_generation
+        workspace_seen = ready_seen = False
+        for record in current.get("recent_logs", []):
+            log(record)
+        for event in current.get("build_events", []):
+            workspace(event)
+
+    replacement(snapshot)
+    deadline = time.monotonic() + timeout
+    while not (workspace_seen and ready_seen):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise RuntimeError("fixture metadata readiness timed out")
+        if max_messages <= 0:
+            raise RuntimeError("fixture metadata readiness exceeded the message bound")
+        try:
+            message = client.receive(min(0.5, remaining))
+        except EOFError as error:
+            raise RuntimeError(
+                "daemon disconnected during metadata readiness"
+            ) from error
+        if message is None:
+            continue
+        max_messages -= 1
+        kind = message.get("type")
+        if kind == "ping":
+            client.send({"type": "pong", "nonce": message["nonce"]})
+        elif kind == "snapshot":
+            replacement(message)
+        elif kind == "event":
+            next_sequence = counter(message.get("sequence"), "sequence")
+            next_generation = counter(message.get("generation"), "generation")
+            if next_sequence != sequence + 1 or next_generation <= generation:
+                raise RuntimeError(
+                    "metadata event sequence/generation is not continuous"
+                )
+            sequence, generation = next_sequence, next_generation
+            event = message.get("event", {})
+            if event.get("type") == "build":
+                workspace(event.get("data", {}))
+            elif event.get("type") == "log":
+                log(event.get("data", {}))
+        else:
+            raise RuntimeError(f"metadata readiness interrupted: {str(message)[:1024]}")
+    return generation
+
+
+def observe_build_ack(message: dict[str, object], request_id: int) -> bool:
+    if message.get("type") in {"error", "detaching", "shutting_down"}:
+        raise RuntimeError(f"fixture build protocol interrupted: {str(message)[:1024]}")
+    if (
+        message.get("type") != "command_result"
+        or message.get("request_id") != request_id
+    ):
+        return False
+    outcome = message.get("outcome", {})
+    if not isinstance(outcome, dict) or outcome.get("type") != "accepted":
+        raise RuntimeError(f"fixture build request rejected: {str(outcome)[:1024]}")
+    return True
 
 
 def process_rss(pid: int) -> int | None:
@@ -183,9 +322,7 @@ def classify_message(message: dict[str, object], observed: set[str]) -> None:
         classify_build(data, observed)
 
 
-def observe_pressure(
-    message: dict[str, object], observed: dict[str, int]
-) -> None:
+def observe_pressure(message: dict[str, object], observed: dict[str, int]) -> None:
     if message.get("type") != "event":
         return
     event = message.get("event")
@@ -358,18 +495,31 @@ def main() -> int:
         client_continuity = False
         generated: dict[str, object] | None = None
         slow_client: ProtocolClient | None = None
+        client: ProtocolClient | None = None
         try:
             client = ProtocolClient(socket_path)
             initial = client.attach()
+            runtime_record = json.loads(
+                (socket_path.parent / "daemon.json").read_text()
+            )
+            if runtime_record.get("daemon_instance_id") != client.daemon_instance_id:
+                raise RuntimeError(
+                    "fixture daemon runtime identity differs from attachment"
+                )
+            readiness_started = time.monotonic()
+            generation = wait_for_metadata_ready(client, initial, root / "build")
+            readiness_seconds = time.monotonic() - readiness_started
             if args.include_slow_client:
-                slow_client = ProtocolClient(socket_path, 11, receive_buffer_bytes=4_096)
+                slow_client = ProtocolClient(
+                    socket_path, 11, receive_buffer_bytes=4_096
+                )
                 slow_client.attach()
             initial_snapshot_bytes = len(
                 json.dumps(initial, separators=(",", ":")).encode()
             )
             classify_snapshot(initial, observed)
-            generation = initial.get("generation")
             measurement_started = time.monotonic()
+            build_acknowledged = False
             next_rss_sample = measurement_started
             daemon_cpu_started = process_cpu_seconds(daemon.pid)
             client.send(
@@ -391,6 +541,8 @@ def main() -> int:
             )
             while time.monotonic() < absolute_deadline:
                 now = time.monotonic()
+                if not build_acknowledged and now - measurement_started >= 10:
+                    raise RuntimeError("fixture build acknowledgement timed out")
                 if now >= next_rss_sample:
                     rss = process_rss(daemon.pid)
                     if rss is not None:
@@ -398,6 +550,7 @@ def main() -> int:
                     next_rss_sample += 1.0
                 message = client.receive(0.05)
                 if message is not None:
+                    build_acknowledged |= observe_build_ack(message, 1)
                     frame_count += 1
                     if message.get("type") == "snapshot":
                         snapshots += 1
@@ -431,7 +584,8 @@ def main() -> int:
                 "received_by_type": client.received_by_type,
                 "daemon_cpu_seconds": (
                     daemon_cpu_finished - daemon_cpu_started
-                    if daemon_cpu_started is not None and daemon_cpu_finished is not None
+                    if daemon_cpu_started is not None
+                    and daemon_cpu_finished is not None
                     else None
                 ),
             }
@@ -443,8 +597,12 @@ def main() -> int:
             client.close()
             if not generator_report.exists():
                 raise RuntimeError("event generator did not publish its bounded report")
+            if not build_acknowledged:
+                raise RuntimeError("fixture build acknowledgement was not observed")
             generated = json.loads(generator_report.read_text(encoding="utf-8"))
         finally:
+            if client is not None:
+                client.socket.close()
             if slow_client is not None:
                 slow_client.socket.close()
             stop_daemon(daemon)
@@ -468,6 +626,13 @@ def main() -> int:
         record = {
             "schema": SCHEMA,
             "status": "observed",
+            "startup": {
+                "readiness_seconds": readiness_seconds,
+                "ready_generation": generation,
+                "daemon_instance_id": client.daemon_instance_id,
+                "build_acknowledged": build_acknowledged,
+                "measurement_started_after_readiness": True,
+            },
             "identity": {
                 "source_base_revision": subprocess.check_output(
                     ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
@@ -543,7 +708,8 @@ def main() -> int:
             return 0 if known_failure and not retention_passed else 1
         if not retention_passed:
             print(
-                "event flood gate failed: missing critical events " + ", ".join(missing),
+                "event flood gate failed: missing critical events "
+                + ", ".join(missing),
                 file=sys.stderr,
             )
             return 1

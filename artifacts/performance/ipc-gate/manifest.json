@@ -1,26 +1,34 @@
 {
   "schema": "yoctui.performance.ipc-continuity-gate.v1",
-  "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
-  "event_flood_artifact": "artifacts/performance/ipc-gate/event-flood.json",
-  "event_flood_sha256": "94d577aaaff9db8fe2c629924f6717789d4363fa3a44d6aa22c2fd81aa86d206",
+  "source_base_revision": "db7a6a78e0fb437e0c947e4510cebba7a64bbfb8",
+  "event_flood_artifact": "artifacts/performance/ipc-gate/v91-readiness-event-flood.json",
+  "event_flood_sha256": "c7dde982429919f729c87bc9c28feaf081fa1b8418b0486d8d6be51955d049cf",
   "saturated_latency_artifact": "artifacts/performance/ipc-latency/host-audit.json",
   "saturated_latency_sha256": "adb0a281e9cab6434fc82cdf3e49456ef0a61428075ce968ab8914fd36cffa26",
   "sources": {
-    "scripts/event-flood-harness.py": "ccf91c0a588525534a750f07f1cdfbf5d56dc82e3858e6da467b65ca18c3b83f",
+    "scripts/event-flood-harness.py": "3072d5ae82e96bf07dc597debebf29de674df3c07e52c619c5306c1e71426b42",
     "scripts/fixtures/bitbake-event-flood-bridge.py": "001d0370fe32df2d21f788643cac8355d339a55d8db98f601d0d3b88567a949b",
-    "scripts/measure-ipc-latency.py": "a7681de536c4864f318ac6501e5d6bb528761a119b9722c1e19498744dba9b53"
+    "scripts/measure-ipc-latency.py": "a7681de536c4864f318ac6501e5d6bb528761a119b9722c1e19498744dba9b53",
+    "scripts/test_event_flood_harness.py": "647b136a89e4190bfe5381533f5b684ddeb6868cd4837a844d5956198071cc73",
+    "artifacts/performance/ipc-gate/v91-readiness-source.patch": "5af884b2628c26ccc9e685a922f9e70e4737726b5c7e4eca07ddff3f8b1a759f"
   },
   "observations": {
     "requested_event_rate_per_second": 4000,
-    "generated_ordinary_events": 4003,
+    "generated_ordinary_events": 4002,
     "healthy_client_event_frames": 1652,
     "critical_sentinels_retained": 4,
     "important_transitions_observed": 2,
-    "maximum_queue_depth": 602,
+    "maximum_queue_depth": 603,
     "slow_client_disconnects": 1,
     "forced_resynchronizations": 0,
     "reconnect_succeeded": true,
     "saturated_daemon_event_p95_ms": 28.371364,
     "saturated_detach_acknowledgement_ms": 0.149685
-  }
+  },
+  "flood_binary": {
+    "path": "/home/bspguy-dev/.local/state/yoctui-v89-release.N94Frh/yoctui",
+    "sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd",
+    "version": "0.1.89"
+  },
+  "provenance_notes": "Fresh actual flood with the repaired harness against db7a6a7 plus v91-readiness-source.patch (git apply --unidiff-zero). Runtime sources are unchanged from preserved v0.1.89 release 261fb7a4; no v0.1.91 binary is claimed. Saturated latency remains the separately source-bound historical host-audit.json, not a new observation. Prior flood/manifest are retained in event-flood.json and pre-readiness-manifest.json."
 }

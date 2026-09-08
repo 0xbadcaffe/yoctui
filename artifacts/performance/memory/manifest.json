@@ -1,21 +1,23 @@
 {
   "schema": "yoctui.performance.bounded-memory-manifest.v1",
-  "source_base_revision": "7dab4836c4fc1a8c130780b37190c73c81dd4132",
+  "source_base_revision": "db7a6a78e0fb437e0c947e4510cebba7a64bbfb8",
   "artifact": "endurance-30m.json",
-  "artifact_sha256": "3435232978fd0996921fef08ee781edc5f61db3074c144c46bd4afec0deb5a40",
-  "binary_sha256": "ee4be85588ce923b0910f71866a9bed5d8e0687f8fad4d29b0b07cb98ab27e8a",
+  "artifact_sha256": "c65a54266bfaa0b6b04b2d514d1f73f4964227d97c6084221fed4a22db8417ee",
+  "binary_sha256": "261fb7a45026d7a869c9ae0f8804b7c813c226d2e3d62238fad76b0c795908fd",
   "sources": {
     "scripts/measure-bounded-memory.py": "63238e103633286c54b41e309daaaeb01194abb2a39a28c76317a1642ce536fe",
-    "scripts/event-flood-harness.py": "ccf91c0a588525534a750f07f1cdfbf5d56dc82e3858e6da467b65ca18c3b83f",
+    "scripts/event-flood-harness.py": "3072d5ae82e96bf07dc597debebf29de674df3c07e52c619c5306c1e71426b42",
     "scripts/verify-bounded-memory.sh": "a255dc1ea48684135b69722372767d6373eb14d7a1df77a68c98211d3007028c",
-    "scripts/test_bounded_memory_harness.py": "42546d448d5e4caf5deee808b09f60a6677fe71751cc5d99f11e1ee6360d7126"
+    "scripts/test_bounded_memory_harness.py": "42546d448d5e4caf5deee808b09f60a6677fe71751cc5d99f11e1ee6360d7126",
+    "scripts/test_event_flood_harness.py": "647b136a89e4190bfe5381533f5b684ddeb6868cd4837a844d5956198071cc73",
+    "artifacts/performance/ipc-gate/v91-readiness-source.patch": "5af884b2628c26ccc9e685a922f9e70e4737726b5c7e4eca07ddff3f8b1a759f"
   },
   "observations": {
     "sample_count": 1800,
-    "daemon_rss_growth_bytes": 700416,
-    "client_rss_growth_bytes": 253952,
-    "daemon_final_slope_bytes_per_minute": 564.6786442929189,
-    "client_final_slope_bytes_per_minute": 3837.66267386882,
+    "daemon_rss_growth_bytes": 2330624,
+    "client_rss_growth_bytes": 282624,
+    "daemon_final_slope_bytes_per_minute": 6397.723571480765,
+    "client_final_slope_bytes_per_minute": 1781.5367655866396,
     "daemon_threads": 3,
     "client_threads": 1,
     "critical_retention_passed": true,

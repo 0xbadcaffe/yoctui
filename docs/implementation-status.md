@@ -1,5 +1,21 @@
 # Yoctui Implementation Status
 
+v0.1.92 completes RELEASE-FIXTURE-READY-001 and its parent
+RELEASE-IPC-GATE-001; all 709 registry tasks are DONE. The event-flood harness
+now waits boundedly and read-only for the exact daemon/workspace metadata
+identity, generation and ready log before issuing one build command, failing
+closed on malformed startup or immediate rejection. Its ten tests, actual
+production backpressure capture, performance-CI-fast, retained/dynamic
+bounded-memory checks, full 1600 workspace tests/doc-tests (four existing
+ignored), 52 bridge tests, strict Clippy, fmt, docs, version policy, 21 goldens,
+six M22 rasters and the README gallery pass. Fresh 30-minute source-bound
+evidence records daemon/client RSS growth of 2330624/282624 bytes, final slopes
+6397.72/1781.54 B/min, stable three/one threads and complete critical
+retention/order/continuity. Historical evidence remains separately retained;
+runtime sources, thresholds, workloads and timers are unchanged. The only
+remaining release operation is the repository-wide clean-worktree completion
+gate.
+
 v0.1.91 README-SCREENSHOTS-001 is DONE. The front README now carries ten
 ordered current-renderer screenshots: active Tasks, Kernel/U-Boot device-tree
 workbenches, both menuconfig sessions, Rootfs composition with the Braille pie
@@ -13,6 +29,24 @@ tests, strict Clippy, fmt, docs, version policy, 709-task roadmap, ten gallery
 rasters and six established rasters pass. RELEASE-FIXTURE-READY-001 resumes
 from its recoverable stash; RELEASE-IPC-GATE-001 remains NOT_STARTED. 707 of
 709 tasks are DONE, so no global completion claim is made.
+
+RELEASE-FIXTURE-READY-001 remains IN_PROGRESS after v0.1.90 db7a6a7.
+Bounded read-only metadata synchronization now checks the exact workspace,
+full daemon identity, sequence/generation and ready log before submitting a
+build. Command rejection fails promptly; accepted commands are never retried.
+Six new readiness groups plus four existing flood tests and two memory-summary
+tests pass. The same preserved v89 debug binary passes the prior reproduction;
+the actual preserved v89 release also passes the unchanged flood validator.
+The one-minute memory preflight passes with daemon/client RSS growth
+1744896/94208 bytes and stable three/one threads. Fresh unchanged 30-minute
+endurance also passes: daemon/client growth 2330624/282624 bytes, final-window
+slopes 6397.72/1781.54 B/min, stable three/one threads, complete critical
+retention/order/continuity, and owned process cleanup. Memory/regression
+promotion and baseline remain pending. Canonical IPC manifest now binds the actual fresh
+flood and passes its unchanged validator. Previous records/manifests are
+preserved separately. Runtime sources and performance thresholds
+are unchanged; no current-release binary identity is invented. 707 of 709 tasks
+remain DONE; no global gate success is claimed.
 
 v0.1.90 RELEASE-IPC-SOURCE-001 is DONE, split from RELEASE-IPC-GATE-001.
 The checker repair passes five failed-first/mutation-negative groups, three

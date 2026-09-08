@@ -1,29 +1,62 @@
 # Current Task
 
-**ID:** RELEASE-FIXTURE-READY-001
-**Title:** Wait for authoritative metadata readiness before performance fixture builds
-**Status:** IN_PROGRESS
+**ID:** RELEASE-IPC-GATE-001
+**Title:** Verify bounded IPC ingress through the explicit supervisor constructor
+**Status:** DONE
 
-707 of 709 registry tasks are DONE. README-SCREENSHOTS-001 is verified in
-v0.1.91 and will be pushed before this task's recoverable stash is restored.
-The four unrelated untracked OpenBMC retry captures remain user-owned and
-untouched. Parent RELEASE-IPC-GATE-001 stays NOT_STARTED until this child's
-complete source-bound backpressure/CI path passes.
+All 709 registry tasks are DONE. README-SCREENSHOTS-001 is verified in v0.1.91
+and pushed at 4b60d22 before the recoverable fixture-readiness work was
+restored. The four unrelated untracked OpenBMC retry captures remain user-owned
+and untouched. This parent is complete after its two atomic follow-ups:
+RELEASE-IPC-SOURCE-001 (v0.1.90) repaired the obsolete fail-closed source
+assertion; RELEASE-FIXTURE-READY-001 (v0.1.92) completes source-bound actual
+fixture readiness and evidence validation. The remaining repository-wide
+completion confirmation must run in an exact clean worktree.
 
-Restore the retained bounded metadata-readiness implementation, failed-first
-tests, source-bound IPC/memory evidence changes, and actual 30-minute acceptance
-record. Rebase that coherent work from its pre-gallery v0.1.91 baseline to
-v0.1.92 without losing the new README gallery or altering old measurements.
-The retained 30-minute observation passed unchanged daemon/client RSS growth,
-final-window slope, stable thread, critical-event, ordering, and continuity
-requirements. Revalidate its exact source/binary provenance after restoration.
+The event-flood fixture previously sent `start_build` while the initial recipe
+inventory was loading, ignored the correct typed conflict, then misreported a
+missing generator result. The bounded repair waits read-only for authoritative
+metadata: exact daemon identity, workspace/build directory, sequence and
+generation, workspace event, and ready log. It fails closed on timeout, EOF,
+metadata failure, order/identity violations and immediate command rejection.
+There are no blind sleeps or retries of accepted commands. All ten harness
+tests pass, as do actual `--backpressure`, performance-CI-fast and
+bounded-memory validations.
 
-Required: `python3 -m unittest scripts/test_event_flood_harness.py`;
-`./scripts/verify-ipc-continuity.sh --backpressure`;
-`./scripts/verify-performance-ci-fast.sh`; `./scripts/verify-bounded-memory.sh`;
-the full workspace/Clippy/bridge/docs/roadmap/version baseline. Then mark the
-child DONE, verify RELEASE-IPC-GATE-001 and resume `./scripts/verify-completion.sh`
-in an exact clean worktree. Do not stop at the screenshot commit.
+The preserved v89 release binary passes the fresh actual flood after 0.100 s
+of readiness synchronization: 4002 ordinary events, maximum queue 603,
+slow-client disconnect/reconnect, no forced resync and retained critical
+events. The fresh required 30-minute observation has daemon/client RSS growth
+2330624/282624 bytes, final-window slopes 6397.72/1781.54 B/min and stable
+three/one threads; critical retention, order, continuity and owned-process
+cleanup pass. Historical records remain preserved separately. No daemon runtime
+source, threshold, workload or timer changed, and no Cargo or profiler ran
+during acceptance.
+
+Canonical IPC, memory and regression manifests bind the actual fresh
+source-bound evidence; historical event-flood and memory records/manifests are
+preserved under their `pre-readiness` names.
+The exact harness/test source patch against db7a6a7 remains
+artifacts/performance/ipc-gate/v91-readiness-source.patch, SHA-256
+5af884b2628c26ccc9e685a922f9e70e4737726b5c7e4eca07ddff3f8b1a759f;
+reverse check with git apply --unidiff-zero passed.
+
+Use the preserved v89 release 261fb7a4 below for these actual fixture captures:
+the checker/harness changes leave all runtime source hashes unchanged. Do not
+claim a v91 binary was measured. Harness SHA-256 at final flood capture:
+3072d5ae82e96bf07dc597debebf29de674df3c07e52c619c5306c1e71426b42;
+measure-bounded-memory.py is unchanged (63238e10). No Cargo/profiler runs
+during acceptance. Logs /tmp/yoctui-v91-{readiness-same-binary,release-flood,
+memory-preflight}.log; failed-first readiness log
+/tmp/yoctui-v91-readiness-failed-first.log. Rebase version/governance artifacts
+to v0.1.92 without changing measured source or relabeling the v91 observations.
+Canonical memory/regression promotion and the full baseline remain pending.
+
+Required checks are complete: ten harness tests, actual IPC backpressure,
+performance CI fast, retained/dynamic bounded memory, workspace tests, strict
+Clippy, bridge tests, formatting, docs, roadmap, version and render checks.
+The next and final operation is `./scripts/verify-completion.sh` in an exact
+clean worktree.
 
 ## Preserved release background
 

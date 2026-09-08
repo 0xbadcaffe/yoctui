@@ -237,12 +237,12 @@ notes = "v0.1.89 DONE: actual v88 unprofiled CPU failure 1.0334662486% was prese
 id = "RELEASE-IPC-GATE-001"
 milestone = "M56"
 title = "Verify bounded IPC ingress through the explicit supervisor constructor"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 1281
 required = true
 depends_on = ["RELEASE-PERF-REFRESH-001", "RELEASE-IPC-SOURCE-001", "RELEASE-FIXTURE-READY-001"]
 verify = ["python3 -m unittest scripts/test_ipc_source_contracts.py", "./scripts/verify-ipc-continuity.sh --backpressure", "./scripts/verify-performance-ci-fast.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Registered after the exact v89 clean-worktree completion gate failed in verify_source_and_unit_contracts with IndexError at the obsolete impl Default for DaemonBitBakeSupervisor split. Production new(job_ids) retains bounded reliable/cosmetic/cancellation-terminal ingress. Repair only the source checker, add failed-first positive and mutation-negative regressions with clear fail-closed diagnostics, preserve runtime source and every acceptance threshold, then rerun the full gate. Relevant files: scripts/verify-ipc-continuity.sh, scripts/test_ipc_source_contracts.py and governance/version artifacts. Done requires focused tests, actual production backpressure/CI checks and baseline verification; global completion remains separate. Log /tmp/yoctui-v89-completion.log; clean worktree yoctui-v89-completion.QlFQ43 at 11f3d8f."
+notes = "v0.1.92 DONE: the v0.1.90 fail-closed source-check repair and v0.1.92 fixture-readiness follow-up now complete the parent without changing production IPC runtime source, limits, timers, workloads, or acceptance thresholds. The repaired harness waits read-only for exact authoritative metadata identity/generation/readiness before its single build request; its ten tests pass. Actual preserved-v89-binary backpressure evidence, performance CI fast checks, retained source-bound memory evidence, and the dynamic bounded-memory probe pass. Workspace tests/doc-tests, strict Clippy, bridge tests, fmt, docs, version policy, 709-task roadmap, all 21 version goldens, six M22 rasters, and the README gallery are verified. The repository-wide clean-worktree completion gate remains the separate final release confirmation."
 
 [[task]]
 id = "RELEASE-IPC-SOURCE-001"
@@ -259,12 +259,12 @@ notes = "v0.1.90 DONE: atomic source-checker child split before changing the sep
 id = "RELEASE-FIXTURE-READY-001"
 milestone = "M56"
 title = "Wait for authoritative metadata readiness before performance fixture builds"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 1283
 required = true
 depends_on = ["RELEASE-IPC-SOURCE-001"]
 verify = ["python3 -m unittest scripts/test_event_flood_harness.py", "./scripts/verify-ipc-continuity.sh --backpressure", "./scripts/verify-performance-ci-fast.sh", "./scripts/verify-bounded-memory.sh", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
-notes = "Registered before harness implementation. Resumes after the explicit README-SCREENSHOTS-001 override is committed and pushed; all agent-owned implementation/evidence work remains retained in a recoverable stash meanwhile. Actual v89 binary returns conflict Initial recipe inventory is still loading to the event-flood harness start_build, then publishes workspace and Initial workspace and recipe inventory ready. The harness ignores command rejection and later says generator report absent; logs /tmp/yoctui-v90-ipc-backpressure.log and /tmp/yoctui-v90-flood-diagnostic.log. Introduce bounded read-only startup synchronization using authoritative protocol state, full identity/generation checks and fail-fast rejection/EOF/metadata-failure diagnostics; no blind sleeps, retries of accepted commands, runtime guards weakened or measurement/threshold changes. Relevant files scripts/event-flood-harness.py, its tests, dependent performance fixtures and source-bound IPC/memory evidence. Review consumers before edits; preserve old measured records and refresh affected evidence with actual captures, never relabel old hashes. The retained actual 30-minute acceptance observation passed unchanged RSS slope/thread/retention requirements and must be restored with its source-bound implementation before verification. Done requires failed-first readiness/failure tests, actual flood/backpressure/CI and affected evidence gates. Only disposable offline fixtures; no original Poky/OpenBMC or normal daemon changes."
+notes = "v0.1.92 DONE: bounded read-only metadata synchronization now proves the exact daemon instance, workspace/build directory, sequence/generation and authoritative readiness log before submitting the one build request. It fails closed on metadata failure, EOF, identity/order violations, timeout/message bound, and command rejection; ping is read-only and accepted commands are never retried. Ten harness tests pass. The preserved v89 release binary passes the actual event-flood/backpressure capture after 0.100 s readiness; the fresh record retains 4002 ordinary events, queue maximum 603, slow-client disconnect/reconnect, critical retention and no forced resync. Fresh 30-minute acceptance has daemon/client RSS growth 2330624/282624 bytes, final-window slopes 6397.72/1781.54 B/min, stable three/one threads, full critical retention/order/continuity and owned-process cleanup. Historical records are retained separately; canonical IPC/memory/regression manifests bind fresh source-bound evidence. No original Poky/OpenBMC data, normal daemon runtime source, thresholds, workloads or timers changed. Actual backpressure, performance-CI-fast, bounded-memory, full baseline and documentation/roadmap gates pass."
 
 [[task]]
 id = "RELEASE-README-001"

@@ -732,13 +732,29 @@ that source shape changes. Five regression groups reproduce the old crash and
 exercise rejection of unbounded or incorrectly sized channels. Runtime sources
 and the accepted v89 measurement identities remain unchanged.
 
-The next actual flood check exposed premature startup: the fixture sends a
-build request before initial metadata is ready and ignores its typed conflict.
-This separate harness/evidence repair is RELEASE-FIXTURE-READY-001; parent
-RELEASE-IPC-GATE-001 remains incomplete. The [failed diagnostics and exact
-binary identity](../artifacts/performance/ci/v89-ipc-gate-failures.md) are
-retained separately. Neither the full IPC gate nor global completion is claimed
-from the passing source-checker tests.
+The next actual flood check exposed premature startup: the fixture sent a build
+request before initial metadata was ready and ignored its typed conflict.
+RELEASE-FIXTURE-READY-001 now performs a bounded read-only wait for the exact
+daemon instance, workspace path, continuous sequence/generation, workspace
+event, and successful metadata-ready log before measurement or command
+submission. It answers pings but sends no build during readiness, rejects
+replacement/identity/order failures, and fails immediately on metadata errors,
+EOF, protocol interruption, command rejection, timeout, or message exhaustion.
+Accepted commands are never retried.
+
+The preserved v0.1.89 release binary, whose runtime sources are unchanged, now
+passes the previously failing actual 4,000-event/s flood after 0.100 seconds of
+read-only readiness. The canonical IPC manifest binds that fresh capture, the
+exact repair patch against db7a6a7, and both harness/test sources; the historical
+capture and manifest remain separately retained. The fresh 30-minute endurance
+capture uses the same source and binary identity: daemon/client RSS growth is
+2,330,624/282,624 bytes, final 20-minute slope is 6,397.72/1,781.54 bytes/min,
+thread maxima remain three/one, and critical retention, strict ordering,
+continuity, and owned-process cleanup all pass. The canonical memory manifest
+and derived 22-metric/seven-correctness regression record are regenerated from
+that evidence. No threshold, runtime source, historical record, or measured
+binary identity was changed. The [original failed diagnostics and exact binary
+identity](../artifacts/performance/ci/v89-ipc-gate-failures.md) remain retained.
 
 ## Operator and developer quick reference
 

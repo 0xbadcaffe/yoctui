@@ -1,6 +1,6 @@
 {
   "artifact": "metrics.json",
-  "artifact_sha256": "d43aebbe3d2403e4d752a29d392aa37647d1fa28bcd708ebd4df65872fa2041a",
+  "artifact_sha256": "db9c6af1f8504c99aba37b0bb85149d9c9c7e8c9334ab05cb9620cb8d4f5e724",
   "policy": {
     "controlled_release_gates": "exact documented thresholds are hard failures",
     "diagnostic_trends": "recorded for comparison but tiny uncontrolled variance is not a hard failure",

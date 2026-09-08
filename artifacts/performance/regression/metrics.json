@@ -188,33 +188,33 @@
         "hard_maximum": 65536,
         "passed": true,
         "unit": "bytes/min",
-        "value": 3837.66267386882
+        "value": 1781.5367655866396
       },
       "client_rss_growth": {
         "hard_maximum": 33554432,
         "passed": true,
         "unit": "bytes",
-        "value": 253952
+        "value": 282624
       },
       "client_rss_max": {
         "unit": "bytes",
-        "value": 24514560
+        "value": 24694784
       },
       "daemon_final_window_slope": {
         "hard_maximum": 65536,
         "passed": true,
         "unit": "bytes/min",
-        "value": 564.6786442929189
+        "value": 6397.723571480765
       },
       "daemon_rss_growth": {
         "hard_maximum": 33554432,
         "passed": true,
         "unit": "bytes",
-        "value": 700416
+        "value": 2330624
       },
       "daemon_rss_max": {
         "unit": "bytes",
-        "value": 22966272
+        "value": 23875584
       }
     },
     "pressure": {
@@ -228,7 +228,7 @@
         "hard_maximum": 4096,
         "passed": true,
         "unit": "events",
-        "value": 602
+        "value": 603
       },
       "real_poky_backend_disconnects": {
         "hard_maximum": 0,
@@ -313,7 +313,7 @@
     },
     "ipc_continuity": {
       "path": "artifacts/performance/ipc-gate/manifest.json",
-      "sha256": "d95a25bdf0a0470970aa9a28eafca994e654f0219fb29f8cb6ac6c553366737f"
+      "sha256": "124e19943cdf6b2f18c2813fb369091e48d0802b54bfa6ca201d099802b7d497"
     },
     "ipc_latency": {
       "path": "artifacts/performance/ipc-latency/host-audit.json",
@@ -321,7 +321,7 @@
     },
     "memory_endurance": {
       "path": "artifacts/performance/memory/endurance-30m.json",
-      "sha256": "3435232978fd0996921fef08ee781edc5f61db3074c144c46bd4afec0deb5a40"
+      "sha256": "c65a54266bfaa0b6b04b2d514d1f73f4964227d97c6084221fed4a22db8417ee"
     },
     "real_poky": {
       "path": "artifacts/performance/real-poky/linux-yocto-do-compile.json",

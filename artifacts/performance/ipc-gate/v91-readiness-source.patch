@@ -1,0 +1,403 @@
+diff --git a/scripts/event-flood-harness.py b/scripts/event-flood-harness.py
+index 8963f76..6b56d4d 100755
+--- a/scripts/event-flood-harness.py
++++ b/scripts/event-flood-harness.py
+@@ -38 +38,4 @@ class ProtocolClient:
+-        self, socket_path: Path, client_byte: int = 9, receive_buffer_bytes: int | None = None
++        self,
++        socket_path: Path,
++        client_byte: int = 9,
++        receive_buffer_bytes: int | None = None,
+@@ -42 +45,3 @@ class ProtocolClient:
+-            self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, receive_buffer_bytes)
++            self.socket.setsockopt(
++                socket.SOL_SOCKET, socket.SO_RCVBUF, receive_buffer_bytes
++            )
+@@ -51,0 +57 @@ class ProtocolClient:
++        self.daemon_instance_id: list[int] | None = None
+@@ -76,2 +82,6 @@ class ProtocolClient:
+-                        {"frames": 0, "frame_bytes": 0, "minimum_frame_bytes": frame_length,
+-                         "maximum_frame_bytes": frame_length},
++                        {
++                            "frames": 0,
++                            "frame_bytes": 0,
++                            "minimum_frame_bytes": frame_length,
++                            "maximum_frame_bytes": frame_length,
++                        },
+@@ -119,0 +130 @@ class ProtocolClient:
++        self.daemon_instance_id = checked_instance(hello.get("daemon_instance_id"))
+@@ -138,0 +150,7 @@ class ProtocolClient:
++        if (
++            checked_instance(snapshot.get("daemon_instance_id"))
++            != self.daemon_instance_id
++        ):
++            raise RuntimeError(
++                "daemon attach instance differs from negotiated identity"
++            )
+@@ -149,0 +168,121 @@ class ProtocolClient:
++def checked_instance(value: object) -> list[int]:
++    if (
++        not isinstance(value, list)
++        or len(value) != 16
++        or any(type(byte) is not int or not 0 <= byte <= 255 for byte in value)
++    ):
++        raise RuntimeError("daemon instance must contain the full 16-byte identity")
++    return value
++
++
++def wait_for_metadata_ready(
++    client: ProtocolClient,
++    snapshot: dict[str, object],
++    build_dir: Path,
++    timeout: float = 20.0,
++    max_messages: int = 8192,
++) -> int:
++    """Read only, before measurement: require exact workspace and startup completion."""
++    instance = checked_instance(client.daemon_instance_id)
++    sequence = generation = -1
++    workspace_seen = ready_seen = False
++
++    def counter(value: object, name: str) -> int:
++        if type(value) is not int or not 0 <= value < 2**64:
++            raise RuntimeError(f"metadata readiness omitted a valid {name}")
++        return value
++
++    def workspace(event: dict[str, object]) -> None:
++        nonlocal workspace_seen
++        if event.get("type") != "workspace":
++            return
++        data = event.get("data")
++        directory = data.get("build_dir") if isinstance(data, dict) else None
++        if (
++            not isinstance(directory, str)
++            or Path(directory).resolve() != build_dir.resolve()
++        ):
++            raise RuntimeError("metadata workspace has the wrong build directory")
++        workspace_seen = True
++
++    def log(record: dict[str, object]) -> None:
++        nonlocal ready_seen
++        if record.get("source") != "daemon-metadata":
++            return
++        message = record.get("message", "")
++        if not isinstance(message, str):
++            raise RuntimeError("metadata readiness log is malformed")
++        if message.startswith("Initial metadata ") or record.get("severity") == "error":
++            raise RuntimeError(f"fixture startup metadata failed: {message[:1024]}")
++        if message == "Initial workspace and recipe inventory ready":
++            ready_seen = True
++
++    def replacement(current: dict[str, object]) -> None:
++        nonlocal sequence, generation, workspace_seen, ready_seen
++        if checked_instance(current.get("daemon_instance_id")) != instance:
++            raise RuntimeError("daemon instance changed during metadata readiness")
++        next_sequence = counter(current.get("sequence"), "sequence")
++        next_generation = counter(current.get("generation"), "generation")
++        if next_sequence < sequence or next_generation < generation:
++            raise RuntimeError("metadata snapshot sequence/generation regressed")
++        sequence, generation = next_sequence, next_generation
++        workspace_seen = ready_seen = False
++        for record in current.get("recent_logs", []):
++            log(record)
++        for event in current.get("build_events", []):
++            workspace(event)
++
++    replacement(snapshot)
++    deadline = time.monotonic() + timeout
++    while not (workspace_seen and ready_seen):
++        remaining = deadline - time.monotonic()
++        if remaining <= 0:
++            raise RuntimeError("fixture metadata readiness timed out")
++        if max_messages <= 0:
++            raise RuntimeError("fixture metadata readiness exceeded the message bound")
++        try:
++            message = client.receive(min(0.5, remaining))
++        except EOFError as error:
++            raise RuntimeError(
++                "daemon disconnected during metadata readiness"
++            ) from error
++        if message is None:
++            continue
++        max_messages -= 1
++        kind = message.get("type")
++        if kind == "ping":
++            client.send({"type": "pong", "nonce": message["nonce"]})
++        elif kind == "snapshot":
++            replacement(message)
++        elif kind == "event":
++            next_sequence = counter(message.get("sequence"), "sequence")
++            next_generation = counter(message.get("generation"), "generation")
++            if next_sequence != sequence + 1 or next_generation <= generation:
++                raise RuntimeError(
++                    "metadata event sequence/generation is not continuous"
++                )
++            sequence, generation = next_sequence, next_generation
++            event = message.get("event", {})
++            if event.get("type") == "build":
++                workspace(event.get("data", {}))
++            elif event.get("type") == "log":
++                log(event.get("data", {}))
++        else:
++            raise RuntimeError(f"metadata readiness interrupted: {str(message)[:1024]}")
++    return generation
++
++
++def observe_build_ack(message: dict[str, object], request_id: int) -> bool:
++    if message.get("type") in {"error", "detaching", "shutting_down"}:
++        raise RuntimeError(f"fixture build protocol interrupted: {str(message)[:1024]}")
++    if (
++        message.get("type") != "command_result"
++        or message.get("request_id") != request_id
++    ):
++        return False
++    outcome = message.get("outcome", {})
++    if not isinstance(outcome, dict) or outcome.get("type") != "accepted":
++        raise RuntimeError(f"fixture build request rejected: {str(outcome)[:1024]}")
++    return True
++
++
+@@ -186,3 +325 @@ def classify_message(message: dict[str, object], observed: set[str]) -> None:
+-def observe_pressure(
+-    message: dict[str, object], observed: dict[str, int]
+-) -> None:
++def observe_pressure(message: dict[str, object], observed: dict[str, int]) -> None:
+@@ -360,0 +498 @@ def main() -> int:
++        client: ProtocolClient | None = None
+@@ -363,0 +502,10 @@ def main() -> int:
++            runtime_record = json.loads(
++                (socket_path.parent / "daemon.json").read_text()
++            )
++            if runtime_record.get("daemon_instance_id") != client.daemon_instance_id:
++                raise RuntimeError(
++                    "fixture daemon runtime identity differs from attachment"
++                )
++            readiness_started = time.monotonic()
++            generation = wait_for_metadata_ready(client, initial, root / "build")
++            readiness_seconds = time.monotonic() - readiness_started
+@@ -365 +513,3 @@ def main() -> int:
+-                slow_client = ProtocolClient(socket_path, 11, receive_buffer_bytes=4_096)
++                slow_client = ProtocolClient(
++                    socket_path, 11, receive_buffer_bytes=4_096
++                )
+@@ -371 +520,0 @@ def main() -> int:
+-            generation = initial.get("generation")
+@@ -372,0 +522 @@ def main() -> int:
++            build_acknowledged = False
+@@ -393,0 +544,2 @@ def main() -> int:
++                if not build_acknowledged and now - measurement_started >= 10:
++                    raise RuntimeError("fixture build acknowledgement timed out")
+@@ -400,0 +553 @@ def main() -> int:
++                    build_acknowledged |= observe_build_ack(message, 1)
+@@ -434 +587,2 @@ def main() -> int:
+-                    if daemon_cpu_started is not None and daemon_cpu_finished is not None
++                    if daemon_cpu_started is not None
++                    and daemon_cpu_finished is not None
+@@ -445,0 +600,2 @@ def main() -> int:
++            if not build_acknowledged:
++                raise RuntimeError("fixture build acknowledgement was not observed")
+@@ -447,0 +604,2 @@ def main() -> int:
++            if client is not None:
++                client.socket.close()
+@@ -470,0 +629,7 @@ def main() -> int:
++            "startup": {
++                "readiness_seconds": readiness_seconds,
++                "ready_generation": generation,
++                "daemon_instance_id": client.daemon_instance_id,
++                "build_acknowledged": build_acknowledged,
++                "measurement_started_after_readiness": True,
++            },
+@@ -546 +711,2 @@ def main() -> int:
+-                "event flood gate failed: missing critical events " + ", ".join(missing),
++                "event flood gate failed: missing critical events "
++                + ", ".join(missing),
+diff --git a/scripts/test_event_flood_harness.py b/scripts/test_event_flood_harness.py
+index 1061dfb..a7c9aad 100755
+--- a/scripts/test_event_flood_harness.py
++++ b/scripts/test_event_flood_harness.py
+@@ -13,0 +14 @@ import unittest
++from unittest.mock import Mock, patch
+@@ -19 +20,3 @@ HARNESS_PATH = ROOT / "scripts/event-flood-harness.py"
+-HARNESS_SPEC = importlib.util.spec_from_file_location("event_flood_harness", HARNESS_PATH)
++HARNESS_SPEC = importlib.util.spec_from_file_location(
++    "event_flood_harness", HARNESS_PATH
++)
+@@ -84,0 +88,174 @@ class BridgeSession:
++class EventFloodReadinessTests(unittest.TestCase):
++    instance = list(range(16))
++    build_dir = Path("/fixture/build")
++
++    def snapshot(self, ready=False):
++        return {
++            "daemon_instance_id": self.instance.copy(),
++            "sequence": 3,
++            "generation": 3,
++            "build_events": [self.workspace()] if ready else [],
++            "recent_logs": [self.ready_log()] if ready else [],
++        }
++
++    def workspace(self):
++        return {"type": "workspace", "data": {"build_dir": str(self.build_dir)}}
++
++    def ready_log(self):
++        return {
++            "source": "daemon-metadata",
++            "severity": "info",
++            "message": "Initial workspace and recipe inventory ready",
++        }
++
++    def event(self, sequence, kind, data):
++        return {
++            "type": "event",
++            "sequence": sequence,
++            "generation": sequence,
++            "event": {"type": kind, "data": data},
++        }
++
++    def client(self, messages=()):
++        class Client:
++            daemon_instance_id = self.instance
++
++            def __init__(inner):
++                inner.messages = iter(messages)
++                inner.sent = []
++
++            def receive(inner, timeout):
++                item = next(inner.messages)
++                if isinstance(item, BaseException):
++                    raise item
++                return item
++
++            def send(inner, message):
++                inner.sent.append(message)
++
++        return Client()
++
++    def wait(self, client, snapshot=None, **kwargs):
++        return HARNESS.wait_for_metadata_ready(
++            client,
++            self.snapshot() if snapshot is None else snapshot,
++            self.build_dir,
++            **kwargs,
++        )
++
++    def test_delayed_workspace_and_ready_log_are_read_only_and_return_latest_generation(
++        self,
++    ):
++        client = self.client(
++            [
++                None,
++                {"type": "ping", "nonce": 7},
++                self.event(4, "build", self.workspace()),
++                self.event(5, "log", self.ready_log()),
++            ]
++        )
++        self.assertEqual(self.wait(client), 5)
++        self.assertEqual(client.sent, [{"type": "pong", "nonce": 7}])
++        self.assertEqual(self.wait(self.client(), self.snapshot(ready=True)), 3)
++
++    def test_replacement_snapshot_checks_the_full_instance_and_build_directory(self):
++        snapshot = self.snapshot(ready=True)
++        snapshot.update(type="snapshot", sequence=8, generation=8)
++        self.assertEqual(self.wait(self.client([snapshot])), 8)
++        for mutate, diagnostic in (
++            (lambda s: s["daemon_instance_id"].__setitem__(15, 99), "instance"),
++            (lambda s: s["daemon_instance_id"].__setitem__(1, True), "instance"),
++            (
++                lambda s: s["build_events"][0]["data"].update(build_dir="/other"),
++                "build directory",
++            ),
++            (lambda s: s.update(generation=True), "generation"),
++        ):
++            with self.subTest(diagnostic=diagnostic):
++                bad = self.snapshot(ready=True)
++                mutate(bad)
++                with self.assertRaisesRegex(RuntimeError, diagnostic):
++                    self.wait(self.client(), bad)
++
++    def test_failures_eof_timeout_and_message_flood_do_not_start_builds(self):
++        failed = {
++            "source": "daemon-metadata",
++            "severity": "error",
++            "message": "Initial metadata scan failed: fixture",
++        }
++        cases = [
++            ([self.event(4, "log", failed)], "metadata"),
++            ([{"type": "resync_required"}], "interrupted"),
++            ([{"type": "shutting_down"}], "interrupted"),
++            ([EOFError("closed")], "disconnected"),
++            ([self.event(3, "build", self.workspace())], "sequence"),
++        ]
++        for messages, diagnostic in cases:
++            with self.subTest(diagnostic=diagnostic):
++                client = self.client(messages)
++                with self.assertRaisesRegex(RuntimeError, diagnostic):
++                    self.wait(client)
++                self.assertEqual(client.sent, [])
++        with patch.object(HARNESS.time, "monotonic", side_effect=[0, 21]):
++            with self.assertRaisesRegex(RuntimeError, "timed out"):
++                self.wait(self.client())
++        noise = self.event(4, "telemetry", {})
++        with self.assertRaisesRegex(RuntimeError, "message bound"):
++            self.wait(self.client([noise]), max_messages=1)
++
++    def test_ready_log_alone_and_unrelated_logs_are_not_workspace_authority(self):
++        client = self.client(
++            [
++                self.event(4, "log", self.ready_log()),
++                self.event(5, "build", self.workspace()),
++            ]
++        )
++        self.assertEqual(self.wait(client), 5)
++        spoof = self.ready_log() | {"source": "unrelated"}
++        with self.assertRaisesRegex(RuntimeError, "message bound"):
++            self.wait(self.client([self.event(4, "log", spoof)]), max_messages=1)
++
++    def test_build_rejection_is_immediate_and_unrelated_requests_cannot_acknowledge(
++        self,
++    ):
++        rejected = {
++            "type": "command_result",
++            "request_id": 1,
++            "outcome": {
++                "type": "rejected",
++                "code": "conflict",
++                "message": "Initial recipe inventory is still loading",
++            },
++        }
++        with self.assertRaisesRegex(RuntimeError, "build request rejected.*conflict"):
++            HARNESS.observe_build_ack(rejected, 1)
++        accepted = {
++            "type": "command_result",
++            "request_id": 1,
++            "outcome": {"type": "accepted"},
++        }
++        self.assertTrue(HARNESS.observe_build_ack(accepted, 1))
++        self.assertFalse(HARNESS.observe_build_ack(accepted | {"request_id": 2}, 1))
++        with self.assertRaisesRegex(RuntimeError, "protocol interrupted"):
++            HARNESS.observe_build_ack({"type": "error", "message": "broken"}, 1)
++
++    def test_attach_rejects_a_snapshot_from_another_full_instance(self):
++        client = object.__new__(HARNESS.ProtocolClient)
++        client.client_id = [9] * 16
++        client.send = Mock()
++        wrong = self.snapshot()
++        wrong["daemon_instance_id"][-1] = 99
++        client.receive = Mock(
++            side_effect=[
++                {"type": "hello", "daemon_instance_id": self.instance},
++                {"type": "attached", "snapshot": wrong},
++            ]
++        )
++        with self.assertRaisesRegex(RuntimeError, "instance differs"):
++            client.attach()
++        self.assertEqual(
++            [call.args[0]["type"] for call in client.send.call_args_list],
++            ["hello", "attach"],
++        )
++
++
+@@ -86 +263,3 @@ class EventFloodHarnessTests(unittest.TestCase):
+-    def test_progress_is_coalescible_but_terminal_and_failure_are_critical(self) -> None:
++    def test_progress_is_coalescible_but_terminal_and_failure_are_critical(
++        self,
++    ) -> None:
