@@ -1,8 +1,17 @@
 # Current Task
 
-**ID:** RELEASE-CI-095
-**Title:** Install explicit Rust quality components in the minimal CI container
+**ID:** RELEASE-CI-096
+**Title:** Provide an init reaper for container process-lifecycle tests
 **Status:** DONE
+
+Hosted v0.1.95 run 34256365912 passes three jobs, formatting and Clippy, but
+the container does not reap an orphaned cancellation fixture. The exact Rust
+test fails without Docker init and passes with --init in Ubuntu 26.04. Add the
+init reaper to the job, keep its assertion/deadline unchanged and refresh the
+candidate to v0.1.96. The exact stress test passes with --init (0.06 s) after
+failing without it (1.30 s); CI contract, fmt, version, README, both raster
+galleries and roadmap checks pass. All 713 registry tasks are DONE. Push the
+candidate; hosted baseline and final locked archive checks gate publication.
 
 Run 34255958841 confirms mounted Git trust and version checks, then exposes
 missing cargo-fmt in the container's minimal rustup installation. Explicitly

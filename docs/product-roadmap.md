@@ -4,6 +4,10 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Product completion rule
 
+RELEASE-CI-096 supplies the test container's init reaper after a reproduced
+process-lifecycle failure. All 713 tasks are DONE; v0.1.96 is the candidate
+and hosted baseline/package verification remains required before publication.
+
 RELEASE-CI-095 explicitly provisions rustfmt and Clippy in the minimal test
 container after the actual v0.1.94 hosted result. All 712 tasks are DONE;
 v0.1.95 is verified locally and awaits hosted CI and final package validation.

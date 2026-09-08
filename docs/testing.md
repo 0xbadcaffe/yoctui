@@ -8,6 +8,11 @@ Cairo 1.18.4, PyCairo 1.27.0 and the manifest-pinned DejaVu fonts; both screensh
 galleries must still reproduce byte-for-byte. Bridge lint and coverage target
 the bundled production bridge plus its tests.
 
+The container explicitly installs rustfmt and Clippy and trusts only its exact
+mounted checkout in system Git configuration. Docker's `--init` reaps orphaned
+fixture descendants so the process-cancellation tests retain their normal-host
+lifecycle requirements and unchanged deadlines.
+
 The real PTY startup/keymap gates wait for the rendered onboarding footer,
 dismiss it, then observe the workbench. They keep draining output during exit
 and answer the displayed quit confirmation before requiring successful exit

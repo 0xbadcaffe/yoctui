@@ -3,6 +3,17 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "RELEASE-CI-096"
+milestone = "M57"
+title = "Provide an init reaper for container process-lifecycle tests"
+status = "DONE"
+priority = 1503
+required = true
+depends_on = ["RELEASE-CI-095"]
+verify = ["./scripts/check-ci.sh", "cargo fmt --all --check", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
+notes = "v0.1.96 prepared: hosted run 34256365912 passes three jobs plus test formatting/Clippy, then finds the cancellation descendant remains as an unreaped zombie in the container PID namespace. The exact unchanged Rust stress test fails in Ubuntu 26.04 without Docker init (1.30 s) and passes with --init (0.06 s). The test job now supplies Docker's init reaper and the CI contract requires it; the original assertion/deadline and application source remain unchanged. CI contract, fmt, version policy, README, sixteen deterministic PNGs, 21 version-only cell/text golden changes and roadmap pass. All six v0.1.95 locked Cargo publication dry-run verifications passed. The final v0.1.96 hosted baseline and locked package verification remain delivery gates before publication."
+
+[[task]]
 id = "RELEASE-CI-095"
 milestone = "M57"
 title = "Install explicit Rust quality components in the minimal CI container"

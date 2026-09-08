@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+v0.1.96 RELEASE-CI-096 is DONE: the test container now requests Docker's
+init reaper after run 34256365912 exposed an unreaped descendant in the process
+cancellation stress test. The exact test reproduces failure without --init and
+passes with it. All three other hosted jobs pass; application source, assertions
+and deadlines are unchanged. CI contract, fmt, version, README, sixteen
+deterministic PNGs and roadmap checks pass; all 21 golden changes are version
+digits only. All 713 tasks are DONE. Final hosted tests and packages gate
+publication.
+
 v0.1.95 RELEASE-CI-095 provisions rustfmt and Clippy explicitly after hosted
 run 34255958841 passed the container trust/version checks but found cargo-fmt
 missing from the minimal rustup profile. This workflow-only correction is
