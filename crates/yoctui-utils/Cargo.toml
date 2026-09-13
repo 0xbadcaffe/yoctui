@@ -9,3 +9,6 @@ homepage.workspace = true
 readme.workspace = true
 
 description = "Shared utility functions for Yoctui"
+
+[dependencies]
+dirs = "7"

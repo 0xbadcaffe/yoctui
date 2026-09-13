@@ -20804,6 +20804,7 @@ mod tests {
 
     fn literal_reference_app() -> App {
         let mut app = App::new(512, 1024 * 1024);
+        let source_dir = profile.source_dir.clone();
         app.screen = Screen::Tasks;
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = 2;
@@ -20831,9 +20832,9 @@ mod tests {
         .into_iter()
         .enumerate()
         .map(|(index, name)| yoctui_model::Layer {
-            name: name.into(),
-            path: yoctui_utils::env_path("YOCTUI_SOURCE_DIR").join(name),
-            priority: Some(index as i32 + 5),
+        name: name.into(),
+        path: source_dir.join(name),
+        priority: Some(index as i32 + 5),
         })
         .collect();
         app.workspace.recipes = ["busybox", "bash", "core-image-minimal"]

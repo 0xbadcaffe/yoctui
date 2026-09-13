@@ -1,9 +1,11 @@
-use std::env;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
-/// Read a filesystem path from an environment variable.
-pub fn env_path(name: &str) -> PathBuf {
-    env::var_os(name)
-        .map(PathBuf::from)
-        .unwrap_or_else(|| panic!("{name} environment variable is not set"))
+pub fn home_dir() -> PathBuf {
+    dirs::home_dir()
+        .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_else(|| PathBuf::from("."))
+}
+
+pub fn home_path<P: AsRef<Path>>(path: P) -> PathBuf {
+    home_dir().join(path)
 }

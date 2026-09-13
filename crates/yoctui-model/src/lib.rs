@@ -11389,7 +11389,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::OpenBuildEnvironmentCloneEditor => {
-            let destination = yoctui_utils::env_path("YOCTUI_SOURCE_DIR").join("poky");
+            let destination = yoctui_utils::home_path("src").join("poky");
             let build_dir = destination.join("build-yoctui");
             let mut editor = PopupEditor::new(format!(
                 "repository = \"https://git.yoctoproject.org/poky\"\n\
