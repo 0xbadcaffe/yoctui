@@ -20808,8 +20808,9 @@ mod tests {
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = 2;
         app.backend = "bridge".into();
-        app.workspace.build_dir = Some("/home/user/yocto/build".into());
-        app.workspace.source_dir = Some("/home/user/yocto".into());
+        let profile = app.build_environment.profile();
+        app.workspace.build_dir = Some(profile.build_dir.to_string_lossy().into_owned());
+        app.workspace.source_dir = Some(profile.source_dir.to_string_lossy().into_owned());
         app.workspace.release = Some("scarthgap".into());
         app.workspace.bitbake_version = Some("2.8.0".into());
         app.workspace
@@ -20831,7 +20832,7 @@ mod tests {
         .enumerate()
         .map(|(index, name)| yoctui_model::Layer {
             name: name.into(),
-            path: format!("/home/user/yocto/{name}").into(),
+            path: yoctui_utils::env_path("YOCTUI_SOURCE_DIR").join(name),
             priority: Some(index as i32 + 5),
         })
         .collect();

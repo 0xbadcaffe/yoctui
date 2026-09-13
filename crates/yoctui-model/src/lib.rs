@@ -11389,8 +11389,18 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::OpenBuildEnvironmentCloneEditor => {
-            let mut editor = PopupEditor::new("repository = \"https://git.yoctoproject.org/poky\"\ndestination = \"/home/user/src/poky\"\nrevision = \"\"\nbuild = \"/home/user/src/poky/build-yoctui\"\n".into());
-            let _ = editor.select_toml_value("repository");
+            let destination = yoctui_utils::env_path("YOCTUI_SOURCE_DIR").join("poky");
+            let build_dir = destination.join("build-yoctui");
+            let mut editor = PopupEditor::new(format!(
+                "repository = \"https://git.yoctoproject.org/poky\"\n\
+        destination = \"{}\"\n\
+        revision = \"\"\n\
+        build = \"{}\"\n",
+                destination.display(),
+                build_dir.display(),
+            ));
+
+let _ = editor.select_toml_value("repository");
             open_dialog(app, Dialog::BuildEnvironmentCloneEditor(editor));
         }
         Action::ToggleBuildEnvironmentCloneEditor => {
@@ -28621,8 +28631,9 @@ mod tests {
         let mut editor = PopupEditor::new("path = \"old\"\nnext = \"value\"".into());
         editor.select_range(8, 11);
         assert_eq!(editor.selected_text(), Some("old"));
-        editor.insert("/home/user/poky");
-        assert!(editor.text.contains("/home/user/poky"));
+        let replacement = "/test/path/poky";
+        editor.insert(replacement);
+        assert!(editor.text.contains(replacement));
         editor.end();
         assert_eq!(editor.cursor, editor.text.find('\n').unwrap());
         editor.home();

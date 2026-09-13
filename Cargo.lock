@@ -2388,6 +2388,7 @@ dependencies = [
  "thiserror 2.0.19",
  "toml",
  "vt100",
+ "yoctui-utils",
 ]
 
 [[package]]
@@ -2424,7 +2425,12 @@ dependencies = [
  "yoctui-app",
  "yoctui-model",
  "yoctui-protocol",
+ "yoctui-utils",
 ]
+
+[[package]]
+name = "yoctui-utils"
+version = "0.1.98"
 
 [[package]]
 name = "zerocopy"
