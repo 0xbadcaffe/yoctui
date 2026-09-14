@@ -1307,3 +1307,9 @@ and U-Boot device trees, both menuconfig sessions, the rootfs package pie, and
 the established representative screens. Fixture and live-capture authority
 remain explicitly distinct. RELEASE-FIXTURE-READY-001 resumes after the
 higher-priority documentation request is committed and pushed.
+
+## M58 — Shared utilities and library decomposition
+
+REF09-UTILS, REF09-MODULES and REF09-VERIFY consolidate portable helpers,
+repair helper bugs, split lib.rs files above 1000 lines by responsibility,
+and deliver baseline-verified commits with coherent package versions.

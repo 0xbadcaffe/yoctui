@@ -7941,3 +7941,36 @@ required = true
 depends_on = ["OVERVIEW-SPEC-001", "OVERVIEW-MODEL-001", "OVERVIEW-TIMELINE-001", "OVERVIEW-REBUILD-001", "OVERVIEW-CACHE-001", "OVERVIEW-IMAGE-001", "OVERVIEW-PROVENANCE-001", "OVERVIEW-PACKAGES-001", "OVERVIEW-SUPPLYCHAIN-001", "OVERVIEW-DISK-001", "ROOTFS-VIZ-FIX-001", "DEPENDENCY-VIZ-FIX-001", "OVERVIEW-DOC-001"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Parent gate for all eight views, SBOM formats and fallback, rootfs usability, task graph reachability, tests, and documentation."
+
+[[task]]
+id = "REF09-UTILS"
+milestone = "M58"
+title = "Consolidate portable helpers and fix shared utility bugs"
+status = "IN_PROGRESS"
+priority = 900
+required = true
+depends_on = []
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Use utils across relevant crates; retain typed domain boundaries; repair fixture compilation and package graph."
+
+[[task]]
+id = "REF09-MODULES"
+milestone = "M58"
+title = "Split oversized library entry points by responsibility"
+status = "NOT_STARTED"
+priority = 901
+required = true
+depends_on = ["REF09-UTILS"]
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "All workspace lib.rs files have at most 1000 lines; preserve public APIs and split tests with their subjects."
+
+[[task]]
+id = "REF09-VERIFY"
+milestone = "M58"
+title = "Verify and deliver the shared utility refactor"
+status = "NOT_STARTED"
+priority = 902
+required = true
+depends_on = ["REF09-MODULES"]
+verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Run baseline, documentation, version and package checks, audit machine-specific assumptions, commit and push ready work."

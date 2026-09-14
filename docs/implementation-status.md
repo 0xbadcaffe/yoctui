@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REF09 starts from 3d21a5a. The 715 earlier tasks are complete; three new tasks
+cover portable utility reuse, library decomposition, and verification/delivery.
+The original checkout has user-owned UI edits and captures; ref09 is isolated.
+Source version 0.1.99 records this governance reconciliation. No new baseline
+or live performance success is claimed.
+
 README-VERSION-BADGE-001 removes the README heading version and duplicate
 source-version paragraph, refreshing the dynamic crates.io badge URL instead.
 v0.1.97 is published: all four hosted jobs in run 34258366108 passed, all six

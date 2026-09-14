@@ -4092,3 +4092,14 @@ read host files while rendering, or substitute screenshots for live acceptance.
 The six established overview/error/image/editor/terminal fixtures remain shared
 with the exact production concept contract, so normal version and visual
 changes refresh both documentation and regression evidence coherently.
+
+## Shared utility boundary
+
+`yoctui-utils` is a leaf support crate for domain-independent path, text,
+time and operating-system helpers. Every crate may consume it directly.
+Domain state, protocol contracts and backend authority remain in their existing
+crates. Library roots expose modules and stable APIs; implementation and tests
+move into files named for their responsibility when a root exceeds 1000 lines.
+Machine-specific runtime defaults come from explicit configuration or platform
+discovery. Synthetic test identities stay deterministic; historical evidence
+retains the original measured identity.
