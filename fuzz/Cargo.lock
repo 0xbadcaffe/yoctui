@@ -423,7 +423,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-model"
-version = "0.1.105"
+version = "0.1.106"
 dependencies = [
  "regex",
  "serde",
@@ -435,7 +435,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-protocol"
-version = "0.1.105"
+version = "0.1.106"
 dependencies = [
  "libc",
  "serde",
@@ -446,7 +446,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-utils"
-version = "0.1.105"
+version = "0.1.106"
 dependencies = [
  "dirs",
 ]

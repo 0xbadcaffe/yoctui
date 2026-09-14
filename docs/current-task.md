@@ -2,20 +2,24 @@
 
 **ID:** CONCEPT-VERIFY
 **Title:** Verify six production concept images and deliver layout changes
-**Status:** IN_PROGRESS
+**Status:** DONE
 
-CONCEPT-SHELL and CONCEPT-DETAIL implement the six scene layouts through the
-production render_at path. Checkpoint v0.1.102 tags 3edb883. The shell is pushed
-at 75e9d44; detail layout is v0.1.105. 202 app and 285 UI tests pass without
-golden updates, plus 52 bridge tests and the concept/raster corruption checks.
+All 721 registry tasks are DONE. The six concept layouts are implemented in the
+production Ratatui renderer and visually reviewed at v0.1.106. Checkpoint
+v0.1.102 tags 3edb883; implementation commits are 75e9d44 and b5d0bcd on ref09.
+The review and linked PNGs are in docs/design/concept-layout-review.md.
 
-Finish the full workspace baseline (cargo test --workspace --all-features,
-strict Clippy, formatting), documentation/CLI checks, version/layout/roadmap,
-and deterministic raster checks. Review all six PNGs and the review document
-at docs/design/concept-layout-review.md, then commit and push the final version.
+Final verification: 1,613 Rust tests pass without golden-update flags (four
+existing ignored), 52 bridge tests, strict workspace Clippy, formatting,
+documentation/CLI/headless/doctor, version/layout/CI/roadmap checks, and all
+sixteen deterministic concept/README rasters. Image corruption and cell-graphics
+regression checks pass. The final version refresh changes only header cells in
+cell goldens. Cargo ran with one build job, no debug/incremental artifacts, and
+RUST_TEST_THREADS=2.
 
-Original concept PNGs and historical live captures remain unchanged. These
-layout captures are production-renderer fixtures; no fresh live-Poky performance
-certification is claimed. The original master checkout's user edits remain
-untouched. Cargo runs sequentially with one build job and no debug/incremental
-artifacts; RUST_TEST_THREADS=2 bounds runtime tests.
+Original concept PNGs, historical live captures and the original checkout's user
+edits remain untouched. These images are production-renderer fixtures. Retained
+real-Poky performance evidence predates source changes (first source digest
+mismatch: crates/yoctui-app/src/environment_setup.rs), so the broader historical
+live-performance gate does not certify this version. No fresh live-Poky
+performance certification is claimed by this concept-layout delivery.

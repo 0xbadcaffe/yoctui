@@ -23,3 +23,11 @@ from cell symbols because the pinned text font lacks Braille. It changes no
 application values. Regression tests cover all 256 Braille masks, continuous
 border endpoints, filled blocks, region geometry and resize/mouse boundaries.
 The original PNG hashes and historical live capture records remain unchanged.
+
+Final v0.1.106 review covers all six linked PNGs. The workspace test suite passes
+1,613 Rust tests (four existing ignored) and 52 bridge tests; strict workspace
+Clippy and formatting pass. Six concept rasters and ten README rasters reproduce
+exactly. The final version refresh changes only header cells in the cell goldens.
+The retained real-Poky performance manifest predates source changes (first digest
+mismatch: `crates/yoctui-app/src/environment_setup.rs`); this delivery makes no
+fresh live-performance certification.

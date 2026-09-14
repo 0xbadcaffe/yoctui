@@ -2948,20 +2948,18 @@ complete; M51 validates these features against its performance implementation.
 
 ## M59 concept layouts
 
-The user requested implementation after inspection of all six M21 concepts.
-Checkpoint v0.1.102 is pushed. Three tasks are open; CONCEPT-SHELL is active.
-The existing anchor-only completion does not certify visual resemblance.
+All three concept tasks are complete in v0.1.106. Checkpoint v0.1.102 tags
+3edb883; shell/dashboard implementation is 75e9d44 and detail layouts are
+b5d0bcd. Shared geometry aligns rendering and pointer routing. Dashboard has
+resource dials and job history; tasks/errors use consolidated inspectors;
+rootfs, editor/menu and terminal scenes follow the reviewed concept hierarchy.
+Terminal tabs and stale writer labels are fixed, and Unicode raster graphics
+faithfully project cell symbols. See [the six-image review](design/concept-layout-review.md).
 
-CONCEPT-SHELL is complete in v0.1.104: shared rendering/mouse geometry, responsive
-Dashboard overview/history/dials/actions/Project Inspector, exact Unicode raster
-graphics and refreshed evidence provenance. 201 app and 283 UI tests pass
-without golden-update flags. CONCEPT-DETAIL is active; full delivery baseline
-and the five remaining screen comparisons are still pending.
-
-CONCEPT-DETAIL implements the five remaining scenes in v0.1.105: consolidated
-task/error inspectors, error layout and readable times, rootfs selection/colors
-and tabs, integrated editor columns and anchored menu, visible terminal tabs and
-prefix rail. Terminal hit testing now excludes other panes and chrome; stale
-replicas never claim writer access. 202 app and 285 UI tests pass without
-updates, plus 52 bridge tests and all image integrity/corruption checks.
-CONCEPT-VERIFY is active for final workspace checks and delivery.
+Final baseline: 1,613 Rust tests pass (four existing ignored), 52 bridge tests,
+strict workspace Clippy, formatting, documentation/CLI/headless/doctor,
+version/layout/CI/roadmap checks and sixteen deterministic PNGs. Image-integrity,
+corruption and cell-graphics checks pass. Original concepts, historical live
+captures and original-checkout user edits are unchanged. Captures use typed
+fixtures; retained real-Poky performance evidence predates source changes and
+is not fresh certification of this version.

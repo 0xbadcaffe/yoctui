@@ -1318,3 +1318,8 @@ and deliver baseline-verified commits with coherent package versions.
 
 CONCEPT-SHELL restores the shell/dashboard, CONCEPT-DETAIL aligns the remaining
 five scenes, and CONCEPT-VERIFY reviews six generated PNGs and baseline checks.
+
+All three M59 tasks are DONE in v0.1.106. All six production images are reviewed;
+the full workspace baseline and deterministic raster checks pass. See the
+[concept layout review](design/concept-layout-review.md) for terminal adaptations
+and the distinction between fixture images and retained live evidence.
