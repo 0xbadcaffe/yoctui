@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.99  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64        Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
+│yoctui v0.1.100  •  Project: yocto  •  ▶ Running  •  Target: core-image-minimal  •  Machine: qemux86-64       Daemon: ✓ Connected/Local  •  BitBake: ✓ Running│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
+│Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: core-image-minimal · All─────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  40%  4/10▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_compile                      │
@@ -21,7 +21,7 @@
 │  ▱ Errors                │││ |  CC     builtins/histfile.o                                                     ││Elapsed     00:09:50                        │
 │    Configuration         │││ |  CC     builtins/jobs.o                                                         ││Workdir     unavailable                     │
 │    Dependencies          │││ |  CC     execute_cmd.o                                                           ││Log file                                    │
-│▾ VALIDATE                │││ [ 72%] Linking bash                                                               ││/home/user/yocto/build/tmp/work/qemux86-64-p│
+│▾ VALIDATE                │││ [ 72%] Linking bash                                                               ││/workspace/yocto/build/tmp/work/qemux86-64-p│
 │    Testing               ││                                                                                    ││oky-linux/bash/5.2.21-r2/temp/log.do_compile│
 │    Security              ││                                                                                    ││.85873                                      │
 │    QA                    ││                                                                                    │└────────────────────────────────────────────┘
@@ -43,7 +43,7 @@
 │                          ││                    │                    │                    │                     ││✓ Daemon Connected · Local · version unavai…│
 │                          ││                  ▅ │                    │                    │                     ││✓ BitBake Running · v2.8.0 · Jobs 1         │
 │                          ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫ │                    │                    │                     ││! Compat Unavailable · PTY 1 · Clients 1    │
-│                          ││     utilization    │                    │                    │                     ││! Build FS unavailable · Workspace /home/us…│
+│                          ││     utilization    │                    │                    │                     ││! Build FS unavailable · Workspace /workspa…│
 └──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │↑/↓ select   f state   F field   / edit filter   d duration   c cancel   ←/→ Focus   F1 Help   F10 Menu   q Quit          ▶ Build running · 1 active  19:28:27│

@@ -146,14 +146,7 @@ pub fn list_tree_text(row: &ListTreeRow, selected: bool, unicode: bool) -> Strin
 }
 
 fn bounded_text(mut value: String, limit: usize) -> String {
-    if value.len() <= limit {
-        return value;
-    }
-    let mut end = limit;
-    while !value.is_char_boundary(end) {
-        end -= 1;
-    }
-    value.truncate(end);
+    yoctui_utils::truncate_utf8(&mut value, limit);
     value
 }
 

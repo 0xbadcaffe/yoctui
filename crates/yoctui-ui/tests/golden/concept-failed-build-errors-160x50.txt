@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.99  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64          Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
+│yoctui v0.1.100  •  Project: yocto  •  ✕ Failed  •  Target: core-image-minimal  •  Machine: qemux86-64         Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: --:--:--  |  Workers: 0                                               │
+│Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: --:--:--  |  Workers: 0                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Failed build summary────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
 │▾ OVERVIEW                ││Target: core-image-minimal  ·  Result: Failed (exit 1)                              ││▾ PRIMARY FACTS                             │
@@ -12,11 +12,11 @@
 │    Recipes               ││> ☑ Errors (checked)     ☑ Warnings (checked)                                       ││Build: core-image-minimal                   │
 │    Packages              ││  ⊟ Related task context (indeterminate)  ·  s cycles severity                      ││Recipe: bash_5.2.21-2  Task: do_compile     │
 │    Images                ││                                                                                    ││Source log:                                 │
-│    Kernel                │└────────────────────────────────────────────────────────────────────────────────────┘│/home/user/yocto/build/tmp/log.do_compile.85│
+│    Kernel                │└────────────────────────────────────────────────────────────────────────────────────┘│/workspace/yocto/build/tmp/log.do_compile.85│
 │    U-Boot / BIOS         │┌Errors and warnings (2 retained; 1 warning / 1 error records evicted)───────────────┐│873                                         │
 │    SDK                   ││Time      Severity  Recipe        Task         Summary            Build             ││Event metadata: severity=Error,             │
 │▾ BUILD                   ││70107s si Warning   bash_5.2.21-2 do_compile   WARNING: bash:do_c core-image-minimal││protected=true, build=core-image-minimal,   │
-│    Tasks                 ││70107s si Error     bash_5.2.21-2 do_compile   ERROR: bash:do_com core-image-minimal││source=/home/user/yocto/build/tmp/log.do_com│
+│    Tasks                 ││70107s si Error     bash_5.2.21-2 do_compile   ERROR: bash:do_com core-image-minimal││source=/workspace/yocto/build/tmp/log.do_com│
 │  ▱ Logs             PAUSE││                                                                                    ││pile.85873                                  │
 │  ▱ Errors               1││                                                                                    ││                                            │
 │    Configuration         ││                                                                                    ││Full message:                               │
@@ -34,7 +34,7 @@
 │  ▱ Build environment     ││                                                                                    ││configure mismatch                          │
 │  ▱ Compatibility         ││                                                                                    ││                                            │
 │  ▱ Settings              ││                                                                                    ││▾ RELATED PATHS                             │
-│                          ││                                                                                    ││/home/user/yocto/build/tmp/log.do_compile.85│
+│                          ││                                                                                    ││/workspace/yocto/build/tmp/log.do_compile.85│
 │                          ││                                                                                    ││873                                         │
 │                          ││                                                                                    ││                                            │
 │                          ││                                                                                    ││▾ CONTEXTUAL ACTIONS                        │

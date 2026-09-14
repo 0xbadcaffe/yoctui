@@ -310,42 +310,19 @@ fn bounded_text(value: &str, maximum_bytes: usize, marker: &str) -> String {
     } else {
         ""
     };
-    let mut keep = maximum_bytes.saturating_sub(marker.len()).min(value.len());
-    while keep > 0 && !value.is_char_boundary(keep) {
-        keep -= 1;
-    }
+    let keep = yoctui_utils::utf8_prefix(
+        value,
+        maximum_bytes.saturating_sub(marker.len()).min(value.len()),
+    )
+    .len();
     let mut output = value[..keep].to_owned();
     output.push_str(marker);
     output
 }
 
-fn push_bounded(output: &mut String, value: &str, maximum_bytes: usize) -> bool {
-    let available = maximum_bytes.saturating_sub(output.len());
-    if value.len() <= available {
-        output.push_str(value);
-        return true;
-    }
-    let mut keep = available.min(value.len());
-    while keep > 0 && !value.is_char_boundary(keep) {
-        keep -= 1;
-    }
-    output.push_str(&value[..keep]);
-    false
-}
+use yoctui_utils::push_bounded;
 
-fn append_marker(output: &mut String, marker: &str, maximum_bytes: usize) {
-    if marker.len() > maximum_bytes {
-        return;
-    }
-    if output.len().saturating_add(marker.len()) > maximum_bytes {
-        let mut keep = maximum_bytes - marker.len();
-        while keep > 0 && !output.is_char_boundary(keep) {
-            keep -= 1;
-        }
-        output.truncate(keep);
-    }
-    output.push_str(marker);
-}
+use yoctui_utils::append_truncation_marker as append_marker;
 
 #[cfg(test)]
 mod tests {

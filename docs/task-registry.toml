@@ -7946,18 +7946,18 @@ notes = "Parent gate for all eight views, SBOM formats and fallback, rootfs usab
 id = "REF09-UTILS"
 milestone = "M58"
 title = "Consolidate portable helpers and fix shared utility bugs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 900
 required = true
 depends_on = []
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "Use utils across relevant crates; retain typed domain boundaries; repair fixture compilation and package graph."
+notes = "All eight consumer crates use utils. 1608 Rust tests pass (four existing ignored), 52 Python bridge tests pass. Shared UTF-8/ANSI/path/time helpers, explicit clone inputs, host page-size accounting, neutral UI fixtures and seven-crate release graph are implemented."
 
 [[task]]
 id = "REF09-MODULES"
 milestone = "M58"
 title = "Split oversized library entry points by responsibility"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 901
 required = true
 depends_on = ["REF09-UTILS"]

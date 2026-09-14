@@ -814,12 +814,9 @@ fn install_panic_hook() {
     }));
 }
 fn config_path(cli: &Cli) -> Option<PathBuf> {
-    cli.config.clone().or_else(|| {
-        env::var_os("XDG_CONFIG_HOME")
-            .map(PathBuf::from)
-            .or_else(|| env::var_os("HOME").map(|p| PathBuf::from(p).join(".config")))
-            .map(|p| p.join("yoctui/config.toml"))
-    })
+    cli.config
+        .clone()
+        .or_else(|| yoctui_utils::config_dir().map(|p| p.join("yoctui/config.toml")))
 }
 
 fn read_file_config(path: Option<&Path>) -> Result<FileConfig> {
@@ -5438,9 +5435,7 @@ fn publish_daemon_maintenance_event(
 
 #[cfg(unix)]
 fn daemon_state_root() -> Result<PathBuf> {
-    env::var_os("XDG_STATE_HOME")
-        .map(PathBuf::from)
-        .or_else(|| env::var_os("HOME").map(|home| PathBuf::from(home).join(".local/state")))
+    yoctui_utils::state_dir()
         .context("XDG_STATE_HOME or HOME is required for daemon state persistence")
 }
 
@@ -5466,20 +5461,15 @@ fn random_instance_id() -> Result<yoctui_protocol::daemon::DaemonInstanceId> {
 }
 
 #[cfg(unix)]
-fn unix_ms() -> u64 {
-    SystemTime::UNIX_EPOCH
-        .elapsed()
-        .unwrap_or_default()
-        .as_millis()
-        .try_into()
-        .unwrap_or(u64::MAX)
-}
+use yoctui_utils::unix_ms;
 
 #[cfg(unix)]
 fn process_memory_bytes() -> Option<u64> {
     let fields = fs::read_to_string("/proc/self/statm").ok()?;
     let resident_pages = fields.split_whitespace().nth(1)?.parse::<u64>().ok()?;
-    Some(resident_pages.saturating_mul(4096))
+    // sysconf reports the actual page size on hosts with 4, 16 or 64 KiB pages.
+    let page_size = unsafe { libc::sysconf(libc::_SC_PAGESIZE) };
+    resident_pages.checked_mul(u64::try_from(page_size).ok().filter(|size| *size > 0)?)
 }
 
 #[cfg(unix)]
@@ -5534,9 +5524,7 @@ fn daemon_service(command: DaemonServiceCommand) -> Result<()> {
 
 #[cfg(unix)]
 fn daemon_service_path() -> Result<PathBuf> {
-    let root = env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .or_else(|| env::var_os("HOME").map(|home| PathBuf::from(home).join(".config")))
+    let root = yoctui_utils::config_dir()
         .context("XDG_CONFIG_HOME or HOME is required for systemd user service installation")?;
     if !root.is_absolute() {
         anyhow::bail!("systemd user configuration path must be absolute");
@@ -11861,7 +11849,7 @@ async fn tui(
     let maintenance_build_dir = if app.build_environment.connected() {
         session_build_dir.clone()
     } else {
-        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/tmp"))
+        std::env::current_dir().unwrap_or_else(|_| std::env::temp_dir())
     };
     let mut maintenance_coordinator =
         MaintenanceCliCoordinator::new(&app, &maintenance_build_dir, initialized_paths)

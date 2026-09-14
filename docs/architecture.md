@@ -4103,3 +4103,12 @@ move into files named for their responsibility when a root exceeds 1000 lines.
 Machine-specific runtime defaults come from explicit configuration or platform
 discovery. Synthetic test identities stay deterministic; historical evidence
 retains the original measured identity.
+
+Shared text helpers define UTF-8 byte-budget truncation, append and marker
+semantics once. Backend and CLI diagnostic sanitization share terminal-control
+parsing; the shell and E2E terminal parsers share the CSI final-byte predicate.
+Protocol poll conversion, CLI Unix timestamps, UI duration labels and app
+home-directory browsing use the same leaf crate. The model's clone draft is
+pure and empty until the operator provides repository and destination values.
+XDG configuration/state paths ignore relative overrides. Linux resident-memory
+accounting uses the kernel's page size rather than a 4 KiB assumption.

@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REF09-UTILS is DONE in v0.1.100: all 1608 Rust tests (four existing ignored),
+52 bridge tests, strict Clippy, formatting, version/roadmap and sixteen
+deterministic rasters pass. Eight crates directly reuse the shared utility
+crate. Fixes cover ANSI punctuation/control strings, UTF-8 bounds, XDG path
+validation, page-size accounting, clone defaults, header width and broken
+UI fixture initialization. REF09-MODULES is now active.
+
 REF09 starts from 3d21a5a. The 715 earlier tasks are complete; three new tasks
 cover portable utility reuse, library decomposition, and verification/delivery.
 The original checkout has user-owned UI edits and captures; ref09 is isolated.

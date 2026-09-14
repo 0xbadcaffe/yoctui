@@ -386,10 +386,7 @@ fn bounded_raw_output_text(bytes: &[u8], truncated_bytes: &mut u64) -> String {
     if text.len() <= yoctui_model::MAX_RAW_OUTPUT_CHUNK_BYTES {
         return text;
     }
-    let mut boundary = yoctui_model::MAX_RAW_OUTPUT_CHUNK_BYTES;
-    while !text.is_char_boundary(boundary) {
-        boundary -= 1;
-    }
+    let boundary = yoctui_utils::utf8_prefix(&text, yoctui_model::MAX_RAW_OUTPUT_CHUNK_BYTES).len();
     *truncated_bytes = truncated_bytes.saturating_add((text.len() - boundary) as u64);
     text.truncate(boundary);
     text

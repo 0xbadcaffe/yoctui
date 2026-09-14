@@ -2,7 +2,8 @@
 set -euo pipefail
 
 repo_root="$(git rev-parse --show-toplevel)"
-source_poky="${YOCTUI_POKY_SOURCE:-/home/bspguy-dev/src/poky}"
+: "${YOCTUI_POKY_SOURCE:?Set YOCTUI_POKY_SOURCE to the source checkout for live validation}"
+source_poky="$YOCTUI_POKY_SOURCE"
 timeout_seconds="${YOCTUI_LIVE_BUILD_TIMEOUT:-14400}"
 if [[ ! "$timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
   printf 'YOCTUI_LIVE_BUILD_TIMEOUT must be a positive integer: %s\n' "$timeout_seconds" >&2

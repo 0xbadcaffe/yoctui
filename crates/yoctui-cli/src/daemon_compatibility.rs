@@ -529,22 +529,10 @@ fn authoritative_value(output: &str) -> Option<String> {
 }
 
 fn strip_terminal_escapes(value: &str) -> String {
-    let mut result = String::with_capacity(value.len());
-    let mut escape = false;
-    for character in value.chars() {
-        if escape {
-            if character.is_ascii_alphabetic() {
-                escape = false;
-            }
-            continue;
-        }
-        if character == '\u{1b}' {
-            escape = true;
-        } else if !character.is_control() {
-            result.push(character);
-        }
-    }
-    result
+    yoctui_utils::strip_ansi(value)
+        .chars()
+        .filter(|character| !character.is_control())
+        .collect()
 }
 
 fn valid_identity_token(value: &str) -> bool {

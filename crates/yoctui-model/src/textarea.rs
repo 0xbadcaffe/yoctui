@@ -956,12 +956,8 @@ fn next_boundary(text: &str, cursor: usize) -> usize {
         .map_or(text.len(), |character| cursor + character.len_utf8())
 }
 
-fn clamp_boundary(text: &str, mut index: usize) -> usize {
-    index = index.min(text.len());
-    while !text.is_char_boundary(index) {
-        index -= 1;
-    }
-    index
+fn clamp_boundary(text: &str, index: usize) -> usize {
+    yoctui_utils::utf8_prefix(text, index).len()
 }
 
 fn word_left(text: &str, cursor: usize) -> usize {
@@ -1165,16 +1161,7 @@ fn atomic_temporary_path(target: &Path, revision: &TextAreaRevision) -> PathBuf 
     target.with_file_name(format!(".{name}.yoctui-{suffix:016x}.tmp"))
 }
 
-fn truncate_utf8(value: &mut String, limit: usize) {
-    if value.len() <= limit {
-        return;
-    }
-    let mut end = limit;
-    while !value.is_char_boundary(end) {
-        end -= 1;
-    }
-    value.truncate(end);
-}
+use yoctui_utils::truncate_utf8;
 
 fn bounded_utf8(mut value: String, limit: usize) -> String {
     truncate_utf8(&mut value, limit);

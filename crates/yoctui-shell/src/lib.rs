@@ -46,7 +46,7 @@ impl TerminalEmulator {
             match bytes[i] {
                 b'\x1b' if bytes.get(i + 1) == Some(&b'[') => {
                     i += 2;
-                    while i < bytes.len() && !bytes[i].is_ascii_alphabetic() {
+                    while i < bytes.len() && !yoctui_utils::is_csi_final_byte(bytes[i]) {
                         i += 1;
                     }
                     if i < bytes.len() && bytes[i] == b'J' {
@@ -146,6 +146,13 @@ mod tests {
         shell.resize(80, 24).unwrap();
         assert!(shell.child_id() > 0);
         let _ = shell.child.kill();
+    }
+
+    #[test]
+    fn punctuation_csi_keeps_following_text() {
+        let mut terminal = TerminalEmulator::new(20, 2);
+        terminal.feed(b"a\x1b[1~after");
+        assert!(terminal.text().starts_with("aafter"));
     }
 
     #[test]

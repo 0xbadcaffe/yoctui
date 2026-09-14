@@ -150,10 +150,7 @@ impl BoundedString {
 impl fmt::Write for BoundedString {
     fn write_str(&mut self, value: &str) -> fmt::Result {
         let available = self.maximum_bytes.saturating_sub(self.value.len());
-        let mut keep = available.min(value.len());
-        while keep > 0 && !value.is_char_boundary(keep) {
-            keep -= 1;
-        }
+        let keep = yoctui_utils::utf8_prefix(value, available.min(value.len())).len();
         self.value.push_str(&value[..keep]);
         Ok(())
     }
@@ -169,10 +166,11 @@ fn bounded_text(value: &str, maximum_bytes: usize) -> String {
     } else {
         ""
     };
-    let mut keep = maximum_bytes.saturating_sub(marker.len()).min(value.len());
-    while keep > 0 && !value.is_char_boundary(keep) {
-        keep -= 1;
-    }
+    let keep = yoctui_utils::utf8_prefix(
+        value,
+        maximum_bytes.saturating_sub(marker.len()).min(value.len()),
+    )
+    .len();
     format!("{}{}", &value[..keep], marker)
 }
 

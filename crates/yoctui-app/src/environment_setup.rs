@@ -150,11 +150,7 @@ pub fn read_environment_directory(
 }
 
 pub fn environment_browser_fallback() -> PathBuf {
-    std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
-        .or_else(|| std::env::current_dir().ok())
-        .unwrap_or_else(|| PathBuf::from("/"))
+    yoctui_utils::home_dir()
 }
 
 #[cfg(test)]

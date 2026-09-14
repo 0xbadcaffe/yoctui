@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.99  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.100  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64           Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
+│Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator──────────┌modal · Recipe edit┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
 │▾ OVERVIEW         │┌Workspace file tre│ Workspace  Build  Navigate  View  Tools  Help            │ol 1────────────────────┐┌Recipe Inspector────────────────┐│

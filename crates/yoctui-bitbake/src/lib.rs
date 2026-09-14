@@ -1457,23 +1457,7 @@ pub trait BitBakeBackend: Send {
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError>;
     async fn shutdown(&mut self) -> Result<(), BackendError>;
 }
-pub fn strip_ansi(input: &str) -> String {
-    let mut out = String::new();
-    let mut chars = input.chars().peekable();
-    while let Some(c) = chars.next() {
-        if c == '\x1b' && chars.peek() == Some(&'[') {
-            chars.next();
-            for x in chars.by_ref() {
-                if x.is_ascii_alphabetic() {
-                    break;
-                }
-            }
-        } else {
-            out.push(c)
-        }
-    }
-    out
-}
+pub use yoctui_utils::strip_ansi;
 pub fn classify_output(line: String) -> LogEntry {
     let clean = strip_ansi(&line);
     let lower = clean.to_ascii_lowercase();

@@ -205,7 +205,7 @@ impl DaemonListener {
         let timeout_ms = if timeout.is_zero() {
             0
         } else {
-            timeout.as_millis().max(1).min(i32::MAX as u128) as i32
+            yoctui_utils::poll_timeout_ms(timeout)
         };
         // SAFETY: `descriptors` owns initialized pollfd values and every
         // listener/connection descriptor remains borrowed for this call.
@@ -232,7 +232,7 @@ impl DaemonListener {
 }
 
 fn wait_until_readable(fd: std::os::fd::RawFd, timeout: Duration) -> Result<(), IpcError> {
-    let timeout_ms = timeout.as_millis().max(1).min(i32::MAX as u128) as i32;
+    let timeout_ms = yoctui_utils::poll_timeout_ms(timeout);
     let mut descriptor = libc::pollfd {
         fd,
         events: libc::POLLIN,

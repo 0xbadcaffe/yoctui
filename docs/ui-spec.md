@@ -691,6 +691,10 @@ semantic role; the helper only renders it.
 
 ## 3. Header
 
+When version or context text exceeds the available header width, compact
+separator spacing before clipping identity values. Keep status labels and
+existing responsive tiers unchanged.
+
 The header is always visible unless the terminal is below the supported
 minimum. It occupies the shell's two-row bordered region and renders one
 content row. Identity/build context is left aligned; daemon/BitBake health is
@@ -4045,7 +4049,8 @@ row.
   build-directory path, and the detected environment script
   (`oe-init-build-env` or a build wrapper).
 - **Clone Poky**: repository URL, absolute destination, optional revision, and
-  absolute build-directory path. Clone never starts before a review screen
+  absolute build-directory path. The draft starts with empty values and selects
+  the repository field; no user home, checkout name or repository is guessed. Clone never starts before a review screen
   shows the exact non-shell `git clone` and checkout vectors and the user
   confirms them.
 - **Initialize environment**: runs only the selected, validated environment

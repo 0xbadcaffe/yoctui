@@ -44,7 +44,7 @@ pub fn parse_screen(bytes: &[u8], width: usize, height: usize) -> Screen {
             b'\x1b' if bytes.get(i + 1) == Some(&b'[') => {
                 i += 2;
                 let start = i;
-                while i < bytes.len() && !bytes[i].is_ascii_alphabetic() {
+                while i < bytes.len() && !yoctui_utils::is_csi_final_byte(bytes[i]) {
                     i += 1;
                 }
                 let params = std::str::from_utf8(&bytes[start..i]).unwrap_or("");
@@ -149,6 +149,15 @@ pub fn run_pty(command: &str, args: &[&str], input: &[u8]) -> io::Result<Vec<u8>
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn punctuation_csi_keeps_following_text() {
+        assert!(
+            super::parse_screen(b"a\x1b[1~after", 20, 2)
+                .text()
+                .starts_with("aafter")
+        );
+    }
+
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
     use std::time::{Duration, Instant, UNIX_EPOCH};

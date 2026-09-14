@@ -3844,13 +3844,13 @@ impl LogState {
         }
         if entry.message.len() > self.max_bytes {
             let suffix = "\n[entry truncated to retention byte limit]";
-            let mut keep = self
-                .max_bytes
-                .saturating_sub(suffix.len())
-                .min(entry.message.len());
-            while keep > 0 && !entry.message.is_char_boundary(keep) {
-                keep -= 1;
-            }
+            let keep = yoctui_utils::utf8_prefix(
+                &entry.message,
+                self.max_bytes
+                    .saturating_sub(suffix.len())
+                    .min(entry.message.len()),
+            )
+            .len();
             entry.message.truncate(keep);
             if suffix.len() <= self.max_bytes {
                 entry.message.push_str(suffix);
@@ -7393,33 +7393,9 @@ pub struct LogExport {
     pub truncated: bool,
 }
 
-fn push_bounded(output: &mut String, value: &str, maximum_bytes: usize) -> bool {
-    let available = maximum_bytes.saturating_sub(output.len());
-    if value.len() <= available {
-        output.push_str(value);
-        return true;
-    }
-    let mut keep = available.min(value.len());
-    while keep > 0 && !value.is_char_boundary(keep) {
-        keep -= 1;
-    }
-    output.push_str(&value[..keep]);
-    false
-}
+use yoctui_utils::push_bounded;
 
-fn append_truncation_marker(output: &mut String, marker: &str, maximum_bytes: usize) {
-    if marker.len() > maximum_bytes {
-        return;
-    }
-    if output.len().saturating_add(marker.len()) > maximum_bytes {
-        let mut keep = maximum_bytes - marker.len();
-        while keep > 0 && !output.is_char_boundary(keep) {
-            keep -= 1;
-        }
-        output.truncate(keep);
-    }
-    output.push_str(marker);
-}
+use yoctui_utils::append_truncation_marker;
 
 pub fn format_log_details_bounded(entry: &LogEntry) -> String {
     let header = format!(
@@ -11389,18 +11365,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::OpenBuildEnvironmentCloneEditor => {
-            let destination = yoctui_utils::home_path("src").join("poky");
-            let build_dir = destination.join("build-yoctui");
-            let mut editor = PopupEditor::new(format!(
-                "repository = \"https://git.yoctoproject.org/poky\"\n\
-        destination = \"{}\"\n\
-        revision = \"\"\n\
-        build = \"{}\"\n",
-                destination.display(),
-                build_dir.display(),
-            ));
-
-let _ = editor.select_toml_value("repository");
+            let mut editor = PopupEditor::new(
+                "repository = \"\"\ndestination = \"\"\nrevision = \"\"\nbuild = \"\"\n".into(),
+            );
+            let _ = editor.select_toml_value("repository");
             open_dialog(app, Dialog::BuildEnvironmentCloneEditor(editor));
         }
         Action::ToggleBuildEnvironmentCloneEditor => {
@@ -19330,14 +19298,7 @@ pub enum Effect {
     },
     WriteBbmask(String),
 }
-pub fn format_duration(duration: Duration) -> String {
-    format!(
-        "{:02}:{:02}:{:02}",
-        duration.as_secs() / 3600,
-        duration.as_secs() / 60 % 60,
-        duration.as_secs() % 60
-    )
-}
+pub use yoctui_utils::format_duration;
 impl fmt::Display for BuildStatus {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{:?}", self)
@@ -28605,6 +28566,24 @@ mod tests {
         request.revision = Some("scarthgap".into());
         request.destination = PathBuf::from("relative/poky");
         assert!(request.validate().is_err());
+    }
+
+    #[test]
+    fn build_environment_clone_draft_does_not_guess_machine_paths() {
+        let mut app = App::new_unconfigured(8, 512);
+        assert!(update(&mut app, Action::OpenBuildEnvironmentCloneEditor).is_none());
+        let Some(Dialog::BuildEnvironmentCloneEditor(editor)) = app.active_dialog() else {
+            panic!("clone editor was not opened");
+        };
+        let fields: toml::Table = toml::from_str(&editor.text).unwrap();
+        for key in ["repository", "destination", "revision", "build"] {
+            assert_eq!(fields[key].as_str(), Some(""));
+        }
+        assert!(update(&mut app, Action::ReviewBuildEnvironmentClone).is_none());
+        assert!(!matches!(
+            app.active_dialog(),
+            Some(Dialog::BuildEnvironmentCloneReview(_))
+        ));
     }
 
     #[test]

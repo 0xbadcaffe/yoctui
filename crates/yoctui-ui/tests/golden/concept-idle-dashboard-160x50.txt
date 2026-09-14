@@ -1,7 +1,7 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.99  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64            Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.100  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64           Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
-│Workspace: /home/user/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
+│Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
 │▾ OVERVIEW                ││Overall  build not started · 0%                                                     ││No task selected.                           │
@@ -43,7 +43,7 @@
 │                          ││                    │                    │                    │                     ││✓ Daemon Connected · Local · version unavai…│
 │                          ││                  ▅ │                    │                    │                     ││– BitBake Exited · v2.8.0 · Jobs 0          │
 │                          ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫ │                    │                    │                     ││! Compat Unavailable · PTY 0 · Clients 1    │
-│                          ││     utilization    │                    │                    │                     ││! Build FS unavailable · Workspace /home/us…│
+│                          ││     utilization    │                    │                    │                     ││! Build FS unavailable · Workspace /workspa…│
 └──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   ←/→ Focus   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit            19:28:27│

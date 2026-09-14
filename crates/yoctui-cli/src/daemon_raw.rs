@@ -1,6 +1,6 @@
 use std::{
     collections::{HashMap, HashSet},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::Duration,
 };
 
 use thiserror::Error;
@@ -806,13 +806,7 @@ fn lifecycle_for(state: &RawExecutionState) -> LifecycleState {
     }
 }
 
-fn unix_ms() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis()
-        .min(u128::from(u64::MAX)) as u64
-}
+use yoctui_utils::unix_ms;
 
 #[derive(Debug, Error)]
 pub enum DaemonRawError {
@@ -843,6 +837,7 @@ pub enum DaemonRawError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
     use std::{collections::BTreeMap, fs, os::unix::fs::PermissionsExt, path::PathBuf};
     use yoctui_model::{
         AuthoritativeValue, CapabilityEvidence, CapabilityEvidenceKind, CapabilityEvidenceOutcome,

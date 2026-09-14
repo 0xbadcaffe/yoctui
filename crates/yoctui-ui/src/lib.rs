@@ -1,4 +1,5 @@
 //! Rendering only; no backend parsing or mutation lives in widgets.
+use yoctui_utils::format_duration;
 mod dialogs;
 mod environment_setup;
 mod layout;
@@ -75,7 +76,7 @@ use yoctui_model::{
     WicDevicePickerDialog, WicKickstart, WicOperation, WicOutputInventoryState, WicSessionId,
     WicWritePhraseDialog, WicWritePreview, WorkspaceAvailabilityState, WorkspaceDestination,
     compatibility_ui_workspace_destination_action_availability, config_comparison,
-    config_edit_disabled_reason, config_source_disabled_reason, format_duration,
+    config_edit_disabled_reason, config_source_disabled_reason,
     notification_requires_acknowledgement, selected_config_copy_value,
 };
 
@@ -1714,6 +1715,16 @@ fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let right_width = u16::try_from(right.width())
         .unwrap_or(inner.width)
         .min(inner.width.saturating_sub(12));
+    // Compact separators before clipping identity values when the release label
+    // or backend context grows. Width tiers alone do not guarantee the text fits.
+    let left_width = left.iter().map(Span::width).sum::<usize>();
+    if left_width + usize::from(right_width) > usize::from(inner.width) {
+        for span in &mut left {
+            if span.content == "  •  " {
+                span.content = " • ".into();
+            }
+        }
+    }
     if !concept_geometry {
         let columns =
             Layout::horizontal([Constraint::Min(12), Constraint::Length(right_width)]).split(inner);
@@ -20804,14 +20815,13 @@ mod tests {
 
     fn literal_reference_app() -> App {
         let mut app = App::new(512, 1024 * 1024);
-        let source_dir = profile.source_dir.clone();
+        let source_dir = PathBuf::from("/workspace/yocto");
         app.screen = Screen::Tasks;
         app.focus = FocusTarget::Navigator;
         app.navigator_selection = 2;
         app.backend = "bridge".into();
-        let profile = app.build_environment.profile();
-        app.workspace.build_dir = Some(profile.build_dir.to_string_lossy().into_owned());
-        app.workspace.source_dir = Some(profile.source_dir.to_string_lossy().into_owned());
+        app.workspace.build_dir = Some(source_dir.join("build"));
+        app.workspace.source_dir = Some(source_dir.clone());
         app.workspace.release = Some("scarthgap".into());
         app.workspace.bitbake_version = Some("2.8.0".into());
         app.workspace
@@ -20832,9 +20842,9 @@ mod tests {
         .into_iter()
         .enumerate()
         .map(|(index, name)| yoctui_model::Layer {
-        name: name.into(),
-        path: source_dir.join(name),
-        priority: Some(index as i32 + 5),
+            name: name.into(),
+            path: source_dir.join(name),
+            priority: Some(index as i32 + 5),
         })
         .collect();
         app.workspace.recipes = ["busybox", "bash", "core-image-minimal"]
@@ -20914,7 +20924,7 @@ mod tests {
             worker: Some("worker-1".into()),
             pid: Some(35_421),
             started: Some(literal_now() - Duration::from_secs(590)),
-            log_path: Some("/home/user/yocto/build/tmp/work/qemux86-64-poky-linux/bash/5.2.21-r2/temp/log.do_compile.85873".into()),
+            log_path: Some("/workspace/yocto/build/tmp/work/qemux86-64-poky-linux/bash/5.2.21-r2/temp/log.do_compile.85873".into()),
             ..Default::default()
         };
         app.tasks.insert(active.id.clone(), active);
@@ -21066,7 +21076,7 @@ mod tests {
                     message: message.into(),
                     recipe: Some("bash_5.2.21-2".into()),
                     task: Some("do_compile".into()),
-                    path: Some("/home/user/yocto/build/tmp/log.do_compile.85873".into()),
+                    path: Some("/workspace/yocto/build/tmp/log.do_compile.85873".into()),
                     timestamp: literal_now(),
                     build: Some("core-image-minimal".into()),
                     protected: true,
@@ -21100,7 +21110,7 @@ mod tests {
             ..Default::default()
         });
         let path = PathBuf::from(
-            "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal-qemux86-64.rootfs.ext4",
+            "/workspace/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal-qemux86-64.rootfs.ext4",
         );
         let artifact = yoctui_model::ImageArtifact {
             identity: yoctui_model::ImageArtifactIdentity {
@@ -21115,17 +21125,17 @@ mod tests {
                 algorithm: "sha256".into(),
                 digest: "6d8d5e7d0f5546a0".into(),
                 source: PathBuf::from(
-                    "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.sha256",
+                    "/workspace/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.sha256",
                 ),
             }]),
             manifests: ImageArtifactField::Available(vec![PathBuf::from(
-                "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.manifest",
+                "/workspace/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.manifest",
             )]),
             licenses: ImageArtifactField::Available(vec![PathBuf::from(
-                "/home/user/yocto/build/tmp/deploy/licenses/core-image-minimal/license.manifest",
+                "/workspace/yocto/build/tmp/deploy/licenses/core-image-minimal/license.manifest",
             )]),
             spdx: ImageArtifactField::Available(vec![PathBuf::from(
-                "/home/user/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.spdx.json",
+                "/workspace/yocto/build/tmp/deploy/images/qemux86-64/core-image-minimal.spdx.json",
             )]),
             wic_files: ImageArtifactField::Available(Vec::new()),
         };
@@ -21139,7 +21149,7 @@ mod tests {
             inventory: yoctui_model::ImageArtifactInventory {
                 machine: "qemux86-64".into(),
                 deploy_directory: ImageArtifactField::Available(PathBuf::from(
-                    "/home/user/yocto/build/tmp/deploy/images/qemux86-64",
+                    "/workspace/yocto/build/tmp/deploy/images/qemux86-64",
                 )),
                 artifacts: vec![artifact],
             },
@@ -21260,7 +21270,7 @@ mod tests {
         app.focus = FocusTarget::Dialog;
         app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
             recipe: "bash".into(),
-            root: PathBuf::from("/home/user/yocto/meta/recipes-extended/bash"),
+            root: PathBuf::from("/workspace/yocto/meta/recipes-extended/bash"),
             files: vec![
                 PathBuf::from("bash_5.2.bb"),
                 PathBuf::from("files/0001-fix-build.patch"),
@@ -21327,7 +21337,7 @@ mod tests {
             yoctui_model::ClientDaemonPtyDetails {
                 id: 1,
                 kind: yoctui_model::ClientDaemonPtyKind::BuildShell,
-                cwd: "/home/user/yocto/build".into(),
+                cwd: "/workspace/yocto/build".into(),
                 columns: 88,
                 rows: 18,
                 writer: Some([1; 16]),
@@ -21338,7 +21348,7 @@ mod tests {
             yoctui_model::ClientDaemonPtyDetails {
                 id: 2,
                 kind: yoctui_model::ClientDaemonPtyKind::Devshell,
-                cwd: "/home/user/yocto/build".into(),
+                cwd: "/workspace/yocto/build".into(),
                 columns: 88,
                 rows: 18,
                 writer: Some([2; 16]),
@@ -21359,9 +21369,9 @@ mod tests {
                 rows: vec![
                     "bspguy@builder:~/yocto/build$ bitbake-layers show-layers".into(),
                     "layer                 path".into(),
-                    "meta                  /home/user/yocto/meta".into(),
-                    "meta-poky             /home/user/yocto/meta-poky".into(),
-                    "meta-yocto-bsp        /home/user/yocto/meta-yocto-bsp".into(),
+                    "meta                  /workspace/yocto/meta".into(),
+                    "meta-poky             /workspace/yocto/meta-poky".into(),
+                    "meta-yocto-bsp        /workspace/yocto/meta-yocto-bsp".into(),
                     "bspguy@builder:~/yocto/build$".into(),
                 ],
                 cells: Vec::new(),
@@ -21403,8 +21413,8 @@ mod tests {
                 Screen::Kernel,
                 6,
                 "virtual/kernel",
-                "/home/user/yocto/meta-freescale/recipes-kernel/linux/linux-imx_6.6.bb",
-                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/source",
+                "/workspace/yocto/meta-freescale/recipes-kernel/linux/linux-imx_6.6.bb",
+                "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/source",
                 vec![
                     (".config", yoctui_model::PlatformFileKind::DotConfig, 96_418),
                     (
@@ -21428,8 +21438,8 @@ mod tests {
                 Screen::Firmware,
                 7,
                 "u-boot-fslc",
-                "/home/user/yocto/meta-freescale/recipes-bsp/u-boot/u-boot-fslc_2024.01.bb",
-                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/source",
+                "/workspace/yocto/meta-freescale/recipes-bsp/u-boot/u-boot-fslc_2024.01.bb",
+                "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/source",
                 vec![
                     (".config", yoctui_model::PlatformFileKind::DotConfig, 51_202),
                     (
@@ -21498,7 +21508,7 @@ mod tests {
         let (name, cwd, rows) = if kernel {
             (
                 "menuconfig:virtual/kernel",
-                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/build",
+                "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/build",
                 vec![
                     "┌─────────────── Linux/arm64 6.6 Kernel Configuration ───────────────┐",
                     "│  Arrow keys navigate the menu.  <Enter> selects submenus --->      │",
@@ -21521,7 +21531,7 @@ mod tests {
         } else {
             (
                 "menuconfig:u-boot-fslc",
-                "/home/user/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/build",
+                "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/build",
                 vec![
                     "┌──────────────────── U-Boot 2024.01 Configuration ──────────────────┐",
                     "│  Arrow keys navigate the menu.  <Enter> selects submenus --->      │",
@@ -21918,7 +21928,7 @@ mod tests {
                 message: "ERROR: bash:do_compile failed with exit code 1".into(),
                 recipe: Some("bash_5.2.21-2".into()),
                 task: Some("do_compile".into()),
-                path: Some("/home/user/yocto/build/tmp/log.do_compile.85873".into()),
+                path: Some("/workspace/yocto/build/tmp/log.do_compile.85873".into()),
                 timestamp: literal_now(),
                 build: Some("core-image-minimal".into()),
                 protected: true,
@@ -22161,7 +22171,7 @@ mod tests {
             "core-image-minimal",
             "busybox",
             "✕ Failed",
-            "/home/user/yocto/build/tmp/work",
+            "/workspace/yocto/build/tmp/work",
             "le.85873",
         ] {
             assert!(screen.contains(expected), "missing {expected}: {screen}");
@@ -24775,10 +24785,7 @@ mod tests {
         let _ = update(&mut app, Action::OpenBuildEnvironmentCloneEditor);
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains("Clone Poky.toml"), "{output}");
-        assert!(
-            output.contains("⟦https://git.yoctoproject.org/poky⟧▏"),
-            "{output}"
-        );
+        assert!(output.contains("repository = \"⟦▏⟧\""), "{output}");
         assert!(output.contains("e change value"), "{output}");
         assert!(output.contains("Ctrl+C copy"), "{output}");
     }

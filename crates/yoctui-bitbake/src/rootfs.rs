@@ -435,14 +435,10 @@ fn ini_value(content: &str, key: &str) -> Option<String> {
 }
 
 fn bounded_preview(content: &str) -> (String, bool) {
-    if content.len() <= MAX_ROOTFS_SYSTEM_PREVIEW_BYTES {
-        return (content.to_owned(), false);
-    }
-    let mut end = MAX_ROOTFS_SYSTEM_PREVIEW_BYTES;
-    while !content.is_char_boundary(end) {
-        end -= 1;
-    }
-    (content[..end].to_owned(), true)
+    (
+        yoctui_utils::utf8_prefix(content, MAX_ROOTFS_SYSTEM_PREVIEW_BYTES).to_owned(),
+        content.len() > MAX_ROOTFS_SYSTEM_PREVIEW_BYTES,
+    )
 }
 
 fn policy_mentions_name(content: &str, name: &str) -> bool {
