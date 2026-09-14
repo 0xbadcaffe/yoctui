@@ -287,6 +287,38 @@ printf '%s\n' '{"protocol_version":1,"sequence":2,"correlation_id":"2","message"
 
 #[cfg(unix)]
 #[tokio::test]
+async fn background_bridge_priority_is_applied_before_metadata_commands() {
+    let script = fixture_script("bridge-background-priority");
+    fs::write(
+        &script,
+        r#"#!/bin/sh
+read -r _request
+printf '%s\n' '{"protocol_version":1,"sequence":1,"correlation_id":"1","message":{"type":"hello_ack","bitbake_version":"test"}}'
+read -r _request
+printf '%s\n' '{"protocol_version":1,"sequence":2,"correlation_id":"2","message":{"type":"bridge_shutdown"}}'
+"#,
+    )
+    .unwrap();
+    let mut command = TokioCommand::new("/bin/sh");
+    command.arg(&script);
+    let mut backend = BridgeBackend::spawn_command(
+        command,
+        std::env::temp_dir(),
+        BTreeMap::new(),
+        None,
+        BridgeProcessPriority::Background,
+    )
+    .await
+    .unwrap();
+    let pid = backend.child.id().unwrap();
+    // SAFETY: getpriority reads kernel state for the live bridge child.
+    assert_eq!(unsafe { libc::getpriority(libc::PRIO_PROCESS, pid) }, 10);
+    backend.shutdown().await.unwrap();
+    fs::remove_file(script).unwrap();
+}
+
+#[cfg(unix)]
+#[tokio::test]
 async fn bridge_stderr_is_attached_to_failed_handshake() {
     let script = fixture_script("bridge-stderr-failure");
     fs::write(

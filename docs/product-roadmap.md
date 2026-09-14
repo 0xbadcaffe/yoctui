@@ -1323,3 +1323,13 @@ All three M59 tasks are DONE in v0.1.106. All six production images are reviewed
 the full workspace baseline and deterministic raster checks pass. See the
 [concept layout review](design/concept-layout-review.md) for terminal adaptations
 and the distinction between fixture images and retained live evidence.
+
+## M60 — Startup responsiveness and utility consolidation
+
+PERF-STARTUP-001 keeps the daemon and client at normal priority while automatic
+startup recipe discovery and its metadata descendants use background priority.
+REF10-UTILS consolidates exact path, text, identifier, bounded-insertion and
+spawn-retry rules in `yoctui-utils`, including portable absolute-path handling.
+PERF-VERIFY-001 requires release-profile idle CPU below the existing 1% combined
+contract, a real initialized-workspace priority observation, the full baseline,
+and delivery of version 0.1.107.

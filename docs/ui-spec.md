@@ -5,6 +5,9 @@ daemon logs report metadata loading, completion or failure. Recipe/layer content
 arrives as a typed workspace update without requiring reattachment. A build
 requested while this scan owns the metadata connection reports a visible
 metadata-loading conflict; it is not silently queued or reported as started.
+On Unix automatic compatibility probes and the inventory scan use background
+process priority, while input, rendering, daemon IPC and requested builds
+retain normal process priority.
 
 Status: **Authoritative product and interaction contract**
 

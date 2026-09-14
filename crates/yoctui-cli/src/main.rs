@@ -76,9 +76,9 @@ use yoctui_app::{
     wic_write_confirmation_action, wic_write_phrase_action, workspace_collection_action,
 };
 use yoctui_bitbake::{
-    BackendEvent, BitBakeBackend, BridgeBackend, BuildEnvironmentAdapter, DevtoolCommandSpec,
-    DevtoolInspector, DevtoolJobRunner, DevtoolRunnerEvent, ImageArtifactAdapter,
-    ImageArtifactCancellation, PackageDataAdapter, PackageDataCancellation,
+    BackendEvent, BitBakeBackend, BridgeBackend, BridgeProcessPriority, BuildEnvironmentAdapter,
+    DevtoolCommandSpec, DevtoolInspector, DevtoolJobRunner, DevtoolRunnerEvent,
+    ImageArtifactAdapter, ImageArtifactCancellation, PackageDataAdapter, PackageDataCancellation,
     PlatformArtifactAdapter, ProcessBackend, QaConfiguredLayerInput, QaFamilyTaskBinding,
     QaLayerCapabilityInput, QaLayerCapabilityInspector, QaLayerCommandSpec, QaLayerJobRunner,
     QaLayerRunnerEvent, QaReportAdapter, QaReportAdapterError, QaReportCancellation,
@@ -2556,11 +2556,12 @@ async fn inspect_daemon_startup_workspace(
         .get("PYTHON")
         .map(String::as_str)
         .unwrap_or("python3");
-    let startup = spawn_configured_bridge_with_compatibility(
+    let startup = spawn_configured_bridge_with_compatibility_at_priority(
         python,
         build_dir,
         Some(startup_environment.clone()),
         compatibility,
+        BridgeProcessPriority::Background,
     );
     let mut backend = tokio::select! {
         biased;
@@ -5778,25 +5779,44 @@ async fn spawn_configured_bridge_with_compatibility(
     environment: Option<BTreeMap<String, String>>,
     compatibility: yoctui_model::DaemonCompatibilitySnapshot,
 ) -> Result<BridgeBackend, yoctui_bitbake::BackendError> {
+    spawn_configured_bridge_with_compatibility_at_priority(
+        python,
+        build_dir,
+        environment,
+        compatibility,
+        BridgeProcessPriority::Inherited,
+    )
+    .await
+}
+
+async fn spawn_configured_bridge_with_compatibility_at_priority(
+    python: &str,
+    build_dir: PathBuf,
+    environment: Option<BTreeMap<String, String>>,
+    compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+    priority: BridgeProcessPriority,
+) -> Result<BridgeBackend, yoctui_bitbake::BackendError> {
     let environment = environment.unwrap_or_default();
     let generation = compatibility.snapshot.generation;
     if let Some(script) = bridge_path_override(env::var_os("YOCTUI_BRIDGE_PATH")) {
-        BridgeBackend::spawn_with_compatibility(
+        BridgeBackend::spawn_with_compatibility_at_priority(
             python,
             script,
             build_dir,
             environment,
             compatibility,
             generation,
+            priority,
         )
         .await
     } else {
-        BridgeBackend::spawn_bundled_with_compatibility(
+        BridgeBackend::spawn_bundled_with_compatibility_at_priority(
             python,
             build_dir,
             environment,
             compatibility,
             generation,
+            priority,
         )
         .await
     }

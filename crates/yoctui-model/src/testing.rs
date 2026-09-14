@@ -1,9 +1,10 @@
 use crate::{BackgroundJobId, BuildRequest};
 use std::{
     collections::{BTreeMap, BTreeSet},
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
     time::{Duration, SystemTime},
 };
+use yoctui_utils::{is_absolute_normal_path_within, is_bounded_identifier, is_bounded_plain_text};
 
 pub const MAX_TEST_SELECTOR_BYTES: usize = 256;
 pub const MAX_TEST_PARALLELISM_INPUT_BYTES: usize = 3;
@@ -17,25 +18,15 @@ pub const MAX_TEST_TEXT_BYTES: usize = 4_096;
 pub const MAX_TEST_FINGERPRINT_BYTES: usize = 256;
 
 fn bounded_token(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= MAX_TEST_SELECTOR_BYTES
-        && !matches!(value, "." | "..")
-        && value.chars().all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '+')
-        })
+    is_bounded_identifier(value, MAX_TEST_SELECTOR_BYTES)
 }
 
 fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.as_os_str().len() <= 4_096
-        && path
-            .components()
-            .all(|component| !matches!(component, Component::ParentDir | Component::CurDir))
+    is_absolute_normal_path_within(path, 4_096)
 }
 
 fn bounded_text(value: &str) -> bool {
-    !value.is_empty() && value.len() <= MAX_TEST_TEXT_BYTES && !value.chars().any(char::is_control)
+    is_bounded_plain_text(value, MAX_TEST_TEXT_BYTES)
 }
 
 fn bounded_fingerprint(value: &str) -> bool {

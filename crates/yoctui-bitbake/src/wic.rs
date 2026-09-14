@@ -21,6 +21,7 @@ use yoctui_model::{
     WicOutputIdentity, WicOutputKind, WicPartitionSummary, WicWriteRequest,
     normalize_wic_capability, normalize_wic_devices, normalize_wic_limitations,
 };
+use yoctui_utils::is_transient_spawn_error;
 
 const MAX_WIC_LIST_BYTES: u64 = 256 * 1024;
 const WIC_INSPECTION_TIMEOUT: Duration = Duration::from_secs(10);
@@ -35,16 +36,6 @@ const WIC_SPAWN_ATTEMPTS: usize = 4;
 const WIC_SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
 type WicOutputSnapshot = BTreeMap<PathBuf, (u64, u128)>;
 type WicOutputScan = (WicOutputSnapshot, Vec<String>);
-
-#[cfg(unix)]
-fn is_transient_spawn_error(error: &std::io::Error) -> bool {
-    error.raw_os_error() == Some(libc::ETXTBSY)
-}
-
-#[cfg(not(unix))]
-fn is_transient_spawn_error(_error: &std::io::Error) -> bool {
-    false
-}
 
 async fn spawn_async_command(command: &mut Command) -> std::io::Result<Child> {
     for attempt in 1..=WIC_SPAWN_ATTEMPTS {

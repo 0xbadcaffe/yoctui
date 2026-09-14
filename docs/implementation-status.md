@@ -1,5 +1,25 @@
 # Yoctui Implementation Status
 
+M60 is DONE in v0.1.107. The observed pre-build slowdown was automatic
+initialized-workspace discovery: sequential environment queries followed by
+dozens of capability probes and recipe inventory. On Unix those child process
+trees now run at nice 10 while daemon IPC, the attached UI, requested builds and
+explicit operations retain inherited priority. A real Poky trace observed all
+96 discovery processes at nice 10, a 10.99 ms first frame and 0.0000% combined
+daemon/client CPU over 20 seconds. The isolated release result is 0.1249%
+idle daemon, 0.1248% attached daemon, 0.1248% client and 0.3744% combined of
+one logical CPU, below the unchanged 1.00% contract. No build was submitted.
+
+Exact repeated path, bounded-text, BitBake-identifier, unique-insertion,
+spawn-retry and priority helpers now live in `yoctui-utils`; domain-specific
+variants retain their local rules. Platform-prefixed absolute paths no longer
+fail solely because they have a prefix, and Poky helper defaults no longer
+embed `/home/$USER`. The operator guide uses release-profile interactive
+commands. All 1,624 Rust tests pass (four existing ignored), along with 52
+bridge tests, strict Clippy, formatting, documentation, version/layout/CI/
+roadmap and sixteen raster checks. All 724 registry tasks are DONE. This is an
+idle/startup observation, not a fresh live-build saturation certification.
+
 REF09-VERIFY is DONE in v0.1.102. All 1608 Rust tests pass without golden-update
 flags (four existing ignored), and all 52 Python bridge tests pass. The final
 path audit finds no personal home paths/usernames in Rust or executable scripts.

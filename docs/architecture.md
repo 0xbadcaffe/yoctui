@@ -86,8 +86,14 @@ trigger automatic resubmission. Receive phases are time/event bounded; protocol
 pings remain serviced while ordinary updates pass through. Detach cleanup cannot
 turn a confirmed accepted build into a reported submission failure.
 
-Initial daemon recipe inventory is an owned, cancellable background scan, not
-part of IPC readiness. It has a ten-minute deadline and a single result slot.
+Initial daemon compatibility queries, capability probes and recipe inventory
+are automatic background discovery. On Unix every spawned probe, the inventory
+bridge and their inherited descendants run at nice 10, so the normal-priority
+daemon and attached client retain scheduler precedence. This priority applies
+only to automatic startup discovery; builds and explicit interactive operations
+retain the caller's normal priority. Failure to lower priority is logged and
+does not make metadata unavailable. Recipe inventory is an owned, cancellable
+scan, not part of IPC readiness. It has a ten-minute deadline and a single result slot.
 The daemon publishes the resulting typed Workspace through its bounded journal;
 until then, build commands report an explicit metadata-loading conflict. Attach,
 doctor, telemetry and shutdown remain serviceable. Shutdown interrupts the

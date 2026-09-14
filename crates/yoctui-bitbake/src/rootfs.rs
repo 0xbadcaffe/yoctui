@@ -1001,13 +1001,11 @@ fn check_control(
 }
 
 fn push_limitation(limitations: &mut Vec<String>, limitation: String) {
-    if limitations.len() < MAX_LIMITATIONS && !limitations.contains(&limitation) {
-        limitations.push(limitation);
-    }
+    yoctui_utils::push_unique_bounded(limitations, limitation, MAX_LIMITATIONS);
 }
 
 fn valid_text(value: &str) -> bool {
-    !value.is_empty() && value.len() <= 512 && !value.chars().any(char::is_control)
+    yoctui_utils::is_bounded_plain_text(value, 512)
 }
 
 #[cfg(test)]

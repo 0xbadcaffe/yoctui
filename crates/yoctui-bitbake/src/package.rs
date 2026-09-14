@@ -1049,9 +1049,7 @@ fn bounded_error_message(stderr: &[u8], stdout: &[u8]) -> String {
 }
 
 fn push_limitation(limitations: &mut Vec<String>, limitation: String) {
-    if limitations.len() < MAX_PACKAGE_LIMITATIONS && !limitations.contains(&limitation) {
-        limitations.push(limitation);
-    }
+    yoctui_utils::push_unique_bounded(limitations, limitation, MAX_PACKAGE_LIMITATIONS);
 }
 
 #[cfg(test)]

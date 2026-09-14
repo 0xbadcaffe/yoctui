@@ -3,9 +3,10 @@ use crate::{
     popup_toml_value,
 };
 use std::{
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
     time::SystemTime,
 };
+use yoctui_utils::{is_absolute_normal_path_within, is_bounded_identifier, is_bounded_plain_text};
 
 pub const MAX_SECURITY_REPORTS: usize = 256;
 pub const MAX_SECURITY_FINDINGS: usize = 16_384;
@@ -20,27 +21,15 @@ pub const MAX_SECURITY_SESSIONS: usize = 64;
 pub const MAX_SECURITY_SESSION_OUTPUT: usize = 256;
 
 fn bounded_text(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= MAX_SECURITY_TEXT_BYTES
-        && !value.chars().any(char::is_control)
+    is_bounded_plain_text(value, MAX_SECURITY_TEXT_BYTES)
 }
 
 fn bounded_token(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 256
-        && !matches!(value, "." | "..")
-        && value.chars().all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '+')
-        })
+    is_bounded_identifier(value, 256)
 }
 
 fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.as_os_str().len() <= 4_096
-        && path
-            .components()
-            .all(|component| !matches!(component, Component::ParentDir | Component::CurDir))
+    is_absolute_normal_path_within(path, 4_096)
 }
 
 fn bounded_fingerprint(value: &str) -> bool {

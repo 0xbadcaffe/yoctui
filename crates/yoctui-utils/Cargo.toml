@@ -13,3 +13,4 @@ description = "Shared utility functions for Yoctui"
 
 [dependencies]
 dirs = "7"
+libc.workspace = true

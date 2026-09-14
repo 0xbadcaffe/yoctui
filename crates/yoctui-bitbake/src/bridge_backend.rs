@@ -14,6 +14,15 @@ pub struct BridgeBackend {
     pub(crate) stderr_task: Option<tokio::task::JoinHandle<()>>,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub enum BridgeProcessPriority {
+    #[default]
+    Inherited,
+    Background,
+}
+
+const BACKGROUND_BRIDGE_NICE: i32 = 10;
+
 #[derive(Default)]
 pub(crate) struct BridgeStderrTail {
     pub(crate) bytes: VecDeque<u8>,
@@ -114,7 +123,14 @@ impl BridgeBackend {
     ) -> Result<Self, BackendError> {
         let mut command = TokioCommand::new(python);
         command.arg("-c").arg(BUNDLED_BRIDGE_SOURCE);
-        Self::spawn_command(command, build_dir, environment, None).await
+        Self::spawn_command(
+            command,
+            build_dir,
+            environment,
+            None,
+            BridgeProcessPriority::Inherited,
+        )
+        .await
     }
 
     pub async fn spawn_bundled_with_compatibility(
@@ -127,7 +143,28 @@ impl BridgeBackend {
         let mut command = TokioCommand::new(python);
         command.arg("-c").arg(BUNDLED_BRIDGE_SOURCE);
         let authority = BitBakeApiAuthority::new(compatibility, expected_generation, &build_dir)?;
-        Self::spawn_command(command, build_dir, environment, Some(authority)).await
+        Self::spawn_command(
+            command,
+            build_dir,
+            environment,
+            Some(authority),
+            BridgeProcessPriority::Inherited,
+        )
+        .await
+    }
+
+    pub async fn spawn_bundled_with_compatibility_at_priority(
+        python: &str,
+        build_dir: PathBuf,
+        environment: BTreeMap<String, String>,
+        compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+        expected_generation: u64,
+        priority: BridgeProcessPriority,
+    ) -> Result<Self, BackendError> {
+        let mut command = TokioCommand::new(python);
+        command.arg("-c").arg(BUNDLED_BRIDGE_SOURCE);
+        let authority = BitBakeApiAuthority::new(compatibility, expected_generation, &build_dir)?;
+        Self::spawn_command(command, build_dir, environment, Some(authority), priority).await
     }
 
     pub async fn spawn(
@@ -145,7 +182,14 @@ impl BridgeBackend {
     ) -> Result<Self, BackendError> {
         let mut command = TokioCommand::new(python);
         command.arg(script);
-        Self::spawn_command(command, build_dir, environment, None).await
+        Self::spawn_command(
+            command,
+            build_dir,
+            environment,
+            None,
+            BridgeProcessPriority::Inherited,
+        )
+        .await
     }
 
     pub async fn spawn_with_compatibility(
@@ -159,7 +203,29 @@ impl BridgeBackend {
         let mut command = TokioCommand::new(python);
         command.arg(script);
         let authority = BitBakeApiAuthority::new(compatibility, expected_generation, &build_dir)?;
-        Self::spawn_command(command, build_dir, environment, Some(authority)).await
+        Self::spawn_command(
+            command,
+            build_dir,
+            environment,
+            Some(authority),
+            BridgeProcessPriority::Inherited,
+        )
+        .await
+    }
+
+    pub async fn spawn_with_compatibility_at_priority(
+        python: &str,
+        script: PathBuf,
+        build_dir: PathBuf,
+        environment: BTreeMap<String, String>,
+        compatibility: yoctui_model::DaemonCompatibilitySnapshot,
+        expected_generation: u64,
+        priority: BridgeProcessPriority,
+    ) -> Result<Self, BackendError> {
+        let mut command = TokioCommand::new(python);
+        command.arg(script);
+        let authority = BitBakeApiAuthority::new(compatibility, expected_generation, &build_dir)?;
+        Self::spawn_command(command, build_dir, environment, Some(authority), priority).await
     }
 
     pub(crate) async fn spawn_command(
@@ -167,6 +233,7 @@ impl BridgeBackend {
         build_dir: PathBuf,
         environment: BTreeMap<String, String>,
         api_authority: Option<BitBakeApiAuthority>,
+        priority: BridgeProcessPriority,
     ) -> Result<Self, BackendError> {
         let mut child = command
             .current_dir(&build_dir)
@@ -176,6 +243,12 @@ impl BridgeBackend {
             .stderr(Stdio::piped())
             .kill_on_drop(true)
             .spawn()?;
+        if priority == BridgeProcessPriority::Background
+            && let Some(pid) = child.id()
+            && let Err(error) = yoctui_utils::lower_process_priority(pid, BACKGROUND_BRIDGE_NICE)
+        {
+            tracing::warn!(pid, %error, "could not lower startup metadata bridge priority");
+        }
         let stdin = child
             .stdin
             .take()

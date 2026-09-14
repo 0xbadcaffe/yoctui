@@ -1359,9 +1359,7 @@ fn scalar_metadata(object: &Map<String, Value>, excluded: &[&str]) -> Vec<Securi
 }
 
 fn valid_text(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= MAX_SECURITY_TEXT_BYTES
-        && !value.chars().any(char::is_control)
+    yoctui_utils::is_bounded_plain_text(value, MAX_SECURITY_TEXT_BYTES)
 }
 
 fn push_limitation(limitations: &mut Vec<String>, value: String) {

@@ -1217,16 +1217,11 @@ fn finding_status(value: &str) -> QaFindingStatus {
 }
 
 fn bounded_text(value: &str) -> bool {
-    !value.is_empty() && value.len() <= MAX_QA_TEXT_BYTES && !value.chars().any(char::is_control)
+    yoctui_utils::is_bounded_plain_text(value, MAX_QA_TEXT_BYTES)
 }
 
 fn bounded_token(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 256
-        && !matches!(value, "." | "..")
-        && value.chars().all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '+')
-        })
+    yoctui_utils::is_bounded_identifier(value, 256)
 }
 
 fn push_limitation(limitations: &mut Vec<String>, value: String) {

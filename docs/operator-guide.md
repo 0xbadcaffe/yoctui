@@ -31,8 +31,12 @@ launch without a positional target:
 ```sh
 test -n "${BUILDDIR:-}" || { echo "BUILDDIR is not set" >&2; exit 1; }
 cd "$HOME/projects/yoctui"
-cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
+cargo run --release --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR"
 ```
+
+The interactive application is a release-profile workload. A debug build is
+useful for development assertions but is substantially slower and is not the
+supported CPU-performance configuration.
 
 Opening a workspace does not start a build. The bridge backend is the normal
 choice for typed workspace metadata and live events. Use `--backend process`
@@ -358,10 +362,10 @@ test -n "${BUILDDIR:-}"
 test -d "$BUILDDIR/conf"
 command -v bitbake
 bitbake --version
-cargo run --locked -p yoctui -- doctor
-cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR" inspect
-cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR" layers
-cargo run --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR" recipes
+cargo run --release --locked -p yoctui -- doctor
+cargo run --release --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR" inspect
+cargo run --release --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR" layers
+cargo run --release --locked -p yoctui -- --backend bridge --build-dir "$BUILDDIR" recipes
 ```
 
 Do not source standalone BitBake's `init-build-env` using a Poky path, or expect
@@ -400,7 +404,7 @@ reset
 stty sane
 ```
 
-Then rerun `cargo run --locked -p yoctui -- doctor`. Reproduce terminal issues
+Then rerun `cargo run --release --locked -p yoctui -- doctor`. Reproduce terminal issues
 with `./scripts/test-terminal.sh`; see [Testing](testing.md) before reporting a
 terminal-lifecycle defect.
 

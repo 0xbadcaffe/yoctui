@@ -900,7 +900,7 @@ impl Drop for QaLayerJobRunner {
 }
 
 fn bounded_text(value: &str) -> bool {
-    !value.is_empty() && value.len() <= MAX_QA_TEXT_BYTES && !value.chars().any(char::is_control)
+    yoctui_utils::is_bounded_plain_text(value, MAX_QA_TEXT_BYTES)
 }
 
 #[cfg(test)]

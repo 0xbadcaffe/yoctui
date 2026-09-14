@@ -14,6 +14,7 @@ use tokio::{
     task::JoinHandle,
 };
 use yoctui_model::DaemonCompatibilitySnapshot;
+use yoctui_utils::is_transient_spawn_error;
 
 use crate::{BitBakeCommandPlanner, BitBakeServerCommandOperation};
 
@@ -23,16 +24,6 @@ const DEFAULT_TIMEOUT: Duration = Duration::from_secs(15);
 const DEFAULT_CANCEL_GRACE: Duration = Duration::from_secs(2);
 const SPAWN_ATTEMPTS: usize = 4;
 const SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
-
-#[cfg(unix)]
-fn is_transient_spawn_error(error: &io::Error) -> bool {
-    error.raw_os_error() == Some(libc::ETXTBSY)
-}
-
-#[cfg(not(unix))]
-fn is_transient_spawn_error(_error: &io::Error) -> bool {
-    false
-}
 
 async fn spawn_process(process: &mut Command) -> io::Result<Child> {
     for attempt in 1..=SPAWN_ATTEMPTS {

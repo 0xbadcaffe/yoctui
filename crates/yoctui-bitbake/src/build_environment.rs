@@ -5,20 +5,11 @@ use tokio::{
     time::{error::Elapsed, timeout},
 };
 use yoctui_model::{BuildEnvironmentCloneRequest, BuildEnvironmentProfile};
+use yoctui_utils::is_transient_spawn_error;
 
 const MAX_OUTPUT: usize = 64 * 1024;
 const SPAWN_ATTEMPTS: usize = 4;
 const SPAWN_RETRY_DELAY: Duration = Duration::from_millis(5);
-
-#[cfg(unix)]
-fn is_transient_spawn_error(error: &std::io::Error) -> bool {
-    error.raw_os_error() == Some(libc::ETXTBSY)
-}
-
-#[cfg(not(unix))]
-fn is_transient_spawn_error(_error: &std::io::Error) -> bool {
-    false
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuildEnvironmentResponse {

@@ -1,4 +1,4 @@
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 pub const MAX_WIC_KICKSTARTS: usize = 256;
 pub const MAX_WIC_PARTITIONS: usize = 128;
@@ -741,14 +741,7 @@ fn safe_name(value: &str) -> bool {
 }
 
 pub(crate) fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.components().all(|component| {
-            !matches!(
-                component,
-                Component::CurDir | Component::ParentDir | Component::Prefix(_)
-            )
-        })
+    yoctui_utils::is_absolute_normal_path(path)
 }
 
 #[cfg(test)]

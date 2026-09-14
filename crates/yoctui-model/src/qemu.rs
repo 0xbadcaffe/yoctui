@@ -1,5 +1,6 @@
 use crate::{ImageArtifactIdentity, ImageArtifactKind};
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
+use yoctui_utils::is_absolute_normal_path as absolute_normal_path;
 
 pub const MIN_QEMU_MEMORY_MIB: u32 = 128;
 pub const MAX_QEMU_MEMORY_MIB: u32 = 262_144;
@@ -374,17 +375,6 @@ fn optional_path(input: &str) -> Result<Option<PathBuf>, &'static str> {
         return Err("runqemu paths must be normalized absolute paths");
     }
     Ok(Some(path))
-}
-
-fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.components().all(|component| {
-            !matches!(
-                component,
-                Component::CurDir | Component::ParentDir | Component::Prefix(_)
-            )
-        })
 }
 
 fn extra_argument_is_valid(argument: &str) -> bool {

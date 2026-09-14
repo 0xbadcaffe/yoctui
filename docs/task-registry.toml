@@ -8007,3 +8007,36 @@ required = true
 depends_on = ["CONCEPT-DETAIL"]
 verify = ["cargo test -p yoctui-ui", "cargo fmt --all --check", "python3 scripts/render-m22-concept-screenshots.py --check", "./scripts/verify-roadmap.sh"]
 notes = "v0.1.106: all six production layouts visually reviewed; 1613 Rust tests pass (four existing ignored), 52 bridge tests, strict workspace Clippy, formatting, docs/CLI/headless/doctor, version/layout/CI/roadmap and sixteen deterministic rasters pass. Original concepts and historical live evidence unchanged. See docs/design/concept-layout-review.md for terminal adaptations and evidence scope."
+
+[[task]]
+id = "PERF-STARTUP-001"
+milestone = "M60"
+title = "Protect UI responsiveness during startup metadata discovery"
+status = "DONE"
+priority = 920
+required = true
+depends_on = []
+verify = ["cargo test -p yoctui-bitbake background_bridge_priority_is_applied_before_metadata_commands", "./scripts/verify-low-overhead.sh", "./scripts/verify-roadmap.sh"]
+notes = "Automatic Unix startup compatibility queries, capability probes, the metadata bridge and inherited descendants use nice 10. Daemon, client, explicit metadata operations and requested builds retain inherited priority. Release-profile launch guidance replaces the prior debug command."
+
+[[task]]
+id = "REF10-UTILS"
+milestone = "M60"
+title = "Consolidate exact repeated validation and process helpers"
+status = "DONE"
+priority = 921
+required = true
+depends_on = ["PERF-STARTUP-001"]
+verify = ["cargo test -p yoctui-utils", "cargo test -p yoctui-model", "cargo test -p yoctui-bitbake", "./scripts/check-library-layout.py"]
+notes = "Shared normal-path, bounded plain-text, BitBake identifier, unique bounded insertion, process priority and transient spawn-error rules live in yoctui-utils. Domain-specific variants remain local. Platform prefixes are no longer rejected as path traversal."
+
+[[task]]
+id = "PERF-VERIFY-001"
+milestone = "M60"
+title = "Measure release idle overhead and deliver startup responsiveness"
+status = "DONE"
+priority = 922
+required = true
+depends_on = ["PERF-STARTUP-001", "REF10-UTILS"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "Version 0.1.107 retains the M46 daemon/client/combined idle CPU thresholds, measures a release binary, checks real initialized-workspace background priority, and completes baseline and deterministic visual verification."

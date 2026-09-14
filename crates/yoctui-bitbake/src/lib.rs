@@ -295,5 +295,5 @@ mod process_backend;
 pub use process_backend::{ProcessBackend, classify_output};
 
 mod bridge_backend;
-pub use bridge_backend::BridgeBackend;
 use bridge_backend::{BUNDLED_BRIDGE_SOURCE, parse_task_dependency_dot};
+pub use bridge_backend::{BridgeBackend, BridgeProcessPriority};

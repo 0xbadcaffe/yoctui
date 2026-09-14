@@ -975,9 +975,7 @@ fn parse_diffsigs_output(output: &str) -> (Vec<SignatureDifference>, Vec<String>
 }
 
 fn push_limitation(limitations: &mut Vec<String>, limitation: String) {
-    if limitations.len() < MAX_SIGNATURE_LIMITATIONS && !limitations.contains(&limitation) {
-        limitations.push(limitation);
-    }
+    yoctui_utils::push_unique_bounded(limitations, limitation, MAX_SIGNATURE_LIMITATIONS);
 }
 
 #[cfg(test)]

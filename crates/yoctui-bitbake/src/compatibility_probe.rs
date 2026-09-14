@@ -177,6 +177,7 @@ pub struct CapabilityProbeObservation {
 pub struct CapabilityProbeRunner {
     timeout: Duration,
     output_limit_per_stream: usize,
+    background_priority: bool,
 }
 
 impl Default for CapabilityProbeRunner {
@@ -184,6 +185,7 @@ impl Default for CapabilityProbeRunner {
         Self {
             timeout: DEFAULT_PROBE_TIMEOUT,
             output_limit_per_stream: DEFAULT_PROBE_OUTPUT_LIMIT,
+            background_priority: false,
         }
     }
 }
@@ -202,7 +204,15 @@ impl CapabilityProbeRunner {
         Ok(Self {
             timeout,
             output_limit_per_stream,
+            background_priority: false,
         })
+    }
+
+    /// Lower only the read-only probe children so interactive callers retain
+    /// scheduler precedence while capability discovery is running.
+    pub fn with_background_priority(mut self) -> Self {
+        self.background_priority = true;
+        self
     }
 
     pub async fn probe(
@@ -359,6 +369,7 @@ impl CapabilityProbeRunner {
             &context.process_environment,
             self.timeout,
             self.output_limit_per_stream,
+            self.background_priority,
         )
         .await;
         match result {
@@ -461,6 +472,7 @@ pub async fn probe_bundled_backend_capabilities(
         environment,
         Duration::from_secs(30),
         DEFAULT_PROBE_OUTPUT_LIMIT,
+        true,
     )
     .await
     {
@@ -524,6 +536,7 @@ async fn run_read_only(
     environment: &BTreeMap<String, String>,
     timeout: Duration,
     output_limit: usize,
+    background_priority: bool,
 ) -> ProbeProcessResult {
     let mut command = Command::new(executable);
     command
@@ -541,6 +554,12 @@ async fn run_read_only(
         Ok(child) => child,
         Err(error) => return ProbeProcessResult::Failed(error.to_string()),
     };
+    if background_priority
+        && let Some(pid) = child.id()
+        && let Err(error) = yoctui_utils::lower_process_priority(pid, 10)
+    {
+        tracing::warn!(pid, %error, "could not lower capability probe priority");
+    }
     let process_group = child.id().map(|id| id as i32);
     let Some(stdout) = child.stdout.take() else {
         return ProbeProcessResult::Failed("stdout pipe is unavailable".into());
@@ -960,6 +979,30 @@ mod tests {
         assert_eq!(
             fs::read_to_string(fixture.root.join("probe.argv")).unwrap(),
             "upgrade\n--help\n--version\n"
+        );
+    }
+
+    #[cfg(unix)]
+    #[tokio::test]
+    async fn compatibility_probe_background_priority_reaches_the_tool_process() {
+        let fixture = Fixture::new(
+            "#!/bin/sh\nsleep 0.1\nps -o ni= -p $$ > probe.nice\necho 'devtool 1.0'\n",
+        );
+        let observation = CapabilityProbeRunner::default()
+            .with_background_priority()
+            .probe(
+                &fixture.context(),
+                &CapabilityProbeSpec::CommandVersion {
+                    tool: CapabilityToolId::Devtool,
+                },
+            )
+            .await;
+        assert_eq!(observation.status, CapabilityProbeStatus::Positive);
+        assert_eq!(
+            fs::read_to_string(fixture.root.join("probe.nice"))
+                .unwrap()
+                .trim(),
+            "10"
         );
     }
 

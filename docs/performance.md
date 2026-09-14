@@ -804,10 +804,15 @@ cd /path/to/yoctui
   --output /tmp/yoctui-real-poky.json
 ```
 
-No supported path requires root, real-time scheduling, a reserved CPU, a nice
-change, or a cgroup override. `yoctui inspect` may suggest reviewing
-`BB_NUMBER_THREADS` and `PARALLEL_MAKE` on an oversubscribed host, but Yoctui
-never changes them. Optional `taskset`, cpuset, nice, or systemd CPUWeight
+No supported path requires root, real-time scheduling, a reserved CPU, or a
+cgroup override. The daemon and client retain inherited priority. On Unix the
+automatic startup compatibility queries, capability probes and recipe-inventory
+bridge are best-effort lowered to nice 10; their descendants inherit that
+priority so they do not compete equally with UI input and IPC before a build
+begins. Requested builds and explicit interactive operations retain inherited
+priority. `yoctui inspect`
+may suggest reviewing `BB_NUMBER_THREADS` and `PARALLEL_MAKE` on an
+oversubscribed host. Optional `taskset`, cpuset, or systemd CPUWeight
 experiments remain administrator policy and must be measured on the actual
 machine; the reference evidence found no benefit over inherited defaults.
 

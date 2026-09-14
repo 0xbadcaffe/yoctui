@@ -22,6 +22,7 @@ use yoctui_model::{
     PrServiceOperation, PrServiceRequest, SstateCleanupMode, SstateCleanupPreview,
     SstateCleanupRequest, SstateReadinessMode, SstateReadinessRequest,
 };
+use yoctui_utils::is_transient_spawn_error;
 
 const SSTATE_EVENT_CHANNEL_CAPACITY: usize = 64;
 const SSTATE_OPERATION_TIMEOUT: Duration = Duration::from_secs(60 * 60);
@@ -216,9 +217,7 @@ fn find_executable(
 }
 
 fn push_limitation(limitations: &mut Vec<String>, limitation: String) {
-    if limitations.len() < MAX_MAINTENANCE_LIMITATIONS && !limitations.contains(&limitation) {
-        limitations.push(limitation);
-    }
+    yoctui_utils::push_unique_bounded(limitations, limitation, MAX_MAINTENANCE_LIMITATIONS);
 }
 
 fn safe_metadata(path: &Path, allow_directory: bool) -> Result<fs::Metadata, ()> {
@@ -1294,16 +1293,6 @@ where
         Err(error) if error.kind() == ErrorKind::BrokenPipe => Ok(()),
         result => result,
     }
-}
-
-#[cfg(unix)]
-fn is_transient_spawn_error(error: &std::io::Error) -> bool {
-    error.raw_os_error() == Some(libc::ETXTBSY)
-}
-
-#[cfg(not(unix))]
-fn is_transient_spawn_error(_error: &std::io::Error) -> bool {
-    false
 }
 
 async fn spawn_process(process: &mut Command) -> std::io::Result<Child> {

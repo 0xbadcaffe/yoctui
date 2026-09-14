@@ -64,7 +64,7 @@ impl Default for DaemonCompatibilityCoordinator {
             cache: CapabilitySnapshotCache::default(),
             catalog: CapabilityCatalog::builtin(),
             resolver: CapabilityResolver::default(),
-            runner: CapabilityProbeRunner::default(),
+            runner: CapabilityProbeRunner::default().with_background_priority(),
             active_key: None,
             implementations: BTreeMap::new(),
         }
@@ -637,6 +637,11 @@ async fn run_read_only(
             executable.display()
         ))
     })?;
+    if let Some(pid) = child.id()
+        && let Err(error) = yoctui_utils::lower_process_priority(pid, 10)
+    {
+        tracing::warn!(pid, %error, "could not lower startup compatibility query priority");
+    }
     let stdout = child
         .stdout
         .take()

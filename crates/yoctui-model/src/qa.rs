@@ -4,9 +4,10 @@ use crate::{
 };
 use std::{
     collections::VecDeque,
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
     time::SystemTime,
 };
+use yoctui_utils::{is_absolute_normal_path_within, is_bounded_identifier, is_bounded_plain_text};
 
 pub const MAX_QA_CHECKS: usize = 256;
 pub const MAX_QA_SCOPES: usize = 256;
@@ -24,16 +25,11 @@ pub const MAX_QA_LAYER_ARGUMENTS: usize = 64;
 pub const MAX_QA_COMPATIBLE_SERIES: usize = 64;
 
 fn bounded_text(value: &str) -> bool {
-    !value.is_empty() && value.len() <= MAX_QA_TEXT_BYTES && !value.chars().any(char::is_control)
+    is_bounded_plain_text(value, MAX_QA_TEXT_BYTES)
 }
 
 fn bounded_token(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 256
-        && !matches!(value, "." | "..")
-        && value.chars().all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '+')
-        })
+    is_bounded_identifier(value, 256)
 }
 
 fn bounded_fingerprint(value: &str) -> bool {
@@ -45,12 +41,7 @@ fn bounded_fingerprint(value: &str) -> bool {
 }
 
 fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.as_os_str().len() <= MAX_QA_TEXT_BYTES
-        && path
-            .components()
-            .all(|component| !matches!(component, Component::ParentDir | Component::CurDir))
+    is_absolute_normal_path_within(path, MAX_QA_TEXT_BYTES)
 }
 
 fn normalize_paths(mut paths: Vec<PathBuf>) -> Vec<PathBuf> {

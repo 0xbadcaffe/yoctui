@@ -1,8 +1,9 @@
 use crate::{BackgroundJobId, BuildRequest};
 use std::{
     collections::BTreeSet,
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
 };
+use yoctui_utils::{is_absolute_normal_path_within, is_bounded_identifier};
 
 pub const MAX_SDK_ARTIFACTS: usize = 4_096;
 pub const MAX_SDK_ASSOCIATIONS: usize = 256;
@@ -12,21 +13,11 @@ pub const MAX_SDK_NATIVE_ARGUMENT_BYTES: usize = 4_096;
 pub const MAX_SDK_NATIVE_ARGUMENT_INPUT_BYTES: usize = 4_096;
 
 fn token_is_valid(value: &str) -> bool {
-    !value.is_empty()
-        && value.len() <= 256
-        && !matches!(value, "." | "..")
-        && value.chars().all(|character| {
-            character.is_ascii_alphanumeric() || matches!(character, '-' | '_' | '.' | '+')
-        })
+    is_bounded_identifier(value, 256)
 }
 
 fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.as_os_str().len() <= 4_096
-        && path
-            .components()
-            .all(|component| !matches!(component, Component::ParentDir | Component::CurDir))
+    is_absolute_normal_path_within(path, 4_096)
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

@@ -1,9 +1,10 @@
 use crate::{PopupEditor, Screen, popup_toml_fields};
 use std::{
     collections::VecDeque,
-    path::{Component, Path, PathBuf},
+    path::{Path, PathBuf},
     time::SystemTime,
 };
+use yoctui_utils::is_absolute_normal_path_within;
 
 pub const MAX_MAINTENANCE_TOOLS: usize = 32;
 pub const MAX_MAINTENANCE_TARGETS: usize = 128;
@@ -33,12 +34,7 @@ fn bounded_token(value: &str) -> bool {
 }
 
 fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.as_os_str().len() <= MAX_MAINTENANCE_TEXT_BYTES
-        && path
-            .components()
-            .all(|component| !matches!(component, Component::ParentDir | Component::CurDir))
+    is_absolute_normal_path_within(path, MAX_MAINTENANCE_TEXT_BYTES)
 }
 
 fn normalize_text(mut values: Vec<String>, maximum: usize) -> Vec<String> {

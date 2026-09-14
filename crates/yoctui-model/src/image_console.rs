@@ -1,4 +1,5 @@
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
+use yoctui_utils::is_absolute_normal_path as absolute_normal_path;
 
 use crate::{
     ImageArtifactIdentity, ImageArtifactKind, QemuCapability, QemuDisplayMode, QemuLaunchDraft,
@@ -352,17 +353,6 @@ fn optional_identity_path(input: &str) -> Result<Option<PathBuf>, String> {
         return Err("SSH identity path must be a normalized absolute path".into());
     }
     Ok(Some(path))
-}
-
-fn absolute_normal_path(path: &Path) -> bool {
-    path.is_absolute()
-        && path != Path::new("/")
-        && path.components().all(|component| {
-            !matches!(
-                component,
-                Component::CurDir | Component::ParentDir | Component::Prefix(_)
-            )
-        })
 }
 
 fn bounded_terminal_name(prefix: &str, identity: &str) -> String {
