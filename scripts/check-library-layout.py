@@ -8,6 +8,9 @@ errors = []
 for manifest in sorted((ROOT / "crates").glob("*/Cargo.toml")):
     package = tomllib.loads(manifest.read_text())
     name = package["package"]["name"]
+    publication = package["package"].get("publish")
+    if publication is not False and publication != ["crates-io"]:
+        errors.append(f"{name} must declare the shared crates-io publication registry")
     library = manifest.parent / "src/lib.rs"
     if library.exists():
         lines = len(library.read_text().splitlines())
@@ -17,4 +20,4 @@ for manifest in sorted((ROOT / "crates").glob("*/Cargo.toml")):
         errors.append(f"{name} must consume the shared yoctui-utils crate")
 if errors:
     raise SystemExit("\n".join(errors))
-print("library layout valid: roots <= 1000 lines; all consumer crates use yoctui-utils")
+print("library layout valid: roots <= 1000 lines; utilities and publication registries consistent")

@@ -7,6 +7,7 @@ authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
 readme.workspace = true
+publish = ["crates-io"]
 
 description = "Shared utility functions for Yoctui"
 

@@ -1,14 +1,20 @@
 [workspace]
 members = [
-  "crates/yoctui-model", "crates/yoctui-protocol", "crates/yoctui-app",
-  "crates/yoctui-bitbake", "crates/yoctui-ui", "crates/yoctui-cli"
-  , "crates/yoctui-e2e", "crates/yoctui-shell"
-, "crates/yoctui-utils"]
+  "crates/yoctui-utils",
+  "crates/yoctui-model",
+  "crates/yoctui-protocol",
+  "crates/yoctui-bitbake",
+  "crates/yoctui-app",
+  "crates/yoctui-ui",
+  "crates/yoctui-cli",
+  "crates/yoctui-e2e",
+  "crates/yoctui-shell",
+]
 exclude = ["fuzz"]
 resolver = "2"
 
 [workspace.package]
-version = "0.1.101"
+version = "0.1.102"
 edition = "2024"
 license = "MIT"
 authors = ["Roy Cohen <roy@0xbadcaffe.dev>"]

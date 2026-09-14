@@ -426,7 +426,7 @@ mod tests {
         draft.host = "192.0.2.44".into();
         draft.user = "root".into();
         draft.port = "2222".into();
-        draft.identity_file = "/home/user/.ssh/id_ed25519".into();
+        draft.identity_file = "/workspace/keys/id_ed25519".into();
         let preview = draft
             .preview(
                 &QemuCapability::MissingTool,
@@ -444,7 +444,7 @@ mod tests {
                 "-p",
                 "2222",
                 "-i",
-                "/home/user/.ssh/id_ed25519",
+                "/workspace/keys/id_ed25519",
                 "root@192.0.2.44"
             ]
         );

@@ -415,7 +415,7 @@ mod tests {
         };
         for source in [
             "retained 32 B/2 lines · dropped 4 B/1 lines · truncated 1 · hits 1",
-            "Source: /home/user/yocto/build/tmp/work/busybox/temp/log.do_compile",
+            "Source: /workspace/yocto/build/tmp/work/busybox/temp/log.do_compile",
             "warning: compiler reports missing header file; review task output",
             "  indented code and café output",
         ] {

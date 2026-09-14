@@ -1,5 +1,23 @@
 # Yoctui Implementation Status
 
+REF09-VERIFY is DONE in v0.1.102. All 1608 Rust tests pass without golden-update
+flags (four existing ignored), and all 52 Python bridge tests pass. The final
+path audit finds no personal home paths/usernames in Rust or executable scripts.
+Synthetic SSH/log fixtures use neutral workspace paths. The original master
+checkout and its user-owned changes remain untouched. Strict Clippy,
+documentation/CLI/headless/doctor, formatting, version/layout/CI/roadmap and
+sixteen raster checks pass. All seven locked source archives match checked Rust
+sources and the bundled bridge; isolated archive compilation was not repeated.
+The fuzz lock includes utils and resolves offline. Public crates now agree on
+the explicit crates.io registry, repairing multi-package packaging. All four
+hosted jobs pass for 301b3d6 and fdca855. All 718 registry tasks are DONE.
+
+The repository-wide live-performance gate is not certified for this refactor:
+the retained real-Poky validator reports a source digest mismatch for
+`crates/yoctui-app/src/environment_setup.rs`. Fresh source-bound live evidence
+is required before claiming that gate passes. Historical measurements are
+preserved; fixture/regression results do not replace real-Poky measurements.
+
 REF09-MODULES implements the decomposition in v0.1.101. The four oversized
 roots are now 160 lines (app), 299 (bitbake), 297 (model), and 282 (UI).
 All workspace roots are below 1000 lines. The 762 reducer arms preserve their
