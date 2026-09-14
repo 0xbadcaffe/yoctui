@@ -1,5 +1,15 @@
 # Yoctui Implementation Status
 
+REF09-MODULES implements the decomposition in v0.1.101. The four oversized
+roots are now 160 lines (app), 299 (bitbake), 297 (model), and 282 (UI).
+All workspace roots are below 1000 lines. The 762 reducer arms preserve their
+original non-comma tokens and all extracted test functions remain. Runtime
+source contracts, layout enforcement and CI configuration checks pass. Full
+regression tests pass: 1608 Rust tests (four existing ignored) and 52 Python
+tests. All 21 goldens are unchanged except for the version; sixteen rasters
+reproduce exactly. Strict Clippy and formatting also pass; REF09-MODULES is DONE and
+REF09-VERIFY is active.
+
 REF09-UTILS is DONE in v0.1.100: all 1608 Rust tests (four existing ignored),
 52 bridge tests, strict Clippy, formatting, version/roadmap and sixteen
 deterministic rasters pass. Eight crates directly reuse the shared utility

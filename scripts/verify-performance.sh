@@ -451,9 +451,9 @@ verify_logs() {
   python3 - <<'PY'
 from pathlib import Path
 
-model = Path("crates/yoctui-model/src/lib.rs").read_text(encoding="utf-8")
+model = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-model/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 runtime = Path("crates/yoctui-cli/src/client_runtime.rs").read_text(encoding="utf-8")
-app = Path("crates/yoctui-app/src/lib.rs").read_text(encoding="utf-8")
+app = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-app/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 filtered = model.split("pub fn filtered(&self)", 1)[1].split("pub fn diagnostics", 1)[0]
 if "e.message.to_lowercase()" in filtered:
     raise SystemExit("log filtering regressed to lowercasing every retained message")
@@ -470,20 +470,20 @@ if "apply_log_events_to_app" not in app:
     raise SystemExit("daemon replica lacks ordered batch log reduction")
 print("bounded batched log source contracts valid")
 PY
-  cargo test -q -p yoctui-model tests::log_batches_preserve_critical_order_counts_and_cached_search -- --exact
-  cargo test -q -p yoctui-model tests::log_retention_prefers_important_diagnostics_and_reports_coalescing -- --exact
-  cargo test -q -p yoctui-model tests::ux_logs_virtualized_window_and_source_time_filters_stay_bounded -- --exact
-  cargo test -q -p yoctui-app tests::daemon_client_batches_contiguous_logs_with_one_model_install -- --exact
-  cargo test -q -p yoctui-ui tests::log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely -- --exact
+  cargo test -q -p yoctui-model tests::coexistence_diagnostic_distinguishes_nominal_busy_and_unknown::log_batches_preserve_critical_order_counts_and_cached_search -- --exact
+  cargo test -q -p yoctui-model tests::coexistence_diagnostic_distinguishes_nominal_busy_and_unknown::log_retention_prefers_important_diagnostics_and_reports_coalescing -- --exact
+  cargo test -q -p yoctui-model tests::coexistence_diagnostic_distinguishes_nominal_busy_and_unknown::ux_logs_virtualized_window_and_source_time_filters_stay_bounded -- --exact
+  cargo test -q -p yoctui-app tests::mouse_runtime_routes_dialog_and_terminal_session_clicks::daemon_client_batches_contiguous_logs_with_one_model_install -- --exact
+  cargo test -q -p yoctui-ui tests::log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely::log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely -- --exact
 }
 
 verify_tasks() {
   python3 - <<'PY'
 from pathlib import Path
 
-model = Path("crates/yoctui-model/src/lib.rs").read_text(encoding="utf-8")
+model = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-model/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 runtime = Path("crates/yoctui-cli/src/client_runtime.rs").read_text(encoding="utf-8")
-app = Path("crates/yoctui-app/src/lib.rs").read_text(encoding="utf-8")
+app = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-app/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 for required in (
     "pub enum TaskEvent", "Action::TaskEvents", "apply_task_batch",
     "task_progress_coalesced", "TaskProjectionCache", "MAX_ACTIVE_TASKS",
@@ -497,10 +497,10 @@ if "apply_task_events_to_app" not in app:
     raise SystemExit("daemon replica lacks ordered batch task reduction")
 print("bounded batched task source contracts valid")
 PY
-  cargo test -q -p yoctui-model tests::task_batches_coalesce_progress_and_preserve_terminal_failures -- --exact
-  cargo test -q -p yoctui-model tests::task_event_flood_bounds_active_and_completed_state_without_losing_terminal_failure -- --exact
-  cargo test -q -p yoctui-model tests::unchanged_task_projection_reuses_sorted_identity_cache -- --exact
-  cargo test -q -p yoctui-app tests::daemon_client_batches_task_progress_without_losing_failure -- --exact
+  cargo test -q -p yoctui-model tests::navigator_workbench_order_keeps_build_and_validation_groups_contiguous::task_batches_coalesce_progress_and_preserve_terminal_failures -- --exact
+  cargo test -q -p yoctui-model tests::navigator_workbench_order_keeps_build_and_validation_groups_contiguous::task_event_flood_bounds_active_and_completed_state_without_losing_terminal_failure -- --exact
+  cargo test -q -p yoctui-model tests::navigator_workbench_order_keeps_build_and_validation_groups_contiguous::unchanged_task_projection_reuses_sorted_identity_cache -- --exact
+  cargo test -q -p yoctui-app tests::mouse_runtime_routes_dialog_and_terminal_session_clicks::daemon_client_batches_task_progress_without_losing_failure -- --exact
   cargo test -q -p yoctui --bin yoctui client_runtime
 }
 
@@ -968,7 +968,7 @@ policy = " ".join(record["policy"].values()).lower()
 for required in ("read-only", "do not multiply", "never automatic", "neither root"):
     if required not in policy:
         raise SystemExit(f"BitBake coexistence policy is incomplete: {required}")
-model = Path("crates/yoctui-model/src/lib.rs").read_text(encoding="utf-8")
+model = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-model/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 cli = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
 for required in (
     "bitbake_coexistence_diagnostic", "BB_NUMBER_THREADS", "PARALLEL_MAKE",

@@ -83,7 +83,7 @@ verify_bitbake_connection() {
 from pathlib import Path
 
 supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
-backend = Path("crates/yoctui-bitbake/src/lib.rs").read_text(encoding="utf-8")
+backend = Path("crates/yoctui-bitbake/src/bridge_backend.rs").read_text(encoding="utf-8")
 bridge = Path("crates/yoctui-bitbake/bridge/yoctui_bridge.py").read_text(encoding="utf-8")
 
 next_event = backend.split(

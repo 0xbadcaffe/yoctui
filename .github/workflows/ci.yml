@@ -45,6 +45,7 @@ jobs:
       - run: python3 -m pip install ruff==0.15.22 mypy==2.3.0 pytest==9.1.1 pytest-cov==7.1.0 pycairo==1.27.0
       - run: python3 -m unittest scripts/test_version_bump.py
       - run: python3 scripts/check-version-bump.py
+      - run: python3 scripts/check-library-layout.py
       - run: cargo fmt --all --check
       - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
       - run: cargo test --workspace --all-features

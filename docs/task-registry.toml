@@ -7957,18 +7957,18 @@ notes = "All eight consumer crates use utils. 1608 Rust tests pass (four existin
 id = "REF09-MODULES"
 milestone = "M58"
 title = "Split oversized library entry points by responsibility"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 901
 required = true
 depends_on = ["REF09-UTILS"]
 verify = ["cargo fmt --all --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "All workspace lib.rs files have at most 1000 lines; preserve public APIs and split tests with their subjects."
+notes = "All eight lib.rs files are below 1000 lines. Named state, adapter, mapping, rendering and fixture modules preserve crate-root APIs. All 762 reducer arms retain original non-comma tokens; all extracted original test functions remain. CI and completion gates enforce root size; exact-test selectors and source audits follow moved files."
 
 [[task]]
 id = "REF09-VERIFY"
 milestone = "M58"
 title = "Verify and deliver the shared utility refactor"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 902
 required = true
 depends_on = ["REF09-MODULES"]

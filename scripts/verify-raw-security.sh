@@ -8,7 +8,7 @@ cd "$repo_root"
 # string. Keep this check intentionally narrow so unrelated, explicitly typed
 # PTY shell workflows are not mistaken for Raw command execution.
 if rg -n 'Command::new\(("(sh|bash|zsh|fish)"|'"'"'(sh|bash|zsh|fish)'"'"')\)' \
-  crates/yoctui-model/src/raw_mode.rs crates/yoctui-app/src/lib.rs; then
+  crates/yoctui-model/src/raw_mode.rs crates/yoctui-app/src/raw_mapping.rs crates/yoctui-app/src/raw_input.rs; then
   echo "Raw security check failed: shell launcher in Raw crates" >&2
   exit 1
 fi

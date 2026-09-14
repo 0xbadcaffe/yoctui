@@ -60,6 +60,7 @@ require cargo flamegraph --version
 ./scripts/check-checkout.sh
 python3 -m unittest scripts/test_version_bump.py
 python3 scripts/check-version-bump.py
+python3 scripts/check-library-layout.py
 ./scripts/verify-ui-spec.sh
 ./scripts/check-docs.sh
 

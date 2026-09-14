@@ -4112,3 +4112,13 @@ home-directory browsing use the same leaf crate. The model's clone draft is
 pure and empty until the operator provides repository and destination values.
 XDG configuration/state paths ignore relative overrides. Linux resident-memory
 accounting uses the kernel's page size rather than a 4 KiB assumption.
+
+Library decomposition keeps existing crate-root public names through explicit
+re-exports. Model state, actions, effects and domain projections live in named
+modules. The reducer dispatches each outer Action variant to exactly one family;
+all guarded and fallback arms for that variant remain together. Family reducers
+retain early-return behavior and the common focus synchronization tail.
+App mapping, backend adapters and UI rendering are separated by responsibility.
+Tests retain every original assertion, with shared fixtures in support modules.
+`check-library-layout.py` enforces the 1000-line root limit and utility dependency
+in CI and the completion gate. Exact test selectors follow the moved modules.
