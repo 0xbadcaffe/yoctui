@@ -64,7 +64,7 @@ pub(crate) fn image_artifact_inspector_text(app: &App) -> String {
                 yoctui_model::ImagePreviewTransport::DirectTerminal,
             );
             format!(
-                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\n\nTerminal image preview\nNative graphics: not offered · protocol probe skipped\nFallback: {}\nReason: {}\n\nDeploy directory: {}\nSize: {}\nTimestamp: {}\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
+                "Machine: {}\nImage: {}\nKind: {}\nPath: {}\n\nTerminal image preview\nNative graphics: not offered\nprotocol probe skipped\nFallback: {}\nReason: {}\n\nDeploy directory: {}\nSize: {}\nTimestamp: {}\nLimitations:\n{}\n\nChecksums:\n{}\n\nManifests:\n{}\n\nLicenses:\n{}\n\nSPDX/SBOM:\n{}\n\nWic files:\n{}",
                 artifact.identity.machine,
                 artifact.identity.image,
                 artifact.kind.label(),

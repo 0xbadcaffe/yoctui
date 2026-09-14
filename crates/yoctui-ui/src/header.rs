@@ -159,12 +159,14 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
             compact,
         ));
     }
-    left.push(header_separator(&palette, compact));
-    left.push(status_label(
-        build_tone,
-        app.build.status.to_string(),
-        status_tone_style(&palette, build_tone),
-    ));
+    if !concept_geometry {
+        left.push(header_separator(&palette, compact));
+        left.push(status_label(
+            build_tone,
+            app.build.status.to_string(),
+            status_tone_style(&palette, build_tone),
+        ));
+    }
     left.push(header_separator(&palette, compact));
     left.extend(header_identity_spans(
         &palette, "Target: ", "T:", target, compact,
@@ -181,7 +183,7 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
             false,
         ));
     }
-    if mode == HeaderMode::Full {
+    if mode == HeaderMode::Full || concept_geometry {
         if let Some(distro) = distro {
             left.push(header_separator(&palette, false));
             left.extend(header_identity_spans(
@@ -192,7 +194,7 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
                 false,
             ));
         }
-        if let Some(release) = release {
+        if let Some(release) = release.filter(|_| !concept_geometry) {
             left.push(Span::raw(format!(" ({release})")));
         }
     }

@@ -415,6 +415,7 @@ fn ux_scroll_production_renderer_exposes_bounded_position_at_every_breakpoint() 
 #[test]
 fn ux_dashboard_uses_live_build_cockpit_and_shared_braille_activity_language() {
     let mut app = App::new(20, 2_000);
+    app.screen = Screen::Tasks;
     app.host_telemetry.cpu_utilization_percent = Some(42);
     let task = yoctui_model::TaskInfo::active(
         yoctui_model::TaskId("bash:do_compile".into()),
@@ -424,7 +425,7 @@ fn ux_dashboard_uses_live_build_cockpit_and_shared_braille_activity_language() {
     app.tasks.insert(task.id.clone(), task);
     let output = rendered_text(&app, 160, 50);
     for anchor in [
-        "Tasks: Build",
+        "Tasks:",
         "do_compile",
         "Log Viewer",
         "Job History",

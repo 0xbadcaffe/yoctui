@@ -119,7 +119,11 @@ pub(crate) fn inspector(
     now: SystemTime,
     task_rows: Option<&[TaskRowRef<'_>]>,
 ) {
-    if matches!(app.screen, Screen::Dashboard | Screen::Tasks) {
+    if app.screen == Screen::Dashboard {
+        dashboard_inspector(frame, app, area, now);
+        return;
+    }
+    if app.screen == Screen::Tasks {
         tasks_inspector(frame, app, area, now, task_rows.unwrap_or_default());
         return;
     }
@@ -315,9 +319,9 @@ pub(crate) fn inspector(
 }
 
 #[allow(dead_code)]
-pub(crate) fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect) {
+pub(crate) fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
-    let center = app.command_center_projection_at(SystemTime::now());
+    let center = app.command_center_projection_at(now);
     let dashboard = &center.dashboard;
     let machine = app
         .workspace
@@ -356,12 +360,7 @@ pub(crate) fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect) {
     );
     let recent = dashboard.recent_work.first().copied().map_or_else(
         || "Recent: none retained".into(),
-        |row| {
-            format!(
-                "Recent: {}",
-                dashboard_recent_work_line(row, SystemTime::now())
-            )
-        },
+        |row| format!("Recent: {}", dashboard_recent_work_line(row, now)),
     );
     let context = center.recent_contexts.first().copied().map_or_else(
         || "Context: none retained".into(),

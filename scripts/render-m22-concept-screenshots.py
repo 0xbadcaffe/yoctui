@@ -215,6 +215,44 @@ def set_rgb(context: cairo.Context, color: tuple[int, int, int]) -> None:
     context.set_source_rgb(*(component / 255.0 for component in color))
 
 
+def draw_cell_graphic(context: cairo.Context, symbol: str, x: float, y: float) -> bool:
+    """Draw terminal graphics directly: the pinned text font lacks Braille.
+
+    This projects only the Unicode symbol recorded in the cell buffer; it does
+    not substitute charts or infer any application data from a screenshot.
+    """
+    if len(symbol) != 1:
+        return False
+    code = ord(symbol)
+    if 0x2800 <= code <= 0x28FF:
+        mask = code - 0x2800
+        for bit, (column, row) in enumerate(((0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (0, 3), (1, 3))):
+            if mask & (1 << bit):
+                context.arc(x + (column + 0.5) * CELL_WIDTH / 2,
+                            y + (row + 0.5) * CELL_HEIGHT / 4, 1.4, 0, 6.283185307179586)
+                context.fill()
+        return True
+    connections = {
+        "─": "lr", "│": "ud", "┌": "rd", "┐": "ld", "└": "ru", "┘": "lu",
+        "├": "urd", "┤": "uld", "┬": "lrd", "┴": "lru", "┼": "lrud",
+    }
+    if symbol in connections:
+        context.set_line_width(1)
+        cx, cy = x + CELL_WIDTH / 2 + 0.5, y + CELL_HEIGHT / 2 + 0.5
+        ends = {"l": (x, cy), "r": (x + CELL_WIDTH, cy), "u": (cx, y), "d": (cx, y + CELL_HEIGHT)}
+        for direction in connections[symbol]:
+            context.move_to(cx, cy)
+            context.line_to(*ends[direction])
+        context.stroke()
+        return True
+    if 0x2581 <= code <= 0x2588:
+        height = (code - 0x2580) * CELL_HEIGHT / 8
+        context.rectangle(x, y + CELL_HEIGHT - height, CELL_WIDTH, height)
+        context.fill()
+        return True
+    return False
+
+
 def render_cell_golden(source: Path, destination: Path) -> None:
     symbols, styles = parse_cell_golden(source)
     surface = cairo.ImageSurface(
@@ -248,6 +286,11 @@ def render_cell_golden(source: Path, destination: Path) -> None:
             )
             context.set_font_size(FONT_SIZE)
             current_bold = style.bold
+        column = index % WIDTH
+        row = index // WIDTH
+        set_rgb(context, style.foreground)
+        if draw_cell_graphic(context, symbol, column * CELL_WIDTH, row * CELL_HEIGHT):
+            continue
         extents = context.text_extents(symbol)
         ascent, descent, _, _, _ = context.font_extents()
         column = index % WIDTH
@@ -297,7 +340,7 @@ def provenance_text(
 ) -> str:
     lines = [
         "schema_version = 1",
-        'renderer = "yoctui-cairo-cell-raster-v1"',
+        'renderer = "yoctui-cairo-cell-raster-v2"',
         f'pycairo_version = "{PYCAIRO_VERSION}"',
         f'cairo_version = "{CAIRO_VERSION}"',
         f'font_family = "{FONT_FAMILY}"',
@@ -345,6 +388,19 @@ def update() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     rendered = render_all(OUTPUT_DIR)
     PROVENANCE.write_text(provenance_text(rendered, OUTPUT_DIR), encoding="utf-8")
+    # Keep the concept ledger bound to the exact newly rendered cell evidence.
+    # Historical live evidence and original concept-image hashes are untouched.
+    manifest = CONCEPT_MANIFEST.read_text(encoding="utf-8")
+    for scenario_id, source, artifact in rendered:
+        pattern = r'(raster_evidence = \{[^\n]*artifact = "' + re.escape(str(artifact.relative_to(ROOT))) + r'"[^\n]*\})'
+        def refresh(match: re.Match[str]) -> str:
+            entry = re.sub(r'(?<!source_)sha256 = "[0-9a-f]+"', f'sha256 = "{sha256(artifact)}"', match.group(0))
+            entry = re.sub(r'source_sha256 = "[0-9a-f]+"', f'source_sha256 = "{sha256(source)}"', entry)
+            return re.sub(r'renderer = "[^"]+"', 'renderer = "yoctui-cairo-cell-raster-v2"', entry)
+        manifest, count = re.subn(pattern, refresh, manifest)
+        if count != 1:
+            fail(f"{scenario_id}: expected one raster evidence entry")
+    CONCEPT_MANIFEST.write_text(manifest, encoding="utf-8")
     print(f"M22 production rasters updated: {len(rendered)} deterministic PNGs")
 
 

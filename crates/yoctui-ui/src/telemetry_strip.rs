@@ -36,20 +36,6 @@ pub(crate) fn network_io_supported(projection: &yoctui_model::HostTelemetryProje
             .is_supported()
 }
 
-pub(crate) fn telemetry_available(app: &App) -> bool {
-    let projection = app.host_telemetry_projection();
-    projection
-        .series
-        .iter()
-        .any(TelemetrySeriesProjection::is_supported)
-        || (app.workspace.build_dir.is_some()
-            && utilization_percent(
-                app.host_telemetry.disk_total_bytes,
-                app.host_telemetry.disk_available_bytes,
-            )
-            .is_some())
-}
-
 pub(crate) struct DenseTelemetryMeter<'a> {
     pub(crate) title: &'a str,
     pub(crate) percent: u8,

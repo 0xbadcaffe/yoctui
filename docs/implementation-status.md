@@ -2951,3 +2951,9 @@ complete; M51 validates these features against its performance implementation.
 The user requested implementation after inspection of all six M21 concepts.
 Checkpoint v0.1.102 is pushed. Three tasks are open; CONCEPT-SHELL is active.
 The existing anchor-only completion does not certify visual resemblance.
+
+CONCEPT-SHELL is complete in v0.1.104: shared rendering/mouse geometry, responsive
+Dashboard overview/history/dials/actions/Project Inspector, exact Unicode raster
+graphics and refreshed evidence provenance. 201 app and 283 UI tests pass
+without golden-update flags. CONCEPT-DETAIL is active; full delivery baseline
+and the five remaining screen comparisons are still pending.

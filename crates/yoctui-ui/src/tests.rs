@@ -53,3 +53,7 @@ use maintenance_fixtures::*;
 
 mod raw_fixtures;
 use raw_fixtures::*;
+
+mod concept_layout_geometry;
+
+use super::telemetry_strip::{TelemetryStripMode, telemetry_strip_mode};

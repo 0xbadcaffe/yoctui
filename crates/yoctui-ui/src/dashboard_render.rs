@@ -91,21 +91,76 @@ pub(crate) fn render_dashboard_build(
     area: Rect,
     now: SystemTime,
 ) {
-    let title = format!("Current Build · {}", app.build.status);
-    let block = pane_block(app, &title, app.focus == FocusTarget::Workspace);
+    let palette = ThemePalette::for_app(app);
+    let block = pane_block(app, "Build Overview", app.focus == FocusTarget::Workspace);
     let inner = block.inner(area);
     frame.render_widget(block, area);
     if inner.is_empty() {
         return;
     }
-    let summary_height = inner.height.min(2);
-    let rows =
-        Layout::vertical([Constraint::Length(summary_height), Constraint::Min(1)]).split(inner);
+    let rows = Layout::vertical([Constraint::Length(2), Constraint::Min(1)]).split(inner);
     render_build_summary(frame, app, rows[0], now);
+    if rows[1].width < 64 || area.height > 9 {
+        frame.render_widget(
+            Paragraph::new(dashboard_build_details(app, projection, rows[1].width)),
+            rows[1],
+        );
+        return;
+    }
+    let columns =
+        Layout::horizontal([Constraint::Percentage(50), Constraint::Percentage(50)]).split(rows[1]);
+    let selected = app
+        .tasks
+        .values()
+        .min_by_key(|task| (&task.recipe, &task.task));
+    let task = selected.map_or_else(
+        || "none".into(),
+        |task| format!("{}:{}", task.recipe, task.task),
+    );
+    let current = vec![
+        Line::from(format!(
+            "Current Build : {}",
+            app.build.target.as_deref().unwrap_or("none")
+        )),
+        Line::from(format!("Current Task  : {task}")),
+        Line::from(format!("Build Status  : {}", app.build.status)),
+        Line::from(format!(
+            "Daemon Status : {}",
+            header::daemon_status_label(app.daemon.status)
+        )),
+        Line::from(format!(
+            "Warnings: {}  Errors: {}",
+            app.build.warnings, app.build.errors
+        )),
+    ];
     frame.render_widget(
-        Paragraph::new(dashboard_build_details(app, projection, inner.width))
-            .wrap(Wrap { trim: false }),
-        rows[1],
+        Paragraph::new(current).block(
+            Block::default()
+                .borders(Borders::RIGHT)
+                .border_style(palette.role(palette.inactive_border, Modifier::empty())),
+        ),
+        columns[0],
+    );
+    let recent = projection.recent_work.first().copied();
+    let result = recent.map_or_else(
+        || "No retained build or job".into(),
+        |row| dashboard_recent_work_line(row, now),
+    );
+    let detail = recent.map_or_else(
+        || "History appears after a build or job".into(),
+        command_center_context_line,
+    );
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::styled(
+                "Last Build / Job",
+                palette.role(palette.heading, Modifier::BOLD),
+            ),
+            Line::from(result),
+            Line::from(detail),
+        ])
+        .wrap(Wrap { trim: false }),
+        columns[1],
     );
 }
 
@@ -327,84 +382,56 @@ pub(crate) fn render_dashboard_attention(
 }
 
 #[allow(dead_code)]
-pub(crate) fn render_dashboard_recent_builds(frame: &mut Frame, app: &App, area: Rect) {
+pub(crate) fn render_dashboard_recent_builds(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    now: SystemTime,
+) {
     let palette = ThemePalette::for_app(app);
-    let block = pane_block(app, "Recent Builds", false);
+    let block = pane_block(app, "Recent Builds · Job History", false);
     let inner = block.inner(area);
     frame.render_widget(block, area);
-    if inner.is_empty() {
-        return;
-    }
-    let rows = app
-        .build_history
+    let projection = app.command_center_projection_at(now);
+    let rows = projection
+        .dashboard
+        .recent_work
         .iter()
-        .rev()
+        .copied()
         .take(usize::from(inner.height.saturating_sub(1)))
         .enumerate()
-        .map(|(index, build)| {
-            let result = if build.success {
-                "✓ Succeeded"
-            } else {
-                "✕ Failed"
-            };
-            let style = if build.success {
-                palette.role(palette.success, Modifier::BOLD)
-            } else {
-                palette.role(palette.error, Modifier::BOLD)
-            };
+        .map(|(index, row)| {
             Row::new([
-                (index + 1).to_string(),
-                build.target.as_deref().unwrap_or("unknown").to_owned(),
-                result.to_owned(),
-                build.completed_tasks.to_string(),
-                build.elapsed.map_or_else(|| "--".into(), format_duration),
+                Cell::from((index + 1).to_string()),
+                job_history_cell(app, row, job_history::JobHistoryColumn::Context, now),
+                job_history_cell(app, row, job_history::JobHistoryColumn::Status, now),
+                job_history_cell(app, row, job_history::JobHistoryColumn::Elapsed, now),
             ])
-            .style(style)
         })
         .collect::<Vec<_>>();
     if rows.is_empty() {
         frame.render_widget(
+            Paragraph::new("No completed builds or jobs retained. B opens build options."),
+            inner,
+        );
+    } else {
+        frame.render_widget(
             Table::new(
-                [Row::new([
-                    "–",
-                    "No completed builds retained",
-                    "–",
-                    "–",
-                    "Press B to build",
-                ])],
+                rows,
                 [
-                    Constraint::Length(4),
-                    Constraint::Percentage(36),
-                    Constraint::Length(13),
-                    Constraint::Length(8),
-                    Constraint::Min(8),
+                    Constraint::Length(3),
+                    Constraint::Min(18),
+                    Constraint::Length(14),
+                    Constraint::Length(10),
                 ],
             )
             .header(
-                Row::new(["#", "Image", "Result", "Tasks", "Duration"])
+                Row::new(["#", "Image / Operation", "Result", "Duration"])
                     .style(palette.role(palette.table_header, Modifier::BOLD)),
             ),
             inner,
         );
-        return;
     }
-    frame.render_widget(
-        Table::new(
-            rows,
-            [
-                Constraint::Length(4),
-                Constraint::Percentage(36),
-                Constraint::Length(13),
-                Constraint::Length(8),
-                Constraint::Min(8),
-            ],
-        )
-        .header(
-            Row::new(["#", "Image", "Result", "Tasks", "Duration"])
-                .style(palette.role(palette.table_header, Modifier::BOLD)),
-        ),
-        inner,
-    );
 }
 
 #[allow(dead_code)]
@@ -418,9 +445,9 @@ pub(crate) fn render_dashboard_quick_actions(frame: &mut Frame, app: &App, area:
     }
     let columns = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(inner);
     let actions = [
-        ("1", "Build image", "Start the selected BitBake target"),
-        ("2", "Open terminal", "Use the initialized Yocto shell"),
-        ("3", "Verify environment", "Check layers and configuration"),
+        ("B", "Build image", "Start the selected BitBake target"),
+        ("t", "Open terminal", "Use the initialized Yocto shell"),
+        ("E", "Verify environment", "Check layers and configuration"),
     ];
     for (index, ((key, label, detail), column)) in
         actions.into_iter().zip(columns.iter().copied()).enumerate()
@@ -694,53 +721,22 @@ pub(crate) fn render_dashboard_compact(
 pub(crate) fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let center = app.command_center_projection_at(now);
     let projection = &center.dashboard;
-    let concept_geometry = area.width == 86 && area.height == 42;
+    let concept_geometry = area.width >= 64 && area.height >= 34;
     if concept_geometry {
         let rows = Layout::vertical([
             Constraint::Length(9),
-            Constraint::Length(14),
+            Constraint::Min(8),
             Constraint::Length(10),
-            Constraint::Length(9),
+            Constraint::Length(7),
         ])
         .split(area);
         render_dashboard_build(frame, app, projection, rows[0], now);
-        render_dashboard_recent_builds(frame, app, rows[1]);
-        render_telemetry_strip(frame, app, rows[2]);
+        render_dashboard_recent_builds(frame, app, rows[1], now);
+        super::dashboard_dials::render_dashboard_dials(frame, app, rows[2]);
         render_dashboard_quick_actions(frame, app, rows[3]);
         return;
     }
-    let show_telemetry = area.height >= 38
-        && telemetry_available(app)
-        && telemetry_strip_mode(Rect::new(area.x, area.y, area.width, 8))
-            != TelemetryStripMode::Hidden;
-    let sections = if show_telemetry {
-        Layout::vertical([Constraint::Min(1), Constraint::Length(8)]).split(area)
-    } else {
-        Layout::vertical([Constraint::Min(1)]).split(area)
-    };
-    let content = sections[0];
-    if content.height < 24 || content.width < 60 {
-        render_dashboard_compact(frame, app, &center, content, now);
-    } else {
-        let remaining = content.height.saturating_sub(10);
-        let middle_height = remaining.div_ceil(2).max(7);
-        let rows = Layout::vertical([
-            Constraint::Length(10),
-            Constraint::Length(middle_height),
-            Constraint::Min(7),
-        ])
-        .split(content);
-        render_dashboard_build(frame, app, projection, rows[0], now);
-        let middle = Layout::horizontal([Constraint::Percentage(58), Constraint::Percentage(42)])
-            .split(rows[1]);
-        render_dashboard_tasks(frame, app, middle[0]);
-        render_dashboard_actions(frame, app, projection, middle[1]);
-        let bottom = Layout::horizontal([Constraint::Percentage(47), Constraint::Percentage(53)])
-            .split(rows[2]);
-        render_dashboard_attention(frame, app, projection, bottom[0]);
-        render_workbench_center(frame, &center, bottom[1], now);
-    }
-    if show_telemetry {
-        render_telemetry_strip(frame, app, sections[1]);
-    }
+    let rows = Layout::vertical([Constraint::Min(1), Constraint::Length(4)]).split(area);
+    render_dashboard_compact(frame, app, &center, rows[0], now);
+    render_compact_telemetry_strip(frame, app, rows[1]);
 }

@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.103  •  Project: yocto  •  – Idle  •  Target: core-image-minimal  •  Machine: qemux86-64           Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.104  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator─────────────────┐┌Tasks: Build────────────────────────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
-│▾ OVERVIEW                ││Overall  build not started · 0%                                                     ││No task selected.                           │
-│  ▱ Dashboard             ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                               ││Task facts appear as typed BitBake events   │
-│  ▱ Insights              ││Target: core-image-minimal  Backend: bridge  Status: Idle  Exit code: none          ││arrive.                                     │
-│▾ CONTENT                 ││Parse progress: not parsing  Tasks: 0/—  Warnings: 0  Errors: 0  Release: scarthgap ││                                            │
-│    Layers                ││Task           Recipe               Status        Time      Progress                ││                                            │
-│    Recipes               ││                                                                                    ││                                            │
-│    Packages              ││                                                                                    ││                                            │
-│    Images                ││                                                                                    ││                                            │
-│    Kernel                ││                                                                                    ││                                            │
-│    U-Boot / BIOS         ││                                                                                    │└────────────────────────────────────────────┘
-│    SDK                   │└────────────────────────────────────────────────────────────────────────────────────┘┌Secondary facts · Paths · Dependencies──────┐
-│▾ BUILD                   │┌Log Viewer — no task selected · ▶ Follow────────────────────────────────────────────┐│Secondary facts, paths, and dependencies    │
-│    Tasks                 ││No task-specific log is available.                                                  ││unavailable.                                │
-│  ▱ Logs              LIVE││                                                                                    ││                                            │
-│  ▱ Errors                ││                                                                                    ││                                            │
-│    Configuration         ││                                                                                    ││                                            │
-│    Dependencies          ││                                                                                    ││                                            │
-│▾ VALIDATE                ││                                                                                    ││                                            │
-│    Testing               ││                                                                                    ││                                            │
-│    Security              ││                                                                                    ││                                            │
-│    QA                    ││                                                                                    │└────────────────────────────────────────────┘
-│▾ TOOLS                   ││                                                                                    │┌Recent output · Recent Log (tail)───────────┐
-│    Raw Mode              │└────────────────────────────────────────────────────────────────────────────────────┘│No task-specific log is available.          │
-│    Terminal Sessions     │┌Job History · Active 0 · Queued 0 · Failed 1 · Recent complete 4 · Daemon-owned 0───┐│                                            │
-│    Devtool               ││Status        Operation     Type         Target / Context        Started   Elapsed  ││                                            │
-│    QEMU / Wic            ││✓ Succeeded   core-image-mi Build        core-image-minimal      19:12:10  00:04:55 │└────────────────────────────────────────────┘
-│    Maintenance           ││✓ Succeeded   busybox       Build        busybox                 19:11:42  00:00:17 │┌Contextual Actions──────────────────────────┐
-│  ▱ Build environment     ││✕ Failed      core-image-mi Build        core-image-minimal      19:08:33  00:01:48 ││× Cancel active build  [c] — Disabled       │
-│  ▱ Compatibility         ││✓ Succeeded   virtual/kerne Build        virtual/kernel          19:07:18  00:00:54 ││  Reason: No active build can be cancelled. │
-│  ▱ Settings              ││                                                                                    ││  Reason: No current environment capability │
-│                          ││                                                                                    ││✓ Open Logs            [l] — Local          │
-│                          ││                                                                                    ││✓ Build History        [h] — Local          │
-│                          │└────────────────────────────────────────────────────────────────────────────────────┘│? Build options        [B] — Unknown        │
-│                          │┌Resource Telemetry · bounded 60-sample histories────────────────────────────────────┐│  Reason: No current environment capability │
-│                          ││CPU Usage        24%│RAM ! unavailable   │BUILD FS ! unavailab│SSTATE ! unavailable │└────────────────────────────────────────────┘
-│                          ││                    │                    │                    │                     │┌System Status───────────────────────────────┐
-│                          ││                    │                    │                    │                     ││✓ Daemon Connected · Local · version unavai…│
-│                          ││                  ▅ │                    │                    │                     ││– BitBake Exited · v2.8.0 · Jobs 0          │
-│                          ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫ │                    │                    │                     ││! Compat Unavailable · PTY 0 · Clients 1    │
-│                          ││     utilization    │                    │                    │                     ││! Build FS unavailable · Workspace /workspa…│
-└──────────────────────────┘└────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
+┌Navigator────────────────┐┌Build Overview───────────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
+│▾ OVERVIEW               ││Overall  build not started · 0%                                                      ││Environment                                 │
+│  ▱ Dashboard            ││Active 0  Waiting 0  Warnings 0  Errors 0  Elapsed --                                ││Project          : core-image-minimal       │
+│  ▱ Insights             ││Current Build : core-image-minimal        │Last Build / Job                          ││Machine          : qemux86-64               │
+│▾ CONTENT                ││Current Task  : none                      │✓ Succeeded core-image-minimal · 00:04:55 ││Distro           : poky                     │
+│    Layers               ││Build Status  : Idle                      │Work · core-image-minimal                 ││Yocto release    : scarthgap                │
+│    Recipes              ││Daemon Status : Connected                 │                                          ││Layers enabled   : 7                        │
+│    Packages             ││Warnings: 0  Errors: 0                    │                                          ││                                            │
+│    Images               │└─────────────────────────────────────────────────────────────────────────────────────┘│Workspace                                   │
+│    Kernel               │┌Recent Builds · Job History──────────────────────────────────────────────────────────┐│Source           : /workspace/yocto         │
+│    U-Boot / BIOS        ││#   Image / Operation                                       Result         Duration  ││Build directory  : /workspace/yocto/build   │
+│    SDK                  ││1   core-image-minimal                                      ✓ Succeeded    00:04:55  ││Disk             : 55.5 GiB free            │
+│▾ BUILD                  ││2   busybox                                                 ✓ Succeeded    00:00:17  ││                                            │
+│    Tasks                ││3   core-image-minimal                                      ✕ Failed       00:01:48  ││Enabled Actions                             │
+│  ▱ Logs             LIVE││4   virtual/kernel                                          ✓ Succeeded    00:00:54  ││[B] Build image                             │
+│  ▱ Errors               ││                                                                                     ││[F2] Monitor tasks                          │
+│    Configuration        ││                                                                                     ││[l] View logs                               │
+│    Dependencies         ││                                                                                     ││[e] View errors                             │
+│▾ VALIDATE               ││                                                                                     ││[E] Verify environment                      │
+│    Testing              ││                                                                                     ││[t] Open terminal                           │
+│    Security             ││                                                                                     ││[d] Open devtool                            │
+│    QA                   ││                                                                                     ││                                            │
+│▾ TOOLS                  ││                                                                                     ││Active Tasks                                │
+│    Raw Mode             ││                                                                                     ││No active task events                       │
+│    Terminal Sessions    │└─────────────────────────────────────────────────────────────────────────────────────┘│Next Action                                 │
+│    Devtool              │┌Resource Telemetry───────────────────────────────────────────────────────────────────┐│Build image [B]                             │
+│    QEMU / Wic           ││      CPU Usage     │      RAM Usage      │   Build FS Usage   │    Sstate Reuse     ││Attention                                   │
+│    Maintenance          ││        ⣀⣀⣀⣀        │        ⢀⣀⣀⣀⡀        │        ⣀⣀⣀⣀        │                     ││No retained warnings or errors              │
+│  ▱ Build environment    ││    ⢀⣤⣾⣿⣯⣟⣻⣽⣿⣷⣤⡀    │    ⢀⣠⣶⣿⣷⣽⣛⣯⣾⣿⣶⣄⡀    │    ⢀⣤⣾⣿⣯⣟⣻⣽⣿⣷⣤⡀    │                     ││Workbench Center                            │
+│  ▱ Compatibility        ││   ⣴⣿⡿⠟⠉    ⠉⠻⢿⣿⣦   │   ⣰⣿⣿⠟⠋⠁   ⠈⠙⠻⣿⣿⣆   │   ⣴⣿⡿⠟⠉    ⠉⠻⢿⣿⣦   │                     ││Context: Work · core-image-minimal          │
+│  ▱ Settings             ││  ⣼⣿⡟          ⢻⣿⣧  │  ⣼⣿⡿⠁         ⠈⢿⣿⣧  │  ⣼⣿⡟          ⢻⣿⣧  │     unavailable     ││Active: tasks 0 · jobs 0                    │
+│                         ││ ⢸⣿⡟            ⢻⣿⡇ │ ⢰⣿⡿             ⢿⣿⡆ │ ⢸⣿⡟            ⢻⣿⡇ │                     ││Favorite: none                              │
+│                         ││ ⢸⣿⡇     18%    ⢸⣿⡇ │ ⢸⣿⡇     42%     ⢸⣿⡇ │ ⢸⣿⡇     63%    ⢸⣿⡇ │                     ││Terminal: none                              │
+│                         ││   4 logical cores  │    6.7/16.0 GiB     │   94.5/150.0 GiB   │backend does not rep…││[t] Terminal sessions                       │
+│                         │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
+│                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
+│                         ││[B] Build image            │[t] Open terminal           │[E] Verify environment      ││00:04:55                                    │
+│                         ││                           │                            │                            ││                                            │
+│                         ││Start the selected BitBake │Use the initialized Yocto   │Check layers and            ││                                            │
+│                         ││target                     │shell                       │configuration               ││                                            │
+│                         ││                           │                            │                            ││                                            │
+└─────────────────────────┘└─────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │B build   f favorites   t terminals   F2 Tasks   e errors   Ctrl+B prefix   ←/→ Focus   F3 History   F5 Logs   F1 Help   F10 Menu   q Quit            19:28:27│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

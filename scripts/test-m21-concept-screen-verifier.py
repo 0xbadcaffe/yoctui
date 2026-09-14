@@ -81,7 +81,7 @@ class ConceptScreenVerifierTests(unittest.TestCase):
     def test_rejects_missing_semantic_anchor(self) -> None:
         path = self.verifier.MANIFEST
         text = path.read_text(encoding="utf-8").replace(
-            '"Current Build · Idle"', '"anchor that cannot exist"', 1
+            '"Build Overview"', '"anchor that cannot exist"', 1
         )
         path.write_text(text, encoding="utf-8")
         self.assert_rejected("semantic capture is missing anchor")

@@ -239,7 +239,7 @@ fn compact_resource_meters_remain_visible_across_workspace_sizes() {
     app.host_telemetry.disk_available_bytes = Some(40);
     app.workspace.build_dir = Some("/work/build".into());
     let selected = app.task_progress_scroll;
-    for screen in [Screen::Dashboard, Screen::Tasks] {
+    for screen in [Screen::Tasks] {
         app.screen = screen;
         for (width, height) in [(181, 43), (160, 48), (130, 40), (100, 30), (80, 24)] {
             let output = rendered_text_at(&app, width, height, literal_now());
@@ -336,8 +336,8 @@ fn dashboard_renders_host_cpu_and_build_disk_space() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(output.contains("Host CPU: 42%"));
-    assert!(output.contains("Build disk free: 8.0 GiB"));
+    assert!(output.contains("CPU Usage") && output.contains("42%"));
+    assert!(output.contains("8.0/16.0 GiB"));
 }
 
 #[test]
@@ -377,16 +377,16 @@ fn ux_dashboard_composes_priority_actions_attention_work_artifacts_and_health() 
 
     let wide = rendered_text_at(&app, 160, 50, literal_now());
     for anchor in [
-        "Tasks: Build",
+        "Build Overview",
         "Overall  40%  4/10",
         "do_compile",
-        "Log Viewer",
-        "ERROR: bash:do_compile failed with exit code 1",
+        "Quick Actions",
+        "Attention",
         "Job History",
         "core-image-minimal",
         "Resource Telemetry",
-        "Inspector: Task",
-        "System Status",
+        "Project Inspector",
+        "Workspace",
     ] {
         assert!(wide.contains(anchor), "missing {anchor}: {wide}");
     }
@@ -399,12 +399,18 @@ fn ux_dashboard_is_responsive_accessible_and_explicit_across_lifecycle_states() 
     app.focus = FocusTarget::Workspace;
     for (width, height) in [(160, 50), (130, 40), (100, 30), (80, 24)] {
         let output = rendered_text_at(&app, width, height, literal_now());
-        assert!(output.contains("Tasks:"), "{width}x{height}: {output}");
+        assert!(
+            output.contains("Build Overview"),
+            "{width}x{height}: {output}"
+        );
         assert!(
             output.contains("Log Viewer") || output.contains("Overall"),
             "{width}x{height}: {output}"
         );
-        assert!(output.contains("do_compile"), "{width}x{height}: {output}");
+        assert!(
+            output.contains("core-image-minimal"),
+            "{width}x{height}: {output}"
+        );
         assert!(!output.contains('�'), "{width}x{height}: {output}");
     }
 
@@ -431,7 +437,7 @@ fn ux_dashboard_is_responsive_accessible_and_explicit_across_lifecycle_states() 
         .artifacts
         .push("/deploy/completed.wic".into());
     let completed = rendered_text_at(&app, 130, 40, literal_now());
-    assert!(completed.contains("Job History"), "{completed}");
+    assert!(completed.contains("Build Overview"), "{completed}");
     assert!(completed.contains("core-image-minimal"), "{completed}");
 
     let mut empty = App::new(16, 4_096);
@@ -444,7 +450,10 @@ fn ux_dashboard_is_responsive_accessible_and_explicit_across_lifecycle_states() 
         empty_output.contains("build not started · 0%"),
         "{empty_output}"
     );
-    assert!(empty_output.contains("No task selected"), "{empty_output}");
+    assert!(
+        empty_output.contains("No completed builds or jobs retained"),
+        "{empty_output}"
+    );
     assert!(empty_output.contains("Job History"), "{empty_output}");
     assert!(
         empty_output.contains("Resource Telemetry"),
@@ -515,10 +524,10 @@ fn ux_command_center_unifies_bounded_source_contexts_without_bypassing_workspace
 
     let wide = rendered_text_at(&app, 160, 50, literal_now());
     for anchor in [
-        "Tasks: Build",
+        "Build Overview",
         "Job History",
-        "System Status",
-        "PTY 2",
+        "Workbench Center",
+        "Terminal",
         "1 queued",
     ] {
         assert!(wide.contains(anchor), "missing {anchor}: {wide}");

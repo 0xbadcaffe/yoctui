@@ -44,8 +44,8 @@ fn next_generation_inspector_shell_names_modes_and_orders_typed_sections() {
     app.screen = Screen::Dashboard;
     app.color_enabled = false;
     let narrow = rendered_text_at(&app, 90, 24, UNIX_EPOCH + Duration::from_secs(11));
-    assert!(narrow.contains("Inspector: Task"), "{narrow}");
-    assert!(narrow.contains("No task selected"), "{narrow}");
+    assert!(narrow.contains("Project Inspector"), "{narrow}");
+    assert!(narrow.contains("Environment"), "{narrow}");
 }
 #[test]
 fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {

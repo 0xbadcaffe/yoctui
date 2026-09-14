@@ -13,9 +13,9 @@ fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
             name: "dashboard",
             screen: Screen::Dashboard,
             anchors: &[
-                "Tasks: Build",
+                "Build Overview",
                 "Target: core-image-minimal",
-                "Log Viewer",
+                "Quick Actions",
                 "Job History",
                 "Resource Telemetry",
             ],

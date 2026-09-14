@@ -37,22 +37,13 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
         );
         return;
     }
-    let concept_geometry = area.width == 160 && area.height == 50;
-    let chunks = if concept_geometry {
-        Layout::vertical([
-            Constraint::Length(5),
-            Constraint::Min(1),
-            Constraint::Length(3),
-        ])
-        .split(area)
-    } else {
-        Layout::vertical([
-            Constraint::Length(2),
-            Constraint::Min(1),
-            Constraint::Length(2),
-        ])
-        .split(area)
-    };
+    let [header, footer] = yoctui_app::workbench_chrome_heights(app, area.width, area.height);
+    let chunks = Layout::vertical([
+        Constraint::Length(header),
+        Constraint::Min(1),
+        Constraint::Length(footer),
+    ])
+    .split(area);
     workbench_header(frame, app, chunks[0], now);
     responsive_shell(frame, app, chunks[1], area.width, now);
     workbench_footer(frame, app, chunks[2], now);

@@ -81,7 +81,7 @@ pub fn mouse_action_for_app(
     {
         return matches!(mouse.kind, MouseKind::Down).then_some(Action::Focus(FocusTarget::Dialog));
     }
-    let shell = workbench_shell(terminal_width, terminal_height)?;
+    let shell = workbench_shell(app, terminal_width, terminal_height)?;
     if app.screen == Screen::TerminalSessions && !app.daemon.pty_sessions.is_empty() {
         return terminal_session_mouse_action(mouse, app, shell);
     }
@@ -161,7 +161,7 @@ pub(crate) fn raw_mouse_action(
     terminal_height: u16,
 ) -> Option<yoctui_model::RawModeAction> {
     use yoctui_model::{RawBrowserColumn, RawModeAction, RawModeView};
-    let shell = workbench_shell(terminal_width, terminal_height)?;
+    let shell = workbench_shell(app, terminal_width, terminal_height)?;
     if !shell.contains(mouse) {
         return None;
     }
@@ -266,12 +266,92 @@ pub(crate) struct WorkbenchMouseRegion {
     pub(crate) area: MouseRect,
 }
 
-pub(crate) fn workbench_shell(width: u16, height: u16) -> Option<MouseRect> {
+/// Shared chrome allocation keeps live mouse input aligned with the renderer.
+pub fn workbench_chrome_heights(app: &yoctui_model::App, width: u16, height: u16) -> [u16; 2] {
+    let concept = matches!(
+        app.screen,
+        Screen::Dashboard
+            | Screen::Tasks
+            | Screen::Errors
+            | Screen::Images
+            | Screen::Recipes
+            | Screen::TerminalSessions
+    );
+    if (width == 160 && height == 50) || (concept && width >= 150 && height >= 50) {
+        [5, 3]
+    } else {
+        [2, 2]
+    }
+}
+
+/// Wide pane widths in terminal cells, shared by rendering and hit testing.
+pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -> [u16; 3] {
+    let compact = app.preferences.density == yoctui_model::UiDensity::Compact;
+    let concept = matches!(
+        app.screen,
+        Screen::Dashboard
+            | Screen::Tasks
+            | Screen::Errors
+            | Screen::Images
+            | Screen::TerminalSessions
+    );
+    if !concept
+        && width == 160
+        && height == 50
+        && !matches!(app.screen, Screen::Layers | Screen::Recipes)
+    {
+        return [28, 86, 46];
+    }
+    let navigator = if compact {
+        18
+    } else if concept && width >= 150 && height >= 50 {
+        ((u32::from(width) * 17 / 100) as u16).clamp(22, 30)
+    } else if width == 160 && matches!(app.screen, Screen::Tasks | Screen::Dashboard) {
+        26
+    } else {
+        22
+    };
+    if matches!(app.screen, Screen::Layers | Screen::Recipes) {
+        return [navigator, width.saturating_sub(navigator), 0];
+    }
+    let inspector = if concept && width >= 150 && height >= 50 {
+        let percent = if app.screen == Screen::TerminalSessions {
+            21
+        } else {
+            29
+        };
+        ((u32::from(width) * percent / 100) as u16).max(32)
+    } else if width == 160 && matches!(app.screen, Screen::Tasks | Screen::Dashboard) {
+        45
+    } else {
+        let percent = if matches!(app.screen, Screen::Tasks | Screen::Dashboard) {
+            56
+        } else {
+            43
+        };
+        width
+            .saturating_sub(navigator)
+            .saturating_sub(((u32::from(width) * percent + 50) / 100) as u16)
+            .max(28)
+    };
+    [
+        navigator,
+        width.saturating_sub(navigator).saturating_sub(inspector),
+        inspector,
+    ]
+}
+
+pub(crate) fn workbench_shell(
+    app: &yoctui_model::App,
+    width: u16,
+    height: u16,
+) -> Option<MouseRect> {
+    let [header, footer] = workbench_chrome_heights(app, width, height);
     (width >= 80 && height >= 24).then_some(MouseRect {
         x: 0,
-        y: 2,
+        y: header,
         width,
-        height: height.saturating_sub(4),
+        height: height.saturating_sub(header + footer),
     })
 }
 
@@ -284,26 +364,9 @@ pub(crate) fn workbench_mouse_region(
         return None;
     }
     if shell.width >= 130 {
-        let (navigator_width, workspace_width) =
-            if app.screen == Screen::Tasks && shell.width == 160 {
-                (26, 89)
-            } else {
-                let percentage = if app.screen == Screen::Tasks { 56 } else { 43 };
-                (
-                    if app.preferences.density == yoctui_model::UiDensity::Compact {
-                        18
-                    } else {
-                        22
-                    },
-                    shell.width.saturating_mul(percentage) / 100,
-                )
-            };
-        let workspace_width = workspace_width.min(
-            shell
-                .width
-                .saturating_sub(navigator_width)
-                .saturating_sub(if app.screen == Screen::Tasks { 32 } else { 28 }),
-        );
+        let total_height = shell.height + if shell.y == 5 { 8 } else { 4 };
+        let [navigator_width, workspace_width, _] =
+            workbench_pane_widths(app, shell.width, total_height);
         let navigator = MouseRect {
             width: navigator_width,
             ..shell
@@ -654,7 +717,7 @@ pub(crate) fn workspace_tab_click(
 
 /// Shared table/log/history/telemetry row allocation for rendering and mouse hit testing.
 pub fn task_workspace_panel_heights(app: &yoctui_model::App, width: u16, height: u16) -> [u16; 4] {
-    if matches!(width, 86 | 89) && height == 42 {
+    if width >= 64 && height == 42 {
         return [12, 12, 10, 8];
     }
     if width == 89 && height == 44 {

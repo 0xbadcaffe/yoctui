@@ -350,7 +350,12 @@ fn target_design_golden_canonical_states() {
                 env!("CARGO_MANIFEST_DIR"),
                 "/tests/golden/target-idle-dashboard-160x50.cells"
             )),
-            ["Status: Idle", "Tasks: 0/—", "Daemon: ✓ Connected"].as_slice(),
+            [
+                "Build Status  : Idle",
+                "build not started · 0%",
+                "Daemon: ✓ Connected",
+            ]
+            .as_slice(),
         ),
         (
             "active-tasks",

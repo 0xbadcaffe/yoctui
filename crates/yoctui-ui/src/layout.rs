@@ -54,58 +54,13 @@ pub(super) fn responsive_shell(
         return;
     }
     if terminal_width >= WIDE_WORKBENCH_MIN_WIDTH {
-        let navigator_width = if app.preferences.density == yoctui_model::UiDensity::Compact {
-            18
-        } else {
-            22
-        };
-        if matches!(app.screen, Screen::Layers | Screen::Recipes) {
-            let panes =
-                Layout::horizontal([Constraint::Length(navigator_width), Constraint::Min(60)])
-                    .split(area);
-            navigator(frame, app, panes[0], task_rows);
-            workspace(frame, app, panes[1], terminal_width, now, task_rows);
-            return;
-        }
-        let panes = if terminal_width == 160 && area.height == 42 && app.screen == Screen::Recipes {
-            Layout::horizontal([
-                Constraint::Length(20),
-                Constraint::Length(94),
-                Constraint::Length(46),
-            ])
-            .split(area)
-        } else if terminal_width == 160 && area.height == 42 {
-            Layout::horizontal([
-                Constraint::Length(28),
-                Constraint::Length(86),
-                Constraint::Length(46),
-            ])
-            .split(area)
-        } else if matches!(app.screen, Screen::Dashboard | Screen::Tasks) && terminal_width == 160 {
-            Layout::horizontal([
-                Constraint::Length(26),
-                Constraint::Length(89),
-                Constraint::Length(45),
-            ])
-            .split(area)
-        } else if matches!(app.screen, Screen::Dashboard | Screen::Tasks) {
-            Layout::horizontal([
-                Constraint::Length(navigator_width),
-                Constraint::Percentage(56),
-                Constraint::Min(32),
-            ])
-            .split(area)
-        } else {
-            Layout::horizontal([
-                Constraint::Length(navigator_width),
-                Constraint::Percentage(43),
-                Constraint::Min(28),
-            ])
-            .split(area)
-        };
+        let widths = yoctui_app::workbench_pane_widths(app, terminal_width, frame.area().height);
+        let panes = Layout::horizontal(widths.map(Constraint::Length)).split(area);
         navigator(frame, app, panes[0], task_rows);
         workspace(frame, app, panes[1], terminal_width, now, task_rows);
-        inspector(frame, app, panes[2], now, task_rows);
+        if !panes[2].is_empty() {
+            inspector(frame, app, panes[2], now, task_rows);
+        }
     } else if terminal_width >= 100 {
         let navigator_width = if app.preferences.density == yoctui_model::UiDensity::Compact {
             18

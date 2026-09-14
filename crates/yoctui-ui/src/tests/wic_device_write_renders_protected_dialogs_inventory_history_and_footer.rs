@@ -405,6 +405,8 @@ fn keyboard_mouse_parity_keeps_keyboard_focus_route_visible() {
 #[test]
 fn animation_is_absent_from_determinate_and_terminal_rows() {
     let mut app = App::new(10, 1_000);
+    app.screen = Screen::Tasks;
+    app.screen = Screen::Tasks;
     app.tasks.insert(
         yoctui_model::TaskId("busybox:do_compile".into()),
         yoctui_model::TaskInfo {
@@ -506,7 +508,7 @@ fn responsive_shell_uses_semantic_content_at_every_breakpoint() {
     app.focus = FocusTarget::Inspector;
     let narrow_inspector = rendered_text(&app, 80, 24);
     assert!(narrow_inspector.contains("Panes: Navigator  Workspace  [Inspector]"));
-    assert!(narrow_inspector.contains("Inspector: Task"));
+    assert!(narrow_inspector.contains("Project Inspector"));
 
     let too_small = rendered_text(&app, 79, 23);
     assert!(too_small.contains("Yoctui needs at least 80x24"));
@@ -733,7 +735,7 @@ fn ux_responsive_m21_surfaces_keep_identity_focus_and_recovery_at_every_required
         (
             "dashboard/command center",
             dashboard,
-            &["Tasks: Build", "Job History"][..],
+            &["Build Overview", "Job History"][..],
         ),
         (
             "dependency graph",

@@ -115,6 +115,7 @@ fn ux_dependency_graph_ascii_and_unicode_rows_preserve_relationship_and_position
 fn dashboard_renders_colored_task_progress_labels() {
     let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
     let mut app = App::new(10, 1_000);
+    app.screen = Screen::Tasks;
     app.tasks.insert(
         yoctui_model::TaskId("busybox:do_compile".into()),
         yoctui_model::TaskInfo {
@@ -206,6 +207,8 @@ fn task_progress_renders_average_velocity_and_eta_when_authoritative() {
 fn dashboard_renders_completed_and_failed_package_tasks() {
     let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
     let mut app = App::new(10, 1_000);
+    app.screen = Screen::Tasks;
+    app.screen = Screen::Tasks;
     app.completed_tasks.push_back(yoctui_model::CompletedTask {
         task: yoctui_model::TaskInfo {
             id: yoctui_model::TaskId("busybox:do_compile".into()),

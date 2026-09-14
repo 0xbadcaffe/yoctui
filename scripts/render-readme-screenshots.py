@@ -56,7 +56,7 @@ def render_all(output_root: Path) -> list[tuple[str, Path, Path]]:
 def provenance_text(rendered: list[tuple[str, Path, Path]]) -> str:
     lines = [
         "schema_version = 1",
-        'renderer = "yoctui-cairo-cell-raster-v1"',
+        'renderer = "yoctui-cairo-cell-raster-v2"',
         'authority = "production TestBackend cell/style goldens"',
         f'pycairo_version = "{RASTER["PYCAIRO_VERSION"]}"',
         f'cairo_version = "{RASTER["CAIRO_VERSION"]}"',

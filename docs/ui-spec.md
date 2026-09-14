@@ -5426,7 +5426,7 @@ checksummed live-capture links remain separate and retain their own authority.
 The v0.1.102 tag is the pre-change checkpoint. The six original M21 PNGs remain
 unchanged visual references. Production screens must reproduce their region
 hierarchy and approximate proportions on the terminal grid, using real typed
-state and the existing keymap. At wide/tall sizes the header has two content
+state and the existing keymap. At wide/tall sizes the six concept workspaces have two header content
 rows separated by a rule (five rows including borders), and the footer has a
 bordered command row (three rows). Compact terminals retain two-row header and
 footer. This supersedes the earlier unconditional two-row chrome rule.

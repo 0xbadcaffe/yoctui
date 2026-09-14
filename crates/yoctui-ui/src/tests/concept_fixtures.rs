@@ -202,6 +202,12 @@ pub(crate) fn literal_reference_app() -> App {
 
 pub(crate) fn concept_idle_dashboard_app() -> App {
     let mut app = literal_reference_app();
+    app.host_telemetry.cpu_utilization_percent = Some(18);
+    app.host_telemetry.logical_cpu_count = Some(4);
+    app.host_telemetry.memory_total_bytes = Some(16 * 1024 * 1024 * 1024);
+    app.host_telemetry.memory_available_bytes = Some(9_964_324_126);
+    app.host_telemetry.disk_total_bytes = Some(150 * 1024 * 1024 * 1024);
+    app.host_telemetry.disk_available_bytes = Some(59_592_671_232);
     app.screen = Screen::Dashboard;
     app.navigator_selection = 0;
     app.focus = FocusTarget::Workspace;

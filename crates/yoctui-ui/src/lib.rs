@@ -161,10 +161,10 @@ use telemetry_gauges::{
 
 mod telemetry_strip;
 use telemetry_strip::{
-    TelemetryStripMode, render_compact_telemetry_strip, render_tasks_context_zoom,
-    render_telemetry_strip, telemetry_available, telemetry_strip_mode,
+    render_compact_telemetry_strip, render_tasks_context_zoom, render_telemetry_strip,
 };
 
+mod dashboard_dials;
 mod dashboard_render;
 use dashboard_render::{command_center_context_line, dashboard_recent_work_line};
 
