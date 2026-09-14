@@ -72,13 +72,14 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
             .iter()
             .map(|group| rootfs_group_label(&group.identity))
             .collect::<Vec<_>>();
+        let palette = ThemePalette::for_app(app);
         let colors = [
-            Color::Cyan,
-            Color::Green,
-            Color::Yellow,
+            palette.progress,
+            palette.informational,
+            palette.warning,
             Color::Magenta,
             Color::Blue,
-            Color::Red,
+            palette.muted,
             Color::LightCyan,
             Color::Gray,
         ];
@@ -90,7 +91,11 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
                 PieSlice::new(
                     label,
                     group.installed_size_bytes as f64,
-                    colors[index % colors.len()],
+                    if group.identity == RootfsGroupIdentity::Other || label == "Other" {
+                        palette.muted
+                    } else {
+                        colors[index % colors.len()]
+                    },
                 )
             })
             .collect();
@@ -206,7 +211,10 @@ pub(crate) fn render_rootfs_accessible_selection(
                 yoctui_model::CheckboxValue::Unchecked
             };
             row.focused = selected;
-            lines.push(Line::from(checkbox_text(&row, unicode)));
+            lines.push(Line::styled(
+                checkbox_text(&row, unicode),
+                selected_style(app, selected),
+            ));
         }
     }
     let mut ownership =

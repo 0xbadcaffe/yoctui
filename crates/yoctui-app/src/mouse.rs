@@ -82,10 +82,13 @@ pub fn mouse_action_for_app(
         return matches!(mouse.kind, MouseKind::Down).then_some(Action::Focus(FocusTarget::Dialog));
     }
     let shell = workbench_shell(app, terminal_width, terminal_height)?;
-    if app.screen == Screen::TerminalSessions && !app.daemon.pty_sessions.is_empty() {
-        return terminal_session_mouse_action(mouse, app, shell);
-    }
     let region = workbench_mouse_region(mouse, app, shell)?;
+    if app.screen == Screen::TerminalSessions
+        && !app.daemon.pty_sessions.is_empty()
+        && region.target == FocusTarget::Workspace
+    {
+        return terminal_session_mouse_action(mouse, app, region.area);
+    }
     if region.target == FocusTarget::Navigator {
         if matches!(mouse.kind, MouseKind::ScrollUp) {
             return Some(Action::SelectNavigator { delta: -1 });
@@ -362,6 +365,16 @@ pub(crate) fn workbench_mouse_region(
 ) -> Option<WorkbenchMouseRegion> {
     if !shell.contains(mouse) {
         return None;
+    }
+    if let Some(target) = app.zoomed_pane {
+        let area = MouseRect {
+            y: shell.y + 1,
+            height: shell.height.saturating_sub(1),
+            ..shell
+        };
+        return area
+            .contains(mouse)
+            .then_some(WorkbenchMouseRegion { target, area });
     }
     if shell.width >= 130 {
         let total_height = shell.height + if shell.y == 5 { 8 } else { 4 };
@@ -819,6 +832,15 @@ pub(crate) fn terminal_session_mouse_action(
     app: &yoctui_model::App,
     shell: MouseRect,
 ) -> Option<Action> {
+    if !shell.contains(mouse) {
+        return None;
+    }
+    let footer = if shell.height >= 30 { 3 } else { 0 };
+    let shell = MouseRect {
+        y: shell.y + 4,
+        height: shell.height.saturating_sub(4 + footer),
+        ..shell
+    };
     if !shell.contains(mouse) {
         return None;
     }

@@ -4,8 +4,8 @@ use super::*;
 pub(crate) fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
     let items = app.active_menu_items();
     if app.menu.kind == Some(yoctui_model::MenuKind::Application)
-        && area.width == 160
-        && area.height == 50
+        && area.width >= 150
+        && area.height >= 50
     {
         application_menu_overlay(frame, app, area, &items);
         return;
@@ -184,7 +184,9 @@ pub(crate) fn application_menu_overlay(
         .saturating_add(5)
         .clamp(10, 18)
         .min(area.height.saturating_sub(8));
-    let popup = Rect::new(40.min(area.width.saturating_sub(width)), 5, width, height);
+    let header = yoctui_app::workbench_chrome_heights(app, area.width, area.height)[0];
+    let anchor = (area.width / 4).min(area.width.saturating_sub(width));
+    let popup = Rect::new(anchor, header, width, height);
     clear_popup(frame, app, popup);
     let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
     let item_viewport_height = usize::from(height.saturating_sub(5)).max(1);

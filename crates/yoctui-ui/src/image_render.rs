@@ -19,13 +19,19 @@ pub(crate) fn images_tabs_line(app: &App, width: u16) -> Line<'static> {
         .flat_map(|(index, view)| {
             let label = match view {
                 ImagesView::Artifacts => "Artifacts",
-                ImagesView::RootfsPackages => "Rootfs packages",
+                ImagesView::RootfsPackages => {
+                    if (78..90).contains(&width) {
+                        "Packages"
+                    } else {
+                        "Rootfs packages"
+                    }
+                }
                 ImagesView::RootfsFilesystem => "Files",
                 ImagesView::SystemdServices => "systemd",
                 ImagesView::SystemDbus => "D-Bus",
                 ImagesView::UdevRules => "udev",
             };
-            let label = if width < 90 && view != app.images_view {
+            let label = if width < 78 && view != app.images_view {
                 ""
             } else {
                 label
@@ -38,7 +44,11 @@ pub(crate) fn images_tabs_line(app: &App, width: u16) -> Line<'static> {
             [
                 Span::styled(format!(" {} {label} ", index + 1), style),
                 Span::raw(if index + 1 == ImagesView::ALL.len() {
-                    "  Tab switches"
+                    if !(78..100).contains(&width) {
+                        "  Tab switches"
+                    } else {
+                        ""
+                    }
                 } else {
                     " │ "
                 }),

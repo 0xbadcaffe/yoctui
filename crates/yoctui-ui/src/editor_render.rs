@@ -97,13 +97,15 @@ pub(crate) fn build_completion_popup(frame: &mut Frame, app: &App, area: Rect) {
     );
 }
 pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor, area: Rect) {
-    let integrated = area.width == 160 && area.height == 50;
+    let integrated = area.width >= 150 && area.height >= 50;
+    let [header, footer] = yoctui_app::workbench_chrome_heights(app, area.width, area.height);
+    let navigator = yoctui_app::workbench_pane_widths(app, area.width, area.height)[0];
     let popup = if integrated {
         Rect::new(
-            20,
-            5,
-            area.width.saturating_sub(20),
-            area.height.saturating_sub(8),
+            navigator,
+            header,
+            area.width.saturating_sub(navigator),
+            area.height.saturating_sub(header + footer),
         )
     } else {
         let width = area.width.saturating_sub(4).max(30);
@@ -116,11 +118,17 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
         )
     };
     clear_popup(frame, app, popup);
-    let outer = dialog_block(
+    let mut outer = dialog_block(
         app,
         format!("Recipe editor: {}", editor.recipe),
         DialogTone::Standard,
     );
+    if app.menu.is_open() {
+        outer = outer.border_style(ThemePalette::for_app(app).role(
+            ThemePalette::for_app(app).inactive_border,
+            Modifier::empty(),
+        ));
+    }
     let inner = outer.inner(popup);
     frame.render_widget(outer, popup);
     let regions = Layout::vertical([
@@ -135,10 +143,31 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
             Constraint::Percentage(57),
             Constraint::Percentage(25),
         ])
-        .split(regions[0])
+        .split(inner)
     } else {
         Layout::horizontal([Constraint::Percentage(35), Constraint::Percentage(65)])
             .split(regions[0])
+    };
+    let editor_rows = Layout::vertical([
+        Constraint::Min(4),
+        Constraint::Length(7),
+        Constraint::Length(1),
+    ])
+    .split(columns[1]);
+    let document_area = if integrated {
+        editor_rows[0]
+    } else {
+        columns[1]
+    };
+    let validation_area = if integrated {
+        editor_rows[1]
+    } else {
+        regions[1]
+    };
+    let status_area = if integrated {
+        editor_rows[2]
+    } else {
+        regions[2]
     };
     let files = editor
         .files
@@ -195,7 +224,7 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
                     .borders(Borders::ALL),
             )
             .wrap(Wrap { trim: false }),
-        columns[1],
+        document_area,
     );
     if integrated {
         let layer = app
@@ -269,15 +298,17 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
                 .borders(Borders::ALL),
         )
         .wrap(Wrap { trim: false }),
-        regions[1],
+        validation_area,
     );
     frame.render_widget(
         Paragraph::new(if file_focus {
             "FILES · ↑/↓ select · Enter/e focus editor · Ctrl+B build recipe · Esc close"
+        } else if integrated {
+            "i insert · / search · Ctrl+S save · Ctrl+B build · Tab files"
         } else {
             "EDITOR · i insert · v visual · / search · Ctrl+S save · Ctrl+B build · Tab files"
         })
         .style(dialog_styles(app).hint),
-        regions[2],
+        status_area,
     );
 }

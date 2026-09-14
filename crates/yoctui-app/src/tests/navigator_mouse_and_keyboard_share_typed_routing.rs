@@ -294,7 +294,7 @@ fn next_generation_mouse_traps_dialogs_and_resizes_exact_terminal_axis() {
     let select_first = mouse_action_for_app(
         MouseInput {
             kind: MouseKind::Down,
-            column: 10,
+            column: 40,
             row: 10,
         },
         &app,
@@ -341,7 +341,7 @@ fn next_generation_mouse_traps_dialogs_and_resizes_exact_terminal_axis() {
             30,
         ),
         Some(Action::ResizeFocusedPane {
-            delta_per_mille: 250,
+            delta_per_mille: 193,
         })
     );
 
@@ -880,5 +880,45 @@ fn concept_chrome_and_pane_mouse_boundaries_agree_across_resize() {
                 assert!(super::super::mouse::workbench_mouse_region(mouse, &app, shell).is_none());
             }
         }
+    }
+}
+
+#[test]
+fn terminal_pane_clicks_exclude_navigator_inspector_tabs_and_prefix_rail() {
+    let mut app = yoctui_model::App::new(16, 4096);
+    app.screen = Screen::TerminalSessions;
+    app.daemon
+        .pty_sessions
+        .push(yoctui_model::ClientDaemonPtySummary {
+            id: 1,
+            name: "shell".into(),
+            lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+            viewers: 1,
+        });
+    for (width, height) in [(160, 50), (200, 60)] {
+        let [nav, workspace, _] = workbench_pane_widths(&app, width, height);
+        let click = |column, row| {
+            mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column,
+                    row,
+                },
+                &app,
+                width,
+                height,
+            )
+        };
+        assert!(!matches!(click(5, 10), Some(Action::SelectPtyPane { .. })));
+        assert_eq!(
+            click(nav + workspace, 10),
+            Some(Action::Focus(FocusTarget::Inspector))
+        );
+        assert_eq!(click(nav + 2, 6), None);
+        assert_eq!(click(nav + 2, height - 5), None);
+        assert!(matches!(
+            click(nav + 2, 10),
+            Some(Action::SelectPtyPane { index: 0, .. })
+        ));
     }
 }

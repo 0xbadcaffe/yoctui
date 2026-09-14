@@ -18,7 +18,7 @@ fn mouse_runtime_routes_dialog_and_terminal_session_clicks() {
             MouseInput {
                 kind: MouseKind::Down,
                 column: 40,
-                row: 2
+                row: 7
             },
             &app,
             120,
@@ -34,7 +34,7 @@ fn mouse_runtime_routes_dialog_and_terminal_session_clicks() {
             MouseInput {
                 kind: MouseKind::Drag,
                 column: 40,
-                row: 2,
+                row: 7,
             },
             &app,
             120,
@@ -49,7 +49,7 @@ fn mouse_runtime_routes_dialog_and_terminal_session_clicks() {
             MouseInput {
                 kind: MouseKind::Down,
                 column: 40,
-                row: 2
+                row: 7
             },
             &app,
             120,

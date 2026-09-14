@@ -745,7 +745,7 @@ fn ux_responsive_m21_surfaces_keep_identity_focus_and_recovery_at_every_required
         (
             "rootfs",
             rootfs,
-            &["Rootfs packages", "Exact composition table"][..],
+            &["Rootfs composition", "Exact composition table"][..],
         ),
         ("terminal", terminal, &["Terminal Sessions", "shell"][..]),
         (

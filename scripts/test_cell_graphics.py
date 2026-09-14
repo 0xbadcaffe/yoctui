@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Regression checks for Unicode terminal-cell raster graphics."""
+
 import importlib.util
 from pathlib import Path
 import sys
@@ -38,7 +39,7 @@ class CellGraphicsTests(unittest.TestCase):
             handled, pixels = self.draw(symbol)
             self.assertTrue(handled)
             for x, y in positions:
-                self.assertTrue(any(pixels[(y * 10 + x) * 4:(y * 10 + x + 1) * 4]))
+                self.assertTrue(any(pixels[(y * 10 + x) * 4 : (y * 10 + x + 1) * 4]))
 
     def test_text_uses_pinned_font_and_blocks_fill_exact_cells(self):
         self.assertFalse(self.draw("A")[0])
@@ -47,8 +48,8 @@ class CellGraphicsTests(unittest.TestCase):
         self.assertTrue(handled)
         self.assertTrue(all(pixels))
         _, lower = self.draw("▄")
-        self.assertFalse(any(lower[:10 * 10 * 4]))
-        self.assertTrue(all(lower[10 * 10 * 4:]))
+        self.assertFalse(any(lower[: 10 * 10 * 4]))
+        self.assertTrue(all(lower[10 * 10 * 4 :]))
 
 
 if __name__ == "__main__":

@@ -8,9 +8,9 @@ pub(crate) fn errors(frame: &mut Frame, app: &App, area: Rect) {
     if area.height >= 32 {
         let chunks = Layout::vertical([
             Constraint::Length(5),
-            Constraint::Length(5),
-            Constraint::Length(10),
+            Constraint::Length(8),
             Constraint::Min(10),
+            Constraint::Length(5),
         ])
         .split(area);
         let target = app.build.target.as_deref().unwrap_or("not selected");
@@ -35,7 +35,8 @@ pub(crate) fn errors(frame: &mut Frame, app: &App, area: Rect) {
             ))
             .block(
                 Block::default()
-                    .title("Failed build summary")
+                    .title(format!("Build Result · {}",app.build.status))
+                    .title_style(build_status_style(app))
                     .borders(Borders::ALL),
             ),
             chunks[0],
@@ -78,11 +79,11 @@ pub(crate) fn errors(frame: &mut Frame, app: &App, area: Rect) {
                     .title("Correlated-log filters")
                     .borders(Borders::ALL),
             ),
-            chunks[1],
+            chunks[3],
         );
 
-        render_error_table(frame, app, chunks[2], &errors);
-        render_correlated_error_log(frame, app, chunks[3], selected);
+        render_error_table(frame, app, chunks[1], &errors);
+        render_correlated_error_log(frame, app, chunks[2], selected);
         return;
     }
 
@@ -120,11 +121,11 @@ pub(crate) fn render_error_table(
         let index = start + offset;
         let diagnostic = log.diagnostic.as_ref();
         Row::new(vec![
-            Cell::from(timestamp_text(log.timestamp)),
+            Cell::from(clock_text(log.timestamp)),
             Cell::from(format!("{:?}", log.severity)),
             Cell::from(log.recipe.as_deref().unwrap_or("")),
             Cell::from(log.task.as_deref().unwrap_or("")),
-            Cell::from(diagnostic.map_or("", |value| value.summary.as_str())),
+            Cell::from(diagnostic.map_or(log.message.as_str(), |value| value.summary.as_str())),
             Cell::from(log.build.as_deref().unwrap_or("")),
         ])
         .style(if index == selection {
@@ -137,12 +138,12 @@ pub(crate) fn render_error_table(
         Table::new(
             rows,
             [
-                Constraint::Length(14),
+                Constraint::Length(8),
                 Constraint::Length(9),
                 Constraint::Length(14),
                 Constraint::Length(16),
                 Constraint::Min(18),
-                Constraint::Length(20),
+                Constraint::Length(if area.width >= 110 { 20 } else { 0 }),
             ],
         )
         .header(
@@ -223,7 +224,7 @@ pub(crate) fn render_correlated_error_log(
     let rows = matches[start..].iter().map(|entry| {
         (
             vec![
-                Line::from(timestamp_text(entry.timestamp)),
+                Line::from(clock_text(entry.timestamp)),
                 Line::from(log_severity_label(entry.severity)),
                 Line::from(entry.task.as_deref().unwrap_or("")),
                 Line::from(entry.message.as_str()),
@@ -292,7 +293,7 @@ pub(crate) fn diagnostic_detail(app: &App, log: &yoctui_model::LogEntry) -> Stri
         "Category: {}\nSummary: {}\nTime: {}\nBuild: {}\nRecipe: {}  Task: {}\nSource log: {}\nEvent metadata: {}\n\nFull message:\n{}\n\nSuggested actions:\n- {}\n\nRelated diagnostics:\n{}",
         diagnostic.map_or("unavailable", |value| value.category.as_str()),
         diagnostic.map_or("unavailable", |value| value.summary.as_str()),
-        timestamp_text(log.timestamp),
+        clock_text(log.timestamp),
         log.build.as_deref().unwrap_or("unavailable"),
         log.recipe.as_deref().unwrap_or("unavailable"),
         log.task.as_deref().unwrap_or("unavailable"),

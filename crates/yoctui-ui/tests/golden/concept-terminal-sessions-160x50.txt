@@ -1,21 +1,21 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.104  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.105  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator────────────────┐ Terminal Sessions                                                                                  ┌Inspector: Daemon / session────┐
-│▾ OVERVIEW               │────────────────────────────────────────────────────────────────────────────────────────────────────│▾ PRIMARY FACTS                │
-│  ▱ Dashboard            │CURRENT · LIVE · WRITER · scrollback 0                                                              │Session: shell (1)             │
-│  ▱ Insights             │┌ shell #1 Running ────────────────────────────────────────────────────────────────────────────────┐│Identity: BuildShell           │
-│▾ CONTENT                ││BuildShell · writer · 2 viewer(s) · 88x18 · /workspace/yocto/build                                ││Lifecycle: Running             │
-│    Layers               ││last search: busybox · 0 matches                                                                  ││Role: Writer                   │
-│    Recipes              ││bspguy@builder:~/yocto/build$ bitbake-layers show-layers                                          ││(keyboard/paste/resize enabled)│
-│    Packages             ││layer                 path                                                                        ││Writer: 01010101 · epoch 4     │
-│    Images               ││meta                  /workspace/yocto/meta                                                       ││Viewers: 2                     │
-│    Kernel               ││meta-poky             /workspace/yocto/meta-poky                                                  ││Dimensions: 88x18              │
-│    U-Boot / BIOS        ││meta-yocto-bsp        /workspace/yocto/meta-yocto-bsp                                             ││Working directory:             │
-│    SDK                  ││bspguy@builder:~/yocto/build$                                                                     ││/workspace/yocto/build         │
-│▾ BUILD                  ││                                                                                                  ││Restartable: yes               │
+┌Navigator────────────────┐Terminal Sessions───────────────────────────────────────────────────────────────────────────────────┌Inspector: Daemon / session────┐
+│▾ OVERVIEW               │ 1:shell  │  2:devshell:busybox  │                                                                  │▾ PRIMARY FACTS                │
+│  ▱ Dashboard            │────────────────────────────────────────────────────────────────────────────────────────────────────│Session: shell (1)             │
+│  ▱ Insights             │CURRENT · LIVE · WRITER · scrollback 0                                                              │Identity: BuildShell           │
+│▾ CONTENT                │┌ shell #1 Running ────────────────────────────────────────────────────────────────────────────────┐│Lifecycle: Running             │
+│    Layers               ││BuildShell · writer · 2 viewer(s) · 88x18 · /workspace/yocto/build                                ││Role: Writer                   │
+│    Recipes              ││last search: busybox · 0 matches                                                                  ││(keyboard/paste/resize enabled)│
+│    Packages             ││build-shell$ bitbake-layers show-layers                                                           ││Writer: 01010101 · epoch 4     │
+│    Images               ││layer                 path                                                                        ││Viewers: 2                     │
+│    Kernel               ││meta                  /workspace/yocto/meta                                                       ││Dimensions: 88x18              │
+│    U-Boot / BIOS        ││meta-poky             /workspace/yocto/meta-poky                                                  ││Working directory:             │
+│    SDK                  ││meta-yocto-bsp        /workspace/yocto/meta-yocto-bsp                                             ││/workspace/yocto/build         │
+│▾ BUILD                  ││build-shell$                                                                                      ││Restartable: yes               │
 │    Tasks                ││                                                                                                  ││Exit code: unavailable         │
 │  ▱ Logs             LIVE││                                                                                                  ││                               │
 │  ▱ Errors               ││                                                                                                  ││Replica / history              │
@@ -23,17 +23,17 @@
 │    Dependencies         ││                                                                                                  ││Retained scrollback: 0 lines   │
 │▾ VALIDATE               ││                                                                                                  ││Dropped history: none observed │
 │    Testing              ││                                                                                                  ││Cursor: 35,6 (visible)         │
-│    Security             ││                                                                                                  ││                               │
-│    QA                   │└──────────────────────────────────────────────────────────────────────────────────────────────────┘│▾ CONTEXTUAL ACTIONS           │
-│▾ TOOLS                  │┌ devshell:busybox #2 Running ─────────────────────────────────────────────────────────────────────┐│✓ Open build shell [n] — Local │
-│    Raw Mode             ││Devshell · read-only · 2 viewer(s) · 88x18 · /workspace/yocto/build                               ││? Open devshell [s] — Unknown  │
-│    Terminal Sessions    ││last search: busybox · 3 matches                                                                  ││  Reason: No current           │
-│    Devtool              ││history 312 · dropped ≥14                                                                         ││environment capability         │
-│    QEMU / Wic           ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                  ││snapshot: devshell.            │
-│    Maintenance          ││CC      coreutils/ls.o                                                                            ││? Open menuconfig [m] — Unknown│
-│  ▱ Build environment    ││CC      coreutils/cp.o                                                                            ││  Reason: No current           │
-│  ▱ Compatibility        ││LD      busybox_unstripped                                                                        ││environment capability         │
-│  ▱ Settings             ││busybox-devshell$                                                                                 ││snapshot: menuconfig.          │
+│    Security             │└──────────────────────────────────────────────────────────────────────────────────────────────────┘│                               │
+│    QA                   │┌ devshell:busybox #2 Running ─────────────────────────────────────────────────────────────────────┐│▾ CONTEXTUAL ACTIONS           │
+│▾ TOOLS                  ││Devshell · read-only · 2 viewer(s) · 88x18 · /workspace/yocto/build                               ││✓ Open build shell [n] — Local │
+│    Raw Mode             ││last search: busybox · 3 matches                                                                  ││? Open devshell [s] — Unknown  │
+│    Terminal Sessions    ││history 312 · dropped ≥14                                                                         ││  Reason: No current           │
+│    Devtool              ││busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs                                                  ││environment capability         │
+│    QEMU / Wic           ││CC      coreutils/ls.o                                                                            ││snapshot: devshell.            │
+│    Maintenance          ││CC      coreutils/cp.o                                                                            ││? Open menuconfig [m] — Unknown│
+│  ▱ Build environment    ││LD      busybox_unstripped                                                                        ││  Reason: No current           │
+│  ▱ Compatibility        ││busybox-devshell$                                                                                 ││environment capability         │
+│  ▱ Settings             ││                                                                                                  ││snapshot: menuconfig.          │
 │                         ││                                                                                                  ││✓ Take writer control [o] —    │
 │                         ││                                                                                                  ││Local                          │
 │                         ││                                                                                                  ││✓ Release writer control [c] — │
@@ -41,9 +41,9 @@
 │                         ││                                                                                                  ││                               │
 │                         ││                                                                                                  ││                               │
 │                         ││                                                                                                  ││                               │
-│                         ││                                                                                                  ││                               │
-│                         ││                                                                                                  ││                               │
-│                         ││                                                                                                  ││                               │
+│                         │└──────────────────────────────────────────────────────────────────────────────────────────────────┘│                               │
+│                         │┌Prefix help───────────────────────────────────────────────────────────────────────────────────────┐│                               │
+│                         ││Ctrl+B then: %/" split · z zoom · [ copy · / search · d detach · x close · ? help                 ││                               │
 └─────────────────────────┘└──────────────────────────────────────────────────────────────────────────────────────────────────┘└───────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Ctrl+B prefix   [ copy   / search   r rename   O release   K confirmed kill   ←/→ Focus   F2 Tasks   F3 History   F1 Help   F10 Menu   q Quit         19:28:27│

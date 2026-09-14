@@ -1,50 +1,50 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.104  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.105  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator──────────┌modal · Recipe edit┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
-│▾ OVERVIEW         │┌Workspace file tre│ Workspace  Build  Navigate  View  Tools  Help            │ol 1────────────────────┐┌Recipe Inspector────────────────┐│
-│  ▱ Dashboard      ││▶ bash_5.2.bb     │Type to jump                                              │                        ││Recipe                          ││
-│  ▱ Insights       ││  files/0001-fix-b│  Build image           B          No current environment │                        ││Name: bash                      ││
-│▾ CONTENT          ││patch             │  Build selected recipe b          No current environment │.tar.gz"                ││Layer: poky                     ││
-│    Layers         ││                  │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
-│    Recipes        ││                  │                                                          │                        ││Language: BitBake               ││
-│    Packages       ││                  │                                                          │                        ││State: modified                 ││
-│    Images         ││                  │↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu        │/bash                   ││                                ││
-│    Kernel         ││                  └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
-│    U-Boot / BIOS  ││                       ││ 9 │ BROKEN_OVERRIDE =  [validation]                                         ││[v] Validate                    ││
-│    SDK            ││                       ││10 │ ▏                                                                       ││[p] Preview diff                ││
-│▾ BUILD            ││                       ││                                                                             ││[Ctrl+S] Save                   ││
-│    Tasks          ││                       ││                                                                             ││[Ctrl+B] Build recipe           ││
-│  ▱ Logs        LIV││                       ││                                                                             ││[e] External editor             ││
-│  ▱ Errors         ││                       ││                                                                             ││                                ││
-│    Configuration  ││                       ││                                                                             ││                                ││
-│    Dependencies   ││                       ││                                                                             ││                                ││
-│▾ VALIDATE         ││                       ││                                                                             ││                                ││
-│    Testing        ││                       ││                                                                             ││                                ││
-│    Security       ││                       ││                                                                             ││                                ││
-│    QA             ││                       ││                                                                             ││                                ││
-│▾ TOOLS            ││                       ││                                                                             ││                                ││
-│    Raw Mode       ││                       ││                                                                             ││                                ││
-│    Terminal Sessio││                       ││                                                                             ││                                ││
-│    Devtool        ││                       ││                                                                             ││                                ││
-│    QEMU / Wic     ││                       ││                                                                             ││                                ││
-│    Maintenance    ││                       ││                                                                             ││                                ││
-│  ▱ Build environme││                       ││                                                                             ││                                ││
-│  ▱ Compatibility  ││                       ││                                                                             ││                                ││
-│  ▱ Settings       ││                       ││                                                                             ││                                ││
-│                   ││                       ││                                                                             ││                                ││
-│                   │└───────────────────────┘└─────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────┘│
-│                   │┌Validation and diff state───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐│
-│                   ││Local validation: ✕ line 9: assignment has no value                                                                                     ││
-│                   ││Diff preview: loaded → buffer                                                                                                           ││
-│                   ││+  10 BROKEN_OVERRIDE =                                                                                                                 ││
-│                   ││Structural diagnostics only; BitBake/compiler output remains authoritative                                                              ││
-│                   ││                                                                                                                                        ││
-│                   │└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘│
-│                   │EDITOR · i insert · v visual · / search · Ctrl+S save · Ctrl+B build · Tab files                                                          │
-└───────────────────└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigator───────────┐┌modal · Recipe ed┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
+│▾ OVERVIEW          ││┌Workspace file t│ Workspace  Build  Navigate  View  Tools  Help            │Col 1───────────────────┐┌Recipe Inspector────────────────┐│
+│  ▱ Dashboard       │││▶ bash_5.2.bb   │Type to jump                                              │                        ││Recipe                          ││
+│  ▱ Insights        │││  files/0001-fix│  Build image           B          No current environment │                        ││Name: bash                      ││
+│▾ CONTENT           │││.patch          │  Build selected recipe b          No current environment │2.tar.gz"               ││Layer: poky                     ││
+│    Layers          │││                │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
+│    Recipes         │││                │                                                          │                        ││Language: BitBake               ││
+│    Packages        │││                │                                                          │                        ││State: modified                 ││
+│    Images          │││                │↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu        │}/bash                  ││                                ││
+│    Kernel          │││                └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
+│    U-Boot / BIOS   │││                      ││ 9 │ BROKEN_OVERRIDE =  [validation]                                        ││[v] Validate                    ││
+│    SDK             │││                      ││10 │ ▏                                                                      ││[p] Preview diff                ││
+│▾ BUILD             │││                      ││                                                                            ││[Ctrl+S] Save                   ││
+│    Tasks           │││                      ││                                                                            ││[Ctrl+B] Build recipe           ││
+│  ▱ Logs        LIVE│││                      ││                                                                            ││[e] External editor             ││
+│  ▱ Errors          │││                      ││                                                                            ││                                ││
+│    Configuration   │││                      ││                                                                            ││                                ││
+│    Dependencies    │││                      ││                                                                            ││                                ││
+│▾ VALIDATE          │││                      ││                                                                            ││                                ││
+│    Testing         │││                      ││                                                                            ││                                ││
+│    Security        │││                      ││                                                                            ││                                ││
+│    QA              │││                      ││                                                                            ││                                ││
+│▾ TOOLS             │││                      ││                                                                            ││                                ││
+│    Raw Mode        │││                      ││                                                                            ││                                ││
+│    Terminal Session│││                      ││                                                                            ││                                ││
+│    Devtool         │││                      ││                                                                            ││                                ││
+│    QEMU / Wic      │││                      ││                                                                            ││                                ││
+│    Maintenance     │││                      ││                                                                            ││                                ││
+│  ▱ Build environmen│││                      ││                                                                            ││                                ││
+│  ▱ Compatibility   │││                      ││                                                                            ││                                ││
+│  ▱ Settings        │││                      ││                                                                            ││                                ││
+│                    │││                      ││                                                                            ││                                ││
+│                    │││                      │└────────────────────────────────────────────────────────────────────────────┘│                                ││
+│                    │││                      │┌Validation and diff state───────────────────────────────────────────────────┐│                                ││
+│                    │││                      ││Local validation: ✕ line 9: assignment has no value                         ││                                ││
+│                    │││                      ││Diff preview: loaded → buffer                                               ││                                ││
+│                    │││                      ││+  10 BROKEN_OVERRIDE =                                                     ││                                ││
+│                    │││                      ││Structural diagnostics only; BitBake/compiler output remains authoritative  ││                                ││
+│                    │││                      ││                                                                            ││                                ││
+│                    │││                      │└────────────────────────────────────────────────────────────────────────────┘│                                ││
+│                    ││└──────────────────────┘i insert · / search · Ctrl+S save · Ctrl+B build · Tab files                  └────────────────────────────────┘│
+└────────────────────┘└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Enter select/confirm   Esc cancel   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F8 Images   F1 Help   F10 Menu   q Quit              19:28:27│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

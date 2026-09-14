@@ -8,7 +8,6 @@ import hashlib
 import re
 import struct
 import subprocess
-import sys
 import tempfile
 import tomllib
 from dataclasses import dataclass
@@ -36,9 +35,7 @@ REGULAR_FONT = Path("/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf")
 BOLD_FONT = Path("/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf")
 REGULAR_FONT_SHA256 = "a54dca07c76d6289e717e75e0a58c0128f6d7269ef3faf76417c9d7d3bba37ab"
 BOLD_FONT_SHA256 = "2d67eed9b325ee2e69f906ce4f3f6264d5105230a13352c8494daad4f17b12c8"
-STYLE_RE = re.compile(
-    r"^T\|(\d+)\|fg=([^;]+);bg=([^;]+);ul=([^;]+);mod=([^;]+)$"
-)
+STYLE_RE = re.compile(r"^T\|(\d+)\|fg=([^;]+);bg=([^;]+);ul=([^;]+);mod=([^;]+)$")
 RGB_RE = re.compile(r"^Rgb\((\d+), (\d+), (\d+)\)$")
 INDEXED_RE = re.compile(r"^Indexed\((\d+)\)$")
 NAMED_COLORS = {
@@ -79,7 +76,10 @@ def fail(message: str) -> None:
 
 
 def require_renderer() -> None:
-    if cairo.version != PYCAIRO_VERSION or cairo.cairo_version_string() != CAIRO_VERSION:
+    if (
+        cairo.version != PYCAIRO_VERSION
+        or cairo.cairo_version_string() != CAIRO_VERSION
+    ):
         fail(
             "renderer version mismatch: expected "
             f"PyCairo {PYCAIRO_VERSION}/Cairo {CAIRO_VERSION}, got "
@@ -102,7 +102,9 @@ def require_renderer() -> None:
             text=True,
         )
         if Path(result.stdout).resolve() != expected:
-            fail(f"fontconfig resolved {pattern!r} to {result.stdout!r}, expected {expected}")
+            fail(
+                f"fontconfig resolved {pattern!r} to {result.stdout!r}, expected {expected}"
+            )
 
 
 def parse_color(value: str, default: tuple[int, int, int]) -> tuple[int, int, int]:
@@ -226,20 +228,41 @@ def draw_cell_graphic(context: cairo.Context, symbol: str, x: float, y: float) -
     code = ord(symbol)
     if 0x2800 <= code <= 0x28FF:
         mask = code - 0x2800
-        for bit, (column, row) in enumerate(((0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (0, 3), (1, 3))):
+        for bit, (column, row) in enumerate(
+            ((0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2), (0, 3), (1, 3))
+        ):
             if mask & (1 << bit):
-                context.arc(x + (column + 0.5) * CELL_WIDTH / 2,
-                            y + (row + 0.5) * CELL_HEIGHT / 4, 1.4, 0, 6.283185307179586)
+                context.arc(
+                    x + (column + 0.5) * CELL_WIDTH / 2,
+                    y + (row + 0.5) * CELL_HEIGHT / 4,
+                    1.4,
+                    0,
+                    6.283185307179586,
+                )
                 context.fill()
         return True
     connections = {
-        "─": "lr", "│": "ud", "┌": "rd", "┐": "ld", "└": "ru", "┘": "lu",
-        "├": "urd", "┤": "uld", "┬": "lrd", "┴": "lru", "┼": "lrud",
+        "─": "lr",
+        "│": "ud",
+        "┌": "rd",
+        "┐": "ld",
+        "└": "ru",
+        "┘": "lu",
+        "├": "urd",
+        "┤": "uld",
+        "┬": "lrd",
+        "┴": "lru",
+        "┼": "lrud",
     }
     if symbol in connections:
         context.set_line_width(1)
         cx, cy = x + CELL_WIDTH / 2 + 0.5, y + CELL_HEIGHT / 2 + 0.5
-        ends = {"l": (x, cy), "r": (x + CELL_WIDTH, cy), "u": (cx, y), "d": (cx, y + CELL_HEIGHT)}
+        ends = {
+            "l": (x, cy),
+            "r": (x + CELL_WIDTH, cy),
+            "u": (cx, y),
+            "d": (cx, y + CELL_HEIGHT),
+        }
         for direction in connections[symbol]:
             context.move_to(cx, cy)
             context.line_to(*ends[direction])
@@ -296,11 +319,7 @@ def render_cell_golden(source: Path, destination: Path) -> None:
         column = index % WIDTH
         row = index // WIDTH
         x = column * CELL_WIDTH + (CELL_WIDTH - extents.x_advance) / 2
-        baseline = (
-            row * CELL_HEIGHT
-            + (CELL_HEIGHT - ascent - descent) / 2
-            + ascent
-        )
+        baseline = row * CELL_HEIGHT + (CELL_HEIGHT - ascent - descent) / 2 + ascent
         set_rgb(context, style.foreground)
         context.move_to(x, baseline)
         context.show_text(symbol)
@@ -312,7 +331,11 @@ def render_cell_golden(source: Path, destination: Path) -> None:
 
 def png_dimensions(path: Path) -> tuple[int, int]:
     header = path.read_bytes()[:24]
-    if len(header) != 24 or header[:8] != b"\x89PNG\r\n\x1a\n" or header[12:16] != b"IHDR":
+    if (
+        len(header) != 24
+        or header[:8] != b"\x89PNG\r\n\x1a\n"
+        or header[12:16] != b"IHDR"
+    ):
         fail(f"renderer did not create a valid PNG: {path}")
     return struct.unpack(">II", header[16:24])
 
@@ -335,9 +358,7 @@ def scenarios() -> list[tuple[str, Path]]:
     return output
 
 
-def provenance_text(
-    rendered: list[tuple[str, Path, Path]], output_root: Path
-) -> str:
+def provenance_text(rendered: list[tuple[str, Path, Path]], output_root: Path) -> str:
     lines = [
         "schema_version = 1",
         'renderer = "yoctui-cairo-cell-raster-v2"',
@@ -392,11 +413,27 @@ def update() -> None:
     # Historical live evidence and original concept-image hashes are untouched.
     manifest = CONCEPT_MANIFEST.read_text(encoding="utf-8")
     for scenario_id, source, artifact in rendered:
-        pattern = r'(raster_evidence = \{[^\n]*artifact = "' + re.escape(str(artifact.relative_to(ROOT))) + r'"[^\n]*\})'
+        pattern = (
+            r'(raster_evidence = \{[^\n]*artifact = "'
+            + re.escape(str(artifact.relative_to(ROOT)))
+            + r'"[^\n]*\})'
+        )
+
         def refresh(match: re.Match[str]) -> str:
-            entry = re.sub(r'(?<!source_)sha256 = "[0-9a-f]+"', f'sha256 = "{sha256(artifact)}"', match.group(0))
-            entry = re.sub(r'source_sha256 = "[0-9a-f]+"', f'source_sha256 = "{sha256(source)}"', entry)
-            return re.sub(r'renderer = "[^"]+"', 'renderer = "yoctui-cairo-cell-raster-v2"', entry)
+            entry = re.sub(
+                r'(?<!source_)sha256 = "[0-9a-f]+"',
+                f'sha256 = "{sha256(artifact)}"',
+                match.group(0),
+            )
+            entry = re.sub(
+                r'source_sha256 = "[0-9a-f]+"',
+                f'source_sha256 = "{sha256(source)}"',
+                entry,
+            )
+            return re.sub(
+                r'renderer = "[^"]+"', 'renderer = "yoctui-cairo-cell-raster-v2"', entry
+            )
+
         manifest, count = re.subn(pattern, refresh, manifest)
         if count != 1:
             fail(f"{scenario_id}: expected one raster evidence entry")
@@ -416,7 +453,9 @@ def check() -> None:
         for _, _, actual in rendered:
             expected = OUTPUT_DIR / actual.name
             if not expected.is_file() or expected.read_bytes() != actual.read_bytes():
-                fail(f"deterministic raster is missing or stale: {expected.relative_to(ROOT)}")
+                fail(
+                    f"deterministic raster is missing or stale: {expected.relative_to(ROOT)}"
+                )
     print(f"M22 production rasters verified: {len(rendered)} deterministic PNGs")
 
 

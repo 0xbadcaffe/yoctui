@@ -43,9 +43,10 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
     }
 
     let regions = Layout::vertical([
-        Constraint::Length(2),
+        Constraint::Length(3),
         Constraint::Length(1),
         Constraint::Min(1),
+        Constraint::Length(if area.height >= 30 { 3 } else { 0 }),
     ])
     .split(area);
     let tabs = app
@@ -53,29 +54,32 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         .pty_sessions
         .iter()
         .enumerate()
-        .map(|(index, session)| {
-            let marker = if index == app.pty_selection {
-                "▶"
-            } else {
-                " "
-            };
-            format!(
-                "{marker} {}:{} [{:?}]",
-                session.id, session.name, session.lifecycle
-            )
+        .flat_map(|(index, session)| {
+            [
+                Span::styled(
+                    format!(" {}:{} ", session.id, session.name),
+                    if index == app.pty_selection {
+                        palette.selected()
+                    } else {
+                        palette.base()
+                    },
+                ),
+                Span::raw(" │ "),
+            ]
         })
-        .collect::<Vec<_>>()
-        .join("  │  ");
+        .collect::<Vec<_>>();
     frame.render_widget(
-        Paragraph::new(bounded_cell_text(&tabs, regions[0].width.saturating_sub(2)))
-            .block(
-                Block::default()
-                    .borders(Borders::BOTTOM)
-                    .title(" Terminal Sessions "),
-            )
-            .style(palette.role(palette.secondary_foreground, Modifier::BOLD)),
+        Paragraph::new(Line::from(tabs)).block(
+            Block::default()
+                .borders(Borders::TOP | Borders::BOTTOM)
+                .title("Terminal Sessions"),
+        ),
         regions[0],
     );
+    if regions[3].height > 0 {
+        frame.render_widget(Paragraph::new("Ctrl+B then: %/\" split · z zoom · [ copy · / search · d detach · x close · ? help")
+            .block(pane_block(app,"Prefix help",false)),regions[3]);
+    }
 
     let selected = app.selected_terminal_session();
     let screen = app.selected_terminal_screen();
@@ -216,7 +220,9 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
         let status = session.map_or_else(
             || "No PTY session".into(),
             |session| {
-                let access = if app.terminal.client_id.is_some()
+                let access = if app.daemon.status != yoctui_model::ClientReplicaStatus::Current {
+                    "retained read-only"
+                } else if app.terminal.client_id.is_some()
                     && details.is_some_and(|details| details.writer == app.terminal.client_id)
                 {
                     "writer"

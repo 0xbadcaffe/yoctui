@@ -1,21 +1,21 @@
 # Current Task
 
-**ID:** CONCEPT-DETAIL
-**Title:** Align task error rootfs editor and terminal detail layouts
+**ID:** CONCEPT-VERIFY
+**Title:** Verify six production concept images and deliver layout changes
 **Status:** IN_PROGRESS
 
-Checkpoint v0.1.102 tags 3edb883 and is pushed. Implement UI specification
-section 45 in layout/render/header/dashboard modules; preserve typed state,
-action routing and safe narrow rendering. Update cell goldens and inspect the
-six generated PNGs. Required checks: cargo test -p yoctui-ui, formatting,
-version policy, raster reproduction and roadmap. Then proceed to CONCEPT-DETAIL
-and CONCEPT-VERIFY; final delivery includes workspace tests, Clippy and bridge
-tests. Historical source-bound live performance evidence remains separate.
+CONCEPT-SHELL and CONCEPT-DETAIL implement the six scene layouts through the
+production render_at path. Checkpoint v0.1.102 tags 3edb883. The shell is pushed
+at 75e9d44; detail layout is v0.1.105. 202 app and 285 UI tests pass without
+golden updates, plus 52 bridge tests and the concept/raster corruption checks.
 
-CONCEPT-SHELL is verified: 201 app and 283 UI tests pass with golden updates
-disabled; shared mouse geometry, distinct dashboard regions, unavailable/ASCII
-dials and raster glyph tests pass. Concept/raster verifier corruption tests
-remain enforced. Renderer v2 records exact cell-derived Braille and border
-geometry; only generated production PNGs change, never original concepts or
-historical live observations. Remaining work is the other five scene layouts
-and final baseline/delivery verification.
+Finish the full workspace baseline (cargo test --workspace --all-features,
+strict Clippy, formatting), documentation/CLI checks, version/layout/roadmap,
+and deterministic raster checks. Review all six PNGs and the review document
+at docs/design/concept-layout-review.md, then commit and push the final version.
+
+Original concept PNGs and historical live captures remain unchanged. These
+layout captures are production-renderer fixtures; no fresh live-Poky performance
+certification is claimed. The original master checkout's user edits remain
+untouched. Cargo runs sequentially with one build job and no debug/incremental
+artifacts; RUST_TEST_THREADS=2 bounds runtime tests.

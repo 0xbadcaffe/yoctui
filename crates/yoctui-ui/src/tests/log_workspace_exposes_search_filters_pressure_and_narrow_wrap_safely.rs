@@ -367,7 +367,7 @@ fn concept_failed_build_composes_summary_filters_correlated_log_and_recovery() {
     let output = rendered_text_at(&app, 160, 50, literal_now());
 
     for anchor in [
-        "Failed build summary",
+        "Build Result · Failed",
         "Result: Failed (exit 1)",
         "Diagnostics: 1 error / 1 warning",
         "Correlated-log filters",

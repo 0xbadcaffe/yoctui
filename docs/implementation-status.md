@@ -2957,3 +2957,11 @@ Dashboard overview/history/dials/actions/Project Inspector, exact Unicode raster
 graphics and refreshed evidence provenance. 201 app and 283 UI tests pass
 without golden-update flags. CONCEPT-DETAIL is active; full delivery baseline
 and the five remaining screen comparisons are still pending.
+
+CONCEPT-DETAIL implements the five remaining scenes in v0.1.105: consolidated
+task/error inspectors, error layout and readable times, rootfs selection/colors
+and tabs, integrated editor columns and anchored menu, visible terminal tabs and
+prefix rail. Terminal hit testing now excludes other panes and chrome; stale
+replicas never claim writer access. 202 app and 285 UI tests pass without
+updates, plus 52 bridge tests and all image integrity/corruption checks.
+CONCEPT-VERIFY is active for final workspace checks and delivery.

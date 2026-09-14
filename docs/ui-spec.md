@@ -5445,3 +5445,24 @@ and box-drawing characters in deterministic rasters must render as their actual
 cell geometry, never missing-glyph boxes. Pixel-exact mockup typography is outside
 the terminal-cell contract. Live captures are separate evidence and are never
 replaced or relabelled as fixture renders.
+
+
+At 150+ columns and 50+ rows, the concept shell uses a Navigator near 17%
+(clamped to 22..30 columns), a 29% Inspector and the remaining center; terminal
+sessions use a 21% Inspector to prioritize PTY width. Layers/Recipes retain
+their integrated preview ownership. Rendering and mouse routing share these
+allocations, including header/footer exclusion and terminal split offsets.
+
+Tasks uses one inspector border with primary facts/paths, Actions and compact
+System Status. Errors places summary, diagnostic table, correlated log, recovery
+and filters in that order; list times use HH:MM:SS rather than truncated epoch
+strings. Its wide inspector prioritizes selected facts/message and recovery.
+Smaller inspectors preserve the complete diagnostic-document fallback.
+
+The integrated recipe editor preserves full-height file-tree and inspector
+columns, with validation/diff and action hints below the document column. The
+F10 menu anchors near the first quarter of the screen below the header and
+alone owns the focused border. Terminal tabs have an actual content row between
+their title and separator; a prefix rail appears below PTYs when body height is
+at least 30 rows. Retained PTY replicas always say read-only, even if a cached
+lease still names this client.

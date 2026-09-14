@@ -1,49 +1,49 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.104  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
+│yoctui v0.1.105  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: ✕ Failed│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: --:--:--  |  Workers: 0                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator────────────────┐┌Failed build summary─────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
-│▾ OVERVIEW               ││Target: core-image-minimal  ·  Result: Failed (exit 1)                               ││▾ PRIMARY FACTS                             │
-│  ▱ Dashboard            ││Diagnostics: 1 error / 1 warning  ·  Selected: bash_5.2.21-2:do_compile              ││Category: BitBake error                     │
-│  ▱ Insights             ││                                                                                     ││Summary: ERROR: bash:do_compile failed with │
-│▾ CONTENT                │└─────────────────────────────────────────────────────────────────────────────────────┘│exit code 1                                 │
-│    Layers               │┌Correlated-log filters───────────────────────────────────────────────────────────────┐│Time: 70107s since Unix epoch               │
-│    Recipes              ││> ☑ Errors (checked)     ☑ Warnings (checked)                                        ││Build: core-image-minimal                   │
-│    Packages             ││  ⊟ Related task context (indeterminate)  ·  s cycles severity                       ││Recipe: bash_5.2.21-2  Task: do_compile     │
-│    Images               ││                                                                                     ││Source log:                                 │
-│    Kernel               │└─────────────────────────────────────────────────────────────────────────────────────┘│/workspace/yocto/build/tmp/log.do_compile.85│
-│    U-Boot / BIOS        │┌Errors and warnings (2 retained; 1 warning / 1 error records evicted)────────────────┐│873                                         │
-│    SDK                  ││Time      Severity  Recipe        Task          Summary            Build             ││Event metadata: severity=Error,             │
-│▾ BUILD                  ││70107s si Warning   bash_5.2.21-2 do_compile    WARNING: bash:do_c core-image-minimal││protected=true, build=core-image-minimal,   │
-│    Tasks                ││70107s si Error     bash_5.2.21-2 do_compile    ERROR: bash:do_com core-image-minimal││source=/workspace/yocto/build/tmp/log.do_com│
-│  ▱ Logs            PAUSE││                                                                                     ││pile.85873                                  │
-│  ▱ Errors              1││                                                                                     ││                                            │
-│    Configuration        ││                                                                                     ││Full message:                               │
-│    Dependencies         ││                                                                                     ││ERROR: bash:do_compile failed with exit code│
-│▾ VALIDATE               ││                                                                                     ││1                                           │
-│    Testing              │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│    Security             │┌Correlated · Paused · match 3/3 · loss 2 W1 E1 ·    1-3/3────────────────────────────┐│Suggested actions:                          │
-│    QA                   ││Time       Severity  Task          Message                                           ││- Inspect the matching retained log context.│
-│▾ TOOLS                  ││70107s sin i Info    do_compile    NOTE: running task bash:do_compile with oe_runmake││- Open the source log and inspect           │
-│    Raw Mode             ││70107s sin ! Warning do_compile    WARNING: bash:do_compile found a recoverable confi││surrounding output.                         │
-│    Terminal Sessions    ││70107s sin ✕ Error   do_compile    ERROR: bash:do_compile failed with exit code 1    ││- Inspect the recipe task and its metadata. │
+┌Navigator────────────────┐┌Build Result · Failed────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
+│▾ OVERVIEW               ││Target: core-image-minimal  ·  Result: Failed (exit 1)                               ││Severity    : Error                         │
+│  ▱ Dashboard            ││Diagnostics: 1 error / 1 warning  ·  Selected: bash_5.2.21-2:do_compile              ││Task        : do_compile                    │
+│  ▱ Insights             ││                                                                                     ││Recipe      : bash_5.2.21-2                 │
+│▾ CONTENT                │└─────────────────────────────────────────────────────────────────────────────────────┘│Current build exit : 1                      │
+│    Layers               │┌Errors and warnings (2 retained; 1 warning / 1 error records evicted)────────────────┐│First seen  : 19:28:27                      │
+│    Recipes              ││Time     Severity  Recipe         Task             Summary                           ││Source log  :                               │
+│    Packages             ││19:28:27 Warning   bash_5.2.21-2  do_compile       WARNING: bash:do_compile found a  ││/workspace/yocto/build/tmp/log.do_compile.85│
+│    Images               ││19:28:27 Error     bash_5.2.21-2  do_compile       ERROR: bash:do_compile failed wit ││873                                         │
+│    Kernel               ││                                                                                     ││                                            │
+│    U-Boot / BIOS        ││                                                                                     ││Message                                     │
+│    SDK                  ││                                                                                     ││ERROR: bash:do_compile failed with exit code│
+│▾ BUILD                  │└─────────────────────────────────────────────────────────────────────────────────────┘│1                                           │
+│    Tasks                │┌Correlated · Paused · match 3/3 · loss 2 W1 E1 ·    1-3/3────────────────────────────┐│                                            │
+│  ▱ Logs            PAUSE││Time       Severity  Task          Message                                           ││                                            │
+│  ▱ Errors              1││19:28:27   i Info    do_compile    NOTE: running task bash:do_compile with oe_runmake││                                            │
+│    Configuration        ││19:28:27   ! Warning do_compile    WARNING: bash:do_compile found a recoverable confi││                                            │
+│    Dependencies         ││19:28:27   ✕ Error   do_compile    ERROR: bash:do_compile failed with exit code 1    ││                                            │
+│▾ VALIDATE               ││                                                                                     ││                                            │
+│    Testing              ││                                                                                     ││                                            │
+│    Security             ││                                                                                     ││                                            │
+│    QA                   ││                                                                                     ││                                            │
+│▾ TOOLS                  ││                                                                                     ││                                            │
+│    Raw Mode             ││                                                                                     ││                                            │
+│    Terminal Sessions    ││                                                                                     ││                                            │
 │    Devtool              ││                                                                                     ││                                            │
-│    QEMU / Wic           ││                                                                                     ││Related diagnostics:                        │
-│    Maintenance          ││                                                                                     ││WARNING: bash:do_compile found a recoverable│
-│  ▱ Build environment    ││                                                                                     ││configure mismatch                          │
+│    QEMU / Wic           ││                                                                                     ││                                            │
+│    Maintenance          ││                                                                                     ││                                            │
+│  ▱ Build environment    ││                                                                                     ││                                            │
 │  ▱ Compatibility        ││                                                                                     ││                                            │
-│  ▱ Settings             ││                                                                                     ││▾ RELATED PATHS                             │
-│                         ││                                                                                     ││/workspace/yocto/build/tmp/log.do_compile.85│
-│                         ││                                                                                     ││873                                         │
+│  ▱ Settings             ││                                                                                     ││                                            │
+│                         ││                                                                                     ││Recovery Actions────────────────────────────│
+│                         │└─────────────────────────────────────────────────────────────────────────────────────┘│[Enter] Open matching log                   │
+│                         │┌Recovery actions─────────────────────────────────────────────────────────────────────┐│[o] Open source log                         │
+│                         ││Enter matching log · o source · B rebuild options                                    ││[s] Cycle severity filter                   │
+│                         ││Rebuild: review + confirmation required.                                             ││[f] Pause / follow logs                     │
+│                         │└─────────────────────────────────────────────────────────────────────────────────────┘│[B] Rebuild options                         │
+│                         │┌Correlated-log filters───────────────────────────────────────────────────────────────┐│                                            │
+│                         ││> ☑ Errors (checked)     ☑ Warnings (checked)                                        ││Rebuild requires review and confirmation.   │
+│                         ││  ⊟ Related task context (indeterminate)  ·  s cycles severity                       ││                                            │
 │                         ││                                                                                     ││                                            │
-│                         ││                                                                                     ││▾ CONTEXTUAL ACTIONS                        │
-│                         ││                                                                                     ││✓ Inspect retained diagnostic …  [Enter/o] —│
-│                         ││                                                                                     ││Local                                       │
-│                         │└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
-│                         │┌Recovery actions─────────────────────────────────────────────────────────────────────┐│                                            │
-│                         ││Enter matching log · o source · B rebuild options                                    ││                                            │
-│                         ││Rebuild: review + confirmation required.                                             ││                                            │
 └─────────────────────────┘└─────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │↑/↓ select   Enter matching log   o source   s severity filter   f pause/follow   B rebuild options   ←/→ Focus   F1 Help   F10 Menu   q Quit         19:28:27│
