@@ -4122,3 +4122,10 @@ App mapping, backend adapters and UI rendering are separated by responsibility.
 Tests retain every original assertion, with shared fixtures in support modules.
 `check-library-layout.py` enforces the 1000-line root limit and utility dependency
 in CI and the completion gate. Exact test selectors follow the moved modules.
+
+## Concept layout rendering after REF09
+
+The production render_at path owns concept layout geometry for all live and
+fixture clients. No screenshot-only rendering path or copied mockup state is
+permitted. Dashboard reuses typed projections; shared geometry must agree with
+input hit testing. Raster tooling projects Unicode cell graphics explicitly.

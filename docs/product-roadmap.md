@@ -1313,3 +1313,8 @@ higher-priority documentation request is committed and pushed.
 REF09-UTILS, REF09-MODULES and REF09-VERIFY consolidate portable helpers,
 repair helper bugs, split lib.rs files above 1000 lines by responsibility,
 and deliver baseline-verified commits with coherent package versions.
+
+## M59 — Concept layout implementation
+
+CONCEPT-SHELL restores the shell/dashboard, CONCEPT-DETAIL aligns the remaining
+five scenes, and CONCEPT-VERIFY reviews six generated PNGs and baseline checks.

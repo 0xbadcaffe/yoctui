@@ -2945,3 +2945,9 @@ build deltas. Security accepts SPDX, CycloneDX JSON, and package-manifest
 fallback inventories. Rootfs chart breakpoints preserve exploration, and
 process-backend task nodes are reachable from their recipe root. M46 remains
 complete; M51 validates these features against its performance implementation.
+
+## M59 concept layouts
+
+The user requested implementation after inspection of all six M21 concepts.
+Checkpoint v0.1.102 is pushed. Three tasks are open; CONCEPT-SHELL is active.
+The existing anchor-only completion does not certify visual resemblance.

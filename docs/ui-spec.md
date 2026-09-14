@@ -5262,13 +5262,11 @@ or daemon summaries into focus targets. Direct focus, Dashboard navigation, and
 modal restoration use the same rule. Layers and Recipes own their preview
 surfaces inside Workspace rather than exposing a duplicate Inspector.
 
-Dashboard uses the same dense build cockpit as Tasks: overall build state,
-the authoritative task table, selected-task log, retained job history,
-hot-dot resource telemetry, selected-task facts/actions, recent output, and
-system status. With no build and no task evidence it says `build not started ·
-0%`; an active task without an authoritative fraction says `progress unknown`
-and uses the shared `BRAILLE_EIGHT_DOUBLE` activity set. `yoctui daemon start`
-uses that same set until the daemon socket becomes ready.
+Dashboard presents Build Overview, Recent Builds, Resource Telemetry and Quick
+Actions with a persistent Project Inspector. This replaces the previous shared
+Tasks cockpit on Dashboard. Tasks retains the interactive task/log/history
+cockpit. Dashboard remains Navigator-only for focus; its action hints use the
+actual typed keymap and unavailable telemetry stays explicitly unavailable.
 
 Layers places file information and the scrollable file preview beside the
 tree. Its tree column follows useful visible-label width within responsive
@@ -5421,3 +5419,29 @@ and `1600x1000` dimensions. README alternative text and ordering are checked.
 Fixture values are explicitly labeled as deterministic UI demonstrations;
 they cannot be described as live BitBake or OpenBMC evidence. Existing
 checksummed live-capture links remain separate and retain their own authority.
+
+
+## 45. Concept layout implementation after REF09
+
+The v0.1.102 tag is the pre-change checkpoint. The six original M21 PNGs remain
+unchanged visual references. Production screens must reproduce their region
+hierarchy and approximate proportions on the terminal grid, using real typed
+state and the existing keymap. At wide/tall sizes the header has two content
+rows separated by a rule (five rows including borders), and the footer has a
+bordered command row (three rows). Compact terminals retain two-row header and
+footer. This supersedes the earlier unconditional two-row chrome rule.
+
+Dashboard restores its overview/history/telemetry/action composition and
+Project Inspector. Tasks and Errors use one outer inspector with internal
+facts and action headings, keeping paths and actions readable. Rootfs pairs a
+cell-rendered pie and exact table above the package explorer. Editor keeps its
+file tree, document, diagnostics/diff, inspector and anchored F10 menu. Terminal
+sessions retain tabs, two bounded PTYs, search, writer ownership and prefix help.
+All layouts respond to size instead of recognizing only one fixture rectangle.
+
+Acceptance requires reviewed production cell and PNG diffs for all six scenes,
+geometry/resize and relevant interaction tests, and the baseline checks. Braille
+and box-drawing characters in deterministic rasters must render as their actual
+cell geometry, never missing-glyph boxes. Pixel-exact mockup typography is outside
+the terminal-cell contract. Live captures are separate evidence and are never
+replaced or relabelled as fixture renders.
