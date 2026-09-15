@@ -1,7 +1,12 @@
 //! Telemetry gauges.
 use super::*;
 
-pub(crate) fn format_bytes_pair(used: u64, total: u64) -> String {
+pub(crate) fn format_bytes_pair_with(
+    used: u64,
+    total: u64,
+    precision: usize,
+    separator: &str,
+) -> String {
     const UNITS: [&str; 5] = ["B", "KiB", "MiB", "GiB", "TiB"];
     let mut divisor = 1_u64;
     let mut unit = 0;
@@ -13,15 +18,19 @@ pub(crate) fn format_bytes_pair(used: u64, total: u64) -> String {
         unit += 1;
     }
     if unit == 0 {
-        format!("{used}/{total} {}", UNITS[unit])
+        format!("{used}{separator}{total} {}", UNITS[unit])
     } else {
         format!(
-            "{:.1}/{:.1} {}",
+            "{:.precision$}{separator}{:.precision$} {}",
             used as f64 / divisor as f64,
             total as f64 / divisor as f64,
             UNITS[unit]
         )
     }
+}
+
+pub(crate) fn format_bytes_pair(used: u64, total: u64) -> String {
+    format_bytes_pair_with(used, total, 1, "/")
 }
 
 pub(crate) fn ram_gauge_label(percent: u8, used: u64, total: u64, width: u16) -> String {

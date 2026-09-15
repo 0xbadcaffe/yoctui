@@ -341,7 +341,7 @@ fn dashboard_renders_host_cpu_and_build_disk_space() {
         .map(|cell| cell.symbol())
         .collect::<String>();
     assert!(output.contains("CPU Usage") && output.contains("42%"));
-    assert!(output.contains("8.0/16.0 GiB"));
+    assert!(output.contains("8.00 / 16.00 GiB"));
 }
 
 #[test]

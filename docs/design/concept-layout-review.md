@@ -31,3 +31,27 @@ exactly. The final version refresh changes only header cells in the cell goldens
 The retained real-Poky performance manifest predates source changes (first digest
 mismatch: `crates/yoctui-app/src/environment_setup.rs`); this delivery makes no
 fresh live-performance certification.
+
+## Added-value review and next sequence
+
+The September 2026 review compares all six original PNGs with the current
+production captures and ranks workflow value rather than pixel similarity.
+
+| Concept | Added value | Recommendation |
+| --- | --- | --- |
+| Dashboard | High: one glance combines build state, history, resource pressure and next actions. | Keep. The meter stroke, value placement and context now match the supplied instrument reference; unavailable sstate remains explicit. |
+| Active tasks | High: progress, task identity, correlated output and retained history support live build supervision. | Keep the present production composition. Polish only measured log-navigation or task-selection gaps. |
+| Failed errors | High: failure selection, correlated log search, filters and recovery actions shorten diagnosis. | Keep. Prioritize action clarity and source correlation over more decoration. |
+| Rootfs composition | High: the chart gives proportion while the table and package tree preserve exact authority. | Keep the production chart/table/tree combination; add detail only when package evidence supports it. |
+| Editor and application menu | Highest remaining value: the recipe tree, large editor, validation/diff split and focus-trapped F10 groups form one complete editing workflow. | First future fidelity target. Expand usable editor space, keep diagnostics and diff visible, and retain disabled reasons and keyboard focus inside the menu. |
+| Terminal sessions | High: tabs, split PTYs, writer ownership, search and prefix help make long-lived sessions manageable. | Keep. Native kernel and U-Boot menuconfig already use the full workspace; refine only from real PTY evidence. |
+
+Recommended delivery order is editor/menu composition first, then focused
+Active Tasks and Failed Errors workflow polish. Rootfs and Terminal Sessions
+need evidence-led refinements rather than broad redesign. Concept-only sample
+paths, usernames, timestamps, percentages and synthetic activity add no product
+value and must not enter runtime state.
+
+Version 0.1.111 applies the Dashboard meter decision to the production renderer
+and synchronized cell/raster evidence. The original M21 concept PNGs remain
+unchanged.

@@ -456,17 +456,19 @@ telemetry sampling cadence, and reduced motion disables any presentation-only
 animation.
 
 When a CPU, RAM, or Build FS strip cell has at least 16 columns and six rows,
-it uses the M21 semicircular dial composition: a centered metric title, a
+it uses the M21 semicircular dial composition: a centered metric title, a thin
 left-to-right colored utilization arc with a muted remainder, the exact whole
 percentage inside the dial, and one centered context line below it. Unicode
-uses diagonal and heavy horizontal arc segments; ASCII mode preserves the same
-shape with `/`, `-`, and `\\`. The arc uses foreground styling only and must not
-paint a rectangular filled background. Shorter cells retain the compact
-horizontal terminal-gauge fallback described below so responsive layouts do
-not lose authoritative values.
+uses one foreground Braille stroke rather than a filled band; ASCII mode
+preserves the same shape with `/`, `-`, and `\\`. The arc must not paint a
+rectangular filled background. Shorter cells retain the compact horizontal
+terminal-gauge fallback described below so responsive layouts do not lose
+authoritative values.
 
-The CPU dial is titled `CPU Usage`; its context is the authoritative logical
-core count when known and `utilization` otherwise. The compact fallback has a
+The CPU dial is titled `CPU Usage`; when the authoritative logical core count
+is known, its context is the percentage-derived active core equivalent and
+total with two decimal places (`used / total cores`). It says `utilization`
+when the core count is unavailable. The compact fallback has a
 numeric label in every determinate presentation. At 28 or more cell columns
 the fallback label is `CPU n% · N cores`; at 16–27 columns the authoritative
 core count contracts to `Nc`; below 16 columns the gauge retains `CPU n%` and
@@ -479,7 +481,7 @@ reduced-motion mode.
 
 The RAM cell derives whole used percent with overflow-free integer arithmetic
 from valid total/available byte samples. Its dial is titled `RAM Usage` and the
-context line is `used/total unit`. In the compact fallback, at 38 or more cell
+context line is `used / total unit` with two decimal places. In the compact fallback, at 38 or more cell
 columns it labels the gauge `RAM n% · used / total`; at 28–37 columns the values
 share the total's largest binary unit as `used/total unit`; below 28 columns the
 gauge retains `RAM n%`. Capacity labels use at most one decimal binary-unit digit and
@@ -491,8 +493,9 @@ same determinate text.
 
 The build-filesystem cell is valid only when the configured build directory
 and a consistent total/available `statvfs` sample are both present. Its dial is
-titled `Build FS Usage` and the context line is the exact available capacity
-followed by `free`. In the compact fallback, at 52 or more cell columns the label is
+titled `Build FS Usage` and the context line is `used / total unit` with two
+decimal places. A used value of 60% starts the dial's warning color and 90%
+starts its error color. In the compact fallback, at 52 or more cell columns the label is
 `BUILD FS n% · free/total unit free · <build-dir>`; at 34–51 columns it omits
 the path but retains free/total; at 16–33 it retains `BUILD FS n%`; below 16 it
 contracts to `FS n%`. The path is the configured build directory, not an

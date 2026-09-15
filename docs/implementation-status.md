@@ -3019,3 +3019,16 @@ kernel and U-Boot menuconfig, including its workspace and PTY sizing.
 Version-bearing cell goldens, deterministic PNGs and provenance manifests are
 synchronized. Workspace tests, strict Clippy, 52 bridge tests, documentation,
 version/layout policy, roadmap and raster checks pass.
+
+## M64 concept value review and telemetry fidelity
+
+METER-CONCEPT-001 is complete in v0.1.111. Dashboard CPU, RAM and Build FS
+meters now use thin foreground semicircles with centered percentages and
+two-decimal source context; Build FS enters warning color at 60%. The explicit
+sstate unavailable state, compact layouts and accessibility fallbacks remain
+truthful. The review of all six M21 PNGs ranks the integrated editor and
+focus-trapped F10 application menu as the first future fidelity investment,
+followed by evidence-led task/error workflow polish. Rootfs and Terminal
+Sessions already retain most of their concept value. Focused and full workspace
+tests, strict Clippy, 52 bridge tests, documentation, version/layout, roadmap,
+concept integrity and deterministic raster checks pass.

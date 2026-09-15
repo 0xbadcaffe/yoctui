@@ -155,8 +155,8 @@ use editor_render::{build_completion_popup, recipe_editor};
 
 mod telemetry_gauges;
 use telemetry_gauges::{
-    format_bytes_pair, render_disk_gauge, render_disk_io_projection, render_network_io_projection,
-    render_ram_gauge,
+    format_bytes_pair, format_bytes_pair_with, render_disk_gauge, render_disk_io_projection,
+    render_network_io_projection, render_ram_gauge,
 };
 
 mod telemetry_strip;

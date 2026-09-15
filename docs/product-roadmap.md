@@ -1366,3 +1366,25 @@ resizing introduced in v0.1.109.
 
 DONE in v0.1.110. The README descriptions, version-bearing cell goldens,
 production rasters and provenance manifests are synchronized and verified.
+
+## M64 — Concept value review and telemetry fidelity
+
+METER-CONCEPT-001 replaces the Dashboard's heavy multi-radius resource bands
+with thin semicircular instruments matching the reviewed reference. The three
+available cards retain typed values, centered percentage and capacity context;
+the fourth remains explicitly unavailable until the backend supplies an
+authoritative sstate-reuse ratio.
+
+The six-image value review keeps the editor and focus-trapped F10 application
+menu as the first future concept investment. Its simultaneous recipe tree,
+large source buffer, validation/diff region and stable menu groups would improve
+an end-to-end editing workflow. Active Tasks and Failed Errors remain the next
+operational polish targets because their correlated progress, logs, search and
+recovery actions shorten build diagnosis. Rootfs Composition and Terminal
+Sessions already deliver most of their concept value and should change only
+when operator evidence exposes a concrete gap. Dashboard sample values,
+timestamps, usernames, paths and decorative activity remain concept-only.
+
+DONE in v0.1.111. Focused and full workspace tests, strict Clippy, bridge,
+documentation, version/layout, roadmap, concept integrity and all deterministic
+raster checks pass.

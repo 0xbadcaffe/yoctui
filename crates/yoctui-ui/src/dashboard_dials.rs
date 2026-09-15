@@ -2,6 +2,29 @@
 use super::*;
 use ratatui::widgets::canvas::{Canvas, Points};
 
+fn dashboard_cpu_context(percent: Option<u8>, cores: Option<u16>) -> String {
+    match (percent, cores) {
+        (Some(percent), Some(cores)) => format!(
+            "{:.2} / {:.2} cores",
+            f64::from(percent.min(100)) * f64::from(cores) / 100.0,
+            f64::from(cores)
+        ),
+        (_, Some(cores)) => format!("{cores} logical cores"),
+        _ => "utilization".into(),
+    }
+}
+
+fn dashboard_meter_style(app: &App, percent: u8, warning_at: u8) -> Style {
+    let palette = ThemePalette::for_app(app);
+    if percent >= 90 {
+        palette.role(palette.error, Modifier::BOLD)
+    } else if percent >= warning_at {
+        palette.role(palette.warning, Modifier::BOLD)
+    } else {
+        palette.role(palette.progress, Modifier::BOLD)
+    }
+}
+
 pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
     if area.width < 64
         || area.height < 7
@@ -28,7 +51,7 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
     });
     let pair = |total: Option<u64>, available: Option<u64>| match (total, available) {
         (Some(total), Some(available)) if total > 0 && available <= total => {
-            format_bytes_pair(total - available, total)
+            format_bytes_pair_with(total - available, total, 2, " / ")
         }
         _ => "unavailable".into(),
     };
@@ -36,10 +59,8 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
         (
             "CPU Usage",
             cpu,
-            telemetry.logical_cpu_count.map_or_else(
-                || "utilization".into(),
-                |cores| format!("{cores} logical cores"),
-            ),
+            dashboard_cpu_context(cpu, telemetry.logical_cpu_count),
+            70,
         ),
         (
             "RAM Usage",
@@ -48,16 +69,18 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
                 telemetry.memory_total_bytes,
                 telemetry.memory_available_bytes,
             ),
+            80,
         ),
         (
             "Build FS Usage",
             disk,
             pair(telemetry.disk_total_bytes, telemetry.disk_available_bytes),
+            60,
         ),
-        ("Sstate Reuse", None, "backend does not report".into()),
+        ("Sstate Reuse", None, "backend does not report".into(), 70),
     ];
     let cells = Layout::horizontal([Constraint::Ratio(1, 4); 4]).split(inner);
-    for (index, ((title, percent, detail), cell)) in
+    for (index, ((title, percent, detail, warning_at), cell)) in
         values.into_iter().zip(cells.iter().copied()).enumerate()
     {
         let divider = Block::default()
@@ -94,16 +117,14 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
         let mut inactive = Vec::new();
         for step in 0..=180 {
             let angle = std::f64::consts::PI * (1.0 - f64::from(step) / 180.0);
-            for radius in [0.82, 0.88, 0.94, 1.0] {
-                let point = (radius * angle.cos(), radius * angle.sin());
-                if percent > 0 && step * 100 <= i32::from(percent) * 180 {
-                    active.push(point);
-                } else {
-                    inactive.push(point);
-                }
+            let point = (angle.cos(), angle.sin());
+            if percent > 0 && step * 100 <= i32::from(percent) * 180 {
+                active.push(point);
+            } else {
+                inactive.push(point);
             }
         }
-        let color = telemetry_meter_style(app, percent)
+        let color = dashboard_meter_style(app, percent, warning_at)
             .fg
             .unwrap_or(palette.progress);
         frame.render_widget(

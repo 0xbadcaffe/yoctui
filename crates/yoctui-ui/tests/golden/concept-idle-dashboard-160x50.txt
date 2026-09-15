@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.110  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.111  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -31,12 +31,12 @@
 │    Devtool              │┌Resource Telemetry───────────────────────────────────────────────────────────────────┐│Build image [B]                             │
 │    QEMU / Wic           ││      CPU Usage     │      RAM Usage      │   Build FS Usage   │    Sstate Reuse     ││Attention                                   │
 │    Maintenance          ││        ⣀⣀⣀⣀        │        ⢀⣀⣀⣀⡀        │        ⣀⣀⣀⣀        │                     ││No retained warnings or errors              │
-│  ▱ Build environment    ││    ⢀⣤⣾⣿⣯⣟⣻⣽⣿⣷⣤⡀    │    ⢀⣠⣶⣿⣷⣽⣛⣯⣾⣿⣶⣄⡀    │    ⢀⣤⣾⣿⣯⣟⣻⣽⣿⣷⣤⡀    │                     ││Workbench Center                            │
-│  ▱ Compatibility        ││   ⣴⣿⡿⠟⠉    ⠉⠻⢿⣿⣦   │   ⣰⣿⣿⠟⠋⠁   ⠈⠙⠻⣿⣿⣆   │   ⣴⣿⡿⠟⠉    ⠉⠻⢿⣿⣦   │                     ││Context: Work · core-image-minimal          │
-│  ▱ Settings             ││  ⣼⣿⡟          ⢻⣿⣧  │  ⣼⣿⡿⠁         ⠈⢿⣿⣧  │  ⣼⣿⡟          ⢻⣿⣧  │     unavailable     ││Active: tasks 0 · jobs 0                    │
-│                         ││ ⢸⣿⡟            ⢻⣿⡇ │ ⢰⣿⡿             ⢿⣿⡆ │ ⢸⣿⡟            ⢻⣿⡇ │                     ││Favorite: none                              │
-│                         ││ ⢸⣿⡇     18%    ⢸⣿⡇ │ ⢸⣿⡇     42%     ⢸⣿⡇ │ ⢸⣿⡇     63%    ⢸⣿⡇ │                     ││Terminal: none                              │
-│                         ││   4 logical cores  │    6.7/16.0 GiB     │   94.5/150.0 GiB   │backend does not rep…││[t] Terminal sessions                       │
+│  ▱ Build environment    ││    ⢀⡤⠚⠉⠁  ⠈⠉⠓⢤⡀    │    ⢀⡠⠖⠋⠁   ⠈⠙⠲⢄⡀    │    ⢀⡤⠚⠉⠁  ⠈⠉⠓⢤⡀    │                     ││Workbench Center                            │
+│  ▱ Compatibility        ││   ⡴⠋          ⠙⢦   │   ⡰⠋           ⠙⢆   │   ⡴⠋          ⠙⢦   │                     ││Context: Work · core-image-minimal          │
+│  ▱ Settings             ││  ⡼⠁            ⠈⢧  │  ⡼⠁             ⠈⢧  │  ⡼⠁            ⠈⢧  │     unavailable     ││Active: tasks 0 · jobs 0                    │
+│                         ││ ⢸⠁              ⠈⡇ │ ⢰⠃               ⠘⡆ │ ⢸⠁              ⠈⡇ │                     ││Favorite: none                              │
+│                         ││ ⢸       18%      ⡇ │ ⢸       42%       ⡇ │ ⢸       63%      ⡇ │                     ││Terminal: none                              │
+│                         ││  0.72 / 4.00 cores │  6.72 / 16.00 GiB   │ 94.50 / 150.00 GiB │backend does not rep…││[t] Terminal sessions                       │
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
 │                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
 │                         ││[B] Build image            │[t] Open terminal           │[E] Verify environment      ││00:04:55                                    │

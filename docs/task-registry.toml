@@ -8073,3 +8073,14 @@ required = true
 depends_on = ["MENUCONFIG-NCURSES-001"]
 verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.110. The README gallery and kernel/firmware workflow document the original ncurses presentation, full-width workspace, omitted passive Inspector and exact visible-pane PTY resizing for both menuconfig providers. Version-bearing goldens, rasters and provenance are synchronized; the full baseline passes."
+
+[[task]]
+id = "METER-CONCEPT-001"
+milestone = "M64"
+title = "Match Dashboard telemetry meters to the reviewed instrument layout"
+status = "DONE"
+priority = 960
+required = true
+depends_on = ["CONCEPT-VERIFY"]
+verify = ["cargo test -p yoctui-ui dashboard", "cargo test -p yoctui-ui concept", "python3 scripts/render-m22-concept-screenshots.py --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.111. Dashboard CPU, RAM and Build FS cards use thin foreground semicircles, centered whole percentages and two-decimal context. Build FS warns at 60%; unavailable sstate remains explicit. All six concept PNGs were reviewed and the editor/F10 composition is the first recommended future fidelity target. Focused and full workspace tests, strict Clippy, 52 bridge tests, docs, version/layout, roadmap and deterministic images pass."

@@ -20,7 +20,15 @@ fn dashboard_concept_has_distinct_regions_and_resizes_without_mutation() {
         };
         assert!(region_text(nav, 5, work, 9).contains("Build Overview"));
         assert!(region_text(nav, 14, work, height - 35).contains("Recent Builds"));
-        assert!(region_text(nav, height - 20, work, 10).contains("Resource Telemetry"));
+        let telemetry = region_text(nav, height - 20, work, 10);
+        assert!(telemetry.contains("Resource Telemetry"));
+        assert!(telemetry.contains("0.72 / 4.00 cores"));
+        assert!(telemetry.contains("6.72 / 16.00 GiB"));
+        assert!(telemetry.contains("94.50 / 150.00 GiB"));
+        assert!(
+            !telemetry.contains('⣿'),
+            "Dashboard dials must remain a thin foreground stroke"
+        );
         assert!(region_text(nav, height - 10, work, 7).contains("Quick Actions"));
         assert!(
             region_text(nav + work, 5, width - nav - work, height - 8)
