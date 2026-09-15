@@ -1,14 +1,14 @@
 # Current Task
 
-**ID:** DEVICE-TREE-HARDEN-001
-**Title:** Audit and harden Device Tree compilation
+**ID:** README-FLAMEGRAPH-001
+**Title:** Restore the validated Flamegraph report to the README
 **Status:** IN_PROGRESS
 
-Hunt for concrete correctness and safety defects in the new shared Kernel and
-U-Boot Device Tree editor/compiler path. Add failed-first regressions for every
-confirmed defect, keep inventory and output authority typed, and preserve exact
-argument preview and daemon-owned execution.
+Restore the checked real-perf Flamegraph and its machine-readable summary to the
+README. State its measurement date, workload, sample count and source-age limit;
+link the interactive SVG and reproduction command. Extend README checks so the
+report cannot silently disappear or cite missing/stale summary fields.
 
-Verification requires focused model/app/UI tests, the complete workspace test
-suite, strict Clippy, bridge tests, formatting, documentation, version/library
-layout checks, both deterministic screenshot sets and roadmap verification.
+Verification requires the README and Flamegraph script tests, documentation,
+version and roadmap checks, the deterministic screenshot checks and the full
+workspace baseline before delivery.

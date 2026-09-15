@@ -528,6 +528,7 @@ fn devwork_terminal_renders_destination_authority_and_zero_spawn_cancel_hint() {
                 ],
             },
             destination: yoctui_model::TerminalLaunchDestination::Embedded,
+            output_must_not_exist: None,
         }));
     let output = rendered_text(&app, 120, 30);
     assert!(output.contains("Choose terminal destination"), "{output}");

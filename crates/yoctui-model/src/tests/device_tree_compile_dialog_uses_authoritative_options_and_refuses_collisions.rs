@@ -19,6 +19,17 @@ fn inventory(component: PlatformComponent, source: PathBuf) -> PlatformInventory
     })
 }
 
+fn unique_temp_root(label: &str) -> PathBuf {
+    std::env::temp_dir().join(format!(
+        "yoctui-dtc-{label}-{}-{}",
+        std::process::id(),
+        SystemTime::now()
+            .duration_since(SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ))
+}
+
 #[test]
 fn device_tree_compile_dialog_builds_exact_preview_for_kernel_and_firmware() {
     for (component, action) in [
@@ -83,15 +94,7 @@ fn device_tree_compile_dialog_builds_exact_preview_for_kernel_and_firmware() {
 
 #[test]
 fn device_tree_compile_refuses_an_existing_derived_output() {
-    let unique = format!(
-        "yoctui-dtc-{}-{}",
-        std::process::id(),
-        SystemTime::now()
-            .duration_since(SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
-    );
-    let root = std::env::temp_dir().join(unique);
+    let root = unique_temp_root("existing-output");
     std::fs::create_dir_all(&root).unwrap();
     let source = root.join("board.dts");
     let output = root.join("board.yoctui.dtb");
@@ -103,6 +106,85 @@ fn device_tree_compile_refuses_an_existing_derived_output() {
     let _ = update(&mut app, Action::CompileSelectedKernelDts);
 
     assert!(app.active_dialog().is_none());
+    assert!(
+        app.notification
+            .as_deref()
+            .is_some_and(|message| message.contains("Refusing to overwrite"))
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn device_tree_compile_rejects_a_source_outside_its_authoritative_root() {
+    let mut app = App::new(8, 512);
+    let mut state = inventory(
+        PlatformComponent::Kernel,
+        PathBuf::from("/outside/board.dts"),
+    );
+    let PlatformInventoryState::Available(inventory) = &mut state else {
+        unreachable!();
+    };
+    inventory.roots = vec![PathBuf::from("/workspace/kernel")];
+    inventory.files[0].root = PathBuf::from("/workspace/kernel");
+    app.kernel.view = PlatformView::DeviceTrees;
+    app.kernel.inventory = state;
+
+    assert_eq!(update(&mut app, Action::CompileSelectedKernelDts), None);
+    assert!(app.active_dialog().is_none());
+    assert!(
+        app.notification
+            .as_deref()
+            .is_some_and(|message| message.contains("outside its authoritative root"))
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn device_tree_compile_refuses_a_dangling_output_symlink() {
+    use std::os::unix::fs::symlink;
+
+    let root = unique_temp_root("dangling-output");
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("board.dts");
+    symlink(root.join("missing-target"), root.join("board.yoctui.dtb")).unwrap();
+
+    let mut app = App::new(8, 512);
+    app.kernel.view = PlatformView::DeviceTrees;
+    app.kernel.inventory = inventory(PlatformComponent::Kernel, source);
+    assert_eq!(update(&mut app, Action::CompileSelectedKernelDts), None);
+
+    assert!(app.active_dialog().is_none());
+    assert!(
+        app.notification
+            .as_deref()
+            .is_some_and(|message| message.contains("Refusing to overwrite"))
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn device_tree_compile_rechecks_output_at_final_launch_confirmation() {
+    let root = unique_temp_root("late-output");
+    std::fs::create_dir_all(&root).unwrap();
+    let source = root.join("board.dts");
+    let output = root.join("board.yoctui.dtb");
+
+    let mut app = App::new(8, 512);
+    app.kernel.view = PlatformView::DeviceTrees;
+    app.kernel.inventory = inventory(PlatformComponent::Kernel, source);
+    assert_eq!(update(&mut app, Action::CompileSelectedKernelDts), None);
+    assert_eq!(update(&mut app, Action::ConfirmDtcCompileOptions), None);
+    assert!(matches!(
+        app.active_dialog(),
+        Some(Dialog::TerminalLaunch(_))
+    ));
+
+    std::fs::write(&output, b"appeared after preview").unwrap();
+    assert_eq!(update(&mut app, Action::ConfirmTerminalLaunch), None);
+    assert!(matches!(
+        app.active_dialog(),
+        Some(Dialog::TerminalLaunch(_))
+    ));
     assert!(
         app.notification
             .as_deref()

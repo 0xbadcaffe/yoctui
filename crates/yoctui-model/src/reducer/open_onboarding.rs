@@ -13,11 +13,41 @@ fn selected_platform_dtc(
     let inventory = workbench
         .inventory()
         .ok_or_else(|| "Refresh the platform inventory before running dtc.".to_owned())?;
+    if !yoctui_utils::is_absolute_normal_path(&file.root)
+        || !yoctui_utils::is_absolute_normal_path(&file.path)
+        || file.path.strip_prefix(&file.root).is_err()
+        || !inventory.roots.iter().any(|root| root == &file.root)
+    {
+        return Err("The selected file is outside its authoritative root.".into());
+    }
     let program = inventory
         .dtc
         .clone()
         .ok_or_else(|| "No authoritative dtc executable was found in PATH.".to_owned())?;
+    if !yoctui_utils::is_absolute_normal_path(&program) {
+        return Err("The reported dtc executable path is unsafe.".into());
+    }
     Ok((file, program, inventory.component))
+}
+
+fn ensure_output_absent(app: &mut App, output: &Path) -> bool {
+    match yoctui_utils::path_entry_exists(output) {
+        Ok(false) => true,
+        Ok(true) => {
+            app.notification = Some(format!(
+                "Refusing to overwrite {}; move or remove it first.",
+                output.display()
+            ));
+            false
+        }
+        Err(error) => {
+            app.notification = Some(format!(
+                "Cannot verify that {} is available: {error}",
+                output.display()
+            ));
+            false
+        }
+    }
 }
 
 fn begin_platform_dtc_compile(app: &mut App, kernel: bool) {
@@ -33,11 +63,7 @@ fn begin_platform_dtc_compile(app: &mut App, kernel: bool) {
         return;
     }
     let dialog = DtcCompileDialog::new(component, &file, program);
-    if dialog.output.exists() {
-        app.notification = Some(format!(
-            "Refusing to overwrite {}; move or remove it first.",
-            dialog.output.display()
-        ));
+    if !ensure_output_absent(app, &dialog.output) {
         return;
     }
     open_dialog(app, Dialog::DtcCompile(dialog));
@@ -61,33 +87,33 @@ fn begin_platform_dtc_decompile(app: &mut App, kernel: bool) {
         .and_then(|value| value.to_str())
         .unwrap_or("device-tree");
     let output = file.path.with_file_name(format!("{stem}.yoctui.dts"));
-    if output.exists() {
-        app.notification = Some(format!(
-            "Refusing to overwrite {}; move or remove it first.",
-            output.display()
-        ));
+    if !ensure_output_absent(app, &output) {
         return;
     }
-    open_terminal_launch(
+    open_dialog(
         app,
-        TerminalLaunchRequest {
-            name: format!(
-                "decompile {} device tree",
-                component.label().to_ascii_lowercase()
-            ),
-            kind: TerminalCreationKind::Utility,
-            cwd: file.root,
-            program,
-            arguments: vec![
-                "-I".into(),
-                "dtb".into(),
-                "-O".into(),
-                "dts".into(),
-                "-o".into(),
-                output.display().to_string(),
-                file.path.display().to_string(),
-            ],
-        },
+        Dialog::TerminalLaunch(TerminalLaunchDialog {
+            request: TerminalLaunchRequest {
+                name: format!(
+                    "decompile {} device tree",
+                    component.label().to_ascii_lowercase()
+                ),
+                kind: TerminalCreationKind::Utility,
+                cwd: file.root,
+                program,
+                arguments: vec![
+                    "-I".into(),
+                    "dtb".into(),
+                    "-O".into(),
+                    "dts".into(),
+                    "-o".into(),
+                    output.display().to_string(),
+                    file.path.display().to_string(),
+                ],
+            },
+            destination: TerminalLaunchDestination::Embedded,
+            output_must_not_exist: Some(output),
+        }),
     );
 }
 
@@ -444,21 +470,18 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmDtcCompileOptions => {
-            if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog().cloned() {
-                if dialog.output.exists() {
-                    app.notification = Some(format!(
-                        "Refusing to overwrite {}; move or remove it first.",
-                        dialog.output.display()
-                    ));
-                } else {
-                    replace_dialog(
-                        app,
-                        Dialog::TerminalLaunch(TerminalLaunchDialog {
-                            request: dialog.terminal_request(),
-                            destination: TerminalLaunchDestination::Embedded,
-                        }),
-                    );
-                }
+            if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog().cloned()
+                && ensure_output_absent(app, &dialog.output)
+            {
+                let output = dialog.output.clone();
+                replace_dialog(
+                    app,
+                    Dialog::TerminalLaunch(TerminalLaunchDialog {
+                        request: dialog.terminal_request(),
+                        destination: TerminalLaunchDestination::Embedded,
+                        output_must_not_exist: Some(output),
+                    }),
+                );
             }
         }
         Action::CancelDtcCompileOptions => {
@@ -703,6 +726,13 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::ConfirmTerminalLaunch => {
             if let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog().cloned() {
+                if dialog
+                    .output_must_not_exist
+                    .as_deref()
+                    .is_some_and(|output| !ensure_output_absent(app, output))
+                {
+                    return None;
+                }
                 close_dialog(app);
                 return Some(match dialog.destination {
                     TerminalLaunchDestination::Embedded => {

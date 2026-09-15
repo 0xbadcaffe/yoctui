@@ -370,7 +370,7 @@ fn recipe_bitbake_action_uses_authoritative_tasks_picker_and_confirmation() {
         assert_eq!(update(&mut app, action), None);
         assert!(matches!(
             app.active_dialog(),
-            Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, destination: TerminalLaunchDestination::Embedded }))
+            Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, destination: TerminalLaunchDestination::Embedded, .. }))
                 if request.name == format!("{expected}:busybox")
         ));
     }
@@ -514,6 +514,7 @@ fn selected_recipe_menuconfig_opens_the_embedded_terminal_chooser() {
                 ..
             },
             destination: TerminalLaunchDestination::Embedded,
+            ..
         })) if name == "menuconfig:busybox"
     ));
 }
@@ -538,6 +539,7 @@ fn kernel_menuconfig_uses_virtual_provider_and_requires_reported_task() {
         Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
             request: TerminalLaunchRequest { arguments, .. },
             destination: TerminalLaunchDestination::Embedded,
+            ..
         })) if arguments == &vec!["bitbake", "virtual/kernel", "-c", "menuconfig"]
     ));
 }
@@ -562,6 +564,7 @@ fn firmware_menuconfig_uses_detected_provider_and_requires_reported_task() {
         Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
             request: TerminalLaunchRequest { arguments, .. },
             destination: TerminalLaunchDestination::Embedded,
+            ..
         })) if arguments == &vec!["bitbake", "u-boot-fslc", "-c", "menuconfig"]
     ));
 }

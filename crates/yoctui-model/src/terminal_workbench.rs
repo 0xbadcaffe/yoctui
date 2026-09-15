@@ -63,6 +63,7 @@ impl Default for DetachedTerminalAvailability {
 pub struct TerminalLaunchDialog {
     pub request: TerminalLaunchRequest,
     pub destination: TerminalLaunchDestination,
+    pub output_must_not_exist: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

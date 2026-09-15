@@ -5517,8 +5517,10 @@ node/property sorting (`-s`), output padding (`-p`) and reserve-map entries
 (`-R`). Left/Right or Space changes the selected value from bounded choices.
 Enter advances to the existing exact terminal-launch preview; Esc cancels
 without spawning. The output remains a derived sibling `NAME.yoctui.dtb`, and
-an existing output blocks both the initial form and the final transition.
-Kernel and U-Boot use the same dialog and execution path.
+any existing filesystem entry, including a dangling symbolic link, blocks the
+initial form, preview transition and final launch confirmation. A selected
+source outside its reported authoritative root is rejected. Kernel and U-Boot
+use the same dialog and execution path.
 
 The compiler runs as the inventory-reported `dtc` executable in the selected
 file's authoritative root through the daemon-owned utility PTY. Its complete

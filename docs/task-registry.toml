@@ -8093,7 +8093,7 @@ status = "DONE"
 priority = 970
 required = true
 depends_on = ["METER-CONCEPT-001"]
-verify = ["cargo test -p yoctui-model device_tree", "cargo test -p yoctui-app dtc", "cargo test -p yoctui-ui device_tree", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/check-library-layout.py", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
+verify = ["cargo test -p yoctui-model device_tree", "cargo test -p yoctui-app dtc", "cargo test -p yoctui-ui device_tree", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "python3 scripts/check-library-layout.py", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.112. DTS/DTSI use Device Tree language detection and syntax roles for directives, labels/nodes, properties, operators, values, line comments and block comments. Kernel and U-Boot share a bounded typed dtc form for -@, -s, -p and -R, collision refusal, exact terminal preview and daemon-owned utility PTY creation. All 1,620 Rust tests pass with four existing live tests ignored; strict Clippy, 52 bridge tests, docs, version/layout, roadmap and deterministic images pass. Host dtc was unavailable, so executable behavior is covered through typed request and existing real daemon PTY tests rather than a local host compile."
 
 [[task]]
@@ -8111,18 +8111,18 @@ notes = "DONE in v0.1.113. Two reviewed production TestBackend cell/style golden
 id = "DEVICE-TREE-HARDEN-001"
 milestone = "M66"
 title = "Audit and harden Device Tree compilation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 981
 required = true
 depends_on = ["README-DTC-SCREENS-001"]
-verify = ["cargo test -p yoctui-model device_tree", "cargo test -p yoctui-app dtc", "cargo test -p yoctui-ui device_tree", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/check-library-layout.py", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
-notes = "Audit is active after the requested README screens. Confirmed defects require failed-first regressions and one coherent v0.1.114 fix commit."
+verify = ["cargo test -p yoctui-model device_tree", "cargo test -p yoctui-app dtc", "cargo test -p yoctui-ui device_tree", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "python3 scripts/check-library-layout.py", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.114. Three failed-first regressions prove the prior source-root escape, dangling-symlink collision bypass and missing final-confirmation recheck. Shared link-aware path-entry detection, fail-closed authoritative path validation and a typed terminal output guard protect Kernel/U-Boot compile and decompile launches. Focused and full baseline verification passes."
 
 [[task]]
 id = "README-FLAMEGRAPH-001"
 milestone = "M66"
 title = "Restore the validated Flamegraph report to the README"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 982
 required = true
 depends_on = ["DEVICE-TREE-HARDEN-001"]

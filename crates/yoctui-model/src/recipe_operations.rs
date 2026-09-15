@@ -212,6 +212,7 @@ pub(crate) fn open_terminal_launch(app: &mut App, request: TerminalLaunchRequest
         Dialog::TerminalLaunch(TerminalLaunchDialog {
             request,
             destination: TerminalLaunchDestination::Embedded,
+            output_must_not_exist: None,
         }),
     );
 }

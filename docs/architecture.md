@@ -4180,5 +4180,8 @@ without renderer-side process access or output parsing.
 
 Kernel and boot-firmware reducers call one shared platform compile constructor.
 The output path is derived beside the selected DTS and is never accepted when
-already present. Option fields emit individual arguments and never form an
-unstructured shell string.
+already present. Entry detection uses link metadata so a dangling final symlink
+also counts as occupied, and the typed terminal dialog retains the output guard
+for a final pre-spawn check. Source and root must be absolute, traversal-free
+and lexically related members of the reported inventory. Option fields emit
+individual arguments and never form an unstructured shell string.

@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+DEVICE-TREE-HARDEN-001 is complete in v0.1.114. Failed-first tests exposed and
+now cover three defects: sources outside their authoritative root were accepted,
+dangling output symlinks bypassed collision checks, and a file created after
+preview was not rechecked at final launch. Shared link-aware entry detection in
+`yoctui-utils`, typed terminal output guards and fail-closed path validation fix
+the Kernel/U-Boot compile and decompile paths. README-FLAMEGRAPH-001 is active.
+
 README-DTC-SCREENS-001 is complete in v0.1.113. The README gallery now adds the
 production shared editor with Device Tree syntax roles and the typed compiler
 dialog with non-default options and derived paths. Both are reviewed `160x50`

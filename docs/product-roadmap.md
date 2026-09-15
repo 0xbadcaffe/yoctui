@@ -1410,3 +1410,8 @@ new path and fixes concrete safety or correctness defects with failed-first
 regressions. README-FLAMEGRAPH-001 restores the checked real-perf Flamegraph and
 its validated summary to the landing page without presenting historical
 evidence as a current source-bound measurement.
+
+README-DTC-SCREENS-001 is DONE in v0.1.113. DEVICE-TREE-HARDEN-001 is DONE in
+v0.1.114 after failed-first coverage repaired root containment, dangling-link
+collision detection and the final launch recheck. README-FLAMEGRAPH-001 is the
+active final task.
