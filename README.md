@@ -437,6 +437,31 @@ their own checks; a version number alone does not establish support.
 | Disabled workflow | Read its Compatibility reason and verify the required tool/task/configuration |
 | Host overloaded or nearly full | Inspect telemetry and disk space; choose build parallelism/cleanup yourself |
 
+## Performance evidence
+
+The checked Flamegraph is a real userspace `perf` capture of the deterministic
+large-metadata workbench at v0.1.64 on September 6, 2026. It completed 6,000
+frames with 2,403 real userspace samples, workload checksum
+`95d507f9b14b71d6`, and zero unresolved frames. This is historical profiling
+evidence because rendering and model sources have changed since that capture;
+it is not source-bound performance certification for the current release.
+
+<p align="center">
+  <a href="artifacts/flamegraph/yoctui.svg"><img src="artifacts/flamegraph/yoctui.svg" alt="Interactive Yoctui large-metadata workbench CPU Flamegraph"></a>
+</p>
+
+[Machine-readable summary](artifacts/flamegraph/summary.txt) ·
+[Profiling method and current limits](docs/profiling.md)
+
+Reproduce the current-source report on a Linux host that permits userspace
+`perf` sampling:
+
+```sh
+cargo install flamegraph --locked
+./scripts/flamegraph.sh
+./scripts/test-flamegraph.sh
+```
+
 ## Development and license
 
 ```sh

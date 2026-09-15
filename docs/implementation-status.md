@@ -1,18 +1,25 @@
 # Yoctui Implementation Status
 
+README-FLAMEGRAPH-001 is complete in v0.1.115. The README again exposes the
+retained v0.1.64 real-perf Flamegraph, its machine-readable summary and exact
+reproduction path. Static checks bind the displayed 6,000 frames, 2,403
+userspace samples and checksum to the summary, bind the weighted-event total to
+the SVG, and require zero unresolved frames. The report explicitly describes
+the artifact as historical because application sources changed after capture.
+All 732 registry tasks are DONE.
+
 DEVICE-TREE-HARDEN-001 is complete in v0.1.114. Failed-first tests exposed and
 now cover three defects: sources outside their authoritative root were accepted,
 dangling output symlinks bypassed collision checks, and a file created after
 preview was not rechecked at final launch. Shared link-aware entry detection in
 `yoctui-utils`, typed terminal output guards and fail-closed path validation fix
-the Kernel/U-Boot compile and decompile paths. README-FLAMEGRAPH-001 is active.
+the Kernel/U-Boot compile and decompile paths.
 
 README-DTC-SCREENS-001 is complete in v0.1.113. The README gallery now adds the
 production shared editor with Device Tree syntax roles and the typed compiler
 dialog with non-default options and derived paths. Both are reviewed `160x50`
 cell/style goldens rendered by the pinned deterministic raster pipeline. The
 gallery manifest, ordering, alternative text and focused UI check pass.
-DEVICE-TREE-HARDEN-001 is active next, followed by the Flamegraph README repair.
 
 M61 is DONE in v0.1.108. Navigator now owns focus at startup and after every
 destination change. Tab and Shift+Tab are the only pane traversal keys, and a

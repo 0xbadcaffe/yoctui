@@ -5527,3 +5527,12 @@ file's authoritative root through the daemon-owned utility PTY. Its complete
 stdout, stderr and exit status remain visible in Terminal Sessions. DTSI is
 editable but cannot be compiled directly; DTB and DTBO retain the existing
 decompile workflow.
+
+## 47. README Flamegraph report
+
+The README embeds the checked interactive SVG and links its machine-readable
+summary and reproduction documentation. The adjacent text must match the
+summary's frame count, perf sample count and workload checksum, name the capture
+version and date, and state whether later source changes make it historical.
+Static README checks reject missing assets, invalid summary bounds, unresolved
+frames, mismatched SVG event totals, missing links and drifted report values.

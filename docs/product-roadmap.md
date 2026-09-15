@@ -1413,5 +1413,6 @@ evidence as a current source-bound measurement.
 
 README-DTC-SCREENS-001 is DONE in v0.1.113. DEVICE-TREE-HARDEN-001 is DONE in
 v0.1.114 after failed-first coverage repaired root containment, dangling-link
-collision detection and the final launch recheck. README-FLAMEGRAPH-001 is the
-active final task.
+collision detection and the final launch recheck. README-FLAMEGRAPH-001 is DONE
+in v0.1.115 with a summary-bound historical report and validated reproduction
+path. All 732 registry tasks are DONE.

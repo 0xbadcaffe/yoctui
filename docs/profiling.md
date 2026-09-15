@@ -44,6 +44,14 @@ status 2. On locked-down Linux hosts, grant `CAP_PERFMON` to `perf` or
 temporarily lower `kernel.perf_event_paranoid` according to local security
 policy before running the flamegraph gate.
 
+The artifact linked from the README is the retained post-optimization v0.1.64
+capture recorded on 2026-09-06. Its checked summary reports 6,000 frames, 2,403
+real userspace perf samples, checksum `95d507f9b14b71d6`, 15,472,248,669
+weighted events and zero unresolved frames. Application sources have changed
+since that commit, so this retained artifact demonstrates the profiler and the
+shape of the optimized workload; it does not certify current-source runtime
+cost. A fresh `scripts/flamegraph.sh` run replaces both files together.
+
 `YOCTUI_PROFILE_TARGET_DIR` selects the ordinary benchmark build cache.
 `YOCTUI_FLAMEGRAPH_BUILD_TARGET_DIR` optionally selects a separate cache for
 the frame-pointer-instrumented flamegraph build; when unset, the existing

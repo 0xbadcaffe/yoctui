@@ -4185,3 +4185,12 @@ also counts as occupied, and the typed terminal dialog retains the output guard
 for a final pre-spawn check. Source and root must be absolute, traversal-free
 and lexically related members of the reported inventory. Option fields emit
 individual arguments and never form an unstructured shell string.
+
+## M66 README profiling evidence
+
+The README Flamegraph is a projection of the checked SVG and key-value summary
+under `artifacts/flamegraph`, not a regenerated or inferred chart. The static
+README contract parses the summary, checks its bounds and zero-unresolved rule,
+binds its weighted event total to the SVG, and requires the displayed frames,
+perf samples and checksum to agree. Capture version/date and historical status
+remain explicit when current runtime or rendering sources differ.

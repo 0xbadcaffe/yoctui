@@ -559,12 +559,14 @@ recipe, task, or external tool is supported.
 | Linux pseudo-terminal | Current baseline | Static/host observed | Alternate-screen and cursor hide/show restoration pass `./scripts/test-terminal.sh`. macOS, BSD, native Windows, and WSL terminal matrices are not recorded. |
 | Fuzzing | Current baseline | Static/host observed | Finite cargo-fuzz smoke covers protocol frames and retained logs. Finite fuzzing is not exhaustive. |
 | Valgrind | Current development host | Static/host observed | No definite, indirect, or possible lost bytes were reported; two Tokio signal descriptors are explicitly recognized. Still-reachable allocations are reported separately. |
-| Flamegraph | 2026-08-15 | Static/host observed | With explicitly authorized temporary `kernel.perf_event_paranoid=0`, `cargo-flamegraph 0.6.13` and matching `perf 7.0.12` captured real userspace samples and regenerated the deterministic headless SVG. Restricted kernel symbols remain a reported host limitation. |
+| Flamegraph | 2026-09-06 | Static/host observed | The retained v0.1.64 large-metadata capture contains 2,403 real userspace samples over 6,000 frames with no unresolved frames. Application sources have changed, so it is historical profiling evidence rather than current-source certification. Restricted kernel symbols remain a host limitation. |
 
 Reproduce the Flamegraph blocker with:
 
 ```sh
-perf record --no-buildid-mmap -e dummy:u -o /tmp/yoctui-perf.data -- true
+perf_probe="$(mktemp)"
+perf record --no-buildid-mmap -e dummy:u -o "$perf_probe" -- true
+rm -f "$perf_probe"
 ./scripts/flamegraph.sh
 ```
 
@@ -578,8 +580,8 @@ test -s artifacts/flamegraph/yoctui.svg
 sudo sysctl -w kernel.perf_event_paranoid=4
 ```
 
-Until that succeeds, the hardening analysis gate remains blocked. Tool
-installation alone is not a pass.
+A fresh successful capture is required before claiming current-source
+Flamegraph evidence. Tool installation alone is not a pass.
 
 ## Adding a supported live combination
 

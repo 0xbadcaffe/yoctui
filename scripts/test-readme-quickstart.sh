@@ -116,6 +116,34 @@ for item in artifacts:
     assert struct.unpack(">II", png[16:24]) == (1600, 1000)
 assert "fixture values" in readme and "Recorded live capture" in readme
 print("README screenshot gallery checks passed")
+
+flamegraph = Path("artifacts/flamegraph/yoctui.svg")
+flamegraph_summary = Path("artifacts/flamegraph/summary.txt")
+assert flamegraph.is_file() and flamegraph.stat().st_size > 100_000
+assert flamegraph_summary.is_file(), "Missing Flamegraph summary"
+summary = dict(
+    line.split("=", 1)
+    for line in flamegraph_summary.read_text(encoding="utf-8").splitlines()
+    if "=" in line and not line.startswith("dominant_")
+)
+assert summary.get("schema") == "yoctui.flamegraph.summary.v1"
+assert int(summary["workload_frames"]) >= 1_000
+assert int(summary["total_samples"]) >= 500
+assert summary.get("unresolved_frames") == "0"
+assert re.fullmatch(r"[0-9a-f]{16}", summary["workload_checksum"])
+svg = flamegraph.read_text(encoding="utf-8")
+readme_words = " ".join(readme.split())
+assert "Yoctui workbench CPU profile" in svg
+assert f'total_samples="{summary["total_event_count"]}"' in svg
+assert "artifacts/flamegraph/yoctui.svg" in readme
+assert "artifacts/flamegraph/summary.txt" in readme
+assert f'{int(summary["workload_frames"]):,} frames' in readme_words
+assert f'{int(summary["total_samples"]):,} real userspace samples' in readme_words
+assert f'`{summary["workload_checksum"]}`' in readme
+assert "v0.1.64" in readme and "September 6, 2026" in readme
+assert "historical" in readme.lower()
+print("README Flamegraph report checks passed")
+
 required_sections = (
     "Screenshots",
     "Features",
@@ -132,6 +160,7 @@ required_sections = (
     "Daemon and remote use",
     "Settings and team profiles",
     "Compatibility and troubleshooting",
+    "Performance evidence",
     "Development and license",
 )
 for section in required_sections:

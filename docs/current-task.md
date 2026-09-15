@@ -2,13 +2,15 @@
 
 **ID:** README-FLAMEGRAPH-001
 **Title:** Restore the validated Flamegraph report to the README
-**Status:** IN_PROGRESS
+**Status:** DONE
 
-Restore the checked real-perf Flamegraph and its machine-readable summary to the
-README. State its measurement date, workload, sample count and source-age limit;
-link the interactive SVG and reproduction command. Extend README checks so the
-report cannot silently disappear or cite missing/stale summary fields.
+Completed in v0.1.115. The README embeds the checked real-perf SVG, links its
+machine-readable summary and reproduction path, and reports the capture version,
+date, workload, userspace sample count, checksum and zero-unresolved result. It
+also states that the retained v0.1.64 capture is historical because application
+sources have changed.
 
-Verification requires the README and Flamegraph script tests, documentation,
-version and roadmap checks, the deterministic screenshot checks and the full
-workspace baseline before delivery.
+The README test derives displayed facts from the summary and binds its weighted
+event total to the SVG. The Flamegraph workload/validator test, full all-features
+workspace suite, strict Clippy, 52 bridge tests, documentation, version/layout,
+roadmap and both deterministic screenshot checks pass.
