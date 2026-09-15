@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M67 requested fixes are implemented and committed as atomic changes: fresh
+build-directory initialization, asynchronous daemon compatibility discovery,
+and empty-on-open content-only build/rootfs/artifact search. Search Help and
+README match the behavior. Full workspace tests, strict Clippy, formatting and
+52 bridge tests pass. All 736 registered tasks are DONE; the final repository
+completion gate is the remaining release-level verification.
+
 README-FLAMEGRAPH-001 is complete in v0.1.115. The README again exposes the
 retained v0.1.64 real-perf Flamegraph, its machine-readable summary and exact
 reproduction path. Static checks bind the displayed 6,000 frames, 2,403
@@ -3098,3 +3105,7 @@ tests pass; the run recovered from disk exhaustion by cleaning generated debug
 artifacts and disabling incremental compilation. This is deterministic fixture
 evidence, not a fresh live-Yocto performance certification. SEARCH-HELP-001
 finishes stale Help/README wording discovered during final review.
+
+SEARCH-HELP-001: DONE. Help and README describe file-content scope, the empty
+initial query and open-file behavior. Full workspace tests, strict Clippy,
+formatting, 52 bridge tests and roadmap validation pass.

@@ -1421,3 +1421,9 @@ path. All 732 registry tasks are DONE.
 
 User-requested atomic queue: SEARCH-CONTENT-001, FRESH-CLONE-001,
 DAEMON-STARTUP-002. Regressions and baseline checks gate each implementation.
+
+M67 implementation is complete: fresh build-directory initialization,
+nonblocking compatibility discovery, content-only search and matching Help are
+verified. The controlled three-second startup probe no longer gates daemon
+readiness (3.246 s before, 116 ms after in the debug fixture). This does not
+replace source-bound live-Yocto release performance evidence.

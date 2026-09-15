@@ -182,7 +182,7 @@ starting the daemon from an initialized shell as shown above.
 | `Tab` / `Shift+Tab` | Change focus; some workspaces use Tab for their views |
 | Arrows, `PageUp`/`PageDown`, `Home`/`End` | Move within lists and trees |
 | `Right` / `Left` in Navigator or a tree | Expand / collapse or move to parent |
-| `/` | Global regex search outside editors and local search fields |
+| `/` | Search build-file contents, generated rootfs and text image artifacts; opens empty (outside editors and local search fields) |
 | `B` | Image build options |
 | `q` | Request exit; confirmation required |
 

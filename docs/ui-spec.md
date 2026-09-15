@@ -5565,3 +5565,8 @@ queries complete. The retained log says `Loading initial compatibility authority
 authority-dependent actions stay unavailable until a typed compatibility update
 arrives. Recipe loading follows that update. Failure retains a visible error
 while status, attachment and shutdown continue to work.
+
+Global-search Help and README shortcuts describe only build text contents,
+generated rootfs and text image artifacts. Help explains that the dialog opens
+empty and Enter opens the matching file/line; it does not advertise action
+execution or external source-tree search.
