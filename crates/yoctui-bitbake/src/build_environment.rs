@@ -5,7 +5,7 @@ use tokio::{
     time::{error::Elapsed, timeout},
 };
 use yoctui_model::{BuildEnvironmentCloneRequest, BuildEnvironmentProfile};
-use yoctui_utils::is_transient_spawn_error;
+use yoctui_utils::{is_transient_spawn_error, path_entry_exists};
 
 const MAX_OUTPUT: usize = 64 * 1024;
 const SPAWN_ATTEMPTS: usize = 4;
@@ -87,7 +87,9 @@ impl BuildEnvironmentAdapter {
                 parent.to_owned(),
             ));
         }
-        if request.destination.exists() {
+        if path_entry_exists(&request.destination)
+            .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(request.destination.clone()))?
+        {
             if request.destination.is_symlink() {
                 return Err(BuildEnvironmentAdapterError::UnsafePath(
                     request.destination.clone(),
@@ -183,7 +185,18 @@ impl BuildEnvironmentAdapter {
         profile
             .validate()
             .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(profile.build_dir.clone()))?;
-        for path in [&profile.source_dir, &profile.build_dir] {
+        for (path, may_create) in [(&profile.source_dir, false), (&profile.build_dir, true)] {
+            if may_create
+                && !path_entry_exists(path)
+                    .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(path.clone()))?
+            {
+                // oe-init-build-env creates the reviewed build directory. Validation
+                // must not require it to exist or create it ahead of the script.
+                if path.parent().is_some_and(|parent| parent.is_dir()) {
+                    continue;
+                }
+                return Err(BuildEnvironmentAdapterError::MissingPath(path.clone()));
+            }
             if !path.is_dir() {
                 return Err(BuildEnvironmentAdapterError::MissingPath(path.clone()));
             }
@@ -310,6 +323,53 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn fresh_clone_initialization_creates_reviewed_build_directory() {
+        let root = std::env::temp_dir().join(format!("yoctui-fresh-clone-{}", std::process::id()));
+        let p = profile(&root);
+        fs::create_dir_all(&p.source_dir).unwrap();
+        crate::test_support::write_executable(
+            &p.init_script,
+            "#!/bin/bash\nmkdir -p \"$1/conf\"\nexport BUILDDIR=\"$1\"\n",
+        );
+        assert!(!p.build_dir.exists());
+        let adapter = BuildEnvironmentAdapter::default();
+        adapter.validate(&p).unwrap();
+        assert!(
+            !p.build_dir.exists(),
+            "validation must not create directories"
+        );
+        let response = adapter.initialize(p.clone()).await.unwrap();
+        assert!(p.build_dir.join("conf").is_dir());
+        assert_eq!(
+            response.environment.get("BUILDDIR"),
+            Some(&p.build_dir.display().to_string())
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
+    async fn fresh_clone_initialization_rejects_files_links_and_missing_parents() {
+        let root =
+            std::env::temp_dir().join(format!("yoctui-fresh-invalid-{}", std::process::id()));
+        let mut p = profile(&root);
+        fs::create_dir_all(&p.source_dir).unwrap();
+        crate::test_support::write_executable(&p.init_script, "#!/bin/bash\ntouch executed\n");
+        let adapter = BuildEnvironmentAdapter::default();
+        fs::write(&p.build_dir, "occupied").unwrap();
+        assert!(adapter.initialize(p.clone()).await.is_err());
+        fs::remove_file(&p.build_dir).unwrap();
+        std::os::unix::fs::symlink(root.join("missing"), &p.build_dir).unwrap();
+        assert!(adapter.initialize(p.clone()).await.is_err());
+        fs::remove_file(&p.build_dir).unwrap();
+        p.build_dir = root.join("missing/build");
+        assert!(adapter.initialize(p.clone()).await.is_err());
+        p.build_dir = root.join("../unsafe");
+        assert!(adapter.initialize(p.clone()).await.is_err());
+        assert!(!p.source_dir.join("executed").exists());
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[tokio::test]
     async fn initializes_child_environment_without_mutating_parent() {
         let root = std::env::temp_dir().join(format!("yoctui-env-{}", std::process::id()));
         let p = profile(&root);
@@ -367,6 +427,25 @@ mod tests {
         adapter.clone_poky(request).await.unwrap();
         assert!(destination.is_dir());
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn fresh_clone_preview_rejects_dangling_destination() {
+        let root = std::env::temp_dir().join(format!("yoctui-clone-link-{}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let destination = root.join("poky");
+        std::os::unix::fs::symlink(root.join("missing"), &destination).unwrap();
+        let request = BuildEnvironmentCloneRequest {
+            repository: "https://example.invalid/poky".into(),
+            destination,
+            revision: None,
+        };
+        assert!(matches!(
+            BuildEnvironmentAdapter::default().preview_clone(&request),
+            Err(BuildEnvironmentAdapterError::UnsafePath(_))
+        ));
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[cfg(unix)]

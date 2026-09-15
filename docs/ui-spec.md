@@ -5554,3 +5554,8 @@ Daemon IPC readiness must not await compatibility probes. Until discovery
 finishes, capability-dependent actions remain unavailable. Compatibility and
 inventory updates arrive on the existing typed event stream. Shutdown cancels
 and cleans up outstanding discovery.
+
+Fresh build-directory validation is read-only: it creates no directory during
+preview. A missing final build component is accepted only with an existing
+directory parent; files and dangling symlinks are rejected. Clone destination
+checks also reject dangling links before invoking Git.

@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** FRESH-CLONE-001
-**Title:** Allow setup to initialize a fresh build directory
-**Status:** NOT_STARTED
+**ID:** DAEMON-STARTUP-002
+**Title:** Serve daemon clients while compatibility discovery runs
+**Status:** IN_PROGRESS
 
-Dependency SEARCH-CONTENT-001 is DONE. Files: bitbake build_environment.rs.
-Done: validated fresh build destinations reach the selected setup script;
-existing files and symlinks fail before execution, and missing source/script
-paths remain errors. Add adapter regressions for fresh setup and failure paths.
-Verify: `cargo test -p yoctui-bitbake build_environment` and AGENTS.md baseline.
-Update specification, architecture, registry and status; commit then continue
-DAEMON-STARTUP-002.
+Dependency FRESH-CLONE-001 is DONE. Scope: CLI startup worker, compatibility
+probe cleanup and fake-process integration tests. Done: IPC startup does not
+wait for compatibility; typed authority updates existing clients before recipe
+inventory starts; commands retain loading/unknown guards; shutdown cancels and
+cleans up discovery. Verify: `cargo test -p yoctui --test daemon_startup` and the
+AGENTS.md baseline. Update UI/architecture, task registry and implementation
+status; commit and run the completion gate.

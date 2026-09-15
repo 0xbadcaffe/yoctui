@@ -3082,3 +3082,9 @@ UTF-8 text scans include rootfs, deployment metadata and alternate tmp trees.
 Scanner, model and TestBackend regressions pass. Full workspace tests pass on
 rerun (the first run failed an unchanged dependency-graph process test), strict
 Clippy, formatting and 52 bridge tests pass. No binary image decoding is claimed.
+
+FRESH-CLONE-001: DONE. A failed-first adapter regression reproduced MissingPath
+for a fresh build destination. Initialization now accepts that missing leaf
+without precreating it. File, dangling-link and missing-parent rejection pass;
+clone preview also rejects dangling links. Full workspace tests, focused fresh
+clone tests, strict Clippy, formatting and 52 bridge tests pass.

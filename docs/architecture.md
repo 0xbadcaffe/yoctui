@@ -4206,3 +4206,8 @@ The environment adapter validates prospective build paths before sourcing the
 selected setup script; filesystem creation belongs to that script. Daemon
 compatibility discovery must be owned asynchronous work, with capability
 publication before starting inventory, and cancellation cleanup on shutdown.
+
+The setup adapter uses link-aware entry checks for clone and prospective build
+destinations. A missing build leaf with an existing directory parent can reach
+initialization; the adapter does not precreate it. Source and script validation
+remain mandatory, and the selected child script owns build creation.
