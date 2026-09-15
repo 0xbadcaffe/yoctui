@@ -3088,3 +3088,13 @@ for a fresh build destination. Initialization now accepts that missing leaf
 without precreating it. File, dangling-link and missing-parent rejection pass;
 clone preview also rejects dangling links. Full workspace tests, focused fresh
 clone tests, strict Clippy, formatting and 52 bridge tests pass.
+
+DAEMON-STARTUP-002: DONE. IPC no longer waits for compatibility discovery. In
+the same debug fake-process fixture with a three-second version probe, readiness
+changed from 3.246 seconds to 116 milliseconds. Five integration tests verify
+early attachment, ordered compatibility/inventory updates, failure availability,
+shutdown and probe reaping. Full workspace tests, strict Clippy and 52 bridge
+tests pass; the run recovered from disk exhaustion by cleaning generated debug
+artifacts and disabling incremental compilation. This is deterministic fixture
+evidence, not a fresh live-Yocto performance certification. SEARCH-HELP-001
+finishes stale Help/README wording discovered during final review.

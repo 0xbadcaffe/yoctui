@@ -6,7 +6,7 @@ mod time;
 mod validation;
 
 pub use paths::{config_dir, home_dir, home_path, path_entry_exists, state_dir};
-pub use process::{is_transient_spawn_error, lower_process_priority};
+pub use process::{ProcessGroupGuard, is_transient_spawn_error, lower_process_priority};
 pub use text::{
     append_truncation_marker, is_csi_final_byte, push_bounded, strip_ansi, truncate_utf8,
     utf8_prefix,

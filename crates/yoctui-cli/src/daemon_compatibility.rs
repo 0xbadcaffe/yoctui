@@ -27,6 +27,22 @@ const STARTUP_ENVIRONMENT_LIMIT: usize = 1_024;
 const STARTUP_ENVIRONMENT_VALUE_LIMIT: usize = 4_096;
 const PROBE_CONCURRENCY: usize = 8;
 
+pub fn spawn_startup(
+    environment: BTreeMap<String, String>,
+) -> crate::daemon_metadata::StartupMetadata<DaemonCompatibilitySnapshot> {
+    crate::daemon_metadata::StartupMetadata::spawn(|mut cancelled| async move {
+        let mut coordinator = DaemonCompatibilityCoordinator::default();
+        tokio::select! {
+            biased;
+            _ = &mut cancelled => anyhow::bail!("startup compatibility discovery cancelled"),
+            result = tokio::time::timeout(Duration::from_secs(600), coordinator.startup_from_environment(&environment)) => {
+                result.map_err(|_| anyhow::anyhow!("startup compatibility discovery exceeded ten minutes"))?
+                    .map_err(anyhow::Error::from)
+            }
+        }
+    })
+}
+
 #[derive(Debug, Clone)]
 pub struct DaemonCompatibilityRuntime {
     pub key: CapabilityCacheKey,
@@ -642,6 +658,7 @@ async fn run_read_only(
     {
         tracing::warn!(pid, %error, "could not lower startup compatibility query priority");
     }
+    let mut group_guard = child.id().map(yoctui_utils::ProcessGroupGuard::new);
     let stdout = child
         .stdout
         .take()
@@ -650,36 +667,39 @@ async fn run_read_only(
         .stderr
         .take()
         .ok_or_else(|| DaemonCompatibilityError::StartupProbe("stderr unavailable".into()))?;
-    let stdout_task = tokio::spawn(read_bounded_stream(stdout));
-    let stderr_task = tokio::spawn(read_bounded_stream(stderr));
-    let status = match tokio::time::timeout(STARTUP_QUERY_TIMEOUT, child.wait()).await {
-        Ok(status) => status.map_err(|error| {
-            DaemonCompatibilityError::StartupProbe(format!(
-                "could not wait for {}: {error}",
-                executable.display()
-            ))
-        })?,
-        Err(_) => {
-            #[cfg(unix)]
-            if let Some(pid) = child.id() {
-                // The command was placed in its own process group above.
-                unsafe {
-                    libc::kill(-(pid as i32), libc::SIGKILL);
-                }
-            }
-            let _ = child.kill().await;
-            return Err(DaemonCompatibilityError::StartupProbe(format!(
-                "read-only query timed out for {}",
-                executable.display()
-            )));
-        }
+    let read = async {
+        let (stdout, stderr, status) = tokio::join!(
+            read_bounded_stream(stdout),
+            read_bounded_stream(stderr),
+            child.wait()
+        );
+        Ok::<_, DaemonCompatibilityError>((
+            stdout?,
+            stderr?,
+            status.map_err(|error| {
+                DaemonCompatibilityError::StartupProbe(format!(
+                    "could not wait for {}: {error}",
+                    executable.display()
+                ))
+            })?,
+        ))
     };
-    let (stdout, stdout_truncated) = stdout_task
-        .await
-        .map_err(|error| DaemonCompatibilityError::StartupProbe(error.to_string()))??;
-    let (stderr, stderr_truncated) = stderr_task
-        .await
-        .map_err(|error| DaemonCompatibilityError::StartupProbe(error.to_string()))??;
+    let ((stdout, stdout_truncated), (stderr, stderr_truncated), status) =
+        match tokio::time::timeout(STARTUP_QUERY_TIMEOUT, read).await {
+            Ok(result) => result?,
+            Err(_) => {
+                drop(group_guard.take());
+                let _ = child.kill().await;
+                let _ = child.wait().await;
+                return Err(DaemonCompatibilityError::StartupProbe(format!(
+                    "read-only query timed out for {}",
+                    executable.display()
+                )));
+            }
+        };
+    if let Some(guard) = &mut group_guard {
+        guard.disarm();
+    }
     if stdout_truncated || stderr_truncated {
         return Err(DaemonCompatibilityError::StartupProbe(format!(
             "read-only query output exceeded {} bytes per stream",

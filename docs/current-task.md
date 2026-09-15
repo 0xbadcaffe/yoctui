@@ -1,13 +1,12 @@
 # Current Task
 
-**ID:** DAEMON-STARTUP-002
-**Title:** Serve daemon clients while compatibility discovery runs
-**Status:** IN_PROGRESS
+**ID:** SEARCH-HELP-001
+**Title:** Align search help and README with content-only results
+**Status:** NOT_STARTED
 
-Dependency FRESH-CLONE-001 is DONE. Scope: CLI startup worker, compatibility
-probe cleanup and fake-process integration tests. Done: IPC startup does not
-wait for compatibility; typed authority updates existing clients before recipe
-inventory starts; commands retain loading/unknown guards; shutdown cancels and
-cleans up discovery. Verify: `cargo test -p yoctui --test daemon_startup` and the
-AGENTS.md baseline. Update UI/architecture, task registry and implementation
-status; commit and run the completion gate.
+Dependencies SEARCH-CONTENT-001 and DAEMON-STARTUP-002 are DONE. Update legacy
+Help text that still advertises actions and external source trees. Explain text
+content, the build/rootfs/artifact scope, empty initial query and file opening.
+Files: UI maintenance_dialog_render.rs, README, UI specification and status.
+Verify: full workspace tests, strict Clippy, formatting, bridge tests and roadmap.
+Commit, then run the repository completion gate.

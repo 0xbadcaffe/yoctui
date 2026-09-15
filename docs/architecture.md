@@ -92,8 +92,9 @@ bridge and their inherited descendants run at nice 10, so the normal-priority
 daemon and attached client retain scheduler precedence. This priority applies
 only to automatic startup discovery; builds and explicit interactive operations
 retain the caller's normal priority. Failure to lower priority is logged and
-does not make metadata unavailable. Recipe inventory is an owned, cancellable
-scan, not part of IPC readiness. It has a ten-minute deadline and a single result slot.
+does not make metadata unavailable. Compatibility discovery and recipe inventory are owned, cancellable
+workers, neither part of IPC readiness. Compatibility is published to current
+clients and installed into supervisors before the inventory worker starts. It has a ten-minute deadline and a single result slot.
 The daemon publishes the resulting typed Workspace through its bounded journal;
 until then, build commands report an explicit metadata-loading conflict. Attach,
 doctor, telemetry and shutdown remain serviceable. Shutdown interrupts the
@@ -4211,3 +4212,10 @@ The setup adapter uses link-aware entry checks for clone and prospective build
 destinations. A missing build leaf with an existing directory parent can reach
 initialization; the adapter does not precreate it. Source and script validation
 remain mandatory, and the selected child script owns build creation.
+
+Startup workers share a typed single-result, cancellation-aware container.
+Compatibility has a ten-minute overall deadline, retaining individual query
+bounds. Query stdout/stderr reads and child wait share the same timeout and
+cancellation lifetime. Owned process-group guards terminate probe descendants
+when their futures are dropped; child handles retain kill-on-drop reaping.
+No detached stream readers remain after compatibility cancellation.

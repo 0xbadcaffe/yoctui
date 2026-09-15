@@ -8155,9 +8155,20 @@ notes = "Files: bitbake build_environment.rs and setup tests. Done requires regr
 id = "DAEMON-STARTUP-002"
 milestone = "M67"
 title = "Serve daemon clients while compatibility discovery runs"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 1600
 required = true
 depends_on = ["FRESH-CLONE-001"]
 verify = ["cargo test -p yoctui --test daemon_startup"]
 notes = "Files: CLI main.rs, daemon_compatibility.rs and startup tests. Done requires regression tests and baseline verification, matching UI/architecture documentation, status updates and a coherent commit."
+
+[[task]]
+id = "SEARCH-HELP-001"
+milestone = "M67"
+title = "Align search help and README with content-only results"
+status = "NOT_STARTED"
+priority = 1601
+required = true
+depends_on = ["SEARCH-CONTENT-001", "DAEMON-STARTUP-002"]
+verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Final review found legacy Help text advertising command/source results. Files: UI maintenance_dialog_render.rs, README and UI spec. Done: help accurately explains build-content scope, empty opening and open-file behavior; baseline passes and docs are committed."

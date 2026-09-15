@@ -2655,31 +2655,9 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
     if let Some(persisted) = &persisted {
         recover_daemon_model_metadata(&mut daemon_state, persisted, &record.boot_id)?;
     }
-    let mut compatibility_coordinator =
-        daemon_compatibility::DaemonCompatibilityCoordinator::default();
     let startup_environment = env::vars().collect::<BTreeMap<_, _>>();
-    match compatibility_coordinator
-        .startup_from_environment(&startup_environment)
-        .await
-    {
-        Ok(Some(compatibility)) => {
-            yoctui_app::reduce_daemon_state(
-                &mut daemon_state,
-                yoctui_model::DaemonStateAction::ReplaceCompatibility(Box::new(compatibility)),
-            )?;
-        }
-        Ok(None) => {}
-        Err(error) => {
-            eprintln!("daemon compatibility startup probe failed: {error}");
-            tracing::warn!(%error, "daemon compatibility startup probe failed");
-            yoctui_app::reduce_daemon_state(
-                &mut daemon_state,
-                yoctui_model::DaemonStateAction::RecordError(format!(
-                    "Compatibility authority is unavailable: {error}"
-                )),
-            )?;
-        }
-    }
+    let mut startup_compatibility =
+        daemon_compatibility::spawn_startup(startup_environment.clone());
     let snapshot = daemon_protocol_snapshot(&daemon_state);
     let snapshot = persisted
         .as_ref()
@@ -2724,19 +2702,15 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         paths: paths.clone(),
         instance,
     };
-    let startup_compatibility = daemon_state.compatibility.clone();
     let rootfs_environment = startup_environment.clone();
     let rootfs_query_permit = std::sync::Arc::new(tokio::sync::Semaphore::new(1));
     let mut retired_rootfs_queries: Vec<daemon_rootfs::PendingQuery> = Vec::new();
-    let startup_configured = startup_compatibility.is_some();
-    let mut startup_metadata = daemon_metadata::StartupMetadata::spawn(|cancelled| async move {
-        inspect_daemon_startup_workspace(&startup_environment, startup_compatibility, cancelled)
-            .await
-    });
+    let startup_configured = startup_environment.contains_key("BUILDDIR");
+    let mut startup_metadata: Option<daemon_metadata::StartupMetadata> = None;
     if startup_configured {
         publish_startup_metadata_log(
             &mut daemon_journal,
-            "Loading initial workspace and recipe inventory",
+            "Loading initial compatibility authority",
             false,
         )?;
     }
@@ -2778,7 +2752,62 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         drop(client_connections);
         bitbake_supervisor.consume_notification();
 
-        if let Some(result) = startup_metadata.try_result() {
+        if let Some(result) = startup_compatibility.try_result() {
+            match result {
+                Ok(Some(compatibility)) => {
+                    devtool_supervisor.replace_compatibility(Some(compatibility.clone()))?;
+                    raw_supervisor.replace_compatibility(Some(compatibility.clone()))?;
+                    bitbake_supervisor
+                        .replace_compatibility(Some(compatibility.clone()))
+                        .map_err(anyhow::Error::msg)?;
+                    yoctui_app::reduce_daemon_state(
+                        &mut daemon_state,
+                        yoctui_model::DaemonStateAction::ReplaceCompatibility(Box::new(
+                            compatibility.clone(),
+                        )),
+                    )?;
+                    let wire = daemon_protocol_snapshot(&daemon_state)
+                        .compatibility
+                        .expect("installed compatibility has wire authority");
+                    daemon_journal.publish(
+                        yoctui_protocol::daemon::DaemonEvent::CompatibilityChanged(Box::new(wire)),
+                    )?;
+                    publish_startup_metadata_log(
+                        &mut daemon_journal,
+                        "Loading initial workspace and recipe inventory",
+                        false,
+                    )?;
+                    let environment = startup_environment.clone();
+                    startup_metadata = Some(daemon_metadata::StartupMetadata::spawn(
+                        |cancelled| async move {
+                            inspect_daemon_startup_workspace(
+                                &environment,
+                                Some(compatibility),
+                                cancelled,
+                            )
+                            .await
+                        },
+                    ));
+                }
+                Ok(None) => {}
+                Err(error) => {
+                    eprintln!("Compatibility authority is unavailable: {error:#}");
+                    tracing::warn!(%error, "daemon compatibility startup probe failed");
+                    publish_startup_metadata_log(
+                        &mut daemon_journal,
+                        &format!("Compatibility authority is unavailable: {error:#}"),
+                        true,
+                    )?;
+                    yoctui_app::reduce_daemon_state(
+                        &mut daemon_state,
+                        yoctui_model::DaemonStateAction::RecordError(format!(
+                            "Compatibility authority is unavailable: {error:#}"
+                        )),
+                    )?;
+                }
+            }
+        }
+        if let Some(result) = startup_metadata.as_mut().and_then(|scan| scan.try_result()) {
             match result {
                 Ok(Some(workspace)) => {
                     if daemon_metadata::publish_workspace(&mut daemon_journal, workspace.clone())? {
@@ -3373,7 +3402,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                             let result = (|| -> Result<daemon_rootfs::PendingQuery> {
                                 anyhow::ensure!(attached && request.expected_generation.is_some(), "rootfs queries require current attached authority");
                                 anyhow::ensure!(rootfs_query.is_none(), "this client already has a rootfs query");
-                                anyhow::ensure!(!startup_metadata.pending() && !daemon_journal.snapshot().jobs.iter().any(|job| job.kind == yoctui_protocol::daemon::JobKind::BitBakeBuild && matches!(job.lifecycle, yoctui_protocol::daemon::LifecycleState::Connecting | yoctui_protocol::daemon::LifecycleState::Running | yoctui_protocol::daemon::LifecycleState::Stopping)), "rootfs metadata is busy; retry after the active build finishes");
+                                anyhow::ensure!(!startup_compatibility.pending() && !startup_metadata.as_ref().is_some_and(|scan| scan.pending()) && !daemon_journal.snapshot().jobs.iter().any(|job| job.kind == yoctui_protocol::daemon::JobKind::BitBakeBuild && matches!(job.lifecycle, yoctui_protocol::daemon::LifecycleState::Connecting | yoctui_protocol::daemon::LifecycleState::Running | yoctui_protocol::daemon::LifecycleState::Stopping)), "rootfs metadata is busy; retry after the active build finishes");
                                 let compatibility = daemon_state.compatibility.clone().context("rootfs query requires compatibility authority")?;
                                 daemon_rootfs::PendingQuery::start(request.request_id, query, instance, compatibility, rootfs_environment.clone(), rootfs_query_permit.clone())
                             })();
@@ -3393,10 +3422,10 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                 current_generation: daemon_journal.snapshot().generation,
                             }
                         }
-                        DaemonCommand::StartBuild { .. } if startup_metadata.pending() => {
+                        DaemonCommand::StartBuild { .. } if startup_compatibility.pending() || startup_metadata.as_ref().is_some_and(|scan| scan.pending()) => {
                             CommandOutcome::Rejected {
                                 code: yoctui_protocol::daemon::ProtocolErrorCode::Conflict,
-                                message: "Initial recipe inventory is still loading; retry the build when metadata is ready".into(),
+                                message: "Initial compatibility or recipe inventory is still loading; retry the build when metadata is ready".into(),
                                 current_generation: daemon_journal.snapshot().generation,
                             }
                         }
@@ -3995,7 +4024,10 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             PersistedPreferences::default(),
         ),
     )?;
-    startup_metadata.shutdown().await;
+    startup_compatibility.shutdown().await;
+    if let Some(scan) = &mut startup_metadata {
+        scan.shutdown().await;
+    }
     for (_, _, _, _, _, query) in &mut clients {
         if let Some(query) = query {
             query.shutdown().await;

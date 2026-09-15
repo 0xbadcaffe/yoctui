@@ -43,9 +43,55 @@ pub fn lower_process_priority(_pid: u32, nice: i32) -> io::Result<()> {
     Ok(())
 }
 
+/// Kill an owned child process group when an asynchronous operation is dropped.
+/// Callers must start the child in a new group whose ID equals its PID, and
+/// disarm after normal completion. The child handle remains responsible for reaping.
+pub struct ProcessGroupGuard {
+    pid: Option<i32>,
+}
+
+impl ProcessGroupGuard {
+    pub fn new(pid: u32) -> Self {
+        Self {
+            pid: i32::try_from(pid).ok().filter(|pid| *pid > 0),
+        }
+    }
+
+    pub fn disarm(&mut self) {
+        self.pid = None;
+    }
+}
+
+impl Drop for ProcessGroupGuard {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        if let Some(pid) = self.pid {
+            // SAFETY: callers supply the PID of their own newly isolated group.
+            unsafe {
+                libc::kill(-pid, libc::SIGKILL);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn process_group_guard_terminates_owned_child_on_drop() {
+        use std::os::unix::process::{CommandExt, ExitStatusExt};
+        let mut child = std::process::Command::new("sleep")
+            .arg("30")
+            .process_group(0)
+            .spawn()
+            .unwrap();
+        drop(ProcessGroupGuard::new(child.id()));
+        assert_eq!(child.wait().unwrap().signal(), Some(libc::SIGKILL));
+        drop(ProcessGroupGuard::new(0));
+        drop(ProcessGroupGuard::new(u32::MAX));
+    }
 
     #[test]
     fn priority_rejects_values_outside_the_portable_nice_range() {

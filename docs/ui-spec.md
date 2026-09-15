@@ -1,6 +1,6 @@
 # Yoctui UI Specification
 
-Daemon attachment does not wait for the initial recipe inventory. The retained
+Daemon attachment does not wait for compatibility discovery or the initial recipe inventory. The retained
 daemon logs report metadata loading, completion or failure. Recipe/layer content
 arrives as a typed workspace update without requiring reattachment. A build
 requested while this scan owns the metadata connection reports a visible
@@ -5559,3 +5559,9 @@ Fresh build-directory validation is read-only: it creates no directory during
 preview. A missing final build component is accepted only with an existing
 directory parent; files and dangling symlinks are rejected. Clone destination
 checks also reject dangling links before invoking Git.
+
+Daemon startup publishes its socket/runtime readiness before compatibility
+queries complete. The retained log says `Loading initial compatibility authority`;
+authority-dependent actions stay unavailable until a typed compatibility update
+arrives. Recipe loading follows that update. Failure retains a visible error
+while status, attachment and shutdown continue to work.

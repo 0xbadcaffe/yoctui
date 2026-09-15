@@ -35,18 +35,18 @@ pub fn publish_workspace(
     }
 }
 
-pub struct StartupMetadata {
+pub struct StartupMetadata<T = Workspace> {
     cancel: Option<oneshot::Sender<()>>,
-    result: oneshot::Receiver<Result<Option<Workspace>>>,
+    result: oneshot::Receiver<Result<Option<T>>>,
     task: tokio::task::JoinHandle<()>,
     pending: bool,
 }
 
-impl StartupMetadata {
+impl<T: Send + 'static> StartupMetadata<T> {
     pub fn spawn<F, Fut>(scan: F) -> Self
     where
         F: FnOnce(oneshot::Receiver<()>) -> Fut,
-        Fut: std::future::Future<Output = Result<Option<Workspace>>> + Send + 'static,
+        Fut: std::future::Future<Output = Result<Option<T>>> + Send + 'static,
     {
         let (cancel, cancelled) = oneshot::channel();
         let (send, result) = oneshot::channel();
@@ -66,7 +66,7 @@ impl StartupMetadata {
         self.pending
     }
 
-    pub fn try_result(&mut self) -> Option<Result<Option<Workspace>>> {
+    pub fn try_result(&mut self) -> Option<Result<Option<T>>> {
         if !self.pending {
             return None;
         }
@@ -94,7 +94,7 @@ impl StartupMetadata {
     }
 }
 
-impl Drop for StartupMetadata {
+impl<T> Drop for StartupMetadata<T> {
     fn drop(&mut self) {
         if let Some(cancel) = self.cancel.take() {
             let _ = cancel.send(());
@@ -166,7 +166,7 @@ mod tests {
     #[tokio::test]
     async fn daemon_startup_slow_inventory_does_not_block_and_can_cancel() {
         let (cleaned_tx, cleaned_rx) = oneshot::channel();
-        let mut scan = StartupMetadata::spawn(|cancel| async move {
+        let mut scan = StartupMetadata::<Workspace>::spawn(|cancel| async move {
             let _ = cancel.await;
             let _ = cleaned_tx.send(());
             Ok(None)
@@ -184,7 +184,8 @@ mod tests {
 
     #[tokio::test]
     async fn daemon_startup_inventory_is_delivered_once() {
-        let mut scan = StartupMetadata::spawn(|_| async { Ok(Some(Workspace::default())) });
+        let mut scan =
+            StartupMetadata::<Workspace>::spawn(|_| async { Ok(Some(Workspace::default())) });
         (&mut scan.task).await.unwrap();
         assert!(scan.try_result().unwrap().unwrap().is_some());
         assert!(!scan.pending());
@@ -193,7 +194,8 @@ mod tests {
 
     #[tokio::test]
     async fn daemon_startup_failed_worker_does_not_remain_pending() {
-        let mut scan = StartupMetadata::spawn(|_| async { panic!("fixture scan failure") });
+        let mut scan =
+            StartupMetadata::<Workspace>::spawn(|_| async { panic!("fixture scan failure") });
         assert!((&mut scan.task).await.is_err());
         assert!(scan.try_result().unwrap().is_err());
         assert!(!scan.pending());

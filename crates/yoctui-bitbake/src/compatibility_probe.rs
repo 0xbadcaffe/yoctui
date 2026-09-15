@@ -561,6 +561,7 @@ async fn run_read_only(
         tracing::warn!(pid, %error, "could not lower capability probe priority");
     }
     let process_group = child.id().map(|id| id as i32);
+    let mut group_guard = child.id().map(yoctui_utils::ProcessGroupGuard::new);
     let Some(stdout) = child.stdout.take() else {
         return ProbeProcessResult::Failed("stdout pipe is unavailable".into());
     };
@@ -595,12 +596,17 @@ async fn run_read_only(
         ))
     };
     match tokio::time::timeout(timeout, read).await {
-        Ok(Ok((success, output, stdout, truncated))) => ProbeProcessResult::Completed {
-            success,
-            output,
-            stdout,
-            truncated,
-        },
+        Ok(Ok((success, output, stdout, truncated))) => {
+            if let Some(guard) = &mut group_guard {
+                guard.disarm();
+            }
+            ProbeProcessResult::Completed {
+                success,
+                output,
+                stdout,
+                truncated,
+            }
+        }
         Ok(Err(message)) => ProbeProcessResult::Failed(message),
         Err(_) => {
             #[cfg(unix)]
