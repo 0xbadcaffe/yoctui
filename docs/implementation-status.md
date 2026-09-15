@@ -3070,3 +3070,8 @@ README-DTC-SCREENS-001 adds two current production-renderer screens for the DTS
 editor and compiler options in v0.1.113. The remaining ordered work audits the
 runtime path for concrete defects and restores the validated Flamegraph report
 to the README with explicit evidence age and reproduction guidance.
+
+## M67 requested corrections
+
+Three atomic tasks are registered. SEARCH-CONTENT-001 is current; setup and
+daemon readiness follow it. No implementation or verification is claimed yet.

@@ -1,16 +1,14 @@
 # Current Task
 
-**ID:** README-FLAMEGRAPH-001
-**Title:** Restore the validated Flamegraph report to the README
-**Status:** DONE
+**ID:** SEARCH-CONTENT-001
+**Title:** Restrict global search to build text content and start empty
+**Status:** NOT_STARTED
 
-Completed in v0.1.115. The README embeds the checked real-perf SVG, links its
-machine-readable summary and reproduction path, and reports the capture version,
-date, workload, userspace sample count, checksum and zero-unresolved result. It
-also states that the retained v0.1.64 capture is historical because application
-sources have changed.
-
-The README test derives displayed facts from the summary and binds its weighted
-event total to the SVG. The Flamegraph workload/validator test, full all-features
-workspace suite, strict Clippy, 52 bridge tests, documentation, version/layout,
-roadmap and both deterministic screenshot checks pass.
+Dependencies: none. Scope: model search projection, CLI scanner and UI palette.
+Done: `/` opens empty, never lists commands, and matches only file contents in
+build directories including generated rootfs and text image artifacts. Blank
+queries do no filesystem work; invalid regex and stale results remain bounded.
+Verify: `cargo test -p yoctui global_search`, `cargo test -p yoctui-model global_`,
+`cargo test -p yoctui-ui global_search`, and the AGENTS.md baseline.
+Update UI specification, architecture, registry and implementation status.
+Next: FRESH-CLONE-001, then DAEMON-STARTUP-002.

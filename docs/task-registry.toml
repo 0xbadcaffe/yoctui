@@ -8128,3 +8128,36 @@ required = true
 depends_on = ["DEVICE-TREE-HARDEN-001"]
 verify = ["./scripts/test-readme-quickstart.sh", "./scripts/test-flamegraph.sh", "./scripts/check-docs.sh", "python3 scripts/check-version-bump.py", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.115. The README embeds the retained v0.1.64 real-perf SVG and links its machine-readable summary and reproduction path. Displayed capture date, 6,000-frame workload, 2,403 userspace samples and checksum are checked against the summary; the SVG weighted-event total and zero-unresolved result are also validated. Documentation clearly identifies the artifact as historical because application sources changed after capture. The Flamegraph gate, full workspace baseline, strict Clippy, 52 bridge tests, docs, version/layout, roadmap and deterministic image checks pass."
+
+[[task]]
+id = "SEARCH-CONTENT-001"
+milestone = "M67"
+title = "Restrict global search to build text content and start empty"
+status = "NOT_STARTED"
+priority = 1600
+required = true
+depends_on = []
+verify = ["cargo test -p yoctui global_search", "cargo test -p yoctui-model global_", "cargo test -p yoctui-ui global_search"]
+notes = "Files: model search projection, CLI global_search.rs, UI palette_render.rs. Done requires regression tests and baseline verification, matching UI/architecture documentation, status updates and a coherent commit."
+
+[[task]]
+id = "FRESH-CLONE-001"
+milestone = "M67"
+title = "Allow setup to initialize a fresh build directory"
+status = "NOT_STARTED"
+priority = 1600
+required = true
+depends_on = ["SEARCH-CONTENT-001"]
+verify = ["cargo test -p yoctui-bitbake build_environment"]
+notes = "Files: bitbake build_environment.rs and setup tests. Done requires regression tests and baseline verification, matching UI/architecture documentation, status updates and a coherent commit."
+
+[[task]]
+id = "DAEMON-STARTUP-002"
+milestone = "M67"
+title = "Serve daemon clients while compatibility discovery runs"
+status = "NOT_STARTED"
+priority = 1600
+required = true
+depends_on = ["FRESH-CLONE-001"]
+verify = ["cargo test -p yoctui --test daemon_startup"]
+notes = "Files: CLI main.rs, daemon_compatibility.rs and startup tests. Done requires regression tests and baseline verification, matching UI/architecture documentation, status updates and a coherent commit."

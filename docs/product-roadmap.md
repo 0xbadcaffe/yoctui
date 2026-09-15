@@ -1416,3 +1416,8 @@ v0.1.114 after failed-first coverage repaired root containment, dangling-link
 collision detection and the final launch recheck. README-FLAMEGRAPH-001 is DONE
 in v0.1.115 with a summary-bound historical report and validated reproduction
 path. All 732 registry tasks are DONE.
+
+## M67 — Fresh setup, responsive daemon readiness and content search
+
+User-requested atomic queue: SEARCH-CONTENT-001, FRESH-CLONE-001,
+DAEMON-STARTUP-002. Regressions and baseline checks gate each implementation.

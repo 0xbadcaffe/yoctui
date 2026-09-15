@@ -5536,3 +5536,21 @@ summary's frame count, perf sample count and workload checksum, name the capture
 version and date, and state whether later source changes make it historical.
 Static README checks reject missing assets, invalid summary bounds, unresolved
 frames, mismatched SVG event totals, missing links and drifted report values.
+
+## Requested setup, startup and search corrections
+
+Global `/` is a text-content regular-expression search. It opens with an empty
+query and zero results; it never lists commands or matches filenames. Search
+covers text files below the selected build directory, including generated
+rootfs trees and text image artifacts. External source/layer trees are outside
+this scope. Binary images are not decoded or mounted. Empty queries perform no
+scan. Existing cancellation, generation checks and result limits still apply.
+
+Fresh setup may name a missing build directory beneath an existing directory;
+the selected environment script creates it. Unsafe paths and existing
+non-directory destinations must fail before execution.
+
+Daemon IPC readiness must not await compatibility probes. Until discovery
+finishes, capability-dependent actions remain unavailable. Compatibility and
+inventory updates arrive on the existing typed event stream. Shutdown cancels
+and cleans up outstanding discovery.

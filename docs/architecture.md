@@ -4194,3 +4194,15 @@ README contract parses the summary, checks its bounds and zero-unresolved rule,
 binds its weighted event total to the SVG, and requires the displayed frames,
 perf samples and checksum to agree. Capture version/date and historical status
 remain explicit when current runtime or rendering sources differ.
+
+## Requested startup and content-search boundaries
+
+The CLI scanner searches only build-directory text contents and returns typed
+file/line hits. The model keeps command results out of global search. Blank
+queries produce no scan or results. Generated rootfs and textual deployment
+artifacts use the same bounded scanner; binary files are skipped.
+
+The environment adapter validates prospective build paths before sourcing the
+selected setup script; filesystem creation belongs to that script. Daemon
+compatibility discovery must be owned asynchronous work, with capability
+publication before starting inventory, and cancellation cleanup on shutdown.
