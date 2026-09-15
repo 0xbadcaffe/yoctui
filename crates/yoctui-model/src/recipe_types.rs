@@ -185,6 +185,7 @@ pub enum SourceLanguage {
     Yaml,
     Make,
     Markdown,
+    DeviceTree,
     #[default]
     PlainText,
 }
@@ -214,6 +215,7 @@ impl SourceLanguage {
             "toml" => Self::Toml,
             "yaml" | "yml" => Self::Yaml,
             "md" | "markdown" => Self::Markdown,
+            "dts" | "dtsi" => Self::DeviceTree,
             _ if matches!(name.as_str(), "makefile" | "gnumakefile")
                 || name.starts_with("makefile.") =>
             {
@@ -238,6 +240,7 @@ impl SourceLanguage {
             Self::Yaml => "YAML",
             Self::Make => "Make",
             Self::Markdown => "Markdown",
+            Self::DeviceTree => "Device Tree",
             Self::PlainText => "Plain text",
         }
     }

@@ -17,7 +17,10 @@ U-Boot, BIOS / UEFI, or the unresolved-safe U-Boot / BIOS fallback.
 The Configuration view lists discovered `.config` files. The Device trees
 view lists `.dts`, `.dtsi`, `.dtb`, and `.dtbo` files. `Enter` or `e` opens a
 text file in the in-app explorer/editor, and `o` explores its authoritative
-root. Binary blobs are never interpreted as text.
+root. DTS and DTSI use Device Tree syntax highlighting for directives, labels,
+nodes, properties, values and comments while retaining the shared editor's
+search, undo/redo, diff, validation and guarded save behavior. Binary blobs are
+never interpreted as text.
 
 `m` opens `bitbake virtual/kernel -c menuconfig` for Kernel or
 `bitbake DETECTED_PROVIDER -c menuconfig` for boot firmware in a daemon-owned
@@ -27,10 +30,14 @@ browsable and show menuconfig as unavailable. The PTY preserves the complete
 ncurses interaction, terminal resize, detach, reconnect, and writer-lease
 behavior of other embedded terminals.
 
-When a canonical `dtc` executable is available, `c` compiles a selected DTS
-to a sibling `NAME.yoctui.dtb`, and `d` decompiles a selected DTB or DTBO to a
-sibling `NAME.yoctui.dts`. Both operations show their exact argv in the normal
-terminal-launch confirmation. Existing outputs are never overwritten.
+When a canonical `dtc` executable is available, `c` opens a typed compile form
+for symbol generation (`-@`), stable sorting (`-s`), output padding (`-p`) and
+reserve-map entries (`-R`). Enter advances to the normal terminal-launch
+confirmation, which shows the exact argument vector before the compiler runs
+in a daemon-owned utility PTY. The derived output is a sibling
+`NAME.yoctui.dtb`. `d` decompiles a selected DTB or DTBO to a sibling
+`NAME.yoctui.dts` through the same preview and PTY boundary. Existing outputs
+are never overwritten; press `r` after completion to refresh the inventory.
 
 Scanning is read-only and bounded to 4,096 matching files, 16,384 directories,
 and depth 32. Directory symlinks and `.git` trees are not traversed. The UI

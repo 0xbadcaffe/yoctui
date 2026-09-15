@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use crate::{TerminalCreationKind, TerminalLaunchRequest};
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlatformComponent {
     Kernel,
@@ -66,6 +68,166 @@ pub struct PlatformFile {
     pub root: PathBuf,
     pub kind: PlatformFileKind,
     pub size_bytes: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DtcCompileOption {
+    #[default]
+    Symbols,
+    Sort,
+    Padding,
+    ReserveEntries,
+}
+
+impl DtcCompileOption {
+    pub const COUNT: usize = 4;
+
+    pub const fn from_index(index: usize) -> Self {
+        match index {
+            1 => Self::Sort,
+            2 => Self::Padding,
+            3 => Self::ReserveEntries,
+            _ => Self::Symbols,
+        }
+    }
+
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Symbols => "Generate symbols (-@)",
+            Self::Sort => "Stable sort (-s)",
+            Self::Padding => "Output padding (-p)",
+            Self::ReserveEntries => "Reserve entries (-R)",
+        }
+    }
+}
+
+pub const DTC_PADDING_CHOICES: [u32; 5] = [0, 256, 1_024, 4_096, 16_384];
+pub const DTC_RESERVE_CHOICES: [u32; 5] = [0, 1, 4, 8, 16];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DtcCompileDialog {
+    pub component: PlatformComponent,
+    pub source: PathBuf,
+    pub output: PathBuf,
+    pub root: PathBuf,
+    pub program: PathBuf,
+    pub selection: usize,
+    pub symbols: bool,
+    pub sort: bool,
+    pub padding_bytes: u32,
+    pub reserve_entries: u32,
+}
+
+impl DtcCompileDialog {
+    pub fn new(component: PlatformComponent, file: &PlatformFile, program: PathBuf) -> Self {
+        let stem = file
+            .path
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or("device-tree");
+        Self {
+            component,
+            source: file.path.clone(),
+            output: file.path.with_file_name(format!("{stem}.yoctui.dtb")),
+            root: file.root.clone(),
+            program,
+            selection: 0,
+            symbols: false,
+            sort: false,
+            padding_bytes: 0,
+            reserve_entries: 0,
+        }
+    }
+
+    pub const fn selected_option(&self) -> DtcCompileOption {
+        DtcCompileOption::from_index(self.selection)
+    }
+
+    pub fn select(&mut self, delta: isize) {
+        self.selection = if delta.is_negative() {
+            self.selection.saturating_sub(delta.unsigned_abs())
+        } else {
+            self.selection
+                .saturating_add(delta as usize)
+                .min(DtcCompileOption::COUNT - 1)
+        };
+    }
+
+    pub fn adjust(&mut self, delta: isize) {
+        match self.selected_option() {
+            DtcCompileOption::Symbols => self.symbols = !self.symbols,
+            DtcCompileOption::Sort => self.sort = !self.sort,
+            DtcCompileOption::Padding => {
+                self.padding_bytes =
+                    shifted_choice(self.padding_bytes, &DTC_PADDING_CHOICES, delta);
+            }
+            DtcCompileOption::ReserveEntries => {
+                self.reserve_entries =
+                    shifted_choice(self.reserve_entries, &DTC_RESERVE_CHOICES, delta);
+            }
+        }
+    }
+
+    pub fn option_value(&self, option: DtcCompileOption) -> String {
+        match option {
+            DtcCompileOption::Symbols => enabled_label(self.symbols).into(),
+            DtcCompileOption::Sort => enabled_label(self.sort).into(),
+            DtcCompileOption::Padding => format!("{} bytes", self.padding_bytes),
+            DtcCompileOption::ReserveEntries => self.reserve_entries.to_string(),
+        }
+    }
+
+    pub fn arguments(&self) -> Vec<String> {
+        let mut arguments = vec!["-I".into(), "dts".into(), "-O".into(), "dtb".into()];
+        if self.symbols {
+            arguments.push("-@".into());
+        }
+        if self.sort {
+            arguments.push("-s".into());
+        }
+        if self.padding_bytes > 0 {
+            arguments.extend(["-p".into(), self.padding_bytes.to_string()]);
+        }
+        if self.reserve_entries > 0 {
+            arguments.extend(["-R".into(), self.reserve_entries.to_string()]);
+        }
+        arguments.extend([
+            "-o".into(),
+            self.output.display().to_string(),
+            self.source.display().to_string(),
+        ]);
+        arguments
+    }
+
+    pub fn terminal_request(&self) -> TerminalLaunchRequest {
+        TerminalLaunchRequest {
+            name: format!(
+                "compile {} device tree",
+                self.component.label().to_ascii_lowercase()
+            ),
+            kind: TerminalCreationKind::Utility,
+            cwd: self.root.clone(),
+            program: self.program.clone(),
+            arguments: self.arguments(),
+        }
+    }
+}
+
+const fn enabled_label(enabled: bool) -> &'static str {
+    if enabled { "enabled" } else { "disabled" }
+}
+
+fn shifted_choice(current: u32, choices: &[u32], delta: isize) -> u32 {
+    let index = choices
+        .iter()
+        .position(|choice| *choice == current)
+        .unwrap_or(0);
+    let next = if delta.is_negative() {
+        index.saturating_sub(delta.unsigned_abs())
+    } else {
+        index.saturating_add(delta as usize).min(choices.len() - 1)
+    };
+    choices[next]
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -196,5 +358,69 @@ mod tests {
             state.selected_file().map(|file| file.kind),
             Some(PlatformFileKind::DotConfig)
         );
+    }
+
+    #[test]
+    fn device_tree_compile_options_build_deterministic_argument_vector() {
+        let file = PlatformFile {
+            path: "/work/board.dts".into(),
+            root: "/work".into(),
+            kind: PlatformFileKind::Dts,
+            size_bytes: 42,
+        };
+        let mut dialog =
+            DtcCompileDialog::new(PlatformComponent::Kernel, &file, "/tools/dtc".into());
+        dialog.adjust(1);
+        dialog.select(1);
+        dialog.adjust(1);
+        dialog.select(1);
+        dialog.adjust(1);
+        dialog.adjust(1);
+        dialog.select(1);
+        dialog.adjust(1);
+
+        assert_eq!(dialog.selected_option(), DtcCompileOption::ReserveEntries);
+        assert_eq!(dialog.padding_bytes, 1_024);
+        assert_eq!(dialog.reserve_entries, 1);
+        assert_eq!(
+            dialog.arguments(),
+            [
+                "-I",
+                "dts",
+                "-O",
+                "dtb",
+                "-@",
+                "-s",
+                "-p",
+                "1024",
+                "-R",
+                "1",
+                "-o",
+                "/work/board.yoctui.dtb",
+                "/work/board.dts",
+            ]
+        );
+        assert_eq!(
+            dialog.terminal_request().program,
+            PathBuf::from("/tools/dtc")
+        );
+    }
+
+    #[test]
+    fn device_tree_compile_choices_are_bounded() {
+        let file = PlatformFile {
+            path: "/work/board.dts".into(),
+            root: "/work".into(),
+            kind: PlatformFileKind::Dts,
+            size_bytes: 42,
+        };
+        let mut dialog =
+            DtcCompileDialog::new(PlatformComponent::UBoot, &file, "/tools/dtc".into());
+        dialog.select(99);
+        dialog.adjust(99);
+        assert_eq!(dialog.selection, DtcCompileOption::COUNT - 1);
+        assert_eq!(dialog.reserve_entries, 16);
+        dialog.select(-99);
+        assert_eq!(dialog.selection, 0);
     }
 }

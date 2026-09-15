@@ -1388,3 +1388,16 @@ timestamps, usernames, paths and decorative activity remain concept-only.
 DONE in v0.1.111. Focused and full workspace tests, strict Clippy, bridge,
 documentation, version/layout, roadmap, concept integrity and all deterministic
 raster checks pass.
+
+## M65 — Device-tree editor and compiler
+
+DEVICE-TREE-EDITOR-001 adds a Device Tree language to the shared viewer/editor
+and a typed `dtc` compile-options dialog for the Kernel and U-Boot workbenches.
+It keeps authoritative discovery, collision refusal, exact argv preview and
+daemon-owned PTY execution while exposing symbol generation, sorting, padding
+and reserve-map capacity.
+
+DONE in v0.1.112. The shared model, app routing, responsive dialog, source
+renderer, documentation and full verification baseline pass. The host used for
+release verification did not provide `dtc`; exact execution handoff is covered
+through the daemon terminal effect and existing real-PTY tests.

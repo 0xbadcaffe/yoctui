@@ -748,6 +748,87 @@ fn bitbake_preview_highlights_assignments_and_comments() {
         Some(Color::Rgb(155, 166, 172))
     );
 }
+
+#[test]
+fn device_tree_preview_highlights_directives_nodes_properties_values_and_comments() {
+    let app = App::new(10, 1_000);
+    let preview = source_preview(
+        "#include \"soc.dtsi\"\n/dts-v1/;\nuart0: serial@1000 {\n  compatible = \"http://vendor/\\\"device\"; // UART\n  interrupt-controller;\n  /* retained */ status = \"okay\";\n};",
+        "board.dts",
+        &app,
+    );
+    let styled = preview
+        .lines
+        .iter()
+        .flat_map(|line| line.spans.iter())
+        .filter_map(|span| span.style.fg.map(|color| (span.content.as_ref(), color)))
+        .collect::<Vec<_>>();
+
+    assert!(styled.iter().any(|(text, _)| *text == "/dts-v1/"));
+    assert!(styled.iter().any(|(text, _)| *text == "#include"));
+    assert!(styled.iter().any(|(text, _)| *text == "uart0"));
+    assert!(styled.iter().any(|(text, _)| *text == "compatible"));
+    assert!(
+        styled
+            .iter()
+            .any(|(text, _)| *text == "\"http://vendor/\\\"device\"")
+    );
+    assert!(
+        styled
+            .iter()
+            .any(|(text, _)| *text == "interrupt-controller")
+    );
+    assert!(
+        styled
+            .iter()
+            .any(|(text, color)| { *text == "// UART" && *color == Color::Rgb(155, 166, 172) })
+    );
+    assert!(
+        styled.iter().any(|(text, color)| {
+            *text == "/* retained */" && *color == Color::Rgb(155, 166, 172)
+        })
+    );
+}
+
+#[test]
+fn device_tree_compile_dialog_renders_typed_options_and_derived_paths() {
+    let mut app = App::new(10, 1_000);
+    app.dialogs
+        .push_back(Dialog::DtcCompile(yoctui_model::DtcCompileDialog::new(
+            yoctui_model::PlatformComponent::Kernel,
+            &yoctui_model::PlatformFile {
+                path: "/workspace/kernel/board.dts".into(),
+                root: "/workspace/kernel".into(),
+                kind: yoctui_model::PlatformFileKind::Dts,
+                size_bytes: 64,
+            },
+            "/toolchain/bin/dtc".into(),
+        )));
+
+    let output = rendered_text(&app, 120, 30);
+    for expected in [
+        "Compile device tree",
+        "board.dts",
+        "board.yoctui.dtb",
+        "Generate symbols (-@)",
+        "Stable sort (-s)",
+        "Output padding (-p)",
+        "Reserve entries (-R)",
+        "Enter review launch",
+    ] {
+        assert!(output.contains(expected), "missing {expected}: {output}");
+    }
+    assert!(rendered_text(&app, 80, 24).contains("Compile device tree"));
+    if let Some(Dialog::DtcCompile(dialog)) = app.dialogs.front_mut() {
+        dialog.source = PathBuf::from(format!("/workspace/{}/board.dts", "nested/".repeat(30)));
+        dialog.output = PathBuf::from(format!(
+            "/workspace/{}/board.yoctui.dtb",
+            "nested/".repeat(30)
+        ));
+    }
+    assert!(rendered_text(&app, 80, 24).contains("Enter review launch"));
+    let _ = rendered_text(&app, 40, 10);
+}
 #[test]
 fn renders_image_picker_for_active_machine() {
     let mut terminal = Terminal::new(TestBackend::new(100, 25)).unwrap();

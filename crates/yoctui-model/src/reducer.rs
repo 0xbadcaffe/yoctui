@@ -73,6 +73,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::ExploreSelectedKernelRoot
         | Action::CompileSelectedKernelDts
         | Action::DecompileSelectedKernelDtb
+        | Action::SelectDtcCompileOption { .. }
+        | Action::AdjustDtcCompileOption { .. }
+        | Action::ConfirmDtcCompileOptions
+        | Action::CancelDtcCompileOptions
         | Action::InspectFirmware
         | Action::FirmwareLoaded(..)
         | Action::FirmwareFailed(..)

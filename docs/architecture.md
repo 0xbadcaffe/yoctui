@@ -4166,3 +4166,18 @@ The production render_at path owns concept layout geometry for all live and
 fixture clients. No screenshot-only rendering path or copied mockup state is
 permitted. Dashboard reuses typed projections; shared geometry must agree with
 input hit testing. Raster tooling projects Unicode cell graphics explicitly.
+
+## M65 device-tree editor and compiler boundary
+
+The model owns Device Tree language detection, compile-option state, bounded
+option transitions and deterministic `dtc` argument construction. Platform
+inventory remains the authority for the selected source/root and executable;
+the UI only renders typed state and the app only maps keys to actions. The
+final request continues through the existing terminal-launch confirmation and
+daemon PTY effect, so process output and exit status use the terminal protocol
+without renderer-side process access or output parsing.
+
+Kernel and boot-firmware reducers call one shared platform compile constructor.
+The output path is derived beside the selected DTS and is never accepted when
+already present. Option fields emit individual arguments and never form an
+unstructured shell string.

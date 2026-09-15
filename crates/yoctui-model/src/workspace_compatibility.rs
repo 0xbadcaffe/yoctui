@@ -899,6 +899,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         | Dialog::BbmaskEdit(_)
         | Dialog::BbmaskConfirmation(_)
         | Dialog::ImageConsole(_)
+        | Dialog::DtcCompile(_)
         | Dialog::TerminalLaunch(_)
         | Dialog::RecipeEditor(_)
         | Dialog::BuildCancellationConfirmation

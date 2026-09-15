@@ -8084,3 +8084,14 @@ required = true
 depends_on = ["CONCEPT-VERIFY"]
 verify = ["cargo test -p yoctui-ui dashboard", "cargo test -p yoctui-ui concept", "python3 scripts/render-m22-concept-screenshots.py --check", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.111. Dashboard CPU, RAM and Build FS cards use thin foreground semicircles, centered whole percentages and two-decimal context. Build FS warns at 60%; unavailable sstate remains explicit. All six concept PNGs were reviewed and the editor/F10 composition is the first recommended future fidelity target. Focused and full workspace tests, strict Clippy, 52 bridge tests, docs, version/layout, roadmap and deterministic images pass."
+
+[[task]]
+id = "DEVICE-TREE-EDITOR-001"
+milestone = "M65"
+title = "Add DTS-aware editing and configurable dtc compilation"
+status = "DONE"
+priority = 970
+required = true
+depends_on = ["METER-CONCEPT-001"]
+verify = ["cargo test -p yoctui-model device_tree", "cargo test -p yoctui-app dtc", "cargo test -p yoctui-ui device_tree", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/check-library-layout.py", "python3 scripts/check-version-bump.py", "python3 scripts/render-m22-concept-screenshots.py --check", "python3 scripts/render-readme-screenshots.py --check", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.112. DTS/DTSI use Device Tree language detection and syntax roles for directives, labels/nodes, properties, operators, values, line comments and block comments. Kernel and U-Boot share a bounded typed dtc form for -@, -s, -p and -R, collision refusal, exact terminal preview and daemon-owned utility PTY creation. All 1,620 Rust tests pass with four existing live tests ignored; strict Clippy, 52 bridge tests, docs, version/layout, roadmap and deterministic images pass. Host dtc was unavailable, so executable behavior is covered through typed request and existing real daemon PTY tests rather than a local host compile."

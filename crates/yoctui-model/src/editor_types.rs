@@ -192,6 +192,7 @@ pub enum Dialog {
     DevtoolDeployConfirmation(DevtoolDeployPlan),
     BbmaskEdit(PopupEditor),
     BbmaskConfirmation(String),
+    DtcCompile(DtcCompileDialog),
     TerminalLaunch(TerminalLaunchDialog),
     RecipeEditor(RecipeEditor),
     BuildCancellationConfirmation,
@@ -274,6 +275,7 @@ impl Dialog {
             | Self::DevtoolFinishPicker(_)
             | Self::DevtoolDeploy(_)
             | Self::BbmaskEdit(_)
+            | Self::DtcCompile(_)
             | Self::TerminalLaunch(_)
             | Self::RecipeEditor(_) => false,
         }

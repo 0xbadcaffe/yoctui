@@ -816,6 +816,35 @@ fn devwork_terminal_dialog_keys_are_focus_trapped_and_recipe_routes_are_explicit
 }
 
 #[test]
+fn dtc_compile_dialog_maps_only_typed_option_and_review_keys() {
+    assert_eq!(
+        dtc_compile_dialog_action(Input::Up),
+        Some(Action::SelectDtcCompileOption { delta: -1 })
+    );
+    assert_eq!(
+        dtc_compile_dialog_action(Input::Tab),
+        Some(Action::SelectDtcCompileOption { delta: 1 })
+    );
+    assert_eq!(
+        dtc_compile_dialog_action(Input::Char(' ')),
+        Some(Action::AdjustDtcCompileOption { delta: 1 })
+    );
+    assert_eq!(
+        dtc_compile_dialog_action(Input::Left),
+        Some(Action::AdjustDtcCompileOption { delta: -1 })
+    );
+    assert_eq!(
+        dtc_compile_dialog_action(Input::Enter),
+        Some(Action::ConfirmDtcCompileOptions)
+    );
+    assert_eq!(
+        dtc_compile_dialog_action(Input::Esc),
+        Some(Action::CancelDtcCompileOptions)
+    );
+    assert_eq!(dtc_compile_dialog_action(Input::Char('x')), None);
+}
+
+#[test]
 fn ux_onboarding_traps_input_and_routes_only_typed_guide_actions() {
     let mut app = yoctui_model::App::new_unconfigured(8, 1_000);
     assert_eq!(onboarding_action(&app, Input::Enter), None);

@@ -65,6 +65,14 @@ pub enum Action {
     ExploreSelectedKernelRoot,
     CompileSelectedKernelDts,
     DecompileSelectedKernelDtb,
+    SelectDtcCompileOption {
+        delta: isize,
+    },
+    AdjustDtcCompileOption {
+        delta: isize,
+    },
+    ConfirmDtcCompileOptions,
+    CancelDtcCompileOptions,
     InspectFirmware,
     FirmwareLoaded(PlatformInventory),
     FirmwareFailed(String),

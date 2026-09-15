@@ -3032,3 +3032,13 @@ followed by evidence-led task/error workflow polish. Rootfs and Terminal
 Sessions already retain most of their concept value. Focused and full workspace
 tests, strict Clippy, 52 bridge tests, documentation, version/layout, roadmap,
 concept integrity and deterministic raster checks pass.
+
+## M65 device-tree editor and compiler
+
+DEVICE-TREE-EDITOR-001 is complete in v0.1.112. DTS/DTSI language recognition
+and highlighting, typed `dtc` options, collision-safe exact preview and
+daemon-owned execution use one shared Kernel/U-Boot workflow. All 1,620 Rust
+tests pass with four existing live tests ignored; strict Clippy, 52 bridge
+tests, documentation, version/layout, roadmap and deterministic image gates
+pass. The verification host had no `dtc`; the exact request reaches the tested
+daemon PTY creation boundary, while a host compile was not claimed.

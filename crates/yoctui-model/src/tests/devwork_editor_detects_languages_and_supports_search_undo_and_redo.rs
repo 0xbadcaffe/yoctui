@@ -19,6 +19,14 @@ fn devwork_editor_detects_languages_and_supports_search_undo_and_redo() {
         SourceLanguage::from_path(Path::new("Makefile")),
         SourceLanguage::Make
     );
+    assert_eq!(
+        SourceLanguage::from_path(Path::new("arch/arm/boot/dts/board.dts")),
+        SourceLanguage::DeviceTree
+    );
+    assert_eq!(
+        SourceLanguage::from_path(Path::new("soc/common.dtsi")),
+        SourceLanguage::DeviceTree
+    );
 
     let mut app = App::new(10, 1_000);
     let _ = update(

@@ -1,6 +1,96 @@
 //! State transitions beginning with OpenOnboarding.
 use super::*;
 
+fn selected_platform_dtc(
+    app: &App,
+    kernel: bool,
+) -> Result<(PlatformFile, PathBuf, PlatformComponent), String> {
+    let workbench = if kernel { &app.kernel } else { &app.firmware };
+    let file = workbench
+        .selected_file()
+        .cloned()
+        .ok_or_else(|| "Select a device-tree file first.".to_owned())?;
+    let inventory = workbench
+        .inventory()
+        .ok_or_else(|| "Refresh the platform inventory before running dtc.".to_owned())?;
+    let program = inventory
+        .dtc
+        .clone()
+        .ok_or_else(|| "No authoritative dtc executable was found in PATH.".to_owned())?;
+    Ok((file, program, inventory.component))
+}
+
+fn begin_platform_dtc_compile(app: &mut App, kernel: bool) {
+    let (file, program, component) = match selected_platform_dtc(app, kernel) {
+        Ok(values) => values,
+        Err(message) => {
+            app.notification = Some(message);
+            return;
+        }
+    };
+    if file.kind != PlatformFileKind::Dts {
+        app.notification = Some("Select a DTS source before compiling.".into());
+        return;
+    }
+    let dialog = DtcCompileDialog::new(component, &file, program);
+    if dialog.output.exists() {
+        app.notification = Some(format!(
+            "Refusing to overwrite {}; move or remove it first.",
+            dialog.output.display()
+        ));
+        return;
+    }
+    open_dialog(app, Dialog::DtcCompile(dialog));
+}
+
+fn begin_platform_dtc_decompile(app: &mut App, kernel: bool) {
+    let (file, program, component) = match selected_platform_dtc(app, kernel) {
+        Ok(values) => values,
+        Err(message) => {
+            app.notification = Some(message);
+            return;
+        }
+    };
+    if !matches!(file.kind, PlatformFileKind::Dtb | PlatformFileKind::Dtbo) {
+        app.notification = Some("Select a DTB or DTBO before decompiling.".into());
+        return;
+    }
+    let stem = file
+        .path
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or("device-tree");
+    let output = file.path.with_file_name(format!("{stem}.yoctui.dts"));
+    if output.exists() {
+        app.notification = Some(format!(
+            "Refusing to overwrite {}; move or remove it first.",
+            output.display()
+        ));
+        return;
+    }
+    open_terminal_launch(
+        app,
+        TerminalLaunchRequest {
+            name: format!(
+                "decompile {} device tree",
+                component.label().to_ascii_lowercase()
+            ),
+            kind: TerminalCreationKind::Utility,
+            cwd: file.root,
+            program,
+            arguments: vec![
+                "-I".into(),
+                "dtb".into(),
+                "-O".into(),
+                "dts".into(),
+                "-o".into(),
+                output.display().to_string(),
+                file.path.display().to_string(),
+            ],
+        },
+    );
+}
+
 pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     match action {
         Action::OpenOnboarding => {
@@ -255,72 +345,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 root: file.root.clone(),
             });
         }
-        Action::CompileSelectedKernelDts | Action::DecompileSelectedKernelDtb => {
-            let compile = matches!(action, Action::CompileSelectedKernelDts);
-            let Some(file) = app.kernel.selected_file().cloned() else {
-                app.notification = Some("Select a device-tree file first.".into());
-                return None;
-            };
-            let valid = if compile {
-                file.kind == PlatformFileKind::Dts
-            } else {
-                matches!(file.kind, PlatformFileKind::Dtb | PlatformFileKind::Dtbo)
-            };
-            if !valid {
-                app.notification = Some(if compile {
-                    "Select a DTS source before compiling.".into()
-                } else {
-                    "Select a DTB or DTBO before decompiling.".into()
-                });
-                return None;
-            }
-            let Some(dtc) = app
-                .kernel
-                .inventory()
-                .and_then(|inventory| inventory.dtc.clone())
-            else {
-                app.notification =
-                    Some("No authoritative dtc executable was found in PATH.".into());
-                return None;
-            };
-            let suffix = if compile { "yoctui.dtb" } else { "yoctui.dts" };
-            let stem = file
-                .path
-                .file_stem()
-                .and_then(|value| value.to_str())
-                .unwrap_or("device-tree");
-            let output = file.path.with_file_name(format!("{stem}.{suffix}"));
-            if output.exists() {
-                app.notification = Some(format!(
-                    "Refusing to overwrite {}; move or remove it first.",
-                    output.display()
-                ));
-                return None;
-            }
-            open_terminal_launch(
-                app,
-                TerminalLaunchRequest {
-                    name: if compile {
-                        "compile device tree"
-                    } else {
-                        "decompile device tree"
-                    }
-                    .into(),
-                    kind: TerminalCreationKind::Utility,
-                    cwd: file.root,
-                    program: dtc,
-                    arguments: vec![
-                        "-I".into(),
-                        if compile { "dts" } else { "dtb" }.into(),
-                        "-O".into(),
-                        if compile { "dtb" } else { "dts" }.into(),
-                        "-o".into(),
-                        output.display().to_string(),
-                        file.path.display().to_string(),
-                    ],
-                },
-            );
-        }
+        Action::CompileSelectedKernelDts => begin_platform_dtc_compile(app, true),
+        Action::DecompileSelectedKernelDtb => begin_platform_dtc_decompile(app, true),
         Action::InspectFirmware => {
             app.firmware.inventory = PlatformInventoryState::Loading;
             return Some(Effect::InspectFirmware);
@@ -405,71 +431,40 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 root: file.root.clone(),
             });
         }
-        Action::CompileSelectedFirmwareDts | Action::DecompileSelectedFirmwareDtb => {
-            let compile = matches!(action, Action::CompileSelectedFirmwareDts);
-            let Some(file) = app.firmware.selected_file().cloned() else {
-                app.notification = Some("Select a device-tree file first.".into());
-                return None;
-            };
-            let valid = if compile {
-                file.kind == PlatformFileKind::Dts
-            } else {
-                matches!(file.kind, PlatformFileKind::Dtb | PlatformFileKind::Dtbo)
-            };
-            if !valid {
-                app.notification = Some(if compile {
-                    "Select a DTS source before compiling.".into()
+        Action::CompileSelectedFirmwareDts => begin_platform_dtc_compile(app, false),
+        Action::DecompileSelectedFirmwareDtb => begin_platform_dtc_decompile(app, false),
+        Action::SelectDtcCompileOption { delta } => {
+            if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog_mut() {
+                dialog.select(delta);
+            }
+        }
+        Action::AdjustDtcCompileOption { delta } => {
+            if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog_mut() {
+                dialog.adjust(delta);
+            }
+        }
+        Action::ConfirmDtcCompileOptions => {
+            if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog().cloned() {
+                if dialog.output.exists() {
+                    app.notification = Some(format!(
+                        "Refusing to overwrite {}; move or remove it first.",
+                        dialog.output.display()
+                    ));
                 } else {
-                    "Select a DTB or DTBO before decompiling.".into()
-                });
-                return None;
+                    replace_dialog(
+                        app,
+                        Dialog::TerminalLaunch(TerminalLaunchDialog {
+                            request: dialog.terminal_request(),
+                            destination: TerminalLaunchDestination::Embedded,
+                        }),
+                    );
+                }
             }
-            let Some(dtc) = app
-                .firmware
-                .inventory()
-                .and_then(|inventory| inventory.dtc.clone())
-            else {
-                app.notification =
-                    Some("No authoritative dtc executable was found in PATH.".into());
-                return None;
-            };
-            let suffix = if compile { "yoctui.dtb" } else { "yoctui.dts" };
-            let stem = file
-                .path
-                .file_stem()
-                .and_then(|value| value.to_str())
-                .unwrap_or("device-tree");
-            let output = file.path.with_file_name(format!("{stem}.{suffix}"));
-            if output.exists() {
-                app.notification = Some(format!(
-                    "Refusing to overwrite {}; move or remove it first.",
-                    output.display()
-                ));
-                return None;
+        }
+        Action::CancelDtcCompileOptions => {
+            if matches!(app.active_dialog(), Some(Dialog::DtcCompile(_))) {
+                close_dialog(app);
             }
-            open_terminal_launch(
-                app,
-                TerminalLaunchRequest {
-                    name: if compile {
-                        "compile firmware device tree"
-                    } else {
-                        "decompile firmware device tree"
-                    }
-                    .into(),
-                    kind: TerminalCreationKind::Utility,
-                    cwd: file.root,
-                    program: dtc,
-                    arguments: vec![
-                        "-I".into(),
-                        if compile { "dts" } else { "dtb" }.into(),
-                        "-O".into(),
-                        if compile { "dtb" } else { "dts" }.into(),
-                        "-o".into(),
-                        output.display().to_string(),
-                        file.path.display().to_string(),
-                    ],
-                },
-            );
         }
         Action::ShiftOverviewView { delta } => {
             app.overview_view = app.overview_view.shifted(delta);

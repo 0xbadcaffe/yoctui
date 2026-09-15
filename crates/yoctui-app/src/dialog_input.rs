@@ -371,6 +371,24 @@ pub fn terminal_launch_dialog_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn dtc_compile_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') | Input::BackTab => {
+            Some(Action::SelectDtcCompileOption { delta: -1 })
+        }
+        Input::Down | Input::Char('j') | Input::Tab => {
+            Some(Action::SelectDtcCompileOption { delta: 1 })
+        }
+        Input::Left | Input::Char('h') => Some(Action::AdjustDtcCompileOption { delta: -1 }),
+        Input::Right | Input::Char('l') | Input::Char(' ') => {
+            Some(Action::AdjustDtcCompileOption { delta: 1 })
+        }
+        Input::Enter => Some(Action::ConfirmDtcCompileOptions),
+        Input::Esc => Some(Action::CancelDtcCompileOptions),
+        _ => None,
+    }
+}
+
 pub fn devtool_modify_confirmation_action(key: Input) -> Option<Action> {
     match key {
         Input::Enter => Some(Action::ConfirmDevtoolModify),

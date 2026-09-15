@@ -592,6 +592,7 @@ pub(crate) fn dialog_mouse_action(
             Some(Action::SelectDevtoolFinishLayer { delta })
         }
         yoctui_model::Dialog::WicDevicePicker(_) => Some(Action::SelectWicDevice { delta }),
+        yoctui_model::Dialog::DtcCompile(_) => Some(Action::SelectDtcCompileOption { delta }),
         _ => None,
     }
 }

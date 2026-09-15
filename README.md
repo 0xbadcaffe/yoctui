@@ -301,8 +301,11 @@ selected provider supports it. Kernel and U-Boot menuconfig retain their native
 ncurses layout, colors and key handling inside Terminal Sessions. The selected
 session uses the full workspace beside the Navigator, omits the passive
 Inspector and prefix-help rail, and resizes its PTY to the visible split pane.
-With `dtc` available, `c` compiles DTS and `d` decompiles DTB/DTBO. Output uses
-a `.yoctui` name and refuses overwrites.
+The editor recognizes DTS/DTSI syntax and highlights directives, nodes,
+properties, values and comments. With `dtc` available, `c` opens typed compile
+options for symbols, stable sorting, padding and reserve entries before the
+exact terminal-launch preview; `d` decompiles DTB/DTBO. Output uses a
+`.yoctui` name and refuses overwrites.
 [Kernel and firmware guide](docs/platform-workbenches.md).
 
 Open **Overview → Insights** and choose `1`–`8` for timeline, rebuild causes,

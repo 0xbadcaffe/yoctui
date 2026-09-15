@@ -5496,3 +5496,28 @@ alone owns the focused border. Terminal tabs have an actual content row between
 their title and separator; a prefix rail appears below PTYs when body height is
 at least 30 rows. Retained PTY replicas always say read-only, even if a cached
 lease still names this client.
+
+## 46. Device-tree source and compiler workflow
+
+DTS and DTSI files opened from either platform workbench use the shared in-app
+viewer/editor with a Device Tree language identity. Color-capable themes
+distinguish directives, node labels and property names, assignment operators,
+values, and line or block comments. Attribute-only and no-color modes retain
+plain readable text. The editor keeps its existing search, selection, undo,
+redo, structural validation, visual diff, guarded save and external-editor
+behavior.
+
+Pressing `c` on a selected DTS opens a focus-trapped compile-options dialog.
+Up/Down selects one of four typed settings: symbol generation (`-@`), stable
+node/property sorting (`-s`), output padding (`-p`) and reserve-map entries
+(`-R`). Left/Right or Space changes the selected value from bounded choices.
+Enter advances to the existing exact terminal-launch preview; Esc cancels
+without spawning. The output remains a derived sibling `NAME.yoctui.dtb`, and
+an existing output blocks both the initial form and the final transition.
+Kernel and U-Boot use the same dialog and execution path.
+
+The compiler runs as the inventory-reported `dtc` executable in the selected
+file's authoritative root through the daemon-owned utility PTY. Its complete
+stdout, stderr and exit status remain visible in Terminal Sessions. DTSI is
+editable but cannot be compiled directly; DTB and DTBO retain the existing
+decompile workflow.

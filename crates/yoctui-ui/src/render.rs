@@ -612,6 +612,44 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
             )),
             popup,
         );
+    } else if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog() {
+        let popup = dialog_popup_rect(area, 84, 16);
+        clear_popup(frame, app, popup);
+        let mut lines = vec![
+            Line::from(format!("Source: {}", dialog.source.display())),
+            Line::from(format!("Output: {}", dialog.output.display())),
+            Line::from(""),
+        ];
+        for index in 0..yoctui_model::DtcCompileOption::COUNT {
+            let option = yoctui_model::DtcCompileOption::from_index(index);
+            lines.push(Line::styled(
+                format!(
+                    "{} {:<28} {}",
+                    if index == dialog.selection {
+                        "▶"
+                    } else {
+                        " "
+                    },
+                    option.label(),
+                    dialog.option_value(option),
+                ),
+                selected_style(app, index == dialog.selection),
+            ));
+        }
+        lines.extend([
+            Line::from(""),
+            Line::from(format!("Arguments: {}", dialog.arguments().join(" "))),
+            Line::from(""),
+            Line::from("↑/↓ select · ←/→ or Space change · Enter review launch · Esc cancel"),
+        ]);
+        frame.render_widget(
+            Paragraph::new(lines).block(dialog_block(
+                app,
+                "Compile device tree",
+                DialogTone::Standard,
+            )),
+            popup,
+        );
     } else if let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog() {
         let width = area.width.saturating_sub(8).clamp(50, 96);
         let popup = Rect::new(
