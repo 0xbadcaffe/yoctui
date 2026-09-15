@@ -3075,3 +3075,10 @@ to the README with explicit evidence age and reproduction guidance.
 
 Three atomic tasks are registered. SEARCH-CONTENT-001 is current; setup and
 daemon readiness follow it. No implementation or verification is claimed yet.
+
+SEARCH-CONTENT-001: DONE. Global search opens empty and excludes command and
+filename matches. The active build root overrides the launch path; bounded
+UTF-8 text scans include rootfs, deployment metadata and alternate tmp trees.
+Scanner, model and TestBackend regressions pass. Full workspace tests pass on
+rerun (the first run failed an unchanged dependency-graph process test), strict
+Clippy, formatting and 52 bridge tests pass. No binary image decoding is claimed.

@@ -9,7 +9,7 @@ use std::{
     },
 };
 use yoctui_model::{
-    App, BuildEnvironmentState, GlobalSearchContentKind, GlobalSearchHit, MAX_GLOBAL_SEARCH_HITS,
+    App, GlobalSearchContentKind, GlobalSearchHit, MAX_GLOBAL_SEARCH_HITS,
     MAX_GLOBAL_SEARCH_PREVIEW_CHARS,
 };
 
@@ -33,8 +33,6 @@ impl GlobalSearchCancellation {
 #[derive(Debug, Clone)]
 pub struct GlobalSearchPlan {
     pub query: String,
-    pub source_roots: Vec<PathBuf>,
-    pub layer_roots: Vec<PathBuf>,
     pub build_dir: Option<PathBuf>,
 }
 
@@ -47,40 +45,10 @@ pub struct GlobalSearchScanResult {
 
 impl GlobalSearchPlan {
     pub fn for_app(app: &App, build_dir: &Path, query: String) -> Self {
-        let profile_source = match &app.build_environment {
-            BuildEnvironmentState::Configured(profile)
-            | BuildEnvironmentState::Connected(profile)
-            | BuildEnvironmentState::Failed { profile, .. }
-            | BuildEnvironmentState::Verifying { profile, .. } => Some(profile.source_dir.clone()),
-            BuildEnvironmentState::Unconfigured => None,
-        };
-        let mut source_roots = app
-            .workspace
-            .source_dir
-            .iter()
-            .cloned()
-            .chain(profile_source)
-            .collect::<Vec<_>>();
-        let mut layer_roots = app
-            .workspace
-            .layers
-            .iter()
-            .map(|layer| layer.path.clone())
-            .collect::<Vec<_>>();
-        normalize_roots(&mut source_roots);
-        normalize_roots(&mut layer_roots);
-        for layer in &layer_roots {
-            if !source_roots.iter().any(|source| layer.starts_with(source)) {
-                source_roots.push(layer.clone());
-            }
-        }
-        normalize_roots(&mut source_roots);
-        let build_dir = safe_search_root(build_dir).then(|| build_dir.to_path_buf());
+        let build_dir = app.workspace.build_dir.as_deref().unwrap_or(build_dir);
         Self {
             query,
-            source_roots,
-            layer_roots,
-            build_dir,
+            build_dir: safe_search_root(build_dir).then(|| build_dir.to_path_buf()),
         }
     }
 }
@@ -94,28 +62,22 @@ fn safe_search_root(path: &Path) -> bool {
             .any(|component| matches!(component, std::path::Component::ParentDir))
 }
 
-fn normalize_roots(roots: &mut Vec<PathBuf>) {
-    roots.retain(|root| safe_search_root(root));
-    roots.sort();
-    roots.dedup();
-    let snapshot = roots.clone();
-    roots.retain(|root| {
-        !snapshot
-            .iter()
-            .any(|other| other != root && root.starts_with(other))
-    });
-}
-
 pub fn scan_global_content(
     plan: &GlobalSearchPlan,
     cancellation: &GlobalSearchCancellation,
 ) -> Result<GlobalSearchScanResult, String> {
+    if plan.query.trim().is_empty() {
+        return Ok(GlobalSearchScanResult {
+            hits: Vec::new(),
+            truncated: false,
+            searched_scopes: Vec::new(),
+        });
+    }
     let expression = RegexBuilder::new(plan.query.trim())
         .case_insensitive(true)
         .build()
         .map_err(|error| format!("invalid regular expression: {error}"))?;
     let mut scanner = Scanner {
-        plan,
         expression,
         cancellation,
         hits: Vec::new(),
@@ -126,19 +88,13 @@ pub fn scan_global_content(
         stop: false,
         searched_scopes: BTreeSet::new(),
     };
-    for root in &plan.source_roots {
-        scanner
-            .searched_scopes
-            .insert(format!("source={}", root.display()));
-        scanner.walk_source(root)?;
-        if scanner.done() {
-            break;
-        }
-    }
     if !scanner.done()
         && let Some(build_dir) = &plan.build_dir
     {
-        scanner.search_build(build_dir)?;
+        scanner
+            .searched_scopes
+            .insert(format!("build={}", build_dir.display()));
+        scanner.walk_tree(build_dir)?;
     }
     Ok(GlobalSearchScanResult {
         hits: scanner.hits,
@@ -148,7 +104,6 @@ pub fn scan_global_content(
 }
 
 struct Scanner<'a> {
-    plan: &'a GlobalSearchPlan,
     expression: regex::Regex,
     cancellation: &'a GlobalSearchCancellation,
     hits: Vec<GlobalSearchHit>,
@@ -165,92 +120,7 @@ impl Scanner<'_> {
         self.cancellation.cancelled() || self.stop || self.hits.len() >= MAX_GLOBAL_SEARCH_HITS
     }
 
-    fn walk_source(&mut self, root: &Path) -> Result<(), String> {
-        self.walk_tree(root, None, &excluded_source_directory)
-    }
-
-    fn search_build(&mut self, build_dir: &Path) -> Result<(), String> {
-        for (relative, kind) in [
-            ("conf", GlobalSearchContentKind::Configuration),
-            ("tmp/log", GlobalSearchContentKind::BuildLog),
-            ("tmp/pkgdata", GlobalSearchContentKind::GeneratedMetadata),
-            ("tmp/deploy", GlobalSearchContentKind::GeneratedMetadata),
-        ] {
-            let root = build_dir.join(relative);
-            if root.is_dir() {
-                self.searched_scopes
-                    .insert(format!("{}={}", kind.label(), root.display()));
-                self.walk_tree(&root, Some(kind), &|_, _| true)?;
-            }
-            if self.done() {
-                return Ok(());
-            }
-        }
-        let work = build_dir.join("tmp/work");
-        if work.is_dir() {
-            self.searched_scopes
-                .insert(format!("generated-work={}", work.display()));
-            self.discover_work_outputs(&work)?;
-        }
-        Ok(())
-    }
-
-    fn discover_work_outputs(&mut self, directory: &Path) -> Result<(), String> {
-        if self.done() {
-            return Ok(());
-        }
-        self.count_directory()?;
-        for entry in directory_entries(directory) {
-            if self.done() {
-                break;
-            }
-            let path = entry.path();
-            let Ok(kind) = entry.file_type() else {
-                continue;
-            };
-            if kind.is_symlink() || !kind.is_dir() {
-                continue;
-            }
-            match entry.file_name().to_str() {
-                Some("rootfs") => {
-                    self.walk_tree(
-                        &path,
-                        Some(GlobalSearchContentKind::ImageRootfs),
-                        &|_, _| true,
-                    )?;
-                }
-                Some("temp") => self.search_task_logs(&path)?,
-                Some(name) if excluded_build_directory_name(name) => {}
-                _ => self.discover_work_outputs(&path)?,
-            }
-        }
-        Ok(())
-    }
-
-    fn search_task_logs(&mut self, directory: &Path) -> Result<(), String> {
-        self.count_directory()?;
-        for entry in directory_entries(directory) {
-            if self.done() {
-                break;
-            }
-            let path = entry.path();
-            let name = entry.file_name();
-            let name = name.to_string_lossy();
-            if entry.file_type().is_ok_and(|kind| kind.is_file())
-                && (name.starts_with("log.") || name.starts_with("run."))
-            {
-                self.search_file(&path, GlobalSearchContentKind::BuildLog)?;
-            }
-        }
-        Ok(())
-    }
-
-    fn walk_tree(
-        &mut self,
-        directory: &Path,
-        forced_kind: Option<GlobalSearchContentKind>,
-        descend: &dyn Fn(&Path, &str) -> bool,
-    ) -> Result<(), String> {
+    fn walk_tree(&mut self, directory: &Path) -> Result<(), String> {
         if self.done() {
             return Ok(());
         }
@@ -269,11 +139,11 @@ impl Scanner<'_> {
             if file_type.is_dir() {
                 let name = entry.file_name();
                 let name = name.to_string_lossy();
-                if descend(&path, &name) {
-                    self.walk_tree(&path, forced_kind, descend)?;
+                if search_directory(&name) {
+                    self.walk_tree(&path)?;
                 }
             } else if file_type.is_file() {
-                let kind = forced_kind.unwrap_or_else(|| self.classify_source(&path));
+                let kind = classify_content(&path);
                 self.search_file(&path, kind)?;
             }
         }
@@ -289,23 +159,6 @@ impl Scanner<'_> {
         Ok(())
     }
 
-    fn classify_source(&self, path: &Path) -> GlobalSearchContentKind {
-        match path.extension().and_then(|extension| extension.to_str()) {
-            Some("bb" | "bbappend" | "inc") => GlobalSearchContentKind::Recipe,
-            Some("conf") => GlobalSearchContentKind::Configuration,
-            Some("bbclass") => GlobalSearchContentKind::Class,
-            _ if self
-                .plan
-                .layer_roots
-                .iter()
-                .any(|root| path.starts_with(root)) =>
-            {
-                GlobalSearchContentKind::LayerSource
-            }
-            _ => GlobalSearchContentKind::PokyBitBakeSource,
-        }
-    }
-
     fn search_file(&mut self, path: &Path, kind: GlobalSearchContentKind) -> Result<(), String> {
         if self.kind_counts.get(&kind).copied().unwrap_or(0) >= MAX_HITS_PER_CONTENT_KIND {
             return Ok(());
@@ -319,10 +172,12 @@ impl Scanner<'_> {
         let Ok(bytes) = fs::read(path) else {
             return Ok(());
         };
-        if bytes.iter().take(8_192).any(|byte| *byte == 0) {
+        if bytes.contains(&0) {
             return Ok(());
         }
-        let content = String::from_utf8_lossy(&bytes);
+        let Ok(content) = std::str::from_utf8(&bytes) else {
+            return Ok(());
+        };
         for (index, line) in content.lines().enumerate() {
             for found in self.expression.find_iter(line) {
                 let line_number = index as u64 + 1;
@@ -356,19 +211,30 @@ impl Scanner<'_> {
     }
 }
 
-fn excluded_source_directory(_path: &Path, name: &str) -> bool {
+fn search_directory(name: &str) -> bool {
     !matches!(
         name,
-        ".git"
-            | ".repo"
-            | "target"
-            | "tmp"
-            | "cache"
-            | "downloads"
-            | "sstate-cache"
-            | "__pycache__"
-            | "node_modules"
+        ".git" | ".repo" | "cache" | "downloads" | "sstate-cache" | "__pycache__" | "node_modules"
     )
+}
+
+fn classify_content(path: &Path) -> GlobalSearchContentKind {
+    if path.components().any(|part| part.as_os_str() == "rootfs") {
+        GlobalSearchContentKind::ImageRootfs
+    } else if path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .is_some_and(|name| name.starts_with("log.") || name.starts_with("run."))
+    {
+        GlobalSearchContentKind::BuildLog
+    } else {
+        match path.extension().and_then(|extension| extension.to_str()) {
+            Some("conf") => GlobalSearchContentKind::Configuration,
+            Some("bb" | "bbappend" | "inc") => GlobalSearchContentKind::Recipe,
+            Some("bbclass") => GlobalSearchContentKind::Class,
+            _ => GlobalSearchContentKind::GeneratedMetadata,
+        }
+    }
 }
 
 fn directory_entries(directory: &Path) -> Vec<fs::DirEntry> {
@@ -379,19 +245,6 @@ fn directory_entries(directory: &Path) -> Vec<fs::DirEntry> {
         .collect::<Vec<_>>();
     entries.sort_by_key(fs::DirEntry::file_name);
     entries
-}
-
-fn excluded_build_directory_name(name: &str) -> bool {
-    matches!(
-        name,
-        "recipe-sysroot"
-            | "recipe-sysroot-native"
-            | "sysroot-destdir"
-            | "packages-split"
-            | "package"
-            | "pseudo"
-            | "build"
-    )
 }
 
 fn bounded_preview(line: &str) -> String {
@@ -442,85 +295,70 @@ mod tests {
     }
 
     #[test]
-    fn unified_search_finds_metadata_sources_logs_and_generated_image_files() {
+    fn global_search_discloses_limits_and_honors_cancellation() {
         let root = fixture_root();
-        let poky = root.join("poky");
-        let layer = poky.join("meta-demo");
-        let build = root.join("build");
-        let rootfs = build.join("tmp/work/qemux86-64-poky-linux/core-image-demo/1.0/rootfs");
-        fs::create_dir_all(layer.join("recipes-core/demo")).unwrap();
-        fs::create_dir_all(layer.join("conf")).unwrap();
-        fs::create_dir_all(layer.join("classes")).unwrap();
-        fs::create_dir_all(poky.join("bitbake/lib/bb")).unwrap();
-        fs::create_dir_all(build.join("tmp/work/x/demo/1.0/temp")).unwrap();
-        fs::create_dir_all(build.join("tmp/deploy/images/qemux86-64")).unwrap();
-        fs::create_dir_all(rootfs.join("usr/lib/systemd/system")).unwrap();
-        fs::write(
-            layer.join("recipes-core/demo/demo.bb"),
-            "SEARCH_TOKEN recipe\n",
-        )
-        .unwrap();
-        fs::write(layer.join("conf/layer.conf"), "SEARCH_TOKEN conf\n").unwrap();
-        fs::write(layer.join("classes/demo.bbclass"), "SEARCH_TOKEN class\n").unwrap();
-        fs::write(poky.join("bitbake/lib/bb/demo.py"), "SEARCH_TOKEN source\n").unwrap();
-        fs::write(
-            poky.join("bitbake/lib/bb/many.py"),
-            "SEARCH_TOKEN repeated source\n".repeat(70),
-        )
-        .unwrap();
-        fs::write(layer.join("setup-demo.sh"), "SEARCH_TOKEN layer script\n").unwrap();
-        fs::write(
-            build.join("tmp/work/x/demo/1.0/temp/log.do_compile"),
-            "SEARCH_TOKEN log\n",
-        )
-        .unwrap();
-        fs::write(
-            build.join("tmp/deploy/images/qemux86-64/core-image-demo.manifest"),
-            "SEARCH_TOKEN generated metadata\n",
-        )
-        .unwrap();
-        fs::write(
-            rootfs.join("usr/lib/systemd/system/demo.service"),
-            "Description=SEARCH_TOKEN service\n",
-        )
-        .unwrap();
-        let plan = GlobalSearchPlan {
-            query: "search_token".into(),
-            source_roots: vec![poky],
-            layer_roots: vec![layer],
-            build_dir: Some(build),
-        };
-        let result = scan_global_content(&plan, &GlobalSearchCancellation::default()).unwrap();
-        assert!(result.truncated, "per-kind bounds must be disclosed");
-        for kind in [
-            GlobalSearchContentKind::Recipe,
-            GlobalSearchContentKind::Configuration,
-            GlobalSearchContentKind::Class,
-            GlobalSearchContentKind::LayerSource,
-            GlobalSearchContentKind::PokyBitBakeSource,
-            GlobalSearchContentKind::BuildLog,
-            GlobalSearchContentKind::GeneratedMetadata,
-            GlobalSearchContentKind::ImageRootfs,
-        ] {
-            assert!(result.hits.iter().any(|hit| hit.kind == kind), "{kind:?}");
-        }
-        let service = result
-            .hits
-            .iter()
-            .find(|hit| hit.path.ends_with("demo.service"))
-            .unwrap();
-        assert_eq!(service.image.as_deref(), Some("core-image-demo"));
+        fs::write(root.join("large.txt"), "token\n".repeat(100)).unwrap();
+        let plan = GlobalSearchPlan::for_app(&App::new(10, 1000), &root, "token".into());
+        let cancellation = GlobalSearchCancellation::default();
+        let result = scan_global_content(&plan, &cancellation).unwrap();
+        assert_eq!(result.hits.len(), MAX_HITS_PER_CONTENT_KIND);
+        assert!(result.truncated);
+        cancellation.cancel();
+        assert!(
+            scan_global_content(&plan, &cancellation)
+                .unwrap()
+                .hits
+                .is_empty()
+        );
         fs::remove_dir_all(root).unwrap();
     }
 
     #[test]
-    fn search_rejects_root_and_prunes_generated_caches() {
+    fn global_search_only_matches_build_text_contents_including_rootfs_and_artifacts() {
+        let root = fixture_root();
+        let build = root.join("build");
+        let files = [
+            "notes.txt",
+            "conf/local.conf",
+            "tmp/work/x/image/1/rootfs/etc/os-release",
+            "tmp/deploy/images/x/image.manifest",
+            "tmp-glibc/work/x/recipe/1/source/code.c",
+        ];
+        for file in files {
+            let path = build.join(file);
+            fs::create_dir_all(path.parent().unwrap()).unwrap();
+            fs::write(path, "first line\ninside TOKEN text\n").unwrap();
+        }
+        fs::write(root.join("outside.bb"), "TOKEN").unwrap();
+        fs::write(build.join("TOKEN-filename.txt"), "no match").unwrap();
+        fs::write(build.join("binary.img"), b"TOKEN\0image").unwrap();
+        fs::write(build.join("invalid.bin"), b"TOKEN\xff").unwrap();
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(&root, build.join("escape")).unwrap();
+        let mut app = App::new(10, 1000);
+        app.workspace.source_dir = Some(root.clone());
+        app.workspace.build_dir = Some(build.clone());
+        let plan = GlobalSearchPlan::for_app(&app, &root, "token".into());
+        let result = scan_global_content(&plan, &GlobalSearchCancellation::default()).unwrap();
+        assert_eq!(result.hits.len(), files.len());
+        assert!(
+            result
+                .hits
+                .iter()
+                .all(|hit| hit.line == 2 && hit.column == 8 && hit.path.starts_with(&build))
+        );
+        assert!(
+            result
+                .hits
+                .iter()
+                .any(|hit| hit.kind == GlobalSearchContentKind::ImageRootfs)
+        );
+        let empty = GlobalSearchPlan::for_app(&app, &build, "  ".into());
+        let result = scan_global_content(&empty, &GlobalSearchCancellation::default()).unwrap();
+        assert!(result.hits.is_empty() && result.searched_scopes.is_empty());
+        let invalid = GlobalSearchPlan::for_app(&app, &build, "[".into());
+        assert!(scan_global_content(&invalid, &GlobalSearchCancellation::default()).is_err());
         assert!(!safe_search_root(Path::new("/")));
-        assert!(!excluded_source_directory(Path::new("/x/.git"), ".git"));
-        assert!(!excluded_source_directory(Path::new("/x/tmp"), "tmp"));
-        assert!(excluded_source_directory(
-            Path::new("/x/scripts"),
-            "scripts"
-        ));
+        fs::remove_dir_all(root).unwrap();
     }
 }

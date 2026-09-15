@@ -1482,17 +1482,7 @@ impl App {
     }
     pub fn filtered_command_palette_commands(&self) -> Vec<PaletteCommand> {
         let query = self.command_palette_query.trim();
-        let regex = match self.command_palette_mode {
-            CommandPaletteMode::Commands => None,
-            CommandPaletteMode::GlobalRegexSearch => regex::RegexBuilder::new(query)
-                .case_insensitive(true)
-                .build()
-                .ok(),
-        };
-        if self.command_palette_mode == CommandPaletteMode::GlobalRegexSearch
-            && !query.is_empty()
-            && regex.is_none()
-        {
+        if self.command_palette_mode == CommandPaletteMode::GlobalRegexSearch {
             return Vec::new();
         }
         let literal_query = query.to_lowercase();
@@ -1507,12 +1497,9 @@ impl App {
                     .chain(command.aliases.iter().copied())
                     .chain(command.palette_keywords.iter().copied());
                 query.is_empty()
-                    || match &regex {
-                        Some(regex) => values.into_iter().any(|value| regex.is_match(value)),
-                        None => values
-                            .into_iter()
-                            .any(|value| value.to_lowercase().contains(&literal_query)),
-                    }
+                    || values
+                        .into_iter()
+                        .any(|value| value.to_lowercase().contains(&literal_query))
             })
             .collect()
     }

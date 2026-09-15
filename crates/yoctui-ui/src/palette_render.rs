@@ -278,7 +278,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         frame.render_widget(
             StateView {
                 kind: StateKind::Loading,
-                summary: "Searching Yocto sources and generated image rootfs trees…".into(),
+                summary: "Searching build text files and generated rootfs…".into(),
                 detail: Some("Results are bounded and generated caches are excluded.".into()),
                 action: Some("Keep typing to replace this search; Esc cancels it.".into()),
             }
@@ -311,8 +311,10 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         frame.render_widget(
             StateView {
                 kind: StateKind::Empty,
-                summary: if global_search {
-                    "No actions or searched Yocto content match this regular expression.".into()
+                summary: if global_search && app.command_palette_query.trim().is_empty() {
+                    "Type a regular expression to search build file contents.".into()
+                } else if global_search {
+                    "No build file contents match this regular expression.".into()
                 } else {
                     "No commands match this search.".into()
                 },
@@ -466,7 +468,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(
         Paragraph::new(bounded_cell_text(
             if global_search {
-                "Unified regex · actions + Yocto sources + image rootfs · Enter open/run · Esc close"
+                "Content regex · build files + rootfs + text artifacts · Enter open · Esc close"
             } else {
                 "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear"
             },

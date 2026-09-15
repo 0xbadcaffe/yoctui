@@ -198,6 +198,9 @@ fn global_search_uses_case_insensitive_regex_and_reports_invalid_patterns() {
         app.command_palette_mode,
         CommandPaletteMode::GlobalRegexSearch
     );
+    assert!(app.filtered_command_palette_commands().is_empty());
+    let _ = update(&mut app, Action::BeginGlobalContentSearch);
+    assert_eq!(app.global_search_content, GlobalSearchContentState::Idle);
     for character in "^open (packages|sdk)$".chars() {
         let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
     }
@@ -206,7 +209,7 @@ fn global_search_uses_case_insensitive_regex_and_reports_invalid_patterns() {
         .into_iter()
         .map(|command| command.id)
         .collect::<Vec<_>>();
-    assert_eq!(ids, [CommandId::OpenPackages, CommandId::OpenSdk]);
+    assert!(ids.is_empty());
     assert_eq!(app.command_palette_regex_error(), None);
 
     let _ = update(&mut app, Action::ClearCommandPaletteQuery);

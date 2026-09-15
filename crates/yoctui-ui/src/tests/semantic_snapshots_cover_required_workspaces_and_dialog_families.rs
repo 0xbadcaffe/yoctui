@@ -738,16 +738,22 @@ fn command_palette_renders_search_results_and_disabled_explanations() {
 }
 
 #[test]
-fn global_regex_search_renders_results_and_inline_errors() {
+fn global_search_starts_empty_excludes_commands_and_renders_inline_errors() {
     let mut app = App::new(10, 1_000);
     app.command_palette_open = true;
     app.command_palette_mode = CommandPaletteMode::GlobalRegexSearch;
     app.command_palette_query = "^open (packages|sdk)$".into();
     let output = rendered_text(&app, 100, 25);
     assert!(output.contains("Global Regex Search"), "{output}");
-    assert!(output.contains("Open Packages"), "{output}");
-    assert!(output.contains("Open SDK"), "{output}");
-    assert!(output.contains("Unified regex"), "{output}");
+    assert!(!output.contains("Open Packages"), "{output}");
+    assert!(!output.contains("Open SDK"), "{output}");
+    assert!(output.contains("Content regex"), "{output}");
+    app.command_palette_query.clear();
+    for (width, height) in [(100, 25), (80, 24)] {
+        let output = rendered_text(&app, width, height);
+        assert!(output.contains("0 matches"), "{output}");
+        assert!(output.contains("Type a regular expression"), "{output}");
+    }
 
     app.command_palette_query = "[".into();
     let output = rendered_text(&app, 100, 25);
