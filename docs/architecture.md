@@ -4118,17 +4118,18 @@ README screenshots are a documentation projection of production rendering,
 not a second UI implementation. Typed `App` fixtures call `render_at` through
 Ratatui's `TestBackend`; reviewed cell/style buffers are the source artifacts.
 `scripts/render-readme-screenshots.py` reuses the pinned Cairo/font cell raster
-implementation, writes only the ten declared PNG destinations, and records
+implementation, writes only the twelve declared PNG destinations, and records
 source/output hashes in `docs/media/screenshots/manifest.toml`. Check mode
 renders into a temporary directory, byte-compares every image and rejects a
 missing, extra, reordered, or stale artifact.
 
-The four platform additions exercise the existing platform-workbench and
-daemon PTY rendering boundaries. They do not parse README text into UI state,
-read host files while rendering, or substitute screenshots for live acceptance.
-The six established overview/error/image/editor/terminal fixtures remain shared
-with the exact production concept contract, so normal version and visual
-changes refresh both documentation and regression evidence coherently.
+The six platform additions exercise the existing platform-workbench, shared
+source-editor, typed compile-dialog and daemon PTY rendering boundaries. They do
+not parse README text into UI state, read host files while rendering, or
+substitute screenshots for live acceptance. The six established overview,
+error, image, editor and terminal fixtures remain shared with the exact
+production concept contract, so normal version and visual changes refresh both
+documentation and regression evidence coherently.
 
 ## Shared utility boundary
 

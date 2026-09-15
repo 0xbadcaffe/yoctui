@@ -65,6 +65,10 @@ implemented UI flows without claiming a live build for the fixture values.
   <tr>
     <td colspan="2"><a href="docs/media/screenshots/10-terminal-sessions.png"><img src="docs/media/screenshots/10-terminal-sessions.png" alt="Yoctui split daemon-owned terminal sessions"></a><br><strong>Terminal sessions</strong> — split build shells and devshells with explicit writer control and scrollback.</td>
   </tr>
+  <tr>
+    <td><a href="docs/media/screenshots/11-device-tree-editor.png"><img src="docs/media/screenshots/11-device-tree-editor.png" alt="Yoctui Device Tree source editor with DTS syntax highlighting"></a><br><strong>Device Tree editor</strong> — DTS/DTSI directives, nodes, properties, values and comments use distinct syntax roles.</td>
+    <td><a href="docs/media/screenshots/12-device-tree-compile-options.png"><img src="docs/media/screenshots/12-device-tree-compile-options.png" alt="Yoctui dtc compile-options dialog for a kernel Device Tree source"></a><br><strong>Device Tree compiler</strong> — configure symbols, stable sorting, padding and reserve entries before reviewing the exact <code>dtc</code> launch.</td>
+  </tr>
 </table>
 
 ## Features

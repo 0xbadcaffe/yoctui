@@ -82,7 +82,7 @@ expected_gallery_ids = (
     "active-build-tasks", "kernel-device-tree", "uboot-device-tree",
     "kernel-menuconfig", "uboot-menuconfig", "rootfs-composition",
     "idle-dashboard", "failed-build-errors", "editor-application-menu",
-    "terminal-sessions",
+    "terminal-sessions", "device-tree-editor", "device-tree-compile-options",
 )
 assert tuple(item.get("id") for item in artifacts) == expected_gallery_ids
 assert gallery.get("authority") == "production TestBackend cell/style goldens"

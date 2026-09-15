@@ -1401,3 +1401,12 @@ DONE in v0.1.112. The shared model, app routing, responsive dialog, source
 renderer, documentation and full verification baseline pass. The host used for
 release verification did not provide `dtc`; exact execution handoff is covered
 through the daemon terminal effect and existing real-PTY tests.
+
+## M66 — Device-tree evidence, hardening and profiling documentation
+
+README-DTC-SCREENS-001 adds production-renderer screenshots for the shared DTS
+editor and typed compile-options dialog. DEVICE-TREE-HARDEN-001 then audits the
+new path and fixes concrete safety or correctness defects with failed-first
+regressions. README-FLAMEGRAPH-001 restores the checked real-perf Flamegraph and
+its validated summary to the landing page without presenting historical
+evidence as a current source-bound measurement.

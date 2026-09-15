@@ -689,6 +689,68 @@ pub(crate) fn readme_platform_app(component: yoctui_model::PlatformComponent) ->
     app
 }
 
+pub(crate) fn readme_device_tree_editor_app() -> App {
+    let mut app = readme_platform_app(yoctui_model::PlatformComponent::Kernel);
+    let root = PathBuf::from(
+        "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/source",
+    );
+    let file = PathBuf::from("arch/arm64/boot/dts/freescale/imx8mp-evk.dts");
+    app.focus = FocusTarget::Dialog;
+    app.dialogs.push_back(Dialog::RecipeEditor(RecipeEditor {
+        recipe: "Kernel device tree".into(),
+        root,
+        files: vec![file],
+        selection: 0,
+        focus: yoctui_model::RecipeEditorFocus::Document,
+        language: yoctui_model::SourceLanguage::DeviceTree,
+        document: yoctui_model::TextAreaState::new(
+            concat!(
+                "/dts-v1/;\n",
+                "#include \"imx8mp.dtsi\"\n\n",
+                "/ {\n",
+                "    model = \"NXP i.MX8M Plus EVK\";\n",
+                "    compatible = \"fsl,imx8mp-evk\", \"fsl,imx8mp\";\n\n",
+                "    chosen {\n",
+                "        stdout-path = &uart2;\n",
+                "    };\n",
+                "};\n\n",
+                "&uart2 {\n",
+                "    pinctrl-names = \"default\";\n",
+                "    status = \"okay\";\n",
+                "};\n",
+            )
+            .into(),
+        ),
+        searching: false,
+    }));
+    if let Some(Dialog::RecipeEditor(editor)) = app.dialogs.back_mut() {
+        editor.refresh_language_and_validation();
+    }
+    app
+}
+
+pub(crate) fn readme_device_tree_compile_app() -> App {
+    let mut app = readme_platform_app(yoctui_model::PlatformComponent::Kernel);
+    let file = app
+        .kernel
+        .selected_file()
+        .expect("README Device Tree fixture has a selected DTS")
+        .clone();
+    let mut dialog = yoctui_model::DtcCompileDialog::new(
+        yoctui_model::PlatformComponent::Kernel,
+        &file,
+        PathBuf::from("/usr/bin/dtc"),
+    );
+    dialog.symbols = true;
+    dialog.sort = true;
+    dialog.padding_bytes = 4_096;
+    dialog.reserve_entries = 4;
+    dialog.selection = 2;
+    app.focus = FocusTarget::Dialog;
+    app.dialogs.push_back(Dialog::DtcCompile(dialog));
+    app
+}
+
 pub(crate) fn readme_menuconfig_app(kernel: bool) -> App {
     let mut app = concept_idle_dashboard_app();
     app.screen = Screen::TerminalSessions;

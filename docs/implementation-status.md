@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+README-DTC-SCREENS-001 is complete in v0.1.113. The README gallery now adds the
+production shared editor with Device Tree syntax roles and the typed compiler
+dialog with non-default options and derived paths. Both are reviewed `160x50`
+cell/style goldens rendered by the pinned deterministic raster pipeline. The
+gallery manifest, ordering, alternative text and focused UI check pass.
+DEVICE-TREE-HARDEN-001 is active next, followed by the Flamegraph README repair.
+
 M61 is DONE in v0.1.108. Navigator now owns focus at startup and after every
 destination change. Tab and Shift+Tab are the only pane traversal keys, and a
 shared model policy includes Workspace only when it owns a selectable,
@@ -3042,3 +3049,10 @@ tests pass with four existing live tests ignored; strict Clippy, 52 bridge
 tests, documentation, version/layout, roadmap and deterministic image gates
 pass. The verification host had no `dtc`; the exact request reaches the tested
 daemon PTY creation boundary, while a host compile was not claimed.
+
+## M66 device-tree evidence, hardening and profiling documentation
+
+README-DTC-SCREENS-001 adds two current production-renderer screens for the DTS
+editor and compiler options in v0.1.113. The remaining ordered work audits the
+runtime path for concrete defects and restores the validated Flamegraph report
+to the README with explicit evidence age and reproduction guidance.

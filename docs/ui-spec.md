@@ -5434,13 +5434,17 @@ modes.
 
 ## 44. README production screenshot gallery
 
-The front README presents ten ordered current-renderer screenshots: active
+The front README presents twelve ordered current-renderer screenshots: active
 Tasks, Kernel and U-Boot device-tree workbenches, Kernel and U-Boot menuconfig,
 Rootfs package composition, Dashboard, Errors, recipe editing, and Terminal
-Sessions. Kernel/U-Boot workbench captures use typed provider, task, source-root,
-configuration, DTS/DTSI/DTB, and `dtc` authority. Menuconfig captures use the
-same daemon-owned `ClientDaemonPtyScreen` path as live interactive sessions.
-The rootfs capture must retain both the Braille pie and exact size table.
+Sessions, followed by the Device Tree source editor and typed `dtc` options
+dialog. Kernel/U-Boot workbench captures use typed provider, task, source-root,
+configuration, DTS/DTSI/DTB, and `dtc` authority. The editor capture must show
+Device Tree syntax roles through the production shared editor, and the compiler
+capture must show non-default bounded options and the derived source/output
+arguments. Menuconfig captures use the same daemon-owned
+`ClientDaemonPtyScreen` path as live interactive sessions. The rootfs capture
+must retain both the Braille pie and exact size table.
 
 Every gallery image is rendered from a reviewed `160x50` Ratatui symbol/style
 cell golden through the pinned production raster pipeline. The manifest binds

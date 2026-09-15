@@ -216,6 +216,46 @@ fn readme_gallery_requested_workbenches_render_through_production_renderer() {
             ]
             .as_slice(),
         ),
+        (
+            "device-tree-editor",
+            readme_device_tree_editor_app(),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-device-tree-editor-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-device-tree-editor-160x50.cells"
+            )),
+            [
+                "Recipe editor: Kernel device tree",
+                "imx8mp-evk.dts",
+                "/dts-v1/",
+                "compatible",
+                "Device Tree",
+            ]
+            .as_slice(),
+        ),
+        (
+            "device-tree-compile-options",
+            readme_device_tree_compile_app(),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-device-tree-compile-options-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-device-tree-compile-options-160x50.cells"
+            )),
+            [
+                "Compile device tree",
+                "Generate symbols (-@)",
+                "Output padding (-p)",
+                "4096 bytes",
+                "Enter review launch",
+            ]
+            .as_slice(),
+        ),
     ];
     let update_goldens = std::env::var_os("YOCTUI_UPDATE_README_GOLDENS").is_some();
     for (name, app, cell_path, cell_fixture, anchors) in scenes {

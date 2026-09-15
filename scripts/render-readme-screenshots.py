@@ -24,6 +24,11 @@ SCENARIOS = [
     ("failed-build-errors", "concept-failed-build-errors-160x50.cells"),
     ("editor-application-menu", "concept-editor-application-menu-160x50.cells"),
     ("terminal-sessions", "concept-terminal-sessions-160x50.cells"),
+    ("device-tree-editor", "readme-device-tree-editor-160x50.cells"),
+    (
+        "device-tree-compile-options",
+        "readme-device-tree-compile-options-160x50.cells",
+    ),
 ]
 
 
