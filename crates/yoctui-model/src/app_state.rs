@@ -1653,6 +1653,11 @@ impl App {
                 self.terminal.client_id.is_some() && details.writer == self.terminal.client_id
             })
     }
+
+    pub fn selected_terminal_is_menuconfig(&self) -> bool {
+        self.selected_terminal_details()
+            .is_some_and(|details| details.kind == ClientDaemonPtyKind::Menuconfig)
+    }
 }
 
 pub(crate) fn context_action_local_disabled_reason(

@@ -1,19 +1,20 @@
 # Current Task
 
-**ID:** FOCUS-NAVIGATOR-001
-**Title:** Keep default focus on Navigator and skip passive panes
+**ID:** MENUCONFIG-NCURSES-001
+**Title:** Preserve native menuconfig presentation in Terminal Sessions
 **Status:** DONE
 
-Make Navigator the focus owner at interactive startup and after destination
-navigation. Tab and Shift+Tab are the only keyboard pane-focus routes, and
-focus traversal includes Workspace or Inspector only when the pane exposes a
-selectable, scrollable, editable, or terminal-input control. Add model, app,
-CLI, responsive UI, and deterministic snapshot coverage; bump the release;
-then run the workspace baseline and completion gates.
+Give selected kernel and U-Boot menuconfig PTYs the full width remaining beside
+Navigator, omit the passive Inspector, propagate the rendered terminal size to
+the daemon-owned PTY, and guarantee a color-capable terminal environment. Make
+the deterministic gallery fixtures exercise styled terminal cells matching the
+native ncurses composition. Verify resize authority, keyboard operation,
+responsive layout, both menuconfig images, and the full release baseline.
 
-Version 0.1.108 implements the shared actionable-pane policy across reducer,
-keyboard, mouse, responsive switcher, command palette, footer, CLI, and concept
-fixtures. Navigator owns startup and destination changes. Tab and Shift+Tab
-reach Workspace only where it owns controls; Inspector remains a read-only
-projection. The focused suites, all-features workspace baseline, strict Clippy,
-bridge tests, documentation checks, and deterministic raster checks pass.
+Version 0.1.109 preserves native ncurses presentation for kernel and U-Boot
+menuconfig. The selected menuconfig session receives the Inspector width and
+omits the prefix-help rail, writer-owned PTYs follow the exact visible split
+pane dimensions, and missing or unusable `TERM` values normalize to
+`xterm-256color`. Both deterministic gallery images now contain styled typed
+terminal cells. Workspace tests, strict Clippy, bridge tests, docs, release
+policies, and deterministic raster checks pass.

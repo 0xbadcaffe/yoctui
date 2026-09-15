@@ -1344,3 +1344,15 @@ DONE in v0.1.108: the shared model policy now drives keyboard, mouse, menus,
 responsive switching and footer hints. Deterministic concept captures show
 Navigator focus on passive screens and an explicit Tab route only for
 actionable Workspaces.
+
+## M62 — Native menuconfig presentation
+
+MENUCONFIG-NCURSES-001 gives kernel and U-Boot menuconfig sessions the full
+Terminal Sessions workspace beside Navigator, removes the passive Inspector
+for the selected menuconfig session, synchronizes the writer-owned PTY to the
+visible cell area, and preserves the native ncurses colors and attributes.
+Deterministic gallery images exercise the same typed terminal-cell renderer.
+
+DONE in v0.1.109. The shared renderer and pointer topology, writer-only
+deduplicated resize path, terminal environment normalization, focused tests,
+full baseline, and both reviewed menuconfig gallery images pass.

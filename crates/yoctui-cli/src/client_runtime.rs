@@ -12,8 +12,8 @@ use yoctui_protocol::daemon::{
     ClientId, ClientLayoutEvent, CommandRequest, DaemonCommand, DaemonDevtoolOperation,
     DaemonQaCapabilityInput, DaemonQaCapabilityRequest, DaemonQemuRequest,
     DaemonSdkArtifactIdentity, DaemonSdkContext, DaemonSdkNativeMode, DaemonSdkOperation,
-    DaemonTestSelftestRequest, DaemonWicCreateRequest, JobId, PaneId, PtyInput, PtySessionId,
-    PtyViewport, RequestId, Subscription, TerminalDimensions,
+    DaemonTestSelftestRequest, DaemonWicCreateRequest, JobId, PaneId, PtyInput, PtyResize,
+    PtySessionId, PtyViewport, RequestId, Subscription, TerminalDimensions,
 };
 
 use crate::client_transport::{ClientServerEvent, ClientTransportError, DaemonClientTransport};
@@ -30,6 +30,7 @@ pub struct InteractiveDaemonRuntime {
     replica: DaemonClientSnapshot,
     local_build_dir: Option<PathBuf>,
     next_request: u64,
+    last_pty_resize: Option<(u64, u64, TerminalDimensions)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,7 +68,48 @@ impl InteractiveDaemonRuntime {
             replica,
             local_build_dir,
             next_request: 1,
+            last_pty_resize: None,
         })
+    }
+
+    pub fn resize_selected_terminal(
+        &mut self,
+        app: &App,
+        dimensions: yoctui_model::PtyDimensions,
+    ) -> Result<bool, ClientRuntimeError> {
+        let Some(details) = app.selected_terminal_details() else {
+            self.last_pty_resize = None;
+            return Ok(false);
+        };
+        if !app.selected_terminal_is_writer() {
+            self.last_pty_resize = None;
+            return Ok(false);
+        }
+        let dimensions = TerminalDimensions {
+            columns: dimensions.columns,
+            rows: dimensions.rows,
+        };
+        if details.columns == dimensions.columns && details.rows == dimensions.rows {
+            self.last_pty_resize = None;
+            return Ok(false);
+        }
+        let resize_key = (details.id, details.writer_epoch, dimensions);
+        if self.last_pty_resize == Some(resize_key) {
+            return Ok(false);
+        }
+        let request_id = RequestId(self.next_request);
+        self.next_request = self
+            .next_request
+            .checked_add(1)
+            .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
+        self.transport.pty_resize(PtyResize {
+            request_id,
+            session_id: PtySessionId(details.id),
+            writer_epoch: details.writer_epoch,
+            dimensions,
+        })?;
+        self.last_pty_resize = Some(resize_key);
+        Ok(true)
     }
 
     pub fn poll(&mut self, app: &mut App) -> Result<bool, ClientRuntimeError> {

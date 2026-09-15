@@ -2998,3 +2998,15 @@ corruption and cell-graphics checks pass. Original concepts, historical live
 captures and original-checkout user edits are unchanged. Captures use typed
 fixtures; retained real-Poky performance evidence predates source changes and
 is not fresh certification of this version.
+
+## M62 native menuconfig presentation
+
+MENUCONFIG-NCURSES-001 is complete in v0.1.109. Kernel and U-Boot menuconfig
+sessions reclaim the passive Inspector width, omit the prefix rail, and render
+the daemon's native ncurses colors and attributes through typed terminal cells.
+The client derives the selected split pane's visible cell dimensions from
+shared geometry and sends deduplicated resize requests only as the writer.
+Missing, empty, and `dumb` terminal identities normalize to
+`xterm-256color`. Both gallery PNGs were visually reviewed; workspace tests,
+strict Clippy, 52 bridge tests, documentation, version/layout policy, roadmap,
+and sixteen deterministic PNG checks pass.

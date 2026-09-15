@@ -42,11 +42,18 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         return;
     }
 
+    let prefix_help_height = if app.selected_terminal_is_menuconfig() {
+        0
+    } else if area.height >= 30 {
+        3
+    } else {
+        0
+    };
     let regions = Layout::vertical([
         Constraint::Length(3),
         Constraint::Length(1),
         Constraint::Min(1),
-        Constraint::Length(if area.height >= 30 { 3 } else { 0 }),
+        Constraint::Length(prefix_help_height),
     ])
     .split(area);
     let tabs = app
@@ -68,10 +75,15 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
             ]
         })
         .collect::<Vec<_>>();
+    let terminal_edge_border = if app.selected_terminal_is_menuconfig() {
+        Borders::RIGHT
+    } else {
+        Borders::NONE
+    };
     frame.render_widget(
         Paragraph::new(Line::from(tabs)).block(
             Block::default()
-                .borders(Borders::TOP | Borders::BOTTOM)
+                .borders(Borders::TOP | Borders::BOTTOM | terminal_edge_border)
                 .title("Terminal Sessions"),
         ),
         regions[0],
@@ -165,13 +177,15 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         }
     };
     frame.render_widget(
-        Paragraph::new(bounded_cell_text(&mode, regions[1].width)).style(match app.terminal.mode {
-            yoctui_model::TerminalWorkbenchMode::KillConfirmation
-            | yoctui_model::TerminalWorkbenchMode::PasteReview => {
-                palette.role(palette.warning, Modifier::BOLD)
-            }
-            _ => palette.role(palette.informational, Modifier::BOLD),
-        }),
+        Paragraph::new(bounded_cell_text(&mode, regions[1].width.saturating_sub(1)))
+            .style(match app.terminal.mode {
+                yoctui_model::TerminalWorkbenchMode::KillConfirmation
+                | yoctui_model::TerminalWorkbenchMode::PasteReview => {
+                    palette.role(palette.warning, Modifier::BOLD)
+                }
+                _ => palette.role(palette.informational, Modifier::BOLD),
+            })
+            .block(Block::default().borders(terminal_edge_border)),
         regions[1],
     );
 

@@ -114,8 +114,8 @@ mod mouse;
 pub use mouse::{
     MouseInput, MouseKind, dashboard_workspace_action, firmware_workspace_action, mouse_action,
     mouse_action_for_app, overview_workspace_action, platform_workspace_action,
-    task_workspace_panel_heights, workbench_chrome_heights, workbench_pane_widths,
-    workspace_collection_action,
+    task_workspace_panel_heights, terminal_workspace_dimensions, workbench_chrome_heights,
+    workbench_pane_widths, workspace_collection_action,
 };
 
 mod raw_input;

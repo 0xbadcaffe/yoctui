@@ -699,50 +699,42 @@ pub(crate) fn readme_menuconfig_app(kernel: bool) -> App {
         .variables
         .insert("MACHINE".into(), "imx8mp-lpddr4-evk".into());
     app.terminal.client_id = Some([1; 16]);
-    let (name, cwd, rows) = if kernel {
+    let (name, cwd, title, entries) = if kernel {
         (
             "menuconfig:virtual/kernel",
             "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/linux-imx/6.6/build",
+            "Linux/arm64 6.6 Kernel Configuration",
             vec![
-                "┌─────────────── Linux/arm64 6.6 Kernel Configuration ───────────────┐",
-                "│  Arrow keys navigate the menu.  <Enter> selects submenus --->      │",
-                "│  Highlighted letters are hotkeys.  Press <Y>/<N>/<M> to change.    │",
-                "│                                                                    │",
-                "│  [*] 64-bit kernel                                                   │",
-                "│      General setup  --->                                             │",
-                "│      Processor type and features  --->                               │",
-                "│      Power management and ACPI options  --->                         │",
-                "│      Bus options (PCI etc.)  --->                                    │",
-                "│      Device Drivers  --->                                             │",
-                "│      File systems  --->                                               │",
-                "│      Security options  --->                                           │",
-                "│      Cryptographic API  --->                                          │",
-                "│                                                                    │",
-                "│       <Select>    < Exit >    < Help >    < Save >    < Load >       │",
-                "└────────────────────────────────────────────────────────────────────┘",
+                "General setup  --->",
+                "Platform selection  --->",
+                "Processor type and features  --->",
+                "Power management options  --->",
+                "Bus support  --->",
+                "Executable file formats  --->",
+                "Networking support  --->",
+                "Device Drivers  --->",
+                "File systems  --->",
+                "Security options  --->",
+                "Cryptographic API  --->",
             ],
         )
     } else {
         (
             "menuconfig:u-boot-fslc",
             "/workspace/yocto/build/tmp/work/imx8mp_lpddr4_evk-poky-linux/u-boot-fslc/2024.01/build",
+            "U-Boot 2024.01 Configuration",
             vec![
-                "┌──────────────────── U-Boot 2024.01 Configuration ──────────────────┐",
-                "│  Arrow keys navigate the menu.  <Enter> selects submenus --->      │",
-                "│  Highlighted letters are hotkeys.  Press <Y>/<N> to change.        │",
-                "│                                                                    │",
-                "│      ARM architecture                                                │",
-                "│      General setup  --->                                             │",
-                "│      Boot options  --->                                              │",
-                "│      Command line interface  --->                                    │",
-                "│      Device Drivers  --->                                             │",
-                "│      File systems  --->                                               │",
-                "│      Networking support  --->                                        │",
-                "│      Security support  --->                                          │",
-                "│      Library routines  --->                                          │",
-                "│                                                                    │",
-                "│       <Select>    < Exit >    < Help >    < Save >    < Load >       │",
-                "└────────────────────────────────────────────────────────────────────┘",
+                "Architecture select  --->",
+                "General setup  --->",
+                "Boot options  --->",
+                "Command line interface  --->",
+                "Device Drivers  --->",
+                "File systems  --->",
+                "Networking support  --->",
+                "Security support  --->",
+                "Library routines  --->",
+                "Device Tree Control  --->",
+                "Environment  --->",
             ],
         )
     };
@@ -756,28 +748,149 @@ pub(crate) fn readme_menuconfig_app(kernel: bool) -> App {
         id: 1,
         kind: yoctui_model::ClientDaemonPtyKind::Menuconfig,
         cwd: cwd.into(),
-        columns: 88,
-        rows: 18,
+        columns: 131,
+        rows: 35,
         writer: Some([1; 16]),
         writer_epoch: 3,
         exit_code: None,
         restartable: true,
     }];
-    app.daemon.pty_screens = vec![yoctui_model::ClientDaemonPtyScreen {
-        session_id: 1,
-        columns: 88,
-        rows_count: 18,
-        cursor_column: 8,
-        cursor_row: 5,
-        cursor_hidden: false,
-        scrollback_offset: 0,
-        rows: rows.into_iter().map(str::to_owned).collect(),
-        cells: Vec::new(),
-        scrollback_lines: 0,
-        dropped_line_feeds_lower_bound: 0,
-    }];
+    app.daemon.pty_screens = vec![menuconfig_ncurses_screen(title, &entries)];
     if let Some(telemetry) = app.daemon.telemetry.as_mut() {
         telemetry.pty_sessions = 1;
     }
     app
+}
+
+fn menuconfig_ncurses_screen(title: &str, entries: &[&str]) -> yoctui_model::ClientDaemonPtyScreen {
+    use std::fmt::Write as _;
+
+    const COLUMNS: u16 = 131;
+    const ROWS: u16 = 35;
+    const LEFT: usize = 4;
+    const DIALOG_WIDTH: usize = 123;
+    let mut ansi = String::from("\x1b[37;44m\x1b[2J");
+    let _ = write!(ansi, "\x1b[1;2H.config - {title}");
+    let _ = write!(ansi, "\x1b[2;2H{}", "─".repeat(127));
+    for row in 4..=33 {
+        let _ = write!(
+            ansi,
+            "\x1b[{row};{LEFT}H\x1b[30;47m{}",
+            " ".repeat(DIALOG_WIDTH)
+        );
+    }
+    let _ = write!(
+        ansi,
+        "\x1b[4;{LEFT}H┌{}┐\x1b[33;{LEFT}H└{}┘",
+        "─".repeat(DIALOG_WIDTH - 2),
+        "─".repeat(DIALOG_WIDTH - 2)
+    );
+    for row in 5..33 {
+        let _ = write!(ansi, "\x1b[{row};{LEFT}H│\x1b[{row};126H│");
+    }
+    let title_column = 4 + (DIALOG_WIDTH.saturating_sub(title.len() + 2) / 2);
+    let _ = write!(
+        ansi,
+        "\x1b[4;{title_column}H\x1b[34;47;1m {title} \x1b[30;47;22m"
+    );
+    let instructions = [
+        "Arrow keys navigate the menu.  <Enter> selects submenus --->  (or empty submenus ----).",
+        "Highlighted letters are hotkeys.  Press <Y> includes, <N> excludes, <M> modularizes.",
+        "Press <Esc><Esc> to exit, <?> for Help, </> for Search.  Legend: [*] built-in  [ ]",
+    ];
+    for (offset, line) in instructions.into_iter().enumerate() {
+        let _ = write!(ansi, "\x1b[{};8H{line}", 6 + offset);
+    }
+    let _ = write!(ansi, "\x1b[10;8H┌{}┐", "─".repeat(113));
+    for row in 11..28 {
+        let _ = write!(ansi, "\x1b[{row};8H│\x1b[{row};122H│");
+    }
+    let _ = write!(ansi, "\x1b[28;8H└{}┘", "─".repeat(113));
+    for (index, entry) in entries.iter().enumerate() {
+        let row = 11 + index;
+        if index == 0 {
+            let _ = write!(
+                ansi,
+                "\x1b[{row};15H\x1b[37;44;1m {:<46}\x1b[30;47;22m",
+                entry
+            );
+        } else {
+            let _ = write!(ansi, "\x1b[{row};17H\x1b[34;47m{entry}\x1b[30;47m");
+        }
+    }
+    let _ = write!(ansi, "\x1b[30;4H├{}┤", "─".repeat(DIALOG_WIDTH - 2));
+    let _ = write!(
+        ansi,
+        "\x1b[31;17H\x1b[37;44;1m<Select>\x1b[31;47;22m    < Exit >    < Help >    < Save >    < Load >"
+    );
+    let _ = write!(ansi, "\x1b[11;15H\x1b[?25l");
+
+    let dimensions = yoctui_model::PtyDimensions {
+        columns: COLUMNS,
+        rows: ROWS,
+    };
+    let mut emulator = yoctui_model::TerminalEmulator::new(dimensions, 0).unwrap();
+    emulator.process(ansi.as_bytes()).unwrap();
+    let snapshot = emulator.snapshot(0).unwrap();
+    let cells = snapshot
+        .cells
+        .into_iter()
+        .map(|cell| yoctui_model::ClientDaemonTerminalCell {
+            contents: cell.contents,
+            foreground: menuconfig_fixture_color(cell.foreground),
+            background: menuconfig_fixture_color(cell.background),
+            bold: cell.bold,
+            dim: cell.dim,
+            italic: cell.italic,
+            underline: cell.underline,
+            inverse: cell.inverse,
+            wide: cell.wide,
+            wide_continuation: cell.wide_continuation,
+        })
+        .collect();
+    yoctui_model::ClientDaemonPtyScreen {
+        session_id: 1,
+        columns: COLUMNS,
+        rows_count: ROWS,
+        cursor_column: snapshot.cursor.1,
+        cursor_row: snapshot.cursor.0,
+        cursor_hidden: snapshot.modes.cursor_hidden,
+        scrollback_offset: 0,
+        rows: snapshot.plain_text.lines().map(str::to_owned).collect(),
+        cells,
+        scrollback_lines: 0,
+        dropped_line_feeds_lower_bound: 0,
+    }
+}
+
+fn menuconfig_fixture_color(
+    color: yoctui_model::TerminalColor,
+) -> yoctui_model::ClientDaemonTerminalColor {
+    match color {
+        yoctui_model::TerminalColor::Default => yoctui_model::ClientDaemonTerminalColor::Default,
+        yoctui_model::TerminalColor::Indexed(index) => {
+            let (red, green, blue) = match index {
+                0 => (0, 0, 0),
+                1 => (170, 0, 0),
+                2 => (0, 170, 0),
+                3 => (170, 85, 0),
+                4 => (0, 0, 170),
+                5 => (170, 0, 170),
+                6 => (0, 170, 170),
+                7 => (170, 170, 170),
+                8 => (85, 85, 85),
+                9 => (255, 85, 85),
+                10 => (85, 255, 85),
+                11 => (255, 255, 85),
+                12 => (85, 85, 255),
+                13 => (255, 85, 255),
+                14 => (85, 255, 255),
+                _ => (255, 255, 255),
+            };
+            yoctui_model::ClientDaemonTerminalColor::Rgb(red, green, blue)
+        }
+        yoctui_model::TerminalColor::Rgb(red, green, blue) => {
+            yoctui_model::ClientDaemonTerminalColor::Rgb(red, green, blue)
+        }
+    }
 }

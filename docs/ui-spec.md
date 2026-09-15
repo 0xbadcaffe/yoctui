@@ -5057,6 +5057,13 @@ Prefix Help exposes session/pane navigation, copy/search, detach, and literal
 prefix. Disconnect, daemon restart, terminal exit, and process loss remain
 distinct outcomes.
 
+When the selected session is kernel or U-Boot menuconfig, the wide layout
+omits the passive Inspector and assigns its cells to the terminal Workspace.
+The live writer PTY follows the visible terminal content dimensions, including
+window changes, so ncurses composes against the actual available area. The
+renderer preserves the daemon's indexed/RGB colors, attributes, cursor, and
+Unicode cells; Yoctui does not recreate or parse the menuconfig interface.
+
 ### Dependency and accessibility gate
 
 Every third-party widget requires a refreshed license/MSRV/source/checksum,

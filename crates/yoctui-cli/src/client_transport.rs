@@ -5,8 +5,8 @@ use yoctui_protocol::{
     daemon::{
         Capability, ClientHello, ClientId, ClientLayoutEvent, ClientMessage, CommandRequest,
         DaemonHello, DaemonInstanceId, DaemonSnapshot, MAX_FRAME_BYTES, ProtocolFailure,
-        ProtocolVersion, PtyInput, PtyViewport, ResumeCursor, SequencedEvent, ServerMessage,
-        Subscription, WorkspaceIdentity, negotiate_capabilities, negotiate_version,
+        ProtocolVersion, PtyInput, PtyResize, PtyViewport, ResumeCursor, SequencedEvent,
+        ServerMessage, Subscription, WorkspaceIdentity, negotiate_capabilities, negotiate_version,
     },
     daemon_ipc::{DaemonConnection, IpcError, RuntimePaths, runtime_paths},
 };
@@ -166,6 +166,11 @@ impl DaemonClientTransport {
     pub fn pty_input(&mut self, input: PtyInput) -> Result<(), ClientTransportError> {
         self.require_attached()?;
         self.send(&ClientMessage::PtyInput(input))
+    }
+
+    pub fn pty_resize(&mut self, resize: PtyResize) -> Result<(), ClientTransportError> {
+        self.require_attached()?;
+        self.send(&ClientMessage::PtyResize(resize))
     }
 
     pub fn pty_viewport(&mut self, viewport: PtyViewport) -> Result<(), ClientTransportError> {

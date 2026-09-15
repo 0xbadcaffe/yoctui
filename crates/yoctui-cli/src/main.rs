@@ -12125,6 +12125,19 @@ async fn tui(
             terminal.clear()?;
             render_scheduler.invalidate(RenderCause::Resize);
         }
+        if app.screen == Screen::TerminalSessions
+            && app.selected_terminal_is_menuconfig()
+            && app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
+            && let Some(runtime) = daemon_runtime.as_mut()
+        {
+            let size = terminal.size()?;
+            if let Some(dimensions) =
+                yoctui_app::terminal_workspace_dimensions(&app, size.width, size.height)
+                && runtime.resize_selected_terminal(&app, dimensions)?
+            {
+                render_scheduler.invalidate(RenderCause::Resize);
+            }
+        }
         if render_scheduler.take_frame_with_interval(ordinary_frame_interval(&app)) {
             terminal.draw(|f| render(f, &app))?;
         }

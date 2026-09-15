@@ -8051,3 +8051,14 @@ required = true
 depends_on = []
 verify = ["cargo test -p yoctui-model focus", "cargo test -p yoctui-app focus", "cargo test -p yoctui-ui focus", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.108. Navigator owns startup and destination navigation. Tab and Shift+Tab are the only keyboard pane traversal keys and include Workspace only when it owns controls. Read-only Inspector and passive Workspace projections reject direct focus, disappear from responsive switching, and are described truthfully by menus and footer hints. Focused model/app/UI tests, all-features workspace tests, strict Clippy, bridge, docs, roadmap and deterministic raster checks pass."
+
+[[task]]
+id = "MENUCONFIG-NCURSES-001"
+milestone = "M62"
+title = "Preserve native kernel and U-Boot menuconfig presentation"
+status = "DONE"
+priority = 940
+required = true
+depends_on = ["FOCUS-NAVIGATOR-001"]
+verify = ["cargo test -p yoctui-app menuconfig", "cargo test -p yoctui menuconfig", "cargo test -p yoctui-ui menuconfig", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 scripts/render-readme-screenshots.py --check", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.109. Selected kernel and U-Boot menuconfig PTYs use Navigator plus full-width Workspace with no Inspector or prefix rail. Writer-only deduplicated resize follows exact visible split-pane cells; color-capable TERM normalization preserves native ncurses cells. Both gallery images were reviewed. Workspace, Clippy, bridge, docs, version/layout, roadmap, and deterministic raster gates pass."

@@ -3702,6 +3702,22 @@ traversal is limited to Tab and Shift+Tab. Left and Right remain inside the
 active Navigator or Workspace control, and clicks on passive pane projections
 do not manufacture focus.
 
+## M62 native menuconfig terminal geometry
+
+The shared workbench geometry recognizes the selected typed `Menuconfig` PTY
+and allocates a Navigator plus Workspace topology with no Inspector. A pure
+geometry projection derives terminal content dimensions from the same chrome
+and pane allocations used by rendering and mouse routing. The client sends a
+bounded `PtyResize` only while it owns the writer lease and the replica differs
+from the visible dimensions. The daemon remains the PTY and VT authority and
+emits the resulting typed screen snapshot.
+
+PTY children inherit the daemon environment after a narrow normalization:
+missing, empty, or `dumb` `TERM` becomes `xterm-256color`. Existing useful
+terminal identities remain unchanged. Kernel and U-Boot menuconfig therefore
+emit native ncurses colors and attributes through the existing sparse cell
+protocol and `tui-term` renderer.
+
 ## M43 Dashboard focus and sparse-browser layout
 
 `focus_target_is_relevant` classifies Dashboard Workspace and every Inspector

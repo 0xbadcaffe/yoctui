@@ -317,7 +317,9 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
     } else {
         22
     };
-    if matches!(app.screen, Screen::Layers | Screen::Recipes) {
+    if matches!(app.screen, Screen::Layers | Screen::Recipes)
+        || (app.screen == Screen::TerminalSessions && app.selected_terminal_is_menuconfig())
+    {
         return [navigator, width.saturating_sub(navigator), 0];
     }
     let inspector = if concept && width >= 150 && height >= 50 {
@@ -345,6 +347,62 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
         width.saturating_sub(navigator).saturating_sub(inspector),
         inspector,
     ]
+}
+
+/// Visible cells available to the selected daemon PTY.
+///
+/// This mirrors the production shell and Terminal Sessions allocations so a
+/// writer can send one exact resize without retaining renderer-owned state.
+pub fn terminal_workspace_dimensions(
+    app: &yoctui_model::App,
+    width: u16,
+    height: u16,
+) -> Option<yoctui_model::PtyDimensions> {
+    if app.screen != Screen::TerminalSessions
+        || !app.selected_terminal_is_menuconfig()
+        || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live
+    {
+        return None;
+    }
+    let shell = workbench_shell(app, width, height)?;
+    let (workspace_width, workspace_height) = if app.zoomed_pane == Some(FocusTarget::Workspace) {
+        (shell.width, shell.height.saturating_sub(1))
+    } else if app.zoomed_pane.is_some() {
+        return None;
+    } else if shell.width >= 130 {
+        (
+            workbench_pane_widths(app, shell.width, height)[1],
+            shell.height,
+        )
+    } else if shell.width >= 100 {
+        let navigator = if app.preferences.density == yoctui_model::UiDensity::Compact {
+            18
+        } else {
+            22
+        };
+        (shell.width.saturating_sub(navigator), shell.height)
+    } else if app.focus == FocusTarget::Workspace {
+        (shell.width, shell.height.saturating_sub(1))
+    } else {
+        return None;
+    };
+    let prefix_help = 0;
+    let terminal_area = MouseRect {
+        x: 0,
+        y: 0,
+        width: workspace_width,
+        height: workspace_height.saturating_sub(3 + 1 + prefix_help),
+    };
+    let mut panes = Vec::new();
+    collect_terminal_mouse_panes(&app.pane_layout.root, terminal_area, &mut panes);
+    let pane = if panes.len() == 1 {
+        panes.first()
+    } else {
+        panes.get(app.pty_selection)
+    }?;
+    let columns = pane.0.width.saturating_sub(2).clamp(2, 512);
+    let rows = pane.0.height.saturating_sub(2 + 1).clamp(1, 512);
+    Some(yoctui_model::PtyDimensions { columns, rows })
 }
 
 pub(crate) fn workbench_shell(
@@ -833,7 +891,11 @@ pub(crate) fn terminal_session_mouse_action(
     if !shell.contains(mouse) {
         return None;
     }
-    let footer = if shell.height >= 30 { 3 } else { 0 };
+    let footer = if !app.selected_terminal_is_menuconfig() && shell.height >= 30 {
+        3
+    } else {
+        0
+    };
     let shell = MouseRect {
         y: shell.y + 4,
         height: shell.height.saturating_sub(4 + footer),
