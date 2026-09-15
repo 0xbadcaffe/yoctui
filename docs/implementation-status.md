@@ -3010,3 +3010,12 @@ Missing, empty, and `dumb` terminal identities normalize to
 `xterm-256color`. Both gallery PNGs were visually reviewed; workspace tests,
 strict Clippy, 52 bridge tests, documentation, version/layout policy, roadmap,
 and sixteen deterministic PNG checks pass.
+
+## M63 native menuconfig README
+
+README-MENUCONFIG-002 is complete in v0.1.110. The README gallery and
+kernel/firmware workflow describe the native ncurses presentation used by both
+kernel and U-Boot menuconfig, including its workspace and PTY sizing.
+Version-bearing cell goldens, deterministic PNGs and provenance manifests are
+synchronized. Workspace tests, strict Clippy, 52 bridge tests, documentation,
+version/layout policy, roadmap and raster checks pass.

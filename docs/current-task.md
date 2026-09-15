@@ -1,20 +1,17 @@
 # Current Task
 
-**ID:** MENUCONFIG-NCURSES-001
-**Title:** Preserve native menuconfig presentation in Terminal Sessions
+**ID:** README-MENUCONFIG-002
+**Title:** Document native kernel and U-Boot menuconfig rendering
 **Status:** DONE
 
-Give selected kernel and U-Boot menuconfig PTYs the full width remaining beside
-Navigator, omit the passive Inspector, propagate the rendered terminal size to
-the daemon-owned PTY, and guarantee a color-capable terminal environment. Make
-the deterministic gallery fixtures exercise styled terminal cells matching the
-native ncurses composition. Verify resize authority, keyboard operation,
-responsive layout, both menuconfig images, and the full release baseline.
+Update the README gallery and kernel/firmware workflow to state that kernel and
+U-Boot menuconfig preserve the original ncurses interface inside Yoctui. Record
+the full workspace layout, omitted passive Inspector and exact PTY resizing.
+Bump the workspace version, refresh deterministic version-bearing artifacts,
+run the documentation, roadmap, release and raster checks, then publish the
+reviewed branch to master.
 
-Version 0.1.109 preserves native ncurses presentation for kernel and U-Boot
-menuconfig. The selected menuconfig session receives the Inspector width and
-omits the prefix-help rail, writer-owned PTYs follow the exact visible split
-pane dimensions, and missing or unusable `TERM` values normalize to
-`xterm-256color`. Both deterministic gallery images now contain styled typed
-terminal cells. Workspace tests, strict Clippy, bridge tests, docs, release
-policies, and deterministic raster checks pass.
+Version 0.1.110 documents the native kernel and U-Boot menuconfig interface in
+the README gallery and operator workflow. All workspace tests, strict Clippy,
+52 bridge tests, documentation, version/layout policy, roadmap, and
+deterministic raster checks pass.

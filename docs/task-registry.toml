@@ -8062,3 +8062,14 @@ required = true
 depends_on = ["FOCUS-NAVIGATOR-001"]
 verify = ["cargo test -p yoctui-app menuconfig", "cargo test -p yoctui menuconfig", "cargo test -p yoctui-ui menuconfig", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 scripts/render-readme-screenshots.py --check", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.109. Selected kernel and U-Boot menuconfig PTYs use Navigator plus full-width Workspace with no Inspector or prefix rail. Writer-only deduplicated resize follows exact visible split-pane cells; color-capable TERM normalization preserves native ncurses cells. Both gallery images were reviewed. Workspace, Clippy, bridge, docs, version/layout, roadmap, and deterministic raster gates pass."
+
+[[task]]
+id = "README-MENUCONFIG-002"
+milestone = "M63"
+title = "Document native kernel and U-Boot menuconfig rendering"
+status = "DONE"
+priority = 950
+required = true
+depends_on = ["MENUCONFIG-NCURSES-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.110. The README gallery and kernel/firmware workflow document the original ncurses presentation, full-width workspace, omitted passive Inspector and exact visible-pane PTY resizing for both menuconfig providers. Version-bearing goldens, rasters and provenance are synchronized; the full baseline passes."

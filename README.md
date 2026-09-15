@@ -51,8 +51,8 @@ implemented UI flows without claiming a live build for the fixture values.
     <td width="50%"><a href="docs/media/screenshots/03-uboot-device-tree.png"><img src="docs/media/screenshots/03-uboot-device-tree.png" alt="Yoctui U-Boot device-tree inventory"></a><br><strong>U-Boot device trees</strong> — bootloader sources and generated device-tree artifacts.</td>
   </tr>
   <tr>
-    <td><a href="docs/media/screenshots/04-kernel-menuconfig.png"><img src="docs/media/screenshots/04-kernel-menuconfig.png" alt="Linux kernel menuconfig inside a Yoctui terminal session"></a><br><strong>Kernel menuconfig</strong> — daemon-owned interactive configuration in the embedded terminal.</td>
-    <td><a href="docs/media/screenshots/05-uboot-menuconfig.png"><img src="docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — provider-specific bootloader configuration with reconnectable PTY ownership.</td>
+    <td><a href="docs/media/screenshots/04-kernel-menuconfig.png"><img src="docs/media/screenshots/04-kernel-menuconfig.png" alt="Linux kernel menuconfig inside a Yoctui terminal session"></a><br><strong>Kernel menuconfig</strong> — the original ncurses interface in a daemon-owned embedded terminal.</td>
+    <td><a href="docs/media/screenshots/05-uboot-menuconfig.png"><img src="docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — the original provider-specific ncurses interface with reconnectable PTY ownership.</td>
   </tr>
   <tr>
     <td><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="Yoctui root filesystem package composition pie chart and exact size table"></a><br><strong>Image composition</strong> — rootfs package pie chart, exact byte totals and filesystem drill-down.</td>
@@ -297,8 +297,12 @@ outside the TUI; exit that shell to return.
 
 Open **Kernel** or **U-Boot / BIOS** in the Navigator. Tab switches Configuration
 and Device trees. Enter/`e` opens a text file; `m` opens menuconfig when the
-selected provider supports it. With `dtc` available, `c` compiles DTS and `d`
-decompiles DTB/DTBO. Output uses a `.yoctui` name and refuses overwrites.
+selected provider supports it. Kernel and U-Boot menuconfig retain their native
+ncurses layout, colors and key handling inside Terminal Sessions. The selected
+session uses the full workspace beside the Navigator, omits the passive
+Inspector and prefix-help rail, and resizes its PTY to the visible split pane.
+With `dtc` available, `c` compiles DTS and `d` decompiles DTB/DTBO. Output uses
+a `.yoctui` name and refuses overwrites.
 [Kernel and firmware guide](docs/platform-workbenches.md).
 
 Open **Overview → Insights** and choose `1`–`8` for timeline, rebuild causes,

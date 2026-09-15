@@ -1356,3 +1356,13 @@ Deterministic gallery images exercise the same typed terminal-cell renderer.
 DONE in v0.1.109. The shared renderer and pointer topology, writer-only
 deduplicated resize path, terminal environment normalization, focused tests,
 full baseline, and both reviewed menuconfig gallery images pass.
+
+## M63 — Native menuconfig README
+
+README-MENUCONFIG-002 documents that kernel and U-Boot menuconfig retain their
+original ncurses layout, colors and controls in the embedded terminal. It also
+records the expanded workspace, omitted passive Inspector and visible-pane PTY
+resizing introduced in v0.1.109.
+
+DONE in v0.1.110. The README descriptions, version-bearing cell goldens,
+production rasters and provenance manifests are synchronized and verified.
