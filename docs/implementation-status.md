@@ -4,8 +4,8 @@ M67 requested fixes are implemented and committed as atomic changes: fresh
 build-directory initialization, asynchronous daemon compatibility discovery,
 and empty-on-open content-only build/rootfs/artifact search. Search Help and
 README match the behavior. Full workspace tests, strict Clippy, formatting and
-52 bridge tests pass. All 736 registered tasks are DONE; the final repository
-completion gate is the remaining release-level verification.
+52 bridge tests pass. The four M67 implementation tasks are DONE. M67-LIVE-EVIDENCE-001 records the
+remaining external release-evidence prerequisite (736 DONE, one BLOCKED).
 
 README-FLAMEGRAPH-001 is complete in v0.1.115. The README again exposes the
 retained v0.1.64 real-perf Flamegraph, its machine-readable summary and exact
@@ -3109,3 +3109,10 @@ finishes stale Help/README wording discovered during final review.
 SEARCH-HELP-001: DONE. Help and README describe file-content scope, the empty
 initial query and open-file behavior. Full workspace tests, strict Clippy,
 formatting, 52 bridge tests and roadmap validation pass.
+
+M67-LIVE-EVIDENCE-001 is BLOCKED on a new genuine current-source real-Poky
+capture. The recorded manifest has 49 source hash mismatches against current
+files, including pre-M67 changes. The completion run passed compatibility and
+workspace checks again, then was stopped after the independent source-binding
+preflight identified this mandatory unmet prerequisite. No release-completion
+or fresh live-Yocto claim is made. Reproduction and follow-up are in current-task.md.

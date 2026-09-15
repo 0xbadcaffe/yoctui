@@ -1427,3 +1427,8 @@ nonblocking compatibility discovery, content-only search and matching Help are
 verified. The controlled three-second startup probe no longer gates daemon
 readiness (3.246 s before, 116 ms after in the debug fixture). This does not
 replace source-bound live-Yocto release performance evidence.
+
+Release follow-up M67-LIVE-EVIDENCE-001 is BLOCKED on new current-source live
+performance evidence. The retained manifest has 49 source digest mismatches;
+M67 behavior/regression verification is complete, while the repository-wide
+release completion gate remains unpassed. No unrelated eligible task remains.

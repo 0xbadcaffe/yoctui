@@ -8172,3 +8172,14 @@ required = true
 depends_on = ["SEARCH-CONTENT-001", "DAEMON-STARTUP-002"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
 notes = "Final review found legacy Help text advertising command/source results. Files: UI maintenance_dialog_render.rs, README and UI spec. Done: help accurately explains build-content scope, empty opening and open-file behavior; baseline passes and docs are committed."
+
+[[task]]
+id = "M67-LIVE-EVIDENCE-001"
+milestone = "M67"
+title = "Supply current-source real-Poky release performance evidence"
+status = "BLOCKED"
+priority = 1602
+required = true
+depends_on = ["SEARCH-CONTENT-001", "FRESH-CLONE-001", "DAEMON-STARTUP-002", "SEARCH-HELP-001"]
+verify = ["./scripts/verify-performance.sh --real-poky-evidence", "./scripts/verify-completion.sh"]
+notes = "External validation prerequisite: retained live evidence is bound to source base d2214e82974a5be708a7cc40f1532254d7c7de63 and has 49 source digest mismatches, including changes predating M67. Supply a new genuine source/binary-bound Yocto 6.0.2 linux-yocto compile capture using the documented release workload before the release gate can certify current code. Do not rewrite digests or treat fake-process startup timings as live evidence. See current-task.md for reproduction and verification scope."
