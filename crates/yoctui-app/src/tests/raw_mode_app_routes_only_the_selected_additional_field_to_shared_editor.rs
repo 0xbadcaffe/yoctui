@@ -129,7 +129,7 @@ fn raw_form_app_routes_selector_editor_fields_and_dialog_focus() {
     let close = raw_mode_input(&app, Input::Char('q')).unwrap();
     let _ = yoctui_model::update(&mut app, yoctui_model::Action::RawMode(close));
     assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Browser);
-    assert_eq!(app.focus, yoctui_model::FocusTarget::Workspace);
+    assert_eq!(app.focus, yoctui_model::FocusTarget::Navigator);
 }
 
 #[test]
@@ -595,7 +595,10 @@ fn ux_focus_outward_escape_zoom_and_modal_input_are_typed_without_shortcut_theft
         Some(Action::ResetPaneSubfocus)
     );
     let _ = yoctui_model::update(&mut app, Action::ResetPaneSubfocus);
-    assert_eq!(focus_action_for_app(&app, Input::Esc), None);
+    assert_eq!(
+        focus_action_for_app(&app, Input::Esc),
+        Some(Action::Focus(FocusTarget::Navigator))
+    );
     assert_eq!(focus_action_for_app(&app, Input::Char('z')), None);
 
     let _ = yoctui_model::update(&mut app, Action::TogglePaneZoom);

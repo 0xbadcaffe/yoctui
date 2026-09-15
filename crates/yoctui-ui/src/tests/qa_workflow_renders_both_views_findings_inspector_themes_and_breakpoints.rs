@@ -711,6 +711,7 @@ fn raw_preview_degrades_safely_at_narrow_and_tiny_sizes() {
 #[test]
 fn raw_form_renders_exact_typed_fields_selectors_and_responsive_focus_trap() {
     let mut app = raw_command_list_app();
+    app.focus = FocusTarget::Workspace;
     set_raw_command_query(&mut app, "--continue <target>");
     assert_eq!(
         update(

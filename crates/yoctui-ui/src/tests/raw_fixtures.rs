@@ -269,6 +269,7 @@ pub(crate) fn raw_command_list_app() -> App {
         &mut app,
         Action::RawMode(yoctui_model::RawModeAction::FocusCommands),
     );
+    app.focus = FocusTarget::Workspace;
     app
 }
 
@@ -311,6 +312,7 @@ pub(crate) fn rendered_raw_preview(width: u16, height: u16) -> String {
 pub(crate) fn ux_terminal_render_fixture() -> App {
     let mut app = App::new(16, 4_096);
     app.screen = Screen::TerminalSessions;
+    app.focus = FocusTarget::Workspace;
     app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
     app.terminal.client_id = Some([1; 16]);
     for (id, name, writer, kind) in [

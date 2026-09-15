@@ -6,6 +6,7 @@ fn config_compare_renders_typed_outcomes_and_disabled_reason_responsively() {
     for (width, height) in [(140, 32), (100, 28), (90, 24)] {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Workspace;
         app.workspace
             .variables
             .insert("MACHINE".into(), "qemux86-64".into());
@@ -46,6 +47,7 @@ fn config_edit_preview_renders_availability_editor_and_exact_confirmation_respon
     for (width, height) in [(140, 32), (100, 28), (90, 24)] {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Workspace;
         app.workspace.build_dir = Some("/build".into());
         app.workspace
             .variables
@@ -169,6 +171,7 @@ fn bbmask_edit_preview_shows_the_exact_assignment() {
 fn live_tasks_renders_summary_states_filters_and_selected_inspector() {
     let mut app = App::new(20, 2_000);
     app.screen = Screen::Tasks;
+    app.focus = FocusTarget::Workspace;
     app.build.completed = 2;
     app.build.total = Some(5);
     app.build.errors = 1;
@@ -372,6 +375,7 @@ fn next_generation_inspector_actions_are_aligned_typed_and_accessible() {
 fn live_tasks_unknown_progress_and_narrow_layout_are_honest_and_safe() {
     let mut app = App::new(20, 2_000);
     app.screen = Screen::Tasks;
+    app.focus = FocusTarget::Workspace;
     let task = yoctui_model::TaskInfo::active(
         yoctui_model::TaskId("linux-yocto:do_compile".into()),
         "linux-yocto".into(),
@@ -696,6 +700,7 @@ fn workbench_tasks_renders_table_log_history_and_structured_inspector() {
 fn workbench_tasks_reduced_height_prioritizes_the_task_table() {
     let mut app = App::new(16, 4_096);
     app.screen = Screen::Tasks;
+    app.focus = FocusTarget::Workspace;
     let task = yoctui_model::TaskInfo::active(
         yoctui_model::TaskId("bash:do_compile".into()),
         "bash".into(),
@@ -713,6 +718,7 @@ fn workbench_tasks_reduced_height_prioritizes_the_task_table() {
 fn workbench_responsive_preserves_task_priority_at_every_breakpoint() {
     let mut app = App::new(16, 4_096);
     app.screen = Screen::Tasks;
+    app.focus = FocusTarget::Workspace;
     app.build.target = Some("core-image-minimal".into());
     let task = yoctui_model::TaskInfo::active(
         yoctui_model::TaskId("busybox:do_compile".into()),
@@ -732,10 +738,7 @@ fn workbench_responsive_preserves_task_priority_at_every_breakpoint() {
     assert!(!medium.contains("System Status"), "{medium}");
 
     let narrow = rendered_text(&app, 80, 24);
-    assert!(
-        narrow.contains("Panes: Navigator  [Workspace]  Inspector"),
-        "{narrow}"
-    );
+    assert!(narrow.contains("Panes: Navigator  [Workspace]"), "{narrow}");
     assert!(narrow.contains("do_compile"), "{narrow}");
 
     let too_small = rendered_text(&app, 79, 23);
@@ -790,6 +793,7 @@ fn workbench_responsive_keeps_semantics_in_every_theme_and_no_color() {
 fn log_workspace_selection_drives_full_multiline_inspector_details() {
     let mut app = App::new(20, 4_000);
     app.screen = Screen::Logs;
+    app.focus = FocusTarget::Workspace;
     app.logs.insert(yoctui_model::LogEntry {
         id: 0,
         severity: Severity::Error,

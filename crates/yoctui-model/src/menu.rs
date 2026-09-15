@@ -176,7 +176,7 @@ mod tests {
         );
 
         let _ = update(&mut app, Action::CloseMenu);
-        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert_eq!(app.focus, FocusTarget::Navigator);
         app.screen = Screen::Recipes;
         app.workspace.build_dir = Some(PathBuf::from("/work/build"));
         let _ = update(&mut app, Action::OpenContextMenu);

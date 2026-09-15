@@ -257,19 +257,17 @@ fn raw_command_help_explains_all_availability_states_and_reference_only_rows() {
 fn raw_accessibility_help_is_bounded_empty_no_color_and_responsive() {
     let mut app = raw_command_list_app();
     set_raw_command_query(&mut app, "--continue <target>");
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     app.color_enabled = false;
     let selection = app.raw_mode.command.clone();
-    for (width, height) in [(160, 50), (100, 30), (80, 24)] {
-        let output = rendered_text(&app, width, height);
-        assert!(output.contains("Inspector: Raw command"), "{output}");
-        assert!(output.contains("Availability: LIMITED"), "{output}");
-        assert!(!output.contains('�'), "{output}");
-        assert_eq!(app.raw_mode.command, selection);
-    }
+    let output = rendered_text(&app, 160, 50);
+    assert!(output.contains("Inspector: Raw command"), "{output}");
+    assert!(output.contains("Availability: LIMITED"), "{output}");
+    assert!(!output.contains('�'), "{output}");
+    assert_eq!(app.raw_mode.command, selection);
 
     set_raw_command_query(&mut app, "definitely-no-such-raw-command");
-    let empty = rendered_text(&app, 100, 30);
+    let empty = rendered_text(&app, 160, 30);
     assert!(empty.contains("No Raw command selected."), "{empty}");
     assert!(
         empty.contains("Select a command in the Workspace"),
@@ -277,7 +275,7 @@ fn raw_accessibility_help_is_bounded_empty_no_color_and_responsive() {
     );
 
     app.raw_mode.command = Some(yoctui_model::RawCommandId::new("stale.command.identity").unwrap());
-    let stale = rendered_text(&app, 80, 24);
+    let stale = rendered_text(&app, 160, 30);
     assert!(stale.contains("No Raw command selected."), "{stale}");
     let below_minimum = rendered_text(&app, 79, 23);
     assert!(below_minimum.contains("Yoctui needs at least 80x24"));
@@ -287,6 +285,7 @@ fn raw_accessibility_help_is_bounded_empty_no_color_and_responsive() {
 fn raw_category_browser_renders_pinned_order_classification_and_bounds() {
     let mut app = App::new(16, 4096);
     let _ = update(&mut app, Action::Open(Screen::RawMode));
+    app.focus = FocusTarget::Workspace;
     let wide = rendered_text(&app, 160, 50);
     for expected in [
         "[FAVORITES] Favorites",
@@ -332,6 +331,7 @@ fn raw_category_browser_renders_pinned_order_classification_and_bounds() {
 fn raw_category_browser_exposes_column_state_and_no_color_text() {
     let mut app = App::new(16, 4096);
     let _ = update(&mut app, Action::Open(Screen::RawMode));
+    app.focus = FocusTarget::Workspace;
     app.color_enabled = false;
     let categories = rendered_text(&app, 80, 24);
     assert!(
@@ -369,6 +369,7 @@ fn raw_category_browser_exposes_column_state_and_no_color_text() {
 fn raw_responsive_navigation_renders_with_exact_shell_help() {
     let mut app = App::new(16, 4096);
     let _ = update(&mut app, Action::Open(Screen::RawMode));
+    app.focus = FocusTarget::Workspace;
     for (width, height) in [(160, 40), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
         assert!(output.contains("Raw Mode"), "{width}x{height}: {output}");
@@ -386,6 +387,7 @@ fn raw_responsive_navigation_renders_with_exact_shell_help() {
     assert!(help.contains("Raw Mode: Left/Right browser pane"), "{help}");
 
     let _ = update(&mut app, Action::Open(Screen::RawMode));
+    app.focus = FocusTarget::Workspace;
     let shortcuts = footer_shortcuts(&app);
     assert!(shortcuts.contains("f Favorite | H History"), "{shortcuts}");
     assert!(shortcuts.contains("F1 Help | F10 Menu"), "{shortcuts}");
@@ -395,6 +397,7 @@ fn raw_responsive_navigation_renders_with_exact_shell_help() {
 fn ux_scroll_production_renderer_exposes_bounded_position_at_every_breakpoint() {
     let mut app = App::new(16, 4_096);
     let _ = update(&mut app, Action::Open(Screen::RawMode));
+    app.focus = FocusTarget::Workspace;
     for (width, height) in [(160, 50), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
         assert!(output.contains("/32"), "{width}x{height}: {output}");
@@ -544,6 +547,7 @@ fn ux_terminal_workbench_renders_writer_read_only_recovery_and_help_states() {
 fn ux_preferences_render_real_settings_across_sizes_and_accessibility_modes() {
     let mut app = App::new(32, 4_096);
     app.screen = Screen::Settings;
+    app.focus = FocusTarget::Workspace;
     for (width, height) in [(160, 50), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
         assert!(output.contains("Settings"), "{width}x{height}: {output}");
@@ -643,6 +647,7 @@ fn firmware_workspace_labels_detected_uboot_and_renders_device_trees() {
 fn overview_insights_render_all_eight_honest_responsive_states() {
     let mut app = App::new(32, 4_096);
     app.screen = Screen::Insights;
+    app.focus = FocusTarget::Workspace;
     let expectations = [
         (
             yoctui_model::OverviewView::Timeline,

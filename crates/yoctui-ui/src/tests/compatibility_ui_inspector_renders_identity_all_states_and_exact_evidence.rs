@@ -52,8 +52,8 @@ fn compatibility_ui_inspector_responsive_absent_themes_and_no_color_are_safe() {
     let app = compatibility_ui_inspector_app();
     for (width, focus) in [
         (180, FocusTarget::Workspace),
-        (100, FocusTarget::Inspector),
-        (80, FocusTarget::Inspector),
+        (100, FocusTarget::Workspace),
+        (80, FocusTarget::Workspace),
     ] {
         let mut responsive = app.clone();
         responsive.focus = focus;
@@ -80,6 +80,7 @@ fn compatibility_ui_inspector_responsive_absent_themes_and_no_color_are_safe() {
 
     let mut absent = App::new(32, 8192);
     absent.screen = Screen::Compatibility;
+    absent.focus = FocusTarget::Workspace;
     absent.daemon.status = yoctui_model::ClientReplicaStatus::Stale;
     let output = rendered_text(&absent, 180, 34);
     assert!(output.contains("snapshot unavailable"), "{output}");
@@ -745,11 +746,11 @@ fn next_generation_header_handles_missing_stale_and_accessible_states() {
 
 #[test]
 fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
-    let mut dashboard = App::new(32, 8192);
-    dashboard.focus = FocusTarget::Workspace;
+    let dashboard = App::new(32, 8192);
     for width in [130_u16, 160, 180, 200] {
         let rail = footer_rail_shortcuts(&dashboard, width.saturating_sub(10));
-        assert!(rail.contains("B build"), "{width}: {rail}");
+        assert!(rail.contains("↑/↓ select"), "{width}: {rail}");
+        assert!(rail.contains("Enter open"), "{width}: {rail}");
         assert!(rail.contains("Ctrl+B prefix"), "{width}: {rail}");
         assert!(rail.contains("F1 Help"), "{width}: {rail}");
         assert!(rail.contains("F10 Menu"), "{width}: {rail}");
@@ -767,7 +768,7 @@ fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
         "F field",
         "/ edit filter",
         "c cancel",
-        "←/→ Focus",
+        "Tab Focus",
         "F1 Help",
         "F10 Menu",
         "q Quit",
@@ -780,7 +781,7 @@ fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
     }
 
     let compact = footer_rail_shortcuts(&dashboard, 80);
-    assert!(compact.contains("B build"), "{compact}");
+    assert!(compact.contains("h/l groups"), "{compact}");
     assert!(compact.contains("? Help"), "{compact}");
     assert!(compact.contains("Ctrl+P Menu"), "{compact}");
     assert!(compact.contains("q Quit"), "{compact}");

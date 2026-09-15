@@ -457,7 +457,7 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
     for label in [
         "↑/↓ select",
         "h/l groups",
-        "←/→ focus",
+        "Tab Focus",
         "Enter open",
         "Ctrl+B prefix",
         "F1 Help",
@@ -679,6 +679,7 @@ fn worker_count_header_keeps_partial_and_lost_identity_unavailable() {
 fn task_identity_unresolved_statistics_render_without_invented_recipe_rows() {
     let mut app = App::new(64, 64 * 1024);
     app.screen = Screen::Tasks;
+    app.focus = FocusTarget::Workspace;
     let _ = update(&mut app, Action::BuildStarted);
     let _ = update(
         &mut app,

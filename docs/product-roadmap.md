@@ -1333,3 +1333,14 @@ spawn-retry rules in `yoctui-utils`, including portable absolute-path handling.
 PERF-VERIFY-001 requires release-profile idle CPU below the existing 1% combined
 contract, a real initialized-workspace priority observation, the full baseline,
 and delivery of version 0.1.107.
+
+## M61 — Navigator-first actionable focus
+
+FOCUS-NAVIGATOR-001 keeps focus on Navigator at startup and after destination
+navigation. Tab and Shift+Tab are the only keyboard routes between panes, and
+pane traversal omits informational panes without user-controlled content.
+
+DONE in v0.1.108: the shared model policy now drives keyboard, mouse, menus,
+responsive switching and footer hints. Deterministic concept captures show
+Navigator focus on passive screens and an explicit Tab route only for
+actionable Workspaces.

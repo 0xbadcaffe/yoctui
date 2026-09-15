@@ -482,11 +482,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 .then(|| selected_correlated_log_id(app))
                 .flatten();
             app.screen = s;
-            app.focus = if focus_target_is_relevant(app, FocusTarget::Workspace) {
-                FocusTarget::Workspace
-            } else {
-                FocusTarget::Navigator
-            };
+            app.focus = FocusTarget::Navigator;
             app.focus_return = None;
             app.workspace_subfocus = WorkspaceSubfocus::Main;
             if app.zoomed_pane.is_some() {

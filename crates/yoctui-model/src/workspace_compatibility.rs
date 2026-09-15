@@ -1608,7 +1608,7 @@ mod tests {
         let revalidated = install_workspace_compatibility(&mut app, unavailable).unwrap();
         assert!(revalidated.closed_dialog);
         assert!(app.active_dialog().is_none());
-        assert_eq!(app.focus, crate::FocusTarget::Inspector);
+        assert_eq!(app.focus, crate::FocusTarget::Navigator);
         assert_eq!(app.navigator_selection, 3);
         let denied = authorize_workspace_effect(&app, &start).unwrap_err();
         assert!(denied.reason().contains("cannot build"));

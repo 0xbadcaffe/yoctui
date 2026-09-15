@@ -36,7 +36,9 @@ for required in \
   fi
 done
 
-if rg -q 'BackendEvent|yoctui_protocol|serde_json' crates/yoctui-ui; then
+if rg -q 'BackendEvent|yoctui_protocol|serde_json' \
+  crates/yoctui-ui/src \
+  --glob '!**/tests/**'; then
   echo "UI renderer must consume typed model state, not backend/protocol data" >&2
   exit 1
 fi

@@ -3687,12 +3687,27 @@ editor workflow; the reducer advances disk authority while retaining the
 visual diff baseline. Builds still leave the model as typed `BuildRequest`
 effects and execute through the existing daemon/backend path.
 
+## M61 Navigator-first actionable focus
+
+`yoctui-model::focus` is the single source of pane eligibility. Navigator is
+always eligible; Workspace is eligible only on screens that own a selectable,
+scrollable, editable, or terminal-input control; the current Inspector is a
+read-only projection and is never eligible. `App::new`, destination activation,
+screen opening, modal restoration, and rejected direct-focus requests all
+settle on Navigator.
+
+The model exports the ordered actionable pane iterator used by reducers, mouse
+hit testing, responsive pane switching, and footer labels. Keyboard pane
+traversal is limited to Tab and Shift+Tab. Left and Right remain inside the
+active Navigator or Workspace control, and clicks on passive pane projections
+do not manufacture focus.
+
 ## M43 Dashboard focus and sparse-browser layout
 
-`focus_target_is_relevant` classifies Dashboard Workspace and Inspector as
-unconditionally passive. Focus cycling, direct focus requests, screen opening,
-and modal restoration all consult that model rule, preventing live or retained
-task data from creating a focus trap.
+`focus_target_is_relevant` classifies Dashboard Workspace and every Inspector
+as unconditionally passive. Focus cycling, direct focus requests, screen
+opening, and modal restoration all consult that model rule, preventing live or
+retained task data from creating a focus trap.
 
 The Layers renderer derives a bounded browser-column width from configured
 layer and visible tree-label needs. It does not store layout state or inspect

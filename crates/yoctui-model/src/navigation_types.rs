@@ -169,6 +169,18 @@ pub enum FocusTarget {
     CommandPalette,
 }
 
+impl FocusTarget {
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Navigator => "Navigator",
+            Self::Workspace => "Workspace",
+            Self::Inspector => "Inspector",
+            Self::Dialog => "Dialog",
+            Self::CommandPalette => "Command Palette",
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InspectorMode {
     Navigator,

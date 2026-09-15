@@ -4,21 +4,28 @@ pub fn focus_target_is_relevant(app: &crate::App, target: FocusTarget) -> bool {
     match target {
         FocusTarget::Navigator => true,
         FocusTarget::Workspace => match app.screen {
-            // The Dashboard is a read-only cockpit. Its task, log, history,
-            // telemetry, and status panels never become actionable merely
-            // because live or retained build data appears.
-            Screen::Dashboard => false,
+            // These are informational projections. Their content never
+            // becomes actionable merely because live or retained data appears.
+            Screen::Dashboard | Screen::LayerRelationships | Screen::Help => false,
             _ => true,
         },
-        // Layers and Recipes carry their selectable preview inside the workspace.
-        // An idle Dashboard inspector is read-only status and must not become a
-        // keyboard focus trap.
-        FocusTarget::Inspector => !matches!(
-            app.screen,
-            Screen::Dashboard | Screen::Layers | Screen::Recipes
-        ),
+        // Inspector surfaces currently project facts and context actions but
+        // own no selectable, scrollable, editable, or terminal-input control.
+        FocusTarget::Inspector => false,
         FocusTarget::Dialog | FocusTarget::CommandPalette => true,
     }
+}
+
+pub const PANE_FOCUS_TARGETS: [FocusTarget; 3] = [
+    FocusTarget::Navigator,
+    FocusTarget::Workspace,
+    FocusTarget::Inspector,
+];
+
+pub fn pane_focus_targets(app: &crate::App) -> impl Iterator<Item = FocusTarget> + '_ {
+    PANE_FOCUS_TARGETS
+        .into_iter()
+        .filter(|target| focus_target_is_relevant(app, *target))
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -103,6 +110,7 @@ mod tests {
     fn dashboard_navigator_focus_always_skips_read_only_panes() {
         let mut app = App::new(32, 8_192);
         assert_eq!(app.screen, Screen::Dashboard);
+        assert_eq!(app.focus, FocusTarget::Navigator);
         let _ = update(&mut app, Action::Focus(FocusTarget::Navigator));
         assert_eq!(app.focus, FocusTarget::Navigator);
 
@@ -140,6 +148,47 @@ mod tests {
     }
 
     #[test]
+    fn focus_targets_include_only_panes_with_owned_controls() {
+        let mut app = App::new(32, 8_192);
+        for passive in [Screen::Dashboard, Screen::LayerRelationships, Screen::Help] {
+            app.screen = passive;
+            assert_eq!(
+                pane_focus_targets(&app).collect::<Vec<_>>(),
+                [FocusTarget::Navigator]
+            );
+            let commands = app.command_palette_commands();
+            assert_eq!(
+                commands
+                    .iter()
+                    .find(|command| command.id == crate::CommandId::FocusWorkspace)
+                    .and_then(|command| command.disabled_reason.as_deref()),
+                Some("The current Workspace is read-only")
+            );
+        }
+
+        for interactive in [Screen::Tasks, Screen::Layers, Screen::TerminalSessions] {
+            app.screen = interactive;
+            assert_eq!(
+                pane_focus_targets(&app).collect::<Vec<_>>(),
+                [FocusTarget::Navigator, FocusTarget::Workspace]
+            );
+            assert!(
+                app.command_palette_commands()
+                    .iter()
+                    .find(|command| command.id == crate::CommandId::FocusWorkspace)
+                    .is_some_and(|command| command.enabled())
+            );
+        }
+        assert_eq!(
+            app.command_palette_commands()
+                .iter()
+                .find(|command| command.id == crate::CommandId::FocusInspector)
+                .and_then(|command| command.disabled_reason.as_deref()),
+            Some("The Inspector is read-only")
+        );
+    }
+
+    #[test]
     fn ux_focus_subfocus_zoom_palette_and_modal_restore_preserve_client_state() {
         let mut app = App::new(32, 8_192);
         app.screen = Screen::Tasks;
@@ -166,12 +215,11 @@ mod tests {
         );
 
         let _ = update(&mut app, Action::OpenCommandPalette);
-        app.command_palette_query = "focus inspector".into();
+        app.command_palette_query = "focus workspace".into();
         app.command_palette_selection = 0;
         let _ = update(&mut app, Action::ActivateCommandPalette);
-        assert_eq!(app.focus, FocusTarget::Inspector);
-        assert_eq!(app.zoomed_pane, Some(FocusTarget::Inspector));
-        assert_eq!(app.inspector_subfocus, InspectorSubfocus::Facts);
+        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert_eq!(app.zoomed_pane, Some(FocusTarget::Workspace));
         assert_eq!(
             crate::command_action(&app, CommandId::NextSubfocus),
             Action::CyclePaneSubfocus { backwards: false }

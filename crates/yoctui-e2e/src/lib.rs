@@ -727,9 +727,7 @@ mod tests {
 
             for (input, expected) in [
                 (Input::Tab, FocusTarget::Workspace),
-                (Input::Tab, FocusTarget::Inspector),
                 (Input::Tab, FocusTarget::Navigator),
-                (Input::BackTab, FocusTarget::Inspector),
                 (Input::BackTab, FocusTarget::Workspace),
                 (Input::BackTab, FocusTarget::Navigator),
             ] {
@@ -741,22 +739,13 @@ mod tests {
                         assert!(output.contains("Panes: [Navigator]"), "{output}")
                     }
                     (80..=99, FocusTarget::Workspace) => {
-                        assert!(output.contains("[Workspace]  Inspector"), "{output}")
-                    }
-                    (80..=99, FocusTarget::Inspector) => {
-                        assert!(output.contains("[Inspector]"), "{output}")
-                    }
-                    (100..=129, FocusTarget::Inspector) => {
-                        assert!(output.contains("Inspector: Task"), "{output}")
+                        assert!(output.contains("[Workspace]"), "{output}")
                     }
                     (_, FocusTarget::Navigator) => {
                         assert!(output.contains("Navigator"), "{output}")
                     }
                     (_, FocusTarget::Workspace) => {
                         assert!(output.contains("Tasks:"), "{output}")
-                    }
-                    (_, FocusTarget::Inspector) => {
-                        assert!(output.contains("Inspector: Task"), "{output}")
                     }
                     _ => unreachable!(),
                 }
@@ -767,16 +756,16 @@ mod tests {
 
         let mut modal = yoctui_model::App::new(32, 8192);
         modal.screen = AppScreen::Tasks;
-        modal.focus = FocusTarget::Inspector;
+        modal.focus = FocusTarget::Workspace;
         let _ = yoctui_model::update(&mut modal, Action::OpenThemePicker);
         assert_eq!(modal.focus, FocusTarget::Dialog);
-        assert_eq!(modal.focus_return, Some(FocusTarget::Inspector));
+        assert_eq!(modal.focus_return, Some(FocusTarget::Workspace));
         dispatch(&mut modal, Input::Tab);
         dispatch(&mut modal, Input::BackTab);
         assert_eq!(modal.focus, FocusTarget::Dialog);
         assert_eq!(focus_action(FocusTarget::Dialog, Input::Tab), None);
         let _ = yoctui_model::update(&mut modal, Action::CloseThemePicker);
-        assert_eq!(modal.focus, FocusTarget::Inspector);
+        assert_eq!(modal.focus, FocusTarget::Workspace);
         assert_eq!(modal.focus_return, None);
 
         modal.focus = FocusTarget::Navigator;
@@ -821,6 +810,6 @@ mod tests {
         assert_eq!(terminal_app.focus, retained_focus);
         assert_eq!(key_action(Input::CtrlB), None);
         dispatch(&mut terminal_app, Input::Tab);
-        assert_eq!(terminal_app.focus, FocusTarget::Inspector);
+        assert_eq!(terminal_app.focus, FocusTarget::Navigator);
     }
 }

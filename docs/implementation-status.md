@@ -1,5 +1,20 @@
 # Yoctui Implementation Status
 
+M61 is DONE in v0.1.108. Navigator now owns focus at startup and after every
+destination change. Tab and Shift+Tab are the only pane traversal keys, and a
+shared model policy includes Workspace only when it owns a selectable,
+scrollable, editable, or terminal-input control. The read-only Inspector and
+passive Workspace projections cannot receive keyboard or mouse focus and are
+omitted from narrow switching; their menu entries and footer hints expose the
+same availability.
+
+The focused model, app, UI and CLI coverage passes with the all-features
+workspace baseline, 52 bridge tests, strict Clippy, formatting, documentation,
+version/layout/roadmap checks, and deterministic concept and README rasters.
+The six concept PNGs reproduce the intended Ratatui layout with Navigator focus
+on passive screens and explicit Tab focus only for controlled Workspaces. All
+725 registry tasks are DONE.
+
 M60 is DONE in v0.1.107. The observed pre-build slowdown was automatic
 initialized-workspace discovery: sequential environment queries followed by
 dozens of capability probes and recipe inventory. On Unix those child process

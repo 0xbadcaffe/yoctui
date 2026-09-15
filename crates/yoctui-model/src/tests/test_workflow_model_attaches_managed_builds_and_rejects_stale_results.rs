@@ -823,11 +823,12 @@ fn raw_navigation_is_unique_grouped_and_palette_reachable() {
 
     assert_eq!(update(&mut app, Action::Open(Screen::RawMode)), None);
     assert_eq!(app.navigator_selection, 17);
-    assert_eq!(app.focus, FocusTarget::Workspace);
-    assert_eq!(app.inspector_mode(), InspectorMode::RawCommand);
+    assert_eq!(app.focus, FocusTarget::Navigator);
+    assert_eq!(app.inspector_mode(), InspectorMode::Navigator);
     assert_eq!(
         update(&mut app, Action::CycleFocus { backwards: false }),
         None
     );
-    assert_eq!(app.focus, FocusTarget::Inspector);
+    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(app.inspector_mode(), InspectorMode::RawCommand);
 }

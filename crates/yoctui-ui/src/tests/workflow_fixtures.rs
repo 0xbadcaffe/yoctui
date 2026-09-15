@@ -166,6 +166,7 @@ pub(crate) fn compatibility_ui_inspector_app() -> App {
     .unwrap();
     let mut app = App::new(32, 8192);
     app.screen = Screen::Compatibility;
+    app.focus = FocusTarget::Workspace;
     app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
     yoctui_model::install_workspace_compatibility(&mut app, authority).unwrap();
     app
@@ -488,7 +489,7 @@ pub(crate) fn sdk_workflow_running_ui_app() -> (App, SdkSessionId) {
         },
     );
     let _ = update(&mut app, Action::SdkSessionRunning { id });
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     (app, id)
 }
 
@@ -564,6 +565,7 @@ pub(crate) fn test_workflow_results_app() -> (
 pub(crate) fn qemu_workspace_app() -> App {
     let mut app = App::new(20, 20_000);
     app.screen = Screen::Images;
+    app.focus = FocusTarget::Workspace;
     app.workspace
         .variables
         .insert("MACHINE".into(), "qemux86-64".into());
@@ -619,7 +621,7 @@ pub(crate) fn qemu_running_workspace_app() -> (App, QemuSessionId) {
         },
     );
     let _ = yoctui_model::update(&mut app, yoctui_model::Action::QemuSessionRunning { id });
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     (app, id)
 }
 

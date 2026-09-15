@@ -455,7 +455,7 @@ fn wic_workspace_dialog_is_bounded_modal_and_stale_safe() {
     ));
     let _ = update(&mut app, Action::CancelWicCreate);
     assert!(app.active_dialog().is_none());
-    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(app.focus, FocusTarget::Navigator);
 
     let _ = update(&mut app, Action::BeginSelectedWicCreate);
     let _ = update(&mut app, Action::PreviewWicCreate);

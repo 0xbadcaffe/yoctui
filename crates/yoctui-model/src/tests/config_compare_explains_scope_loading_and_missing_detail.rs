@@ -83,7 +83,7 @@ fn config_edit_preview_requires_allowlisted_loaded_global_detail() {
         update(&mut app, Action::ConfirmConfigEdit),
         Some(Effect::WriteConfigAssignment(expected))
     );
-    assert_eq!(app.focus, FocusTarget::Inspector);
+    assert_eq!(app.focus, FocusTarget::Navigator);
 }
 
 #[test]

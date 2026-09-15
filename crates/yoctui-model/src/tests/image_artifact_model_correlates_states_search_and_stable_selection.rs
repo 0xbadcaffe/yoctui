@@ -828,5 +828,5 @@ fn qemu_workspace_dialog_fields_are_bounded_modal_and_validation_aware() {
     ));
     let _ = update(&mut app, Action::CancelQemuLaunch);
     assert!(app.active_dialog().is_none());
-    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(app.focus, FocusTarget::Navigator);
 }

@@ -106,6 +106,19 @@ fn ux_responsive_mouse_regions_keyboard_scroll_and_minimum_are_exact() {
         mouse_action_for_app(
             MouseInput {
                 kind: MouseKind::Down,
+                column: 22,
+                row: 2,
+            },
+            &app,
+            90,
+            30,
+        ),
+        Some(Action::Focus(FocusTarget::Workspace))
+    );
+    assert_eq!(
+        mouse_action_for_app(
+            MouseInput {
+                kind: MouseKind::Down,
                 column: 32,
                 row: 2,
             },
@@ -113,7 +126,7 @@ fn ux_responsive_mouse_regions_keyboard_scroll_and_minimum_are_exact() {
             90,
             30,
         ),
-        Some(Action::Focus(FocusTarget::Inspector))
+        None
     );
     for inert in [
         MouseInput {
@@ -745,10 +758,7 @@ fn layers_workspace_owns_horizontal_hierarchy_keys_before_pane_focus() {
     app.screen = Screen::Layers;
     app.focus = FocusTarget::Workspace;
     assert_eq!(focus_action_for_app(&app, Input::Right), None);
-    assert_eq!(
-        focus_action_for_app(&app, Input::Left),
-        Some(Action::CycleFocus { backwards: true })
-    );
+    assert_eq!(focus_action_for_app(&app, Input::Left), None);
 
     let _ = yoctui_model::update(
         &mut app,
@@ -910,10 +920,7 @@ fn terminal_pane_clicks_exclude_navigator_inspector_tabs_and_prefix_rail() {
             )
         };
         assert!(!matches!(click(5, 10), Some(Action::SelectPtyPane { .. })));
-        assert_eq!(
-            click(nav + workspace, 10),
-            Some(Action::Focus(FocusTarget::Inspector))
-        );
+        assert_eq!(click(nav + workspace, 10), None);
         assert_eq!(click(nav + 2, 6), None);
         assert_eq!(click(nav + 2, height - 5), None);
         assert!(matches!(

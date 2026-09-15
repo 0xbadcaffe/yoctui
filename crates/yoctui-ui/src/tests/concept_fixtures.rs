@@ -210,7 +210,7 @@ pub(crate) fn concept_idle_dashboard_app() -> App {
     app.host_telemetry.disk_available_bytes = Some(59_592_671_232);
     app.screen = Screen::Dashboard;
     app.navigator_selection = 0;
-    app.focus = FocusTarget::Workspace;
+    app.focus = FocusTarget::Navigator;
     app.build.status = BuildStatus::Idle;
     app.build.started = None;
     app.build.completed = 0;

@@ -221,6 +221,7 @@ fn build_environment_workspace_renders_disconnected_state_and_unlock_rule() {
 fn project_profile_renders_team_intent_and_explicit_resolution_states() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::BuildEnvironment;
+    app.focus = FocusTarget::Workspace;
     app.project_profile = yoctui_model::ProjectProfileState::Loaded(yoctui_model::ProjectProfile {
         schema_version: yoctui_model::PROJECT_PROFILE_SCHEMA_VERSION,
         favorites: yoctui_model::ProjectFavorites {
@@ -617,6 +618,7 @@ fn animation_unknown_progress_never_fabricates_a_percentage() {
 fn images_workspace_renders_typed_artifacts_inspector_and_responsive_modes() {
     let mut app = App::new(20, 20_000);
     app.screen = Screen::Images;
+    app.focus = FocusTarget::Workspace;
     app.workspace
         .variables
         .insert("MACHINE".into(), "qemux86-64".into());

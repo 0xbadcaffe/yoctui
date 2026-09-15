@@ -218,7 +218,7 @@ impl App {
             preferences: WorkbenchPreferences::default(),
             screen: Screen::Dashboard,
             overview_view: OverviewView::default(),
-            focus: FocusTarget::Workspace,
+            focus: FocusTarget::Navigator,
             focus_return: None,
             workspace_subfocus: WorkspaceSubfocus::Main,
             inspector_subfocus: InspectorSubfocus::Facts,
@@ -1421,24 +1421,34 @@ impl App {
                 let OperatorActionTarget::Command(id) = definition.target else {
                     unreachable!("global catalog entries target command IDs")
                 };
-                let local_disabled_reason = match definition.local_requirement {
-                    OperatorActionLocalRequirement::None => None,
-                    OperatorActionLocalRequirement::WorkspaceLoaded => self
-                        .workspace
-                        .build_dir
-                        .is_none()
-                        .then_some("Load a Yocto workspace first"),
-                    OperatorActionLocalRequirement::ImageRecipeAvailable => (!self
-                        .workspace
-                        .recipes
-                        .iter()
-                        .any(|recipe| recipe.name.contains("image")))
-                    .then_some("No image recipes are available"),
-                    OperatorActionLocalRequirement::SelectedRecipe => (self.screen
-                        != Screen::Recipes
-                        || self.workspace.recipes.get(self.recipe_selection).is_none())
-                    .then_some("Open Recipes and select a recipe"),
+                let pane_disabled_reason = match id {
+                    CommandId::FocusWorkspace
+                        if !focus_target_is_relevant(self, FocusTarget::Workspace) =>
+                    {
+                        Some("The current Workspace is read-only")
+                    }
+                    CommandId::FocusInspector => Some("The Inspector is read-only"),
+                    _ => None,
                 };
+                let local_disabled_reason =
+                    pane_disabled_reason.or(match definition.local_requirement {
+                        OperatorActionLocalRequirement::None => None,
+                        OperatorActionLocalRequirement::WorkspaceLoaded => self
+                            .workspace
+                            .build_dir
+                            .is_none()
+                            .then_some("Load a Yocto workspace first"),
+                        OperatorActionLocalRequirement::ImageRecipeAvailable => (!self
+                            .workspace
+                            .recipes
+                            .iter()
+                            .any(|recipe| recipe.name.contains("image")))
+                        .then_some("No image recipes are available"),
+                        OperatorActionLocalRequirement::SelectedRecipe => (self.screen
+                            != Screen::Recipes
+                            || self.workspace.recipes.get(self.recipe_selection).is_none())
+                        .then_some("Open Recipes and select a recipe"),
+                    });
                 let compatibility =
                     compatibility_ui_command_action_availability(&self.workspace_compatibility, id);
                 let compatibility_reason = compatibility.exact_reason();

@@ -155,11 +155,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             }
             app.screen = NAVIGATOR_SCREENS[app.navigator_selection];
-            app.focus = if focus_target_is_relevant(app, FocusTarget::Workspace) {
-                FocusTarget::Workspace
-            } else {
-                FocusTarget::Navigator
-            };
+            app.focus = FocusTarget::Navigator;
             app.focus_return = None;
             if app.screen == Screen::Packages
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)

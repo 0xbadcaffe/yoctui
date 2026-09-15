@@ -696,15 +696,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             if matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette) {
                 return None;
             }
-            const TARGETS: [FocusTarget; 3] = [
-                FocusTarget::Navigator,
-                FocusTarget::Workspace,
-                FocusTarget::Inspector,
-            ];
-            let targets = TARGETS
-                .into_iter()
-                .filter(|target| focus_target_is_relevant(app, *target))
-                .collect::<Vec<_>>();
+            let targets = pane_focus_targets(app).collect::<Vec<_>>();
             let current = targets
                 .iter()
                 .position(|target| *target == app.focus)

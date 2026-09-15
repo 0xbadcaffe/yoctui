@@ -202,6 +202,7 @@ fn wic_workspace_handles_long_source_themes_and_exact_footer_hints() {
         let _ = yoctui_model::update(&mut app, yoctui_model::Action::CancelWicCreatePreview);
     }
     let footer = footer_shortcuts(&app);
+    assert_eq!(app.focus, FocusTarget::Workspace);
     for expected in [
         "Q QEMU",
         "W create Wic",
@@ -233,6 +234,7 @@ fn dashboard_footer_documents_keyboard_prefix_layer() {
 fn pane_split_renders_daemon_sessions_with_focus_and_narrow_safety() {
     let mut app = App::new(32, 4096);
     app.screen = Screen::TerminalSessions;
+    app.focus = FocusTarget::Workspace;
     app.daemon
         .pty_sessions
         .push(yoctui_model::ClientDaemonPtySummary {
@@ -344,7 +346,7 @@ fn image_console_qemu_and_ssh_panes_use_tui_term_typed_cells_not_plain_fallback(
 fn mouse_input_footer_keeps_keyboard_route_visible() {
     let app = App::new(16, 4096);
     let footer = footer_shortcuts(&app);
-    assert!(footer.contains("Tab focus"), "{footer}");
+    assert!(footer.contains("no other actionable panes"), "{footer}");
     assert!(footer.contains("Ctrl+B prefix"), "{footer}");
 }
 
@@ -352,6 +354,7 @@ fn mouse_input_footer_keeps_keyboard_route_visible() {
 fn mouse_runtime_terminal_workspace_keeps_pane_labels_visible() {
     let mut app = App::new(16, 4096);
     app.screen = Screen::TerminalSessions;
+    app.focus = FocusTarget::Workspace;
     app.daemon
         .pty_sessions
         .push(yoctui_model::ClientDaemonPtySummary {
@@ -390,6 +393,7 @@ fn mouse_split_resizes_client_local_layout_and_keeps_keyboard_path() {
 #[test]
 fn keyboard_mouse_parity_keeps_keyboard_focus_route_visible() {
     let mut app = App::new(16, 4096);
+    app.screen = Screen::Tasks;
     let before = app.focus;
     let _ = yoctui_model::update(
         &mut app,
@@ -397,9 +401,9 @@ fn keyboard_mouse_parity_keeps_keyboard_focus_route_visible() {
     );
     assert_ne!(app.focus, before);
     let footer = responsive_footer_shortcuts(&app, 160);
-    assert!(footer.contains("Focus Navigator"), "{footer}");
-    assert!(footer.contains("→ Workspace"), "{footer}");
-    assert!(footer.contains("← Inspector"), "{footer}");
+    assert!(footer.contains("Focus Workspace"), "{footer}");
+    assert!(footer.contains("Tab Navigator"), "{footer}");
+    assert!(!footer.contains("Inspector"), "{footer}");
 }
 
 #[test]
@@ -457,7 +461,7 @@ fn persistent_shell_degrades_across_supported_terminal_widths() {
     for (width, height, expected) in [
         (140, 30, "Inspector"),
         (100, 24, "Navigator"),
-        (80, 24, "Build"),
+        (80, 24, "Dashboard"),
     ] {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         terminal
@@ -479,6 +483,7 @@ fn persistent_shell_degrades_across_supported_terminal_widths() {
 #[test]
 fn responsive_shell_uses_semantic_content_at_every_breakpoint() {
     let mut app = App::new(10, 1_000);
+    app.screen = Screen::Tasks;
 
     let wide = rendered_text(&app, 130, 24);
     assert!(wide.contains("Navigator"));
@@ -487,28 +492,18 @@ fn responsive_shell_uses_semantic_content_at_every_breakpoint() {
 
     let medium = rendered_text(&app, 129, 24);
     assert!(medium.contains("Navigator"));
-    assert!(medium.contains("Build"));
+    assert!(medium.contains("Tasks"));
     assert!(!medium.contains("┌Inspector"));
-
-    app.focus = FocusTarget::Inspector;
-    let medium_inspector = rendered_text(&app, 100, 24);
-    assert!(medium_inspector.contains("Navigator"));
-    assert!(medium_inspector.contains("Inspector"));
 
     app.focus = FocusTarget::Workspace;
     let narrow_workspace = rendered_text(&app, 99, 24);
-    assert!(narrow_workspace.contains("Panes: Navigator  [Workspace]  Inspector"));
-    assert!(narrow_workspace.contains("Build"));
+    assert!(narrow_workspace.contains("Panes: Navigator  [Workspace]"));
+    assert!(narrow_workspace.contains("Tasks"));
 
     app.focus = FocusTarget::Navigator;
     let narrow_navigator = rendered_text(&app, 80, 24);
-    assert!(narrow_navigator.contains("Panes: [Navigator]  Workspace  Inspector"));
+    assert!(narrow_navigator.contains("Panes: [Navigator]  Workspace"));
     assert!(narrow_navigator.contains("Dashboard"));
-
-    app.focus = FocusTarget::Inspector;
-    let narrow_inspector = rendered_text(&app, 80, 24);
-    assert!(narrow_inspector.contains("Panes: Navigator  Workspace  [Inspector]"));
-    assert!(narrow_inspector.contains("Project Inspector"));
 
     let too_small = rendered_text(&app, 79, 23);
     assert!(too_small.contains("Yoctui needs at least 80x24"));
@@ -517,7 +512,8 @@ fn responsive_shell_uses_semantic_content_at_every_breakpoint() {
 #[test]
 fn responsive_resize_preserves_the_selected_pane() {
     let mut app = App::new(10, 1_000);
-    app.focus = FocusTarget::Inspector;
+    app.screen = Screen::Tasks;
+    app.focus = FocusTarget::Workspace;
     let mut terminal = Terminal::new(TestBackend::new(130, 24)).unwrap();
     terminal.draw(|frame| render(frame, &app)).unwrap();
 
@@ -531,7 +527,7 @@ fn responsive_resize_preserves_the_selected_pane() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(medium.contains("Inspector"));
+    assert!(medium.contains("Tasks"));
 
     terminal.backend_mut().resize(80, 24);
     terminal.autoresize().unwrap();
@@ -543,8 +539,8 @@ fn responsive_resize_preserves_the_selected_pane() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(narrow.contains("[Inspector]"));
-    assert_eq!(app.focus, FocusTarget::Inspector);
+    assert!(narrow.contains("[Workspace]"));
+    assert_eq!(app.focus, FocusTarget::Workspace);
 }
 
 #[test]
@@ -633,33 +629,16 @@ fn ux_responsive_breakpoint_matrix_preserves_pane_priority_content_and_dialog_co
         !medium_workspace.contains("Inspector: Task"),
         "the collapsed Inspector must not overlap medium Workspace: {medium_workspace}"
     );
-    app.focus = FocusTarget::Inspector;
-    let medium_inspector = rendered_text_at(&app, 100, 30, literal_now());
-    assert!(medium_inspector.contains("Navigator"), "{medium_inspector}");
-    assert!(
-        medium_inspector.contains("Inspector: Task"),
-        "{medium_inspector}"
-    );
-    assert!(
-        !medium_inspector.contains("Log Viewer"),
-        "focused Inspector must replace, not overlap, medium Workspace: {medium_inspector}"
-    );
-
     for (focus, switcher, content) in [
         (
             FocusTarget::Navigator,
-            "Panes: [Navigator]  Workspace  Inspector",
+            "Panes: [Navigator]  Workspace",
             "Dashboard",
         ),
         (
             FocusTarget::Workspace,
-            "Panes: Navigator  [Workspace]  Inspector",
+            "Panes: Navigator  [Workspace]",
             "do_compile",
-        ),
-        (
-            FocusTarget::Inspector,
-            "Panes: Navigator  Workspace  [Inspector]",
-            "Inspector: Task",
         ),
     ] {
         app.focus = focus;
@@ -719,6 +698,7 @@ fn ux_responsive_m21_surfaces_keep_identity_focus_and_recovery_at_every_required
     let dashboard = concept_idle_dashboard_app();
     let mut dependencies = App::new(10, 1_000);
     dependencies.screen = Screen::Dependencies;
+    dependencies.focus = FocusTarget::Workspace;
     let mut rootfs = ux_rootfs_ui_app();
     rootfs.images_view = ImagesView::RootfsPackages;
     let terminal = concept_terminal_sessions_app();
@@ -729,13 +709,14 @@ fn ux_responsive_m21_surfaces_keep_identity_focus_and_recovery_at_every_required
     let _ = update(&mut onboarding, Action::OpenOnboarding);
     let mut settings = App::new(10, 1_000);
     settings.screen = Screen::Settings;
+    settings.focus = FocusTarget::Workspace;
     settings.settings_selection = 12;
 
     let cases = [
         (
             "dashboard/command center",
             dashboard,
-            &["Build Overview", "Job History"][..],
+            &["Dashboard", "Build Overview", "Job History"][..],
         ),
         (
             "dependency graph",

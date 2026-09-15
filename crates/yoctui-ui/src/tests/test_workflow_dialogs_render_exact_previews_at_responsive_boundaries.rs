@@ -283,7 +283,7 @@ fn image_console_dialog_renders_qemu_and_ssh_authority_and_safety() {
 #[test]
 fn qemu_workspace_renders_capability_dialogs_session_and_responsive_states() {
     let mut app = qemu_workspace_app();
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     for (width, height) in [(80, 24), (100, 30), (160, 40)] {
         let output = rendered_text(&app, width, height);
         if width == 160 {
@@ -351,7 +351,7 @@ fn qemu_workspace_renders_capability_dialogs_session_and_responsive_states() {
             timestamp: SystemTime::UNIX_EPOCH,
         },
     );
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     let running = rendered_text(&app, 160, 40);
     assert!(running.contains("Status: running"), "{running}");
     assert!(

@@ -8040,3 +8040,14 @@ required = true
 depends_on = ["PERF-STARTUP-001", "REF10-UTILS"]
 verify = ["cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 -m pytest bridge/tests", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
 notes = "Version 0.1.107 retains the M46 daemon/client/combined idle CPU thresholds, measures a release binary, checks real initialized-workspace background priority, and completes baseline and deterministic visual verification."
+
+[[task]]
+id = "FOCUS-NAVIGATOR-001"
+milestone = "M61"
+title = "Keep default focus on Navigator and skip passive panes"
+status = "DONE"
+priority = 930
+required = true
+depends_on = []
+verify = ["cargo test -p yoctui-model focus", "cargo test -p yoctui-app focus", "cargo test -p yoctui-ui focus", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/check-docs.sh", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.108. Navigator owns startup and destination navigation. Tab and Shift+Tab are the only keyboard pane traversal keys and include Workspace only when it owns controls. Read-only Inspector and passive Workspace projections reject direct focus, disappear from responsive switching, and are described truthfully by menus and footer hints. Focused model/app/UI tests, all-features workspace tests, strict Clippy, bridge, docs, roadmap and deterministic raster checks pass."

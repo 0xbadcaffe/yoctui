@@ -275,7 +275,7 @@ fn background_job_completes_and_survives_workspace_navigation() {
 
     let job = app.background_jobs.get(id).unwrap();
     assert_eq!(app.screen, Screen::Settings);
-    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(app.focus, FocusTarget::Navigator);
     assert_eq!(job.status, BackgroundJobStatus::Succeeded);
     assert_eq!(
         job.progress,
@@ -820,11 +820,11 @@ fn navigator_selection_and_focus_cycle_are_bounded() {
     assert_eq!(app.navigator_selection, NAVIGATOR_SCREENS.len() - 1);
     let _ = update(&mut app, Action::ActivateNavigator);
     assert_eq!(app.screen, Screen::Settings);
-    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(app.focus, FocusTarget::Navigator);
     let _ = update(&mut app, Action::CycleFocus { backwards: false });
-    assert_eq!(app.focus, FocusTarget::Inspector);
-    let _ = update(&mut app, Action::CycleFocus { backwards: true });
     assert_eq!(app.focus, FocusTarget::Workspace);
+    let _ = update(&mut app, Action::CycleFocus { backwards: true });
+    assert_eq!(app.focus, FocusTarget::Navigator);
 }
 
 #[test]

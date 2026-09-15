@@ -2,12 +2,26 @@
 use super::*;
 
 pub(crate) fn pane_focus_shortcuts(app: &App) -> Option<String> {
-    let route = match app.focus {
-        FocusTarget::Navigator => Some("→ Workspace | ← Inspector"),
-        FocusTarget::Workspace => Some("→ Inspector | ← Navigator"),
-        FocusTarget::Inspector => Some("→ Navigator | ← Workspace"),
-        FocusTarget::Dialog | FocusTarget::CommandPalette => None,
-    }?;
+    if matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette) {
+        return None;
+    }
+    let mut targets = [FocusTarget::Navigator; 3];
+    let mut target_count = 0;
+    for target in yoctui_model::pane_focus_targets(app) {
+        targets[target_count] = target;
+        target_count += 1;
+    }
+    let current = targets[..target_count]
+        .iter()
+        .position(|target| *target == app.focus)
+        .unwrap_or_default();
+    let route = if target_count == 1 {
+        "no other actionable panes".to_owned()
+    } else {
+        let next = targets[(current + 1) % target_count];
+        let previous = targets[(current + target_count - 1) % target_count];
+        format!("Tab {} | Shift+Tab {}", next.label(), previous.label())
+    };
     Some(format!(
         "Focus {}{} | {route}",
         app.pane_focus_label(),
@@ -178,7 +192,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             app.navigator_compatibility_destination(),
             with_focus_shortcuts(
                 app,
-                "↑/↓ select | h/l groups | ←/→ focus | Enter open | Ctrl+B prefix | q quit",
+                "↑/↓ select | h/l groups | Enter open | Ctrl+B prefix | q quit",
             ),
         );
     }
@@ -461,12 +475,13 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
     if current_search_state(app).is_some_and(|(_, filtered)| filtered) {
         items.insert(0, "Ctrl+U clear".into());
     }
-    if !responsive_override
-        && width >= 100
-        && pane_focus_shortcuts(app).is_some()
-        && items.len() >= 3
-    {
-        items.drain(..3);
+    if !responsive_override && width >= 100 {
+        let focus_prefix_len = pane_focus_shortcuts(app)
+            .map(|shortcuts| shortcuts.split(" | ").count())
+            .unwrap_or_default();
+        if items.len() >= focus_prefix_len {
+            items.drain(..focus_prefix_len);
+        }
     }
     items.retain(|item| {
         !matches!(
@@ -475,14 +490,9 @@ pub(crate) fn footer_context_items(app: &App, width: u16) -> Vec<String> {
         )
     });
     items.truncate(6);
-    let focus = match app.focus {
-        FocusTarget::Navigator => Some("←/→ Focus"),
-        FocusTarget::Workspace => Some("←/→ Focus"),
-        FocusTarget::Inspector => Some("←/→ Focus"),
-        FocusTarget::Dialog | FocusTarget::CommandPalette => None,
-    };
+    let focus = (yoctui_model::pane_focus_targets(app).count() > 1).then_some("Tab Focus");
     if let Some(focus) = focus {
-        items.push(focus.into());
+        items.insert(0, focus.into());
     }
     items
 }

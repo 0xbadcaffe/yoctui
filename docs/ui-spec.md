@@ -230,15 +230,16 @@ Workspace is the first recipient of extra width after the Navigator reaches
 its minimum.
 
 At `100..129` columns, Navigator is 22 columns and Workspace receives the
-remainder. Inspector remains a first-class focus target but is collapsed from
-the grid. Focusing it replaces the Workspace rectangle with a full-height
-Inspector overlay; `Esc` returns to Workspace and Tab/Shift+Tab preserve the
-global focus order.
+remainder. A Workspace with user-controlled content participates in the Tab
+route. The read-only Inspector is collapsed from the grid and is not a focus
+target.
 
-At `80..99` columns, exactly one body pane is visible beneath a one-row pane
-switcher. Navigator, Workspace, and Inspector retain independent selection and
-scroll state while hidden. Tab and Shift+Tab change the visible pane. Dialogs
-replace none of those states and remain bounded inside the full terminal.
+At `80..99` columns, exactly one actionable body pane is visible beneath a
+one-row pane switcher. Navigator is always present; Workspace appears only when
+it owns a selectable, scrollable, editable, or terminal-input control. The
+read-only Inspector is omitted. Tab and Shift+Tab change the visible pane.
+Dialogs replace none of those states and remain bounded inside the full
+terminal.
 
 Height degradation is independent of width:
 
@@ -872,8 +873,15 @@ enum FocusTarget {
 
 Rules:
 
+- interactive startup, restored workspaces, Navigator activation, and direct
+  screen-opening shortcuts begin with Navigator focus
 - `Tab`: next focus target
 - `Shift+Tab`: previous focus target
+- `Tab` and `Shift+Tab` are the only keyboard routes that move between body
+  panes; Left/Right remain owned by the focused pane
+- Workspace or Inspector participates in pane traversal only when that pane
+  exposes a selectable, scrollable, editable, or terminal-input control;
+  informational content alone never makes a pane focusable
 - contextual rails include the next `Tab` destination when it fits; the
   focused border/selection treatment and Help expose the complete forward and
   backward focus map when that lower-priority hint is omitted
@@ -882,7 +890,7 @@ Rules:
   unmatched key continues through the active workspace and global shortcut
   routes instead of being discarded
 - global actions such as `Ctrl+P`, `F1`, `F10`, `q`, and `Ctrl+C` remain
-  reachable from Navigator, Workspace, and Inspector focus
+  reachable from Navigator and every actionable Workspace focus
 - a non-dialog notification consumes `Enter` only when it has an actionable
   destination and consumes `Esc` for dismissal; a passive notification never
   blocks `Enter`, arrows, or unrelated workspace input
@@ -900,9 +908,9 @@ Rules:
   and shown after that dialog closes; it never interrupts or discards input
 
 The focus-flow acceptance sequence dispatches real `Tab`/`Shift+Tab` actions
-through Navigator → Workspace → Inspector in both directions and renders each
-state at `160x50`, `100x30`, and `80x24`. It also proves dialogs and command
-palette retain and restore the exact previous pane, prefix commands leave
+through Navigator and each actionable pane in both directions and renders each
+state at `160x50`, `100x30`, and `80x24`. It proves passive panes are skipped,
+dialogs and command palette retain and restore the exact previous pane, prefix commands leave
 terminal-session shell focus unchanged, and resizing/focus cycling does not
 mutate Navigator or workspace selections.
 - inactive panes remain visible but use subdued styling
@@ -2448,9 +2456,10 @@ exact shell-free argument vector. `p` validates and opens the indexed preview.
 The Tool field is explicitly not applicable in find-sysroot mode.
 
 All SDK dialogs trap focus and remain usable at 80×24. Responsive modes follow
-the shared Navigator/Workspace/Inspector rules, all lifecycle and selection
-meaning survives no-color mode, and long paths/arguments are bounded and
-wrapped. The SDK footer is:
+the shared actionable-pane rules: Navigator remains reachable, Workspace is
+included because its controls accept input, and the read-only Inspector is
+never a focus stop. All lifecycle and selection meaning survives no-color
+mode, and long paths/arguments are bounded and wrapped. The SDK footer is:
 
 ```text
 ↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel
@@ -2605,11 +2614,13 @@ shell-free resulttool vector. `Enter` exports; `Esc` cancels. Success,
 nonzero failure, cancellation, timeout, stale input, and worker loss remain
 distinct, and Yoctui never guesses an overwrite policy.
 
-All Testing views and dialogs remain usable at 80×24. Wide mode uses
-Navigator/Workspace/Inspector; medium mode uses the normal Inspector overlay;
-narrow mode uses the visible pane switcher. Long identities, metadata, output,
-and limitations are bounded and wrapped. Themes and no-color mode preserve
-selection, status, category, and failure meaning with labels and attributes.
+All Testing views and dialogs remain usable at 80×24. Wide mode renders all
+three pane projections while focus cycles only between Navigator and the
+controlled Workspace. Medium mode keeps the Inspector as a read-only overlay;
+narrow mode lists only actionable panes in the visible switcher. Long
+identities, metadata, output, and limitations are bounded and wrapped. Themes
+and no-color mode preserve selection, status, category, and failure meaning
+with labels and attributes.
 
 The full Testing footer is:
 
@@ -2765,11 +2776,13 @@ output, warning/error counts, result paths, and terminal outcome across
 navigation. Cancellation targets only the exact Security-owned operation and
 never an unrelated build, Testing, SDK, QEMU, Wic, Devtool, or metadata job.
 
-All Security views and dialogs remain usable at 80×24. Wide mode uses the
-persistent Navigator/Workspace/Inspector shell; medium and narrow modes use
-the shared Inspector overlay and visible-pane switcher. Long paths, findings,
-metadata, and limitations are bounded and wrapped. Every theme and no-color
-mode preserves status and severity meaning with text and terminal attributes.
+All Security views and dialogs remain usable at 80×24. Wide mode renders the
+persistent three-pane shell while focus cycles only between Navigator and the
+controlled Workspace. Medium mode keeps the Inspector as a read-only overlay;
+narrow mode lists only actionable panes in the visible switcher. Long paths,
+findings, metadata, and limitations are bounded and wrapped. Every theme and
+no-color mode preserves status and severity meaning with text and terminal
+attributes.
 
 The full Security footer is:
 
@@ -2918,12 +2931,13 @@ SDK, QEMU, Wic, Devtool, or unrelated metadata/report work.
 
 Operation, import, and cancellation dialogs trap focus, show exact indexed
 previews or normalized paths, and keep unavailable actions disabled with a
-stable reason. All QA views and dialogs remain usable at 80×24. Wide mode uses
-the persistent Navigator/Workspace/Inspector shell; medium and narrow modes
-use the shared Inspector overlay and visible-pane switcher. Long paths,
-findings, vectors, metadata, and limitations are bounded and wrapped. Every
-theme and no-color mode preserves status meaning through text and terminal
-attributes.
+stable reason. All QA views and dialogs remain usable at 80×24. Wide mode
+renders the persistent three-pane shell while focus cycles only between
+Navigator and the controlled Workspace. Medium mode keeps the Inspector as a
+read-only overlay; narrow mode lists only actionable panes in the visible
+switcher. Long paths, findings, vectors, metadata, and limitations are bounded
+and wrapped. Every theme and no-color mode preserves status meaning through
+text and terminal attributes.
 
 The full QA footer is:
 
@@ -3566,7 +3580,7 @@ At the canonical `160x48` Tasks size the footer retains its exact two-row
 bordered reference geometry. With Navigator focused it prioritizes Navigator
 selection/open/prefix controls, then non-current global destinations that fit,
 then `F1 Help`, `F10 Menu`, and `q Quit`. With Workspace focused it instead
-prioritizes task selection/filter/cancellation and `Tab Inspector`. A route
+prioritizes task selection/filter/cancellation and `Tab Focus`. A route
 that already names the active screen is omitted as redundant. Every displayed
 key invokes the named action; no unavailable or duplicate route is used merely
 to resemble concept art. When transient status is present it takes the bounded
@@ -3583,11 +3597,11 @@ compound narrow tokens.
 Dashboard example:
 
 ```text
-B Options  Ctrl+B Prefix  Tab Inspector  ↑/↓ Package progress  F1 Help  F10 Menu  q Quit
+B Options  Ctrl+B Prefix  ↑/↓ Package progress  F1 Help  F10 Menu  q Quit
 ```
 
 When no dialog or editor traps input, `q` and `Ctrl+C` retain their global quit
-meaning while Navigator, Workspace, or Inspector has focus.
+meaning while Navigator or an actionable Workspace has focus.
 
 When terminal sessions are available, the footer also shows `Ctrl+B prefix`
 and the pending prefix map. Prefix commands are client-local navigation intent;
@@ -3602,7 +3616,7 @@ Enter Open/Toggle  ← Collapse  → Expand  e Editor  m Metadata  d Dependencie
 Tasks example:
 
 ```text
-↑/↓ Select  f State  F Field  / Edit Filter  d Duration  c Cancel  Tab Inspector
+Tab Focus  ↑/↓ Select  f State  F Field  / Edit Filter  d Duration  c Cancel
 ```
 
 Dialog example:
@@ -4115,16 +4129,17 @@ three-tier cockpit when both width and height permit.
 
 ### Medium terminal
 
-At widths from 100 through 129 columns, keep navigator and workspace. Focusing
-the Inspector with Tab or Shift+Tab replaces the workspace region with an
-Inspector overlay; Shift+Tab or Esc returns to the workspace and Tab continues
-the focus cycle.
+At widths from 100 through 129 columns, keep Navigator and Workspace. The
+Inspector may replace the workspace region as a read-only projection driven by
+the current selection, but it never becomes a focus stop. Tab and Shift+Tab
+move only between Navigator and an actionable Workspace.
 
 ### Narrow terminal
 
 At widths from 80 through 99 columns, use one pane at a time with a visible
-Navigator / Workspace / Inspector switcher. Tab and Shift+Tab cycle the active
-pane. The same focus selection is retained across resize transitions.
+switcher containing Navigator and any actionable Workspace. Read-only
+projections are omitted. Tab and Shift+Tab cycle those entries, and the same
+focus selection is retained across resize transitions.
 
 ### Too small
 
@@ -4467,8 +4482,8 @@ persistent Inspector is titled `Inspector: Raw command`. `Left`/`Right` (or
 moves bounded selection in that column. `Enter` on a category activates its
 command list. `Enter` on an executable command opens its typed configuration;
 on reference-only material it opens only its help. Global `Tab` and
-`Shift+Tab` retain the shell Navigator/Workspace/Inspector focus cycle and do
-not become an undisclosed Raw subpane focus model.
+`Shift+Tab` retain the shell's actionable Navigator/Workspace focus cycle and
+do not become an undisclosed Raw subpane focus model.
 
 The exact selected command drives the Inspector immediately. It shows, in
 order, description, reference section, template, Available/Limited/
@@ -4651,12 +4666,12 @@ pane, records the exact reason, and emits no start effect. Already-owned cancel,
 detach, reattach, and inspect actions remain available.
 
 At `130+` columns the Workspace shows categories and commands beside the
-persistent Inspector. At `100..129`, categories and commands share Workspace
-and the global Inspector overlay supplies help. At `80..99`, the existing
-Navigator/Workspace/Inspector switcher applies; Raw Workspace shows one of
-category, command, form/output, or history state at a time with explicit
-back/forward text. Below `80x24`, only the global resize screen renders.
-Selection and search identities survive resize.
+persistent read-only Inspector. At `100..129`, categories and commands share
+Workspace and the Inspector overlay supplies help without taking focus. At
+`80..99`, the actionable-pane switcher includes Navigator and Raw Workspace;
+Raw Workspace shows one of category, command, form/output, or history state at
+a time with explicit back/forward text. Below `80x24`, only the global resize
+screen renders. Selection and search identities survive resize.
 
 Mouse clicks and wheel movement use the same rendered rectangles and typed
 actions as keyboard selection; modal and PTY ownership rules remain unchanged.
@@ -4808,13 +4823,15 @@ terminal replicas. `Esc` first leaves a modal owner through that owner's route,
 then restores zoom, then resets non-primary subfocus, then follows the existing
 pane-outward behavior.
 
-Six read-only global catalog commands—focus Navigator, Workspace, or Inspector;
-previous/next subfocus; and toggle pane zoom—make this model directly reachable
-from both the F10 View group and command palette. They have no hidden single-key
-fallback and therefore do not steal workspace shortcuts. Direct pane focus
-while zoomed changes the zoom target, responsive resize retains the same typed
-target, a zoomed non-terminal pane owns its full mouse body, and menu, dialog,
-palette, and terminal input traps remain authoritative.
+Six read-only global catalog commands—request focus for Navigator, Workspace,
+or Inspector; previous/next subfocus; and toggle pane zoom—make this model
+directly reachable from both the F10 View group and command palette. A pane
+focus request is accepted only when that pane currently owns user-controlled
+content; otherwise focus returns to Navigator. They have no hidden single-key
+fallback and therefore do not steal workspace shortcuts. Direct actionable
+pane focus while zoomed changes the zoom target, responsive resize retains the
+same typed target, a zoomed non-terminal pane owns its full mouse body, and
+menu, dialog, palette, and terminal input traps remain authoritative.
 
 ### Widgets progress logs and editors
 

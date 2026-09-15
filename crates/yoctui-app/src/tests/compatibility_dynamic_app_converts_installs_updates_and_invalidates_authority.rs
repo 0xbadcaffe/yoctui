@@ -556,7 +556,7 @@ fn ux_keymap_preferences_capture_validate_reset_export_and_trap_focus() {
     assert!(app.keymap_preferences.overrides.is_empty());
     let _ = compatibility_workspace_action(&mut app, Action::CloseKeymapPreferences);
     assert!(!app.keymap_preferences_ui.open);
-    assert_eq!(app.focus, yoctui_model::FocusTarget::Workspace);
+    assert_eq!(app.focus, yoctui_model::FocusTarget::Navigator);
 }
 
 #[test]

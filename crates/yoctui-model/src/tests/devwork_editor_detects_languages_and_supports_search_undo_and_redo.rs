@@ -490,7 +490,7 @@ fn config_source_picker_uses_typed_operation_line_and_restores_focus() {
         update(&mut app, Action::OpenSelectedConfigSourceChoice),
         Some(Effect::OpenInEditor("/build/conf/local.conf".into()))
     );
-    assert_eq!(app.focus, FocusTarget::Inspector);
+    assert_eq!(app.focus, FocusTarget::Navigator);
 }
 
 #[test]

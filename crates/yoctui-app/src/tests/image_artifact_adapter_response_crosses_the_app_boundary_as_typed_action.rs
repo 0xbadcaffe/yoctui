@@ -792,6 +792,10 @@ fn dialog_focus_navigation_keys_are_typed_before_cli_routing() {
         None,
         "inspector arrows must not leak into workspace actions"
     );
+    for focus in [FocusTarget::Workspace, FocusTarget::Inspector] {
+        assert_eq!(focus_action(focus, Input::Left), None);
+        assert_eq!(focus_action(focus, Input::Right), None);
+    }
     assert_eq!(
         focus_action(FocusTarget::Dialog, Input::Tab),
         None,

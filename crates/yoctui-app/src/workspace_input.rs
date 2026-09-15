@@ -94,12 +94,6 @@ pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
         (FocusTarget::Navigator, Input::Right | Input::Char('l')) => {
             Some(Action::ExpandNavigatorGroup)
         }
-        (FocusTarget::Workspace | FocusTarget::Inspector, Input::Left) => {
-            Some(Action::CycleFocus { backwards: true })
-        }
-        (FocusTarget::Workspace | FocusTarget::Inspector, Input::Right) => {
-            Some(Action::CycleFocus { backwards: false })
-        }
         (FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector, Input::Tab) => {
             Some(Action::CycleFocus { backwards: false })
         }
@@ -107,8 +101,8 @@ pub fn focus_action(focus: FocusTarget, key: Input) -> Option<Action> {
             FocusTarget::Navigator | FocusTarget::Workspace | FocusTarget::Inspector,
             Input::BackTab,
         ) => Some(Action::CycleFocus { backwards: true }),
-        (FocusTarget::Navigator | FocusTarget::Inspector, Input::Esc) => {
-            Some(Action::Focus(FocusTarget::Workspace))
+        (FocusTarget::Workspace | FocusTarget::Inspector, Input::Esc) => {
+            Some(Action::Focus(FocusTarget::Navigator))
         }
         _ => None,
     }
@@ -132,16 +126,6 @@ pub fn focus_action_for_app(app: &yoctui_model::App, key: Input) -> Option<Actio
         {
             return Some(Action::ResetPaneSubfocus);
         }
-    }
-    // The Layers workspace uses horizontal motion for its hierarchy.  Let the
-    // workspace route Right to opening/expanding, and let an open tree own
-    // Left for collapse/parent navigation.  Tab and BackTab remain the
-    // unambiguous pane-focus controls.
-    if app.focus == FocusTarget::Workspace
-        && app.screen == Screen::Layers
-        && (key == Input::Right || (app.layer_browser.is_some() && key == Input::Left))
-    {
-        return None;
     }
     focus_action(app.focus, key)
 }

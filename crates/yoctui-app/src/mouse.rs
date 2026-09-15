@@ -83,6 +83,9 @@ pub fn mouse_action_for_app(
     }
     let shell = workbench_shell(app, terminal_width, terminal_height)?;
     let region = workbench_mouse_region(mouse, app, shell)?;
+    if !yoctui_model::focus_target_is_relevant(app, region.target) {
+        return None;
+    }
     if app.screen == Screen::TerminalSessions
         && !app.daemon.pty_sessions.is_empty()
         && region.target == FocusTarget::Workspace
@@ -440,11 +443,9 @@ pub(crate) fn workbench_mouse_region(
         });
     }
     if mouse.row == shell.y {
-        return narrow_switcher_target(app.focus, mouse.column).map(|target| {
-            WorkbenchMouseRegion {
-                target,
-                area: shell,
-            }
+        return narrow_switcher_target(app, mouse.column).map(|target| WorkbenchMouseRegion {
+            target,
+            area: shell,
         });
     }
     Some(WorkbenchMouseRegion {
@@ -463,14 +464,11 @@ pub(crate) fn workbench_mouse_region(
     })
 }
 
-pub(crate) fn narrow_switcher_target(focus: FocusTarget, column: u16) -> Option<FocusTarget> {
+pub(crate) fn narrow_switcher_target(app: &yoctui_model::App, column: u16) -> Option<FocusTarget> {
     let mut cursor = "Panes: ".len() as u16;
-    for (target, name) in [
-        (FocusTarget::Navigator, "Navigator"),
-        (FocusTarget::Workspace, "Workspace"),
-        (FocusTarget::Inspector, "Inspector"),
-    ] {
-        let width = name.len() as u16 + u16::from(focus == target) * 2;
+    for target in yoctui_model::pane_focus_targets(app) {
+        let name = target.label();
+        let width = name.len() as u16 + u16::from(app.focus == target) * 2;
         if (cursor..cursor.saturating_add(width)).contains(&column) {
             return Some(target);
         }

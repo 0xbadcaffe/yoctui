@@ -1952,7 +1952,7 @@ mod tests {
             Some(Effect::Security(SecurityEffect::InspectCapability))
         );
         assert_eq!(app.screen, Screen::Security);
-        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert_eq!(app.focus, FocusTarget::Navigator);
         let _ = update(
             &mut app,
             Action::Security(SecurityAction::CapabilityLoaded(capability())),
@@ -1985,7 +1985,7 @@ mod tests {
             ),
             Some(Effect::Security(SecurityEffect::StartBuild { .. }))
         ));
-        assert_eq!(app.focus, FocusTarget::Workspace);
+        assert_eq!(app.focus, FocusTarget::Navigator);
     }
 
     #[test]

@@ -190,8 +190,6 @@ pub(crate) fn synchronize_focus(app: &mut App) {
         let target = app.focus_return.take().unwrap_or(app.focus);
         app.focus = if is_pane_focus(target) && focus_target_is_relevant(app, target) {
             target
-        } else if focus_target_is_relevant(app, FocusTarget::Workspace) {
-            FocusTarget::Workspace
         } else {
             FocusTarget::Navigator
         };

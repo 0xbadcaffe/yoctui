@@ -209,6 +209,7 @@ fn recipes_workspace_partial_failure_and_all_responsive_modes_are_safe() {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Recipes;
+        app.focus = FocusTarget::Workspace;
         app.workspace.recipes.push(yoctui_model::Recipe {
             name: "demo".into(),
             ..yoctui_model::Recipe::default()
@@ -341,6 +342,7 @@ fn devtool_metadata_renders_typed_partial_and_disabled_states_responsively() {
     for (width, height) in [(160, 34), (110, 28), (90, 25)] {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Recipes;
+        app.focus = FocusTarget::Workspace;
         let file = std::path::PathBuf::from("/layers/core/demo.bb");
         app.workspace.recipes.push(yoctui_model::Recipe {
             name: "demo".into(),
@@ -455,6 +457,7 @@ fn recipe_qa_action_renders_capabilities_confirmation_and_honest_results() {
 
     let mut app = App::new(20, 4_000);
     app.screen = Screen::Recipes;
+    app.focus = FocusTarget::Workspace;
     app.workspace.recipes.push(yoctui_model::Recipe {
         name: "busybox".into(),
         ..yoctui_model::Recipe::default()
@@ -656,6 +659,7 @@ fn config_workspace_renders_lazy_partial_and_error_states_responsively() {
     for (width, height) in [(160, 30), (110, 26), (90, 24), (70, 20)] {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Workspace;
         app.workspace
             .variables
             .insert("MACHINE".into(), "qemux86-64".into());
@@ -708,6 +712,7 @@ fn config_copy_renders_shortcuts_and_exact_availability_responsively() {
     for (width, height) in [(160, 32), (110, 28), (90, 24)] {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Workspace;
         app.workspace
             .variables
             .insert("MACHINE".into(), "qemux86-64".into());
@@ -739,6 +744,7 @@ fn config_source_renders_typed_picker_and_disabled_reason_responsively() {
     for (width, height) in [(140, 30), (100, 26), (90, 24)] {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Workspace;
         app.workspace
             .variables
             .insert("MACHINE".into(), "qemux86-64".into());
@@ -779,6 +785,7 @@ fn config_scope_renders_picker_active_identity_and_global_fallback() {
     for (width, height) in [(140, 32), (100, 28), (90, 24)] {
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Configuration;
+        app.focus = FocusTarget::Workspace;
         app.workspace
             .variables
             .insert("MACHINE".into(), "global-summary".into());

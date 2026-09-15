@@ -116,18 +116,15 @@ fn theme_command_palette_and_no_color_override_are_explicit() {
 #[test]
 fn focus_command_rail_names_current_next_and_previous_panes() {
     let mut app = App::new(10, 1_000);
+    app.screen = Screen::Tasks;
     for (focus, expected) in [
         (
             FocusTarget::Navigator,
-            ["Focus Navigator", "→ Workspace", "← Inspector"],
+            ["Focus Navigator", "Tab Workspace", "Shift+Tab Workspace"],
         ),
         (
             FocusTarget::Workspace,
-            ["Focus Workspace", "→ Inspector", "← Navigator"],
-        ),
-        (
-            FocusTarget::Inspector,
-            ["Focus Inspector", "→ Navigator", "← Workspace"],
+            ["Focus Workspace", "Tab Navigator", "Shift+Tab Navigator"],
         ),
     ] {
         app.focus = focus;
@@ -136,12 +133,18 @@ fn focus_command_rail_names_current_next_and_previous_panes() {
             assert!(footer.contains(label), "{footer}");
         }
     }
+
+    app.screen = Screen::Dashboard;
+    app.focus = FocusTarget::Navigator;
+    let footer = footer_shortcuts(&app);
+    assert!(footer.contains("no other actionable panes"), "{footer}");
+    assert!(!footer.contains("Inspector"), "{footer}");
 }
 #[test]
-fn dialog_focus_is_trapped_then_visibly_restored_to_inspector() {
+fn dialog_focus_is_trapped_then_visibly_restored_to_actionable_workspace() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Logs;
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     let _ = update(&mut app, Action::OpenBuildOptions);
 
     let dialog = rendered_text(&app, 100, 24);
@@ -151,8 +154,8 @@ fn dialog_focus_is_trapped_then_visibly_restored_to_inspector() {
 
     let _ = update(&mut app, Action::CloseBuildOptions);
     let restored = rendered_text(&app, 100, 24);
-    assert_eq!(app.focus, FocusTarget::Inspector);
-    assert!(restored.contains("Inspector"));
+    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert!(restored.contains("Log Viewer"));
     assert!(!restored.contains("Image build options"));
 }
 #[test]
@@ -218,6 +221,7 @@ fn bbmask_footer_shows_its_edit_shortcut() {
     let mut terminal = Terminal::new(TestBackend::new(120, 40)).unwrap();
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Bbmask;
+    app.focus = FocusTarget::Workspace;
     terminal.draw(|frame| render(frame, &app)).unwrap();
     let output = terminal
         .backend()

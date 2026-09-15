@@ -203,6 +203,7 @@ fn next_generation_log_activity_is_compact_complete_and_embedded() {
 fn ux_logs_workspace_renders_virtualized_bookmarks_filter_chips_and_bounded_actions() {
     let mut app = App::new(1_000, 500_000);
     app.screen = Screen::Logs;
+    app.focus = FocusTarget::Workspace;
     for index in 0..300 {
         app.logs.insert(yoctui_model::LogEntry {
             id: 0,
@@ -261,6 +262,7 @@ fn ux_logs_workspace_renders_virtualized_bookmarks_filter_chips_and_bounded_acti
 fn ux_internal_log_view_is_separate_bounded_responsive_and_nonvisual() {
     let mut app = App::new(512, 256 * 1024);
     app.screen = Screen::Logs;
+    app.focus = FocusTarget::Workspace;
     app.log_workspace_view = LogWorkspaceView::Yoctui;
     app.logs.insert(yoctui_model::LogEntry {
         id: 0,
@@ -323,6 +325,7 @@ fn ux_internal_log_view_is_separate_bounded_responsive_and_nonvisual() {
 fn error_workspace_renders_structured_columns_inspector_and_related_entries() {
     let mut app = App::new(20, 4_000);
     app.screen = Screen::Errors;
+    app.focus = FocusTarget::Workspace;
     app.build.target = Some("core-image-minimal".into());
     let mut first = yoctui_model::LogEntry {
         id: 0,
@@ -546,6 +549,7 @@ fn pkgdata_workspace_renders_typed_partial_details_footer_and_responsive_modes()
     };
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Packages;
+    app.focus = FocusTarget::Workspace;
     app.package_selection = Some(identity.clone());
     app.package_inventory = PackageInventoryState::Partial {
         request,

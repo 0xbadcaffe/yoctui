@@ -460,14 +460,13 @@ pub(crate) fn pane_switcher(frame: &mut Frame, app: &App, area: Rect) {
             name.to_owned()
         }
     };
+    let panes = yoctui_model::pane_focus_targets(app)
+        .map(|target| label(target, target.label()))
+        .collect::<Vec<_>>()
+        .join("  ");
     frame.render_widget(
-        Paragraph::new(format!(
-            "Panes: {}  {}  {}  Tab/Shift+Tab",
-            label(FocusTarget::Navigator, "Navigator"),
-            label(FocusTarget::Workspace, "Workspace"),
-            label(FocusTarget::Inspector, "Inspector"),
-        ))
-        .style(ThemePalette::for_app(app).focus()),
+        Paragraph::new(format!("Panes: {panes}  Tab/Shift+Tab"))
+            .style(ThemePalette::for_app(app).focus()),
         area,
     );
 }

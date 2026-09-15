@@ -113,19 +113,19 @@ fn responsive_pane_focus_cycle_cannot_escape_modal_focus() {
 
     app.focus = FocusTarget::Workspace;
     let _ = update(&mut app, Action::CycleFocus { backwards: false });
-    assert_eq!(app.focus, FocusTarget::Inspector);
-    let _ = update(&mut app, Action::CycleFocus { backwards: false });
     assert_eq!(app.focus, FocusTarget::Navigator);
+    let _ = update(&mut app, Action::CycleFocus { backwards: false });
+    assert_eq!(app.focus, FocusTarget::Workspace);
 }
 #[test]
 fn focus_restores_exact_pane_after_nested_dialog_transitions() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Tasks;
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
 
     let _ = update(&mut app, Action::OpenBuildOptions);
     assert_eq!(app.focus, FocusTarget::Dialog);
-    assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
+    assert_eq!(app.focus_return, Some(FocusTarget::Workspace));
 
     let _ = update(&mut app, Action::BeginBuildTargetEdit);
     assert!(matches!(
@@ -133,10 +133,10 @@ fn focus_restores_exact_pane_after_nested_dialog_transitions() {
         Some(Dialog::BuildTarget { .. })
     ));
     assert_eq!(app.focus, FocusTarget::Dialog);
-    assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
+    assert_eq!(app.focus_return, Some(FocusTarget::Workspace));
 
     let _ = update(&mut app, Action::CancelBuildTargetEdit);
-    assert_eq!(app.focus, FocusTarget::Inspector);
+    assert_eq!(app.focus, FocusTarget::Workspace);
     assert_eq!(app.focus_return, None);
 }
 #[test]
@@ -299,7 +299,6 @@ fn command_palette_empty_and_disabled_activation_are_inert() {
 #[test]
 fn command_palette_available_entry_dispatches_existing_typed_action() {
     let mut app = App::new(10, 1_000);
-    app.focus = FocusTarget::Inspector;
     let _ = update(&mut app, Action::OpenCommandPalette);
     for character in "Open Settings".chars() {
         let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
@@ -308,13 +307,13 @@ fn command_palette_available_entry_dispatches_existing_typed_action() {
     assert_eq!(update(&mut app, Action::ActivateCommandPalette), None);
     assert_eq!(app.screen, Screen::Settings);
     assert!(!app.command_palette_open);
-    assert_eq!(app.focus, FocusTarget::Workspace);
+    assert_eq!(app.focus, FocusTarget::Navigator);
 }
 #[test]
 fn theme_command_palette_entry_opens_named_picker() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Tasks;
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Navigator;
     let _ = update(&mut app, Action::OpenCommandPalette);
     for character in "Choose theme".chars() {
         let _ = update(&mut app, Action::AppendCommandPaletteQuery(character));
@@ -326,13 +325,13 @@ fn theme_command_palette_entry_opens_named_picker() {
         Some(Dialog::ThemePicker { .. })
     ));
     assert_eq!(app.focus, FocusTarget::Dialog);
-    assert_eq!(app.focus_return, Some(FocusTarget::Inspector));
+    assert_eq!(app.focus_return, Some(FocusTarget::Navigator));
 }
 #[test]
 fn focus_async_dialog_waits_behind_palette_then_restores() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Tasks;
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     let _ = update(&mut app, Action::OpenCommandPalette);
     let _ = update(
         &mut app,
@@ -347,7 +346,7 @@ fn focus_async_dialog_waits_behind_palette_then_restores() {
     let _ = update(&mut app, Action::CloseCommandPalette);
     assert_eq!(app.focus, FocusTarget::Dialog);
     let _ = update(&mut app, Action::DismissBuildCompletion);
-    assert_eq!(app.focus, FocusTarget::Inspector);
+    assert_eq!(app.focus, FocusTarget::Workspace);
 }
 #[test]
 fn dialog_completion_queues_behind_active_dialog_and_restores_focus_after_both_close() {

@@ -5,6 +5,7 @@ use super::*;
 fn ux_dependency_graph_renders_typed_partial_paths_and_responsive_modes() {
     let mut app = App::new(10, 1_000);
     app.screen = Screen::Dependencies;
+    app.focus = FocusTarget::Workspace;
     let root = DependencyNodeId::recipe("image");
     let task = DependencyNodeId::task("busybox", "do_compile");
     let orphan = DependencyNodeId::recipe("orphan");
@@ -48,9 +49,9 @@ fn ux_dependency_graph_renders_typed_partial_paths_and_responsive_modes() {
     assert!(rendered_text(&app, 110, 24).contains("Dependency tree"));
     assert!(rendered_text(&app, 80, 24).contains("Dependency table"));
 
-    app.focus = FocusTarget::Inspector;
+    app.focus = FocusTarget::Workspace;
     app.dependency_graph_selection = Some(orphan);
-    let output = rendered_text(&app, 80, 24);
+    let output = rendered_text(&app, 160, 36);
     assert!(output.contains("unreachable from root"));
 
     app.focus = FocusTarget::Workspace;
@@ -700,6 +701,7 @@ fn layer_tree_binary_preview_and_responsive_modes_never_render_bytes() {
         let mut terminal = Terminal::new(TestBackend::new(width, height)).unwrap();
         let mut app = App::new(10, 1_000);
         app.screen = Screen::Layers;
+        app.focus = FocusTarget::Workspace;
         let mut browser = LayerBrowser::new("meta-binary".into(), "/layers/meta-binary".into());
         browser.entries.push(yoctui_model::LayerBrowserEntry {
             path: "/layers/meta-binary/image.bin".into(),

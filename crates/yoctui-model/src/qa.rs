@@ -3642,7 +3642,7 @@ mod tests {
 
         let mut app = App::new(10, 1_000);
         app.screen = crate::Screen::Qa;
-        app.focus = FocusTarget::Inspector;
+        app.focus = FocusTarget::Workspace;
         app.qa.view = QaView::LayerQa;
         let _ = update(
             &mut app,
@@ -3656,14 +3656,14 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Dialog);
         let _ = update(&mut app, Action::Qa(QaAction::CancelDialog));
         assert!(app.active_dialog().is_none());
-        assert_eq!(app.focus, FocusTarget::Inspector);
+        assert_eq!(app.focus, FocusTarget::Workspace);
     }
 
     #[test]
     fn qa_check_workflow_app_boundary_traps_dialog_focus_and_maps_typed_effects() {
         let mut app = App::new(10, 1_000);
         app.screen = crate::Screen::Qa;
-        app.focus = FocusTarget::Inspector;
+        app.focus = FocusTarget::Workspace;
         assert_eq!(
             update(&mut app, Action::Qa(QaAction::InspectCapability)),
             Some(Effect::Qa(QaEffect::InspectCapability { scope: None }))
@@ -3680,7 +3680,7 @@ mod tests {
         assert_eq!(app.focus, FocusTarget::Dialog);
         let _ = update(&mut app, Action::Qa(QaAction::CancelDialog));
         assert!(app.active_dialog().is_none());
-        assert_eq!(app.focus, FocusTarget::Inspector);
+        assert_eq!(app.focus, FocusTarget::Workspace);
 
         let _ = update(&mut app, Action::Qa(QaAction::BeginImport));
         assert!(matches!(
