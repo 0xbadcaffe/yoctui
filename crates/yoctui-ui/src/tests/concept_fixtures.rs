@@ -704,22 +704,7 @@ pub(crate) fn readme_device_tree_editor_app() -> App {
         focus: yoctui_model::RecipeEditorFocus::Document,
         language: yoctui_model::SourceLanguage::DeviceTree,
         document: yoctui_model::TextAreaState::new(
-            concat!(
-                "/dts-v1/;\n",
-                "#include \"imx8mp.dtsi\"\n\n",
-                "/ {\n",
-                "    model = \"NXP i.MX8M Plus EVK\";\n",
-                "    compatible = \"fsl,imx8mp-evk\", \"fsl,imx8mp\";\n\n",
-                "    chosen {\n",
-                "        stdout-path = &uart2;\n",
-                "    };\n",
-                "};\n\n",
-                "&uart2 {\n",
-                "    pinctrl-names = \"default\";\n",
-                "    status = \"okay\";\n",
-                "};\n",
-            )
-            .into(),
+            include_str!("../../tests/fixtures/device-tree/imx8mp-evk.dts").replace('\t', "    "),
         ),
         searching: false,
     }));

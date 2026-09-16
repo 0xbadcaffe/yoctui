@@ -8337,3 +8337,14 @@ required = true
 depends_on = ["M69-RELEASE-001"]
 verify = ["./scripts/test-readme-quickstart.sh", "./scripts/check-docs.sh", "python3 scripts/render-readme-screenshots.py --check"]
 notes = "README.md and gallery coverage checker: retain all 20 screens, commands, controls, data limits, evidence and links; start with dashboard/setup, order screenshots by workflow, remove development-update and promotional wording. Keep UI behavior unchanged. Update current task, registry, status and roadmap; run baseline and documentation checks, then commit."
+
+[[task]]
+id = "README-REAL-DTS-001"
+milestone = "M70"
+title = "Show upstream DTS source with syntax highlighting"
+status = "DONE"
+priority = 1901
+required = true
+depends_on = ["README-ONBOARDING-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check"]
+notes = "Use an attributed unmodified upstream DTS file in the production editor screenshot; verify visible DTS syntax colors and content, update README caption and golden/raster provenance, run baseline checks, update task/status records and commit."

@@ -4,6 +4,10 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Current handoff
 
+README-REAL-DTS-001 is complete in source v0.1.120. The Device Tree screenshot
+uses attributed upstream Linux v6.6 DTS content and tested syntax highlighting.
+751 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED.
+
 README-ONBOARDING-001 is complete in source v0.1.119. The README follows the
 new-user setup and daily development workflow, preserves all 20 screens and
 technical information, and removes release-update and promotional wording.

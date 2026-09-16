@@ -204,7 +204,7 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
     <td width="50%"><a href="docs/media/screenshots/05-uboot-menuconfig.png"><img src="docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — The selected provider’s ncurses interface in a reconnectable PTY.</td>
   </tr>
   <tr>
-    <td width="50%"><a href="docs/media/screenshots/11-device-tree-editor.png"><img src="docs/media/screenshots/11-device-tree-editor.png" alt="Yoctui Device Tree source editor with DTS syntax highlighting"></a><br><strong>Device Tree editor</strong> — Syntax highlighting for DTS/DTSI directives, nodes, properties, values and comments.</td>
+    <td width="50%"><a href="docs/media/screenshots/11-device-tree-editor.png"><img src="docs/media/screenshots/11-device-tree-editor.png" alt="Yoctui Device Tree source editor with DTS syntax highlighting"></a><br><strong>Device Tree editor</strong> — Linux v6.6 <a href="https://github.com/torvalds/linux/blob/v6.6/arch/arm64/boot/dts/freescale/imx8mp-evk.dts">NXP i.MX8MP EVK DTS</a>, with highlighted directives, nodes, properties, values and comments.</td>
     <td width="50%"><a href="docs/media/screenshots/12-device-tree-compile-options.png"><img src="docs/media/screenshots/12-device-tree-compile-options.png" alt="Yoctui dtc compile-options dialog for a kernel Device Tree source"></a><br><strong>Device Tree compiler</strong> — Set symbols, sorting, padding and reserve entries, then review the exact <code>dtc</code> command.</td>
   </tr>
 </table>

@@ -10937,3 +10937,10 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR
 IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 ```
+
+## Device Tree screenshot source
+
+The NXP i.MX8MP EVK fixture is copied from Linux v6.6 under its MIT option.
+Copyright 2019 NXP. Its original SPDX and copyright header is retained.
+[Source and checksum](../../crates/yoctui-ui/tests/fixtures/device-tree/README.md) ·
+[MIT licence](../../crates/yoctui-ui/tests/fixtures/device-tree/LICENSE.MIT).

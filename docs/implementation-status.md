@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+README-REAL-DTS-001 is DONE in source v0.1.120. The Device Tree editor screenshot
+loads the complete Linux v6.6 NXP imx8mp-evk.dts; the fixture is byte-identical
+to upstream, with MIT licensing and SHA-256 attribution. Display tabs expand
+to four spaces. The production screenshot test verifies distinct visible colors
+for directives, properties, nodes, strings and comments. README links upstream.
+1,677 Rust tests, 52 bridge tests, strict Clippy, fmt, final screenshot tests,
+README/docs/raster checks and version policy pass. 751 tasks are DONE; only
+M67-LIVE-EVIDENCE-001 remains BLOCKED. Published crates remain at v0.1.118.
+
 README-ONBOARDING-001 is DONE in source v0.1.119. The README starts with the
 dashboard, installation and Poky setup; its 20 screenshots follow setup, build
 diagnostics, history, editing/Git, kernel/U-Boot and image inspection. Duplicate

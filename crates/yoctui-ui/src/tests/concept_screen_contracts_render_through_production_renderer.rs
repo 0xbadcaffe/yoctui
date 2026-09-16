@@ -232,6 +232,8 @@ fn readme_gallery_requested_workbenches_render_through_production_renderer() {
                 "imx8mp-evk.dts",
                 "/dts-v1/",
                 "compatible",
+                "NXP i.MX8MPlus EVK board",
+                "hdmi_connector_in",
                 "Device Tree",
             ]
             .as_slice(),
@@ -272,6 +274,34 @@ fn readme_gallery_requested_workbenches_render_through_production_renderer() {
                 actual_text.contains(anchor),
                 "{name} missing {anchor}: {actual_text}"
             );
+        }
+        if name == "device-tree-editor" {
+            let buffer = terminal.backend().buffer();
+            let token_color = |token: &str| {
+                for y in 0..TARGET_GOLDEN_HEIGHT {
+                    let row: String = (0..TARGET_GOLDEN_WIDTH)
+                        .map(|x| buffer[(x, y)].symbol())
+                        .collect();
+                    if let Some(offset) = row.find(token) {
+                        let x = row[..offset].chars().count() as u16;
+                        return buffer[(x, y)].fg;
+                    }
+                }
+                panic!("DTS token not visible: {token}");
+            };
+            let colors = [
+                "/dts-v1/",
+                "model =",
+                "chosen {",
+                "\"NXP i.MX8MPlus EVK board\"",
+                "* Copyright 2019 NXP",
+            ]
+            .map(token_color);
+            for (i, color) in colors.iter().enumerate() {
+                for other in &colors[i + 1..] {
+                    assert_ne!(color, other, "DTS syntax roles must have distinct colors");
+                }
+            }
         }
         if update_goldens {
             fs::write(cell_path, serialize_target_golden(&actual_cells)).unwrap();
