@@ -4,6 +4,10 @@
 **Title:** Supply current-source real-Poky release performance evidence
 **Status:** BLOCKED
 
+README-ONBOARDING-001 is DONE: the README now follows setup and daily Yocto
+workflows, retains all 20 screenshots and technical information, and uses direct
+operator wording. Documentation, screenshot and baseline checks pass.
+
 All requested M67/M68/M69 implementation and publication tasks are DONE. The source and UI fixes,
 GitUI integration, offline workbench, durable saved history and updated 20-screen
 README gallery are committed for master. Version 0.1.118 is published on crates.io

@@ -1,5 +1,16 @@
 # Yoctui Implementation Status
 
+README-ONBOARDING-001 is DONE in source v0.1.119. The README starts with the
+dashboard, installation and Poky setup; its 20 screenshots follow setup, build
+diagnostics, history, editing/Git, kernel/U-Boot and image inspection. Duplicate
+screens and development-update wording are removed. Commands, links, controls,
+limits and profiling data are retained. Gallery checks now cover all 20 screens
+once in workflow order. The published registry version remains v0.1.118.
+
+Verification: 1,677 Rust tests, 52 bridge tests, fmt, strict Clippy, README
+quickstart, documentation, screenshot provenance and version policy pass.
+750 tasks are DONE; only M67-LIVE-EVIDENCE-001 remains BLOCKED.
+
 M69 is complete. Version 0.1.118 is published and verified on crates.io across
 all seven public crates. Screens remain navigable offline; saved builds, log
 excerpts, task summaries and errors survive daemon/client restart. README has

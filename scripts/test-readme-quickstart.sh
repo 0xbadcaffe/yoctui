@@ -83,6 +83,8 @@ expected_gallery_ids = (
     "kernel-menuconfig", "uboot-menuconfig", "rootfs-composition",
     "idle-dashboard", "failed-build-errors", "editor-application-menu",
     "terminal-sessions", "device-tree-editor", "device-tree-compile-options",
+    "cloning", "cancelling", "search-empty", "gitui-diff", "gitui-commit",
+    "offline-dashboard", "saved-build-history", "saved-build-logs",
 )
 assert tuple(item.get("id") for item in artifacts) == expected_gallery_ids
 assert gallery.get("authority") == "production TestBackend cell/style goldens"
@@ -103,8 +105,18 @@ class GalleryImages(HTMLParser):
 
 gallery_images = GalleryImages()
 gallery_images.feed(readme)
-expected_files = [item["file"] for item in artifacts]
-assert gallery_images.images == expected_files, "README gallery order differs from provenance"
+workflow_order = (
+    "idle-dashboard", "cloning", "offline-dashboard", "active-build-tasks",
+    "failed-build-errors", "cancelling", "search-empty", "saved-build-history",
+    "saved-build-logs", "editor-application-menu", "terminal-sessions",
+    "gitui-diff", "gitui-commit", "kernel-device-tree", "uboot-device-tree",
+    "kernel-menuconfig", "uboot-menuconfig", "device-tree-editor",
+    "device-tree-compile-options", "rootfs-composition",
+)
+assert set(workflow_order) == set(expected_gallery_ids)
+files_by_id = {item["id"]: item["file"] for item in artifacts}
+expected_files = [files_by_id[key] for key in workflow_order]
+assert gallery_images.images == expected_files, "README must show every screen once in workflow order"
 for item in artifacts:
     image = Path(item["file"])
     source = Path(item["source"])

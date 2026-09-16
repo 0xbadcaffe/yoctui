@@ -8326,3 +8326,14 @@ required = true
 depends_on = ["M69-HISTORY-001"]
 verify = ["python3 scripts/check-version-bump.py"]
 notes = "Files and done criteria: README, screenshots/version and package graph; baseline, push and crates.io publication verification. Baseline checks, UI/architecture documentation, registry/status/current updates and coherent commit required."
+
+[[task]]
+id = "README-ONBOARDING-001"
+milestone = "M70"
+title = "Order README around the Yocto developer workflow"
+status = "DONE"
+priority = 1900
+required = true
+depends_on = ["M69-RELEASE-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "./scripts/check-docs.sh", "python3 scripts/render-readme-screenshots.py --check"]
+notes = "README.md and gallery coverage checker: retain all 20 screens, commands, controls, data limits, evidence and links; start with dashboard/setup, order screenshots by workflow, remove development-update and promotional wording. Keep UI behavior unchanged. Update current task, registry, status and roadmap; run baseline and documentation checks, then commit."

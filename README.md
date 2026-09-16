@@ -1,6 +1,6 @@
 <!-- yoctui-header -->
 <p align="center">
-  <img src="docs/media/yoctui-header.png" width="1000" alt="Yoctui — TUI for the Yocto Project. Visualize, build, inspect, develop and debug, all in your terminal.">
+  <img src="docs/media/yoctui-header.png" width="1000" alt="Yoctui — terminal interface for Yocto and BitBake development.">
 </p>
 
 <p align="center">
@@ -19,7 +19,7 @@
   <a href="docs/operator-guide.md">Docs</a> ·
   <a href="#install">Install</a> ·
   <a href="#features">Features</a> ·
-  <a href="#quickstart-poky-build-environment">Examples</a> ·
+  <a href="#quickstart-poky-build-environment">Quickstart</a> ·
   <a href="https://github.com/0xbadcaffe/yoctui">GitHub</a> ·
   <a href="https://github.com/0xbadcaffe/yoctui/issues">Issues</a>
 </p>
@@ -31,103 +31,15 @@ Yoctui is a terminal application for Yocto and BitBake development. It runs
 builds, shows tasks and logs, edits recipes and sources, inspects generated
 images, and manages development terminals.
 
-## Updated workflows
-
-Production-renderer captures of the repaired screens. Fixture values illustrate
-the UI; GitUI panes replay real native output from a demo repository.
-
-<table>
-  <tr>
-    <td><a href="docs/media/screenshots/18-offline-dashboard.png"><img src="docs/media/screenshots/18-offline-dashboard.png" alt="Offline Dashboard with saved builds and setup guidance"></a><br><strong>Offline dashboard</strong> — setup, reconnect guidance and retained builds.</td>
-    <td><a href="docs/media/screenshots/19-saved-build-history.png"><img src="docs/media/screenshots/19-saved-build-history.png" alt="Saved build history without a daemon connection"></a><br><strong>Saved history</strong> — browse previous builds without configuring an environment or attaching.</td>
-  </tr>
-  <tr><td colspan="2"><a href="docs/media/screenshots/20-saved-build-logs.png"><img src="docs/media/screenshots/20-saved-build-logs.png" alt="Read-only saved build logs with provenance"></a><br><strong>Saved logs and tasks</strong> — separate read-only views with explicit retention limits.</td></tr>
-</table>
-
-<table>
-  <tr>
-    <td><a href="docs/media/screenshots/13-cloning.png"><img src="docs/media/screenshots/13-cloning.png" alt="Fresh clone"></a><br><strong>Fresh clone</strong> — Braille Cloning… while the clone runs in the background.</td>
-    <td><a href="docs/media/screenshots/14-cancelling.png"><img src="docs/media/screenshots/14-cancelling.png" alt="Background cancellation"></a><br><strong>Background cancellation</strong> — Cancellation stays visible while navigation remains available.</td>
-  </tr>
-  <tr>
-    <td><a href="docs/media/screenshots/15-search-empty.png"><img src="docs/media/screenshots/15-search-empty.png" alt="Content search"></a><br><strong>Content search</strong> — Opening / starts empty; results come from build and generated rootfs text.</td>
-    <td><a href="docs/media/screenshots/16-gitui-diff.png"><img src="docs/media/screenshots/16-gitui-diff.png" alt="Source Git and diffs"></a><br><strong>Source Git and diffs</strong> — Global repository status and the native GitUI staging/diff workbench.</td>
-  </tr>
-  <tr>
-    <td><a href="docs/media/screenshots/17-gitui-commit.png"><img src="docs/media/screenshots/17-gitui-commit.png" alt="Commit messages"></a><br><strong>Commit messages</strong> — Native GitUI commit entry inside a Yoctui terminal.</td>
-    <td><a href="docs/media/screenshots/09-editor-application-menu.png"><img src="docs/media/screenshots/09-editor-application-menu.png" alt="Application menus"></a><br><strong>Application menus</strong> — Arrow-key navigation, disabled reasons and Escape to return.</td>
-  </tr>
-  <tr>
-    <td><a href="docs/media/screenshots/07-idle-dashboard.png"><img src="docs/media/screenshots/07-idle-dashboard.png" alt="Clean dashboard bars"></a><br><strong>Clean dashboard bars</strong> — Exact CPU, RAM and filesystem values with readable capacity bars.</td>
-    <td><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="High-resolution Rootfs pie"></a><br><strong>High-resolution Rootfs pie</strong> — Full-area Braille rendering with a color-matched exact-value table.</td>
-  </tr>
-</table>
-
 <p align="center">
-  <a href="docs/media/screenshots/01-active-build-tasks.png"><img src="docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a>
+  <a href="docs/media/screenshots/07-idle-dashboard.png"><img src="docs/media/screenshots/07-idle-dashboard.png" alt="Yoctui dashboard with workspace status, recent builds and CPU, RAM and filesystem usage"></a>
 </p>
 
-Current production-renderer screenshot. The deterministic gallery below is
-generated from reviewed `160x50` Ratatui cell/style captures; it demonstrates
-implemented UI flows without claiming a live build for the fixture values.
-[Raster provenance](docs/media/screenshots/manifest.toml) ·
-[Recorded live capture](artifacts/release-quality/next-generation-ui/manifest.json) ·
-[Completed live build](docs/media/yoctui-live-completion.svg) ·
-[Failed live build](docs/media/yoctui-live-failed-task.svg)
+The dashboard shows workspace status, recent jobs, build actions and host usage.
+CPU, RAM and filesystem bars include percentages and capacity values.
 
-## Screenshots
-
-<table>
-  <tr>
-    <td width="50%"><a href="docs/media/screenshots/02-kernel-device-tree.png"><img src="docs/media/screenshots/02-kernel-device-tree.png" alt="Yoctui Kernel device-tree inventory"></a><br><strong>Kernel device trees</strong> — provider-aware DTS, DTSI and compiled DTB inventory.</td>
-    <td width="50%"><a href="docs/media/screenshots/03-uboot-device-tree.png"><img src="docs/media/screenshots/03-uboot-device-tree.png" alt="Yoctui U-Boot device-tree inventory"></a><br><strong>U-Boot device trees</strong> — bootloader sources and generated device-tree artifacts.</td>
-  </tr>
-  <tr>
-    <td><a href="docs/media/screenshots/04-kernel-menuconfig.png"><img src="docs/media/screenshots/04-kernel-menuconfig.png" alt="Linux kernel menuconfig inside a Yoctui terminal session"></a><br><strong>Kernel menuconfig</strong> — the original ncurses interface in a daemon-owned embedded terminal.</td>
-    <td><a href="docs/media/screenshots/05-uboot-menuconfig.png"><img src="docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — the original provider-specific ncurses interface with reconnectable PTY ownership.</td>
-  </tr>
-  <tr>
-    <td><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="Yoctui root filesystem package composition pie chart and exact size table"></a><br><strong>Image composition</strong> — rootfs package pie chart, exact byte totals and filesystem drill-down.</td>
-    <td><a href="docs/media/screenshots/07-idle-dashboard.png"><img src="docs/media/screenshots/07-idle-dashboard.png" alt="Yoctui idle project dashboard with build and host status"></a><br><strong>Dashboard</strong> — workspace status, recent jobs, quick actions and host telemetry.</td>
-  </tr>
-  <tr>
-    <td><a href="docs/media/screenshots/08-failed-build-errors.png"><img src="docs/media/screenshots/08-failed-build-errors.png" alt="Yoctui failed BitBake task errors and correlated logs"></a><br><strong>Errors</strong> — retained diagnostics, task correlation and recovery actions.</td>
-    <td><a href="docs/media/screenshots/09-editor-application-menu.png"><img src="docs/media/screenshots/09-editor-application-menu.png" alt="Yoctui BitBake recipe editor and application action menu"></a><br><strong>Recipe editing</strong> — syntax-aware source editing, validation and contextual actions.</td>
-  </tr>
-  <tr>
-    <td colspan="2"><a href="docs/media/screenshots/10-terminal-sessions.png"><img src="docs/media/screenshots/10-terminal-sessions.png" alt="Yoctui split daemon-owned terminal sessions"></a><br><strong>Terminal sessions</strong> — split build shells and devshells with explicit writer control and scrollback.</td>
-  </tr>
-  <tr>
-    <td><a href="docs/media/screenshots/11-device-tree-editor.png"><img src="docs/media/screenshots/11-device-tree-editor.png" alt="Yoctui Device Tree source editor with DTS syntax highlighting"></a><br><strong>Device Tree editor</strong> — DTS/DTSI directives, nodes, properties, values and comments use distinct syntax roles.</td>
-    <td><a href="docs/media/screenshots/12-device-tree-compile-options.png"><img src="docs/media/screenshots/12-device-tree-compile-options.png" alt="Yoctui dtc compile-options dialog for a kernel Device Tree source"></a><br><strong>Device Tree compiler</strong> — configure symbols, stable sorting, padding and reserve entries before reviewing the exact <code>dtc</code> launch.</td>
-  </tr>
-</table>
-
-## Features
-
-| Area | Features |
-| --- | --- |
-| Build environment | Source/build directory browser, manual path editing, environment-script detection, nested fresh-clone destinations, background cloning with Braille progress, initialization and connection checks |
-| Dashboard and Tasks | Build/task state, progress, elapsed time, job history, background cancellation, clean CPU/RAM/filesystem bars, disk/network histories |
-| Logs and Errors | Live follow/pause, filters, search, bookmarks, wrapping, horizontal scrolling, copy/export, task correlation and failure details; Yocto log panes use tui-logger |
-| Layers and Recipes | Expandable layer tree using tui-tree-widget, provider/appends/tasks/patch inspection, syntax-aware file previews, source editing and external editors |
-| Configuration | Effective values, overrides, provenance, scope comparison, reviewed local.conf edits and BBMASK |
-| Dependencies and signatures | Recipe/task graphs, runtime dependencies, reverse traversal, why-built paths, signature inspection and diffsigs comparison |
-| Devtool | Status, modify, source editing, recipe builds, update-recipe, finish into a layer, deploy and reset |
-| Packages and Images | Generated pkgdata, installed packages, deployed artifacts, rootfs package pie chart using tui-piechart, filesystem tree, systemd units, system D-Bus configuration and udev rules |
-| Kernel and firmware | Kernel and U-Boot/BIOS provider detection, configuration files, menuconfig, DTS/DTB/DTBO browsing and device-tree compile/decompile |
-| Overview Insights | Timeline/critical path, rebuild causes, sstate/download outcomes, image size and retained size deltas, metadata provenance, package topology, supply-chain reports and disk history |
-| Offline history | Saved build outcomes, machine, duration, bounded logs/tasks and explicit missing-evidence states; no daemon required |
-| Source Git | Global branch, staged/unstaged/untracked/conflict and ahead/behind status; embedded GitUI diffs, staging and commits |
-| Terminals | Daemon-owned shells, devshell/menuconfig, SSH and runqemu consoles using tui-term; split panes, resize, scrollback, copy/search and reconnect |
-| SDK and Wic | Standard/extensible SDK builds and tests, installer inspection/publication, native tools, Wic creation and confirmed removable-device writing |
-| Testing, Security and QA | Selftests, image/SDK tests, ptest, result comparison/JUnit export, CVE checks, SPDX/CycloneDX/manifest imports, recipe/kernel and layer checks |
-| Raw Mode and Maintenance | Structured command catalog, argument previews, favorites/history, sstate checks/cleanup, PR/hash diagnostics, locked caches, buildhistory comparison and Git archives |
-| Preferences and profiles | Color themes, reduced motion, ASCII/no-color views, keybindings, saved preferences, onboarding and optional team project profiles |
-
-Actions depend on the connected Yocto environment and generated files.
-Unavailable actions show their prerequisites; a feature listed here is not a
-promise that every Poky release provides it.
+[Install](#install) · [Set up Poky](#quickstart-poky-build-environment) ·
+[Screenshots](#screenshots) · [Features](#features) · [Operator guide](docs/operator-guide.md)
 
 ## Install
 
@@ -227,6 +139,84 @@ their keys before global navigation. Terminal writers retain normal keys; use
 `Ctrl+B` for Yoctui terminal controls. See the [keymap](docs/keymap.md) for
 terminal-prefix commands and custom bindings.
 
+## Screenshots
+
+Screens use fixture values rendered through Yoctui at `160x50`. GitUI panes
+replay native output from a demo repository. For live build captures and image
+checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
+[Recorded live capture](artifacts/release-quality/next-generation-ui/manifest.json),
+[Completed live build](docs/media/yoctui-live-completion.svg) and
+[Failed live build](docs/media/yoctui-live-failed-task.svg).
+
+### Set up a workspace
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/13-cloning.png"><img src="docs/media/screenshots/13-cloning.png" alt="Fresh clone"></a><br><strong>Clone sources</strong> — Background cloning with a Braille <code>Cloning…</code> indicator.</td>
+    <td width="50%"><a href="docs/media/screenshots/18-offline-dashboard.png"><img src="docs/media/screenshots/18-offline-dashboard.png" alt="Offline Dashboard with saved builds and setup guidance"></a><br><strong>Offline dashboard</strong> — Configure paths, reconnect the daemon or open saved builds.</td>
+  </tr>
+</table>
+
+### Build and debug
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/01-active-build-tasks.png"><img src="docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a><br><strong>Tasks</strong> — Active BitBake tasks, build progress and task logs.</td>
+    <td width="50%"><a href="docs/media/screenshots/08-failed-build-errors.png"><img src="docs/media/screenshots/08-failed-build-errors.png" alt="Yoctui failed BitBake task errors and correlated logs"></a><br><strong>Errors</strong> — Failed tasks, diagnostics, source logs and recovery actions.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/14-cancelling.png"><img src="docs/media/screenshots/14-cancelling.png" alt="Background cancellation"></a><br><strong>Cancel a build</strong> — Cancellation runs in the background; navigation stays available.</td>
+    <td width="50%"><a href="docs/media/screenshots/15-search-empty.png"><img src="docs/media/screenshots/15-search-empty.png" alt="Content search"></a><br><strong>Search build output</strong> — <code>/</code> opens an empty search of build files, generated rootfs and text image artifacts.</td>
+  </tr>
+</table>
+
+### Read previous builds
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/19-saved-build-history.png"><img src="docs/media/screenshots/19-saved-build-history.png" alt="Saved build history without a daemon connection"></a><br><strong>Build history</strong> — Browse saved outcomes without a configured environment or daemon connection.</td>
+    <td width="50%"><a href="docs/media/screenshots/20-saved-build-logs.png"><img src="docs/media/screenshots/20-saved-build-logs.png" alt="Read-only saved build logs with provenance"></a><br><strong>Saved logs and tasks</strong> — Read retained build details and log excerpts; missing records and retention limits are shown.</td>
+  </tr>
+</table>
+
+### Edit sources and commit changes
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/09-editor-application-menu.png"><img src="docs/media/screenshots/09-editor-application-menu.png" alt="Yoctui BitBake recipe editor and application action menu"></a><br><strong>Recipe editor and menus</strong> — Syntax highlighting, validation and context actions. Use arrows to navigate menus and Escape to return; unavailable actions show the reason.</td>
+    <td width="50%"><a href="docs/media/screenshots/10-terminal-sessions.png"><img src="docs/media/screenshots/10-terminal-sessions.png" alt="Yoctui split daemon-owned terminal sessions"></a><br><strong>Terminal sessions</strong> — Split build shells and devshells with writer control and scrollback.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/16-gitui-diff.png"><img src="docs/media/screenshots/16-gitui-diff.png" alt="Source Git and diffs"></a><br><strong>Git status and diffs</strong> — Repository status in the header; native GitUI for reviewing and staging changes.</td>
+    <td width="50%"><a href="docs/media/screenshots/17-gitui-commit.png"><img src="docs/media/screenshots/17-gitui-commit.png" alt="Commit messages"></a><br><strong>Commit changes</strong> — Enter commit messages in GitUI inside a Yoctui terminal.</td>
+  </tr>
+</table>
+
+### Configure the kernel and bootloader
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/02-kernel-device-tree.png"><img src="docs/media/screenshots/02-kernel-device-tree.png" alt="Yoctui Kernel device-tree inventory"></a><br><strong>Kernel device trees</strong> — DTS, DTSI and compiled DTB files for the selected provider.</td>
+    <td width="50%"><a href="docs/media/screenshots/03-uboot-device-tree.png"><img src="docs/media/screenshots/03-uboot-device-tree.png" alt="Yoctui U-Boot device-tree inventory"></a><br><strong>U-Boot device trees</strong> — Bootloader sources and generated device-tree artifacts.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/04-kernel-menuconfig.png"><img src="docs/media/screenshots/04-kernel-menuconfig.png" alt="Linux kernel menuconfig inside a Yoctui terminal session"></a><br><strong>Kernel menuconfig</strong> — Native ncurses controls in a daemon-owned terminal.</td>
+    <td width="50%"><a href="docs/media/screenshots/05-uboot-menuconfig.png"><img src="docs/media/screenshots/05-uboot-menuconfig.png" alt="U-Boot menuconfig inside a Yoctui terminal session"></a><br><strong>U-Boot menuconfig</strong> — The selected provider’s ncurses interface in a reconnectable PTY.</td>
+  </tr>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/11-device-tree-editor.png"><img src="docs/media/screenshots/11-device-tree-editor.png" alt="Yoctui Device Tree source editor with DTS syntax highlighting"></a><br><strong>Device Tree editor</strong> — Syntax highlighting for DTS/DTSI directives, nodes, properties, values and comments.</td>
+    <td width="50%"><a href="docs/media/screenshots/12-device-tree-compile-options.png"><img src="docs/media/screenshots/12-device-tree-compile-options.png" alt="Yoctui dtc compile-options dialog for a kernel Device Tree source"></a><br><strong>Device Tree compiler</strong> — Set symbols, sorting, padding and reserve entries, then review the exact <code>dtc</code> command.</td>
+  </tr>
+</table>
+
+### Inspect the generated image
+
+<table>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="Yoctui root filesystem package composition pie chart and exact size table"></a><br><strong>Rootfs composition</strong> — Braille package-size chart with matching table colors, exact byte totals and filesystem drill-down.</td>
+  </tr>
+</table>
+
 ## Build, logs and errors
 
 1. Use `B` for an image build, or `b` on a selected recipe.
@@ -239,19 +229,6 @@ terminal-prefix commands and custom bindings.
 
 Logs show output acquired by Yoctui, not every log file on the host.
 Retention is bounded. [Log controls and limits](docs/yocto-logs.md).
-
-## Search source code and generated content
-
-Press `/` and enter a case-insensitive Rust regex, for example
-`systemd|udev`. Search includes actions and available content from recipes
-(`.bb`, `.bbappend`, `.inc`), configuration, classes, layer scripts, Poky and
-BitBake sources, build logs, pkgdata and generated metadata. Retained rootfs
-trees are included, so an installed service file can match by its contents.
-
-Results show file/line and image origin where known; Enter opens the result.
-The search skips symlinks, binary/oversized files, downloads, sstate and other
-large caches, and returns at most 500 hits. It is not an exhaustive disk index.
-Editors and terminals retain literal `/`; use their own search controls.
 
 ## Offline use and saved builds
 
@@ -270,10 +247,10 @@ data as last observed; they do not claim a build is idle or successful.
 Press **F3** for history. **Up/Down** selects a saved build; **Enter** opens details.
 Use **Left/Right** for Summary, Logs, Tasks and Errors; **PgUp/PgDn** scrolls;
 **Esc** returns to the list. **r** reloads saved records and **l** switches between
-saved records and live job history when connected. Viewing history never replaces
-live task/log state or grants control over an old process.
+saved records and live job history when connected. Saved history is read-only
+and separate from live task and log views.
 
-The updated daemon saves builds without an attached client. It checkpoints active
+The daemon saves builds without an attached client. It checkpoints active
 builds every 30 seconds and terminal transitions promptly in a background worker.
 Storage is private under `$XDG_STATE_HOME/yoctui/build-history/history.json`
 (default `~/.local/state/yoctui/build-history/history.json`). Retention is bounded
@@ -284,32 +261,14 @@ A failure record states when the backend did not preserve a distinct cancellatio
 outcome. Incomplete records are last observations, never proof of a running build.
 
 Offline startup does not run BitBake metadata probes. On the Dashboard, **E** opens
-Build Environment and **F3** opens history. To connect, start the updated daemon
+Build Environment and **F3** opens history. To connect, start the daemon
 from your initialized Yocto shell with `yoctui daemon start`; the client retries
-automatically. A daemon started before this release must be restarted after its
-active work finishes to enable the new history checkpoints.
+automatically. Daemons older than v0.1.118 must be restarted after active work
+finishes to enable history checkpoints.
 
 GitUI requires a selected source repository, but no build environment verification.
 Without a daemon, its launch preview offers the current terminal; quitting GitUI
 restores Yoctui. A detected detached terminal is also available.
-
-## Source Git status
-
-The global header shows the selected source repository and its Git state:
-`+N` staged, `~N` unstaged, `?N` untracked, and `!N` conflicted files.
-Ahead/behind counts compare against the last fetched upstream; `synced*` means
-those recorded commits match. Local changes remain visible independently.
-No upstream is shown explicitly. Status refreshes in the background without fetching.
-
-### GitUI source workbench
-
-Install [GitUI](https://github.com/gitui-org/gitui#installation) on your `PATH`,
-then restart Yoctui. Choose **F10 → Tools → Open GitUI**, or search for GitUI in
-**Ctrl+P**. Review the source directory and choose the embedded terminal.
-Press **o** to take writer control. GitUI provides diffs, staging, commit messages,
-branch management, fetch and push; its footer shows the active keys.
-Use **Ctrl+B t** for the session list. Git status refreshes automatically.
-
 
 ## Edit recipes and develop a patch
 
@@ -323,8 +282,8 @@ In Recipes:
 2. Use `t` to refresh Devtool status and `d` to review `devtool modify` or
    open its existing source workspace.
 3. Edit the source and save with `Ctrl+S`. The editor provides syntax
-   highlighting, navigation, search, undo/redo and a diff view; it is not an LSP
-   or a replacement for VS Code's extension system.
+   highlighting, navigation, search, undo/redo and a diff view. It does not
+   provide LSP support or VS Code extensions.
 4. Press `Ctrl+B` from the saved editor to review a build of that recipe.
 5. Use `u` for `devtool update-recipe`, or commit the source changes and use
    `F` for `devtool finish` into a selected layer. Review the destination and
@@ -336,6 +295,64 @@ deployment and `D` previews a destructive Devtool reset.
 Shell/devshell/menuconfig actions offer an embedded session or a detached
 terminal when supported. External editing restores Yoctui after the editor
 exits. [Editing and Devtool details](docs/operator-guide.md#recipes-and-devtool).
+
+## Source Git status
+
+The global header shows the selected source repository and its Git state:
+`+N` staged, `~N` unstaged, `?N` untracked, and `!N` conflicted files.
+Ahead/behind counts compare against the last fetched upstream; `synced*` means
+those recorded commits match. Local changes remain visible independently.
+Repositories without an upstream are marked accordingly. Status refreshes in the background without fetching.
+
+### GitUI
+
+Install [GitUI](https://github.com/gitui-org/gitui#installation) on your `PATH`,
+then restart Yoctui. Choose **F10 → Tools → Open GitUI**, or search for GitUI in
+**Ctrl+P**. Review the source directory and choose the embedded terminal.
+Press **o** to take writer control. GitUI provides diffs, staging, commit messages,
+branch management, fetch and push; its footer shows the active keys.
+Use **Ctrl+B t** for the session list. Git status refreshes automatically.
+
+
+## Search source code and generated content
+
+Press `/` and enter a case-insensitive Rust regex, for example
+`systemd|udev`. Search opens empty and matches text file contents under the
+build directory, generated rootfs and text image artifacts. This includes build
+logs, pkgdata and generated metadata; recipes (`.bb`, `.bbappend`, `.inc`),
+configuration, classes, layer scripts, Poky and BitBake sources are searched
+when present under those directories. An installed service file can match by
+its contents in a retained rootfs. Use `Ctrl+P` to find actions.
+
+Results show file/line and image origin where known; Enter opens the result.
+The search skips symlinks, binary/oversized files, downloads, sstate and other
+large caches, and returns at most 500 hits. It is not an exhaustive disk index.
+Editors and terminals retain literal `/`; use their own search controls.
+
+## Kernel, firmware and build analysis
+
+Open **Kernel** or **U-Boot / BIOS** in the Navigator. Tab switches Configuration
+and Device trees. Enter/`e` opens a text file; `m` opens menuconfig when the
+selected provider supports it. Kernel and U-Boot menuconfig retain their native
+ncurses layout, colors and key handling inside Terminal Sessions. The selected
+session uses the full workspace beside the Navigator, omits the passive
+Inspector and prefix-help rail, and resizes its PTY to the visible split pane.
+The editor recognizes DTS/DTSI syntax and highlights directives, nodes,
+properties, values and comments. With `dtc` available, `c` opens compile
+options for symbols, stable sorting, padding and reserve entries before the
+command preview; `d` decompiles DTB/DTBO. Output uses a
+`.yoctui` name and refuses overwrites.
+[Kernel and firmware guide](docs/platform-workbenches.md).
+
+Open **Overview → Insights** and choose `1`–`8` for timeline, rebuild causes,
+sstate/downloads, image size, metadata provenance, package dependencies,
+supply-chain coverage or disk history. These views use loaded data; missing
+timestamps or reports are not estimates.
+
+Use Dependencies for recipe/task graphs. In Recipes, `Z` opens signature
+history; choose two sides with `1`/`2` and compare with `c`. Configuration
+shows effective values and their source files. Reviewed edits target supported
+assignments in `conf/local.conf`, rather than rewriting arbitrary metadata.
 
 ## Inspect an image, its packages and rootfs
 
@@ -358,7 +375,7 @@ With `rm_work`, package information may remain while filesystem data is gone.
 
 The udev view lists rules, overrides and masks; `[`/`]` scrolls the preview.
 Service and D-Bus views describe installed files, not live unit/bus state.
-No rule is executed. Changes made directly to staged rootfs files can be
+The udev view does not execute rules. Changes made directly to staged rootfs files can be
 overwritten by BitBake; make lasting changes in a recipe or layer.
 
 The pie chart retains an exact size table and falls back to tables in narrow
@@ -392,31 +409,6 @@ Press the prefix and its command separately. `!` opens an inherited shell
 outside the TUI; exit that shell to return.
 [Terminal sessions](docs/embedded-shell.md).
 
-## Kernel, firmware and build analysis
-
-Open **Kernel** or **U-Boot / BIOS** in the Navigator. Tab switches Configuration
-and Device trees. Enter/`e` opens a text file; `m` opens menuconfig when the
-selected provider supports it. Kernel and U-Boot menuconfig retain their native
-ncurses layout, colors and key handling inside Terminal Sessions. The selected
-session uses the full workspace beside the Navigator, omits the passive
-Inspector and prefix-help rail, and resizes its PTY to the visible split pane.
-The editor recognizes DTS/DTSI syntax and highlights directives, nodes,
-properties, values and comments. With `dtc` available, `c` opens typed compile
-options for symbols, stable sorting, padding and reserve entries before the
-exact terminal-launch preview; `d` decompiles DTB/DTBO. Output uses a
-`.yoctui` name and refuses overwrites.
-[Kernel and firmware guide](docs/platform-workbenches.md).
-
-Open **Overview → Insights** and choose `1`–`8` for timeline, rebuild causes,
-sstate/downloads, image size, metadata provenance, package dependencies,
-supply-chain coverage or disk history. These views use loaded data; missing
-timestamps or reports are not estimates.
-
-Use Dependencies for recipe/task graphs. In Recipes, `Z` opens signature
-history; choose two sides with `1`/`2` and compare with `c`. Configuration
-shows effective values and their source files. Reviewed edits target supported
-assignments in `conf/local.conf`, rather than rewriting arbitrary metadata.
-
 ## SDK, Wic, tests, security and maintenance
 
 - **SDK:** `s`/`E` reviews standard/extensible SDK builds; `t`/`T` reviews
@@ -440,7 +432,7 @@ assignments in `conf/local.conf`, rather than rewriting arbitrary metadata.
   than automatically uploading reports or managing Toaster.
 
 See the [operator guide](docs/operator-guide.md) for per-view controls and
-prerequisites. None of these workflows silently changes BitBake parallelism.
+prerequisites. These operations leave BitBake parallelism unchanged.
 
 ## Daemon and remote use
 
@@ -504,11 +496,35 @@ Inspect it with `yoctui --build-dir "$BUILDDIR" profile`. Loading a profile does
 not execute it. Profiles store shared names and build intent, not credentials,
 host paths or shell hooks. Select a preset and review its request before running.
 
+## Features
+
+| Area | Features |
+| --- | --- |
+| Build environment | Source/build directory browser, manual path editing, environment-script detection, nested fresh-clone destinations, background cloning with Braille progress, initialization and connection checks |
+| Dashboard and Tasks | Build/task state, progress, elapsed time, job history, background cancellation, CPU/RAM/filesystem bars, disk/network histories |
+| Logs and Errors | Live follow/pause, filters, search, bookmarks, wrapping, horizontal scrolling, copy/export, task correlation and failure details; Yocto log panes use tui-logger |
+| Layers and Recipes | Expandable layer tree using tui-tree-widget, provider/appends/tasks/patch inspection, syntax-aware file previews, source editing and external editors |
+| Configuration | Effective values, overrides, provenance, scope comparison, reviewed local.conf edits and BBMASK |
+| Dependencies and signatures | Recipe/task graphs, runtime dependencies, reverse traversal, why-built paths, signature inspection and diffsigs comparison |
+| Devtool | Status, modify, source editing, recipe builds, update-recipe, finish into a layer, deploy and reset |
+| Packages and Images | Generated pkgdata, installed packages, deployed artifacts, rootfs package pie chart using tui-piechart, filesystem tree, systemd units, system D-Bus configuration and udev rules |
+| Kernel and firmware | Kernel and U-Boot/BIOS provider detection, configuration files, menuconfig, DTS/DTB/DTBO browsing and device-tree compile/decompile |
+| Overview Insights | Timeline/critical path, rebuild causes, sstate/download outcomes, image size and retained size deltas, metadata provenance, package topology, supply-chain reports and disk history |
+| Offline history | Saved build outcomes, machine, duration, bounded logs/tasks and missing-record notices; no daemon required |
+| Source Git | Global branch, staged/unstaged/untracked/conflict and ahead/behind status; embedded GitUI diffs, staging and commits |
+| Terminals | Daemon-owned shells, devshell/menuconfig, SSH and runqemu consoles using tui-term; split panes, resize, scrollback, copy/search and reconnect |
+| SDK and Wic | Standard/extensible SDK builds and tests, installer inspection/publication, native tools, Wic creation and confirmed removable-device writing |
+| Testing, Security and QA | Selftests, image/SDK tests, ptest, result comparison/JUnit export, CVE checks, SPDX/CycloneDX/manifest imports, recipe/kernel and layer checks |
+| Raw Mode and Maintenance | Structured command catalog, argument previews, favorites/history, sstate checks/cleanup, PR/hash diagnostics, locked caches, buildhistory comparison and Git archives |
+| Preferences and profiles | Color themes, reduced motion, ASCII/no-color views, keybindings, saved preferences, onboarding and optional team project profiles |
+
+Actions depend on the connected Yocto environment and generated files.
+Unavailable actions show the required tools, tasks or files.
+
 ## Compatibility and troubleshooting
 
-Yoctui functionality is Yocto-feature-correlated: available actions depend on
-the connected environment's tools, tasks and capability checks. The same
-binary may expose different actions in different builds.
+Available actions depend on the connected Yocto environment’s tools, tasks
+and configuration.
 
 Open Compatibility for detected versions and reasons for disabled actions:
 
@@ -517,7 +533,7 @@ yoctui --build-dir "$BUILDDIR" doctor
 yoctui --build-dir "$BUILDDIR" doctor --json
 ```
 
-The recorded supported anchors are Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose
+Tested Yocto/BitBake combinations are Scarthgap 5.0.19 / BitBake 2.8.1 and Wrynose
 6.0.2 / BitBake 2.18.0. Exact revisions, evidence expiry and host limits are in
 the [compatibility matrix](docs/compatibility-matrix.md). Other versions need
 their own checks; a version number alone does not establish support.
@@ -534,12 +550,12 @@ their own checks; a version number alone does not establish support.
 
 ## Performance evidence
 
-The checked Flamegraph is a real userspace `perf` capture of the deterministic
-large-metadata workbench at v0.1.64 on September 6, 2026. It completed 6,000
+This Flamegraph records userspace `perf` samples from the deterministic
+large-metadata workload at v0.1.64 on September 6, 2026. It completed 6,000
 frames with 2,403 real userspace samples, workload checksum
-`95d507f9b14b71d6`, and zero unresolved frames. This is historical profiling
-evidence because rendering and model sources have changed since that capture;
-it is not source-bound performance certification for the current release.
+`95d507f9b14b71d6`, and zero unresolved frames. Rendering and model code have
+changed since this capture. The historical measurements apply to v0.1.64, not
+the current release.
 
 <p align="center">
   <a href="artifacts/flamegraph/yoctui.svg"><img src="artifacts/flamegraph/yoctui.svg" alt="Interactive Yoctui large-metadata workbench CPU Flamegraph"></a>

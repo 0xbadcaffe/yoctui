@@ -4,10 +4,15 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Current handoff
 
+README-ONBOARDING-001 is complete in source v0.1.119. The README follows the
+new-user setup and daily development workflow, preserves all 20 screens and
+technical information, and removes release-update and promotional wording.
+750 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED.
+
 M67/M68/M69 requested implementation and UI repairs are complete. Version
 0.1.118 is published across all seven crates on crates.io and includes offline
 navigation, durable saved build history/log excerpts and the reviewed 20-screen
-README gallery. The registry has 749 DONE tasks and one BLOCKED task:
+README gallery. The remaining BLOCKED task is:
 M67-LIVE-EVIDENCE-001 requires a genuine current-source real-Poky performance
 capture before performance certification.
 
