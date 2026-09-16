@@ -5625,3 +5625,8 @@ M68 clone details: the footer keeps `Cloning…` visible even during another bui
 Escape in Build Environment cancels the pending clone once dialogs/menus are closed.
 Partial files remain on failure/cancellation; retry uses an empty destination.
 A completed clone cannot replace a profile selected while the clone was running.
+
+M68 pending operations expose named footer activity on every screen: Initializing…,
+Cancelling…, or Loading…. Build cancellation leaves navigation and rendering live;
+its terminal state is shown only when the backend reports completion. Existing
+modal confirmation still precedes cancellation.

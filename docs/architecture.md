@@ -4235,3 +4235,10 @@ M68 clone execution uses a client-owned task with a 30-minute Git deadline and
 bounded output capture. Dropping/cancelling it terminates its owned process group.
 Completion installs the reviewed profile only if the environment has not changed.
 Parent directories are created only after confirmation; symlink ancestors are rejected.
+
+M68 cancellation: the process backend transfers child/process-group ownership to
+a cancellation task. Cancel returns after scheduling; duplicate requests are
+idempotent and BuildCompleted still comes through the backend event stream.
+The worker sends TERM, waits the configured grace period, then kills and reaps.
+Environment initialization plus backend metadata inspection uses a generation-bound
+client task; replacement backend cleanup also runs outside the input loop.

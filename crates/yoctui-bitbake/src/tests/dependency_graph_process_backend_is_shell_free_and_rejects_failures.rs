@@ -387,3 +387,54 @@ async fn bundled_bridge_starts_without_a_source_checkout_path() {
     assert!(backend.list_recipes(None).await.is_err());
     backend.shutdown().await.unwrap();
 }
+
+#[tokio::test]
+async fn process_backend_cancel_returns_before_slow_shutdown_and_is_idempotent() {
+    let script = fixture_script("background-cancel");
+    fs::write(
+        &script,
+        "#!/bin/sh\ntrap '' TERM\necho ready\nwhile :; do sleep 1; done\n",
+    )
+    .unwrap();
+    let mut backend =
+        shell_backend(script.clone()).with_cancellation_timeout(Duration::from_millis(300));
+    backend
+        .start_build(BuildRequest {
+            targets: vec!["busybox".into()],
+            task: None,
+            force: false,
+        })
+        .await
+        .unwrap();
+    loop {
+        if matches!(backend.next_event().await.unwrap(), BackendEvent::Log(_)) {
+            break;
+        }
+    }
+    tokio::time::timeout(Duration::from_millis(100), backend.cancel_build())
+        .await
+        .unwrap()
+        .unwrap();
+    tokio::time::timeout(Duration::from_millis(100), backend.cancel_build())
+        .await
+        .unwrap()
+        .unwrap();
+    assert!(
+        backend
+            .cancellation
+            .as_ref()
+            .is_some_and(|task| !task.is_finished())
+    );
+    loop {
+        if let BackendEvent::BuildCompleted { success, .. } =
+            tokio::time::timeout(Duration::from_secs(2), backend.next_event())
+                .await
+                .unwrap()
+                .unwrap()
+        {
+            assert!(!success);
+            break;
+        }
+    }
+    fs::remove_file(script).unwrap();
+}

@@ -3125,3 +3125,7 @@ or fresh live-Yocto claim is made. Reproduction and follow-up are in current-tas
 ### M68-CLONE-001
 
 DONE — Fresh nested destinations, asynchronous clone ownership, bounded Git output and group cancellation, stale-profile protection, named Braille footer. Clone regressions, full workspace tests, clippy, fmt, 52 bridge tests and roadmap passed.
+
+### M68-CANCEL-001
+
+DONE — Process cancellation is asynchronous and idempotent; environment initialization and backend replacement run in generation-bound workers. Named activity covers pending initialization, cancellation and loading. Full workspace suite, focused cancellation regressions, clippy, fmt, bridge and roadmap passed.

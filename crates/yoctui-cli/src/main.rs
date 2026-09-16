@@ -159,6 +159,7 @@ mod daemon_security;
 mod daemon_test;
 #[cfg(unix)]
 mod daemon_wic;
+mod environment_operation;
 mod environment_setup;
 mod global_search;
 mod internal_tracing;
@@ -11861,6 +11862,7 @@ async fn tui(
     let mut rootfs_composition_operation = None;
     let mut global_content_search_operation = None;
     let mut clone_operation = None;
+    let mut environment_operation = None;
     let sdk_artifact_adapter = app
         .workspace
         .variables
@@ -12064,7 +12066,8 @@ async fn tui(
                 }
             }
         }
-        let local_operation_active = clone_operation.is_some()
+        let local_operation_active = environment_operation.is_some()
+            || clone_operation.is_some()
             || signature_operation.is_some()
             || package_operation.is_some()
             || image_artifact_operation.is_some()
@@ -12088,6 +12091,28 @@ async fn tui(
             || qa_coordinator.report.is_some()
             || qa_coordinator.layer.is_some()
             || maintenance_coordinator.operation_active();
+        environment_operation::poll(&mut app, &mut backend, &mut environment_operation).await;
+        for (activity, active) in [
+            (
+                yoctui_model::BackgroundActivity::Initializing,
+                environment_operation.is_some(),
+            ),
+            (
+                yoctui_model::BackgroundActivity::Cancelling,
+                app.build.status == yoctui_model::BuildStatus::Cancelling,
+            ),
+            (
+                yoctui_model::BackgroundActivity::Loading,
+                local_operation_active
+                    && clone_operation.is_none()
+                    && environment_operation.is_none(),
+            ),
+        ] {
+            compatibility_workspace_action(
+                &mut app,
+                Action::SetBackgroundActivity { activity, active },
+            );
+        }
         clone_operation::poll(&mut app, &mut clone_operation).await;
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
@@ -14534,54 +14559,13 @@ async fn tui(
                         generation,
                     }) = compatibility_workspace_action(&mut app, action)
                     {
-                        match BuildEnvironmentAdapter::default().initialize(profile).await {
-                            Ok(response) => {
-                                let profile = response.profile.clone();
-                                let _ = compatibility_workspace_action(
-                                    &mut app,
-                                    Action::BuildEnvironmentVerified { generation },
-                                );
-                                let _ = backend.shutdown().await;
-                                match select_backend_with_environment(
-                                    backend_kind.clone(),
-                                    profile.build_dir.clone(),
-                                    Some(cancellation_timeout),
-                                    Some(response.environment),
-                                )
-                                .await
-                                {
-                                    Ok(mut connected) => {
-                                        match connected.inspect_workspace().await {
-                                            Ok(workspace) => {
-                                                let _ = compatibility_workspace_action(
-                                                    &mut app,
-                                                    Action::WorkspaceLoaded(workspace),
-                                                );
-                                                backend = connected;
-                                            }
-                                            Err(error) => {
-                                                app.notification = Some(format!(
-                                                    "BitBake verification failed: {error}"
-                                                ))
-                                            }
-                                        }
-                                    }
-                                    Err(error) => {
-                                        app.notification =
-                                            Some(format!("Could not start BitBake: {error}"))
-                                    }
-                                }
-                            }
-                            Err(error) => {
-                                let _ = compatibility_workspace_action(
-                                    &mut app,
-                                    Action::BuildEnvironmentVerificationFailed {
-                                        generation,
-                                        message: error.to_string(),
-                                    },
-                                );
-                            }
-                        }
+                        environment_operation::start(
+                            &mut environment_operation,
+                            profile,
+                            generation,
+                            backend_kind.clone(),
+                            cancellation_timeout,
+                        );
                     }
                 } else if app.screen == Screen::Settings && settings_action(input).is_some() {
                     if app.settings_selection == 0 && matches!(input, Input::Enter | Input::Right) {
@@ -14606,54 +14590,13 @@ async fn tui(
                         Some(Effect::VerifyBuildEnvironment {
                             profile,
                             generation,
-                        }) => match BuildEnvironmentAdapter::default().initialize(profile).await {
-                            Ok(response) => {
-                                let profile = response.profile.clone();
-                                let _ = compatibility_workspace_action(
-                                    &mut app,
-                                    Action::BuildEnvironmentVerified { generation },
-                                );
-                                let _ = backend.shutdown().await;
-                                match select_backend_with_environment(
-                                    backend_kind.clone(),
-                                    profile.build_dir,
-                                    Some(cancellation_timeout),
-                                    Some(response.environment),
-                                )
-                                .await
-                                {
-                                    Ok(mut connected) => {
-                                        match connected.inspect_workspace().await {
-                                            Ok(workspace) => {
-                                                let _ = compatibility_workspace_action(
-                                                    &mut app,
-                                                    Action::WorkspaceLoaded(workspace),
-                                                );
-                                                backend = connected;
-                                            }
-                                            Err(error) => {
-                                                app.notification = Some(format!(
-                                                    "BitBake verification failed: {error}"
-                                                ))
-                                            }
-                                        }
-                                    }
-                                    Err(error) => {
-                                        app.notification =
-                                            Some(format!("Could not start BitBake: {error}"))
-                                    }
-                                }
-                            }
-                            Err(error) => {
-                                let _ = compatibility_workspace_action(
-                                    &mut app,
-                                    Action::BuildEnvironmentVerificationFailed {
-                                        generation,
-                                        message: error.to_string(),
-                                    },
-                                );
-                            }
-                        },
+                        }) => environment_operation::start(
+                            &mut environment_operation,
+                            profile,
+                            generation,
+                            backend_kind.clone(),
+                            cancellation_timeout,
+                        ),
                         _ => {}
                     }
                 } else if app.screen == Screen::Tasks

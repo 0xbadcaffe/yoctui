@@ -35,6 +35,8 @@ pub struct ProcessBackend {
     pub(crate) output: Option<tokio::sync::mpsc::Receiver<LogEntry>>,
     pub(crate) build_started_pending: bool,
     pub(crate) cancellation_timeout: Duration,
+    pub(crate) cancellation:
+        Option<tokio::task::JoinHandle<Result<std::process::ExitStatus, std::io::Error>>>,
     #[cfg(unix)]
     pub(crate) process_group: Option<i32>,
 }
@@ -59,6 +61,7 @@ impl ProcessBackend {
             output: None,
             build_started_pending: false,
             cancellation_timeout: Duration::from_secs(5),
+            cancellation: None,
             #[cfg(unix)]
             process_group: None,
         }
@@ -102,6 +105,13 @@ impl ProcessBackend {
         .map_err(|error| BackendError::Bridge(error.to_string()))
     }
     pub(crate) async fn collect(&mut self) -> Result<(bool, Option<i32>), BackendError> {
+        if let Some(task) = self.cancellation.as_mut() {
+            let status = task
+                .await
+                .map_err(|e| BackendError::Bridge(e.to_string()))??;
+            self.cancellation = None;
+            return Ok((status.success(), status.code()));
+        }
         let child = self.child.as_mut().ok_or(BackendError::NotRunning)?;
         let status = child.wait().await?;
         Ok((status.success(), status.code()))
@@ -111,7 +121,7 @@ impl ProcessBackend {
         &self,
         recipe: String,
     ) -> Result<DependencyGraphResponse, BackendError> {
-        if self.child.is_some() {
+        if self.child.is_some() || self.cancellation.is_some() {
             return Err(BackendError::Bridge(
                 "dependency graph generation is unavailable during an active build".into(),
             ));
@@ -243,7 +253,7 @@ impl BitBakeBackend for ProcessBackend {
         &mut self,
         target: SignatureTarget,
     ) -> Result<SignatureDumpResponse, BackendError> {
-        if self.child.is_some() {
+        if self.child.is_some() || self.cancellation.is_some() {
             return Err(BackendError::Bridge(
                 "signature inspection is unavailable during an active process-backend build".into(),
             ));
@@ -257,7 +267,7 @@ impl BitBakeBackend for ProcessBackend {
         &mut self,
         request: SignatureComparisonRequest,
     ) -> Result<SignatureComparisonResponse, BackendError> {
-        if self.child.is_some() {
+        if self.child.is_some() || self.cancellation.is_some() {
             return Err(BackendError::Bridge(
                 "signature comparison is unavailable during an active process-backend build".into(),
             ));
@@ -283,6 +293,11 @@ impl BitBakeBackend for ProcessBackend {
         Err(BackendError::Bridge("the process backend cannot inspect authoritative layer relationships; use the Yoctui bridge".into()))
     }
     async fn start_build(&mut self, request: BuildRequest) -> Result<(), BackendError> {
+        if self.cancellation.is_some() {
+            return Err(BackendError::Bridge(
+                "build cancellation is still running".into(),
+            ));
+        }
         request
             .validate()
             .map_err(|e| BackendError::Bridge(e.to_string()))?;
@@ -329,26 +344,36 @@ impl BitBakeBackend for ProcessBackend {
         Ok(())
     }
     async fn cancel_build(&mut self) -> Result<(), BackendError> {
-        let c = self.child.as_mut().ok_or(BackendError::NotRunning)?;
-        #[cfg(unix)]
-        if let Some(process_group) = self.process_group {
-            // SAFETY: process_group comes from the child PID after `process_group(0)`, and a
-            // negative PID targets only that child process group, never the caller's group.
-            let result = unsafe { libc::kill(-process_group, libc::SIGTERM) };
-            if result == 0
-                && tokio::time::timeout(self.cancellation_timeout, c.wait())
-                    .await
-                    .is_ok()
-            {
-                return Ok(());
-            }
-            // SAFETY: same process-group identity and scope as the graceful signal above.
-            let _ = unsafe { libc::kill(-process_group, libc::SIGKILL) };
+        if self.cancellation.is_some() {
+            return Ok(());
         }
-        c.kill().await?;
-        let _ = c.wait().await?;
+        let mut child = self.child.take().ok_or(BackendError::NotRunning)?;
+        let deadline = self.cancellation_timeout;
+        #[cfg(unix)]
+        let process_group = self.process_group.take();
+        self.cancellation = Some(tokio::spawn(async move {
+            #[cfg(unix)]
+            let guard = process_group.map(|pid| yoctui_utils::ProcessGroupGuard::new(pid as u32));
+            #[cfg(unix)]
+            if let Some(group) = process_group {
+                // SAFETY: the group belongs to this backend's spawned child.
+                unsafe {
+                    libc::kill(-group, libc::SIGTERM);
+                }
+                if let Ok(status) = tokio::time::timeout(deadline, child.wait()).await {
+                    return status;
+                }
+            }
+            #[cfg(not(unix))]
+            let _ = deadline;
+            #[cfg(unix)]
+            drop(guard);
+            let _ = child.start_kill();
+            child.wait().await
+        }));
         Ok(())
     }
+
     async fn next_event(&mut self) -> Result<BackendEvent, BackendError> {
         if self.build_started_pending {
             self.build_started_pending = false;
@@ -368,6 +393,9 @@ impl BitBakeBackend for ProcessBackend {
             && child.try_wait()?.is_none()
         {
             self.cancel_build().await?;
+        }
+        if self.cancellation.is_some() {
+            let _ = self.collect().await?;
         }
         Ok(())
     }

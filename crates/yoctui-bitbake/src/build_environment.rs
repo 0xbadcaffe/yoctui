@@ -277,7 +277,8 @@ set -e
 source "$1" "$2"
 env -0
 "#;
-        let child = Command::new("bash")
+        let mut command = Command::new("bash");
+        command
             .arg("-c")
             .arg(script)
             .arg("yoctui-init")
@@ -287,12 +288,20 @@ env -0
             .stdin(std::process::Stdio::null())
             .stdout(std::process::Stdio::piped())
             .stderr(std::process::Stdio::piped())
+            .kill_on_drop(true);
+        #[cfg(unix)]
+        command.process_group(0);
+        let child = command
             .spawn()
             .map_err(|error| BuildEnvironmentAdapterError::Failed(error.to_string()))?;
+        let mut group = child.id().map(yoctui_utils::ProcessGroupGuard::new);
         let output = timeout(self.timeout, child.wait_with_output())
             .await
             .map_err(|_: Elapsed| BuildEnvironmentAdapterError::Timeout)?
             .map_err(|error| BuildEnvironmentAdapterError::Failed(error.to_string()))?;
+        if let Some(group) = &mut group {
+            group.disarm();
+        }
         if output.stdout.len() > MAX_OUTPUT || output.stderr.len() > MAX_OUTPUT {
             return Err(BuildEnvironmentAdapterError::OutputTooLarge);
         }
