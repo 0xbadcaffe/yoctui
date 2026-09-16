@@ -399,6 +399,37 @@ pub(crate) fn render_dashboard_recent_builds(
     let block = pane_block(app, "Recent Builds · Job History", false);
     let inner = block.inner(area);
     frame.render_widget(block, area);
+    if app.is_offline() && !app.saved_builds.records.is_empty() {
+        let rows = app
+            .saved_builds
+            .records
+            .iter()
+            .take(usize::from(inner.height.saturating_sub(1)))
+            .map(|r| {
+                Row::new([
+                    r.target.clone(),
+                    format!("{:?}", r.outcome),
+                    format!("{} saved logs", r.logs.len()),
+                ])
+            });
+        frame.render_widget(
+            Table::new(
+                rows,
+                [
+                    Constraint::Percentage(55),
+                    Constraint::Percentage(25),
+                    Constraint::Percentage(20),
+                ],
+            )
+            .header(Row::new([
+                "Saved build · F3 details",
+                "Outcome",
+                "Retained logs",
+            ])),
+            inner,
+        );
+        return;
+    }
     let projection = app.command_center_projection_at(now);
     let rows = projection
         .dashboard

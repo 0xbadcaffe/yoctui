@@ -5710,3 +5710,14 @@ is not represented as current certification.
 Offline GitUI confirmation labels its current-terminal fallback explicitly.
 It suspends Yoctui's terminal modes, runs GitUI in the selected source directory,
 and restores Yoctui when GitUI exits; no daemon or graphical terminal is required.
+
+M69 history retains at most 32 records and 8 MiB total, with at most 256 log
+lines (4096 UTF-8 bytes each) and 256 task rows per record. Active builds checkpoint
+every 30 seconds and terminal transitions checkpoint promptly in background.
+Saved detail tabs remain read-only and separate from current Tasks/Logs; `l`
+switches between saved records and live job history when connected, `r` reloads.
+Only BitBake log lines within the observed build time window are associated with
+a build. Missing start time yields unavailable logs instead of guessed correlation.
+Legacy history supplies summaries only. Failure records disclose when the backend
+did not preserve a distinct cancellation outcome. Offline startup never probes
+BitBake; existing local files and saved records remain available immediately.

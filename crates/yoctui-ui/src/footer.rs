@@ -221,7 +221,9 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Tasks => {
             "↑/↓ select | f state | F field | / edit filter | d duration | c cancel | Tab focus"
         }
-        Screen::BuildHistory => "↑/↓ select | Esc dashboard | ? help | q quit",
+        Screen::BuildHistory => {
+            "↑/↓ select | Enter details | ←/→ view | PgUp/PgDn scroll | r refresh | l live/saved | Esc back"
+        }
         Screen::Dependencies => {
             "↑/↓ or j/k select | Enter recipe | o provider | L task log | r refresh | Tab focus | Esc dashboard"
         }

@@ -915,3 +915,67 @@ fn offline_screens_retain_navigation_and_explain_connection() {
         }
     }
 }
+
+#[test]
+fn archive_history_renders_saved_summary_logs_tasks_and_missing_evidence() {
+    use yoctui_model::{
+        SavedBuild, SavedBuildAction as A, SavedBuildLog, SavedBuildOutcome, SavedBuildTask,
+        SavedBuildView,
+    };
+    let mut app = App::new_unconfigured(32, 4096);
+    app.require_daemon = true;
+    let record = SavedBuild {
+        id: "one".into(),
+        target: "core-image-minimal".into(),
+        machine: Some("qemuarm64".into()),
+        source: Some("/source".into()),
+        build_dir: Some("/build".into()),
+        outcome: SavedBuildOutcome::Succeeded,
+        saved_unix_ms: 3000,
+        started_unix_ms: Some(1000),
+        finished_unix_ms: Some(3000),
+        logs: vec![SavedBuildLog {
+            unix_ms: 2000,
+            severity: Severity::Error,
+            message: "retained compiler diagnostic".into(),
+        }],
+        tasks: vec![SavedBuildTask {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+            status: "Succeeded".into(),
+        }],
+        limitations: vec!["Bounded saved excerpt".into()],
+    };
+    update(
+        &mut app,
+        Action::SavedBuild(A::Loaded {
+            records: vec![record],
+            notice: None,
+        }),
+    );
+    update(&mut app, Action::Open(Screen::BuildHistory));
+    app.saved_builds.loading = false;
+    for (width, height) in [(80, 24), (100, 30), (160, 50)] {
+        let list = rendered_text(&app, width, height);
+        assert!(list.contains("core-image-minimal"), "{list}");
+        for (view, anchor) in [
+            (SavedBuildView::Summary, "Duration: 2 s"),
+            (SavedBuildView::Logs, "retained compiler diagnostic"),
+            (SavedBuildView::Tasks, "busybox:do_compile"),
+            (SavedBuildView::Errors, "retained compiler diagnostic"),
+        ] {
+            app.saved_builds.view = Some(view);
+            let text = rendered_text(&app, width, height);
+            assert!(text.contains(anchor), "{text}");
+            assert!(!text.contains(" LIVE"), "{text}");
+        }
+        app.saved_builds.view = None;
+    }
+    assert!(app.logs.entries.is_empty());
+    assert!(app.tasks.is_empty());
+    std::sync::Arc::make_mut(&mut app.saved_builds.records)[0]
+        .logs
+        .clear();
+    app.saved_builds.view = Some(SavedBuildView::Logs);
+    assert!(rendered_text(&app, 100, 30).contains("Saved logs/errors unavailable"));
+}

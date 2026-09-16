@@ -4279,3 +4279,11 @@ I/O and daemon capture, app maps records to model state, and UI renders typed
 records. Archive loading does not install live capabilities, processes or writer
 leases. Client-local navigation and historical selection cannot replace live
 replica data. Daemon and client connection state remain distinct from setup state.
+
+M69 archive storage uses the model's serializable read-only saved-build records
+inside a protocol-versioned envelope. Protocol now has a runtime model dependency,
+following the documented dependency direction. Client history state shares records
+through Arc so ordinary reducer snapshots do not copy megabytes of saved logs.
+A daemon-owned background recorder checkpoints bounded evidence; atomic private
+files under XDG_STATE_HOME/yoctui/build-history are never used as live authority.
+The client loads them asynchronously even when initial daemon attachment fails.

@@ -157,6 +157,9 @@ pub(crate) fn job_history_detail(row: JobHistoryRowRef<'_>, now: SystemTime) -> 
 }
 
 pub(crate) fn build_history(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+    if app.is_offline() || app.saved_builds.browsing {
+        return crate::saved_builds::saved_build_history(frame, app, area, now);
+    }
     let history = app.job_history_rows();
     let selected_index = app
         .build_history_selection

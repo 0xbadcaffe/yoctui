@@ -3176,3 +3176,7 @@ untouched. The handoff commit is pushed normally and remote HEAD is verified.
 ### M69-AUTHORITY-001
 
 DONE — Offline navigation suppresses automatic backend probes, preserves cached state with age/connection notices, removes live labels and gates backend effects. GitUI supports an explicit current-terminal offline fallback. Full workspace tests, strict Clippy, formatting and 52 bridge tests pass; no local or hosted stale performance runs were found.
+
+### M69-HISTORY-001
+
+DONE — Added private bounded background build checkpoints, legacy summary import and asynchronous offline loading. F3 provides read-only Summary/Logs/Tasks/Errors without replacing live state. Offline startup avoids BitBake probes. 1,676 Rust tests, strict Clippy, formatting, 52 bridge tests and archive failure-path/UI tests pass.

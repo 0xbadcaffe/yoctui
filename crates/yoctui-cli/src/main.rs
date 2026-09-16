@@ -1,3 +1,4 @@
+mod build_archive;
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand, ValueEnum};
 use crossterm::{
@@ -2728,6 +2729,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
         ClientId,
         Option<daemon_rootfs::PendingQuery>,
     )> = Vec::new();
+    let mut archive_recorder = build_archive::Recorder::new(daemon_state_root()?);
     let mut shutting_down = false;
     let mut last_telemetry_ms = record.started_unix_ms;
     let mut maximum_client_backlog = 0_usize;
@@ -2940,6 +2942,9 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             publish_daemon_pty_event(&mut daemon_journal, event)?;
         }
         let now_ms = unix_ms();
+        archive_recorder
+            .poll(daemon_journal.snapshot(), unix_ms())
+            .await;
         let active_work = daemon_has_active_work(daemon_journal.snapshot());
         let current_client_backlog = clients
             .iter()
@@ -4027,6 +4032,11 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             PersistedPreferences::default(),
         ),
     )?;
+    archive_recorder.finish().await;
+    archive_recorder
+        .poll(daemon_journal.snapshot(), unix_ms())
+        .await;
+    archive_recorder.finish().await;
     startup_compatibility.shutdown().await;
     if let Some(scan) = &mut startup_metadata {
         scan.shutdown().await;
@@ -11678,14 +11688,14 @@ fn parse_ssh_access_origin(value: &str) -> ClientAccessOrigin {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum StartupMetadataAuthority {
     DaemonSnapshot,
-    ClientBackend,
+    OfflineFiles,
 }
 
 fn startup_metadata_authority(daemon_attached: bool) -> StartupMetadataAuthority {
     if daemon_attached {
         StartupMetadataAuthority::DaemonSnapshot
     } else {
-        StartupMetadataAuthority::ClientBackend
+        StartupMetadataAuthority::OfflineFiles
     }
 }
 
@@ -11798,53 +11808,26 @@ async fn tui(
     app.logs.task_filter = session.log_task_filter.clone();
     app.logs.build_filter = session.log_build_filter.clone();
     let session_build_dir = build_dir.clone();
-    let mut backend: Box<dyn BitBakeBackend> = if daemon_attached {
-        Box::new(ProcessBackend::new(build_dir.clone()))
-    } else if build_dir_configured {
-        select_backend_with_timeout(
-            backend_kind.clone(),
-            build_dir.clone(),
-            Some(cancellation_timeout),
-        )
-        .await?
-    } else {
-        Box::new(ProcessBackend::new(PathBuf::from("/")))
-    };
-    if build_dir_configured
-        && startup_metadata_authority(daemon_attached) == StartupMetadataAuthority::ClientBackend
-    {
-        match backend.inspect_workspace().await {
-            Ok(workspace) => {
-                let _ = update(&mut app, Action::WorkspaceLoaded(workspace));
-                match backend.list_recipes(None).await {
-                    Ok(recipes) => {
-                        let _ = update(&mut app, Action::RecipesLoaded(recipes));
-                    }
-                    Err(error) => app.notification = Some(format!("Recipes unavailable: {error}")),
-                }
-                match backend.list_layers().await {
-                    Ok(layers) => {
-                        let _ = update(&mut app, Action::LayersLoaded(layers));
-                    }
-                    Err(error) => app.notification = Some(format!("Layers unavailable: {error}")),
-                }
-            }
-            Err(error) => {
-                let _ = update(
-                    &mut app,
-                    Action::Failure(AppError::new(
-                        "Backend",
-                        error.to_string(),
-                        "run `yoctui doctor` to diagnose the selected backend",
-                    )),
+    // Offline browsing must not spawn BitBake or refresh live metadata.
+    let mut backend: Box<dyn BitBakeBackend> = Box::new(ProcessBackend::new(build_dir.clone()));
+    if startup_metadata_authority(daemon_attached) == StartupMetadataAuthority::OfflineFiles {
+        if build_dir_configured {
+            if let Some(source) =
+                project_profile_root(&build_dir).filter(|p| p.join("oe-init-build-env").is_file())
+            {
+                app.workspace.source_dir = Some(source.clone());
+                app.build_environment = yoctui_model::BuildEnvironmentState::Configured(
+                    yoctui_model::BuildEnvironmentProfile {
+                        init_script: source.join("oe-init-build-env"),
+                        source_dir: source,
+                        build_dir: build_dir.clone(),
+                    },
                 );
             }
+            app.notification = Some("Offline files and saved builds are available. Start the daemon in your initialized Yocto shell; connection retries automatically.".into());
+        } else {
+            app.notification = Some("Build environment: press e to configure paths or b to browse; F3 opens saved builds.".into());
         }
-    } else if !build_dir_configured {
-        app.notification = Some(
-            "Build environment: press e to configure paths or b to browse, then V to verify."
-                .into(),
-        );
     }
     if !targets.is_empty() {
         app.build.target = targets.first().cloned()
@@ -11871,6 +11854,9 @@ async fn tui(
     let mut image_artifact_operation = None;
     let mut rootfs_composition_operation = None;
     let mut global_content_search_operation = None;
+    let history_root = daemon_state_root()?;
+    let mut history_load = None;
+    app.saved_builds.reload_requested = true;
     let mut clone_operation = None;
     let mut source_git_poller = source_git::SourceGitPoller::default();
     let mut environment_operation = None;
@@ -12077,10 +12063,14 @@ async fn tui(
                 }
             }
         }
+        if build_archive::poll_load(&mut app, &mut history_load, &history_root).await {
+            render_scheduler.invalidate(RenderCause::State);
+        }
         if source_git_poller.poll(&mut app).await {
             render_scheduler.invalidate(RenderCause::State);
         }
-        let local_operation_active = environment_operation.is_some()
+        let local_operation_active = history_load.is_some()
+            || environment_operation.is_some()
             || clone_operation.is_some()
             || signature_operation.is_some()
             || package_operation.is_some()
@@ -12663,6 +12653,10 @@ async fn tui(
                         }
                         _ => {}
                     }
+                    continue;
+                }
+                if let Some(action) = yoctui_app::saved_build_workspace_action(&app, input) {
+                    let _ = compatibility_workspace_action(&mut app, action);
                     continue;
                 }
                 if let Some(action) = notification_popup_action(&app, input) {
@@ -15798,7 +15792,7 @@ mod tests {
         );
         assert_eq!(
             startup_metadata_authority(false),
-            StartupMetadataAuthority::ClientBackend
+            StartupMetadataAuthority::OfflineFiles
         );
     }
 

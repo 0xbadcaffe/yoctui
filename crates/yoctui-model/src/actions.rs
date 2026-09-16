@@ -27,6 +27,7 @@ pub struct ObservedTaskTiming {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
+    SavedBuild(SavedBuildAction),
     OpenGitUi,
     GitUiDetected(Option<PathBuf>),
     SourceGitStatusUpdated(SourceGitStatus),

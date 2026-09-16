@@ -44,6 +44,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::SavedBuild(action) => {
+            crate::saved_builds::reduce_saved_build(app, action);
+            None
+        }
         Action::GitUiDetected(program) => {
             app.gitui_program = program;
             None
