@@ -8293,3 +8293,36 @@ required = true
 depends_on = ["M68-GALLERY-001"]
 verify = ["git status --short", "git log -1 --oneline"]
 notes = "Scope and done criteria: verify coherent commits, preserve existing user artifacts, fetch and integrate master safely, push without force and verify remote HEAD; record any genuine external blocker. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M69-AUTHORITY-001"
+milestone = "M69"
+title = "Expose offline connection state and prerequisite guidance"
+status = "IN_PROGRESS"
+priority = 1800
+required = true
+depends_on = []
+verify = ["cargo test --workspace --all-features offline"]
+notes = "Files and done criteria: model/app connection projection, UI notices and local Git availability; transition and responsive tests. Baseline checks, UI/architecture documentation, registry/status/current updates and coherent commit required."
+
+[[task]]
+id = "M69-HISTORY-001"
+milestone = "M69"
+title = "Persist and browse bounded saved builds offline"
+status = "NOT_STARTED"
+priority = 1801
+required = true
+depends_on = ["M69-AUTHORITY-001"]
+verify = ["cargo test --workspace --all-features archive"]
+notes = "Files and done criteria: protocol archive schema, CLI atomic persistence and startup load, typed History details; restart/corrupt/missing/truncated records and UI tests. Baseline checks, UI/architecture documentation, registry/status/current updates and coherent commit required."
+
+[[task]]
+id = "M69-RELEASE-001"
+milestone = "M69"
+title = "Document test push and publish offline workbench release"
+status = "NOT_STARTED"
+priority = 1802
+required = true
+depends_on = ["M69-HISTORY-001"]
+verify = ["python3 scripts/check-version-bump.py"]
+notes = "Files and done criteria: README, screenshots/version and package graph; baseline, push and crates.io publication verification. Baseline checks, UI/architecture documentation, registry/status/current updates and coherent commit required."

@@ -1,5 +1,8 @@
 # Yoctui Implementation Status
 
+M69 is active for offline screens, durable history and crates.io publication.
+No stale performance processes were found; the regular running daemon is retained.
+
 All ten M68 tasks are DONE. The requested clone/cancellation responsiveness,
 source Git/GitUI, menu/focus and chart repairs are implemented, tested and pushed
 to master. The front README contains 17 verified production screenshots. The

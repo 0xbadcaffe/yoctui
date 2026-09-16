@@ -4270,3 +4270,12 @@ terminal writer/transient modes precede pane-focus routing. The CLI menu shortcu
 uses the same ownership predicates, so typing `a` cannot open a context menu.
 Navigator activation selects relevant Workspace focus through the existing model
 focus policy. Signatures consumes only its own keys while Workspace is focused.
+
+## M69 offline authority and build archives
+
+The model owns connection provenance and read-only saved-build presentations.
+Protocol owns bounded archive wire records; CLI performs private atomic archive
+I/O and daemon capture, app maps records to model state, and UI renders typed
+records. Archive loading does not install live capabilities, processes or writer
+leases. Client-local navigation and historical selection cannot replace live
+replica data. Daemon and client connection state remain distinct from setup state.

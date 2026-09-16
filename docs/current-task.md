@@ -1,43 +1,10 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** M69-AUTHORITY-001
+**Status:** IN_PROGRESS
 
-All requested M67/M68 implementation tasks are DONE. The source and UI fixes,
-GitUI integration and updated README gallery are committed and pushed to master.
-Full workspace tests, strict Clippy, formatting, 52 bridge tests, screenshot
-provenance checks and the native GitUI PTY smoke pass. No release-performance
-certification is claimed from fixtures or fake-process timing.
-
-External prerequisite: a genuine current-source/binary-bound real-Poky
-performance capture for the documented Yocto 6.0.2 linux-yocto workload.
-The retained `artifacts/performance/real-poky/manifest.json` is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63`; 51 recorded source hashes now
-differ, including changes predating this request. Historical evidence stays intact.
-
-Reproduce the independent prerequisite check:
-
-```bash
-python3 - <<'PYCODE'
-from pathlib import Path
-import hashlib, json
-m = json.loads(Path("artifacts/performance/real-poky/manifest.json").read_text())
-stale = [name for name, expected in m["sources"].items()
-         if hashlib.sha256(Path(name).read_bytes()).hexdigest() != expected]
-print("Source digest mismatches:", len(stale))
-raise SystemExit(bool(stale))
-PYCODE
-```
-
-The completion gate reports this required task as BLOCKED. The broader
-performance verifier was stopped after its static contracts passed because the
-independent mandatory evidence check already proves the capture is stale.
-Follow the existing capture procedure in `docs/performance.md`, then verify:
-
-```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
-```
-
-No other eligible incomplete task remains.
+Expose offline state and prerequisite guidance. Dependencies: none.
+Files: model/app connection projection, UI workspace notices and Git launch.
+Done: unconfigured/disconnected/current transitions preserve data and truthful labels; local inspection stays available; backend actions retain prerequisite guards.
+Verify: `cargo test --workspace --all-features offline` and AGENTS.md baseline.
+Update UI/architecture, registry and status; commit then continue M69-HISTORY-001.

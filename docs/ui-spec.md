@@ -5681,3 +5681,28 @@ indicators, empty global content search, source Git status with native GitUI dif
 and commit entry, application menus, clean capacity bars and the full-area pie.
 Native GitUI captures are replayed through the same typed terminal screen model;
 all screenshots explicitly use fixture data and do not assert live build evidence.
+
+## M69 offline workbench and saved builds
+
+All screens remain navigable without an environment or daemon. A persistent
+workspace notice distinguishes unconfigured, disconnected, stale and current
+connections; it gives Configure/Connect guidance and the last observed timestamp.
+Cached data is explicitly last observed, never current; disconnected running
+builds are not presented as idle or successful. Backend actions require current
+authority and configured prerequisites, while local source/Git inspection remains
+available. GitUI may launch in a detached terminal without a daemon.
+
+F3 History exposes bounded durable saved builds across restarts without attaching.
+Saved records retain identity, source/build paths, target, machine, outcome,
+duration, bounded logs and recorded task events. History arrows select records;
+Enter opens details, Left/Right changes Summary/Logs/Tasks/Errors, PgUp/PgDn
+scrolls details and Escape returns to the list. Missing logs and truncated records
+are explicit. Saved details never mutate live build state or acquire execution
+capabilities. Dashboard advertises setup/connect and saved-history access.
+
+New archives are retained privately with bounded size/count and atomic writes.
+Daemon builds are saved independently of client attachment. Existing daemon
+history is imported as summary-only when detailed logs were never retained.
+README documents offline scope, retention, controls and availability. Release
+publication follows baseline/package verification; historical performance evidence
+is not represented as current certification.
