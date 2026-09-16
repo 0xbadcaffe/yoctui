@@ -4,6 +4,10 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Current handoff
 
+README-SYSTEMD-001 is complete in source v0.1.121. The README has 21 verified
+screenshots, including offline systemd service files beside rootfs composition.
+752 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED.
+
 README-REAL-DTS-001 is complete in source v0.1.120. The Device Tree screenshot
 uses attributed upstream Linux v6.6 DTS content and tested syntax highlighting.
 751 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED.

@@ -217,6 +217,26 @@ fn readme_gallery_requested_workbenches_render_through_production_renderer() {
             .as_slice(),
         ),
         (
+            "systemd-services",
+            readme_systemd_services_app(),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-systemd-services-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-systemd-services-160x50.cells"
+            )),
+            [
+                "Offline systemd service files",
+                "systemd-networkd.service",
+                "org.freedesktop.network1",
+                "multi-user.target.wants",
+                "disabled/static",
+            ]
+            .as_slice(),
+        ),
+        (
             "device-tree-editor",
             readme_device_tree_editor_app(),
             concat!(

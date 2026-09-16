@@ -4,6 +4,10 @@
 **Title:** Supply current-source real-Poky release performance evidence
 **Status:** BLOCKED
 
+README-SYSTEMD-001 is DONE: the README includes a production-rendered offline
+systemd Services screenshot beside rootfs composition. All 21 screenshots and
+the baseline/documentation checks pass.
+
 README-REAL-DTS-001 is DONE: the Device Tree editor screenshot uses the Linux
 v6.6 NXP i.MX8MP EVK source, with attributed MIT licensing and verified syntax
 colors. Baseline, screenshot and documentation checks pass.

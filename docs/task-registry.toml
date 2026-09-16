@@ -8348,3 +8348,14 @@ required = true
 depends_on = ["README-ONBOARDING-001"]
 verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check"]
 notes = "Use an attributed unmodified upstream DTS file in the production editor screenshot; verify visible DTS syntax colors and content, update README caption and golden/raster provenance, run baseline checks, update task/status records and commit."
+
+[[task]]
+id = "README-SYSTEMD-001"
+milestone = "M70"
+title = "Add offline systemd Services screenshot to README"
+status = "DONE"
+priority = 1902
+required = true
+depends_on = ["README-REAL-DTS-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check"]
+notes = "Add a deterministic production-renderer Services fixture and screenshot beside Rootfs composition; show unit descriptions, BusName and on-disk enablement without live-state claims. Update gallery coverage/provenance and README, run baseline/docs checks, record task completion and commit."

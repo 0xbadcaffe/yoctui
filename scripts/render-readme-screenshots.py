@@ -37,6 +37,7 @@ SCENARIOS = [
     ("offline-dashboard", "readme-offline-dashboard-160x50.cells"),
     ("saved-build-history", "readme-saved-build-history-160x50.cells"),
     ("saved-build-logs", "readme-saved-build-logs-160x50.cells"),
+    ("systemd-services", "readme-systemd-services-160x50.cells"),
 ]
 
 

@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+README-SYSTEMD-001 is DONE in source v0.1.121. The README image-inspection
+gallery pairs rootfs composition with the offline systemd Services view. The
+production-renderer fixture shows unit descriptions, BusName and on-disk
+enablement in the existing expanded workspace. The caption distinguishes
+installed files from live service state. All 21 screenshots have checked cell
+and raster provenance. 1,677 Rust tests, 52 bridge tests, fmt, strict Clippy,
+README/docs checks and version policy pass. 752 tasks are DONE; only
+M67-LIVE-EVIDENCE-001 remains BLOCKED. Published crates remain at v0.1.118.
+
 README-REAL-DTS-001 is DONE in source v0.1.120. The Device Tree editor screenshot
 loads the complete Linux v6.6 NXP imx8mp-evk.dts; the fixture is byte-identical
 to upstream, with MIT licensing and SHA-256 attribution. Display tabs expand

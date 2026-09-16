@@ -1082,3 +1082,109 @@ pub(crate) fn readme_offline_history_app(scene: &str) -> App {
     }
     app
 }
+
+pub(crate) fn readme_systemd_services_app() -> App {
+    let mut app = concept_rootfs_app();
+    app.images_view = ImagesView::SystemdServices;
+    app.zoomed_pane = Some(FocusTarget::Workspace);
+    let root = PathBuf::from(
+        "/workspace/yocto/build/tmp/work/qemux86_64-poky-linux/core-image-minimal/1.0/rootfs",
+    );
+    let services = [
+        (
+            "dbus.service",
+            "D-Bus System Message Bus",
+            "",
+            "multi-user.target.wants",
+        ),
+        (
+            "dropbear.service",
+            "Dropbear SSH server",
+            "",
+            "multi-user.target.wants",
+        ),
+        (
+            "getty@tty1.service",
+            "Getty on tty1",
+            "",
+            "getty.target.wants",
+        ),
+        (
+            "serial-getty@ttyS0.service",
+            "Serial Getty on ttyS0",
+            "",
+            "getty.target.wants",
+        ),
+        (
+            "systemd-journald.service",
+            "Journal Service",
+            "",
+            "sysinit.target.wants",
+        ),
+        (
+            "systemd-logind.service",
+            "User Login Management",
+            "org.freedesktop.login1",
+            "multi-user.target.wants",
+        ),
+        (
+            "systemd-networkd.service",
+            "Network Configuration",
+            "org.freedesktop.network1",
+            "multi-user.target.wants",
+        ),
+        (
+            "systemd-resolved.service",
+            "Network Name Resolution",
+            "org.freedesktop.resolve1",
+            "multi-user.target.wants",
+        ),
+        (
+            "systemd-timesyncd.service",
+            "Network Time Synchronization",
+            "",
+            "sysinit.target.wants",
+        ),
+        (
+            "systemd-tmpfiles-clean.service",
+            "Cleanup Temporary Directories",
+            "",
+            "",
+        ),
+        (
+            "systemd-udevd.service",
+            "Rule-based Device Events",
+            "",
+            "sysinit.target.wants",
+        ),
+    ]
+    .into_iter()
+    .map(|(name, description, bus, enabled)| {
+        let logical = format!("/usr/lib/systemd/system/{name}");
+        yoctui_model::RootfsSystemdService {
+            name: name.into(),
+            logical_path: yoctui_model::RootfsPathIdentity(logical.clone().into()),
+            host_path: root.join(logical.trim_start_matches('/')),
+            description: Some(description.into()),
+            bus_name: (!bus.is_empty()).then(|| bus.into()),
+            enabled_by: if enabled.is_empty() {
+                Vec::new()
+            } else {
+                vec![enabled.into()]
+            },
+            preview: format!("[Unit]\nDescription={description}\n"),
+            preview_truncated: false,
+        }
+    })
+    .collect();
+    if let RootfsCompositionState::Partial { composition, .. } = &mut app.rootfs_composition {
+        composition.root_directory = Some(root);
+        composition.system_inventory =
+            yoctui_model::RootfsAuthority::Available(yoctui_model::RootfsSystemInventory {
+                systemd_services: services,
+                ..Default::default()
+            });
+    }
+    app.rootfs_systemd_selection = 6;
+    app
+}
