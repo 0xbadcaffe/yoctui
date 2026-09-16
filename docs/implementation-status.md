@@ -1,7 +1,16 @@
 # Yoctui Implementation Status
 
-M69 is active for offline screens, durable history and crates.io publication.
-No stale performance processes were found; the regular running daemon is retained.
+M69 is complete. Version 0.1.118 is published and verified on crates.io across
+all seven public crates. Screens remain navigable offline; saved builds, log
+excerpts, task summaries and errors survive daemon/client restart. README has
+20 verified production screenshots. All 749 implementation tasks are DONE;
+M67-LIVE-EVIDENCE-001 remains BLOCKED on fresh real-Poky performance evidence.
+No stale local or hosted performance runs were found; the regular running daemon
+and the user's four untracked capture files were preserved.
+
+Release verification: 1,677 Rust tests, native GitUI PTY smoke, 52 bridge tests,
+strict Clippy, formatting, docs and screenshot checks, version policy and the
+extracted seven-crate package graph with standalone CLI/bridge handshake pass.
 
 All ten M68 tasks are DONE. The requested clone/cancellation responsiveness,
 source Git/GitUI, menu/focus and chart repairs are implemented, tested and pushed
@@ -3180,3 +3189,7 @@ DONE — Offline navigation suppresses automatic backend probes, preserves cache
 ### M69-HISTORY-001
 
 DONE — Added private bounded background build checkpoints, legacy summary import and asynchronous offline loading. F3 provides read-only Summary/Logs/Tasks/Errors without replacing live state. Offline startup avoids BitBake probes. 1,676 Rust tests, strict Clippy, formatting, 52 bridge tests and archive failure-path/UI tests pass.
+
+### M69-RELEASE-001
+
+DONE — v0.1.118 published and independently verified on crates.io for yoctui-utils, model, protocol, bitbake, app, ui and CLI. 1,677 Rust tests, native GitUI PTY smoke, 52 bridge tests, fmt, strict Clippy, docs, raster provenance, version policy and extracted package graph/CLI/bridge verification pass. README has 20 production screenshots. No stale local or hosted performance runs existed; the regular daemon and preexisting user captures were preserved. Fresh real-Poky performance certification remains the separate M67 blocker.

@@ -528,6 +528,7 @@ pub(crate) fn inspector_related_paths(app: &App) -> Vec<String> {
         Screen::Sdk => app
             .selected_sdk_artifact()
             .map(|artifact| artifact.identity.path.clone()),
+        Screen::BuildHistory if app.is_offline() || app.saved_builds.browsing => None,
         Screen::BuildHistory => app
             .job_history_rows()
             .get(app.build_history_selection)

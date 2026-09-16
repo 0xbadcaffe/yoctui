@@ -5721,3 +5721,8 @@ a build. Missing start time yields unavailable logs instead of guessed correlati
 Legacy history supplies summaries only. Failure records disclose when the backend
 did not preserve a distinct cancellation outcome. Offline startup never probes
 BitBake; existing local files and saved records remain available immediately.
+
+M69 saved-history Inspector facts, paths and output belong only to the selected
+saved build; live-job actions and output are suppressed there. Offline Dashboard
+quick actions offer E configuration, F3 history, and the initialized-shell daemon
+start command with automatic reconnect guidance instead of promoting live builds.

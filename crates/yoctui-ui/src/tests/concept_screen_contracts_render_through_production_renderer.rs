@@ -935,3 +935,63 @@ fn readme_repaired_workflows_render_through_production_renderer() {
         }
     }
 }
+
+#[test]
+fn readme_offline_archive_screens() {
+    let scenes = [
+        (
+            "offline-dashboard",
+            "Saved build · F3 details",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-offline-dashboard-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-offline-dashboard-160x50.cells"
+            )),
+        ),
+        (
+            "saved-build-history",
+            "Target · Enter details",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-saved-build-history-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-saved-build-history-160x50.cells"
+            )),
+        ),
+        (
+            "saved-build-logs",
+            "compiler reported a missing header",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-saved-build-logs-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-saved-build-logs-160x50.cells"
+            )),
+        ),
+    ];
+    for (name, anchor, path, fixture) in scenes {
+        let app = readme_offline_history_app(name);
+        let mut terminal = Terminal::new(TestBackend::new(160, 50)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let text = concept_text_capture(&terminal);
+        assert!(text.contains(anchor), "{text}");
+        if name != "offline-dashboard" {
+            assert!(text.contains("Saved build · read-only"), "{text}");
+        }
+        let cells = literal_cells(&terminal);
+        if std::env::var_os("YOCTUI_UPDATE_README_GOLDENS").is_some() {
+            fs::write(path, serialize_target_golden(&cells)).unwrap();
+        } else {
+            assert_target_golden(name, &parse_target_golden(fixture), &cells);
+        }
+    }
+}

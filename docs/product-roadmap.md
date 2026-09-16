@@ -4,10 +4,12 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Current handoff
 
-M67/M68 requested implementation and UI repairs are complete and published to
-master. Version 0.1.117 includes the reviewed 17-screen README gallery. The
-registry has 746 DONE tasks and one BLOCKED task: M67-LIVE-EVIDENCE-001 requires
-a genuine current-source real-Poky performance capture before release certification.
+M67/M68/M69 requested implementation and UI repairs are complete. Version
+0.1.118 is published across all seven crates on crates.io and includes offline
+navigation, durable saved build history/log excerpts and the reviewed 20-screen
+README gallery. The registry has 749 DONE tasks and one BLOCKED task:
+M67-LIVE-EVIDENCE-001 requires a genuine current-source real-Poky performance
+capture before performance certification.
 
 ## Product completion rule
 

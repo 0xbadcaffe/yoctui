@@ -481,6 +481,10 @@ pub(crate) fn render_dashboard_quick_actions(frame: &mut Frame, app: &App, area:
     if inner.is_empty() {
         return;
     }
+    if app.is_offline() {
+        frame.render_widget(Paragraph::new("[E] Configure build environment    [F3] Saved build history\n\nStart the daemon from your initialized Yocto shell: yoctui daemon start\nYoctui retries the connection automatically.").wrap(Wrap { trim:true }),inner);
+        return;
+    }
     let columns = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(inner);
     let actions = [
         ("B", "Build image", "Start the selected BitBake target"),

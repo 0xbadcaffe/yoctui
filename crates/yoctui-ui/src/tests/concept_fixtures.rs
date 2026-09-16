@@ -1036,3 +1036,64 @@ pub(crate) fn readme_repaired_workflow_app(scene: &str) -> App {
     }
     app
 }
+
+pub(crate) fn readme_offline_history_app(scene: &str) -> App {
+    use yoctui_model::{
+        SavedBuild, SavedBuildLog, SavedBuildOutcome, SavedBuildTask, SavedBuildView,
+    };
+    let mut app = concept_idle_dashboard_app();
+    app.require_daemon = true;
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Disconnected;
+    app.daemon.jobs.clear();
+    let now = literal_now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as u64;
+    let mut record = SavedBuild {
+        id: "fixture-build-1".into(),
+        target: "core-image-minimal".into(),
+        machine: Some("qemux86-64".into()),
+        source: Some("/workspace/yocto".into()),
+        build_dir: Some("/workspace/yocto/build".into()),
+        outcome: SavedBuildOutcome::Failed,
+        saved_unix_ms: now - 120_000,
+        started_unix_ms: Some(now - 1_098_000),
+        finished_unix_ms: Some(now - 120_000),
+        logs: vec![
+            SavedBuildLog {
+                unix_ms: now - 130_000,
+                severity: Severity::Info,
+                message: "NOTE: Running task busybox:do_compile".into(),
+            },
+            SavedBuildLog {
+                unix_ms: now - 120_000,
+                severity: Severity::Error,
+                message: "ERROR: busybox do_compile: compiler reported a missing header".into(),
+            },
+        ],
+        tasks: vec![SavedBuildTask {
+            recipe: "busybox".into(),
+            task: "do_compile".into(),
+            status: "Failed".into(),
+        }],
+        limitations: vec!["Bounded saved excerpt; complete logs may be unavailable.".into()],
+    };
+    let first = record.clone();
+    record.id = "fixture-build-2".into();
+    record.target = "core-image-base".into();
+    record.outcome = SavedBuildOutcome::Succeeded;
+    record.logs.clear();
+    record.tasks.clear();
+    record.saved_unix_ms = now - 7_200_000;
+    app.saved_builds.records = std::sync::Arc::new(vec![first, record]);
+    app.saved_builds.browsing = true;
+    if scene != "offline-dashboard" {
+        app.screen = Screen::BuildHistory;
+        app.focus = FocusTarget::Workspace;
+        app.navigator_selection = 0;
+        if scene == "saved-build-logs" {
+            app.saved_builds.view = Some(SavedBuildView::Logs);
+        }
+    }
+    app
+}

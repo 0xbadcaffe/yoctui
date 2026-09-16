@@ -238,6 +238,9 @@ pub(crate) fn inspector(
             ),
         Screen::Dependencies | Screen::LayerRelationships => dependency_inspector(app),
         Screen::Signatures => signature_detail_text(app),
+        Screen::BuildHistory if app.is_offline() || app.saved_builds.browsing => app.saved_builds.records.get(app.saved_builds.selection).map_or_else(
+            || "No saved build selected.".into(),
+            |r| format!("Saved build · read-only\nTarget: {}\nMachine: {}\nOutcome: {:?}\nSaved log lines: {}\nRecorded tasks: {}\n\nNo live process authority.\nEnter details; Left/Right changes views.",r.target,r.machine.as_deref().unwrap_or("not recorded"),r.outcome,r.logs.len(),r.tasks.len())),
         Screen::BuildHistory => app
             .job_history_rows()
             .get(app.build_history_selection)
@@ -267,7 +270,9 @@ pub(crate) fn inspector(
     let destination = yoctui_model::workspace_screen_destination(app.screen);
     let actions = compatibility_workspace_actions(app, destination);
     let related_paths = inspector_related_paths(app);
-    let secondary = matches!(app.screen, Screen::Dashboard | Screen::BuildHistory)
+    let secondary = (matches!(app.screen, Screen::Dashboard | Screen::BuildHistory)
+        && !app.is_offline()
+        && !(app.screen == Screen::BuildHistory && app.saved_builds.browsing))
         .then(|| job_summary_label(app, area.width));
     let recent_output = match app.screen {
         Screen::Logs => match app.log_workspace_view {
@@ -277,6 +282,7 @@ pub(crate) fn inspector(
                 .selected()
                 .map(|entry| entry.message.as_str()),
         },
+        Screen::BuildHistory if app.is_offline() || app.saved_builds.browsing => None,
         Screen::BuildHistory => app
             .job_history_rows()
             .get(app.build_history_selection)
@@ -299,7 +305,11 @@ pub(crate) fn inspector(
             secondary: secondary.as_deref(),
             related_paths: &related_paths,
             recent_output,
-            actions: (show_actions && !actions.is_empty()).then_some(actions.as_slice()),
+            actions: (show_actions
+                && !actions.is_empty()
+                && !(app.screen == Screen::BuildHistory
+                    && (app.is_offline() || app.saved_builds.browsing)))
+                .then_some(actions.as_slice()),
             status: status.as_deref(),
         },
         area.width.saturating_sub(2),
@@ -332,6 +342,10 @@ pub(crate) fn inspector(
 
 #[allow(dead_code)]
 pub(crate) fn dashboard_inspector(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+    if app.is_offline() {
+        frame.render_widget(Paragraph::new(format!("Offline workspace\n\n[E] Configure build environment\n[F3] Saved build history\n\nSaved builds: {}\n\nStart or reconnect the daemon for live build operations.\n\nLocal files and saved records remain available. Previous observations do not establish current build state.", app.saved_builds.records.len())).wrap(Wrap { trim: true }).block(Block::default().borders(Borders::ALL).title("Project Inspector")), area);
+        return;
+    }
     let palette = ThemePalette::for_app(app);
     let center = app.command_center_projection_at(now);
     let dashboard = &center.dashboard;

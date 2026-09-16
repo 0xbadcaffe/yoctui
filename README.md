@@ -6,7 +6,7 @@
 <p align="center">
   <a href="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml"><img src="https://github.com/0xbadcaffe/yoctui/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI workflow status"></a>
   <a href="docs/testing.md#completion-gate"><img src="https://img.shields.io/badge/coverage-gates-orange?style=flat-square" alt="Coverage verification gates"></a>
-  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.97" alt="Latest published crates.io version"></a>
+  <a href="https://crates.io/crates/yoctui"><img src="https://img.shields.io/crates/v/yoctui?style=flat-square&amp;cacheSeconds=300&amp;release=0.1.118" alt="Latest published crates.io version"></a>
   <a href="#install"><img src="https://img.shields.io/badge/rust-stable-orange?style=flat-square&amp;logo=rust" alt="Rust stable toolchain"></a>
   <br>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="MIT license"></a>
@@ -35,6 +35,14 @@ images, and manages development terminals.
 
 Production-renderer captures of the repaired screens. Fixture values illustrate
 the UI; GitUI panes replay real native output from a demo repository.
+
+<table>
+  <tr>
+    <td><a href="docs/media/screenshots/18-offline-dashboard.png"><img src="docs/media/screenshots/18-offline-dashboard.png" alt="Offline Dashboard with saved builds and setup guidance"></a><br><strong>Offline dashboard</strong> — setup, reconnect guidance and retained builds.</td>
+    <td><a href="docs/media/screenshots/19-saved-build-history.png"><img src="docs/media/screenshots/19-saved-build-history.png" alt="Saved build history without a daemon connection"></a><br><strong>Saved history</strong> — browse previous builds without configuring an environment or attaching.</td>
+  </tr>
+  <tr><td colspan="2"><a href="docs/media/screenshots/20-saved-build-logs.png"><img src="docs/media/screenshots/20-saved-build-logs.png" alt="Read-only saved build logs with provenance"></a><br><strong>Saved logs and tasks</strong> — separate read-only views with explicit retention limits.</td></tr>
+</table>
 
 <table>
   <tr>
@@ -109,6 +117,7 @@ implemented UI flows without claiming a live build for the fixture values.
 | Packages and Images | Generated pkgdata, installed packages, deployed artifacts, rootfs package pie chart using tui-piechart, filesystem tree, systemd units, system D-Bus configuration and udev rules |
 | Kernel and firmware | Kernel and U-Boot/BIOS provider detection, configuration files, menuconfig, DTS/DTB/DTBO browsing and device-tree compile/decompile |
 | Overview Insights | Timeline/critical path, rebuild causes, sstate/download outcomes, image size and retained size deltas, metadata provenance, package topology, supply-chain reports and disk history |
+| Offline history | Saved build outcomes, machine, duration, bounded logs/tasks and explicit missing-evidence states; no daemon required |
 | Source Git | Global branch, staged/unstaged/untracked/conflict and ahead/behind status; embedded GitUI diffs, staging and commits |
 | Terminals | Daemon-owned shells, devshell/menuconfig, SSH and runqemu consoles using tui-term; split panes, resize, scrollback, copy/search and reconnect |
 | SDK and Wic | Standard/extensible SDK builds and tests, installer inspection/publication, native tools, Wic creation and confirmed removable-device writing |
@@ -243,6 +252,46 @@ Results show file/line and image origin where known; Enter opens the result.
 The search skips symlinks, binary/oversized files, downloads, sstate and other
 large caches, and returns at most 500 hits. It is not an exhaustive disk index.
 Editors and terminals retain literal `/`; use their own search controls.
+
+## Offline use and saved builds
+
+Screens remain reachable without a configured build environment or a connected
+daemon. Setup and connection are separate: local source files and Git can remain
+usable while live build actions are unavailable. Disconnected screens label retained
+data as last observed; they do not claim a build is idle or successful.
+
+| Connection state | Available work |
+| --- | --- |
+| No environment | Configure/clone, saved builds, Settings and Help |
+| Configured, disconnected | Local files and Git, retained information and saved history |
+| Connected, idle | Supported workflows and build launch |
+| Connection lost | Last-observed data with its update age, saved history and automatic reconnect |
+
+Press **F3** for history. **Up/Down** selects a saved build; **Enter** opens details.
+Use **Left/Right** for Summary, Logs, Tasks and Errors; **PgUp/PgDn** scrolls;
+**Esc** returns to the list. **r** reloads saved records and **l** switches between
+saved records and live job history when connected. Viewing history never replaces
+live task/log state or grants control over an old process.
+
+The updated daemon saves builds without an attached client. It checkpoints active
+builds every 30 seconds and terminal transitions promptly in a background worker.
+Storage is private under `$XDG_STATE_HOME/yoctui/build-history/history.json`
+(default `~/.local/state/yoctui/build-history/history.json`). Retention is bounded
+to **32 builds and 8 MiB**, with at most **256 log records and 256 task rows per build**.
+Each message is limited to 4096 UTF-8 bytes. These are saved excerpts, not complete
+transcripts. Legacy builds show summaries when logs or task details were never saved.
+A failure record states when the backend did not preserve a distinct cancellation
+outcome. Incomplete records are last observations, never proof of a running build.
+
+Offline startup does not run BitBake metadata probes. On the Dashboard, **E** opens
+Build Environment and **F3** opens history. To connect, start the updated daemon
+from your initialized Yocto shell with `yoctui daemon start`; the client retries
+automatically. A daemon started before this release must be restarted after its
+active work finishes to enable the new history checkpoints.
+
+GitUI requires a selected source repository, but no build environment verification.
+Without a daemon, its launch preview offers the current terminal; quitting GitUI
+restores Yoctui. A detected detached terminal is also available.
 
 ## Source Git status
 
