@@ -43,6 +43,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::SourceGitStatusUpdated(status) => {
+            app.source_git_status = status;
+            None
+        }
         Action::SetBackgroundActivity { activity, active } => {
             if active {
                 app.background_activities.insert(activity);

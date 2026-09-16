@@ -840,3 +840,28 @@ fn clone_progress_is_visible_across_terminal_widths() {
         );
     }
 }
+
+#[test]
+fn git_status_is_global_and_visible_at_supported_widths() {
+    let mut app = App::new(10, 1024);
+    app.source_git_status = yoctui_model::SourceGitStatus::Ready(yoctui_model::SourceGitSummary {
+        branch: "master".into(),
+        unstaged: 2,
+        upstream: Some("origin/master".into()),
+        ..Default::default()
+    });
+    for width in [80, 100, 160] {
+        let mut terminal = Terminal::new(TestBackend::new(width, 5)).unwrap();
+        terminal
+            .draw(|frame| workbench_header(frame, &app, frame.area(), UNIX_EPOCH))
+            .unwrap();
+        let text = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|c| c.symbol())
+            .collect::<String>();
+        assert!(text.contains("Git: master ~2 synced*"), "{width}: {text}");
+    }
+}

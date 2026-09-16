@@ -27,6 +27,7 @@ pub struct ObservedTaskTiming {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
+    SourceGitStatusUpdated(SourceGitStatus),
     SetBackgroundActivity {
         activity: BackgroundActivity,
         active: bool,

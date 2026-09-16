@@ -1,11 +1,11 @@
 # Current Task
 
-**ID:** M68-GIT-001
-**Title:** Show asynchronous source repository synchronization status
+**ID:** M68-GITUI-001
+**Title:** Integrate GitUI through the existing terminal workbench
 **Status:** IN_PROGRESS
 
-Dependencies: M68-CANCEL-001 (DONE).
+Dependencies: M68-GIT-001 (DONE).
 
-Scope and done criteria: typed model Git status, shell-free CLI adapter and global header; temporary repository tests for dirty, ahead, behind, missing upstream and failures. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
+Scope and done criteria: typed menu/palette launch, terminal runtime, availability diagnostic; real temporary-repository terminal smoke plus input/resize tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
 
-Verification: `cargo test --workspace --all-features git_status` plus AGENTS.md baseline.
+Verification: `cargo test --workspace --all-features gitui` plus AGENTS.md baseline.

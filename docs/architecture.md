@@ -4242,3 +4242,9 @@ idempotent and BuildCompleted still comes through the backend event stream.
 The worker sends TERM, waits the configured grace period, then kills and reaps.
 Environment initialization plus backend metadata inspection uses a generation-bound
 client task; replacement backend cleanup also runs outside the input loop.
+
+Source Git status is a typed model projection from a read-only adapter running
+`git --no-optional-locks status --porcelain=2 --branch -z`. The CLI refreshes every
+five seconds without awaiting unfinished probes and discards changed-source tasks.
+The adapter bounds output to 1 MiB and elapsed time to five seconds. Rename paths
+are consumed as data and cannot become branch metadata. No implicit fetch occurs.

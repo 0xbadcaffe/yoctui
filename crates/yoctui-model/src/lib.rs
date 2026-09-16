@@ -297,3 +297,6 @@ pub use reducer::update;
 mod effects;
 pub use effects::Effect;
 use effects::next_filter;
+
+mod source_git;
+pub use source_git::*;

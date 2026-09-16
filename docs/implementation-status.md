@@ -3129,3 +3129,7 @@ DONE — Fresh nested destinations, asynchronous clone ownership, bounded Git ou
 ### M68-CANCEL-001
 
 DONE — Process cancellation is asynchronous and idempotent; environment initialization and backend replacement run in generation-bound workers. Named activity covers pending initialization, cancellation and loading. Full workspace suite, focused cancellation regressions, clippy, fmt, bridge and roadmap passed.
+
+### M68-GIT-001
+
+DONE — Typed source status and five-second background refresh report branch, tracking, staged/unstaged/untracked/conflict facts, with bounded subprocess output and stale-source cancellation. Real temporary-repository and narrow-header tests, full workspace, clippy, fmt, bridge and roadmap pass.

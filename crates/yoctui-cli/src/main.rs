@@ -170,6 +170,7 @@ mod pty_attach;
 #[cfg(test)]
 mod pty_workflow_tests;
 mod render_scheduler;
+mod source_git;
 mod telemetry_scheduler;
 
 use global_search::{
@@ -11862,6 +11863,7 @@ async fn tui(
     let mut rootfs_composition_operation = None;
     let mut global_content_search_operation = None;
     let mut clone_operation = None;
+    let mut source_git_poller = source_git::SourceGitPoller::default();
     let mut environment_operation = None;
     let sdk_artifact_adapter = app
         .workspace
@@ -12065,6 +12067,9 @@ async fn tui(
                     render_scheduler.invalidate(RenderCause::State);
                 }
             }
+        }
+        if source_git_poller.poll(&mut app).await {
+            render_scheduler.invalidate(RenderCause::State);
         }
         let local_operation_active = environment_operation.is_some()
             || clone_operation.is_some()

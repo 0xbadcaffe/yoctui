@@ -297,3 +297,6 @@ pub use process_backend::{ProcessBackend, classify_output};
 mod bridge_backend;
 use bridge_backend::{BUNDLED_BRIDGE_SOURCE, parse_task_dependency_dot};
 pub use bridge_backend::{BridgeBackend, BridgeProcessPriority};
+
+mod source_git;
+pub use source_git::inspect_source_git;

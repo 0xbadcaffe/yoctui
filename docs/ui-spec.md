@@ -5630,3 +5630,10 @@ M68 pending operations expose named footer activity on every screen: Initializin
 Cancelling…, or Loading…. Build cancellation leaves navigation and rendering live;
 its terminal state is shown only when the backend reports completion. Existing
 modal confirmation still precedes cancellation.
+
+M68 global Git status appears beside the application name. `+N` means staged,
+`~N` unstaged, `?N` untracked, and `!N` conflicted files. Ahead/behind counts and
+`no upstream` are independent of worktree changes. `synced*` compares against the
+last fetched upstream reference; status refresh never fetches or changes files.
+The source comes from the selected environment, falling back to workspace metadata.
+Missing/non-Git sources show `Git: unavailable`; scanning has a named pending state.

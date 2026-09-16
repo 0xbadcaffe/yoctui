@@ -149,6 +149,19 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
         format!("yoctui v{}", env!("CARGO_PKG_VERSION")),
         palette.role(palette.progress, Modifier::BOLD),
     )];
+    if let Some(mut git) = app.source_git_status.label() {
+        if matches!(
+            app.source_git_status,
+            yoctui_model::SourceGitStatus::Scanning
+        ) {
+            git = format!("{} {git}", task_activity(app, None));
+        }
+        left.push(header_separator(&palette, true));
+        left.push(Span::styled(
+            git,
+            palette.role(palette.informational, Modifier::BOLD),
+        ));
+    }
     if mode != HeaderMode::Narrow {
         left.push(header_separator(&palette, compact));
         left.extend(header_identity_spans(

@@ -11,7 +11,13 @@ const SATURATED_HOST_CPU_PERCENT: u8 = 90;
 /// Whether the foreground workspace contains a visible indeterminate activity
 /// glyph. Hidden work must not drive animation frames.
 pub(crate) fn has_visible_indeterminate_activity(app: &App) -> bool {
-    if !app.reduced_motion && !app.background_activities.is_empty() {
+    if !app.reduced_motion
+        && (!app.background_activities.is_empty()
+            || matches!(
+                app.source_git_status,
+                yoctui_model::SourceGitStatus::Scanning
+            ))
+    {
         return true;
     }
 

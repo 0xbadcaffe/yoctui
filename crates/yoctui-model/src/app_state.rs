@@ -3,6 +3,7 @@ use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
+    pub source_git_status: SourceGitStatus,
     pub background_activities: std::collections::BTreeSet<BackgroundActivity>,
     pub daemon: ClientDaemonView,
     pub client_access_origin: ClientAccessOrigin,
@@ -200,6 +201,7 @@ pub fn centered_viewport_range(
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
+            source_git_status: SourceGitStatus::default(),
             background_activities: Default::default(),
             daemon: ClientDaemonView::default(),
             client_access_origin: ClientAccessOrigin::default(),

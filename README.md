@@ -216,6 +216,14 @@ The search skips symlinks, binary/oversized files, downloads, sstate and other
 large caches, and returns at most 500 hits. It is not an exhaustive disk index.
 Editors and terminals retain literal `/`; use their own search controls.
 
+## Source Git status
+
+The global header shows the selected source repository and its Git state:
+`+N` staged, `~N` unstaged, `?N` untracked, and `!N` conflicted files.
+Ahead/behind counts compare against the last fetched upstream; `synced*` means
+those recorded commits match. Local changes remain visible independently.
+No upstream is shown explicitly. Status refreshes in the background without fetching.
+
 ## Edit recipes and develop a patch
 
 In Layers, Enter opens a layer tree, Right/Left expands/collapses directories,
