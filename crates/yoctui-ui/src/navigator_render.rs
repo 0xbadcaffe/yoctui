@@ -203,7 +203,7 @@ pub(crate) fn navigator_badge(app: &App, destination: WorkspaceDestination) -> S
             }
         }
         WorkspaceDestination::Logs if app.logs.paused_len.is_some() => " PAUSE".into(),
-        WorkspaceDestination::Logs if app.logs.follow => " LIVE".into(),
+        WorkspaceDestination::Logs if app.logs.follow && !app.is_offline() => " LIVE".into(),
         WorkspaceDestination::Devtool => {
             if app.devtool_statuses.is_empty() {
                 String::new()

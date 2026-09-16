@@ -123,7 +123,14 @@ pub(crate) fn render_dashboard_build(
             app.build.target.as_deref().unwrap_or("none")
         )),
         Line::from(format!("Current Task  : {task}")),
-        Line::from(format!("Build Status  : {}", app.build.status)),
+        Line::from(format!(
+            "Build Status  : {}",
+            if app.is_offline() {
+                "unavailable (offline)".to_owned()
+            } else {
+                app.build.status.to_string()
+            }
+        )),
         Line::from(format!(
             "Daemon Status : {}",
             header::daemon_status_label(app.daemon.status)

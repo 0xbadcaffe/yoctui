@@ -895,3 +895,23 @@ fn focus_navigation_renders_workspace_then_navigator_at_each_breakpoint() {
     update(&mut app, Action::Focus(FocusTarget::Navigator));
     assert_eq!(app.screen, Screen::Recipes);
 }
+
+#[test]
+fn offline_screens_retain_navigation_and_explain_connection() {
+    let mut app = App::new_unconfigured(32, 4096);
+    app.require_daemon = true;
+    for (width, height) in [(80, 24), (100, 30), (160, 50)] {
+        for screen in [
+            Screen::Dashboard,
+            Screen::Logs,
+            Screen::Tasks,
+            Screen::BuildHistory,
+        ] {
+            update(&mut app, Action::Open(screen));
+            app.focus = FocusTarget::Workspace;
+            let text = rendered_text(&app, width, height);
+            assert!(text.contains("No build environment"), "{text}");
+            assert!(!text.contains(" LIVE"), "{text}");
+        }
+    }
+}

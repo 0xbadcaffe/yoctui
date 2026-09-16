@@ -161,6 +161,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 FocusTarget::Navigator
             };
             app.focus_return = None;
+            if app.is_offline() {
+                return None;
+            }
             if app.screen == Screen::Packages
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
             {

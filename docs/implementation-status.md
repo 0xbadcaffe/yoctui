@@ -3172,3 +3172,7 @@ style tests, strict Clippy, formatting, version consistency, roadmap and all
 17 README/six concept screenshot checks pass. The completion gate reports only
 M67-LIVE-EVIDENCE-001 BLOCKED. Existing user capture files remain untracked and
 untouched. The handoff commit is pushed normally and remote HEAD is verified.
+
+### M69-AUTHORITY-001
+
+DONE — Offline navigation suppresses automatic backend probes, preserves cached state with age/connection notices, removes live labels and gates backend effects. GitUI supports an explicit current-terminal offline fallback. Full workspace tests, strict Clippy, formatting and 52 bridge tests pass; no local or hosted stale performance runs were found.

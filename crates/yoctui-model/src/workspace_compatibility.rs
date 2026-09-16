@@ -1059,6 +1059,16 @@ pub fn authorize_workspace_effect(
 pub fn update_with_workspace_authority(app: &mut App, action: crate::Action) -> Option<Effect> {
     let before = app.clone();
     let effect = crate::update(app, action)?;
+    if app.is_offline()
+        && !matches!(
+            workspace_effect_requirement(&effect),
+            WorkspaceEffectRequirement::ClientLocal
+        )
+    {
+        *app = before;
+        app.notification = Some("Connect to a current daemon and verify the build environment first; saved history remains available with F3.".into());
+        return None;
+    }
     match authorize_workspace_effect(app, &effect) {
         Ok(_) => Some(effect),
         Err(error) => {

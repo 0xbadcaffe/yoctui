@@ -515,6 +515,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             if let Some(id) = correlated_log_id {
                 app.logs.jump_to(id);
             }
+            if app.is_offline() {
+                return None;
+            }
             if s == Screen::Packages
                 && matches!(app.package_inventory, PackageInventoryState::NotLoaded)
             {
@@ -736,7 +739,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
                 return Some(match dialog.destination {
                     TerminalLaunchDestination::Embedded => {
-                        if dialog.request.kind == TerminalCreationKind::GitUi {
+                        if dialog.request.kind == TerminalCreationKind::GitUi && !app.is_offline() {
                             app.screen = Screen::TerminalSessions;
                             app.focus = FocusTarget::Workspace;
                             app.focus_return = None;

@@ -679,11 +679,18 @@ pub fn render_at(frame: &mut Frame, app: &App, now: SystemTime) {
                 Line::from(""),
                 Line::styled(
                     format!(
-                        "{} Embedded in Yoctui (daemon-owned PTY)",
+                        "{} {}",
                         if dialog.destination == yoctui_model::TerminalLaunchDestination::Embedded {
                             "▶"
                         } else {
                             " "
+                        },
+                        if app.is_offline()
+                            && dialog.request.kind == yoctui_model::TerminalCreationKind::GitUi
+                        {
+                            "Current terminal (offline GitUI; quit to return)"
+                        } else {
+                            "Embedded in Yoctui (daemon-owned PTY)"
                         }
                     ),
                     selected_style(

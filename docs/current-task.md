@@ -1,10 +1,11 @@
 # Current Task
 
-**ID:** M69-AUTHORITY-001
+**ID:** M69-HISTORY-001
+**Title:** Persist and browse bounded saved builds offline
 **Status:** IN_PROGRESS
 
-Expose offline state and prerequisite guidance. Dependencies: none.
-Files: model/app connection projection, UI workspace notices and Git launch.
-Done: unconfigured/disconnected/current transitions preserve data and truthful labels; local inspection stays available; backend actions retain prerequisite guards.
-Verify: `cargo test --workspace --all-features offline` and AGENTS.md baseline.
-Update UI/architecture, registry and status; commit then continue M69-HISTORY-001.
+Dependencies: M69-AUTHORITY-001 (DONE).
+
+Files and done criteria: protocol archive schema, CLI atomic persistence and startup load, typed History details; restart/corrupt/missing/truncated records and UI tests. Baseline checks, UI/architecture documentation, registry/status/current updates and coherent commit required.
+
+Verification: `cargo test --workspace --all-features archive` plus AGENTS.md baseline.

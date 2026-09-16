@@ -5706,3 +5706,7 @@ history is imported as summary-only when detailed logs were never retained.
 README documents offline scope, retention, controls and availability. Release
 publication follows baseline/package verification; historical performance evidence
 is not represented as current certification.
+
+Offline GitUI confirmation labels its current-terminal fallback explicitly.
+It suspends Yoctui's terminal modes, runs GitUI in the selected source directory,
+and restores Yoctui when GitUI exits; no daemon or graphical terminal is required.

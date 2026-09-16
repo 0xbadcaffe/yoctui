@@ -176,7 +176,11 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
         left.push(header_separator(&palette, compact));
         left.push(status_label(
             build_tone,
-            app.build.status.to_string(),
+            if app.is_offline() {
+                "Offline".into()
+            } else {
+                app.build.status.to_string()
+            },
             status_tone_style(&palette, build_tone),
         ));
     }

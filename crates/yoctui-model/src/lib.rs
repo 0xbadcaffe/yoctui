@@ -300,3 +300,5 @@ use effects::next_filter;
 
 mod source_git;
 pub use source_git::*;
+
+mod offline;

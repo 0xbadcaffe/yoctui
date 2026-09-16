@@ -3,6 +3,8 @@ use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
+    pub require_daemon: bool,
+    pub last_daemon_update: Option<SystemTime>,
     pub gitui_program: Option<PathBuf>,
     pub source_git_status: SourceGitStatus,
     pub background_activities: std::collections::BTreeSet<BackgroundActivity>,
@@ -202,6 +204,8 @@ pub fn centered_viewport_range(
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
+            require_daemon: false,
+            last_daemon_update: None,
             gitui_program: None,
             source_git_status: SourceGitStatus::default(),
             background_activities: Default::default(),

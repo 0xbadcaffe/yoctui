@@ -35,7 +35,9 @@ pub(crate) fn log_severity_label(severity: Severity) -> &'static str {
 
 pub(crate) fn compact_log_activity(app: &App, width: u16) -> String {
     let detailed = width >= 96;
-    let mut segments = vec![if app.logs.follow {
+    let mut segments = vec![if app.is_offline() {
+        "Saved / last observed".to_owned()
+    } else if app.logs.follow {
         if detailed {
             "▶ Following"
         } else {

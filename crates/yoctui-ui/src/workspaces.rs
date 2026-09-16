@@ -10,6 +10,18 @@ pub(super) fn workspace(
     now: SystemTime,
     task_rows: Option<&[TaskRowRef<'_>]>,
 ) {
+    let area = if let Some(notice) = app.offline_notice() {
+        let rows = Layout::vertical([Constraint::Length(2), Constraint::Min(0)]).split(area);
+        frame.render_widget(
+            Paragraph::new(notice)
+                .wrap(Wrap { trim: true })
+                .style(Style::default().fg(ThemePalette::for_app(app).warning)),
+            rows[0],
+        );
+        rows[1]
+    } else {
+        area
+    };
     match app.screen {
         Screen::Dashboard => dashboard_render::dashboard(frame, app, area, now),
         Screen::Insights => overview_workspace(frame, app, area, now),

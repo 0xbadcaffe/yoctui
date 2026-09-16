@@ -129,6 +129,10 @@ impl DaemonClientSnapshot {
     }
 
     pub fn install_app(&mut self, app: &mut yoctui_model::App) {
+        app.observe_daemon(
+            self.status == yoctui_model::ClientReplicaStatus::Current,
+            std::time::SystemTime::now(),
+        );
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
         if self.status == yoctui_model::ClientReplicaStatus::Current
             && let Some(progress) = self

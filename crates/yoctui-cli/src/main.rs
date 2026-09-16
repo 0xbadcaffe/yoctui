@@ -11727,6 +11727,7 @@ async fn tui(
     // The interactive application always opens on Overview / Dashboard in
     // Navigator. Model fixtures retain their explicit focus semantics.
     app.focus = yoctui_model::FocusTarget::Navigator;
+    app.require_daemon = true;
     app.client_access_origin = client_access_origin();
     let _ = update(
         &mut app,
@@ -13492,7 +13493,39 @@ async fn tui(
                             if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect)
                                 .is_none()
                             {
-                                app.notification = Some("Embedded terminal unavailable: connect to the daemon or choose a detached terminal.".into());
+                                if let Effect::Terminal(yoctui_model::TerminalEffect::Create {
+                                    kind: yoctui_model::TerminalCreationKind::GitUi,
+                                    program,
+                                    cwd,
+                                    arguments,
+                                    ..
+                                }) = effect
+                                {
+                                    if let Err(error) = guard.suspend() {
+                                        app.notification =
+                                            Some(format!("Cannot open GitUI: {error}"));
+                                    } else {
+                                        let result = tokio::task::spawn_blocking(move || {
+                                            std::process::Command::new(program)
+                                                .args(arguments)
+                                                .current_dir(cwd)
+                                                .status()
+                                        })
+                                        .await;
+                                        let restored = guard.resume();
+                                        app.notification = Some(match (result, restored) {
+                                            (_, Err(error)) => {
+                                                format!("Cannot restore terminal: {error}")
+                                            }
+                                            (Ok(Ok(status)), Ok(())) if status.success() => {
+                                                "GitUI closed; source status will refresh.".into()
+                                            }
+                                            (result, _) => format!("GitUI finished: {result:?}"),
+                                        });
+                                    }
+                                } else {
+                                    app.notification = Some("Embedded terminal unavailable: connect to the daemon or choose a detached terminal.".into());
+                                }
                             }
                         }
                         Some(Effect::LaunchDetachedTerminal(request)) => {
