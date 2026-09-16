@@ -887,12 +887,17 @@ fn menuconfig_ncurses_screen(title: &str, entries: &[&str]) -> yoctui_model::Cli
     );
     let _ = write!(ansi, "\x1b[11;15H\x1b[?25l");
 
-    let dimensions = yoctui_model::PtyDimensions {
-        columns: COLUMNS,
-        rows: ROWS,
-    };
+    captured_terminal_screen(ansi.as_bytes(), COLUMNS, ROWS)
+}
+
+fn captured_terminal_screen(
+    ansi: &[u8],
+    columns: u16,
+    rows: u16,
+) -> yoctui_model::ClientDaemonPtyScreen {
+    let dimensions = yoctui_model::PtyDimensions { columns, rows };
     let mut emulator = yoctui_model::TerminalEmulator::new(dimensions, 0).unwrap();
-    emulator.process(ansi.as_bytes()).unwrap();
+    emulator.process(ansi).unwrap();
     let snapshot = emulator.snapshot(0).unwrap();
     let cells = snapshot
         .cells
@@ -912,8 +917,8 @@ fn menuconfig_ncurses_screen(title: &str, entries: &[&str]) -> yoctui_model::Cli
         .collect();
     yoctui_model::ClientDaemonPtyScreen {
         session_id: 1,
-        columns: COLUMNS,
-        rows_count: ROWS,
+        columns,
+        rows_count: rows,
         cursor_column: snapshot.cursor.1,
         cursor_row: snapshot.cursor.0,
         cursor_hidden: snapshot.modes.cursor_hidden,
@@ -955,4 +960,79 @@ fn menuconfig_fixture_color(
             yoctui_model::ClientDaemonTerminalColor::Rgb(red, green, blue)
         }
     }
+}
+
+pub(crate) fn readme_repaired_workflow_app(scene: &str) -> App {
+    let mut app = concept_idle_dashboard_app();
+    app.source_git_status = yoctui_model::SourceGitStatus::Ready(yoctui_model::SourceGitSummary {
+        branch: "master".into(),
+        upstream: Some("origin/master".into()),
+        ahead: 1,
+        unstaged: 2,
+        ..Default::default()
+    });
+    match scene {
+        "cloning" => {
+            app = App::new_unconfigured(512, 1024 * 1024);
+            app.navigator_selection = 22;
+            app.focus = FocusTarget::Workspace;
+            update(
+                &mut app,
+                Action::SetBackgroundActivity {
+                    activity: yoctui_model::BackgroundActivity::Cloning,
+                    active: true,
+                },
+            );
+        }
+        "cancelling" => {
+            app = literal_reference_app();
+            app.screen = Screen::Tasks;
+            app.navigator_selection = 9;
+            app.focus = FocusTarget::Workspace;
+            app.build.status = BuildStatus::Cancelling;
+            update(
+                &mut app,
+                Action::SetBackgroundActivity {
+                    activity: yoctui_model::BackgroundActivity::Cancelling,
+                    active: true,
+                },
+            );
+        }
+        "search-empty" => {
+            app.command_palette_open = true;
+            app.command_palette_mode = CommandPaletteMode::GlobalRegexSearch;
+            app.command_palette_query.clear();
+        }
+        "gitui-diff" | "gitui-commit" => {
+            let ansi = if scene == "gitui-diff" {
+                include_bytes!("../../tests/fixtures/gitui-diff.ansi").as_slice()
+            } else {
+                include_bytes!("../../tests/fixtures/gitui-commit.ansi").as_slice()
+            };
+            app.screen = Screen::TerminalSessions;
+            app.navigator_selection = 18;
+            app.focus = FocusTarget::Workspace;
+            app.terminal.client_id = Some([1; 16]);
+            app.daemon.pty_sessions = vec![yoctui_model::ClientDaemonPtySummary {
+                id: 1,
+                name: "GitUI".into(),
+                lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+                viewers: 1,
+            }];
+            app.daemon.pty_details = vec![yoctui_model::ClientDaemonPtyDetails {
+                id: 1,
+                kind: yoctui_model::ClientDaemonPtyKind::Utility,
+                cwd: "/workspace/yocto".into(),
+                columns: 98,
+                rows: 32,
+                writer: Some([1; 16]),
+                writer_epoch: 1,
+                exit_code: None,
+                restartable: true,
+            }];
+            app.daemon.pty_screens = vec![captured_terminal_screen(ansi, 98, 32)];
+        }
+        _ => panic!("unknown repaired workflow fixture: {scene}"),
+    }
+    app
 }

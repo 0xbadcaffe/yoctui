@@ -65,6 +65,7 @@ class CellStyle:
     foreground: tuple[int, int, int]
     background: tuple[int, int, int]
     bold: bool
+    underline: bool
 
 
 def sha256(path: Path) -> str:
@@ -196,12 +197,18 @@ def parse_cell_golden(path: Path) -> tuple[list[str], list[CellStyle]]:
         if not match:
             fail(f"malformed style run {line!r}")
         count, foreground, background, underline, modifiers = match.groups()
-        if underline != "Reset" or modifiers not in {"NONE", "BOLD"}:
+        flags = set(modifiers.split(" | ")) - {"NONE"}
+        if underline != "Reset" or flags - {"BOLD", "UNDERLINED", "REVERSED"}:
             fail(f"unsupported style projection {line!r}")
+        fg = parse_color(foreground, DEFAULT_FOREGROUND)
+        bg = parse_color(background, DEFAULT_BACKGROUND)
+        if "REVERSED" in flags:
+            fg, bg = bg, fg
         style = CellStyle(
-            foreground=parse_color(foreground, DEFAULT_FOREGROUND),
-            background=parse_color(background, DEFAULT_BACKGROUND),
-            bold=modifiers == "BOLD",
+            foreground=fg,
+            background=bg,
+            bold="BOLD" in flags,
+            underline="UNDERLINED" in flags,
         )
         styles.extend([style] * int(count))
     expected = WIDTH * HEIGHT
@@ -299,6 +306,11 @@ def render_cell_golden(source: Path, destination: Path) -> None:
 
     current_bold: bool | None = None
     for index, (symbol, style) in enumerate(zip(symbols, styles, strict=True)):
+        if style.underline:
+            set_rgb(context, style.foreground)
+            context.rectangle((index % WIDTH) * CELL_WIDTH,
+                              (index // WIDTH + 1) * CELL_HEIGHT - 2, CELL_WIDTH, 1)
+            context.fill()
         if symbol.isspace() or not symbol:
             continue
         if current_bold != style.bold:
@@ -361,7 +373,7 @@ def scenarios() -> list[tuple[str, Path]]:
 def provenance_text(rendered: list[tuple[str, Path, Path]], output_root: Path) -> str:
     lines = [
         "schema_version = 1",
-        'renderer = "yoctui-cairo-cell-raster-v2"',
+        'renderer = "yoctui-cairo-cell-raster-v3"',
         f'pycairo_version = "{PYCAIRO_VERSION}"',
         f'cairo_version = "{CAIRO_VERSION}"',
         f'font_family = "{FONT_FAMILY}"',
@@ -431,7 +443,7 @@ def update() -> None:
                 entry,
             )
             return re.sub(
-                r'renderer = "[^"]+"', 'renderer = "yoctui-cairo-cell-raster-v2"', entry
+                r'renderer = "[^"]+"', 'renderer = "yoctui-cairo-cell-raster-v3"', entry
             )
 
         manifest, count = re.subn(pattern, refresh, manifest)

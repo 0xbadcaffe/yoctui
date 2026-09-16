@@ -29,6 +29,11 @@ SCENARIOS = [
         "device-tree-compile-options",
         "readme-device-tree-compile-options-160x50.cells",
     ),
+    ("cloning", "readme-cloning-160x50.cells"),
+    ("cancelling", "readme-cancelling-160x50.cells"),
+    ("search-empty", "readme-search-empty-160x50.cells"),
+    ("gitui-diff", "readme-gitui-diff-160x50.cells"),
+    ("gitui-commit", "readme-gitui-commit-160x50.cells"),
 ]
 
 
@@ -61,7 +66,7 @@ def render_all(output_root: Path) -> list[tuple[str, Path, Path]]:
 def provenance_text(rendered: list[tuple[str, Path, Path]]) -> str:
     lines = [
         "schema_version = 1",
-        'renderer = "yoctui-cairo-cell-raster-v2"',
+        'renderer = "yoctui-cairo-cell-raster-v3"',
         'authority = "production TestBackend cell/style goldens"',
         f'pycairo_version = "{RASTER["PYCAIRO_VERSION"]}"',
         f'cairo_version = "{RASTER["CAIRO_VERSION"]}"',

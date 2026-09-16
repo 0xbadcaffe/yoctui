@@ -1,9 +1,10 @@
 # Yoctui Implementation Status
 
-M68 is active: ten atomic tasks are registered for the new user request.
-Existing F10 application menus and Devtool Git status were found; general
-GitUI integration is absent. Clone still awaits inside the input handler.
-M68-CLONE-001 is current; M67 live evidence remains a separate blocker.
+M68 implementation tasks are complete: fresh clones and cancellation run in the
+background, Git status and embedded GitUI are available, menus/focus are repaired,
+and dashboard bars/Rootfs pie use reviewed production rendering. The refreshed
+README gallery is under verification; publication to master follows. M67 live
+performance evidence remains a separate external blocker.
 
 M67 requested fixes are implemented and committed as atomic changes: fresh
 build-directory initialization, asynchronous daemon compatibility discovery,
@@ -3153,3 +3154,7 @@ DONE — Replaced scrambled dashboard arcs with clean exact-value capacity bars;
 ### M68-PIE-001
 
 DONE — Expanded the Braille chart to its full drawing area with a matching-color exact table; geometry and accessibility regressions, full workspace tests, Clippy, bridge tests, formatting and reviewed production goldens pass.
+
+### M68-GALLERY-001
+
+DONE — Published a front README gallery of all repaired workflows with 17 verified production rasters, genuine GitUI diff/commit captures and tested underline/reverse style export. Version 0.1.116, full workspace tests, strict Clippy, 52 bridge tests, formatting, docs, version and screenshot checks pass.

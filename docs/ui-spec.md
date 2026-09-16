@@ -5673,3 +5673,11 @@ resolution. The adjacent exact composition table supplies matching colored
 category markers, bytes, counts and percentages; duplicate in-chart legends and
 percentage overlays no longer consume or obscure the drawing area. Existing
 narrow, ASCII, monochrome and explicit table preferences retain the exact table.
+
+### M68 repaired-workflow gallery
+
+The front README gallery includes production-rendered cloning and cancellation
+indicators, empty global content search, source Git status with native GitUI diff
+and commit entry, application menus, clean capacity bars and the full-area pie.
+Native GitUI captures are replayed through the same typed terminal screen model;
+all screenshots explicitly use fixture data and do not assert live build evidence.

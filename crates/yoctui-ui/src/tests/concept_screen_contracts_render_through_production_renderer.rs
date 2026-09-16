@@ -853,3 +853,85 @@ fn snapshot_progress_renders_aggregate_instead_of_retained_row_count() {
     assert!(text.contains("2340/—"), "{text}");
     assert!(text.contains("progress unknown"), "{text}");
 }
+
+#[test]
+fn readme_repaired_workflows_render_through_production_renderer() {
+    let scenes = [
+        (
+            "cloning",
+            "Cloning…",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-cloning-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-cloning-160x50.cells"
+            )),
+        ),
+        (
+            "cancelling",
+            "Cancelling…",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-cancelling-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-cancelling-160x50.cells"
+            )),
+        ),
+        (
+            "search-empty",
+            "Type a regular expression",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-search-empty-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-search-empty-160x50.cells"
+            )),
+        ),
+        (
+            "gitui-diff",
+            "SUMMARY",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-gitui-diff-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-gitui-diff-160x50.cells"
+            )),
+        ),
+        (
+            "gitui-commit",
+            "Update example recipe",
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-gitui-commit-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-gitui-commit-160x50.cells"
+            )),
+        ),
+    ];
+    let update_goldens = std::env::var_os("YOCTUI_UPDATE_README_GOLDENS").is_some();
+    for (name, anchor, path, fixture) in scenes {
+        let app = readme_repaired_workflow_app(name);
+        let mut terminal = Terminal::new(TestBackend::new(160, 50)).unwrap();
+        terminal
+            .draw(|frame| render_at(frame, &app, literal_now()))
+            .unwrap();
+        let text = concept_text_capture(&terminal);
+        assert!(text.contains(anchor), "{name} missing {anchor}: {text}");
+        let cells = literal_cells(&terminal);
+        if update_goldens {
+            fs::write(path, serialize_target_golden(&cells)).unwrap();
+        } else {
+            assert_target_golden(name, &parse_target_golden(fixture), &cells);
+        }
+    }
+}

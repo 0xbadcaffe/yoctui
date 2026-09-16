@@ -31,6 +31,30 @@ Yoctui is a terminal application for Yocto and BitBake development. It runs
 builds, shows tasks and logs, edits recipes and sources, inspects generated
 images, and manages development terminals.
 
+## Updated workflows
+
+Production-renderer captures of the repaired screens. Fixture values illustrate
+the UI; GitUI panes replay real native output from a demo repository.
+
+<table>
+  <tr>
+    <td><a href="docs/media/screenshots/13-cloning.png"><img src="docs/media/screenshots/13-cloning.png" alt="Fresh clone"></a><br><strong>Fresh clone</strong> — Braille Cloning… while the clone runs in the background.</td>
+    <td><a href="docs/media/screenshots/14-cancelling.png"><img src="docs/media/screenshots/14-cancelling.png" alt="Background cancellation"></a><br><strong>Background cancellation</strong> — Cancellation stays visible while navigation remains available.</td>
+  </tr>
+  <tr>
+    <td><a href="docs/media/screenshots/15-search-empty.png"><img src="docs/media/screenshots/15-search-empty.png" alt="Content search"></a><br><strong>Content search</strong> — Opening / starts empty; results come from build and generated rootfs text.</td>
+    <td><a href="docs/media/screenshots/16-gitui-diff.png"><img src="docs/media/screenshots/16-gitui-diff.png" alt="Source Git and diffs"></a><br><strong>Source Git and diffs</strong> — Global repository status and the native GitUI staging/diff workbench.</td>
+  </tr>
+  <tr>
+    <td><a href="docs/media/screenshots/17-gitui-commit.png"><img src="docs/media/screenshots/17-gitui-commit.png" alt="Commit messages"></a><br><strong>Commit messages</strong> — Native GitUI commit entry inside a Yoctui terminal.</td>
+    <td><a href="docs/media/screenshots/09-editor-application-menu.png"><img src="docs/media/screenshots/09-editor-application-menu.png" alt="Application menus"></a><br><strong>Application menus</strong> — Arrow-key navigation, disabled reasons and Escape to return.</td>
+  </tr>
+  <tr>
+    <td><a href="docs/media/screenshots/07-idle-dashboard.png"><img src="docs/media/screenshots/07-idle-dashboard.png" alt="Clean dashboard bars"></a><br><strong>Clean dashboard bars</strong> — Exact CPU, RAM and filesystem values with readable capacity bars.</td>
+    <td><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="High-resolution Rootfs pie"></a><br><strong>High-resolution Rootfs pie</strong> — Full-area Braille rendering with a color-matched exact-value table.</td>
+  </tr>
+</table>
+
 <p align="center">
   <a href="docs/media/screenshots/01-active-build-tasks.png"><img src="docs/media/screenshots/01-active-build-tasks.png" alt="Yoctui active BitBake tasks and correlated build logs"></a>
 </p>
@@ -75,8 +99,8 @@ implemented UI flows without claiming a live build for the fixture values.
 
 | Area | Features |
 | --- | --- |
-| Build environment | Source/build directory browser, manual path editing, environment-script detection, clone preview, initialization and connection checks |
-| Dashboard and Tasks | Build/task state, progress, elapsed time, job history, cancellation, CPU/RAM/filesystem meters, disk/network histories |
+| Build environment | Source/build directory browser, manual path editing, environment-script detection, nested fresh-clone destinations, background cloning with Braille progress, initialization and connection checks |
+| Dashboard and Tasks | Build/task state, progress, elapsed time, job history, background cancellation, clean CPU/RAM/filesystem bars, disk/network histories |
 | Logs and Errors | Live follow/pause, filters, search, bookmarks, wrapping, horizontal scrolling, copy/export, task correlation and failure details; Yocto log panes use tui-logger |
 | Layers and Recipes | Expandable layer tree using tui-tree-widget, provider/appends/tasks/patch inspection, syntax-aware file previews, source editing and external editors |
 | Configuration | Effective values, overrides, provenance, scope comparison, reviewed local.conf edits and BBMASK |
@@ -85,6 +109,7 @@ implemented UI flows without claiming a live build for the fixture values.
 | Packages and Images | Generated pkgdata, installed packages, deployed artifacts, rootfs package pie chart using tui-piechart, filesystem tree, systemd units, system D-Bus configuration and udev rules |
 | Kernel and firmware | Kernel and U-Boot/BIOS provider detection, configuration files, menuconfig, DTS/DTB/DTBO browsing and device-tree compile/decompile |
 | Overview Insights | Timeline/critical path, rebuild causes, sstate/download outcomes, image size and retained size deltas, metadata provenance, package topology, supply-chain reports and disk history |
+| Source Git | Global branch, staged/unstaged/untracked/conflict and ahead/behind status; embedded GitUI diffs, staging and commits |
 | Terminals | Daemon-owned shells, devshell/menuconfig, SSH and runqemu consoles using tui-term; split panes, resize, scrollback, copy/search and reconnect |
 | SDK and Wic | Standard/extensible SDK builds and tests, installer inspection/publication, native tools, Wic creation and confirmed removable-device writing |
 | Testing, Security and QA | Selftests, image/SDK tests, ptest, result comparison/JUnit export, CVE checks, SPDX/CycloneDX/manifest imports, recipe/kernel and layer checks |
@@ -226,6 +251,16 @@ The global header shows the selected source repository and its Git state:
 Ahead/behind counts compare against the last fetched upstream; `synced*` means
 those recorded commits match. Local changes remain visible independently.
 No upstream is shown explicitly. Status refreshes in the background without fetching.
+
+### GitUI source workbench
+
+Install [GitUI](https://github.com/gitui-org/gitui#installation) on your `PATH`,
+then restart Yoctui. Choose **F10 → Tools → Open GitUI**, or search for GitUI in
+**Ctrl+P**. Review the source directory and choose the embedded terminal.
+Press **o** to take writer control. GitUI provides diffs, staging, commit messages,
+branch management, fetch and push; its footer shows the active keys.
+Use **Ctrl+B t** for the session list. Git status refreshes automatically.
+
 
 ## Edit recipes and develop a patch
 
@@ -495,12 +530,3 @@ Yoctui is [MIT-licensed](LICENSE). Dependency licenses are listed in
 The offline systemd service view was informed by the MIT-licensed
 [systemd-manager-tui](https://github.com/Matheus-git/systemd-manager-tui) by
 Matheus-git; Yoctui uses its own parser for unbooted images.
-
-### GitUI source workbench
-
-Install [GitUI](https://github.com/gitui-org/gitui#installation) on your `PATH`,
-then restart Yoctui. Choose **F10 → Tools → Open GitUI**, or search for GitUI in
-**Ctrl+P**. Review the source directory and choose the embedded terminal.
-Press **o** to take writer control. GitUI provides diffs, staging, commit messages,
-branch management, fetch and push; its footer shows the active keys.
-Use **Ctrl+B t** for the session list. Git status refreshes automatically.
