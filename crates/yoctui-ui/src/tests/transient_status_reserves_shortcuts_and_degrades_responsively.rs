@@ -810,3 +810,33 @@ fn settings_workspace_renders_typed_rows_and_controls_on_narrow_terminals() {
     assert!(output.contains("select"));
     assert!(output.contains("change"));
 }
+
+#[test]
+fn clone_progress_is_visible_across_terminal_widths() {
+    let mut app = App::new(32, 8192);
+    update(
+        &mut app,
+        Action::SetBackgroundActivity {
+            activity: yoctui_model::BackgroundActivity::Cloning,
+            active: true,
+        },
+    );
+    for width in [80, 100, 160] {
+        let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+        terminal
+            .draw(|frame| workbench_footer(frame, &app, frame.area(), UNIX_EPOCH))
+            .unwrap();
+        let text = terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|c| c.symbol())
+            .collect::<String>();
+        assert!(text.contains("Cloning…"), "{width}: {text}");
+        assert!(
+            text.chars().any(|c| ('\u{2800}'..='\u{28ff}').contains(&c)),
+            "{text}"
+        );
+    }
+}

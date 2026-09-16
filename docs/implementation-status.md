@@ -3121,3 +3121,7 @@ files, including pre-M67 changes. The completion run passed compatibility and
 workspace checks again, then was stopped after the independent source-binding
 preflight identified this mandatory unmet prerequisite. No release-completion
 or fresh live-Yocto claim is made. Reproduction and follow-up are in current-task.md.
+
+### M68-CLONE-001
+
+DONE — Fresh nested destinations, asynchronous clone ownership, bounded Git output and group cancellation, stale-profile protection, named Braille footer. Clone regressions, full workspace tests, clippy, fmt, 52 bridge tests and roadmap passed.

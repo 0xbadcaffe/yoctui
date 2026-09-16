@@ -27,6 +27,10 @@ pub struct ObservedTaskTiming {
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
+    SetBackgroundActivity {
+        activity: BackgroundActivity,
+        active: bool,
+    },
     Tick,
     OpenOnboarding,
     DismissOnboarding,

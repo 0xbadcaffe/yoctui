@@ -5620,3 +5620,8 @@ menu geometry rules.
   clone progress, Git status/GitUI, menus/navigation, cancellation, Rootfs and
   Dashboard. Deterministic demonstrations are labeled; no fixture is described
   as a live Yocto measurement. Original concept art remains unchanged.
+
+M68 clone details: the footer keeps `Cloning…` visible even during another build.
+Escape in Build Environment cancels the pending clone once dialogs/menus are closed.
+Partial files remain on failure/cancellation; retry uses an empty destination.
+A completed clone cannot replace a profile selected while the clone was running.

@@ -425,6 +425,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::ConfirmBuildEnvironmentClone => {
+            if app
+                .background_activities
+                .contains(&BackgroundActivity::Cloning)
+            {
+                return None;
+            }
             if let Some(Dialog::BuildEnvironmentCloneReview(plan)) = app.active_dialog().cloned() {
                 close_dialog(app);
                 return Some(Effect::CloneBuildEnvironment(plan));

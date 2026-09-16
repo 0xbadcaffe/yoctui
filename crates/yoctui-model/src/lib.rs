@@ -1,5 +1,7 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
 mod action_catalog;
+mod background_activity;
+pub use background_activity::BackgroundActivity;
 mod bitbake_layers;
 mod bitbake_restart;
 mod checkbox;

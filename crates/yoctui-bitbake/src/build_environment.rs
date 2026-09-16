@@ -1,5 +1,11 @@
-use std::{collections::BTreeMap, path::PathBuf, process::Output, time::Duration};
+use std::{
+    collections::BTreeMap,
+    path::PathBuf,
+    process::{Output, Stdio},
+    time::Duration,
+};
 use thiserror::Error;
+use tokio::io::AsyncReadExt;
 use tokio::{
     process::Command,
     time::{error::Elapsed, timeout},
@@ -80,13 +86,7 @@ impl BuildEnvironmentAdapter {
         request
             .validate()
             .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(request.destination.clone()))?;
-        if let Some(parent) = request.destination.parent()
-            && !parent.is_dir()
-        {
-            return Err(BuildEnvironmentAdapterError::DestinationParent(
-                parent.to_owned(),
-            ));
-        }
+        validate_clone_ancestors(&request.destination)?;
         if path_entry_exists(&request.destination)
             .map_err(|_| BuildEnvironmentAdapterError::UnsafePath(request.destination.clone()))?
         {
@@ -137,6 +137,12 @@ impl BuildEnvironmentAdapter {
         request: BuildEnvironmentCloneRequest,
     ) -> Result<BuildEnvironmentClonePreview, BuildEnvironmentAdapterError> {
         let preview = self.preview_clone(&request)?;
+        if let Some(parent) = request.destination.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|_| BuildEnvironmentAdapterError::DestinationParent(parent.to_owned()))?;
+        }
+        // Recheck after creating the reviewed parent chain, before executing Git.
+        self.preview_clone(&request)?;
         let output = self.run_git(&preview.clone_argv).await?;
         if output.stdout.len() > MAX_OUTPUT || output.stderr.len() > MAX_OUTPUT {
             return Err(BuildEnvironmentAdapterError::OutputTooLarge);
@@ -159,23 +165,60 @@ impl BuildEnvironmentAdapter {
 
     async fn run_git(&self, argv: &[String]) -> Result<Output, BuildEnvironmentAdapterError> {
         for attempt in 1..=SPAWN_ATTEMPTS {
-            match timeout(
-                self.timeout,
-                Command::new(&self.git_program).args(argv).output(),
-            )
-            .await
-            {
-                Err(_elapsed) => return Err(BuildEnvironmentAdapterError::Timeout),
-                Ok(Ok(output)) => return Ok(output),
-                Ok(Err(error)) if attempt < SPAWN_ATTEMPTS && is_transient_spawn_error(&error) => {
+            let mut command = Command::new(&self.git_program);
+            command
+                .args(argv)
+                .env("GIT_TERMINAL_PROMPT", "0")
+                .stdin(Stdio::null())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .kill_on_drop(true);
+            #[cfg(unix)]
+            command.process_group(0);
+            let mut child = match command.spawn() {
+                Ok(child) => child,
+                Err(error) if attempt < SPAWN_ATTEMPTS && is_transient_spawn_error(&error) => {
                     tokio::time::sleep(SPAWN_RETRY_DELAY).await;
+                    continue;
                 }
-                Ok(Err(error)) => {
-                    return Err(BuildEnvironmentAdapterError::Failed(error.to_string()));
+                Err(error) => return Err(BuildEnvironmentAdapterError::Failed(error.to_string())),
+            };
+            let mut group = child.id().map(yoctui_utils::ProcessGroupGuard::new);
+            let stdout = child.stdout.take().expect("piped stdout");
+            let stderr = child.stderr.take().expect("piped stderr");
+            let collect = async {
+                let (status, stdout, stderr) = tokio::join!(
+                    child.wait(),
+                    bounded_git_output(stdout),
+                    bounded_git_output(stderr)
+                );
+                Ok::<_, std::io::Error>(Output {
+                    status: status?,
+                    stdout: stdout?,
+                    stderr: stderr?,
+                })
+            };
+            let result = timeout(self.timeout, collect).await;
+            match result {
+                Ok(Ok(output)) => {
+                    if let Some(group) = &mut group {
+                        group.disarm();
+                    }
+                    return Ok(output);
+                }
+                result => {
+                    drop(group);
+                    let _ = child.kill().await;
+                    let _ = child.wait().await;
+                    return Err(match result {
+                        Err(_) => BuildEnvironmentAdapterError::Timeout,
+                        Ok(Err(error)) => BuildEnvironmentAdapterError::Failed(error.to_string()),
+                        _ => unreachable!(),
+                    });
                 }
             }
         }
-        unreachable!("the bounded build environment spawn loop always returns")
+        unreachable!("bounded retry loop returns")
     }
 
     pub fn validate(
@@ -285,6 +328,43 @@ env -0
             profile,
             environment,
         })
+    }
+}
+
+fn validate_clone_ancestors(
+    destination: &std::path::Path,
+) -> Result<(), BuildEnvironmentAdapterError> {
+    for ancestor in destination.ancestors().skip(1) {
+        match std::fs::symlink_metadata(ancestor) {
+            Ok(metadata) if metadata.is_symlink() || !metadata.is_dir() => {
+                return Err(BuildEnvironmentAdapterError::UnsafePath(
+                    ancestor.to_owned(),
+                ));
+            }
+            Ok(_) => {}
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(_) => {
+                return Err(BuildEnvironmentAdapterError::DestinationParent(
+                    ancestor.to_owned(),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
+async fn bounded_git_output(
+    mut stream: impl tokio::io::AsyncRead + Unpin,
+) -> std::io::Result<Vec<u8>> {
+    let mut output = Vec::new();
+    let mut buffer = [0; 4096];
+    loop {
+        let count = stream.read(&mut buffer).await?;
+        if count == 0 {
+            return Ok(output);
+        }
+        let keep = count.min(MAX_OUTPUT.saturating_sub(output.len()));
+        output.extend_from_slice(&buffer[..keep]);
     }
 }
 
@@ -427,6 +507,25 @@ mod tests {
         adapter.clone_poky(request).await.unwrap();
         assert!(destination.is_dir());
         let _ = fs::remove_dir_all(root);
+    }
+
+    #[tokio::test]
+    async fn fresh_clone_creates_nested_parents_only_on_execution() {
+        let root = std::env::temp_dir().join(format!("yoctui-clone-nested-{}", std::process::id()));
+        fs::create_dir_all(&root).unwrap();
+        let bin = root.join("git");
+        crate::test_support::write_executable(&bin, "#!/bin/sh\nmkdir -p \"$3\"\n");
+        let request = BuildEnvironmentCloneRequest {
+            repository: "https://example.invalid/poky".into(),
+            destination: root.join("new/parent/poky"),
+            revision: None,
+        };
+        let adapter = BuildEnvironmentAdapter::default().with_git_program(bin);
+        adapter.preview_clone(&request).unwrap();
+        assert!(!root.join("new").exists());
+        adapter.clone_poky(request.clone()).await.unwrap();
+        assert!(request.destination.is_dir());
+        fs::remove_dir_all(root).unwrap();
     }
 
     #[cfg(unix)]

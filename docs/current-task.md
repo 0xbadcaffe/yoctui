@@ -1,13 +1,11 @@
 # Current Task
 
-**ID:** M68-CLONE-001
-**Title:** Run fresh clones asynchronously with named Braille progress
-**Status:** NOT_STARTED
+**ID:** M68-CANCEL-001
+**Title:** Keep slow operations and build cancellation off the input path
+**Status:** IN_PROGRESS
 
-User M68 request supersedes the blocked M67 live-evidence follow-up.
-Dependencies: none. Scope: environment adapter, typed pending operations,
-CLI clone worker, Braille progress rendering. Done: reviewed fresh destinations
-work, input/redraw stay responsive, Cloning… is visible until a typed success,
-failure or cancellation, duplicate launches are prevented, tests cover all paths.
-Verify: `cargo test --workspace --all-features clone` plus AGENTS.md baseline.
-Update UI/architecture, status and registry; commit, then M68-CANCEL-001.
+Dependencies: M68-CLONE-001 (DONE).
+
+Scope and done criteria: CLI client/backend operation ownership and named activity; delayed acknowledgement responsiveness and duplicate cancellation tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
+
+Verification: `cargo test --workspace --all-features cancel` plus AGENTS.md baseline.

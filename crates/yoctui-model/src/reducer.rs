@@ -43,6 +43,15 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::SetBackgroundActivity { activity, active } => {
+            if active {
+                app.background_activities.insert(activity);
+            } else {
+                app.background_activities.remove(&activity);
+            }
+            None
+        }
+
         Action::OpenOnboarding
         | Action::DismissOnboarding
         | Action::SelectOnboarding { .. }

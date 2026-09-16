@@ -125,6 +125,7 @@ mod client_runtime;
 #[cfg(unix)]
 #[cfg_attr(not(test), allow(dead_code))]
 mod client_transport;
+mod clone_operation;
 #[cfg(unix)]
 mod daemon_bitbake;
 #[cfg(unix)]
@@ -11859,6 +11860,7 @@ async fn tui(
     let mut image_artifact_operation = None;
     let mut rootfs_composition_operation = None;
     let mut global_content_search_operation = None;
+    let mut clone_operation = None;
     let sdk_artifact_adapter = app
         .workspace
         .variables
@@ -12062,7 +12064,8 @@ async fn tui(
                 }
             }
         }
-        let local_operation_active = signature_operation.is_some()
+        let local_operation_active = clone_operation.is_some()
+            || signature_operation.is_some()
             || package_operation.is_some()
             || image_artifact_operation.is_some()
             || rootfs_composition_operation.is_some()
@@ -12085,6 +12088,7 @@ async fn tui(
             || qa_coordinator.report.is_some()
             || qa_coordinator.layer.is_some()
             || maintenance_coordinator.operation_active();
+        clone_operation::poll(&mut app, &mut clone_operation).await;
         poll_signature_operation(&mut app, &mut signature_operation).await;
         poll_package_operation(&mut app, &mut package_operation).await;
         poll_image_artifact_operation(
@@ -12418,6 +12422,16 @@ async fn tui(
                 let Some(mut input) = input_from_key(k) else {
                     continue;
                 };
+                if input == Input::Esc
+                    && app.screen == Screen::BuildEnvironment
+                    && app.active_dialog().is_none()
+                    && !app.menu.is_open()
+                    && clone_operation.is_some()
+                {
+                    clone_operation::cancel(&mut app, &mut clone_operation);
+                    render_scheduler.invalidate(RenderCause::State);
+                    continue;
+                }
                 if let Some(Dialog::EnvironmentSetup(setup)) = app.active_dialog() {
                     if let Some(action) = yoctui_app::environment_setup_action(setup, input)
                         && let Some(effect) = compatibility_workspace_action(&mut app, action)
@@ -12792,28 +12806,7 @@ async fn tui(
                         && let Some(Effect::CloneBuildEnvironment(plan)) =
                             compatibility_workspace_action(&mut app, action)
                     {
-                        match BuildEnvironmentAdapter::default()
-                            .clone_poky(plan.request.clone())
-                            .await
-                        {
-                            Ok(_) => {
-                                let profile = yoctui_model::BuildEnvironmentProfile {
-                                    source_dir: plan.request.destination.clone(),
-                                    build_dir: plan.build_dir,
-                                    init_script: plan.request.destination.join("oe-init-build-env"),
-                                };
-                                let _ = compatibility_workspace_action(
-                                    &mut app,
-                                    Action::ConfigureBuildEnvironment(profile),
-                                );
-                                app.notification = Some(
-                                    "Poky cloned. Press V to initialize and verify BitBake.".into(),
-                                );
-                            }
-                            Err(error) => {
-                                app.notification = Some(format!("Poky clone failed: {error}"))
-                            }
-                        }
+                        clone_operation::start(&mut app, &mut clone_operation, plan);
                     }
                 } else if let Some(Dialog::BuildEnvironmentEditor(editor)) =
                     app.active_dialog().cloned()

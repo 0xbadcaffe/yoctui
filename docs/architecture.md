@@ -4230,3 +4230,8 @@ and its input/resize/lifecycle ownership. Clone and build cancellation must not
 await child work on the interactive input path. Late results carry operation
 identity so they cannot overwrite a replacement workflow. Existing menu and
 focus actions are extended rather than introducing a second menu system.
+
+M68 clone execution uses a client-owned task with a 30-minute Git deadline and
+bounded output capture. Dropping/cancelling it terminates its owned process group.
+Completion installs the reviewed profile only if the environment has not changed.
+Parent directories are created only after confirmation; symlink ancestors are rejected.

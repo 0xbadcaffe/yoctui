@@ -393,31 +393,37 @@ pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: Sy
     );
     if let Some(status) = transient.filter(|_| status_width > 0) {
         let tone = transient_status_tone(status.kind);
-        let responsive_text = if app.build.status == BuildStatus::Running {
-            let jobs = app.job_summary();
-            if jobs.queued > 0 && status_width < 30 {
-                format!("Running · {} queued", jobs.queued)
-            } else if jobs.queued > 0 && status_width < 40 {
-                let active = app
-                    .tasks
-                    .values()
-                    .filter(|task| task.state == TaskState::Active)
-                    .count();
-                format!("Running · {active} task · {} queued", jobs.queued)
+        let responsive_text =
+            if app.build.status == BuildStatus::Running && app.background_activities.is_empty() {
+                let jobs = app.job_summary();
+                if jobs.queued > 0 && status_width < 30 {
+                    format!("Running · {} queued", jobs.queued)
+                } else if jobs.queued > 0 && status_width < 40 {
+                    let active = app
+                        .tasks
+                        .values()
+                        .filter(|task| task.state == TaskState::Active)
+                        .count();
+                    format!("Running · {active} task · {} queued", jobs.queued)
+                } else {
+                    status.text.split_whitespace().collect::<Vec<_>>().join(" ")
+                }
             } else {
                 status.text.split_whitespace().collect::<Vec<_>>().join(" ")
-            }
-        } else {
-            status.text.split_whitespace().collect::<Vec<_>>().join(" ")
-        };
+            };
         let text = bounded_status_line(responsive_text, status_width.saturating_sub(2));
-        frame.render_widget(
-            Paragraph::new(Line::from(status_label(
-                tone,
-                text,
+        let spans = if status.kind == TransientStatusKind::Activity
+            && !app.background_activities.is_empty()
+        {
+            vec![Span::styled(
+                format!("{} {text}", task_activity(app, None)),
                 status_tone_style(&palette, tone),
-            )))
-            .alignment(Alignment::Right),
+            )]
+        } else {
+            vec![status_label(tone, text, status_tone_style(&palette, tone))]
+        };
+        frame.render_widget(
+            Paragraph::new(Line::from(spans)).alignment(Alignment::Right),
             columns[1],
         );
     }

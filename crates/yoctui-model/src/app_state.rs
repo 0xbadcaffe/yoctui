@@ -3,6 +3,7 @@ use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
+    pub background_activities: std::collections::BTreeSet<BackgroundActivity>,
     pub daemon: ClientDaemonView,
     pub client_access_origin: ClientAccessOrigin,
     pub workspace_compatibility: WorkspaceCompatibilityState,
@@ -199,6 +200,7 @@ pub fn centered_viewport_range(
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
+            background_activities: Default::default(),
             daemon: ClientDaemonView::default(),
             client_access_origin: ClientAccessOrigin::default(),
             workspace_compatibility: WorkspaceCompatibilityState::default(),
@@ -711,6 +713,13 @@ impl App {
         summary
     }
     pub fn transient_status(&self) -> Option<TransientStatus> {
+        if let Some(activity) = self.background_activities.first() {
+            return Some(TransientStatus {
+                kind: TransientStatusKind::Activity,
+                text: activity.label().into(),
+            });
+        }
+
         let notification = self
             .notification
             .as_deref()
