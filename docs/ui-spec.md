@@ -5665,3 +5665,11 @@ horizontal bars. CPU, RAM and build-filesystem cards retain exact percentages
 and capacity/context labels. Sstate remains unavailable until reported by the
 backend. Existing narrow, ASCII and colorless telemetry fallback stays textual;
 no estimated utilization or fake activity is introduced.
+
+### M68 full-resolution Rootfs pie
+
+The wide Rootfs pie uses the full chart interior at Braille (2×4 dots per cell)
+resolution. The adjacent exact composition table supplies matching colored
+category markers, bytes, counts and percentages; duplicate in-chart legends and
+percentage overlays no longer consume or obscure the drawing area. Existing
+narrow, ASCII, monochrome and explicit table preferences retain the exact table.

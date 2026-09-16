@@ -1,11 +1,11 @@
 # Current Task
 
-**ID:** M68-PIE-001
-**Title:** Give the Rootfs Braille pie full usable rendering resolution
+**ID:** M68-GALLERY-001
+**Title:** Update front README gallery with all repaired workflows
 **Status:** IN_PROGRESS
 
-Dependencies: M68-METERS-001 (DONE).
+Dependencies: M68-PIE-001 (DONE).
 
-Scope and done criteria: rootfs chart layout and renderer; geometric resolution, exact table and accessibility tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
+Scope and done criteria: production fixtures, reviewed cell goldens, rasters, manifest, README and release version; all requested screens, baseline, docs and screenshot verification. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
 
-Verification: `cargo test --workspace --all-features rootfs` plus AGENTS.md baseline.
+Verification: `python3 scripts/render-readme-screenshots.py --check`, `python3 scripts/render-m22-concept-screenshots.py --check` plus AGENTS.md baseline.

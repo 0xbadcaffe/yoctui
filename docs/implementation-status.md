@@ -3149,3 +3149,7 @@ DONE — Right/Enter now focus actionable workspaces; Escape unwinds local owner
 ### M68-METERS-001
 
 DONE — Replaced scrambled dashboard arcs with clean exact-value capacity bars; full workspace tests, Clippy, Python bridge tests, formatting and visual goldens pass.
+
+### M68-PIE-001
+
+DONE — Expanded the Braille chart to its full drawing area with a matching-color exact table; geometry and accessibility regressions, full workspace tests, Clippy, bridge tests, formatting and reviewed production goldens pass.

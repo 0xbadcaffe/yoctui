@@ -6,24 +6,24 @@
 ┌Navigator────────────────┐┌Images · Rootfs composition──────────────────────────────────────────────────────────┐┌Inspector: Artifact─────────────────────────┐
 │▾ OVERVIEW               ││ 1 Artifacts  │  2 Packages  │  3 Files  │  4 systemd  │  5 D-Bus  │  6 udev         ││▾ PRIMARY FACTS                             │
 │  ▱ Dashboard            ││┌Rootfs packages · installed bytes────────────┐┌Exact composition table · 126400000 ┐││Rootfs composition                          │
-│  ▱ Insights             │││                                             ││Category   Pkgs  Exact bytes %      │││View: Rootfs packages                       │
-│▾ CONTENT                │││                         ■ base system 37.0% ││base syste 90    46800000    37.02% │││State: partial · 1 limitation(s)            │
-│    Layers               │││                                             ││libraries  110   34100000    26.97% │││Image: core-image-minimal                   │
-│    Recipes              │││         ⣀⣀⣀⣄⣀⣀⡀         ■ libraries 27.0%   ││kernel and 50    18900000    14.95% │││Path:                                       │
-│    Packages             │││     ⢀⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣄                          ││locales    70    11400000    9.01%  │││/workspace/yocto/build/tmp/deploy/images/qem│
-│    Images               │││   ⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆    ■ kernel and modules││utilities  70    8800000     6.96%  │││ux86-64/core-image-minimal-qemux86-64.rootfs│
-│    Kernel               │││  ⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀                      ││Other      22    6400000     5.06%  │││.ext4                                       │
-│    U-Boot / BIOS        │││ ⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧  ■ locales 9.0%      ││                                    │││Installed packages: available               │
-│    SDK                  │││ ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿                      ││                                    │││Filesystem tree: partial · 1 limitation(s)  │
-│▾ BUILD                  │││ ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁ ■ utilities 7.0%    ││                                    │││Offline system map: available               │
-│    Tasks                │││ ⠸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿                      ││                                    │││                                            │
-│  ▱ Logs             LIVE│││  ⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠃  ■ Other 5.1%        ││                                    │││Exact totals                                │
-│  ▱ Errors               │││   ⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁                       ││                                    │││Package bytes: 126400000                    │
-│    Configuration        │││    ⠈⠙⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⠉                         ││                                    │││Package files: 4735                         │
-│    Dependencies         │││       ⠈⠉⠛⠛⠛⠟⠛⠛⠋⠉                            ││                                    │││Filesystem bytes: 1198305                   │
-│▾ VALIDATE               │││                                             ││                                    │││Entries: 9 (files 2 · dirs 5 · symlinks 1 · │
-│    Testing              │││                                             ││                                    │││special 1)                                  │
-│    Security             │││                                             ││                                    │││Overflow: false                             │
+│  ▱ Insights             │││                  ⣀⣀⣀⣀⣄⣀⣀⣀⡀                  ││Category   Pkgs  Exact bytes %      │││View: Rootfs packages                       │
+│▾ CONTENT                │││             ⢀⣤⣴⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣤⣄              ││● base sys 90    46800000    37.02% │││State: partial · 1 limitation(s)            │
+│    Layers               │││          ⢀⣠⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣦⣀           ││● librarie 110   34100000    26.97% │││Image: core-image-minimal                   │
+│    Recipes              │││         ⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡀         ││● kernel a 50    18900000    14.95% │││Path:                                       │
+│    Packages             │││       ⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆        ││● locales  70    11400000    9.01%  │││/workspace/yocto/build/tmp/deploy/images/qem│
+│    Images               │││      ⢀⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣇       ││● utilitie 70    8800000     6.96%  │││ux86-64/core-image-minimal-qemux86-64.rootfs│
+│    Kernel               │││      ⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆      ││● Other    22    6400000     5.06%  │││.ext4                                       │
+│    U-Boot / BIOS        │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││Installed packages: available               │
+│    SDK                  │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││Filesystem tree: partial · 1 limitation(s)  │
+│▾ BUILD                  │││     ⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁     ││                                    │││Offline system map: available               │
+│    Tasks                │││     ⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿      ││                                    │││                                            │
+│  ▱ Logs             LIVE│││     ⠈⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏      ││                                    │││Exact totals                                │
+│  ▱ Errors               │││      ⠘⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟       ││                                    │││Package bytes: 126400000                    │
+│    Configuration        │││       ⠙⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠁       ││                                    │││Package files: 4735                         │
+│    Dependencies         │││        ⠈⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠋         ││                                    │││Filesystem bytes: 1198305                   │
+│▾ VALIDATE               │││          ⠙⠻⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⠛⠁          ││                                    │││Entries: 9 (files 2 · dirs 5 · symlinks 1 · │
+│    Testing              │││            ⠈⠙⠿⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⠟⠉             ││                                    │││special 1)                                  │
+│    Security             │││                ⠈⠉⠛⠛⠛⠛⠟⠛⠛⠛⠋⠉                 ││                                    │││Overflow: false                             │
 │    QA                   │││                                             ││                                    │││                                            │
 │▾ TOOLS                  ││└─────────────────────────────────────────────┘└────────────────────────────────────┘││Selected group: base system                 │
 │    Raw Mode             ││┌Accessible package selection · j/k moves checked row───────────────────────────────┐││Selected package: base-system-000           │

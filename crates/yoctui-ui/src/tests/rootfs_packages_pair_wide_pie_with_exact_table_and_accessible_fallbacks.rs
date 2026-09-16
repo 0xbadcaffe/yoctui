@@ -21,6 +21,28 @@ fn ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks() 
         "the wide production chart must contain tui-piechart Braille cells: {wide}"
     );
 
+    let braille_rows: Vec<Vec<usize>> = wide
+        .chars()
+        .collect::<Vec<_>>()
+        .chunks(200)
+        .map(|line| {
+            line.iter()
+                .copied()
+                .enumerate()
+                .filter_map(|(x, glyph)| ('\u{2801}'..='\u{28ff}').contains(&glyph).then_some(x))
+                .collect()
+        })
+        .filter(|row: &Vec<usize>| !row.is_empty())
+        .collect();
+    let left = braille_rows.iter().flatten().min().unwrap();
+    let right = braille_rows.iter().flatten().max().unwrap();
+    assert!(
+        right - left >= 35 && braille_rows.len() >= 16,
+        "pie must use its drawing area: {} columns, {} rows",
+        right - left + 1,
+        braille_rows.len()
+    );
+
     app.theme = Theme::Monochrome;
     app.color_enabled = false;
     for (width, height) in [(100, 30), (80, 24)] {

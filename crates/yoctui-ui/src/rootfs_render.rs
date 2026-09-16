@@ -72,17 +72,6 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
             .iter()
             .map(|group| rootfs_group_label(&group.identity))
             .collect::<Vec<_>>();
-        let palette = ThemePalette::for_app(app);
-        let colors = [
-            palette.progress,
-            palette.informational,
-            palette.warning,
-            Color::Magenta,
-            Color::Blue,
-            palette.muted,
-            Color::LightCyan,
-            Color::Gray,
-        ];
         let slices = groups
             .iter()
             .zip(labels.iter())
@@ -91,11 +80,7 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
                 PieSlice::new(
                     label,
                     group.installed_size_bytes as f64,
-                    if group.identity == RootfsGroupIdentity::Other || label == "Other" {
-                        palette.muted
-                    } else {
-                        colors[index % colors.len()]
-                    },
+                    rootfs_group_color(app, group, index),
                 )
             })
             .collect();
@@ -103,9 +88,8 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
             PieChart::new(slices)
                 .block(Block::bordered().title("Rootfs packages · installed bytes"))
                 .resolution(Resolution::Braille)
-                .show_percentages(true)
-                .show_legend(true)
-                .legend_position(LegendPosition::Right),
+                .show_percentages(false)
+                .show_legend(false),
             columns[0],
         );
         render_rootfs_exact_group_table(frame, app, &groups, total, columns[1]);
@@ -116,6 +100,24 @@ pub(crate) fn rootfs_packages_workspace(frame: &mut Frame, app: &App, area: Rect
     }
 }
 
+fn rootfs_group_color(app: &App, group: &yoctui_model::RootfsGroupRow, index: usize) -> Color {
+    let palette = ThemePalette::for_app(app);
+    if group.identity == RootfsGroupIdentity::Other {
+        return palette.muted;
+    }
+    let colors = [
+        palette.progress,
+        palette.informational,
+        palette.warning,
+        Color::Magenta,
+        Color::Blue,
+        palette.muted,
+        Color::LightCyan,
+        Color::Gray,
+    ];
+    colors[index % colors.len()]
+}
+
 pub(crate) fn render_rootfs_exact_group_table(
     frame: &mut Frame,
     app: &App,
@@ -123,10 +125,16 @@ pub(crate) fn render_rootfs_exact_group_table(
     total: u64,
     area: Rect,
 ) {
-    let rows = groups.iter().map(|group| {
+    let rows = groups.iter().enumerate().map(|(index, group)| {
         let selected = app.rootfs_group_selection.as_ref() == Some(&group.identity);
         Row::new([
-            Cell::from(rootfs_group_label(&group.identity)),
+            Cell::from(Line::from(vec![
+                Span::styled(
+                    "● ",
+                    Style::default().fg(rootfs_group_color(app, group, index)),
+                ),
+                Span::raw(rootfs_group_label(&group.identity)),
+            ])),
             Cell::from(group.package_count.to_string()),
             Cell::from(group.installed_size_bytes.to_string()),
             Cell::from(format!(
