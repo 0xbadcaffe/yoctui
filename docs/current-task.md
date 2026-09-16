@@ -1,11 +1,43 @@
 # Current Task
 
-**ID:** M68-PUSH-001
-**Title:** Verify and push completed fixes to master
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Dependencies: M68-GALLERY-001 (DONE).
+All requested M67/M68 implementation tasks are DONE. The source and UI fixes,
+GitUI integration and updated README gallery are committed and pushed to master.
+Full workspace tests, strict Clippy, formatting, 52 bridge tests, screenshot
+provenance checks and the native GitUI PTY smoke pass. No release-performance
+certification is claimed from fixtures or fake-process timing.
 
-Scope and done criteria: verify coherent commits, preserve existing user artifacts, fetch and integrate master safely, push without force and verify remote HEAD; record any genuine external blocker. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
+External prerequisite: a genuine current-source/binary-bound real-Poky
+performance capture for the documented Yocto 6.0.2 linux-yocto workload.
+The retained `artifacts/performance/real-poky/manifest.json` is bound to source
+base `d2214e82974a5be708a7cc40f1532254d7c7de63`; 51 recorded source hashes now
+differ, including changes predating this request. Historical evidence stays intact.
 
-Verification: `git status --short`, `git log -1 --oneline` plus AGENTS.md baseline.
+Reproduce the independent prerequisite check:
+
+```bash
+python3 - <<'PYCODE'
+from pathlib import Path
+import hashlib, json
+m = json.loads(Path("artifacts/performance/real-poky/manifest.json").read_text())
+stale = [name for name, expected in m["sources"].items()
+         if hashlib.sha256(Path(name).read_bytes()).hexdigest() != expected]
+print("Source digest mismatches:", len(stale))
+raise SystemExit(bool(stale))
+PYCODE
+```
+
+The completion gate reports this required task as BLOCKED. The broader
+performance verifier was stopped after its static contracts passed because the
+independent mandatory evidence check already proves the capture is stale.
+Follow the existing capture procedure in `docs/performance.md`, then verify:
+
+```bash
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
+```
+
+No other eligible incomplete task remains.

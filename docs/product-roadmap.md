@@ -2,6 +2,13 @@
 
 This roadmap defines the stable milestone sequence. Atomic implementation state lives in `docs/task-registry.toml`.
 
+## Current handoff
+
+M67/M68 requested implementation and UI repairs are complete and published to
+master. Version 0.1.117 includes the reviewed 17-screen README gallery. The
+registry has 746 DONE tasks and one BLOCKED task: M67-LIVE-EVIDENCE-001 requires
+a genuine current-source real-Poky performance capture before release certification.
+
 ## Product completion rule
 
 README-VERSION-BADGE-001 follows the user's correction: the README title is

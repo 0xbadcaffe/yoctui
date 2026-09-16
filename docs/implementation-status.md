@@ -1,10 +1,10 @@
 # Yoctui Implementation Status
 
-M68 implementation tasks are complete: fresh clones and cancellation run in the
-background, Git status and embedded GitUI are available, menus/focus are repaired,
-and dashboard bars/Rootfs pie use reviewed production rendering. The refreshed
-README gallery is under verification; publication to master follows. M67 live
-performance evidence remains a separate external blocker.
+All ten M68 tasks are DONE. The requested clone/cancellation responsiveness,
+source Git/GitUI, menu/focus and chart repairs are implemented, tested and pushed
+to master. The front README contains 17 verified production screenshots. The
+final handoff version is 0.1.117. All 746 implementation tasks are DONE; only
+M67-LIVE-EVIDENCE-001 remains BLOCKED on genuine current-source performance data.
 
 M67 requested fixes are implemented and committed as atomic changes: fresh
 build-directory initialization, asynchronous daemon compatibility discovery,
@@ -3158,3 +3158,14 @@ DONE — Expanded the Braille chart to its full drawing area with a matching-col
 ### M68-GALLERY-001
 
 DONE — Published a front README gallery of all repaired workflows with 17 verified production rasters, genuine GitUI diff/commit captures and tested underline/reverse style export. Version 0.1.116, full workspace tests, strict Clippy, 52 bridge tests, formatting, docs, version and screenshot checks pass.
+
+### M68-PUSH-001
+
+DONE — All requested feature and gallery commits were pushed without force to master, with remote d1523e8 verified. The final versioned handoff records the remaining genuine live-evidence prerequisite; pre-existing user artifacts are preserved.
+
+Final handoff verification: 1,664 Rust tests pass (five explicitly ignored),
+with the genuine GitUI PTY smoke separately passing; 52 bridge tests, two raster
+style tests, strict Clippy, formatting, version consistency, roadmap and all
+17 README/six concept screenshot checks pass. The completion gate reports only
+M67-LIVE-EVIDENCE-001 BLOCKED. Existing user capture files remain untracked and
+untouched. The handoff commit is pushed normally and remote HEAD is verified.
