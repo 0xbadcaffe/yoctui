@@ -5645,3 +5645,10 @@ Embedded confirmation opens Terminal Sessions and selects the new session slot;
 while Yoctui's Ctrl+B prefix retains session navigation. Missing GitUI has an
 explicit install-and-restart reason. Staging, commits and remote operations
 are initiated by the user in GitUI.
+
+M68 application menus use the anchored six-group concept layout from 80×24
+through wide terminals. The selected action's unavailable reason occupies the
+second menu row when no type-ahead query is active. Arrow keys select groups and
+items, Enter activates, and Esc/F10 closes. Mouse clicks select group tabs or
+rows; the wheel selects rows and Enter activates the selection. Outside clicks
+remain trapped. Rendering and hit testing share the same geometry.

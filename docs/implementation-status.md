@@ -3137,3 +3137,7 @@ DONE — Typed source status and five-second background refresh report branch, t
 ### M68-GITUI-001
 
 DONE — Added source-scoped GitUI menu/palette launch with explicit capability errors and trapped modal focus, using the existing embedded/detached terminal runtime. Real GitUI 0.28.1 PTY input/resize/exit smoke passed; captured actual diff and commit-message views. Full workspace suite, clippy, fmt, bridge and roadmap passed.
+
+### M68-MENU-001
+
+DONE — Anchored concept menus now cover compact terminals, expose selected unavailable reasons and share renderer/pointer geometry. Group/row clicks and wheel selection preserve modal trapping. Reviewed updated production golden; menu regressions, full workspace, clippy, fmt, bridge and roadmap passed.

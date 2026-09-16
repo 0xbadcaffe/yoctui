@@ -5,13 +5,13 @@
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator───────────┐┌modal · Recipe ed┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
 │▾ OVERVIEW          ││┌Workspace file t│ Workspace  Build  Navigate  View  Tools  Help            │Col 1───────────────────┐┌Recipe Inspector────────────────┐│
-│  ▱ Dashboard       │││▶ bash_5.2.bb   │Type to jump                                              │                        ││Recipe                          ││
+│  ▱ Dashboard       │││▶ bash_5.2.bb   │No active build is available to cancel.                   │                        ││Recipe                          ││
 │  ▱ Insights        │││  files/0001-fix│  Build image           B          No current environment │                        ││Name: bash                      ││
 │▾ CONTENT           │││.patch          │  Build selected recipe b          No current environment │2.tar.gz"               ││Layer: poky                     ││
 │    Layers          │││                │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
 │    Recipes         │││                │                                                          │                        ││Language: BitBake               ││
 │    Packages        │││                │                                                          │                        ││State: modified                 ││
-│    Images          │││                │↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu        │}/bash                  ││                                ││
+│    Images          │││                │Esc/F10 close · Enter open · ↑/↓ select · ←/→ groups      │}/bash                  ││                                ││
 │    Kernel          │││                └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
 │    U-Boot / BIOS   │││                      ││ 9 │ BROKEN_OVERRIDE =  [validation]                                        ││[v] Validate                    ││
 │    SDK             │││                      ││10 │ ▏                                                                      ││[p] Preview diff                ││

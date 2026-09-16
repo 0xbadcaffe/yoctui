@@ -102,7 +102,7 @@ fn ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_stat
             output.contains("Application menu"),
             "{width}x{height}: {output}"
         );
-        assert!(output.contains("[Workspace]"), "{output}");
+        assert!(output.contains("Workspace"), "{output}");
         assert!(output.contains("Build"), "{output}");
         assert!(output.contains("Navigate"), "{output}");
         assert!(output.contains("View"), "{output}");

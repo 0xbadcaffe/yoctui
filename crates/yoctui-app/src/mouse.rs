@@ -54,7 +54,7 @@ pub fn mouse_action_for_app(
         return None;
     }
     if app.menu.is_open() {
-        return None;
+        return application_menu_mouse_action(mouse, app, terminal_width, terminal_height);
     }
     if app.active_dialog().is_some() {
         return dialog_mouse_action(mouse, app, terminal_width, terminal_height);
@@ -1079,4 +1079,138 @@ pub(crate) fn literal_navigator_selection_at_row(
     }
     const TASK_DESTINATIONS: [usize; 8] = [6, 11, 13, 14, 15, 5, 12, 16];
     TASK_DESTINATIONS.get(row - tasks_start - 1).copied()
+}
+
+/// Shared concept-menu bounds for rendering and mouse hit testing.
+pub fn application_menu_bounds(
+    app: &App,
+    width: u16,
+    height: u16,
+    items: usize,
+) -> Option<(u16, u16, u16, u16)> {
+    if width < 64 || height < 16 {
+        return None;
+    }
+    let menu_width = 60.min(width.saturating_sub(4));
+    let menu_height = u16::try_from(items)
+        .unwrap_or(u16::MAX)
+        .saturating_add(5)
+        .clamp(10, 18)
+        .min(height.saturating_sub(8));
+    let top = workbench_chrome_heights(app, width, height)[0];
+    Some((
+        (width / 4).min(width.saturating_sub(menu_width)),
+        top,
+        menu_width,
+        menu_height,
+    ))
+}
+fn application_menu_mouse_action(
+    mouse: MouseInput,
+    app: &App,
+    width: u16,
+    height: u16,
+) -> Option<Action> {
+    if app.menu.kind != Some(yoctui_model::MenuKind::Application) {
+        return None;
+    }
+    let items = app.active_menu_items();
+    let (left, top, width, height) = application_menu_bounds(app, width, height, items.len())?;
+    if mouse.column <= left
+        || mouse.column >= left + width - 1
+        || mouse.row <= top
+        || mouse.row >= top + height - 1
+    {
+        return None;
+    }
+    match mouse.kind {
+        MouseKind::ScrollUp => return Some(Action::SelectMenuItem { delta: -1 }),
+        MouseKind::ScrollDown => return Some(Action::SelectMenuItem { delta: 1 }),
+        MouseKind::Down => {}
+        _ => return None,
+    }
+    if mouse.row == top + 1 {
+        let mut column = left + 1;
+        for (index, group) in yoctui_model::ApplicationMenuGroup::ALL.iter().enumerate() {
+            let end = column + group.label().len() as u16 + 2;
+            if mouse.column < end {
+                return Some(Action::SelectMenuGroup {
+                    delta: index as isize - app.menu.group_selection as isize,
+                });
+            }
+            column = end;
+        }
+        return None;
+    }
+    if mouse.row >= top + 3 && mouse.row < top + height - 2 {
+        let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
+        let range = yoctui_model::centered_viewport_range(
+            (!items.is_empty()).then_some(selected),
+            items.len(),
+            usize::from(height.saturating_sub(5)).max(1),
+        );
+        let index = range.start + usize::from(mouse.row - top - 3);
+        if index < range.end {
+            return Some(Action::SelectMenuItem {
+                delta: index as isize - selected as isize,
+            });
+        }
+    }
+    None
+}
+
+#[cfg(test)]
+mod menu_mouse_tests {
+    use super::*;
+    #[test]
+    fn concept_menu_mouse_matches_compact_bounds_and_traps_outside_clicks() {
+        for (width, height) in [(80, 24), (100, 30), (160, 50)] {
+            let mut app = App::new(10, 1024);
+            app.preferences.mouse_enabled = true;
+            yoctui_model::update(&mut app, Action::OpenApplicationMenu);
+            let (left, top, _, _) =
+                application_menu_bounds(&app, width, height, app.active_menu_items().len())
+                    .unwrap();
+            let action = mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: left + 13,
+                    row: top + 1,
+                },
+                &app,
+                width,
+                height,
+            )
+            .unwrap();
+            yoctui_model::update(&mut app, action);
+            assert_eq!(app.menu.group(), yoctui_model::ApplicationMenuGroup::Build);
+            assert!(
+                mouse_action_for_app(
+                    MouseInput {
+                        kind: MouseKind::Down,
+                        column: 0,
+                        row: 0
+                    },
+                    &app,
+                    width,
+                    height
+                )
+                .is_none()
+            );
+            let action = mouse_action_for_app(
+                MouseInput {
+                    kind: MouseKind::Down,
+                    column: left + 2,
+                    row: top + 4,
+                },
+                &app,
+                width,
+                height,
+            )
+            .unwrap();
+            yoctui_model::update(&mut app, action);
+            assert_eq!(app.menu.item_selection, 1);
+            assert_eq!(app.focus, FocusTarget::Dialog);
+        }
+    }
 }

@@ -734,7 +734,7 @@ fn ux_responsive_m21_surfaces_keep_identity_focus_and_recovery_at_every_required
             editor,
             &["Recipe editor: bash", "bash_5.2.bb"][..],
         ),
-        ("menu", menu, &["Application menu", "[Workspace]"][..]),
+        ("menu", menu, &["Application menu", "Workspace"][..]),
         (
             "onboarding",
             onboarding,

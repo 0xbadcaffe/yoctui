@@ -1,11 +1,11 @@
 # Current Task
 
-**ID:** M68-MENU-001
-**Title:** Make concept application menus usable across terminal sizes
+**ID:** M68-FOCUS-001
+**Title:** Implement inward arrow and outward Escape focus navigation
 **Status:** IN_PROGRESS
 
-Dependencies: M68-GITUI-001 (DONE).
+Dependencies: M68-MENU-001 (DONE).
 
-Scope and done criteria: existing menu model/render/input; geometry, keyboard, mouse and unavailable action tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
+Scope and done criteria: model focus/reducer and app input routing; tree, dialog, editor, terminal ownership and responsive tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required.
 
-Verification: `cargo test --workspace --all-features menu` plus AGENTS.md baseline.
+Verification: `cargo test --workspace --all-features focus` plus AGENTS.md baseline.

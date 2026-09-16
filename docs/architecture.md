@@ -4260,3 +4260,7 @@ lease, keyboard input, 110×32 → 100×28 resize, and exit status 0. Reproduce 
 `YOCTUI_GITUI_PROGRAM=/absolute/path/gitui cargo test --workspace --all-features gitui_real_terminal -- --ignored`.
 The ordinary suite covers absent-tool diagnostics, menu availability, typed cwd
 and argv, modal focus at supported widths, and embedded-session navigation.
+
+M68 application-menu bounds live in the app layer and are shared by the renderer
+and pointer routing. Mouse input emits existing group/row selection actions;
+activation remains the existing keyboard/menu action route with availability checks.

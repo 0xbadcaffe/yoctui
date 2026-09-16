@@ -4,8 +4,7 @@ use super::*;
 pub(crate) fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
     let items = app.active_menu_items();
     if app.menu.kind == Some(yoctui_model::MenuKind::Application)
-        && area.width >= 150
-        && area.height >= 50
+        && yoctui_app::application_menu_bounds(app, area.width, area.height, items.len()).is_some()
     {
         application_menu_overlay(frame, app, area, &items);
         return;
@@ -178,15 +177,12 @@ pub(crate) fn application_menu_overlay(
     items: &[yoctui_model::MenuItem],
 ) {
     let palette = ThemePalette::for_app(app);
-    let width = 60.min(area.width.saturating_sub(4));
-    let height = u16::try_from(items.len())
-        .unwrap_or(u16::MAX)
-        .saturating_add(5)
-        .clamp(10, 18)
-        .min(area.height.saturating_sub(8));
-    let header = yoctui_app::workbench_chrome_heights(app, area.width, area.height)[0];
-    let anchor = (area.width / 4).min(area.width.saturating_sub(width));
-    let popup = Rect::new(anchor, header, width, height);
+    let Some((left, top, width, height)) =
+        yoctui_app::application_menu_bounds(app, area.width, area.height, items.len())
+    else {
+        return;
+    };
+    let popup = Rect::new(area.x + left, area.y + top, width, height);
     clear_popup(frame, app, popup);
     let selected = app.menu.item_selection.min(items.len().saturating_sub(1));
     let item_viewport_height = usize::from(height.saturating_sub(5)).max(1);
@@ -229,7 +225,10 @@ pub(crate) fn application_menu_overlay(
         })
         .collect::<Vec<_>>();
     let prefix = if app.menu.typed_prefix.is_empty() {
-        "Type to jump".into()
+        items
+            .get(selected)
+            .and_then(|item| item.disabled_reason.clone())
+            .unwrap_or_else(|| "Type to jump".into())
     } else {
         format!("Jump: {}_", app.menu.typed_prefix)
     };
@@ -276,7 +275,7 @@ pub(crate) fn application_menu_overlay(
         regions[1],
     );
     frame.render_widget(
-        Paragraph::new("↑/↓ Select · Enter Activate · Esc Close · ←/→ Menu")
+        Paragraph::new("Esc/F10 close · Enter open · ↑/↓ select · ←/→ groups")
             .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
         regions[2],
     );
