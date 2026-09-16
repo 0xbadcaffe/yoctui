@@ -3145,3 +3145,7 @@ DONE — Anchored concept menus now cover compact terminals, expose selected una
 ### M68-FOCUS-001
 
 DONE — Right/Enter now focus actionable workspaces; Escape unwinds local ownership then panes. Searches, editors and terminal writers retain literal/navigation keys, with shared app/CLI ownership predicates and corrected Signatures routing. Focus, terminal and responsive regressions plus full workspace, clippy, fmt, bridge and roadmap passed.
+
+### M68-METERS-001
+
+DONE — Replaced scrambled dashboard arcs with clean exact-value capacity bars; full workspace tests, Clippy, Python bridge tests, formatting and visual goldens pass.

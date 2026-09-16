@@ -1,6 +1,6 @@
-//! Dashboard capacity dials, with explicit unavailable and accessible fallbacks.
+//! Dashboard capacity bars, with explicit unavailable and accessible fallbacks.
 use super::*;
-use ratatui::widgets::canvas::{Canvas, Points};
+use ratatui::widgets::Gauge;
 
 fn dashboard_cpu_context(percent: Option<u8>, cores: Option<u16>) -> String {
     match (percent, cores) {
@@ -77,7 +77,7 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
             pair(telemetry.disk_total_bytes, telemetry.disk_available_bytes),
             60,
         ),
-        ("Sstate Reuse", None, "backend does not report".into(), 70),
+        ("Sstate Reuse", None, "not reported".into(), 70),
     ];
     let cells = Layout::horizontal([Constraint::Ratio(1, 4); 4]).split(inner);
     for (index, ((title, percent, detail, warning_at), cell)) in
@@ -113,49 +113,70 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
             );
             continue;
         };
-        let mut active = Vec::new();
-        let mut inactive = Vec::new();
-        for step in 0..=180 {
-            let angle = std::f64::consts::PI * (1.0 - f64::from(step) / 180.0);
-            let point = (angle.cos(), angle.sin());
-            if percent > 0 && step * 100 <= i32::from(percent) * 180 {
-                active.push(point);
-            } else {
-                inactive.push(point);
-            }
-        }
-        let color = dashboard_meter_style(app, percent, warning_at)
-            .fg
-            .unwrap_or(palette.progress);
-        frame.render_widget(
-            Canvas::default()
-                .background_color(palette.background)
-                .marker(ratatui::symbols::Marker::Braille)
-                .x_bounds([-1.15, 1.15])
-                .y_bounds([0.0, 1.15])
-                .paint(|context| {
-                    context.draw(&Points {
-                        coords: &inactive,
-                        color: palette.muted,
-                    });
-                    context.draw(&Points {
-                        coords: &active,
-                        color,
-                    });
-                }),
-            rows[1],
-        );
-        let label = Rect::new(
-            rows[1].x,
-            rows[1].bottom().saturating_sub(1),
-            rows[1].width,
+        let bar = Rect::new(
+            rows[1].x.saturating_add(2),
+            rows[1].y + rows[1].height / 2,
+            rows[1].width.saturating_sub(4),
             1,
         );
         frame.render_widget(
-            Paragraph::new(format!("{percent}%"))
-                .alignment(Alignment::Center)
-                .style(palette.role(color, Modifier::BOLD)),
-            label,
+            Gauge::default()
+                .gauge_style(
+                    dashboard_meter_style(app, percent, warning_at).bg(palette.inactive_border),
+                )
+                .ratio(f64::from(percent) / 100.0)
+                .use_unicode(true)
+                .label(format!("{percent}%")),
+            bar,
         );
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::{Terminal, backend::TestBackend};
+    #[test]
+    fn dashboard_resource_bars_are_contiguous_exact_and_truthful() {
+        let mut app = App::new(10, 1024);
+        app.host_telemetry.cpu_utilization_percent = Some(72);
+        app.host_telemetry.memory_total_bytes = Some(1000);
+        app.host_telemetry.memory_available_bytes = Some(590);
+        for width in [80, 100, 160] {
+            let mut terminal = Terminal::new(TestBackend::new(width, 9)).unwrap();
+            terminal
+                .draw(|frame| render_dashboard_dials(frame, &app, frame.area()))
+                .unwrap();
+            let text = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|c| c.symbol())
+                .collect::<String>();
+            assert!(text.contains("72%"), "{text}");
+            assert!(text.contains("41%"), "{text}");
+            assert!(text.contains("unavailable"), "{text}");
+            assert!(
+                !text.chars().any(|c| ('\u{2800}'..='\u{28ff}').contains(&c)),
+                "capacity bars must not use dotted arcs"
+            );
+        }
+        for width in [80, 100] {
+            app.color_enabled = false;
+            app.preferences.symbols = SymbolPreference::Ascii;
+            let mut terminal = Terminal::new(TestBackend::new(width, 9)).unwrap();
+            terminal
+                .draw(|frame| render_dashboard_dials(frame, &app, frame.area()))
+                .unwrap();
+            let text = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|c| c.symbol())
+                .collect::<String>();
+            assert!(text.contains("72%"), "{text}");
+        }
     }
 }

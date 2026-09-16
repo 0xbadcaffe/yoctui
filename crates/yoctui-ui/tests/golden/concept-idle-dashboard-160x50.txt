@@ -30,13 +30,13 @@
 │    Terminal Sessions    │└─────────────────────────────────────────────────────────────────────────────────────┘│Next Action                                 │
 │    Devtool              │┌Resource Telemetry───────────────────────────────────────────────────────────────────┐│Build image [B]                             │
 │    QEMU / Wic           ││      CPU Usage     │      RAM Usage      │   Build FS Usage   │    Sstate Reuse     ││Attention                                   │
-│    Maintenance          ││        ⣀⣀⣀⣀        │        ⢀⣀⣀⣀⡀        │        ⣀⣀⣀⣀        │                     ││No retained warnings or errors              │
-│  ▱ Build environment    ││    ⢀⡤⠚⠉⠁  ⠈⠉⠓⢤⡀    │    ⢀⡠⠖⠋⠁   ⠈⠙⠲⢄⡀    │    ⢀⡤⠚⠉⠁  ⠈⠉⠓⢤⡀    │                     ││Workbench Center                            │
-│  ▱ Compatibility        ││   ⡴⠋          ⠙⢦   │   ⡰⠋           ⠙⢆   │   ⡴⠋          ⠙⢦   │                     ││Context: Work · core-image-minimal          │
-│  ▱ Settings             ││  ⡼⠁            ⠈⢧  │  ⡼⠁             ⠈⢧  │  ⡼⠁            ⠈⢧  │     unavailable     ││Active: tasks 0 · jobs 0                    │
-│                         ││ ⢸⠁              ⠈⡇ │ ⢰⠃               ⠘⡆ │ ⢸⠁              ⠈⡇ │                     ││Favorite: none                              │
-│                         ││ ⢸       18%      ⡇ │ ⢸       42%       ⡇ │ ⢸       63%      ⡇ │                     ││Terminal: none                              │
-│                         ││  0.72 / 4.00 cores │  6.72 / 16.00 GiB   │ 94.50 / 150.00 GiB │backend does not rep…││[t] Terminal sessions                       │
+│    Maintenance          ││                    │                     │                    │                     ││No retained warnings or errors              │
+│  ▱ Build environment    ││                    │                     │                    │                     ││Workbench Center                            │
+│  ▱ Compatibility        ││                    │                     │                    │                     ││Context: Work · core-image-minimal          │
+│  ▱ Settings             ││  ██▉   18%         │  ███████42%         │  ██████63% ▏       │     unavailable     ││Active: tasks 0 · jobs 0                    │
+│                         ││                    │                     │                    │                     ││Favorite: none                              │
+│                         ││                    │                     │                    │                     ││Terminal: none                              │
+│                         ││  0.72 / 4.00 cores │  6.72 / 16.00 GiB   │ 94.50 / 150.00 GiB │    not reported     ││[t] Terminal sessions                       │
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
 │                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
 │                         ││[B] Build image            │[t] Open terminal           │[E] Verify environment      ││00:04:55                                    │

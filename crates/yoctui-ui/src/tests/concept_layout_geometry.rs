@@ -27,18 +27,21 @@ fn dashboard_concept_has_distinct_regions_and_resizes_without_mutation() {
         assert!(telemetry.contains("94.50 / 150.00 GiB"));
         assert!(
             !telemetry.contains('⣿'),
-            "Dashboard dials must remain a thin foreground stroke"
+            "Dashboard capacity uses continuous bars rather than dotted glyphs"
         );
         assert!(region_text(nav, height - 10, work, 7).contains("Quick Actions"));
         assert!(
             region_text(nav + work, 5, width - nav - work, height - 8)
                 .contains("Project Inspector")
         );
-        assert!(buffer.content.iter().any(|cell| {
+        assert!(!buffer.content.iter().any(|cell| {
             cell.symbol()
                 .chars()
                 .any(|ch| ('\u{2801}'..='\u{28ff}').contains(&ch))
         }));
+        for percent in ["18%", "42%", "63%"] {
+            assert!(telemetry.contains(percent));
+        }
         assert_eq!(app.screen, Screen::Dashboard);
     }
     let mut empty = App::new(16, 4096);

@@ -5659,3 +5659,9 @@ focus. Escape leaves local search/edit/copy mode first, then Workspace, then the
 Navigator to Dashboard. Terminal writers retain Tab, Escape, q, a and function
 keys; Ctrl+B remains the Yoctui escape prefix. F10 can open an application menu
 over an editor, while ordinary `a` stays literal in editors/searches.
+
+M68 resource meters replace dotted semicircular arcs with one-row continuous
+horizontal bars. CPU, RAM and build-filesystem cards retain exact percentages
+and capacity/context labels. Sstate remains unavailable until reported by the
+backend. Existing narrow, ASCII and colorless telemetry fallback stays textual;
+no estimated utilization or fake activity is introduced.
