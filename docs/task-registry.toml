@@ -8183,3 +8183,113 @@ required = true
 depends_on = ["SEARCH-CONTENT-001", "FRESH-CLONE-001", "DAEMON-STARTUP-002", "SEARCH-HELP-001"]
 verify = ["./scripts/verify-performance.sh --real-poky-evidence", "./scripts/verify-completion.sh"]
 notes = "External validation prerequisite: retained live evidence is bound to source base d2214e82974a5be708a7cc40f1532254d7c7de63 and has 49 source digest mismatches, including changes predating M67. Supply a new genuine source/binary-bound Yocto 6.0.2 linux-yocto compile capture using the documented release workload before the release gate can certify current code. Do not rewrite digests or treat fake-process startup timings as live evidence. See current-task.md for reproduction and verification scope."
+
+[[task]]
+id = "M68-CLONE-001"
+milestone = "M68"
+title = "Run fresh clones asynchronously with named Braille progress"
+status = "NOT_STARTED"
+priority = 1700
+required = true
+depends_on = []
+verify = ["cargo test --workspace --all-features clone"]
+notes = "Scope and done criteria: build_environment adapter, model pending state, CLI clone worker, UI activity; new destination, success, failure and cancellation tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-CANCEL-001"
+milestone = "M68"
+title = "Keep slow operations and build cancellation off the input path"
+status = "NOT_STARTED"
+priority = 1701
+required = true
+depends_on = ["M68-CLONE-001"]
+verify = ["cargo test --workspace --all-features cancel"]
+notes = "Scope and done criteria: CLI client/backend operation ownership and named activity; delayed acknowledgement responsiveness and duplicate cancellation tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-GIT-001"
+milestone = "M68"
+title = "Show asynchronous source repository synchronization status"
+status = "NOT_STARTED"
+priority = 1702
+required = true
+depends_on = ["M68-CANCEL-001"]
+verify = ["cargo test --workspace --all-features git_status"]
+notes = "Scope and done criteria: typed model Git status, shell-free CLI adapter and global header; temporary repository tests for dirty, ahead, behind, missing upstream and failures. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-GITUI-001"
+milestone = "M68"
+title = "Integrate GitUI through the existing terminal workbench"
+status = "NOT_STARTED"
+priority = 1703
+required = true
+depends_on = ["M68-GIT-001"]
+verify = ["cargo test --workspace --all-features gitui"]
+notes = "Scope and done criteria: typed menu/palette launch, terminal runtime, availability diagnostic; real temporary-repository terminal smoke plus input/resize tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-MENU-001"
+milestone = "M68"
+title = "Make concept application menus usable across terminal sizes"
+status = "NOT_STARTED"
+priority = 1704
+required = true
+depends_on = ["M68-GITUI-001"]
+verify = ["cargo test --workspace --all-features menu"]
+notes = "Scope and done criteria: existing menu model/render/input; geometry, keyboard, mouse and unavailable action tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-FOCUS-001"
+milestone = "M68"
+title = "Implement inward arrow and outward Escape focus navigation"
+status = "NOT_STARTED"
+priority = 1705
+required = true
+depends_on = ["M68-MENU-001"]
+verify = ["cargo test --workspace --all-features focus"]
+notes = "Scope and done criteria: model focus/reducer and app input routing; tree, dialog, editor, terminal ownership and responsive tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-METERS-001"
+milestone = "M68"
+title = "Replace scrambled Dashboard dials with clean resource bars"
+status = "NOT_STARTED"
+priority = 1706
+required = true
+depends_on = ["M68-FOCUS-001"]
+verify = ["cargo test --workspace --all-features dashboard"]
+notes = "Scope and done criteria: Dashboard resource renderer and production fixtures; exact values, unavailable, narrow and colorless tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-PIE-001"
+milestone = "M68"
+title = "Give the Rootfs Braille pie full usable rendering resolution"
+status = "NOT_STARTED"
+priority = 1707
+required = true
+depends_on = ["M68-METERS-001"]
+verify = ["cargo test --workspace --all-features rootfs"]
+notes = "Scope and done criteria: rootfs chart layout and renderer; geometric resolution, exact table and accessibility tests. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-GALLERY-001"
+milestone = "M68"
+title = "Update front README gallery with all repaired workflows"
+status = "NOT_STARTED"
+priority = 1708
+required = true
+depends_on = ["M68-PIE-001"]
+verify = ["python3 scripts/render-readme-screenshots.py --check", "python3 scripts/render-m22-concept-screenshots.py --check"]
+notes = "Scope and done criteria: production fixtures, reviewed cell goldens, rasters, manifest, README and release version; all requested screens, baseline, docs and screenshot verification. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."
+
+[[task]]
+id = "M68-PUSH-001"
+milestone = "M68"
+title = "Verify and push completed fixes to master"
+status = "NOT_STARTED"
+priority = 1709
+required = true
+depends_on = ["M68-GALLERY-001"]
+verify = ["git status --short", "git log -1 --oneline"]
+notes = "Scope and done criteria: verify coherent commits, preserve existing user artifacts, fetch and integrate master safely, push without force and verify remote HEAD; record any genuine external blocker. Update UI/architecture where changed, registry, status and current task; baseline checks and one coherent commit required."

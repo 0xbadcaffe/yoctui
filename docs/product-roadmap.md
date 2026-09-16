@@ -1432,3 +1432,11 @@ Release follow-up M67-LIVE-EVIDENCE-001 is BLOCKED on new current-source live
 performance evidence. The retained manifest has 49 source digest mismatches;
 M67 behavior/regression verification is complete, while the repository-wide
 release completion gate remains unpassed. No unrelated eligible task remains.
+
+## M68 — Responsive workflows, Git and concept UI repair
+
+The user request prioritizes clone/progress, background cancellation, source Git
+status and GitUI, concept menus, arrow/Escape focus, clean meters and a readable
+Braille pie. Ten atomic tasks end with updated front README screens and a
+non-force push to master. M67 live performance evidence remains a separate
+blocked prerequisite and does not prevent implementing or pushing these fixes.

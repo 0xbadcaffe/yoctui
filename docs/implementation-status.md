@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M68 is active: ten atomic tasks are registered for the new user request.
+Existing F10 application menus and Devtool Git status were found; general
+GitUI integration is absent. Clone still awaits inside the input handler.
+M68-CLONE-001 is current; M67 live evidence remains a separate blocker.
+
 M67 requested fixes are implemented and committed as atomic changes: fresh
 build-directory initialization, asynchronous daemon compatibility discovery,
 and empty-on-open content-only build/rootfs/artifact search. Search Help and

@@ -5570,3 +5570,53 @@ Global-search Help and README shortcuts describe only build text contents,
 generated rootfs and text image artifacts. Help explains that the dialog opens
 empty and Enter opens the matching file/line; it does not advertise action
 execution or external source-tree search.
+
+## M68 — Responsive setup, Git and navigation
+
+This user-requested contract supersedes earlier conflicting focus, meter and
+menu geometry rules.
+
+- Clone confirmation starts cancellable background work. While pending the
+  shell remains interactive and displays the shared Braille activity marker
+  with `Cloning…`. Only successful completion installs the reviewed source and
+  build profile. Errors and cancellation remain distinct. Reviewed fresh clone
+  destinations can be created beneath a validated existing ancestor; occupied
+  destinations and symlink escapes are rejected. No shell interpolation.
+- Slow operations expose named typed activity (for example `Cloning…`,
+  `Initializing…`, `Loading…`, `Cancelling…`). Known progress remains numeric;
+  unknown progress uses the existing Braille animation. Reduced-motion and
+  ASCII modes retain static and textual alternatives. Input/rendering never
+  awaits process completion, network work or cancellation acknowledgement.
+- Build cancellation changes immediately to Cancelling and runs in the
+  background. Navigation, redraws and resize remain available. Duplicate
+  cancellation is suppressed; terminal backend events retain result authority.
+- A global source-repository status reports branch and independent staged,
+  unstaged, untracked, conflict, ahead and behind facts. Clean without upstream
+  is not labeled pushed. Ahead/behind are relative to the last fetched tracking
+  ref; no automatic fetch. Non-repositories, detached HEAD, loading and errors
+  are explicit. Refresh is bounded asynchronous work, including after Git UI.
+- Git tools reuse a real embedded terminal running GitUI in the selected
+  authoritative source repository. Expose it in the application menu/palette,
+  preserving GitUI diff, stage, commit-message, history and synchronization
+  controls. Missing GitUI has a visible installation diagnostic. Terminal keys
+  stay owned by GitUI; the existing terminal prefix exits to the shell safely.
+- F10 opens the existing Workspace/Build/Navigate/View/Tools/Help application
+  menu with concept-style tabs and compact rows at supported sizes. Left/Right
+  changes groups, Up/Down changes items, Enter activates and Esc closes. Menu
+  operations remain context-aware and show exact unavailable reasons.
+- Navigator Up/Down selects, Right expands collapsed groups, otherwise Right
+  or Enter opens the selected destination and focuses actionable Workspace.
+  Workspace Esc returns to Navigator before any Dashboard navigation; transient
+  modes and dialogs consume Esc first. Navigator Esc returns to Dashboard.
+  Tree Left/Right keep tree semantics and terminal/editor keys keep local
+  ownership. Tab/Shift+Tab remain explicit pane cycling; passive panes stay out.
+- Dashboard resource cards use smooth, single-row horizontal bars with exact
+  percentages and capacity context, avoiding overlapping Braille dials.
+  Unavailable values never fabricate percentages. Rootfs pie uses the highest
+  terminal-cell Braille resolution and allocates the chart its usable space,
+  without an internal legend competing with the adjacent authoritative table.
+  Narrow/accessible layouts retain exact tables.
+- The front README gallery includes updated production-renderer examples of
+  clone progress, Git status/GitUI, menus/navigation, cancellation, Rootfs and
+  Dashboard. Deterministic demonstrations are labeled; no fixture is described
+  as a live Yocto measurement. Original concept art remains unchanged.

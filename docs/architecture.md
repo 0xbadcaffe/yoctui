@@ -4219,3 +4219,14 @@ bounds. Query stdout/stderr reads and child wait share the same timeout and
 cancellation lifetime. Owned process-group guards terminate probe descendants
 when their futures are dropped; child handles retain kill-on-drop reaping.
 No detached stream readers remain after compatibility cancellation.
+
+## M68 asynchronous operations and Git integration
+
+The model owns named pending-operation and source Git state; the CLI owns
+cancellable workers and installs typed outcomes. UI rendering and reducers do
+not parse Git/process output. Repository observation uses bounded shell-free
+Git commands and never fetches automatically. GitUI reuses the terminal runtime
+and its input/resize/lifecycle ownership. Clone and build cancellation must not
+await child work on the interactive input path. Late results carry operation
+identity so they cannot overwrite a replacement workflow. Existing menu and
+focus actions are extended rather than introducing a second menu system.
