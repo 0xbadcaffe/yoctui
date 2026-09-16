@@ -5652,3 +5652,10 @@ second menu row when no type-ahead query is active. Arrow keys select groups and
 items, Enter activates, and Esc/F10 closes. Mouse clicks select group tabs or
 rows; the wheel selects rows and Enter activates the selection. Outside clicks
 remain trapped. Rendering and hit testing share the same geometry.
+
+M68 focus details: activating an expanded Navigator destination enters its
+interactive Workspace; passive Dashboard/Help/relationships retain Navigator
+focus. Escape leaves local search/edit/copy mode first, then Workspace, then the
+Navigator to Dashboard. Terminal writers retain Tab, Escape, q, a and function
+keys; Ctrl+B remains the Yoctui escape prefix. F10 can open an application menu
+over an editor, while ordinary `a` stays literal in editors/searches.

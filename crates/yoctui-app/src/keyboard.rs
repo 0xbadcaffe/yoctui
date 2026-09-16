@@ -218,6 +218,21 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
         || app.command_palette_open
         || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
         || app.screen == yoctui_model::Screen::TerminalSessions
+        || workspace_text_input_active(app)
+    {
+        None
+    } else {
+        Some(Action::OpenGlobalSearch)
+    }
+}
+
+/// Screen-local editors and searches retain text, Escape and navigation keys.
+pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
+    (app.screen == yoctui_model::Screen::BuildEnvironment
+        && app
+            .build_environment_draft
+            .as_ref()
+            .is_some_and(|draft| draft.editing))
         || (app.screen == yoctui_model::Screen::Tasks && app.task_filter_editing)
         || (app.screen == yoctui_model::Screen::Logs
             && (app.logs.searching || app.internal_logs.searching))
@@ -242,11 +257,13 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
                 app.raw_mode.view,
                 yoctui_model::RawModeView::Form | yoctui_model::RawModeView::Preview
             ))
-    {
-        None
-    } else {
-        Some(Action::OpenGlobalSearch)
-    }
+}
+
+pub fn terminal_owns_input(app: &yoctui_model::App) -> bool {
+    app.screen == yoctui_model::Screen::TerminalSessions
+        && app.focus == FocusTarget::Workspace
+        && (app.selected_terminal_is_writer()
+            || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live)
 }
 
 pub fn input_key_stroke(key: Input) -> yoctui_model::KeyStroke {

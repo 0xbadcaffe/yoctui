@@ -4264,3 +4264,9 @@ and argv, modal focus at supported widths, and embedded-session navigation.
 M68 application-menu bounds live in the app layer and are shared by the renderer
 and pointer routing. Mouse input emits existing group/row selection actions;
 activation remains the existing keyboard/menu action route with availability checks.
+
+M68 input ownership is explicit in the app layer: active screen text fields and
+terminal writer/transient modes precede pane-focus routing. The CLI menu shortcut
+uses the same ownership predicates, so typing `a` cannot open a context menu.
+Navigator activation selects relevant Workspace focus through the existing model
+focus policy. Signatures consumes only its own keys while Workspace is focused.

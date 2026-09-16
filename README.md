@@ -181,13 +181,16 @@ starting the daemon from an initialized shell as shown above.
 | `F10` / `a` | Application menu / context actions |
 | `Tab` / `Shift+Tab` | Change focus; some workspaces use Tab for their views |
 | Arrows, `PageUp`/`PageDown`, `Home`/`End` | Move within lists and trees |
-| `Right` / `Left` in Navigator or a tree | Expand / collapse or move to parent |
+| `Right` / `Enter` in Navigator | Expand a group, then open and focus its workspace |
+| `Left` in a tree | Collapse or move to parent |
+| `Esc` | Close the active context, return to Navigator, then Dashboard |
 | `/` | Search build-file contents, generated rootfs and text image artifacts; opens empty (outside editors and local search fields) |
 | `B` | Image build options |
 | `q` | Request exit; confirmation required |
 
 The footer lists shortcuts for the current view. Dialogs and editors own
-their keys before global navigation. See the [keymap](docs/keymap.md) for
+their keys before global navigation. Terminal writers retain normal keys; use
+`Ctrl+B` for Yoctui terminal controls. See the [keymap](docs/keymap.md) for
 terminal-prefix commands and custom bindings.
 
 ## Build, logs and errors

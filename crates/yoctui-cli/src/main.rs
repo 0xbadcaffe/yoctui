@@ -11621,12 +11621,16 @@ async fn refresh_workspace(
 }
 
 fn direct_menu_shortcut_action(app: &App, input: Input, replayed: bool) -> Option<Action> {
-    if replayed || app.command_palette_open {
+    if replayed || app.command_palette_open || yoctui_app::terminal_owns_input(app) {
         return None;
     }
     match input {
         Input::F10 => Some(Action::OpenApplicationMenu),
-        Input::Char('a') => Some(Action::OpenContextMenu),
+        Input::Char('a')
+            if app.active_dialog().is_none() && !yoctui_app::workspace_text_input_active(app) =>
+        {
+            Some(Action::OpenContextMenu)
+        }
         _ => None,
     }
 }
@@ -13591,6 +13595,8 @@ async fn tui(
                         }
                     }
                 } else if app.screen == Screen::Signatures
+                    && app.focus == yoctui_model::FocusTarget::Workspace
+                    && signature_workspace_action(input).is_some()
                     && app.active_dialog().is_none()
                     && app.notification.is_none()
                 {
@@ -22949,6 +22955,24 @@ esac"#,
         .unwrap();
         assert!(
             matches!(app.rootfs_composition, yoctui_model::RootfsCompositionState::Failed { ref message, .. } if message.contains("authority changed"))
+        );
+    }
+}
+
+#[cfg(test)]
+mod m68_focus_tests {
+    use super::*;
+    #[test]
+    fn focus_menu_shortcut_preserves_editor_and_search_text() {
+        let mut app = App::new(10, 1024);
+        app.screen = Screen::Recipes;
+        app.focus = yoctui_model::FocusTarget::Workspace;
+        app.metadata_searching = true;
+        assert!(direct_menu_shortcut_action(&app, Input::Char('a'), false).is_none());
+        assert!(pane_focus_route(&app, Input::Char('q')).is_none());
+        assert_eq!(
+            direct_menu_shortcut_action(&app, Input::F10, false),
+            Some(Action::OpenApplicationMenu)
         );
     }
 }

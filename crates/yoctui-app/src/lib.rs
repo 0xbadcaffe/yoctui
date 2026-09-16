@@ -159,3 +159,5 @@ pub use dialog_input::{
     wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
     wic_write_confirmation_action, wic_write_phrase_action,
 };
+
+pub use keyboard::{terminal_owns_input, workspace_text_input_active};

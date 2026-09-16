@@ -880,3 +880,18 @@ fn gitui_launch_dialog_exposes_source_and_preserves_focus() {
         assert_eq!(app.focus, FocusTarget::Dialog);
     }
 }
+
+#[test]
+fn focus_navigation_renders_workspace_then_navigator_at_each_breakpoint() {
+    let mut app = App::new(10, 1024);
+    yoctui_model::update(&mut app, Action::Open(Screen::Recipes));
+    update(&mut app, Action::ActivateNavigator);
+    assert_eq!(app.focus, FocusTarget::Workspace);
+    for (width, height) in [(80, 24), (100, 30), (160, 50)] {
+        let text = rendered_text(&app, width, height);
+        assert!(text.contains("Recipes"));
+        assert!(text.contains("Navigator"));
+    }
+    update(&mut app, Action::Focus(FocusTarget::Navigator));
+    assert_eq!(app.screen, Screen::Recipes);
+}

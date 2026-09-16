@@ -31,8 +31,12 @@ opens image build options.
 
 ## Focus and collection movement
 
-`Tab` and `Shift+Tab` move among visible focus targets. `Esc` closes the
-innermost transient owner or moves outward. Focus and zoom commands are
+`Right` expands a Navigator group; on an expanded destination, `Right` or
+`Enter` opens and focuses its interactive Workspace. `Left` collapses tree
+groups or moves to a parent. `Tab` and `Shift+Tab` cycle relevant panes.
+`Esc` closes the innermost transient owner, then returns from Workspace to
+Navigator, then to Dashboard. Terminal writers retain these keys; `Ctrl+B`
+introduces Yoctui terminal controls. Focus and zoom commands are
 discoverable through `F10` → View and the command palette; zoom preserves the
 exact selection, scroll, follow, and subfocus state.
 

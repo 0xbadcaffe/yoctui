@@ -3141,3 +3141,7 @@ DONE — Added source-scoped GitUI menu/palette launch with explicit capability 
 ### M68-MENU-001
 
 DONE — Anchored concept menus now cover compact terminals, expose selected unavailable reasons and share renderer/pointer geometry. Group/row clicks and wheel selection preserve modal trapping. Reviewed updated production golden; menu regressions, full workspace, clippy, fmt, bridge and roadmap passed.
+
+### M68-FOCUS-001
+
+DONE — Right/Enter now focus actionable workspaces; Escape unwinds local ownership then panes. Searches, editors and terminal writers retain literal/navigation keys, with shared app/CLI ownership predicates and corrected Signatures routing. Focus, terminal and responsive regressions plus full workspace, clippy, fmt, bridge and roadmap passed.

@@ -750,6 +750,17 @@ fn ux_terminal_keys_are_modal_and_never_forward_control_actions() {
             exit_code: None,
             restartable: true,
         });
+    app.focus = FocusTarget::Workspace;
+    for key in [
+        Input::Tab,
+        Input::Esc,
+        Input::Char('q'),
+        Input::Char('a'),
+        Input::F10,
+    ] {
+        assert!(focus_action_for_app(&app, key).is_none());
+        assert!(terminal_owns_input(&app));
+    }
     for literal in ['n', 's', 'm', 'o', 'r', 'x', '?', '/', 'v'] {
         assert_eq!(
             terminal_workspace_action(&app, Input::Char(literal)),
