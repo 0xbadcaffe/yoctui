@@ -427,7 +427,9 @@ fn wire_terminal_kind(
         yoctui_model::TerminalCreationKind::DevtoolShell => {
             yoctui_protocol::daemon::PtyKind::DevtoolShell
         }
-        yoctui_model::TerminalCreationKind::Utility => yoctui_protocol::daemon::PtyKind::Utility,
+        yoctui_model::TerminalCreationKind::Utility | yoctui_model::TerminalCreationKind::GitUi => {
+            yoctui_protocol::daemon::PtyKind::Utility
+        }
         yoctui_model::TerminalCreationKind::Devshell => yoctui_protocol::daemon::PtyKind::Devshell,
         yoctui_model::TerminalCreationKind::Menuconfig => {
             yoctui_protocol::daemon::PtyKind::Menuconfig

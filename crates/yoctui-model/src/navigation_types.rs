@@ -321,6 +321,7 @@ pub enum CommandId {
     OpenConfiguration,
     OpenRawMode,
     OpenTerminalSessions,
+    OpenGitUi,
     OpenMaintenance,
     OpenBuildEnvironment,
     OpenCompatibility,

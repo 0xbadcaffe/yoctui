@@ -101,7 +101,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 35] = [
+const GLOBAL_COMMANDS: [CommandId; 36] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -122,6 +122,7 @@ const GLOBAL_COMMANDS: [CommandId; 35] = [
     CommandId::OpenConfiguration,
     CommandId::OpenRawMode,
     CommandId::OpenTerminalSessions,
+    CommandId::OpenGitUi,
     CommandId::OpenMaintenance,
     CommandId::OpenBuildEnvironment,
     CommandId::OpenCompatibility,
@@ -351,6 +352,20 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &[],
             35,
         ),
+        CommandId::OpenGitUi => {
+            let mut metadata = navigation(
+                "tools.gitui",
+                "Open GitUI",
+                "Review source diffs, stage changes, commit and synchronize in GitUI",
+                &["git", "diff", "commit"],
+                &["git", "source", "stage", "push", "fetch"],
+                &[],
+                65,
+            );
+            metadata.menu_path = vec!["Tools", "GitUI"];
+            metadata.help_group = Group::Operate;
+            metadata
+        }
         CommandId::OpenTerminalSessions => navigation(
             "navigate.terminal-sessions",
             "Open Terminal Sessions",
@@ -584,6 +599,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenErrors => "e",
         CommandId::OpenConfiguration => "v",
         CommandId::OpenRawMode => "Ctrl+P raw",
+        CommandId::OpenGitUi => "F10 Tools",
         CommandId::OpenTerminalSessions => "Ctrl+B t",
         CommandId::OpenMaintenance | CommandId::OpenBuildEnvironment => "none",
         CommandId::OpenCompatibility => "none",
@@ -619,6 +635,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenErrors => Some(WorkspaceDestination::Errors),
         CommandId::OpenConfiguration => Some(WorkspaceDestination::Configuration),
         CommandId::OpenRawMode => Some(WorkspaceDestination::RawMode),
+        CommandId::OpenGitUi => None,
         CommandId::OpenTerminalSessions => Some(WorkspaceDestination::TerminalSessions),
         CommandId::OpenMaintenance => Some(WorkspaceDestination::Maintenance),
         CommandId::OpenBuildEnvironment => Some(WorkspaceDestination::BuildEnvironment),
@@ -862,7 +879,7 @@ mod tests {
     fn ux_action_catalog_is_unique_complete_and_safe() {
         validate_operator_action_catalog().unwrap();
         let catalog = operator_action_catalog();
-        assert_eq!(catalog.len(), 158, "35 global plus 123 workspace actions");
+        assert_eq!(catalog.len(), 159, "36 global plus 123 workspace actions");
         assert!(
             catalog
                 .iter()

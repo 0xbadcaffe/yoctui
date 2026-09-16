@@ -865,3 +865,18 @@ fn git_status_is_global_and_visible_at_supported_widths() {
         assert!(text.contains("Git: master ~2 synced*"), "{width}: {text}");
     }
 }
+
+#[test]
+fn gitui_launch_dialog_exposes_source_and_preserves_focus() {
+    let mut app = App::new(10, 1024);
+    app.gitui_program = Some("/usr/bin/gitui".into());
+    app.workspace.source_dir = Some("/workspace/source".into());
+    app.source_git_status = yoctui_model::SourceGitStatus::Ready(Default::default());
+    update(&mut app, Action::OpenGitUi);
+    for (width, height) in [(80, 24), (100, 30), (160, 50)] {
+        let text = rendered_text(&app, width, height);
+        assert!(text.contains("gitui"), "{text}");
+        assert!(text.contains("/workspace/source"), "{text}");
+        assert_eq!(app.focus, FocusTarget::Dialog);
+    }
+}

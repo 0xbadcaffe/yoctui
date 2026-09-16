@@ -11732,6 +11732,10 @@ async fn tui(
         &mut app,
         Action::SshClientCapabilityDetected(ssh_client_capability()),
     );
+    let _ = update(
+        &mut app,
+        Action::GitUiDetected(executable_on_initialized_path("gitui")),
+    );
     if build_dir_configured {
         app.workspace.build_dir = Some(build_dir.clone());
     }
@@ -13481,7 +13485,11 @@ async fn tui(
                         .and_then(|action| compatibility_workspace_action(&mut app, action));
                     match effect {
                         Some(effect @ Effect::Terminal(_)) => {
-                            let _ = submit_daemon_effect(&mut daemon_runtime, &mut app, &effect);
+                            if submit_daemon_effect(&mut daemon_runtime, &mut app, &effect)
+                                .is_none()
+                            {
+                                app.notification = Some("Embedded terminal unavailable: connect to the daemon or choose a detached terminal.".into());
+                            }
                         }
                         Some(Effect::LaunchDetachedTerminal(request)) => {
                             match launch_detached_terminal(&request) {

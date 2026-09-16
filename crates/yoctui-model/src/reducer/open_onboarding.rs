@@ -736,6 +736,13 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
                 return Some(match dialog.destination {
                     TerminalLaunchDestination::Embedded => {
+                        if dialog.request.kind == TerminalCreationKind::GitUi {
+                            app.screen = Screen::TerminalSessions;
+                            app.focus = FocusTarget::Workspace;
+                            app.focus_return = None;
+                            app.pty_selection = app.daemon.pty_sessions.len();
+                            app.notification = Some("GitUI requested. Press o to take writer control; Ctrl+B t returns to sessions.".into());
+                        }
                         Effect::Terminal(TerminalEffect::Create {
                             name: dialog.request.name,
                             kind: dialog.request.kind,

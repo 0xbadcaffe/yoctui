@@ -492,3 +492,12 @@ Yoctui is [MIT-licensed](LICENSE). Dependency licenses are listed in
 The offline systemd service view was informed by the MIT-licensed
 [systemd-manager-tui](https://github.com/Matheus-git/systemd-manager-tui) by
 Matheus-git; Yoctui uses its own parser for unbooted images.
+
+### GitUI source workbench
+
+Install [GitUI](https://github.com/gitui-org/gitui#installation) on your `PATH`,
+then restart Yoctui. Choose **F10 → Tools → Open GitUI**, or search for GitUI in
+**Ctrl+P**. Review the source directory and choose the embedded terminal.
+Press **o** to take writer control. GitUI provides diffs, staging, commit messages,
+branch management, fetch and push; its footer shows the active keys.
+Use **Ctrl+B t** for the session list. Git status refreshes automatically.

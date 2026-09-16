@@ -486,6 +486,7 @@ pub fn compatibility_ui_command_action_definition(
             compatibility_ui_destination_action_definition(Screen::Configuration)
         }
         CommandId::OpenRawMode => compatibility_ui_destination_action_definition(Screen::RawMode),
+        CommandId::OpenGitUi => CompatibilityUiActionDefinition::local(),
         CommandId::OpenTerminalSessions => {
             compatibility_ui_destination_action_definition(Screen::TerminalSessions)
         }

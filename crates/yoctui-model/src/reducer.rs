@@ -19,6 +19,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         && matches!(
             &action,
             Action::OpenOnboarding
+                | Action::OpenGitUi
                 | Action::Open(_)
                 | Action::OpenRawFavorites
                 | Action::SelectNavigator { .. }
@@ -43,6 +44,38 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         return None;
     }
     match action {
+        Action::GitUiDetected(program) => {
+            app.gitui_program = program;
+            None
+        }
+        Action::OpenGitUi => {
+            if let Some(reason) = app
+                .command_palette_commands()
+                .iter()
+                .find(|c| c.id == CommandId::OpenGitUi)
+                .and_then(|c| c.disabled_reason.clone())
+            {
+                app.notification = Some(reason);
+                return None;
+            }
+            let program = app.gitui_program.clone()?;
+            let cwd = app
+                .source_repository_path()
+                .map(std::path::Path::to_owned)?;
+            crate::recipe_operations::open_terminal_launch(
+                app,
+                TerminalLaunchRequest {
+                    name: "GitUI · source".into(),
+                    kind: TerminalCreationKind::GitUi,
+                    cwd,
+                    program,
+                    arguments: Vec::new(),
+                },
+            );
+            synchronize_focus(app);
+            None
+        }
+
         Action::SourceGitStatusUpdated(status) => {
             app.source_git_status = status;
             None

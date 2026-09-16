@@ -5637,3 +5637,11 @@ M68 global Git status appears beside the application name. `+N` means staged,
 last fetched upstream reference; status refresh never fetches or changes files.
 The source comes from the selected environment, falling back to workspace metadata.
 Missing/non-Git sources show `Git: unavailable`; scanning has a named pending state.
+
+M68 GitUI is available through F10 Tools and Ctrl+P. Launch previews the exact
+source directory and executable in the existing embedded/detached terminal dialog.
+Embedded confirmation opens Terminal Sessions and selects the new session slot;
+`o` takes writer control. GitUI owns normal keys (including arrows and Escape)
+while Yoctui's Ctrl+B prefix retains session navigation. Missing GitUI has an
+explicit install-and-restart reason. Staging, commits and remote operations
+are initiated by the user in GitUI.

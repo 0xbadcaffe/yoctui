@@ -3,6 +3,7 @@ use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct App {
+    pub gitui_program: Option<PathBuf>,
     pub source_git_status: SourceGitStatus,
     pub background_activities: std::collections::BTreeSet<BackgroundActivity>,
     pub daemon: ClientDaemonView,
@@ -201,6 +202,7 @@ pub fn centered_viewport_range(
 impl App {
     pub fn new(max_entries: usize, max_bytes: usize) -> Self {
         Self {
+            gitui_program: None,
             source_git_status: SourceGitStatus::default(),
             background_activities: Default::default(),
             daemon: ClientDaemonView::default(),
@@ -1433,6 +1435,17 @@ impl App {
                     unreachable!("global catalog entries target command IDs")
                 };
                 let pane_disabled_reason = match id {
+                    CommandId::OpenGitUi if self.gitui_program.is_none() => {
+                        Some("GitUI is not installed; install gitui and restart Yoctui")
+                    }
+                    CommandId::OpenGitUi if self.source_repository_path().is_none() => {
+                        Some("Select a source directory in Build Environment")
+                    }
+                    CommandId::OpenGitUi
+                        if !matches!(self.source_git_status, SourceGitStatus::Ready(_)) =>
+                    {
+                        Some("Source Git status is unavailable or still being inspected")
+                    }
                     CommandId::FocusWorkspace
                         if !focus_target_is_relevant(self, FocusTarget::Workspace) =>
                     {

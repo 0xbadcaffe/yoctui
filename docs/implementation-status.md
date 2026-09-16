@@ -3133,3 +3133,7 @@ DONE — Process cancellation is asynchronous and idempotent; environment initia
 ### M68-GIT-001
 
 DONE — Typed source status and five-second background refresh report branch, tracking, staged/unstaged/untracked/conflict facts, with bounded subprocess output and stale-source cancellation. Real temporary-repository and narrow-header tests, full workspace, clippy, fmt, bridge and roadmap pass.
+
+### M68-GITUI-001
+
+DONE — Added source-scoped GitUI menu/palette launch with explicit capability errors and trapped modal focus, using the existing embedded/detached terminal runtime. Real GitUI 0.28.1 PTY input/resize/exit smoke passed; captured actual diff and commit-message views. Full workspace suite, clippy, fmt, bridge and roadmap passed.

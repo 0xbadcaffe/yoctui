@@ -63,7 +63,8 @@ impl ApplicationMenuGroup {
             | CommandId::PreviousSubfocus
             | CommandId::NextSubfocus
             | CommandId::TogglePaneZoom => Self::View,
-            CommandId::OpenRawMode
+            CommandId::OpenGitUi
+            | CommandId::OpenRawMode
             | CommandId::OpenTerminalSessions
             | CommandId::OpenMaintenance
             | CommandId::OpenBuildEnvironment

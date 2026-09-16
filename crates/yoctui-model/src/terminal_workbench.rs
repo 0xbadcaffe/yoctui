@@ -109,6 +109,7 @@ pub enum TerminalCreationKind {
     BuildShell,
     DevtoolShell,
     Utility,
+    GitUi,
     Devshell,
     Menuconfig,
     QemuConsole,

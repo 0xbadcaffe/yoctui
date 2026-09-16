@@ -4248,3 +4248,15 @@ Source Git status is a typed model projection from a read-only adapter running
 five seconds without awaiting unfinished probes and discards changed-source tasks.
 The adapter bounds output to 1 MiB and elapsed time to five seconds. Rename paths
 are consumed as data and cannot become branch metadata. No implicit fetch occurs.
+
+M68 GitUI reuses the terminal launch request and daemon utility PTY protocol.
+A typed GitUi creation kind selects the source workbench without introducing a
+second terminal emulator or parsing GitUI output in widgets. Capability detection
+supplies an executable path; launch uses exact argv and the selected source cwd.
+
+GitUI integration verification includes the real executable (0.28.1) under the
+daemon PTY supervisor: temporary committed repository, unstaged diff, writer
+lease, keyboard input, 110×32 → 100×28 resize, and exit status 0. Reproduce with
+`YOCTUI_GITUI_PROGRAM=/absolute/path/gitui cargo test --workspace --all-features gitui_real_terminal -- --ignored`.
+The ordinary suite covers absent-tool diagnostics, menu availability, typed cwd
+and argv, modal focus at supported widths, and embedded-session navigation.

@@ -259,6 +259,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenErrors => Action::Open(Screen::Errors),
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenRawMode => Action::Open(Screen::RawMode),
+        CommandId::OpenGitUi => Action::OpenGitUi,
         CommandId::OpenTerminalSessions => Action::Open(Screen::TerminalSessions),
         CommandId::OpenMaintenance => Action::Open(Screen::Maintenance),
         CommandId::OpenBuildEnvironment => Action::Open(Screen::BuildEnvironment),
