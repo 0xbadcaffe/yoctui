@@ -217,6 +217,47 @@ fn readme_gallery_requested_workbenches_render_through_production_renderer() {
             .as_slice(),
         ),
         (
+            "system-dbus",
+            readme_system_dbus_app(),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-system-dbus-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-system-dbus-160x50.cells"
+            )),
+            [
+                "Offline system-bus activation map",
+                "org.freedesktop.network1",
+                "systemd-networkd.service",
+                "/usr/lib/systemd/systemd-networkd",
+                "Policies",
+            ]
+            .as_slice(),
+        ),
+        (
+            "udev-rules",
+            readme_udev_rules_app(),
+            concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-udev-rules-160x50.cells"
+            ),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/golden/readme-udev-rules-160x50.cells"
+            )),
+            [
+                "udev rules",
+                "Overridden",
+                "Masked",
+                "Rule preview",
+                "ATTRS{idVendor}",
+                "board-console-%k",
+            ]
+            .as_slice(),
+        ),
+        (
             "systemd-services",
             readme_systemd_services_app(),
             concat!(

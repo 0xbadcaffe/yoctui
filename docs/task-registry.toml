@@ -8359,3 +8359,14 @@ required = true
 depends_on = ["README-REAL-DTS-001"]
 verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check"]
 notes = "Add a deterministic production-renderer Services fixture and screenshot beside Rootfs composition; show unit descriptions, BusName and on-disk enablement without live-state claims. Update gallery coverage/provenance and README, run baseline/docs checks, record task completion and commit."
+
+[[task]]
+id = "README-DBUS-UDEV-001"
+milestone = "M70"
+title = "Add system D-Bus and udev rules screenshots"
+status = "DONE"
+priority = 1903
+required = true
+depends_on = ["README-SYSTEMD-001"]
+verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check"]
+notes = "Add two production-rendered image-inspection fixtures/screenshots: system-bus activation mappings and udev selected/overridden/masked files with rule preview. Update README gallery, exporter, coverage and provenance. Verify screenshots and baseline/docs, update task/status records and commit. No application behavior changes."

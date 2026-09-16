@@ -4,6 +4,10 @@
 **Title:** Supply current-source real-Poky release performance evidence
 **Status:** BLOCKED
 
+README-DBUS-UDEV-001 is DONE: system D-Bus and udev rules screenshots are
+in the README image-inspection gallery. All 23 screenshots and the baseline/
+documentation checks pass.
+
 README-SYSTEMD-001 is DONE: the README includes a production-rendered offline
 systemd Services screenshot beside rootfs composition. All 21 screenshots and
 the baseline/documentation checks pass.

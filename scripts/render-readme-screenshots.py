@@ -38,6 +38,8 @@ SCENARIOS = [
     ("saved-build-history", "readme-saved-build-history-160x50.cells"),
     ("saved-build-logs", "readme-saved-build-logs-160x50.cells"),
     ("systemd-services", "readme-systemd-services-160x50.cells"),
+    ("system-dbus", "readme-system-dbus-160x50.cells"),
+    ("udev-rules", "readme-udev-rules-160x50.cells"),
 ]
 
 

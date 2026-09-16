@@ -84,7 +84,7 @@ expected_gallery_ids = (
     "idle-dashboard", "failed-build-errors", "editor-application-menu",
     "terminal-sessions", "device-tree-editor", "device-tree-compile-options",
     "cloning", "cancelling", "search-empty", "gitui-diff", "gitui-commit",
-    "offline-dashboard", "saved-build-history", "saved-build-logs", "systemd-services",
+    "offline-dashboard", "saved-build-history", "saved-build-logs", "systemd-services", "system-dbus", "udev-rules",
 )
 assert tuple(item.get("id") for item in artifacts) == expected_gallery_ids
 assert gallery.get("authority") == "production TestBackend cell/style goldens"
@@ -111,7 +111,7 @@ workflow_order = (
     "saved-build-logs", "editor-application-menu", "terminal-sessions",
     "gitui-diff", "gitui-commit", "kernel-device-tree", "uboot-device-tree",
     "kernel-menuconfig", "uboot-menuconfig", "device-tree-editor",
-    "device-tree-compile-options", "rootfs-composition", "systemd-services",
+    "device-tree-compile-options", "rootfs-composition", "systemd-services", "system-dbus", "udev-rules",
 )
 assert set(workflow_order) == set(expected_gallery_ids)
 files_by_id = {item["id"]: item["file"] for item in artifacts}

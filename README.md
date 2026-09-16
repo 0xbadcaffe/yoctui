@@ -216,6 +216,10 @@ checksums, see [Raster provenance](docs/media/screenshots/manifest.toml),
     <td width="50%"><a href="docs/media/screenshots/06-rootfs-composition.png"><img src="docs/media/screenshots/06-rootfs-composition.png" alt="Yoctui root filesystem package composition pie chart and exact size table"></a><br><strong>Rootfs composition</strong> — Braille package-size chart with matching table colors, exact byte totals and filesystem drill-down.</td>
     <td width="50%"><a href="docs/media/screenshots/21-systemd-services.png"><img src="docs/media/screenshots/21-systemd-services.png" alt="Offline systemd Services view listing unit files, descriptions, BusName and enablement from IMAGE_ROOTFS"></a><br><strong>Offline systemd services</strong> — Inspect unit files, D-Bus names and enablement links in <code>IMAGE_ROOTFS</code>. These are installed files, not live service status.</td>
   </tr>
+  <tr>
+    <td width="50%"><a href="docs/media/screenshots/22-system-dbus.png"><img src="docs/media/screenshots/22-system-dbus.png" alt="Offline system D-Bus activation map with bus names, systemd units, users, executables and policy counts"></a><br><strong>System D-Bus</strong> — Inspect activation files, associated systemd units and policy files from the image.</td>
+    <td width="50%"><a href="docs/media/screenshots/23-udev-rules.png"><img src="docs/media/screenshots/23-udev-rules.png" alt="Offline udev rule files showing overrides, masks and selected rule content"></a><br><strong>udev rules</strong> — Check file precedence, overrides and masks, then read the selected rule. Rules are not executed.</td>
+  </tr>
 </table>
 
 ## Build, logs and errors

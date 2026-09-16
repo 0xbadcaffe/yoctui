@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+README-DBUS-UDEV-001 is DONE in source v0.1.122. Two production-rendered
+screenshots show offline system-bus activation mappings and udev rule-file
+precedence, masks and selected rule content. The README places both beside the
+existing rootfs/systemd views. All 23 screenshots have checked cell/raster
+provenance. 1,677 Rust tests, 52 bridge tests, fmt, strict Clippy, README/docs
+checks and version policy pass. 753 tasks are DONE; only M67-LIVE-EVIDENCE-001
+remains BLOCKED. Published crates remain at v0.1.118.
+
 README-SYSTEMD-001 is DONE in source v0.1.121. The README image-inspection
 gallery pairs rootfs composition with the offline systemd Services view. The
 production-renderer fixture shows unit descriptions, BusName and on-disk

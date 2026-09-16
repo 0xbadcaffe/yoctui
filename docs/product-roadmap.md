@@ -4,6 +4,10 @@ This roadmap defines the stable milestone sequence. Atomic implementation state 
 
 ## Current handoff
 
+README-DBUS-UDEV-001 is complete in source v0.1.122. The README has 23 verified
+screenshots, including system D-Bus activation files and udev rules/overrides.
+753 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED.
+
 README-SYSTEMD-001 is complete in source v0.1.121. The README has 21 verified
 screenshots, including offline systemd service files beside rootfs composition.
 752 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED.
