@@ -1,20 +1,21 @@
 # Current Task
 
-**ID:** M72-IPC-001
-**Title:** Preserve client frames under temporary backpressure and terminal ownership
+**ID:** M72-CACHE-001
+**Title:** Expose authoritative build cache and download status in compact telemetry
 **Status:** IN_PROGRESS
 
 User-requested live OpenBMC corrections supersede the blocked task below.
-Dependencies: none. Files: protocol daemon_ipc, CLI main/client runtime.
-Done: bounded resumable event writes, terminal-safe diagnostics, real Unix
-socket regression tests. Update UI/architecture, registry, status and current
-task, commit, then continue M72-CACHE-001 and M72-LAYOUT-001. Preserve the
-active user daemon/build.
+Dependency M72-IPC-001 is DONE with full baseline and private flood verification.
+Files: BitBake adapters, protocol/model cache state, replica and dashboard.
+Done: validated native sstate summary, cumulative observed fetch outcomes,
+configured network policy, honest offline readiness, compact resource meters,
+and reducer/adapter/reattach/TestBackend tests. Update UI/architecture, registry,
+status/current and commit, then continue M72-LAYOUT-001. Preserve the live build.
 
 Verification:
 ```bash
-cargo test -p yoctui-protocol daemon_ipc
-cargo test -p yoctui interactive_daemon
+cargo test --workspace --all-features cache
+cargo test -p yoctui-ui
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -139,6 +139,7 @@ impl DaemonListener {
                         pending: Vec::new(),
                         expected_frame_len: None,
                         write_poisoned: false,
+                        outgoing: None,
                     });
                 }
                 Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
@@ -176,10 +177,11 @@ impl DaemonListener {
         timeout: Duration,
     ) -> Result<bool, IpcError> {
         if connections.iter().any(|connection| {
-            connection
-                .expected_frame_len
-                .is_some_and(|frame_len| connection.pending.len() >= frame_len)
-                || (connection.expected_frame_len.is_none() && connection.pending.len() >= 4)
+            !connection.event_write_pending()
+                && (connection
+                    .expected_frame_len
+                    .is_some_and(|frame_len| connection.pending.len() >= frame_len)
+                    || (connection.expected_frame_len.is_none() && connection.pending.len() >= 4))
         }) {
             return Ok(true);
         }
@@ -192,7 +194,11 @@ impl DaemonListener {
         });
         descriptors.extend(connections.iter().map(|connection| libc::pollfd {
             fd: connection.stream.as_raw_fd(),
-            events: libc::POLLIN,
+            events: if connection.event_write_pending() {
+                libc::POLLOUT
+            } else {
+                libc::POLLIN
+            },
             revents: 0,
         }));
         if let Some(fd) = additional_fd {
@@ -272,6 +278,7 @@ pub struct DaemonConnection {
     pending: Vec<u8>,
     expected_frame_len: Option<usize>,
     write_poisoned: bool,
+    outgoing: Option<(Vec<u8>, usize, Instant)>,
 }
 
 impl DaemonConnection {
@@ -286,6 +293,7 @@ impl DaemonConnection {
                         pending: Vec::new(),
                         expected_frame_len: None,
                         write_poisoned: false,
+                        outgoing: None,
                     });
                 }
                 Err(error)
@@ -364,6 +372,9 @@ impl DaemonConnection {
     /// again. Daemon fan-out uses this to share immutable event encoding across
     /// attached clients.
     pub fn send_encoded_frame(&mut self, frame: &[u8]) -> Result<(), IpcError> {
+        if self.outgoing.is_some() {
+            return Err(IpcError::Timeout("pending event write"));
+        }
         if self.write_poisoned {
             return Err(IpcError::Disconnected);
         }
@@ -409,6 +420,77 @@ impl DaemonConnection {
             self.stream.set_write_timeout(previous)?;
         }
         result
+    }
+
+    /// Queue at most one bounded event frame. The daemon must finish this
+    /// frame before advancing to another event or responding to a command.
+    pub fn queue_event_frame(&mut self, frame: &[u8]) -> Result<(), IpcError> {
+        if self.write_poisoned {
+            return Err(IpcError::Disconnected);
+        }
+        if self.outgoing.is_some() {
+            return Err(IpcError::Timeout("pending event write"));
+        }
+        if frame.len() < 4
+            || frame.len() > MAX_FRAME_BYTES.saturating_add(4)
+            || u32::from_be_bytes(frame[..4].try_into().unwrap()) as usize != frame.len() - 4
+        {
+            return Err(DaemonProtocolError::InvalidLength.into());
+        }
+        self.outgoing = Some((frame.to_vec(), 0, Instant::now()));
+        Ok(())
+    }
+
+    pub fn event_write_pending(&self) -> bool {
+        self.outgoing.is_some()
+    }
+
+    /// One nonblocking write per service slice, retaining partial frame bytes.
+    /// A peer that cannot finish one frame within five seconds is disconnected.
+    pub fn flush_event_frame(&mut self) -> Result<bool, IpcError> {
+        if self.write_poisoned {
+            return Err(IpcError::Disconnected);
+        }
+        let Some((frame, offset, started)) = self.outgoing.as_mut() else {
+            return Ok(true);
+        };
+        if started.elapsed() >= Duration::from_secs(5) {
+            self.write_poisoned = true;
+            return Err(IpcError::Timeout("event delivery"));
+        }
+        let remaining = &frame[*offset..];
+        // SAFETY: the connection owns the descriptor and `remaining` stays
+        // valid for this call. MSG_DONTWAIT does not change receive semantics.
+        let written = unsafe {
+            libc::send(
+                self.stream.as_raw_fd(),
+                remaining.as_ptr().cast(),
+                remaining.len().min(64 * 1024),
+                libc::MSG_DONTWAIT | libc::MSG_NOSIGNAL,
+            )
+        };
+        if written < 0 {
+            let error = io::Error::last_os_error();
+            if matches!(
+                error.kind(),
+                io::ErrorKind::WouldBlock | io::ErrorKind::Interrupted
+            ) {
+                return Ok(false);
+            }
+            self.write_poisoned = true;
+            return Err(error.into());
+        }
+        if written == 0 {
+            self.write_poisoned = true;
+            return Err(IpcError::Disconnected);
+        }
+        *offset += written as usize;
+        if *offset == frame.len() {
+            self.outgoing = None;
+            Ok(true)
+        } else {
+            Ok(false)
+        }
     }
 
     pub fn receive<T: DeserializeOwned>(&mut self) -> Result<T, IpcError> {
@@ -727,6 +809,7 @@ mod tests {
             pending: Vec::new(),
             expected_frame_len: None,
             write_poisoned: false,
+            outgoing: None,
         };
         assert!(!connection.is_readable().unwrap());
         peer.write_all(&encode_frame(&ClientMessage::Pong { nonce: 31 }).unwrap())
@@ -768,6 +851,100 @@ mod tests {
         server.receive::<ClientMessage>().unwrap();
         drop(client.join().unwrap());
         assert!(server.send(&ClientMessage::Pong { nonce: 7 }).is_ok());
+        cleanup(&paths);
+    }
+
+    fn event_pair() -> (DaemonConnection, UnixStream) {
+        let (stream, peer) = UnixStream::pair().unwrap();
+        (
+            DaemonConnection {
+                stream,
+                server_mode: true,
+                pending: Vec::new(),
+                expected_frame_len: None,
+                write_poisoned: false,
+                outgoing: None,
+            },
+            peer,
+        )
+    }
+
+    #[test]
+    fn daemon_ipc_event_backpressure_resumes_exact_bytes_without_interleaving() {
+        let paths = test_paths("event-backpressure");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let (mut server, mut peer) = event_pair();
+        let frame = encode_frame(&"x".repeat(1024 * 1024)).unwrap();
+        server.queue_event_frame(&frame).unwrap();
+        // Deliberately leave the peer unread until its socket is full.
+        for _ in 0..32 {
+            assert!(!server.flush_event_frame().unwrap());
+        }
+        assert!(server.event_write_pending());
+        server.pending = encode_frame(&ClientMessage::Pong { nonce: 3 }).unwrap();
+        assert!(
+            !listener
+                .wait_for_activity(&[&server], Duration::from_millis(10))
+                .unwrap()
+        );
+        assert!(server.send(&ClientMessage::Pong { nonce: 1 }).is_err());
+        assert!(server.queue_event_frame(&frame).is_err());
+        let expected = frame.clone();
+        let reader = thread::spawn(move || {
+            let mut received = vec![0; expected.len()];
+            peer.read_exact(&mut received).unwrap();
+            assert_eq!(received, expected);
+            let next = encode_frame(&ClientMessage::Pong { nonce: 2 }).unwrap();
+            let mut received = vec![0; next.len()];
+            peer.read_exact(&mut received).unwrap();
+            assert_eq!(received, next);
+        });
+        while !server.flush_event_frame().unwrap() {
+            thread::yield_now();
+        }
+        server.send(&ClientMessage::Pong { nonce: 2 }).unwrap();
+        reader.join().unwrap();
+        drop(listener);
+        cleanup(&paths);
+    }
+
+    #[test]
+    fn daemon_ipc_stalled_event_expires_and_peer_close_is_reported() {
+        let (mut server, peer) = event_pair();
+        let frame = encode_frame(&ClientMessage::Pong { nonce: 1 }).unwrap();
+        server.queue_event_frame(&frame).unwrap();
+        server.outgoing.as_mut().unwrap().2 = Instant::now() - Duration::from_secs(6);
+        assert!(matches!(
+            server.flush_event_frame(),
+            Err(IpcError::Timeout(_))
+        ));
+        assert!(matches!(server.send(&1), Err(IpcError::Timeout(_))));
+        drop(peer);
+        let (mut server, peer) = event_pair();
+        server.queue_event_frame(&frame).unwrap();
+        drop(peer);
+        assert!(server.flush_event_frame().is_err());
+        assert!(server.write_poisoned);
+        assert!(server.queue_event_frame(&frame).is_err());
+    }
+
+    #[test]
+    fn daemon_listener_wakes_for_pending_output_without_peer_input() {
+        let paths = test_paths("pending-output");
+        let listener = DaemonListener::bind(&paths).unwrap();
+        let (mut server, _peer) = event_pair();
+        server
+            .queue_event_frame(&encode_frame(&42).unwrap())
+            .unwrap();
+        let started = Instant::now();
+        assert!(
+            listener
+                .wait_for_activity(&[&server], Duration::from_secs(2))
+                .unwrap()
+        );
+        assert!(started.elapsed() < Duration::from_secs(1));
+        assert!(server.flush_event_frame().unwrap());
+        drop(listener);
         cleanup(&paths);
     }
 
@@ -1064,6 +1241,7 @@ mod tests {
             pending: Vec::new(),
             expected_frame_len: None,
             write_poisoned: false,
+            outgoing: None,
         };
         let snapshot_deadline = Duration::from_secs(1);
         connection

@@ -680,7 +680,9 @@ def main() -> int:
                 "supervisor_reliable_events": 512,
                 "supervisor_cosmetic_events": 512,
                 "per_client_backlog_events": 4_096,
-                "slow_client_write_deadline_milliseconds": 2,
+                "slow_client_write_deadline_milliseconds": 5000,
+                "event_write_slice_bytes": 65536,
+                "pending_event_frames_per_client": 1,
             },
             "result": {
                 "critical_retention_passed": retention_passed,

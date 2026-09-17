@@ -78,7 +78,7 @@ PY
     --binary target/debug/yoctui \
     --rate 4000 \
     --duration-seconds 1 \
-    --observation-seconds 3 \
+    --observation-seconds 7 \
     --include-slow-client \
     --output "$artifact" >/dev/null
   python3 - "$artifact" <<'PY'
@@ -185,12 +185,16 @@ for required in (
 ):
     if required not in supervisor:
         raise SystemExit(f"bounded supervisor contract is missing: {required}")
-for required in ("pub fn is_readable", "pub fn send_encoded_frame_with_timeout"):
+for required in (
+    "pub fn is_readable", "pub fn queue_event_frame", "pub fn flush_event_frame",
+    "libc::MSG_DONTWAIT", "libc::POLLOUT", "Duration::from_secs(5)",
+    "remaining.len().min(64 * 1024)",
+):
     if required not in transport:
         raise SystemExit(f"bounded daemon transport contract is missing: {required}")
 for required in (
     "MAX_DAEMON_CLIENT_EVENTS_PER_TICK: usize = 32",
-    "connection.is_readable()?", "send_encoded_frame_with_timeout(",
+    "connection.is_readable()?", "queue_event_frame(", "flush_event_frame()", "event_write_pending()",
     "Duration::from_millis(2)", "Duration::from_secs(1)",
     "slow_client_disconnects", "forced_client_resynchronizations",
 ):

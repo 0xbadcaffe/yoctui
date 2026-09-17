@@ -1,10 +1,16 @@
 # Yoctui Implementation Status
 
-M72 requested OpenBMC corrections are IN_PROGRESS: IPC continuity/terminal
-ownership, compact telemetry with authoritative cache/download status, and
-responsive progress/Insights controls. These three atomic tasks take priority
-over the existing blocked M67 live-Poky evidence task. No live build is stopped
-or restarted as part of implementation.
+M72-IPC-001 is DONE: event writes retain a single bounded frame and resume on
+writable readiness, with five-second stalled-peer expiry. Interactive tracing
+and reconnect diagnostics stay off stderr. Full workspace tests, strict Clippy,
+fmt, 52 bridge tests, 20 transport tests, two focused client checks and 15
+harness/source checks pass. A private 4,000-event/s flood preserved critical
+events and ordering without healthy-client resync, and isolated the non-reading
+client. This is fixture evidence, not a live release-performance certification.
+
+M72-CACHE-001 is IN_PROGRESS; M72-LAYOUT-001 follows. The existing
+M67 live-Poky evidence prerequisite remains BLOCKED. The user daemon and live
+OpenBMC build are preserved.
 
 README-DBUS-UDEV-001 is DONE in source v0.1.122. Two production-rendered
 screenshots show offline system-bus activation mappings and udev rule-file

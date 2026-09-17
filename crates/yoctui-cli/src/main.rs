@@ -1236,6 +1236,14 @@ fn resolve_config(cli: &Cli, session: &Session) -> Result<Config> {
 // bounded synchronous terminal/listener polls. More workers add idle scheduler
 // threads without improving those bounded waits; expensive filesystem and
 // process work is dispatched through `spawn_blocking` at its call sites.
+fn uses_interactive_terminal(cli: &Cli) -> bool {
+    !cli.headless
+        && matches!(
+            cli.command,
+            None | Some(Command::Attach | Command::Build { .. })
+        )
+}
+
 #[tokio::main(worker_threads = 2)]
 async fn main() -> Result<()> {
     install_panic_hook();
@@ -1257,7 +1265,10 @@ async fn main() -> Result<()> {
         .context("invalid Yoctui tracing filter")?;
     tracing_subscriber::registry()
         .with(tracing_filter)
-        .with(tracing_subscriber::fmt::layer().with_writer(std::io::stderr))
+        .with(
+            (!uses_interactive_terminal(&cli))
+                .then(|| tracing_subscriber::fmt::layer().with_writer(std::io::stderr)),
+        )
         .with(internal_tracing_layer)
         .init();
     let build_dir = config.build_dir.clone();
@@ -3056,6 +3067,30 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
             mut rootfs_query,
         ) in clients.drain(..)
         {
+            match connection.flush_event_frame() {
+                Ok(true) => {}
+                Ok(false) => {
+                    remaining_clients.push((
+                        connection,
+                        negotiated,
+                        attached,
+                        last_sequence,
+                        client_id,
+                        rootfs_query,
+                    ));
+                    continue;
+                }
+                Err(error) => {
+                    tracing::debug!(%error, "dropping daemon client after event delivery failure");
+                    slow_client_disconnects = slow_client_disconnects.saturating_add(1);
+                    pty_supervisor.disconnect_client(yoctui_model::PtyClientId(client_id.0));
+                    if let Some(mut query) = rootfs_query.take() {
+                        query.cancel();
+                        retired_rootfs_queries.push(query);
+                    }
+                    continue;
+                }
+            }
             let mut keep_client = true;
             if let Some(result) = rootfs_query.as_mut().and_then(|query| query.try_result()) {
                 let query = rootfs_query.take().expect("completed rootfs query");
@@ -3097,7 +3132,7 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 ) {
                     yoctui_protocol::daemon::DaemonSnapshotSync::Replay { events, .. } => {
                         for event in events {
-                            last_sequence = event.sequence;
+                            let sequence = event.sequence;
                             let frame = match encoded_event_frames.entry(event.sequence) {
                                 std::collections::hash_map::Entry::Occupied(entry) => {
                                     entry.into_mut()
@@ -3106,13 +3141,23 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                                     entry.insert(encode_frame(&ServerMessage::Event(event))?)
                                 }
                             };
-                            if let Err(error) = connection
-                                .send_encoded_frame_with_timeout(frame, Duration::from_millis(2))
+                            match connection
+                                .queue_event_frame(frame)
+                                .and_then(|()| connection.flush_event_frame())
                             {
-                                tracing::debug!(%error, "dropping daemon client during event fan-out");
-                                slow_client_disconnects = slow_client_disconnects.saturating_add(1);
-                                keep_client = false;
-                                break;
+                                Ok(complete) => {
+                                    last_sequence = sequence;
+                                    if !complete {
+                                        break;
+                                    }
+                                }
+                                Err(error) => {
+                                    tracing::debug!(%error, "dropping daemon client during event fan-out");
+                                    slow_client_disconnects =
+                                        slow_client_disconnects.saturating_add(1);
+                                    keep_client = false;
+                                    break;
+                                }
                             }
                         }
                     }
@@ -3141,10 +3186,22 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 }
             }
             if !keep_client {
+                pty_supervisor.disconnect_client(yoctui_model::PtyClientId(client_id.0));
                 if let Some(mut query) = rootfs_query.take() {
                     query.cancel();
                     retired_rootfs_queries.push(query);
                 }
+                continue;
+            }
+            if connection.event_write_pending() {
+                remaining_clients.push((
+                    connection,
+                    negotiated,
+                    attached,
+                    last_sequence,
+                    client_id,
+                    rootfs_query,
+                ));
                 continue;
             }
             loop {
@@ -12014,7 +12071,7 @@ async fn tui(
         };
         #[cfg(unix)]
         if let Some(error) = daemon_poll_error {
-            eprintln!("yoctui daemon client disconnected: {error}");
+            tracing::warn!(%error, "yoctui daemon client disconnected; reconnecting");
             daemon_runtime = None;
             app.daemon.status = yoctui_model::ClientReplicaStatus::Disconnected;
             yoctui_model::invalidate_workspace_compatibility(&mut app);
@@ -17769,6 +17826,29 @@ mod tests {
         assert!(!terminal_event_requires_full_redraw(&Event::Key(
             KeyEvent::new(KeyCode::Char('j'), KeyModifiers::NONE,)
         )));
+    }
+
+    #[test]
+    fn interactive_daemon_logging_keeps_stderr_out_of_terminal_sessions() {
+        for args in [
+            vec!["yoctui"],
+            vec!["yoctui", "attach"],
+            vec!["yoctui", "build", "image"],
+        ] {
+            assert!(uses_interactive_terminal(
+                &Cli::try_parse_from(args).unwrap()
+            ));
+        }
+        for args in [
+            vec!["yoctui", "--headless"],
+            vec!["yoctui", "doctor"],
+            vec!["yoctui", "inspect"],
+            vec!["yoctui", "daemon", "status"],
+        ] {
+            assert!(!uses_interactive_terminal(
+                &Cli::try_parse_from(args).unwrap()
+            ));
+        }
     }
 
     #[test]

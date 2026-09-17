@@ -77,6 +77,10 @@ class IpcSourceContractTests(unittest.TestCase):
     def test_transport_and_slow_client_requirements_remain_enforced(self) -> None:
         for name, token, diagnostic in (
             (TRANSPORT, "pub fn is_readable", "bounded daemon transport"),
+            (TRANSPORT, "pub fn flush_event_frame", "bounded daemon transport"),
+            (TRANSPORT, "libc::MSG_DONTWAIT", "bounded daemon transport"),
+            (TRANSPORT, "Duration::from_secs(5)", "bounded daemon transport"),
+            (DAEMON, "event_write_pending()", "slow-client isolation"),
             (DAEMON, "slow_client_disconnects", "slow-client isolation"),
         ):
             with self.subTest(name=name):

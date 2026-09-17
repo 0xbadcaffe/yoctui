@@ -3849,10 +3849,16 @@ snapshot. A history gap still produces one explicit resynchronization and
 current snapshot. Each sequence is encoded once per service slice and the
 immutable frame is reused for every caught-up client. Each client's independent
 cursor backlog is bounded by the 4,096-record journal. Socket readability is
-checked without waiting; an incomplete input frame or full output socket gets a
-two-millisecond deadline. A non-reading peer is disconnected after that bound,
-so it cannot delay another client, journal reduction, or BitBake ingestion and
-can reconnect through the normal snapshot/replay path.
+checked without waiting; an incomplete input frame gets a two-millisecond read
+slice. Event writes use one nonblocking syscall, capped at 64 KiB, and retain
+at most one protocol-bounded frame with its exact byte offset per client.
+Socket readiness watches writability while an event is pending, then returns
+to readability; buffered commands cannot cause a busy loop during backpressure.
+Commands and later frames cannot overtake this pending frame. Delivery retries
+across service slices for up to five seconds, then disconnects a non-reading
+peer without delaying other clients or BitBake ingestion. Reattachment uses
+the normal snapshot/replay path. Client transport diagnostics use captured
+tracing, never stderr while the alternate-screen terminal owns output.
 
 BitBake supervisor ingress has independent 512-record reliable and cosmetic
 lanes. Build lifecycle, task transitions, warnings, errors, failures, and
