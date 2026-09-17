@@ -244,29 +244,19 @@ pub(crate) fn render_dashboard_tasks(frame: &mut Frame, app: &App, area: Rect) {
         } else {
             palette.role(palette.progress, Modifier::BOLD)
         };
-        let label = match completed {
-            Some(success) => format!(
-                " {} {}:{} · 100% {}",
-                if *success { "✓" } else { "×" },
-                task.recipe,
-                task.task,
-                if *success { "complete" } else { "failed" }
-            ),
-            None if task.progress.is_some() => format!(
-                " {} {}:{} · {}",
-                "›",
-                task.recipe,
-                task.task,
-                task_progress_bar(progress)
-            ),
-            None => format!(
-                " {} {}:{} · active",
-                task_activity(app, None),
-                task.recipe,
-                task.task,
-            ),
+        let status = match completed {
+            Some(true) => "complete".into(),
+            Some(false) => "failed".into(),
+            None if task.progress.is_some() => task_progress_bar(app, progress),
+            None => format!("active {}", task_activity(app, None)),
         };
-        frame.render_widget(Paragraph::new(label).style(style), row);
+        let columns = Layout::horizontal([Constraint::Min(1), Constraint::Length(18)]).split(row);
+        let identity = format!(" {}:{}", task.recipe, task.task);
+        frame.render_widget(
+            Paragraph::new(bounded_cell_text(&identity, columns[0].width)).style(style),
+            columns[0],
+        );
+        frame.render_widget(Paragraph::new(status).style(style), columns[1]);
     }
 }
 

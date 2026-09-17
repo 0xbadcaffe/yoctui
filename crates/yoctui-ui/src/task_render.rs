@@ -138,8 +138,7 @@ impl TaskTableColumn {
 
     pub(crate) const fn constraint(self) -> Constraint {
         match self {
-            Self::Task => Constraint::Min(12),
-            Self::Recipe => Constraint::Percentage(24),
+            Self::Task | Self::Recipe => Constraint::Fill(1),
             Self::State => Constraint::Length(13),
             Self::Elapsed => Constraint::Length(9),
             Self::Progress => Constraint::Length(24),
@@ -228,7 +227,7 @@ pub(crate) fn task_table_cell(
         }
         (TaskRowRef::Task { task, state }, TaskTableColumn::Task) => {
             Cell::from(if *state == TaskState::Active {
-                format!("{} {}", task_activity(app, None), task.task)
+                format!("{} {}", task_activity(app, task.progress), task.task)
             } else {
                 format!("  {}", task.task)
             })
@@ -248,7 +247,7 @@ pub(crate) fn task_table_cell(
                 (TaskState::Active, None) => {
                     format!("progress unknown {}", task_activity(app, None))
                 }
-                (_, Some(progress)) => task_progress_bar(progress),
+                (_, Some(progress)) => task_progress_bar(app, progress),
                 _ => "--".into(),
             },
             task_state_style(app, *state),
@@ -295,18 +294,27 @@ pub(crate) fn render_build_summary(frame: &mut Frame, app: &App, area: Rect, now
     if let Some(fraction) = progress.build.fraction {
         let percent = fraction.percent();
         let total = fraction.total;
-        render_dot_meter(
-            frame,
-            app,
-            rows[0],
-            percent,
-            format!(
-                "Overall  {percent}%  {}/{}",
-                fraction.current.min(total),
-                total
-            ),
-            build_status_style(app).bg(palette.background),
+        let label = format!(
+            "Overall  {percent}%  {}/{}",
+            fraction.current.min(total),
+            total
         );
+        if app.preferences.symbols == SymbolPreference::Ascii {
+            frame.render_widget(
+                Paragraph::new(format!("{label}  {}", task_progress_bar(app, percent)))
+                    .style(build_status_style(app)),
+                rows[0],
+            );
+        } else {
+            frame.render_widget(
+                ratatui::widgets::Gauge::default()
+                    .gauge_style(build_status_style(app).bg(palette.inactive_border))
+                    .ratio(f64::from(percent) / 100.0)
+                    .use_unicode(true)
+                    .label(label),
+                rows[0],
+            );
+        }
     } else if matches!(app.build.status, BuildStatus::Idle)
         && summary.completed == 0
         && app.tasks.is_empty()
@@ -470,29 +478,10 @@ pub(crate) fn render_task_table(
                 index == app.task_progress_scroll,
             ))
         });
-    let constraints = if area.width == 89
-        && area.height == 17
-        && columns
-            == [
-                TaskTableColumn::Task,
-                TaskTableColumn::Recipe,
-                TaskTableColumn::State,
-                TaskTableColumn::Elapsed,
-                TaskTableColumn::Progress,
-            ] {
-        vec![
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Length(13),
-            Constraint::Length(9),
-            Constraint::Min(18),
-        ]
-    } else {
-        columns
-            .iter()
-            .map(|column| column.constraint())
-            .collect::<Vec<_>>()
-    };
+    let constraints = columns
+        .iter()
+        .map(|column| column.constraint())
+        .collect::<Vec<_>>();
     let headers = columns
         .iter()
         .map(|column| column.header())

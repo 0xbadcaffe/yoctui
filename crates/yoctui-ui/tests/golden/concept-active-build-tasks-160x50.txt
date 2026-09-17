@@ -4,15 +4,15 @@
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: 00:16:18  |  Workers: 1                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator────────────────┐┌Tasks: core-image-minimal · All──────────────────────────────────────────────────────┐┌Inspector: Task─────────────────────────────┐
-│▾ OVERVIEW               ││▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪Overall  40%  4/10▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫││Task        do_compile                      │
+│▾ OVERVIEW               ││█████████████████████████████████Overall  40%  4/10                                  ││Task        do_compile                      │
 │  ▱ Dashboard            ││Active 1  Waiting 5  Warnings 0  Errors 0  Elapsed 00:16:18                          ││Recipe      bash_5.2.21-2                   │
-│  ▱ Insights             ││Task            Recipe               Status        Time      Progress                ││PN          bash_5.2.21-2                   │
-│▾ CONTENT                ││  do_fetch      bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PV          unavailable                     │
-│    Layers               ││  do_unpack     bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││PR          unavailable                     │
-│    Recipes              ││  do_patch      bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││State       ▶ Running                       │
-│    Packages             ││  do_configure  bash_5.2.21-2        ✓ Succeeded   00:00:01  ▪▪▪▪▪▪▪▪▪▪ 100%         ││Progress    72%                             │
-│    Images               ││⣧ do_compile    bash_5.2.21-2        ▶ Running     00:09:50  ▪▪▪▪▪▪▪▪▫▫ 72%          ││                                            │
-│    Kernel               ││5 waiting tasks unavailable          ▫ Waiting     --        metadata unavailable    ││Worker      worker-1                        │
+│  ▱ Insights             ││Task               Recipe            Status        Time      Progress                ││PN          bash_5.2.21-2                   │
+│▾ CONTENT                ││  do_fetch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││PV          unavailable                     │
+│    Layers               ││  do_unpack        bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││PR          unavailable                     │
+│    Recipes              ││  do_patch         bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││State       ▶ Running                       │
+│    Packages             ││  do_configure     bash_5.2.21-2     ✓ Succeeded   00:00:01  ██████████ 100%         ││Progress    72%                             │
+│    Images               ││ do_compile        bash_5.2.21-2     ▶ Running     00:09:50  ███████▏░░ 72%          ││                                            │
+│    Kernel               ││5 waiting tasks    unavailable       ▫ Waiting     --        metadata unavailable    ││Worker      worker-1                        │
 │    U-Boot / BIOS        ││                                                                                     ││PID         35421                           │
 │    SDK                  │└─────────────────────────────────────────────────────────────────────────────────────┘│Started     19:18:37                        │
 │▾ BUILD                  │┌Log Viewer — do_compile (bash_5.2.21-2) · ▶ Follow───────────────────────────────────┐│Elapsed     00:09:50                        │

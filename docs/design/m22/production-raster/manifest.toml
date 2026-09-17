@@ -25,9 +25,9 @@ sha256 = "5b951b01451aedafe4cbe49addcec41c4ad4cf6969ccd9ead89cd26592e2c5cd"
 [[artifact]]
 id = "active-build-tasks"
 source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
-source_sha256 = "9c39d130105a773d74fe16e04fef2637ead7ea1f43b9c1d39f1c19f5aa653c4f"
+source_sha256 = "5c96cccff0aff4eb7cd24cde673921bee06dd74afe24f328e758a13b73cc55a6"
 file = "docs/design/m22/production-raster/02-active-build-tasks.png"
-sha256 = "fb7d186db24159211fdba6fa63bf25e50faf5a6099c2fe44de1e28e26ff752a7"
+sha256 = "552f1ff2cace584cc013aedc7046a7cbefdaa7363b8453157e39a1c35ac26221"
 
 [[artifact]]
 id = "failed-build-errors"

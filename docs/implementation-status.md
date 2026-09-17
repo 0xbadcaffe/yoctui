@@ -16,7 +16,13 @@ including 297 UI tests; strict Clippy, fmt, 53 bridge tests, source contracts,
 private flood and all 29 raster checks pass. Existing process-fixture races
 passed isolated and serial reruns without weakening tests.
 
-M72-LAYOUT-001 is IN_PROGRESS. The existing
+M72-LAYOUT-001 is DONE: overall/task bars are continuous, progress width is
+reserved before long identities, and every whole numbered Insights tab wraps
+into visible rows. Determinate task names no longer animate. Full workspace
+tests pass serially, including 300 UI tests and explicit long-name/unknown/
+ASCII/breakpoint checks. Strict Clippy, fmt, 53 bridge tests and all 29 reviewed
+concept/README raster checks pass. All three requested M72 tasks are committed;
+758 registry tasks are DONE. The existing
 M67 live-Poky evidence prerequisite remains BLOCKED. The user daemon and live
 OpenBMC build are preserved.
 

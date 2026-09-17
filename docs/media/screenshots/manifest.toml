@@ -14,9 +14,9 @@ pixel_height = 1000
 [[artifact]]
 id = "active-build-tasks"
 source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
-source_sha256 = "9c39d130105a773d74fe16e04fef2637ead7ea1f43b9c1d39f1c19f5aa653c4f"
+source_sha256 = "5c96cccff0aff4eb7cd24cde673921bee06dd74afe24f328e758a13b73cc55a6"
 file = "docs/media/screenshots/01-active-build-tasks.png"
-sha256 = "fb7d186db24159211fdba6fa63bf25e50faf5a6099c2fe44de1e28e26ff752a7"
+sha256 = "552f1ff2cace584cc013aedc7046a7cbefdaa7363b8453157e39a1c35ac26221"
 
 [[artifact]]
 id = "kernel-device-tree"
@@ -105,9 +105,9 @@ sha256 = "b259371d2225fbac83ca3171faa101691d4cf4aef33c2b5161e5c79babed3cd5"
 [[artifact]]
 id = "cancelling"
 source = "crates/yoctui-ui/tests/golden/readme-cancelling-160x50.cells"
-source_sha256 = "7e186400bc28fdaf372ee57e61224e2a524d5cc3a712c9c9e91d075ce85da4ff"
+source_sha256 = "321644ed516fc6e8e3d74dd9e1fa906d31483cc9a302b9a91cec01e96bca0cf4"
 file = "docs/media/screenshots/14-cancelling.png"
-sha256 = "07d503469d56243adc1ab873e6f1101355009c984c1772e2ac74a10bfebecd2c"
+sha256 = "2cee0cad08862af9a3b857a48c68713367c04c0223893fa716fa2a81f9da09b9"
 
 [[artifact]]
 id = "search-empty"

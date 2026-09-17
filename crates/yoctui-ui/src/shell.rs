@@ -34,14 +34,25 @@ pub(super) fn task_activity(app: &App, task_progress: Option<u8>) -> String {
     activity_symbol(projection, unicode).into()
 }
 
-pub(super) fn task_progress_bar(progress: u8) -> String {
+pub(super) fn task_progress_bar(app: &App, progress: u8) -> String {
     const WIDTH: usize = 10;
     let progress = progress.min(100);
-    let filled = (usize::from(progress) * WIDTH).div_ceil(100);
+    if app.preferences.symbols == SymbolPreference::Ascii {
+        let filled = usize::from(progress) * WIDTH / 100;
+        return format!(
+            "{}{} {progress}%",
+            "#".repeat(filled),
+            "-".repeat(WIDTH - filled)
+        );
+    }
+    let units = usize::from(progress) * WIDTH * 8 / 100;
+    let filled = units / 8;
+    let remainder = units % 8;
+    let partial = ["", "▏", "▎", "▍", "▌", "▋", "▊", "▉"][remainder];
     format!(
-        "{}{} {progress}%",
-        "▪".repeat(filled),
-        "▫".repeat(WIDTH.saturating_sub(filled))
+        "{}{partial}{} {progress}%",
+        "█".repeat(filled),
+        "░".repeat(WIDTH - filled - usize::from(remainder > 0))
     )
 }
 

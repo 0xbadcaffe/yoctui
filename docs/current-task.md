@@ -1,25 +1,22 @@
 # Current Task
 
-**ID:** M72-LAYOUT-001
-**Title:** Keep progress and all Insights shortcuts visible across terminal sizes
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Refresh genuine current-source real-Poky performance evidence
+**Status:** BLOCKED
 
-User-requested live OpenBMC corrections supersede the blocked task below.
-Dependency M72-CACHE-001 is DONE with full baseline and private flood verification.
-Files: UI overview/task/shell renderers and screenshot fixtures.
-Done: continuous overall/task bars, reserved task-progress width, visible unknown
-activity, wrapped whole Insights tabs, and TestBackend breakpoint coverage.
-Review updated goldens/rasters, update UI/architecture as needed, registry,
-status/current and commit. Then restore the external blocker below and run the
-completion gate. Preserve the live daemon/build.
+The user-requested M72 OpenBMC corrections are DONE: bounded resumable IPC and
+terminal-safe logging; native cache/download facts and compact resource cards;
+continuous visible progress and wrapped Insights shortcuts. Full workspace tests
+pass serially (300 UI tests), as do strict Clippy, fmt, 53 bridge tests and all
+29 reviewed raster checks. The running daemon/build and user captures were not
+modified. Protocol 1.3 requires matching rebuilt daemon/client after the active
+build finishes. No eligible implementation task remains; the external evidence
+prerequisite below is the only incomplete registry task.
 
 Verification:
 ```bash
-cargo test --workspace --all-features --no-fail-fast -- --test-threads=1
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
-./scripts/verify-roadmap.sh
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
 
 ## Retained external blocker: M67-LIVE-EVIDENCE-001
@@ -59,7 +56,7 @@ certification is claimed from fixtures or fake-process timing.
 External prerequisite: a genuine current-source/binary-bound real-Poky
 performance capture for the documented Yocto 6.0.2 linux-yocto workload.
 The retained `artifacts/performance/real-poky/manifest.json` is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63`; 52 recorded source hashes now
+base `d2214e82974a5be708a7cc40f1532254d7c7de63`; 58 recorded source hashes now
 differ, including changes predating this request. Historical evidence stays intact.
 
 Reproduce the independent prerequisite check:
@@ -86,4 +83,4 @@ Follow the existing capture procedure in `docs/performance.md`, then verify:
 ./scripts/verify-completion.sh
 ```
 
-After M72, this external evidence prerequisite remains required.
+M72 is complete; this external evidence prerequisite remains required.

@@ -40,6 +40,14 @@ visibly active, never a fabricated percentage. Insights wraps whole numbered
 tab labels into as many rows as needed, retaining all eight shortcuts and the
 selected view at supported terminal sizes.
 
+Overall known progress uses a continuous gauge; task bars use ten continuous
+cells (fractional blocks in Unicode, `#`/`-` in ASCII) with an exact percentage.
+Task and recipe columns share only the space left after fixed status/progress
+columns, with no golden-size-specific percentage layout. Determinate task names
+do not animate. Insights reserves the actual number of wrapped tab rows instead
+of a fixed two-row header; the former internal authority-description row is
+removed so every numbered view remains discoverable.
+
 This document defines how Yoctui must look, behave, navigate, present BitBake state, and expose Yocto workflows.
 
 The implementation agent must follow this document. It must not invent new layouts, panes, dialogs, shortcuts, focus rules, or interaction patterns without updating this file in the same commit.

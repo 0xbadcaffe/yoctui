@@ -28,12 +28,12 @@ notes = "DONE: validated native sstate availability, cumulative fetch/setscene o
 id = "M72-LAYOUT-001"
 milestone = "M72"
 title = "Keep progress and all Insights shortcuts visible across terminal sizes"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2102
 required = true
 depends_on = ["M72-CACHE-001"]
 verify = ["cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Files: UI overview/task/shell renderers and screenshot fixtures. Done: continuous bars, reserved task-progress width, active unknown indicators and wrapped whole Insights tabs with TestBackend breakpoint coverage; reviewed goldens and baseline. Update authoritative docs, task/status/current and commit."
+notes = "DONE: continuous overall/task bars, fixed progress width with flexible task/recipe identity, no size-specific squeezing, stable determinate names, and wrapped whole numbered Insights tabs. Long-name/unknown/ASCII tests cover task widths 54-160 and all eight Insights views at widths 32-160, plus production breakpoints. Full workspace tests pass serially including 300 UI tests; strict Clippy/fmt, 53 bridge tests and all 29 reviewed raster/provenance checks pass. User daemon/build and user captures remain untouched."
 
 [[task]]
 id = "README-VERSION-BADGE-001"

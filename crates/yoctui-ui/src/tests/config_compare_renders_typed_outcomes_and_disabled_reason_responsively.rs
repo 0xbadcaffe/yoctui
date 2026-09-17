@@ -609,15 +609,12 @@ fn next_generation_build_summary_is_determinate_only_with_a_real_total() {
     ] {
         assert!(known.contains(expected), "missing {expected}: {known}");
     }
-    assert!(
-        terminal
-            .backend()
-            .buffer()
-            .content
-            .iter()
-            .any(|cell| cell.symbol() == "▪"),
+    assert_eq!(
+        terminal.backend().buffer()[(1, 1)].symbol(),
+        "█",
         "determinate progress must have a visible filled bar"
     );
+    assert_eq!(terminal.backend().buffer()[(98, 1)].symbol(), " ");
     assert!(!known.contains("Sstate"), "{known}");
 
     app.build.total = None;

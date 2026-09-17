@@ -689,6 +689,12 @@ fn overview_insights_render_all_eight_honest_responsive_states() {
                 "{view:?} {width}x{height}: {output}"
             );
             assert!(!output.contains('�'), "{view:?} {width}x{height}: {output}");
+            for (index, tab) in yoctui_model::OverviewView::ALL.iter().enumerate() {
+                assert!(
+                    output.contains(&format!("{} {}", index + 1, tab.label())),
+                    "{width}x{height}: {output}"
+                );
+            }
         }
     }
 

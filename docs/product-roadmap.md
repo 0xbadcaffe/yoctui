@@ -2,13 +2,19 @@
 
 ## M72 — Live dashboard corrections
 
-Prioritize the reported OpenBMC client disconnect, compact resource/cache
-status, readable progress and responsive Insights tabs. Atomic tasks are
-M72-IPC-001, M72-CACHE-001 and M72-LAYOUT-001. Preserve the running user build.
+Completed the reported OpenBMC client continuity, compact resource/cache
+status, readable progress and responsive Insights tabs. M72-IPC-001,
+M72-CACHE-001 and M72-LAYOUT-001 are DONE with baseline and reviewed screenshot
+verification. The running user build is preserved; protocol 1.3 requires a
+matching rebuilt daemon and client after the active build finishes.
 
 This roadmap defines the stable milestone sequence. Atomic implementation state lives in `docs/task-registry.toml`.
 
 ## Current handoff
+
+M72 is complete: 758 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED
+on genuine current-source real-Poky performance evidence. No release-performance
+certification is inferred from fixture tests or rewritten historical hashes.
 
 README-DBUS-UDEV-001 is complete in source v0.1.122. The README has 23 verified
 screenshots, including system D-Bus activation files and udev rules/overrides.

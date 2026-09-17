@@ -9,8 +9,10 @@ pub(super) fn overview_workspace(frame: &mut Frame, app: &App, area: Rect, now: 
     if inner.is_empty() {
         return;
     }
-    let sections = Layout::vertical([Constraint::Length(2), Constraint::Min(1)]).split(inner);
-    render_overview_tabs(frame, app, sections[0]);
+    let tabs = overview_tabs(app, inner.width);
+    let sections =
+        Layout::vertical([Constraint::Length(tabs.len() as u16), Constraint::Min(1)]).split(inner);
+    frame.render_widget(Paragraph::new(tabs), sections[0]);
     match app.overview_view {
         yoctui_model::OverviewView::Timeline => render_timeline(frame, app, sections[1], now),
         yoctui_model::OverviewView::RebuildCauses => render_rebuild(frame, app, sections[1]),
@@ -27,26 +29,30 @@ pub(super) fn overview_workspace(frame: &mut Frame, app: &App, area: Rect, now: 
     }
 }
 
-fn render_overview_tabs(frame: &mut Frame, app: &App, area: Rect) {
+fn overview_tabs(app: &App, width: u16) -> Vec<Line<'static>> {
     let palette = ThemePalette::for_app(app);
-    let mut spans = Vec::new();
+    let mut lines = Vec::new();
+    let mut line = Line::default();
     for (index, view) in yoctui_model::OverviewView::ALL.iter().enumerate() {
-        if index > 0 {
-            spans.push(Span::raw("  "));
-        }
-        spans.push(Span::styled(
+        let tab = Span::styled(
             format!("{} {}", index + 1, view.label()),
             if *view == app.overview_view {
                 palette.selected()
             } else {
                 palette.role(palette.disabled, Modifier::empty())
             },
-        ));
+        );
+        if !line.spans.is_empty() && line.width() + 2 + tab.width() > usize::from(width) {
+            lines.push(line);
+            line = Line::default();
+        }
+        if !line.spans.is_empty() {
+            line.spans.push(Span::raw("  "));
+        }
+        line.spans.push(tab);
     }
-    frame.render_widget(Paragraph::new(vec![
-        Line::from(spans),
-        Line::from("authorities: tasks · signatures · pkgdata/rootfs · security reports · host telemetry"),
-    ]), area);
+    lines.push(line);
+    lines
 }
 
 fn empty_insight(frame: &mut Frame, area: Rect, title: &str, guidance: &str) {

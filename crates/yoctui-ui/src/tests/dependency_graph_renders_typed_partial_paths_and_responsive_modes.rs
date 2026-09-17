@@ -156,7 +156,7 @@ fn task_progress_renders_determinate_bar_in_tasks_workspace() {
         },
     );
     let output = rendered_text(&app, 120, 30);
-    assert!(output.contains("▪▪▪▪▪▫▫▫▫▫ 42%"), "{output}");
+    assert!(output.contains("████▏░░░░░ 42%"), "{output}");
 }
 
 #[test]
