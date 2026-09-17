@@ -8381,3 +8381,14 @@ required = true
 depends_on = ["README-DBUS-UDEV-001"]
 verify = ["./scripts/test-release-compatibility.sh", "./scripts/test-tui-performance.sh", "./scripts/verify-compatibility.sh --structure-only"]
 notes = "Restore the product compatibility rule in README and make the narrow-terminal first-frame performance probe recognize compact renders. Update versioned workspace metadata, status/current task, run baseline CI checks, commit and push."
+
+[[task]]
+id = "CI-GOLDEN-002"
+milestone = "M71"
+title = "Refresh versioned production-renderer CI goldens"
+status = "DONE"
+priority = 2001
+required = true
+depends_on = ["CI-RELEASE-GATES-001"]
+verify = ["CARGO_INCREMENTAL=0 cargo test --workspace --all-features", "python3 scripts/check-version-bump.py"]
+notes = "Refresh target, literal, concept and README production-renderer goldens after the 0.1.123 build-count mismatch in GitHub CI. Keep the update limited to rendered fixture output and version metadata."

@@ -3240,3 +3240,10 @@ compatibility rule after the gallery reorder. The fix restores that sentence
 and accepts a valid terminal clear/home frame for compact layouts. The full
 deterministic compatibility gate, narrow-terminal performance gate and
 compatibility structure check pass locally.
+
+### CI-GOLDEN-002
+
+DONE — GitHub CI exposed six production-renderer goldens that still expected
+the prior build count after the 0.1.123 versioned fixture update. Regenerated
+the target, literal, concept and README goldens through the production
+renderer, bumped the workspace to 0.1.124, and ran the full workspace suite.
