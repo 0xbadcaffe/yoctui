@@ -4,6 +4,14 @@
 **Title:** Supply current-source real-Poky release performance evidence
 **Status:** BLOCKED
 
+CI-RELEASE-GATES-001 is DONE: GitHub Actions compatibility and release-quality
+gates now recognize the restored README compatibility rule and compact
+80-column terminal frames. The deterministic compatibility, performance,
+formatting, Clippy and version checks pass locally.
+
+The remaining task is blocked on a genuine current-source real-Poky
+performance capture, documented below.
+
 README-DBUS-UDEV-001 is DONE: system D-Bus and udev rules screenshots are
 in the README image-inspection gallery. All 23 screenshots and the baseline/
 documentation checks pass.

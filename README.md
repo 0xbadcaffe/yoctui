@@ -531,6 +531,10 @@ Unavailable actions show the required tools, tasks or files.
 Available actions depend on the connected Yocto environment’s tools, tasks
 and configuration.
 
+Yoctui functionality is Yocto-feature-correlated: the installed Yoctui binary
+defines the operations it knows, while the connected Yocto/OpenEmbedded/BitBake
+environment supplies the evidence that determines which operation is safe now.
+
 Open Compatibility for detected versions and reasons for disabled actions:
 
 ```sh

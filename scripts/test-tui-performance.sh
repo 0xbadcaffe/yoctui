@@ -23,7 +23,11 @@ for width, height in ((80, 24), (160, 48)):
             if ready:
                 try: raw.extend(os.read(master, 65536))
                 except OSError: break
-                if first_frame is None and b'Yoctui' in raw: first_frame = time.perf_counter() - started
+                # Compact 80-column layouts can omit the product title. A
+                # terminal clear/home sequence still proves that a frame was
+                # rendered, so accept it as the first-frame signal.
+                if first_frame is None and (b'yoctui' in raw.lower() or b'\x1b[2J' in raw or b'\x1b[H' in raw):
+                    first_frame = time.perf_counter() - started
                 if first_frame is not None: break
         os.write(master, b'q\r')
         try: proc.wait(timeout=3)

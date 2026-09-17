@@ -8370,3 +8370,14 @@ required = true
 depends_on = ["README-SYSTEMD-001"]
 verify = ["./scripts/test-readme-quickstart.sh", "python3 scripts/render-readme-screenshots.py --check"]
 notes = "Add two production-rendered image-inspection fixtures/screenshots: system-bus activation mappings and udev selected/overridden/masked files with rule preview. Update README gallery, exporter, coverage and provenance. Verify screenshots and baseline/docs, update task/status records and commit. No application behavior changes."
+
+[[task]]
+id = "CI-RELEASE-GATES-001"
+milestone = "M71"
+title = "Fix GitHub release and compatibility CI gates"
+status = "DONE"
+priority = 2000
+required = true
+depends_on = ["README-DBUS-UDEV-001"]
+verify = ["./scripts/test-release-compatibility.sh", "./scripts/test-tui-performance.sh", "./scripts/verify-compatibility.sh --structure-only"]
+notes = "Restore the product compatibility rule in README and make the narrow-terminal first-frame performance probe recognize compact renders. Update versioned workspace metadata, status/current task, run baseline CI checks, commit and push."

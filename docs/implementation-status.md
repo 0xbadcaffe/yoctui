@@ -3230,3 +3230,13 @@ DONE — Added private bounded background build checkpoints, legacy summary impo
 ### M69-RELEASE-001
 
 DONE — v0.1.118 published and independently verified on crates.io for yoctui-utils, model, protocol, bitbake, app, ui and CLI. 1,677 Rust tests, native GitUI PTY smoke, 52 bridge tests, fmt, strict Clippy, docs, raster provenance, version policy and extracted package graph/CLI/bridge verification pass. README has 20 production screenshots. No stale local or hosted performance runs existed; the regular daemon and preexisting user captures were preserved. Fresh real-Poky performance certification remains the separate M67 blocker.
+
+### CI-RELEASE-GATES-001
+
+DONE — GitHub Actions release-quality failed because the narrow PTY
+performance probe only recognized the full product title, and deterministic
+compatibility failed because README no longer contained the normative product
+compatibility rule after the gallery reorder. The fix restores that sentence
+and accepts a valid terminal clear/home frame for compact layouts. The full
+deterministic compatibility gate, narrow-terminal performance gate and
+compatibility structure check pass locally.
