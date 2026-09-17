@@ -11,6 +11,28 @@ retain normal process priority.
 
 Status: **Authoritative product and interaction contract**
 
+### M72 live dashboard corrections
+
+Transport failures remain inside the terminal UI and its retained diagnostics;
+they must never print to stderr while the alternate screen is active. A briefly
+backpressured client retains an ordered partial IPC frame and retries without
+blocking other clients. Genuine disconnections retain the existing reconnect
+and stale-authority behavior.
+
+Dashboard resource cards use three adjacent rows (label, continuous bar, exact
+value) without the former dial's vertical padding. Sstate and Downloads appear
+below them as compact typed build-cache summaries. Report BitBake's sstate
+summary when available, and observed fetch outcomes plus configured network
+policy. Offline readiness must remain explicitly unverified without an exact
+target-scoped fetch verification; an existing DL_DIR or successful retained
+fetches alone cannot prove it.
+
+Overall and task progress use continuous filled bars with exact text. Task
+identity truncates before the progress column; unknown task progress remains
+visibly active, never a fabricated percentage. Insights wraps whole numbered
+tab labels into as many rows as needed, retaining all eight shortcuts and the
+selected view at supported terminal sizes.
+
 This document defines how Yoctui must look, behave, navigate, present BitBake state, and expose Yocto workflows.
 
 The implementation agent must follow this document. It must not invent new layouts, panes, dialogs, shortcuts, focus rules, or interaction patterns without updating this file in the same commit.

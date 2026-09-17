@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+## M72 — Live dashboard corrections
+
+Prioritize the reported OpenBMC client disconnect, compact resource/cache
+status, readable progress and responsive Insights tabs. Atomic tasks are
+M72-IPC-001, M72-CACHE-001 and M72-LAYOUT-001. Preserve the running user build.
+
 This roadmap defines the stable milestone sequence. Atomic implementation state lives in `docs/task-registry.toml`.
 
 ## Current handoff

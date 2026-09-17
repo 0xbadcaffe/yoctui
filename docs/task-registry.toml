@@ -3,6 +3,39 @@ project = "Yoctui"
 status_values = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"]
 
 [[task]]
+id = "M72-IPC-001"
+milestone = "M72"
+title = "Preserve client frames under temporary backpressure and terminal ownership"
+status = "IN_PROGRESS"
+priority = 2100
+required = true
+depends_on = []
+verify = ["cargo test -p yoctui-protocol daemon_ipc", "cargo test -p yoctui interactive_daemon", "./scripts/verify-roadmap.sh"]
+notes = "Files: protocol daemon_ipc, CLI main/client runtime. Done: bounded resumable event writes, no stderr corruption, real Unix socket regression tests and baseline checks. Update UI/architecture, status/current and registry; commit before next task."
+
+[[task]]
+id = "M72-CACHE-001"
+milestone = "M72"
+title = "Expose authoritative build cache and download status in compact telemetry"
+status = "NOT_STARTED"
+priority = 2101
+required = true
+depends_on = ["M72-IPC-001"]
+verify = ["cargo test --workspace --all-features cache", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Files: bridge event normalization, protocol/model cache state, CLI replica, UI dashboard. Done: native sstate summary, fetch counters, network policy and explicit unverified offline readiness; compact telemetry; normal/missing/reset/reattach tests and baseline checks. Update authoritative docs, task/status/current and commit."
+
+[[task]]
+id = "M72-LAYOUT-001"
+milestone = "M72"
+title = "Keep progress and all Insights shortcuts visible across terminal sizes"
+status = "NOT_STARTED"
+priority = 2102
+required = true
+depends_on = ["M72-CACHE-001"]
+verify = ["cargo test -p yoctui-ui", "cargo test --workspace --all-features", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Files: UI overview/task/shell renderers and screenshot fixtures. Done: continuous bars, reserved task-progress width, active unknown indicators and wrapped whole Insights tabs with TestBackend breakpoint coverage; reviewed goldens and baseline. Update authoritative docs, task/status/current and commit."
+
+[[task]]
 id = "README-VERSION-BADGE-001"
 milestone = "M57"
 title = "Keep the README version in the published-version badge only"

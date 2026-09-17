@@ -1,8 +1,28 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** M72-IPC-001
+**Title:** Preserve client frames under temporary backpressure and terminal ownership
+**Status:** IN_PROGRESS
+
+User-requested live OpenBMC corrections supersede the blocked task below.
+Dependencies: none. Files: protocol daemon_ipc, CLI main/client runtime.
+Done: bounded resumable event writes, terminal-safe diagnostics, real Unix
+socket regression tests. Update UI/architecture, registry, status and current
+task, commit, then continue M72-CACHE-001 and M72-LAYOUT-001. Preserve the
+active user daemon/build.
+
+Verification:
+```bash
+cargo test -p yoctui-protocol daemon_ipc
+cargo test -p yoctui interactive_daemon
+cargo fmt --all --check
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-roadmap.sh
+```
+
+## Retained external blocker: M67-LIVE-EVIDENCE-001
 
 CI-RELEASE-GATES-001 is DONE: GitHub Actions compatibility and release-quality
 gates now recognize the restored README compatibility rule and compact
@@ -66,4 +86,4 @@ Follow the existing capture procedure in `docs/performance.md`, then verify:
 ./scripts/verify-completion.sh
 ```
 
-No other eligible incomplete task remains.
+After M72, this external evidence prerequisite remains required.

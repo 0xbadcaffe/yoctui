@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M72 requested OpenBMC corrections are IN_PROGRESS: IPC continuity/terminal
+ownership, compact telemetry with authoritative cache/download status, and
+responsive progress/Insights controls. These three atomic tasks take priority
+over the existing blocked M67 live-Poky evidence task. No live build is stopped
+or restarted as part of implementation.
+
 README-DBUS-UDEV-001 is DONE in source v0.1.122. Two production-rendered
 screenshots show offline system-bus activation mappings and udev rule-file
 precedence, masks and selected rule content. The README places both beside the
