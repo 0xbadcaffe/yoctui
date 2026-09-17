@@ -26,11 +26,7 @@ fn dashboard_meter_style(app: &App, percent: u8, warning_at: u8) -> Style {
 }
 
 pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
-    if area.width < 64
-        || area.height < 7
-        || !app.color_enabled
-        || app.preferences.symbols == SymbolPreference::Ascii
-    {
+    if area.width < 64 || area.height < 8 {
         render_telemetry_strip(frame, app, area);
         return;
     }
@@ -77,14 +73,23 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
             pair(telemetry.disk_total_bytes, telemetry.disk_available_bytes),
             60,
         ),
-        ("Sstate Reuse", None, "not reported".into(), 70),
     ];
-    let cells = Layout::horizontal([Constraint::Ratio(1, 4); 4]).split(inner);
+    let sections = Layout::vertical([Constraint::Length(3), Constraint::Length(3)]).split(inner);
+    let cells = Layout::horizontal([Constraint::Ratio(1, 3); 3]).split(sections[0]);
+    frame.render_widget(
+        Paragraph::new(
+            app.cache_status_lines()
+                .into_iter()
+                .map(Line::from)
+                .collect::<Vec<_>>(),
+        ),
+        sections[1],
+    );
     for (index, ((title, percent, detail, warning_at), cell)) in
         values.into_iter().zip(cells.iter().copied()).enumerate()
     {
         let divider = Block::default()
-            .borders(if index < 3 {
+            .borders(if index < 2 {
                 Borders::RIGHT
             } else {
                 Borders::NONE
@@ -94,7 +99,7 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
         frame.render_widget(divider, cell);
         let rows = Layout::vertical([
             Constraint::Length(1),
-            Constraint::Min(3),
+            Constraint::Length(1),
             Constraint::Length(1),
         ])
         .split(body);
@@ -119,13 +124,26 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
             rows[1].width.saturating_sub(4),
             1,
         );
+        if app.preferences.symbols == SymbolPreference::Ascii {
+            let width = usize::from(bar.width.saturating_sub(7));
+            let filled = usize::from(percent) * width / 100;
+            frame.render_widget(
+                Paragraph::new(format!(
+                    "[{}{}] {percent}%",
+                    "#".repeat(filled),
+                    "-".repeat(width - filled)
+                )),
+                bar,
+            );
+            continue;
+        }
         frame.render_widget(
             Gauge::default()
                 .gauge_style(
                     dashboard_meter_style(app, percent, warning_at).bg(palette.inactive_border),
                 )
                 .ratio(f64::from(percent) / 100.0)
-                .use_unicode(true)
+                .use_unicode(app.preferences.symbols != SymbolPreference::Ascii)
                 .label(format!("{percent}%")),
             bar,
         );
@@ -136,6 +154,36 @@ pub(super) fn render_dashboard_dials(frame: &mut Frame, app: &App, area: Rect) {
 mod tests {
     use super::*;
     use ratatui::{Terminal, backend::TestBackend};
+    #[test]
+    fn cache_dashboard_shows_authoritative_counts_without_offline_promise() {
+        let mut app = App::new(10, 1024);
+        app.build.cache.summary = Some(yoctui_model::SstateSummary {
+            wanted: 10,
+            local: 3,
+            mirrors: 2,
+            missed: 5,
+            current: 8,
+        });
+        app.build.cache.fetch_completed = 1234;
+        app.build.cache.fetch_failed = 2;
+        for width in [64, 80, 160] {
+            let mut terminal = Terminal::new(TestBackend::new(width, 8)).unwrap();
+            terminal
+                .draw(|frame| render_dashboard_dials(frame, &app, frame.area()))
+                .unwrap();
+            let text = terminal
+                .backend()
+                .buffer()
+                .content
+                .iter()
+                .map(|cell| cell.symbol())
+                .collect::<String>();
+            assert!(text.contains("3 local + 2 mirrors / 10 wanted"), "{text}");
+            assert!(text.contains("1234 completed, 2 failed"), "{text}");
+            assert!(text.contains("offline readiness: unverified"), "{text}");
+        }
+    }
+
     #[test]
     fn dashboard_resource_bars_are_contiguous_exact_and_truthful() {
         let mut app = App::new(10, 1024);
@@ -157,6 +205,13 @@ mod tests {
             assert!(text.contains("72%"), "{text}");
             assert!(text.contains("41%"), "{text}");
             assert!(text.contains("unavailable"), "{text}");
+            assert!(text.contains("Downloads:"), "{text}");
+            assert!(text.contains("offline readiness: unverified"), "{text}");
+            let buffer = terminal.backend().buffer();
+            assert!(
+                (1..width - 1).any(|x| buffer[(x, 2)].symbol() == "7"),
+                "bar must directly follow the title"
+            );
             assert!(
                 !text.chars().any(|c| ('\u{2800}'..='\u{28ff}').contains(&c)),
                 "capacity bars must not use dotted arcs"

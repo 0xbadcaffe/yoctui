@@ -1,7 +1,9 @@
 //! Domain model and pure state transitions. BitBake remains authoritative.
 mod action_catalog;
 mod background_activity;
+mod build_cache;
 pub use background_activity::BackgroundActivity;
+pub use build_cache::{BuildCacheState, SstateSummary};
 mod bitbake_layers;
 mod bitbake_restart;
 mod checkbox;

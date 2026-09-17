@@ -50,7 +50,7 @@ def serve(listener, failures):
                 hello = receive(connection)
                 assert hello["type"] == "hello", hello
                 send(connection, {
-                    "type": "hello", "selected_version": {"major": 1, "minor": 2},
+                    "type": "hello", "selected_version": {"major": 1, "minor": 3},
                     "daemon_instance_id": [80] * 16, "boot_id": "timing-fixture",
                     "capabilities": hello["capabilities"],
                     "limits": {

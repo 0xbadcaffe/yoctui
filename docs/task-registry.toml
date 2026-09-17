@@ -17,18 +17,18 @@ notes = "DONE: one bounded pending frame per client, nonblocking partial writes 
 id = "M72-CACHE-001"
 milestone = "M72"
 title = "Expose authoritative build cache and download status in compact telemetry"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2101
 required = true
 depends_on = ["M72-IPC-001"]
 verify = ["cargo test --workspace --all-features cache", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "Files: bridge event normalization, protocol/model cache state, CLI replica, UI dashboard. Done: native sstate summary, fetch counters, network policy and explicit unverified offline readiness; compact telemetry; normal/missing/reset/reattach tests and baseline checks. Update authoritative docs, task/status/current and commit."
+notes = "DONE: validated native sstate availability, cumulative fetch/setscene outcomes surviving row eviction and reattach, configured network policy, explicit unverified offline readiness, and compact three-row resource cards. Protocol 1.3 rejects mismatched peers. Full workspace tests pass serially (including 486 model, 285 adapter, 210 app and 297 UI tests), strict Clippy/fmt, 53 bridge tests, source checks, private flood and all 29 raster checks pass. Two existing process-fixture races passed isolated and serial reruns without test weakening. User daemon/build and historical evidence remain untouched."
 
 [[task]]
 id = "M72-LAYOUT-001"
 milestone = "M72"
 title = "Keep progress and all Insights shortcuts visible across terminal sizes"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2102
 required = true
 depends_on = ["M72-CACHE-001"]

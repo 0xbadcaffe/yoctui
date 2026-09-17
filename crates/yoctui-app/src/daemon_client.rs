@@ -141,6 +141,7 @@ impl DaemonClientSnapshot {
                 .and_then(|snapshot| snapshot.build_progress)
         {
             let total = progress.total.filter(|total| *total > 0);
+            app.build.cache = progress.cache;
             if (app.build.completed, app.build.total) != (progress.completed, total) {
                 app.build.completed = progress.completed;
                 app.build.total = total;
@@ -513,6 +514,7 @@ pub(crate) fn backend_event_from_daemon(
         DaemonBuildEvent::ParseProgress { current, total } => {
             BackendEvent::ParseProgress { current, total }
         }
+        DaemonBuildEvent::SstateSummary { summary } => BackendEvent::SstateSummary(summary),
         DaemonBuildEvent::TaskQueued {
             recipe,
             task,

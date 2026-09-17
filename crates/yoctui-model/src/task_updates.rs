@@ -2,6 +2,7 @@
 use super::*;
 
 pub(crate) fn prepare_build(app: &mut App, target: Option<String>) {
+    app.build.cache = BuildCacheState::default();
     app.build.status = BuildStatus::LoadingWorkspace;
     app.build.target = target;
     app.build.started = None;
@@ -114,6 +115,7 @@ pub(crate) fn apply_task_event(app: &mut App, event: TaskEvent) {
             } else {
                 Some(SystemTime::now())
             };
+            app.build.cache.record_outcome(&task.task, success);
             app.completed_tasks
                 .push_back(CompletedTask { task, success });
             if app.completed_tasks.len() > MAX_COMPLETED_TASKS {

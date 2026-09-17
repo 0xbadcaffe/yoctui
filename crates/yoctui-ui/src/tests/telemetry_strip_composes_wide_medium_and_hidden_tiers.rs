@@ -145,7 +145,9 @@ fn next_generation_telemetry_strip_composes_wide_medium_and_hidden_tiers() {
     app.preferences.symbols = SymbolPreference::Unicode;
 
     let dashboard = rendered_text(&app, 300, 60);
-    assert!(dashboard.contains("Telemetry · bounded 60-sample histories"));
+    assert!(dashboard.contains("Resource Telemetry"));
+    assert!(dashboard.contains("Downloads:"));
+    assert!(dashboard.contains("offline readiness: unverified"));
 
     app.screen = Screen::Tasks;
     let task_rows = app.visible_task_row_refs_at(UNIX_EPOCH);

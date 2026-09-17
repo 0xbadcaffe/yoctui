@@ -451,7 +451,7 @@ fn qa_workflow_dialogs_map_only_typed_confirmation_and_edit_actions() {
 }
 
 #[test]
-fn snapshot_progress_matches_live_batches_after_eviction_and_reset() {
+fn cache_snapshot_progress_matches_live_batches_after_eviction_and_reset() {
     use yoctui_protocol::daemon::{
         DaemonBuildEvent, DaemonEvent, DaemonSnapshotJournal, DaemonSnapshotLimits,
         MAX_DAEMON_BUILD_EVENTS,
@@ -476,6 +476,15 @@ fn snapshot_progress_matches_live_batches_after_eviction_and_reset() {
         DaemonBuildEvent::Started {
             started_unix_ms: None,
         },
+        DaemonBuildEvent::SstateSummary {
+            summary: yoctui_model::SstateSummary {
+                wanted: 10,
+                local: 3,
+                mirrors: 2,
+                missed: 5,
+                current: 8,
+            },
+        },
         DaemonBuildEvent::TaskQueued {
             recipe: "seed".into(),
             task: "do_compile".into(),
@@ -496,7 +505,7 @@ fn snapshot_progress_matches_live_batches_after_eviction_and_reset() {
         let event = journal
             .publish(DaemonEvent::Build(DaemonBuildEvent::TaskCompleted {
                 recipe: format!("recipe-{index}"),
-                task: "do_compile".into(),
+                task: "do_fetch".into(),
                 success: true,
                 started_unix_ms: None,
                 finished_unix_ms: None,
@@ -507,8 +516,12 @@ fn snapshot_progress_matches_live_batches_after_eviction_and_reset() {
             .unwrap();
     }
     let expected = (2_339 + count, Some(6_812));
+    assert_eq!(app.build.cache.fetch_completed, count);
+    let cache = app.build.cache;
     assert_eq!((app.build.completed, app.build.total), expected);
     replica.replace_app(&mut app, journal.snapshot().clone());
+    assert_eq!(app.build.cache, cache);
+    assert_eq!(app.build.cache.summary.unwrap().match_percent(), Some(50));
     assert_eq!((app.build.completed, app.build.total), expected);
     let event = journal
         .publish(DaemonEvent::Build(DaemonBuildEvent::Reset {
@@ -518,6 +531,7 @@ fn snapshot_progress_matches_live_batches_after_eviction_and_reset() {
     replica.apply_event_to_app(&mut app, &event).unwrap();
     assert_eq!((app.build.completed, app.build.total), (0, None));
     assert!(app.completed_tasks.is_empty());
+    assert_eq!(app.build.cache, yoctui_model::BuildCacheState::default());
 }
 
 #[test]

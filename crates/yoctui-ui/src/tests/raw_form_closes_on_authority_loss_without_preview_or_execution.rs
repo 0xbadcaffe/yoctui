@@ -711,5 +711,6 @@ fn overview_insights_render_all_eight_honest_responsive_states() {
     let output = rendered_text_at(&app, 160, 50, UNIX_EPOCH);
     assert!(output.contains("/cache/sstate"), "{output}");
     assert!(output.contains("/cache/downloads"), "{output}");
-    assert!(output.contains("hits"), "{output}");
+    assert!(output.contains("Setscene outcomes"), "{output}");
+    assert!(output.contains("offline readiness: unverified"), "{output}");
 }

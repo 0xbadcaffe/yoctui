@@ -20,7 +20,7 @@ fn dashboard_concept_has_distinct_regions_and_resizes_without_mutation() {
         };
         assert!(region_text(nav, 5, work, 9).contains("Build Overview"));
         assert!(region_text(nav, 14, work, height - 35).contains("Recent Builds"));
-        let telemetry = region_text(nav, height - 20, work, 10);
+        let telemetry = region_text(nav, height - 18, work, 8);
         assert!(telemetry.contains("Resource Telemetry"));
         assert!(telemetry.contains("0.72 / 4.00 cores"));
         assert!(telemetry.contains("6.72 / 16.00 GiB"));

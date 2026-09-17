@@ -27,6 +27,13 @@ policy. Offline readiness must remain explicitly unverified without an exact
 target-scoped fetch verification; an existing DL_DIR or successful retained
 fetches alone cannot prove it.
 
+The sstate summary describes local/mirror availability against wanted objects,
+plus already-current tasks, not a measured reuse percentage. Downloads report
+cumulative observed do_fetch successes/failures and currently active fetches.
+Disconnected observations are labeled last observed; network policy is disabled,
+premirrors only, allowed, or unknown. Resource meters remain adjacent three-row
+cards in ASCII/no-color modes too; the Dashboard resource region is eight rows.
+
 Overall and task progress use continuous filled bars with exact text. Task
 identity truncates before the progress column; unknown task progress remains
 visibly active, never a fabricated percentage. Insights wraps whole numbered
@@ -4954,14 +4961,16 @@ active throbber.
 
 These scopes are independent members of one typed progress hierarchy: overall
 build, parse, runqueue, selected task, selected background job, CPU, RAM, build
-filesystem, and sstate reuse. A scope without authority stays unavailable even
+filesystem, and sstate availability match. A scope without authority stays unavailable even
 when a neighboring scope is determinate. Current-without-total is `current/?`
 and active, an ended phase below its reported total is partial, and terminal
 build/task/job projections retain their last authoritative fraction. Average
 task rate and ETA are projections from completed work plus injected elapsed
 time and always begin with `estimate`; no selected entity or invalid resource
-sample remains explicit. Because no typed backend field currently reports
-sstate reuse progress, that scope says unavailable rather than inferring logs.
+sample remains explicit. A validated typed native sstate summary supplies
+local-plus-mirror availability divided by wanted objects, never actual reuse
+progress. Missing, stale, or zero-wanted summaries have no percentage. The UI
+does not infer cache authority by parsing logs.
 
 The build Logs workspace retains its typed bounded store. A separate internal
 diagnostic view may display Yoctui tracing records, but it never captures or
@@ -5684,9 +5693,11 @@ over an editor, while ordinary `a` stays literal in editors/searches.
 
 M68 resource meters replace dotted semicircular arcs with one-row continuous
 horizontal bars. CPU, RAM and build-filesystem cards retain exact percentages
-and capacity/context labels. Sstate remains unavailable until reported by the
-backend. Existing narrow, ASCII and colorless telemetry fallback stays textual;
-no estimated utilization or fake activity is introduced.
+and capacity/context labels. The M72 compact layout uses three resource cards
+and cache/download status rows; missing sstate summaries stay explicitly absent.
+Narrow telemetry fallback stays textual, ASCII cards use `#`/`-` bars, and
+colorless cards retain exact numeric labels. No estimated utilization or fake
+activity is introduced.
 
 ### M68 full-resolution Rootfs pie
 

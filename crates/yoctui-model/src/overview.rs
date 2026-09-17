@@ -214,33 +214,22 @@ impl App {
 
     pub fn overview_cache(&self) -> OverviewCacheProjection {
         let mut projection = OverviewCacheProjection {
+            sstate_hits: self.build.cache.setscene_completed,
+            sstate_misses: self.build.cache.setscene_failed,
+            fetch_completed: self.build.cache.fetch_completed,
+            fetch_failed: self.build.cache.fetch_failed,
             sstate_dir: self.workspace.variables.get("SSTATE_DIR").cloned(),
             downloads_dir: self.workspace.variables.get("DL_DIR").cloned(),
             ..OverviewCacheProjection::default()
         };
         for task in self.tasks.values() {
-            let is_sstate =
-                task.task.contains("setscene") || task.task == "do_shared_workdir_setscene";
+            let is_sstate = task.task.ends_with("_setscene");
             let is_fetch = task.task == "do_fetch";
-            if is_sstate {
-                match task.state {
-                    TaskState::Completed => projection.sstate_hits += 1,
-                    TaskState::Failed | TaskState::Lost => projection.sstate_misses += 1,
-                    TaskState::Active | TaskState::Queued | TaskState::Waiting => {
-                        projection.sstate_active += 1
-                    }
-                    TaskState::Cancelled => {}
-                }
+            if is_sstate && task.state == TaskState::Active {
+                projection.sstate_active += 1;
             }
-            if is_fetch {
-                match task.state {
-                    TaskState::Completed => projection.fetch_completed += 1,
-                    TaskState::Failed | TaskState::Lost => projection.fetch_failed += 1,
-                    TaskState::Active | TaskState::Queued | TaskState::Waiting => {
-                        projection.fetch_active += 1
-                    }
-                    TaskState::Cancelled => {}
-                }
+            if is_fetch && task.state == TaskState::Active {
+                projection.fetch_active += 1;
             }
         }
         projection
@@ -498,6 +487,20 @@ mod tests {
                 task: "do_fetch".into(),
                 state: TaskState::Failed,
                 ..TaskInfo::default()
+            },
+        );
+        crate::update(
+            &mut app,
+            crate::Action::TaskCompleted {
+                id: TaskId("s".into()),
+                success: true,
+            },
+        );
+        crate::update(
+            &mut app,
+            crate::Action::TaskCompleted {
+                id: TaskId("f".into()),
+                success: false,
             },
         );
         let projection = app.overview_cache();

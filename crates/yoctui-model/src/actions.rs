@@ -887,6 +887,7 @@ pub enum Action {
         target: Option<String>,
     },
     BuildStarted,
+    SstateSummary(SstateSummary),
     TaskStats(TaskStats),
     ParseProgress {
         current: Option<u64>,

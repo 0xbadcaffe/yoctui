@@ -568,6 +568,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::LoseBackgroundJob { .. }
         | Action::BuildRequested { .. }
         | Action::BuildStarted
+        | Action::SstateSummary(..)
         | Action::TaskStats(..)
         | Action::ParseProgress { .. }
         | Action::TaskStarted(..)

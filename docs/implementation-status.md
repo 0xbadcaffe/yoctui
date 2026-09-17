@@ -8,7 +8,15 @@ harness/source checks pass. A private 4,000-event/s flood preserved critical
 events and ordering without healthy-client resync, and isolated the non-reading
 client. This is fixture evidence, not a live release-performance certification.
 
-M72-CACHE-001 is IN_PROGRESS; M72-LAYOUT-001 follows. The existing
+M72-CACHE-001 is DONE: native sstate availability and cumulative fetch/setscene
+outcomes survive bounded history and reconnects. Compact resource cards include
+downloads, network policy and explicitly unverified offline readiness. Protocol
+1.3 requires matching clients/daemon. Full workspace tests pass serially,
+including 297 UI tests; strict Clippy, fmt, 53 bridge tests, source contracts,
+private flood and all 29 raster checks pass. Existing process-fixture races
+passed isolated and serial reruns without weakening tests.
+
+M72-LAYOUT-001 is IN_PROGRESS. The existing
 M67 live-Poky evidence prerequisite remains BLOCKED. The user daemon and live
 OpenBMC build are preserved.
 

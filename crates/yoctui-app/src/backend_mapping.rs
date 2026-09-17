@@ -6,6 +6,7 @@ pub fn model_action_from_backend_event(event: BackendEvent) -> Option<Action> {
         BackendEvent::Workspace(workspace) => Some(Action::WorkspaceLoaded(workspace)),
         BackendEvent::BuildStarted => Some(Action::BuildStarted),
         BackendEvent::TaskStats(stats) => Some(Action::TaskStats(stats)),
+        BackendEvent::SstateSummary(summary) => Some(Action::SstateSummary(summary)),
         BackendEvent::ParseProgress { current, total } => {
             Some(Action::ParseProgress { current, total })
         }

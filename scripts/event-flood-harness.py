@@ -111,8 +111,8 @@ class ProtocolClient:
         self.send(
             {
                 "type": "hello",
-                "minimum_version": {"major": 1, "minor": 2},
-                "maximum_version": {"major": 1, "minor": 2},
+                "minimum_version": {"major": 1, "minor": 3},
+                "maximum_version": {"major": 1, "minor": 3},
                 "client_id": self.client_id,
                 "client_name": "event-flood-harness",
                 "capabilities": [

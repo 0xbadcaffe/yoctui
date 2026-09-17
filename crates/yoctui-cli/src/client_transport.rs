@@ -321,6 +321,9 @@ fn validate_hello(
     hello: &DaemonHello,
     requested: &[Capability],
 ) -> Result<(), ClientTransportError> {
+    if hello.selected_version != ProtocolVersion::CURRENT {
+        return Err(yoctui_protocol::daemon::DaemonProtocolError::IncompatibleVersion.into());
+    }
     negotiate_version(
         ProtocolVersion::CURRENT,
         ProtocolVersion::CURRENT,
@@ -763,6 +766,14 @@ mod tests {
 
     #[test]
     fn client_transport_rejects_incompatible_or_unbounded_hello() {
+        for minor in [
+            ProtocolVersion::CURRENT.minor - 1,
+            ProtocolVersion::CURRENT.minor + 1,
+        ] {
+            let mut invalid = hello(DaemonInstanceId([1; 16]));
+            invalid.selected_version.minor = minor;
+            assert!(validate_hello(&invalid, &requested_capabilities()).is_err());
+        }
         assert!(matches!(
             validate_client(ClientId([0; 16]), "client"),
             Err(ClientTransportError::InvalidClientIdentity)

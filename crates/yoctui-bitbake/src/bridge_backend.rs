@@ -817,6 +817,13 @@ impl BridgeBackend {
                     "error" => Severity::Error,
                     _ => Severity::Info,
                 };
+                if severity == Severity::Info
+                    && recipe.is_none()
+                    && task.is_none()
+                    && let Some(summary) = crate::build_cache::parse_sstate_summary(&message)
+                {
+                    return Ok(BackendEvent::SstateSummary(summary));
+                }
                 BackendEvent::Log(LogEntry {
                     id: 0,
                     severity,

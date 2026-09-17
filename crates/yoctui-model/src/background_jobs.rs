@@ -3,6 +3,7 @@ use super::*;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuildState {
+    pub cache: BuildCacheState,
     pub status: BuildStatus,
     pub target: Option<String>,
     pub started: Option<SystemTime>,

@@ -570,6 +570,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             },
         ),
         Action::BuildRequested { target } => prepare_build(app, target),
+        Action::SstateSummary(summary) => {
+            if summary.valid() {
+                app.build.cache.summary = Some(summary);
+            }
+        }
         Action::BuildStarted => {
             app.build.status = BuildStatus::Running;
             app.build.started = Some(SystemTime::now());

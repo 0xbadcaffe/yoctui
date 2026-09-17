@@ -3,6 +3,7 @@ use super::*;
 
 #[derive(Debug, Clone)]
 pub enum BackendEvent {
+    SstateSummary(yoctui_model::SstateSummary),
     Workspace(Workspace),
     Recipes(Vec<Recipe>),
     Layers(Vec<Layer>),

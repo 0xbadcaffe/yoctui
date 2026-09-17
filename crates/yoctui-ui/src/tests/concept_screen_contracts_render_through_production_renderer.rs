@@ -928,6 +928,7 @@ fn snapshot_progress_renders_aggregate_instead_of_retained_row_count() {
     snapshot.build_progress = Some(DaemonBuildProgress {
         completed: 2_340,
         total: Some(6_812),
+        ..Default::default()
     });
     let mut app = App::new(64, 64 * 1024);
     app.screen = Screen::Tasks;

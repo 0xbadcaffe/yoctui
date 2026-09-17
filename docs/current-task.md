@@ -1,23 +1,22 @@
 # Current Task
 
-**ID:** M72-CACHE-001
-**Title:** Expose authoritative build cache and download status in compact telemetry
+**ID:** M72-LAYOUT-001
+**Title:** Keep progress and all Insights shortcuts visible across terminal sizes
 **Status:** IN_PROGRESS
 
 User-requested live OpenBMC corrections supersede the blocked task below.
-Dependency M72-IPC-001 is DONE with full baseline and private flood verification.
-Files: BitBake adapters, protocol/model cache state, replica and dashboard.
-Done: validated native sstate summary, cumulative observed fetch outcomes,
-configured network policy, honest offline readiness, compact resource meters,
-and reducer/adapter/reattach/TestBackend tests. Update UI/architecture, registry,
-status/current and commit, then continue M72-LAYOUT-001. Preserve the live build.
+Dependency M72-CACHE-001 is DONE with full baseline and private flood verification.
+Files: UI overview/task/shell renderers and screenshot fixtures.
+Done: continuous overall/task bars, reserved task-progress width, visible unknown
+activity, wrapped whole Insights tabs, and TestBackend breakpoint coverage.
+Review updated goldens/rasters, update UI/architecture as needed, registry,
+status/current and commit. Then restore the external blocker below and run the
+completion gate. Preserve the live daemon/build.
 
 Verification:
 ```bash
-cargo test --workspace --all-features cache
-cargo test -p yoctui-ui
+cargo test --workspace --all-features --no-fail-fast -- --test-threads=1
 cargo fmt --all --check
-cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh

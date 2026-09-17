@@ -56,9 +56,9 @@ sha256 = "69f6d05c5dd15a770f3dd53bb9d530f2e8a64bdfceeddea80fff0ea8e67ea010"
 [[artifact]]
 id = "idle-dashboard"
 source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
-source_sha256 = "3c76d366d83774921e7000ffefb4d7709dd866fb4fe6f6fd1a6c3096bc60084e"
+source_sha256 = "3ae8e18d809cf9bbab2266d91b43149836184c6752c419f0845b6efe8c984787"
 file = "docs/media/screenshots/07-idle-dashboard.png"
-sha256 = "0d951fa4cdf71a7b83599b1e1e8daa22c50a6b387cc972da4972c820cbab6121"
+sha256 = "5b951b01451aedafe4cbe49addcec41c4ad4cf6969ccd9ead89cd26592e2c5cd"
 
 [[artifact]]
 id = "failed-build-errors"
@@ -133,9 +133,9 @@ sha256 = "a1f0079f30c7ab8bc0bd15b331107bd3b1b709e44bcbc976bb4736a842cee908"
 [[artifact]]
 id = "offline-dashboard"
 source = "crates/yoctui-ui/tests/golden/readme-offline-dashboard-160x50.cells"
-source_sha256 = "6b1709f79f82f457202e172b1a02d0cb1c63509c3a6a7d23439336b623e4fff6"
+source_sha256 = "d3f4813d9eac46dcbcb557117dc28ac99a991e06ef6f9074745a6e26af5ee121"
 file = "docs/media/screenshots/18-offline-dashboard.png"
-sha256 = "67094c0617e7b75c0ad50bfe68e1de3db16a94ae89be75ffe8ae207054955507"
+sha256 = "566fcbedcf52d4a4275c50979567b5152f8571962cb8fb16c5ec59350b3957e0"
 
 [[artifact]]
 id = "saved-build-history"

@@ -768,7 +768,7 @@ pub(crate) fn dashboard(frame: &mut Frame, app: &App, area: Rect, now: SystemTim
         let rows = Layout::vertical([
             Constraint::Length(9),
             Constraint::Min(8),
-            Constraint::Length(10),
+            Constraint::Length(8),
             Constraint::Length(7),
         ])
         .split(area);

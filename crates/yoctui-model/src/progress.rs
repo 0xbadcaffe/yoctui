@@ -438,12 +438,22 @@ impl App {
                 memory,
                 build_filesystem,
             },
-            sstate: explicit(
-                "Sstate reuse",
-                WidgetState::Unavailable,
-                WidgetRole::Disabled,
-                "backend does not report progress",
-            ),
+            sstate: match self.build.cache.summary.filter(|summary| summary.valid()) {
+                Some(summary) if summary.wanted > 0 && !self.is_offline() => {
+                    GaugeProjection::determinate(
+                        "Sstate match",
+                        summary.local + summary.mirrors,
+                        summary.wanted,
+                        WidgetRole::Progress,
+                    )
+                }
+                _ => explicit(
+                    "Sstate match",
+                    WidgetState::Unavailable,
+                    WidgetRole::Disabled,
+                    "summary unavailable, stale, or no sstate requested",
+                ),
+            },
             estimate,
         }
     }

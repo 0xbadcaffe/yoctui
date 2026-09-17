@@ -149,7 +149,7 @@ fn render_cache(frame: &mut Frame, app: &App, area: Rect) {
     ];
     let chart = area.width >= 64
         && area.height >= 18
-        && values.iter().sum::<usize>() > 0
+        && values.iter().any(|value| *value > 0)
         && app.color_enabled
         && app.preferences.symbols == SymbolPreference::Unicode;
     let sections = if chart {
@@ -159,8 +159,8 @@ fn render_cache(frame: &mut Frame, app: &App, area: Rect) {
     };
     if chart {
         let slices = [
-            ("sstate hit", cache.sstate_hits, Color::Green),
-            ("sstate miss", cache.sstate_misses, Color::Red),
+            ("setscene ok", cache.sstate_hits, Color::Green),
+            ("setscene failed", cache.sstate_misses, Color::Red),
             ("fetch ok", cache.fetch_completed, Color::Cyan),
             ("fetch failed", cache.fetch_failed, Color::Yellow),
         ]
@@ -179,7 +179,10 @@ fn render_cache(frame: &mut Frame, app: &App, area: Rect) {
         );
     }
     let text = format!(
-        "SSTATE observed\n  hits       {}\n  misses     {}\n  active     {}\n\nDownloads / do_fetch\n  completed  {}\n  failed     {}\n  active     {}\n\nSSTATE_DIR  {}\nDL_DIR      {}\n\nCounts describe retained BitBake task events. Directory byte totals remain unavailable until an authoritative bounded scan reports them.",
+        "{}\n{}\n{}\n\nSetscene outcomes\n  completed  {}\n  failed     {}\n  active     {}\n\nDownloads / do_fetch\n  completed  {}\n  failed     {}\n  active     {}\n\nSSTATE_DIR  {}\nDL_DIR      {}\n\nCounts describe observed outcomes for this build, not a complete download inventory. Directory byte totals are unavailable without a bounded scan.",
+        app.cache_status_lines()[0],
+        app.cache_status_lines()[1],
+        app.cache_status_lines()[2],
         cache.sstate_hits,
         cache.sstate_misses,
         cache.sstate_active,

@@ -35,7 +35,7 @@ required_features = [
   { id = "resource-state", description = "Typed telemetry and unavailable cache state", fixture_anchors = ["Resource Telemetry", "CPU Usage", "18%"] },
   { id = "discoverability", description = "Navigator and application-menu routes remain visible", fixture_anchors = ["Enter open", "F10 Menu"] },
 ]
-raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/01-idle-dashboard.png", sha256 = "0d951fa4cdf71a7b83599b1e1e8daa22c50a6b387cc972da4972c820cbab6121", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "3c76d366d83774921e7000ffefb4d7709dd866fb4fe6f6fd1a6c3096bc60084e", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v3" }
+raster_evidence = { status = "verified", artifact = "docs/design/m22/production-raster/01-idle-dashboard.png", sha256 = "5b951b01451aedafe4cbe49addcec41c4ad4cf6969ccd9ead89cd26592e2c5cd", source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells", source_sha256 = "3ae8e18d809cf9bbab2266d91b43149836184c6752c419f0845b6efe8c984787", provenance = "docs/design/m22/production-raster/manifest.toml", renderer = "yoctui-cairo-cell-raster-v3" }
 live_evidence = { status = "verified", artifact = "artifacts/release-quality/m22-concept-live/idle-dashboard.txt", sha256 = "ec0802214b75d27d76379081ed9447b72b2c4d0f5b109450b47957d111efc437", interactions = ["launch a real client against the idle supported-host daemon"], assertions = ["Current Build · Idle", "Daemon: ✓ Connected", "F10 Menu"] }
 implementation_tasks = ["UX-DASHBOARD-001", "UX-CONCEPT-RASTER-001", "UX-CONCEPT-LIVE-001", "UX-TELEMETRY-DIAL-001"]
 open_gaps = []

@@ -9,7 +9,7 @@ use thiserror::Error;
 use crate::{TaskStatsData, WorkspaceData};
 
 pub const PROTOCOL_MAJOR: u16 = 1;
-pub const PROTOCOL_MINOR: u16 = 2;
+pub const PROTOCOL_MINOR: u16 = 3;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_CAPABILITIES: usize = 128;
 pub const MAX_RETAINED_EVENTS: usize = 65_536;
@@ -2038,6 +2038,8 @@ pub struct DaemonSnapshot {
 /// Absence supports legacy snapshots; it is not a zero-completed checkpoint.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DaemonBuildProgress {
+    #[serde(default)]
+    pub cache: yoctui_model::BuildCacheState,
     pub completed: usize,
     pub total: Option<usize>,
 }
@@ -2045,6 +2047,9 @@ pub struct DaemonBuildProgress {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum DaemonBuildEvent {
+    SstateSummary {
+        summary: yoctui_model::SstateSummary,
+    },
     Reset {
         targets: Vec<String>,
     },
@@ -2871,6 +2876,9 @@ fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
     }
 
     match &event {
+        DaemonBuildEvent::SstateSummary { .. } => snapshot
+            .build_events
+            .retain(|item| !matches!(item, DaemonBuildEvent::SstateSummary { .. })),
         DaemonBuildEvent::Workspace { data } => {
             if let (Some(source), Some(build)) = (&data.source_dir, &data.build_dir) {
                 snapshot.workspace = Some(WorkspaceIdentity {
@@ -2934,6 +2942,15 @@ fn apply_build_event(snapshot: &mut DaemonSnapshot, event: DaemonBuildEvent) {
 
 fn update_build_progress(snapshot: &mut DaemonSnapshot, event: &DaemonBuildEvent) {
     match event {
+        DaemonBuildEvent::SstateSummary { summary } => {
+            if summary.valid() {
+                snapshot
+                    .build_progress
+                    .get_or_insert_with(Default::default)
+                    .cache
+                    .summary = Some(*summary);
+            }
+        }
         DaemonBuildEvent::Reset { .. } => {
             snapshot.build_progress = Some(DaemonBuildProgress::default());
         }
@@ -2950,7 +2967,12 @@ fn update_build_progress(snapshot: &mut DaemonSnapshot, event: &DaemonBuildEvent
             progress.completed = progress.completed.max(stats.completed);
             progress.total = (stats.total > 0).then_some(stats.total);
         }
-        DaemonBuildEvent::TaskCompleted { recipe, task, .. } => {
+        DaemonBuildEvent::TaskCompleted {
+            recipe,
+            task,
+            success,
+            ..
+        } => {
             // Inspect identity before compaction removes the active task. A
             // repeated completion is inert, but a newly started same-ID task
             // may complete again. Never count a legacy snapshot's partial
@@ -2970,6 +2992,7 @@ fn update_build_progress(snapshot: &mut DaemonSnapshot, event: &DaemonBuildEvent
                 && let Some(progress) = &mut snapshot.build_progress
             {
                 progress.completed = progress.completed.saturating_add(1);
+                progress.cache.record_outcome(task, *success);
             }
         }
         DaemonBuildEvent::Completed { success: true, .. } => {
@@ -3962,7 +3985,8 @@ mod tests {
             snapshot.build_progress,
             Some(DaemonBuildProgress {
                 completed: 2_339 + count,
-                total: Some(6_812)
+                total: Some(6_812),
+                ..Default::default()
             })
         );
         assert!(!snapshot.build_events.iter().any(|event| matches!(event,
@@ -4053,7 +4077,8 @@ mod tests {
             snapshot.build_progress,
             Some(DaemonBuildProgress {
                 completed: 42,
-                total: None
+                total: None,
+                ..Default::default()
             })
         );
         for invalid in [
@@ -4197,7 +4222,8 @@ mod tests {
             journal.snapshot().build_progress,
             Some(DaemonBuildProgress {
                 completed: 2340,
-                total: Some(6812)
+                total: Some(6812),
+                ..Default::default()
             })
         );
         assert_eq!(journal.snapshot().build_events.len(), 1);

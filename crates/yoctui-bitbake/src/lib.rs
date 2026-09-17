@@ -3,6 +3,7 @@ mod bitbake_cli_control;
 mod bitbake_restart;
 #[cfg(unix)]
 mod bitbake_socket;
+mod build_cache;
 mod build_environment;
 mod compatibility_api;
 mod compatibility_cache;

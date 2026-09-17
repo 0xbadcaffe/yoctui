@@ -1,5 +1,18 @@
 # Yoctui Architecture
 
+M72 cache observations cross the adapter boundary as a validated typed
+`SstateSummary`: Wanted equals Local + Mirrors + Missed with checked arithmetic.
+Only native unscoped informational sstate logs are normalized; widgets never
+parse process text. This is cache availability, not proof of actual reuse.
+Model and daemon aggregate cumulative fetch/setscene outcomes independently of
+bounded task rows; aggregate cache state is restored after snapshot replay.
+Daemon protocol 1.3 adds the summary event and a defaultable cache checkpoint.
+Client and daemon must be upgraded together after the active build completes.
+Initialized metadata provides BB_NO_NETWORK and BB_FETCH_PREMIRRORONLY (unset
+means zero); absent legacy metadata remains unknown. Offline readiness is
+unverified without target-scoped fetch verification; no scan or build is started
+merely by rendering this status.
+
 The model owns the header's observed active-worker projection. Current replica
 and build lifecycle gate its authority; complete positive active PID sets take
 precedence over complete nonblank active worker-label sets. Both are separately

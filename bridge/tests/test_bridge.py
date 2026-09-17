@@ -34,6 +34,26 @@ def run_bridge(
 
 
 class BridgeProtocolTests(unittest.TestCase):
+    def test_cache_network_policy_uses_initialized_metadata_defaults(self) -> None:
+        spec = importlib.util.spec_from_file_location("yoctui_cache_policy", BRIDGE)
+        assert spec is not None and spec.loader is not None
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+        values = {"DL_DIR": "/cache/downloads", "BB_NO_NETWORK": "1"}
+        connection = object.__new__(bridge.TinfoilConnection)
+        connection.tinfoil = SimpleNamespace(
+            config_data=SimpleNamespace(getVar=values.get)
+        )
+        connection.module = SimpleNamespace()
+        connection._layers = lambda: []
+        connection._variable_provenance = lambda data, key: None
+        variables = connection.inspect_workspace()["variables"]
+        self.assertEqual(variables["BB_NO_NETWORK"], "1")
+        self.assertEqual(variables["BB_FETCH_PREMIRRORONLY"], "0")
+        self.assertEqual(variables["DL_DIR"], "/cache/downloads")
+        values.clear()
+        self.assertEqual(connection.inspect_workspace()["variables"]["BB_NO_NETWORK"], "0")
+
     def test_task_identity_uses_initialized_metadata_for_native_git_and_pn_overrides(
         self,
     ) -> None:

@@ -281,6 +281,7 @@ impl BuildJobCoordinator {
             | BackendEvent::LayerRelationships(_)
             | BackendEvent::ParseProgress { .. }
             | BackendEvent::TaskStats(_)
+            | BackendEvent::SstateSummary(_)
             | BackendEvent::TaskQueued { .. }
             | BackendEvent::TaskStarted { .. }
             | BackendEvent::TaskProgress { .. }

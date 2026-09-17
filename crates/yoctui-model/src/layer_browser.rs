@@ -158,6 +158,7 @@ pub const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {
         Self {
+            cache: BuildCacheState::default(),
             status: BuildStatus::Idle,
             target: None,
             started: None,

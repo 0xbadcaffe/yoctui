@@ -3210,6 +3210,18 @@ async fn run_daemon_foreground(termination: &mut tokio::sync::mpsc::Receiver<()>
                 }
                 match connection.receive::<ClientMessage>() {
                 Ok(ClientMessage::Hello(hello)) => {
+                    if !yoctui_protocol::daemon::negotiate_version(
+                        hello.minimum_version, hello.maximum_version, ProtocolVersion::CURRENT,
+                    ).is_ok_and(|version| version == ProtocolVersion::CURRENT) {
+                        let _ = connection.send(&ServerMessage::Error(yoctui_protocol::daemon::ProtocolFailure {
+                            request_id: None,
+                            code: yoctui_protocol::daemon::ProtocolErrorCode::IncompatibleVersion,
+                            message: "Client and daemon protocol versions differ; upgrade both together".into(),
+                            retryable: false,
+                        }));
+                        keep_client = false;
+                        break;
+                    }
                     connection.send(&ServerMessage::Hello(DaemonHello {
                         selected_version: ProtocolVersion::CURRENT,
                         daemon_instance_id: instance,
@@ -4402,6 +4414,9 @@ fn daemon_build_event_at(
             Some(DaemonBuildEvent::ParseProgress { current, total }),
             None,
         ),
+        BackendEvent::SstateSummary(summary) => {
+            (Some(DaemonBuildEvent::SstateSummary { summary }), None)
+        }
         // An unresolved recipe contributes aggregate authority, not a fake
         // per-task row. Existing job progress keeps older clients decodable.
         BackendEvent::TaskStats(stats) => (None, Some(running_job(stats))),

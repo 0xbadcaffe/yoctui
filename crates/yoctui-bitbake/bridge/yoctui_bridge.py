@@ -346,6 +346,8 @@ class TinfoilConnection:
             "BBLAYERS",
             "DL_DIR",
             "SSTATE_DIR",
+            "BB_NO_NETWORK",
+            "BB_FETCH_PREMIRRORONLY",
             "TMPDIR",
             "DEPLOY_DIR_IMAGE",
             "PKGDATA_DIR",
@@ -363,6 +365,8 @@ class TinfoilConnection:
         provenance = {}
         for key in keys:
             value = self.tinfoil.config_data.getVar(key)
+            if value is None and key in ("BB_NO_NETWORK", "BB_FETCH_PREMIRRORONLY"):
+                value = "0"
             if value is not None:
                 variables[key] = str(value)
             source = self._variable_provenance(self.tinfoil.config_data, key)
@@ -1288,6 +1292,8 @@ def workspace_data(version):
         "BBLAYERS",
         "DL_DIR",
         "SSTATE_DIR",
+        "BB_NO_NETWORK",
+        "BB_FETCH_PREMIRRORONLY",
         "TMPDIR",
         "DEPLOY_DIR_IMAGE",
         "PKGDATA_DIR",

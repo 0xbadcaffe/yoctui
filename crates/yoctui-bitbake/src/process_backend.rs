@@ -382,6 +382,11 @@ impl BitBakeBackend for ProcessBackend {
         if let Some(output) = self.output.as_mut()
             && let Some(line) = output.recv().await
         {
+            if line.severity == Severity::Info
+                && let Some(summary) = crate::build_cache::parse_sstate_summary(&line.message)
+            {
+                return Ok(BackendEvent::SstateSummary(summary));
+            }
             return Ok(BackendEvent::Log(line));
         }
         let (success, exit_code) = self.collect().await?;

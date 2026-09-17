@@ -18,9 +18,9 @@ hint_metrics = "on"
 [[artifact]]
 id = "idle-dashboard"
 source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
-source_sha256 = "3c76d366d83774921e7000ffefb4d7709dd866fb4fe6f6fd1a6c3096bc60084e"
+source_sha256 = "3ae8e18d809cf9bbab2266d91b43149836184c6752c419f0845b6efe8c984787"
 file = "docs/design/m22/production-raster/01-idle-dashboard.png"
-sha256 = "0d951fa4cdf71a7b83599b1e1e8daa22c50a6b387cc972da4972c820cbab6121"
+sha256 = "5b951b01451aedafe4cbe49addcec41c4ad4cf6969ccd9ead89cd26592e2c5cd"
 
 [[artifact]]
 id = "active-build-tasks"
