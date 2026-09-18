@@ -344,3 +344,6 @@ fn daemon_integration_validates_handshake_limits_and_reconnect_cursor() {
     assert!(matches!(replayed, ServerMessage::Attached { .. }));
     drop(guard);
 }
+
+#[path = "daemon_state_runtime/command_routing.rs"]
+mod command_routing;

@@ -272,6 +272,7 @@ def main() -> int:
                     ROOT / "crates/yoctui-protocol/src/daemon_ipc.rs",
                     ROOT / "scripts/measure-low-overhead.py",
                     ROOT / "scripts/measure-process-overhead.py",
+                    *sorted((ROOT / "crates/yoctui-cli/src/daemon_server").rglob("*.rs")),
                 )
             },
             "method": {

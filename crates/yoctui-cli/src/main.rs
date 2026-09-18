@@ -338,7 +338,9 @@ mod daemon_scheduling;
 use daemon_scheduling::*;
 mod daemon_startup;
 use daemon_startup::*;
+#[cfg(unix)]
 mod daemon_server;
+#[cfg(unix)]
 use daemon_server::*;
 mod daemon_publish_build;
 use daemon_publish_build::*;

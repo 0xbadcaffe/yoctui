@@ -1,5 +1,18 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-DAEMON-001 is DONE in v0.1.127. Daemon orchestration is 451
+lines; private background, telemetry, client-message and twelve command-family
+modules each remain below 500 lines. Typed daemon/client ownership retains
+request order and explicit no-immediate-reply handling. All 43 command arms
+retain their original tokens after accounting for state qualification, deferred
+returns and rustfmt wrapping. A real private-daemon test checks one reply and
+connection continuity across eleven rejected command families, including the
+build-directory authority rejection. The serial workspace suite (1,692 tests,
+five existing ignored), strict Clippy, fmt, 53 bridge tests, eight source-checker
+tests, version/roadmap and 29 deterministic raster checks pass. Historical live
+evidence is preserved. Interactive runtime decomposition is next.
+
+
 REDUCE-CLI-MAIN-001 is DONE in source v0.1.126: main.rs is 468 lines,
 with 72 responsibility-named private modules. Its inline tests and fixtures
 now live under src/tests; all 491 extracted function bodies match the original

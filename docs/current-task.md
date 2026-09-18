@@ -1,23 +1,24 @@
 # Current Task
 
-**ID:** REDUCE-CLI-DAEMON-001
-**Title:** Decompose daemon service loop and command routing
+**ID:** REDUCE-CLI-TUI-001
+**Title:** Decompose interactive runtime state input and effects
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-MAIN-001 is DONE. main.rs is 468 lines and its tests
-are in src/tests. Next split daemon_server.rs (about 1,520 lines) into named
-startup, background polling, client service and command-routing modules,
-targeting approximately 500 lines per file. Preserve ordering, authority,
-backpressure, cancellation, bounded readiness and every existing assertion.
+Dependencies REDUCE-CLI-MAIN-001 and REDUCE-CLI-DAEMON-001 are DONE.
+main.rs is 472 lines; daemon orchestration and every extracted daemon module
+are below 500 lines. Split interactive_runtime.rs into typed runtime state,
+startup/shutdown, background polling, presentation and named input/effect
+routing modules. Target approximately 500 lines per file. Preserve branch
+order, outer-loop continuation, ownership, cancellation and render cadence.
 
-Relevant files: crates/yoctui-cli/src/daemon_server.rs and extracted daemon
-modules; IPC/performance source-contract scripts. Done requires behavior
-preservation, baseline and focused verification, registry/status/architecture
-updates, and a coherent commit. Continue with REDUCE-CLI-TUI-001 afterward.
+Relevant files: crates/yoctui-cli/src/interactive_runtime.rs and its new
+modules; scripts that inspect interactive sources. Keep existing assertions,
+add focused regression coverage where needed, update architecture and task
+records, and commit after verification. Continue with remaining CLI files.
 
 ```bash
-cargo test -p yoctui --all-features daemon
-python3 -m unittest scripts/test_ipc_source_contracts.py
+cargo test -p yoctui --all-features
+./scripts/test-terminal.sh
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

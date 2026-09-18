@@ -12,6 +12,7 @@ SUPERVISOR = "crates/yoctui-cli/src/daemon_bitbake.rs"
 TRANSPORT = "crates/yoctui-protocol/src/daemon_ipc.rs"
 DAEMON = "crates/yoctui-cli/src/daemon_server.rs"
 SCHEDULING = "crates/yoctui-cli/src/daemon_scheduling.rs"
+CLIENT_REQUESTS = "crates/yoctui-cli/src/daemon_server/client_requests.rs"
 
 
 class IpcSourceContractTests(unittest.TestCase):
@@ -25,7 +26,7 @@ class IpcSourceContractTests(unittest.TestCase):
             "exec",
         )
         cls.sources = {
-            name: (ROOT / name).read_text() for name in (SUPERVISOR, TRANSPORT, DAEMON, SCHEDULING)
+            name: (ROOT / name).read_text() for name in (SUPERVISOR, TRANSPORT, DAEMON, SCHEDULING, CLIENT_REQUESTS)
         }
 
     def run_checker(self, **replacements: str) -> str:
@@ -82,6 +83,7 @@ class IpcSourceContractTests(unittest.TestCase):
             (TRANSPORT, "libc::MSG_DONTWAIT", "bounded daemon transport"),
             (TRANSPORT, "Duration::from_secs(5)", "bounded daemon transport"),
             (DAEMON, "event_write_pending()", "slow-client isolation"),
+            (CLIENT_REQUESTS, "connection.is_readable()?", "slow-client isolation"),
             (DAEMON, "slow_client_disconnects", "slow-client isolation"),
         ):
             with self.subTest(name=name):
