@@ -263,7 +263,7 @@ python3 scripts/test-live-m22-concept-evidence.py
 
 cli_help="$(cargo run -q -p yoctui -- --help)"
 for expected in \
-  'A Ratatui frontend and control client for BitBake' \
+  'A Terminal Workbanch for Yocto/BitBake' \
   'Usage: yoctui' \
   '--backend <BACKEND>' \
   'inspect' \

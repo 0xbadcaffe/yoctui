@@ -8430,7 +8430,7 @@ notes = "Refresh target, literal, concept and README production-renderer goldens
 id = "REDUCE-CLI-MAIN-001"
 milestone = "M73"
 title = "Extract CLI entry-point responsibilities and move its inline tests"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2200
 required = true
 depends_on = []
@@ -8444,7 +8444,7 @@ title = "Finish responsibility-based modules and test folders in yoctui-cli"
 status = "NOT_STARTED"
 priority = 2201
 required = true
-depends_on = ["REDUCE-CLI-MAIN-001"]
+depends_on = ["REDUCE-CLI-TUI-001"]
 verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-cli. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
@@ -8557,3 +8557,25 @@ required = true
 depends_on = ["REDUCE-TOOLS-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: scripts/check-library-layout.py docs/architecture.md. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-001"
+milestone = "M73"
+title = "Decompose daemon service loop and command routing"
+status = "NOT_STARTED"
+priority = 2201
+required = true
+depends_on = ["REDUCE-CLI-MAIN-001"]
+verify = ["cargo test -p yoctui --all-features daemon", "python3 -m unittest scripts/test_ipc_source_contracts.py", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_server.rs, daemon request/publication modules, IPC source contracts. Preserve request order, authority, cancellation, readiness, render cadence and lifecycle. Split into meaningful modules targeting approximately 500 lines each; preserve all tests and retain source-checker coverage. Done requires baseline checks, task/status/current records and a coherent commit."
+
+[[task]]
+id = "REDUCE-CLI-TUI-001"
+milestone = "M73"
+title = "Decompose interactive runtime state input and effects"
+status = "NOT_STARTED"
+priority = 2201
+required = true
+depends_on = ["REDUCE-CLI-DAEMON-001"]
+verify = ["cargo test -p yoctui --all-features", "./scripts/test-terminal.sh", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: interactive_runtime.rs, typed runtime state, input/effect/background polling modules. Preserve request order, authority, cancellation, readiness, render cadence and lifecycle. Split into meaningful modules targeting approximately 500 lines each; preserve all tests and retain source-checker coverage. Done requires baseline checks, task/status/current records and a coherent commit."

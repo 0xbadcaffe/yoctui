@@ -62,6 +62,12 @@ for source, digest in suite.get("sources", {}).items():
         raise SystemExit(f"low-overhead source digest mismatch: {source}")
 required_sources = {
     "crates/yoctui-cli/src/main.rs",
+    "crates/yoctui-cli/src/daemon_server.rs",
+    "crates/yoctui-cli/src/daemon_scheduling.rs",
+    "crates/yoctui-cli/src/host_telemetry.rs",
+    "crates/yoctui-cli/src/interactive_runtime.rs",
+    "crates/yoctui-cli/src/input_routing.rs",
+    "crates/yoctui-cli/src/terminal_lifecycle.rs",
     "crates/yoctui-protocol/src/daemon_ipc.rs",
     "scripts/measure-low-overhead.py",
     "scripts/measure-process-overhead.py",

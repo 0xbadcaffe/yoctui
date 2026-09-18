@@ -10,7 +10,8 @@ from unittest.mock import patch
 ROOT = Path(__file__).resolve().parents[1]
 SUPERVISOR = "crates/yoctui-cli/src/daemon_bitbake.rs"
 TRANSPORT = "crates/yoctui-protocol/src/daemon_ipc.rs"
-DAEMON = "crates/yoctui-cli/src/main.rs"
+DAEMON = "crates/yoctui-cli/src/daemon_server.rs"
+SCHEDULING = "crates/yoctui-cli/src/daemon_scheduling.rs"
 
 
 class IpcSourceContractTests(unittest.TestCase):
@@ -24,7 +25,7 @@ class IpcSourceContractTests(unittest.TestCase):
             "exec",
         )
         cls.sources = {
-            name: (ROOT / name).read_text() for name in (SUPERVISOR, TRANSPORT, DAEMON)
+            name: (ROOT / name).read_text() for name in (SUPERVISOR, TRANSPORT, DAEMON, SCHEDULING)
         }
 
     def run_checker(self, **replacements: str) -> str:

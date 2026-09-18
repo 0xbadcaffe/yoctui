@@ -153,7 +153,8 @@ import re
 
 supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
 transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
-daemon = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+daemon = Path("crates/yoctui-cli/src/daemon_server.rs").read_text(encoding="utf-8")
+daemon += Path("crates/yoctui-cli/src/daemon_scheduling.rs").read_text(encoding="utf-8")
 # The supervisor now receives shared job IDs through new(), not Default.
 # Inspect only its rustfmt-delimited constructor: the per-job cancellation
 # signal channel elsewhere is not event ingress. Fail closed if this shape

@@ -1,5 +1,17 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-MAIN-001 is DONE in source v0.1.126: main.rs is 468 lines,
+with 72 responsibility-named private modules. Its inline tests and fixtures
+now live under src/tests; all 491 extracted function bodies match the original
+parsed tokens before the necessary moved include_str fixture-path correction.
+The full serial workspace suite passes (1,691 tests, five existing ignored),
+strict workspace Clippy, fmt, 53 bridge tests, eight IPC/measurement checker
+tests, docs/version/layout/roadmap checks and all 29 deterministic rasters pass.
+The existing CLI description is preserved and its stale documentation assertion
+is aligned. Historical evidence and the four user captures remain untouched.
+REDUCE-CLI-DAEMON-001 is next, followed by the interactive loop and crate review.
+
+
 ## M73 source decomposition
 
 The user-requested source review is registered. REDUCE-CLI-MAIN-001 is next;

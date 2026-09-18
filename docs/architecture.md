@@ -4153,6 +4153,13 @@ documentation and regression evidence coherently.
 
 ## Shared utility boundary
 
+The CLI entry point owns startup and module wiring. Configuration/session
+persistence, host telemetry, workspace inspection, workflow coordinators,
+daemon event publication and terminal lifecycle each have named private
+modules. CLI unit tests live under `src/tests`, with shared fixtures in
+`tests/cli/support`; moved fixtures resolve the same original inputs.
+Daemon and interactive loop decomposition continues in the M73 runtime tasks.
+
 `yoctui-utils` is a leaf support crate for domain-independent path, text,
 time and operating-system helpers. Every crate may consume it directly.
 Domain state, protocol contracts and backend authority remain in their existing

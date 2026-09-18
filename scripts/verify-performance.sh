@@ -333,15 +333,16 @@ verify_event_loops() {
   python3 - <<'PY'
 from pathlib import Path
 
-daemon = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+daemon = Path("crates/yoctui-cli/src/daemon_server.rs").read_text(encoding="utf-8")
 ipc = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
 if "listener.accept(Duration::from_millis(1))" in daemon:
     raise SystemExit("daemon listener regressed to one-millisecond polling")
 if "thread::sleep(CONNECT_RETRY_INTERVAL.min(timeout))" in ipc.split("impl DaemonListener", 1)[1].split("impl Drop", 1)[0]:
     raise SystemExit("daemon listener regressed to sleep-based readiness polling")
-if "terminal.draw(|f| render(f, &app))?;\n        if event::poll" in daemon:
+client = Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
+if "terminal.draw(|f| render(f, &app))?;\n        if event::poll" in client:
     raise SystemExit("interactive client regressed to unconditional idle rendering")
-if "if build_jobs.active_job_id().is_some()" not in daemon:
+if "if build_jobs.active_job_id().is_some()" not in client:
     raise SystemExit("idle client must not poll the inactive local BitBake backend")
 print("event-loop source contracts valid")
 PY
@@ -355,7 +356,7 @@ verify_render() {
   python3 - <<'PY'
 from pathlib import Path
 
-source = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+source = Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
 scheduler = Path("crates/yoctui-cli/src/render_scheduler.rs").read_text(encoding="utf-8")
 tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
 draw = "terminal.draw(|f| render(f, &app))?;"
@@ -387,7 +388,7 @@ verify_animations() {
   python3 - <<'PY'
 from pathlib import Path
 
-source = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+source = Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
 scheduler = Path("crates/yoctui-cli/src/render_scheduler.rs").read_text(encoding="utf-8")
 tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
 for required in (
@@ -420,9 +421,10 @@ verify_telemetry() {
   python3 - <<'PY'
 from pathlib import Path
 
-source = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+source = Path("crates/yoctui-cli/src/host_telemetry.rs").read_text(encoding="utf-8")
+source += Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
 scheduler = Path("crates/yoctui-cli/src/telemetry_scheduler.rs").read_text(encoding="utf-8")
-sampler = source.split("struct HostTelemetrySampler", 1)[1].split("impl Drop for TerminalGuard", 1)[0]
+sampler = Path("crates/yoctui-cli/src/host_telemetry.rs").read_text(encoding="utf-8")
 if "ProcessCommand" in sampler or "Command::new" in sampler:
     raise SystemExit("host telemetry must not spawn a process per sample")
 for required in (
@@ -566,7 +568,7 @@ if not any("format_escaped_str" in item.get("symbol", "") and item.get("self_per
 
 protocol = Path("crates/yoctui-protocol/src/daemon.rs").read_text(encoding="utf-8")
 transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
-daemon = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+daemon = Path("crates/yoctui-cli/src/daemon_server.rs").read_text(encoding="utf-8")
 supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
 for required in (
     "snapshot_bytes_upper_bound", "snapshot_serializations", "synchronize_bounded",
@@ -634,6 +636,8 @@ if inventory != manifest["source_inventory_before"]:
     raise SystemExit("Tokio source inventory evidence mismatch")
 
 main = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+main += Path("crates/yoctui-cli/src/input_routing.rs").read_text(encoding="utf-8")
+main += Path("crates/yoctui-cli/src/tests/cli/tokio_runtime_two_workers_isolate_a_bounded_blocking_poll.rs").read_text(encoding="utf-8")
 if "#[tokio::main(worker_threads = 2)]" not in main:
     raise SystemExit("Yoctui runtime is not pinned to the audited two-worker policy")
 for required in (
@@ -969,7 +973,7 @@ for required in ("read-only", "do not multiply", "never automatic", "neither roo
     if required not in policy:
         raise SystemExit(f"BitBake coexistence policy is incomplete: {required}")
 model = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-model/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
-cli = Path("crates/yoctui-cli/src/main.rs").read_text(encoding="utf-8")
+cli = Path("crates/yoctui-cli/src/workspace_commands.rs").read_text(encoding="utf-8")
 for required in (
     "bitbake_coexistence_diagnostic", "BB_NUMBER_THREADS", "PARALLEL_MAKE",
     "configured build parallelism can occupy every logical CPU",

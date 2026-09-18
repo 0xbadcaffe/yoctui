@@ -263,6 +263,12 @@ def main() -> int:
                 str(path.relative_to(ROOT)): sha256(path)
                 for path in (
                     ROOT / "crates/yoctui-cli/src/main.rs",
+                    ROOT / "crates/yoctui-cli/src/daemon_server.rs",
+                    ROOT / "crates/yoctui-cli/src/daemon_scheduling.rs",
+                    ROOT / "crates/yoctui-cli/src/host_telemetry.rs",
+                    ROOT / "crates/yoctui-cli/src/interactive_runtime.rs",
+                    ROOT / "crates/yoctui-cli/src/input_routing.rs",
+                    ROOT / "crates/yoctui-cli/src/terminal_lifecycle.rs",
                     ROOT / "crates/yoctui-protocol/src/daemon_ipc.rs",
                     ROOT / "scripts/measure-low-overhead.py",
                     ROOT / "scripts/measure-process-overhead.py",

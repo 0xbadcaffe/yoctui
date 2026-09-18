@@ -1,31 +1,29 @@
 # Current Task
 
-**ID:** REDUCE-CLI-MAIN-001
-**Title:** Extract CLI entry-point responsibilities and move its inline tests
+**ID:** REDUCE-CLI-DAEMON-001
+**Title:** Decompose daemon service loop and command routing
 **Status:** NOT_STARTED
 
-User request: review all source files, beginning with main.rs, target roughly
-500 lines per file, use meaningful module names, and move tests into test folders.
-The initial inventory finds main.rs at 23,100 lines. Extract configuration,
-telemetry, commands, workflow coordinators and event publication into real Rust
-modules. Keep main.rs as startup/module wiring; retain every test assertion in
-named test modules. Oversized runtime loops receive explicit follow-up tasks.
+Dependency REDUCE-CLI-MAIN-001 is DONE. main.rs is 468 lines and its tests
+are in src/tests. Next split daemon_server.rs (about 1,520 lines) into named
+startup, background polling, client service and command-routing modules,
+targeting approximately 500 lines per file. Preserve ordering, authority,
+backpressure, cancellation, bounded readiness and every existing assertion.
 
-Dependencies: none. Relevant files: crates/yoctui-cli/src/main.rs and extracted
-CLI modules/tests; source-inspection scripts that refer to moved definitions.
-Definition of done: main.rs is approximately 500 lines or fewer, test bodies are
-in test folders, behavior/public APIs are preserved, verification passes, and
-registry/status/architecture records and code are committed.
+Relevant files: crates/yoctui-cli/src/daemon_server.rs and extracted daemon
+modules; IPC/performance source-contract scripts. Done requires behavior
+preservation, baseline and focused verification, registry/status/architecture
+updates, and a coherent commit. Continue with REDUCE-CLI-TUI-001 afterward.
 
-Verification:
 ```bash
+cargo test -p yoctui --all-features daemon
+python3 -m unittest scripts/test_ipc_source_contracts.py
 cargo fmt --all --check
-cargo test -p yoctui --all-features
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 
-The unrelated M67-LIVE-EVIDENCE-001 remains BLOCKED on a genuine current-source
-real-Poky capture. Historical performance evidence and user captures stay intact.
+M67-LIVE-EVIDENCE-001 remains BLOCKED on genuine current-source real-Poky
+performance evidence. Preserve historical captures and the running user build.
