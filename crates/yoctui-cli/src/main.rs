@@ -180,7 +180,7 @@ use global_search::{
 
 use maintenance_cli::MaintenanceCliCoordinator;
 #[derive(Parser, Debug)]
-#[command(version, about = "A Ratatui frontend and control client for BitBake")]
+#[command(version, about = "A Terminal Workbanch for Yocto/BitBake")]
 struct Cli {
     #[arg(long, value_enum)]
     backend: Option<Backend>,
