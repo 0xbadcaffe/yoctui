@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+## M73 source decomposition
+
+The user-requested source review is registered. REDUCE-CLI-MAIN-001 is next;
+the remaining crate/tooling tasks will be split into atomic families as needed.
+No implementation or verification success is claimed yet.
+
 M72-IPC-001 is DONE: event writes retain a single bounded frame and resume on
 writable readiness, with five-second stalled-peer expiry. Interactive tracing
 and reconnect diagnostics stay off stderr. Full workspace tests, strict Clippy,

@@ -8425,3 +8425,135 @@ required = true
 depends_on = ["CI-RELEASE-GATES-001"]
 verify = ["CARGO_INCREMENTAL=0 cargo test --workspace --all-features", "python3 scripts/check-version-bump.py"]
 notes = "Refresh target, literal, concept and README production-renderer goldens after the 0.1.123 build-count mismatch in GitHub CI. Keep the update limited to rendered fixture output and version metadata."
+
+[[task]]
+id = "REDUCE-CLI-MAIN-001"
+milestone = "M73"
+title = "Extract CLI entry-point responsibilities and move its inline tests"
+status = "NOT_STARTED"
+priority = 2200
+required = true
+depends_on = []
+verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-cli/src/main.rs. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-CLI-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-cli"
+status = "NOT_STARTED"
+priority = 2201
+required = true
+depends_on = ["REDUCE-CLI-MAIN-001"]
+verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-cli. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-UTILS-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-utils"
+status = "NOT_STARTED"
+priority = 2202
+required = true
+depends_on = ["REDUCE-CLI-001"]
+verify = ["cargo test -p yoctui-utils --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-utils. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-MODEL-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-model"
+status = "NOT_STARTED"
+priority = 2203
+required = true
+depends_on = ["REDUCE-UTILS-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-model. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-PROTOCOL-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-protocol"
+status = "NOT_STARTED"
+priority = 2204
+required = true
+depends_on = ["REDUCE-MODEL-001"]
+verify = ["cargo test -p yoctui-protocol --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-protocol. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-BITBAKE-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-bitbake"
+status = "NOT_STARTED"
+priority = 2205
+required = true
+depends_on = ["REDUCE-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-bitbake. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-APP-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-app"
+status = "NOT_STARTED"
+priority = 2206
+required = true
+depends_on = ["REDUCE-BITBAKE-001"]
+verify = ["cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-app. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-UI-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-ui"
+status = "NOT_STARTED"
+priority = 2207
+required = true
+depends_on = ["REDUCE-APP-001"]
+verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-ui. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-SHELL-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-shell"
+status = "NOT_STARTED"
+priority = 2208
+required = true
+depends_on = ["REDUCE-UI-001"]
+verify = ["cargo test -p yoctui-shell --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-shell. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-E2E-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-e2e"
+status = "NOT_STARTED"
+priority = 2209
+required = true
+depends_on = ["REDUCE-SHELL-001"]
+verify = ["cargo test -p yoctui-e2e --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-e2e. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-TOOLS-001"
+milestone = "M73"
+title = "Split bridge and verification tooling into named modules and test folders"
+status = "NOT_STARTED"
+priority = 2210
+required = true
+depends_on = ["REDUCE-E2E-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: bridge/tests scripts crates/yoctui-bitbake/bridge. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+
+[[task]]
+id = "REDUCE-LAYOUT-GATE-001"
+milestone = "M73"
+title = "Verify the complete source inventory and enforce the module-size convention"
+status = "NOT_STARTED"
+priority = 2211
+required = true
+depends_on = ["REDUCE-TOOLS-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: scripts/check-library-layout.py docs/architecture.md. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."

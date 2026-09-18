@@ -1,86 +1,31 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Refresh genuine current-source real-Poky performance evidence
-**Status:** BLOCKED
+**ID:** REDUCE-CLI-MAIN-001
+**Title:** Extract CLI entry-point responsibilities and move its inline tests
+**Status:** NOT_STARTED
 
-The user-requested M72 OpenBMC corrections are DONE: bounded resumable IPC and
-terminal-safe logging; native cache/download facts and compact resource cards;
-continuous visible progress and wrapped Insights shortcuts. Full workspace tests
-pass serially (300 UI tests), as do strict Clippy, fmt, 53 bridge tests and all
-29 reviewed raster checks. The running daemon/build and user captures were not
-modified. Protocol 1.3 requires matching rebuilt daemon/client after the active
-build finishes. No eligible implementation task remains; the external evidence
-prerequisite below is the only incomplete registry task.
+User request: review all source files, beginning with main.rs, target roughly
+500 lines per file, use meaningful module names, and move tests into test folders.
+The initial inventory finds main.rs at 23,100 lines. Extract configuration,
+telemetry, commands, workflow coordinators and event publication into real Rust
+modules. Keep main.rs as startup/module wiring; retain every test assertion in
+named test modules. Oversized runtime loops receive explicit follow-up tasks.
+
+Dependencies: none. Relevant files: crates/yoctui-cli/src/main.rs and extracted
+CLI modules/tests; source-inspection scripts that refer to moved definitions.
+Definition of done: main.rs is approximately 500 lines or fewer, test bodies are
+in test folders, behavior/public APIs are preserved, verification passes, and
+registry/status/architecture records and code are committed.
 
 Verification:
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo fmt --all --check
+cargo test -p yoctui --all-features
+cargo test --workspace --all-features
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+python3 -m pytest bridge/tests
+./scripts/verify-roadmap.sh
 ```
 
-## Retained external blocker: M67-LIVE-EVIDENCE-001
-
-CI-RELEASE-GATES-001 is DONE: GitHub Actions compatibility and release-quality
-gates now recognize the restored README compatibility rule and compact
-80-column terminal frames. The deterministic compatibility, performance,
-formatting, Clippy and version checks pass locally.
-
-The remaining task is blocked on a genuine current-source real-Poky
-performance capture, documented below.
-
-README-DBUS-UDEV-001 is DONE: system D-Bus and udev rules screenshots are
-in the README image-inspection gallery. All 23 screenshots and the baseline/
-documentation checks pass.
-
-README-SYSTEMD-001 is DONE: the README includes a production-rendered offline
-systemd Services screenshot beside rootfs composition. All 21 screenshots and
-the baseline/documentation checks pass.
-
-README-REAL-DTS-001 is DONE: the Device Tree editor screenshot uses the Linux
-v6.6 NXP i.MX8MP EVK source, with attributed MIT licensing and verified syntax
-colors. Baseline, screenshot and documentation checks pass.
-
-README-ONBOARDING-001 is DONE: the README now follows setup and daily Yocto
-workflows, retains all 20 screenshots and technical information, and uses direct
-operator wording. Documentation, screenshot and baseline checks pass.
-
-All requested M67/M68/M69 implementation and publication tasks are DONE. The source and UI fixes,
-GitUI integration, offline workbench, durable saved history and updated 20-screen
-README gallery are committed for master. Version 0.1.118 is published on crates.io
-for all seven public crates.
-Full workspace tests, strict Clippy, formatting, 52 bridge tests, screenshot
-provenance checks and the native GitUI PTY smoke pass. No release-performance
-certification is claimed from fixtures or fake-process timing.
-
-External prerequisite: a genuine current-source/binary-bound real-Poky
-performance capture for the documented Yocto 6.0.2 linux-yocto workload.
-The retained `artifacts/performance/real-poky/manifest.json` is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63`; 58 recorded source hashes now
-differ, including changes predating this request. Historical evidence stays intact.
-
-Reproduce the independent prerequisite check:
-
-```bash
-python3 - <<'PYCODE'
-from pathlib import Path
-import hashlib, json
-m = json.loads(Path("artifacts/performance/real-poky/manifest.json").read_text())
-stale = [name for name, expected in m["sources"].items()
-         if hashlib.sha256(Path(name).read_bytes()).hexdigest() != expected]
-print("Source digest mismatches:", len(stale))
-raise SystemExit(bool(stale))
-PYCODE
-```
-
-The completion gate reports this required task as BLOCKED. The broader
-performance verifier was stopped after its static contracts passed because the
-independent mandatory evidence check already proves the capture is stale.
-Follow the existing capture procedure in `docs/performance.md`, then verify:
-
-```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
-```
-
-M72 is complete; this external evidence prerequisite remains required.
+The unrelated M67-LIVE-EVIDENCE-001 remains BLOCKED on a genuine current-source
+real-Poky capture. Historical performance evidence and user captures stay intact.

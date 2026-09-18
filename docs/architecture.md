@@ -4157,7 +4157,12 @@ documentation and regression evidence coherently.
 time and operating-system helpers. Every crate may consume it directly.
 Domain state, protocol contracts and backend authority remain in their existing
 crates. Library roots expose modules and stable APIs; implementation and tests
-move into files named for their responsibility when a root exceeds 1000 lines.
+move into files named for their responsibility, targeting approximately 500
+lines per source file. Inline test bodies belong in test folders, with shared
+fixtures in named support modules. M73 applies this convention to the complete
+source inventory, beginning with the CLI entry point; public APIs and behavior
+remain unchanged. Oversized functions must be decomposed by responsibility,
+not hidden with textual includes or numbered file fragments.
 Machine-specific runtime defaults come from explicit configuration or platform
 discovery. Synthetic test identities stay deterministic; historical evidence
 retains the original measured identity.

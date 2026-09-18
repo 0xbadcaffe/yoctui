@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+## M73 — Source decomposition
+
+Review every source file, starting with main.rs, target approximately 500 lines
+per file, use responsibility-based names, and move inline tests to test folders.
+Preserve public interfaces, runtime behavior and every existing assertion.
+
 ## M72 — Live dashboard corrections
 
 Completed the reported OpenBMC client continuity, compact resource/cache
