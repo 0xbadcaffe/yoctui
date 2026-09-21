@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-APP-DAEMON-JOBS-001
-**Title:** Decompose application daemon and job coordination
+**ID:** REDUCE-APP-TESTS-001
+**Title:** Move application tests into responsibility folders
 **Status:** NOT_STARTED
 
-Dependency REDUCE-APP-MAPPING-001 is DONE. Split `daemon_client.rs` and
-`job_coordinators.rs` into meaningful responsibility files of approximately
-500 lines or less, then audit every application production source. Preserve
-request correlation, cancellation, typed outcomes and public APIs.
+Dependency REDUCE-APP-DAEMON-JOBS-001 is DONE. Move inline application unit-test
+bodies and oversized existing test sources into descriptive files under
+`crates/yoctui-app/src/tests`. Preserve shared fixtures, platform gates, test
+names and assertions, and keep each test source near 500 lines or less.
 
 ```bash
 cargo test -p yoctui-app --all-features

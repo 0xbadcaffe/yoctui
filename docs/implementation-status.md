@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-APP-DAEMON-JOBS-001 is DONE in v0.1.178. Daemon snapshot handling,
+backend translation and build/Devtool coordination now flow through five named
+sources; the largest is 315 lines. The production audit covers 54 application
+sources with a 436-line maximum. All 210 tests and package Clippy pass. Test
+migration is next.
+
 REDUCE-APP-MAPPING-001 is DONE in v0.1.177. Raw protocol conversion, runner
 events and compatibility snapshot mapping now flow through 10 named sources;
 the largest is 313 lines. All 210 application tests and package Clippy pass.
