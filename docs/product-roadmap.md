@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-MAINTENANCE-001 is DONE in v0.1.148. Maintenance is a 30-line
+coordinator with 18 responsibility modules, all at 385 lines or less. The
+56-action reducer is separated into nine typed workflow handlers, and 20 tests
+now live in descriptive files under `src/tests`. Focused maintenance tests,
+package Clippy and full repository gates pass. QA model decomposition is next.
+
 REDUCE-MODEL-RAW-MODE-001 is DONE in v0.1.147. Raw mode is a 66-line
 coordinator with 17 responsibility modules, all at 476 lines or less. Its 51
 tests now live in descriptive files under `src/tests`; exact argv, authority,

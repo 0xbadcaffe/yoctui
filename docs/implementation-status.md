@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-MAINTENANCE-001 is DONE in v0.1.148. The former 4,024-line
+maintenance owner is now a 30-line coordinator and 18 named capability,
+service, integration, operation, draft, state and transition modules; the
+largest is 385 lines. Its 56-action reducer routes to nine workflow handlers,
+and 20 inline tests now live in descriptive files under `src/tests`. Focused
+maintenance tests, package Clippy and the full repository gates pass. QA model
+decomposition is next.
+
 REDUCE-MODEL-RAW-MODE-001 is DONE in v0.1.147. The former 7,476-line raw mode
 owner is now a 66-line coordinator and 17 named identity/parameter, selector,
 argv, preview, execution, catalog, favorites and reducer modules; the largest
