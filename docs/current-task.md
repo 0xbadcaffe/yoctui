@@ -1,13 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-SECURITY-TESTING-001
-**Title:** Decompose security and test workflow models
+**ID:** REDUCE-MODEL-COMPATIBILITY-001
+**Title:** Decompose compatibility state catalogs and projections
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-QA-001 is DONE. Split security.rs and testing.rs into
-meaningful modules for typed requests, reports, findings, sessions, comparison
-projections and state transitions. Preserve public APIs, authority rules and
-reducer behavior while targeting approximately 500 lines per production source.
+Dependency REDUCE-MODEL-SECURITY-TESTING-001 is DONE. Split compatibility.rs,
+compatibility_catalog.rs, compatibility_ui.rs and workspace_compatibility.rs
+into meaningful modules for capability identity, implementation selection,
+catalogs, UI projections and workspace behavior. Preserve public APIs and
+fail-closed authority while targeting approximately 500 lines per source.
 
 ```bash
 cargo test -p yoctui-model --all-features raw

@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-SECURITY-TESTING-001 is DONE in v0.1.150. Security and testing are
+24-line and 17-line coordinators with 15 named capability, report, inventory,
+comparison, launch, session and transition modules; the largest is 418 lines.
+Security's 45 actions route exhaustively through five workflow handlers, and 11
+inline tests now live in descriptive files under `src/tests`. All 492 model
+package tests/doc-tests, package Clippy and the full repository gates pass.
+Compatibility model decomposition is next.
+
 REDUCE-MODEL-QA-001 is DONE in v0.1.149. The former 3,707-line QA owner is now
 a 29-line coordinator and 14 named capability, check, session, report,
 inventory, state and transition modules; the largest is 390 lines. Its 61

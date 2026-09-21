@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-SECURITY-TESTING-001 is DONE in v0.1.150. Security and testing are
+small coordinators with 15 responsibility modules, all at 418 lines or less.
+Security's 45 actions route through five exhaustive handlers, and 11 tests moved
+under `src/tests`. All model package tests/doc-tests, package Clippy and full
+repository gates pass. Compatibility model decomposition is next.
+
 REDUCE-MODEL-QA-001 is DONE in v0.1.149. QA is a 29-line coordinator with 14
 responsibility modules, all at 390 lines or less. Its 61 actions route through
 seven exhaustive workflow handlers, and 16 tests moved to descriptive files
