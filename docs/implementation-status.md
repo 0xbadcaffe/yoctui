@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+The final REDUCE-CLI-001 audit found no source file above 504 lines. Its
+remaining test-placement scope is split into four ordered tasks covering core
+lifecycle modules, primary daemon adapters, remaining daemon workflows and CLI
+runtime helpers. Core lifecycle test migration is first.
+
 REDUCE-CLI-DAEMON-PTY-001 is DONE in v0.1.137. The former 885-line PTY owner is
 split into an 82-line shared state/event parent and named 204-line supervisor,
 145-line child runtime, 81-line request validation and 117-line terminal mapping

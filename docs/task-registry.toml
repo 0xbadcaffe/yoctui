@@ -8526,13 +8526,57 @@ verify = ["cargo test -p yoctui --all-features daemon_pty", "cargo fmt --all --c
 notes = "Scope: daemon_pty.rs. Separate request validation, child ownership and terminal event mapping near 500 lines; move inline tests into the CLI test folder and retain platform gates and PTY lifecycle behavior."
 
 [[task]]
-id = "REDUCE-CLI-001"
+id = "REDUCE-CLI-CORE-TESTS-001"
 milestone = "M73"
-title = "Finish responsibility-based modules and test folders in yoctui-cli"
+title = "Move CLI core lifecycle tests into test folders"
 status = "NOT_STARTED"
 priority = 2210
 required = true
 depends_on = ["REDUCE-CLI-DAEMON-PTY-001"]
+verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: build_archive.rs, clone_operation.rs, daemon_job_ids.rs, environment_operation.rs and environment_setup.rs. Move inline tests into responsibility-named CLI test files without changing fixtures or assertions."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-ADAPTER-TESTS-001"
+milestone = "M73"
+title = "Move primary daemon adapter tests into test folders"
+status = "NOT_STARTED"
+priority = 2211
+required = true
+depends_on = ["REDUCE-CLI-CORE-TESTS-001"]
+verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_devtool.rs, daemon_maintenance.rs, daemon_metadata.rs and daemon_qa.rs. Move inline tests into responsibility-named CLI test files while preserving fake-process, cancellation and authority fixtures."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-WORKFLOW-TESTS-001"
+milestone = "M73"
+title = "Move remaining daemon workflow tests into test folders"
+status = "NOT_STARTED"
+priority = 2212
+required = true
+depends_on = ["REDUCE-CLI-DAEMON-ADAPTER-TESTS-001"]
+verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_qemu.rs, daemon_sdk.rs, daemon_security.rs, daemon_test.rs and daemon_wic.rs. Move inline tests into responsibility-named CLI test files without changing typed identity or failure coverage."
+
+[[task]]
+id = "REDUCE-CLI-RUNTIME-TESTS-001"
+milestone = "M73"
+title = "Move remaining CLI runtime tests into test folders"
+status = "NOT_STARTED"
+priority = 2213
+required = true
+depends_on = ["REDUCE-CLI-DAEMON-WORKFLOW-TESTS-001"]
+verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: global_search.rs, internal_tracing.rs, pty_attach.rs, render_scheduler.rs, telemetry_scheduler.rs and pty_workflow_tests.rs. Move inline and source-root tests into responsibility-named CLI test files, then run the final CLI source audit."
+
+[[task]]
+id = "REDUCE-CLI-001"
+milestone = "M73"
+title = "Finish responsibility-based modules and test folders in yoctui-cli"
+status = "NOT_STARTED"
+priority = 2214
+required = true
+depends_on = ["REDUCE-CLI-RUNTIME-TESTS-001"]
 verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-cli. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 

@@ -1,5 +1,10 @@
 # Yoctui Product Roadmap
 
+The final CLI audit confirms every source file is approximately 500 lines or
+less; the largest is 504 lines. Four ordered child tasks now cover the remaining
+inline-test migration across core lifecycle, daemon adapter, daemon workflow
+and runtime helper modules before REDUCE-CLI-001 closes.
+
 REDUCE-CLI-DAEMON-PTY-001 is DONE in v0.1.137. The 885-line daemon PTY owner now
 has named supervisor routing, child runtime, request validation and typed
 terminal mapping modules, all below 500 lines. Seven unit tests and the ignored

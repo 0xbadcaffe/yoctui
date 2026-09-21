@@ -1,14 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-CLI-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-cli
+**ID:** REDUCE-CLI-CORE-TESTS-001
+**Title:** Move CLI core lifecycle tests into test folders
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-DAEMON-PTY-001 is DONE. Audit `crates/yoctui-cli`, update
-source-checker paths, and complete any remaining responsibility-based source
-splits or inline-test moves needed to keep source files approximately 500 lines.
-Preserve behavior, public APIs, assertions and platform gates. Split further
-work into atomic file/family tasks before implementation when needed.
+Dependency REDUCE-CLI-DAEMON-PTY-001 is DONE. Move inline tests from
+build_archive.rs, clone_operation.rs, daemon_job_ids.rs,
+environment_operation.rs and environment_setup.rs into responsibility-named
+files under the CLI test folder. Preserve every fixture and assertion.
 
 ```bash
 cargo test -p yoctui --all-features
