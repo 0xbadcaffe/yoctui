@@ -9107,3 +9107,47 @@ required = true
 depends_on = ["REDUCE-CLI-DAEMON-001"]
 verify = ["cargo test -p yoctui --all-features", "./scripts/test-terminal.sh", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: interactive_runtime.rs, typed runtime state, input/effect/background polling modules. Preserve request order, authority, cancellation, readiness, render cadence and lifecycle. Split into meaningful modules targeting approximately 500 lines each; preserve all tests and retain source-checker coverage. Done requires baseline checks, task/status/current records and a coherent commit."
+
+[[task]]
+id = "LAYER-NAV-001"
+milestone = "M74"
+title = "Restore configured-layer navigation from the active layer tree"
+status = "DONE"
+priority = 2304
+required = true
+depends_on = ["REDUCE-LAYOUT-GATE-001"]
+verify = ["cargo test -p yoctui --all-features layer_", "cargo fmt --all --check"]
+notes = "DONE in v0.1.196. The layer browser owns tree collection input and Escape before pane focus, routes its lazy directory/preview/editor effects, and returns to the configured-layer inventory. Seven focused CLI layer tests pass; full baseline intentionally deferred for the user's rapid manual bug pass."
+
+[[task]]
+id = "SEARCH-RETURN-001"
+milestone = "M74"
+title = "Show search activity and restore results after viewing a file"
+status = "IN_PROGRESS"
+priority = 2303
+required = true
+depends_on = ["LAYER-NAV-001"]
+verify = ["cargo test -p yoctui-model global_search", "cargo test -p yoctui-ui global_search", "cargo test -p yoctui --all-features global_search", "cargo fmt --all --check"]
+notes = "Show the shared Braille activity phase during an active global content scan and reopen the same query, generation, selection and results when the configured editor returns."
+
+[[task]]
+id = "PACKAGE-IMAGE-NAV-001"
+milestone = "M74"
+title = "Restore package and image collection navigation"
+status = "PENDING"
+priority = 2302
+required = true
+depends_on = ["SEARCH-RETURN-001"]
+verify = ["cargo test -p yoctui-app images_workspace", "cargo test -p yoctui-ui packages", "cargo test -p yoctui-ui images", "cargo fmt --all --check"]
+notes = "Keep package and artifact selections visible, retain owning-recipe access, and give Images tab keys precedence over pane focus so Rootfs packages and all composition tabs are reachable."
+
+[[task]]
+id = "FIRMWARE-BRIDGE-NAV-001"
+milestone = "M74"
+title = "Use authoritative bridge metadata for kernel and firmware workbenches"
+status = "PENDING"
+priority = 2301
+required = true
+depends_on = ["PACKAGE-IMAGE-NAV-001"]
+verify = ["cargo test -p yoctui --all-features firmware", "cargo test -p yoctui --all-features kernel", "cargo fmt --all --check"]
+notes = "An attached bridge client must inspect authoritative recipe metadata instead of retaining the process fallback; Kernel and U-Boot/BIOS tabs own Tab and BackTab before pane focus."

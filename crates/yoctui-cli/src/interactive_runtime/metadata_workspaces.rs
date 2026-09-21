@@ -222,6 +222,37 @@ impl InteractiveRuntime {
                 Action::BeginSelectedRecipeCleanState,
             );
         } else if runtime.app.screen == yoctui_model::Screen::Layers
+            && runtime.app.layer_browser.is_some()
+            && layer_tree_action(runtime.app.metadata_searching, input).is_some()
+        {
+            let action = layer_tree_action(runtime.app.metadata_searching, input)
+                .expect("layer browser action was checked");
+            match compatibility_workspace_action(&mut runtime.app, action) {
+                Some(Effect::LoadLayerBrowserDirectory {
+                    layer,
+                    root,
+                    directory,
+                }) => {
+                    load_layer_browser_directory(&mut runtime.app, layer, root, directory).await;
+                }
+                Some(Effect::LoadLayerBrowserPreview(path)) => {
+                    load_layer_browser_preview(&mut runtime.app, path).await;
+                }
+                Some(Effect::OpenLayerBrowserEditor { layer, root, file }) => {
+                    if let Some(Effect::LoadRecipeEditorFile(path)) = compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::OpenRecipeEditor {
+                            recipe: layer,
+                            root,
+                            files: vec![file],
+                        },
+                    ) {
+                        load_recipe_editor_file(&mut runtime.app, path).await;
+                    }
+                }
+                _ => {}
+            }
+        } else if runtime.app.screen == yoctui_model::Screen::Layers
             && collection_scroll_delta(input).is_some()
         {
             let delta = collection_scroll_delta(input).expect("scroll key was checked");

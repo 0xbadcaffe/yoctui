@@ -1,24 +1,13 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Refresh genuine current-source real-Poky performance evidence
-**Status:** BLOCKED
+**ID:** SEARCH-RETURN-001
+**Title:** Keep global-search loading and return state visible
+**Status:** IN_PROGRESS
 
-M73 source decomposition is complete at v0.1.195. The maintained inventory has
-2,670 Rust, Python and shell files, every source is at most 500 lines, Rust test
-bodies live in test folders, and the layout gate enforces those boundaries.
-No eligible implementation task remains.
+LAYER-NAV-001 is complete in v0.1.196. Add the shared Braille activity symbol
+to a running `/` content search and restore the same result list after the
+selected file editor exits.
 
-The remaining required task depends on a genuine current-source and
-binary-bound Yocto 6.0.2 `linux-yocto:do_compile` performance capture. The
-retained evidence is bound to source base
-`d2214e82974a5be708a7cc40f1532254d7c7de63` and now has 143 source digest
-mismatches. Historical evidence and the user's running build/captures must
-remain intact. Follow the capture procedure in `docs/performance.md`, then run:
-
-```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
-```
-
-Do not rewrite retained digests or claim live compatibility from mocked tests.
+Run only the focused model, UI, and CLI search tests during the agreed rapid
+bug pass. The user will request the full baseline after manual testing of all
+four reported bug series.

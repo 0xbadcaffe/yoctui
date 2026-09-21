@@ -5767,3 +5767,28 @@ M69 saved-history Inspector facts, paths and output belong only to the selected
 saved build; live-job actions and output are suppressed there. Offline Dashboard
 quick actions offer E configuration, F3 history, and the initialized-shell daemon
 start command with automatic reconnect guidance instead of promoting live builds.
+
+## M74 focused live-workbench corrections
+
+Layer-browser input belongs to the active tree before pane focus handling.
+`Esc` closes the tree and restores the configured-layer inventory; collection
+keys move the visible tree selection and keep its viewport reconciled in both
+directions. They must not move a hidden configured-layer selection behind the
+open browser.
+
+Global content search shows the shared Braille activity symbol while its
+current generation is loading. Opening a result in the configured editor and
+returning restores the same query, result generation, selection, and result
+list.
+
+Packages and Images keep their selected rows inside a selection-centered
+viewport. Package rows retain their authoritative owning-recipe column and
+`o` route. In Images, `Tab`, `BackTab`, and numbered tabs belong to the image
+workspace before pane focus traversal, including Rootfs packages and every
+other composition tab.
+
+Kernel and U-Boot / BIOS inspection uses the configured bridge metadata
+backend when the interactive client is attached to a daemon. Configuration
+and Device trees tabs remain switchable with `Tab` / `BackTab`; the client
+must not fall back to a process backend that cannot provide authoritative
+recipe metadata.

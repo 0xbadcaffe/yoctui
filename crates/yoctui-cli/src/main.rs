@@ -68,7 +68,7 @@ use yoctui_app::{
     devtool_update_confirmation_action, dtc_compile_dialog_action, errors_action,
     firmware_workspace_action, focus_action_for_app, global_search_action,
     image_console_dialog_action, images_workspace_action_for_view, keymap_action_for_app,
-    keymap_preferences_action, log_workspace_action, maintenance_dialog_action,
+    keymap_preferences_action, layer_tree_action, log_workspace_action, maintenance_dialog_action,
     maintenance_workspace_action, menu_action, model_action_from_backend_event,
     mouse_action_for_app, notification_popup_action, onboarding_action, overview_workspace_action,
     package_workspace_action, platform_workspace_action, popup_editor_action, qa_dialog_action,

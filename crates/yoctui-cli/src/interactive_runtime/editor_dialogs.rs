@@ -259,7 +259,9 @@ impl InteractiveRuntime {
                     }
                 }
             }
-        } else if let Some(action) = pane_focus_route(&runtime.app, input) {
+        } else if !workspace_owns_focus_key(&runtime.app, input)
+            && let Some(action) = pane_focus_route(&runtime.app, input)
+        {
             let effect = compatibility_workspace_action(&mut runtime.app, action);
             if let Some(effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_))) =
                 effect

@@ -24,6 +24,10 @@ pub(crate) fn pane_focus_route(app: &App, input: Input) -> Option<Action> {
     focus_action_for_app(app, input)
 }
 
+pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
+    input == Input::Esc && app.screen == Screen::Layers && app.layer_browser.is_some()
+}
+
 pub(crate) fn layer_list_open_action(app: &App, input: Input) -> Option<Action> {
     (app.screen == Screen::Layers
         && app.layer_browser.is_none()

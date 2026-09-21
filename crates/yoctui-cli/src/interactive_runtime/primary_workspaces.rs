@@ -93,7 +93,8 @@ impl InteractiveRuntime {
             && let Some(action) = overview_workspace_action(input)
         {
             let _ = compatibility_workspace_action(&mut runtime.app, action);
-        } else if collection_scroll_delta(input).is_some()
+        } else if runtime.app.screen != Screen::Layers
+            && collection_scroll_delta(input).is_some()
             && let Some(action) = workspace_collection_action(&runtime.app, input)
         {
             let _ = compatibility_workspace_action(&mut runtime.app, action);
