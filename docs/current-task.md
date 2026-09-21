@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-BITBAKE-BACKEND-001
-**Title:** Decompose BitBake backend controllers
+**ID:** REDUCE-BITBAKE-REMAINDER-001
+**Title:** Decompose remaining oversized BitBake sources
 **Status:** NOT_STARTED
 
-Dependency REDUCE-BITBAKE-RUNNERS-001 is DONE. Split production responsibilities
-in `bridge_backend.rs`, `devtool_runner.rs` and `server_controller.rs` into
-meaningful sources of approximately 500 lines or less. Preserve public APIs,
-platform gates and controller behavior.
+Dependency REDUCE-BITBAKE-BACKEND-001 is DONE. Split remaining production
+sources above approximately 500 lines into meaningful responsibility files.
+Preserve public APIs, platform gates and adapter behavior, then audit every
+production source under `crates/yoctui-bitbake/src`.
 
 ```bash
 cargo test -p yoctui-bitbake --all-features

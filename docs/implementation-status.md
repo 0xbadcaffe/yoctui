@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-BITBAKE-BACKEND-001 is DONE in v0.1.171. Bridge transport, Devtool
+execution and BitBake server lifecycle controllers now route through 11 named
+process, event, graph, command, inspection and lifecycle sources; the largest
+is 416 lines. All 285 BitBake unit tests and package Clippy pass. Remaining
+oversized production sources are next.
+
 REDUCE-BITBAKE-RUNNERS-001 is DONE in v0.1.170. SDK tools, layer QA,
 self-test, security mapping and Raw jobs now route through 16 named capability,
 command, validation, environment, output and runner sources; the largest is 463
