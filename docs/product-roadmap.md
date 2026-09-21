@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-PROTOCOL-DAEMON-RAW-001 is DONE in v0.1.161. Raw request/history,
+raw event/snapshot, compatibility identity and compatibility validation wire
+families now live in four named sources of 249–373 lines. They remain in the
+original daemon module, preserving public paths and serde representations. All
+91 protocol tests/doc-tests and package Clippy pass. Daemon state is next.
+
 REDUCE-PROTOCOL-001 is split into four ordered tasks after an audit found
 8,831 Rust lines in seven sources, 3,205 production lines in `daemon.rs`, two
 additional production sources above 500 lines, and eight inline test modules.
