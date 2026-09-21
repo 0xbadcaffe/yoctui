@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-BITBAKE-MAINTENANCE-001
-**Title:** Decompose BitBake maintenance adapters
+**ID:** REDUCE-BITBAKE-ARTIFACTS-001
+**Title:** Decompose BitBake artifact and metadata adapters
 **Status:** NOT_STARTED
 
-Dependency REDUCE-PROTOCOL-001 is DONE. Split the production responsibilities
-in `maintenance_sstate.rs`, `maintenance_release.rs`, `maintenance_service.rs`
-and `maintenance_optional.rs` into meaningful sources of approximately 500
-lines or less. Preserve public APIs, process ownership and validation behavior.
+Dependency REDUCE-BITBAKE-MAINTENANCE-001 is DONE. Split production
+responsibilities in `wic.rs`, `package.rs`, `rootfs.rs` and `signature.rs` into
+meaningful sources of approximately 500 lines or less. Preserve public APIs,
+filesystem containment, process ownership and typed outcomes.
 
 ```bash
 cargo test -p yoctui-bitbake --all-features

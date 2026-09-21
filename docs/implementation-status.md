@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-BITBAKE-MAINTENANCE-001 is DONE in v0.1.167. Sstate, release,
+service and optional maintenance adapters now route through 15 named capability,
+validation, command, evidence, endpoint and runner sources; the largest is 466
+lines. All 285 BitBake unit tests and package Clippy pass. Artifact and metadata
+adapter decomposition is next.
+
 REDUCE-BITBAKE-001 is split into seven ordered tasks after an audit found
 44,502 Rust lines, 23 production sources above 500 lines, 45 inline test
 modules, and an oversized existing test source. Maintenance adapters are first,
