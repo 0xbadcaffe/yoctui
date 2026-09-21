@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-WORKFLOWS-001 is DONE in v0.1.153. Root filesystem, Wic,
+SDK, image artifact and project profile models are thin coordinators over 19
+named capability, request, artifact, normalization, inventory, session, state
+and validation modules; the largest is 254 lines. All 17 inline tests now live
+in descriptive files under `src/tests`. All 492 model package tests/doc-tests
+and package Clippy pass. Interaction model decomposition is next.
+
 REDUCE-MODEL-APP-STATE-001 is DONE in v0.1.152. Application state and
 actions are thin coordinators over 12 named state, construction, navigation,
 projection, workflow, menu, terminal, event and action modules; the largest is

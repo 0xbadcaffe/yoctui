@@ -1,13 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-WORKFLOWS-001
-**Title:** Decompose image and build workflow domain models
+**ID:** REDUCE-MODEL-INTERACTION-001
+**Title:** Decompose text input keymap and action catalogs
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-APP-STATE-001 is DONE. Split rootfs.rs, wic.rs, sdk.rs,
-image.rs and project_profile.rs into meaningful request, result, state and
-validation modules. Preserve public APIs and typed workflow behavior while
-targeting approximately 500 lines per source.
+Dependency REDUCE-MODEL-WORKFLOWS-001 is DONE. Split textarea.rs, keymap.rs,
+action_catalog.rs and related interaction types into meaningful editing,
+navigation, key binding and catalog projection modules. Preserve public APIs
+and typed interaction behavior while targeting approximately 500 lines per
+source.
 
 ```bash
 cargo test -p yoctui-model --all-features

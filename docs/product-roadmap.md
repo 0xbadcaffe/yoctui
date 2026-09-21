@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-WORKFLOWS-001 is DONE in v0.1.153. Root filesystem, Wic,
+SDK, image artifact and project profile models are thin coordinators over 19
+responsibility modules, all at 254 lines or less. Seventeen tests moved to
+meaningful files under `src/tests`, with typed workflow and validation behavior
+preserved. All model package tests/doc-tests and package Clippy pass.
+Interaction model decomposition is next.
+
 REDUCE-MODEL-APP-STATE-001 is DONE in v0.1.152. Application state and
 actions are thin coordinators over 12 responsibility modules, all at 443 lines
 or less. The 749 public action variants remain source-compatible, while state
