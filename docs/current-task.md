@@ -1,12 +1,12 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-REDUCER-001
-**Title:** Decompose oversized reducer transition modules
+**ID:** REDUCE-MODEL-REMAINDER-001
+**Title:** Decompose remaining oversized model sources
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-PROJECTIONS-001 is DONE. Split reducer.rs and reducer
-modules above approximately 500 lines into meaningful transition families.
-Preserve dispatch order, state authority, public APIs and failure behavior.
+Dependency REDUCE-MODEL-REDUCER-001 is DONE. Audit every remaining
+`yoctui-model` production source above approximately 500 lines and split it into
+meaningful modules. Preserve public exports and pure reducer boundaries.
 
 ```bash
 cargo test -p yoctui-model --all-features

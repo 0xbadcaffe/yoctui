@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-REDUCER-001 is DONE in v0.1.156. The main reducer is a
+358-line exhaustive dispatcher, and its 13 oversized transition owners route
+to 38 action-range modules while preserving guarded fallback arms atomically;
+the largest reducer source is 367 lines. All 492 model package tests/doc-tests
+and package Clippy pass. The remaining oversized model-source audit is next.
+
 REDUCE-MODEL-PROJECTIONS-001 is DONE in v0.1.155. Overview, dashboard,
 progress, widget, daemon, PTY and session-update owners are thin coordinators
 over 22 named state, projection, hierarchy, client-view, state-machine and

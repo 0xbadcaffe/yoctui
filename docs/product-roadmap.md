@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-REDUCER-001 is DONE in v0.1.156. The main reducer is a
+358-line exhaustive dispatcher and 13 former oversized transition owners route
+to 38 bounded action-range modules. Guarded and fallback arms remain atomic,
+and every reducer source is at most 367 lines. All model package tests/doc-tests
+and package Clippy pass. The remaining oversized model-source audit is next.
+
 REDUCE-MODEL-PROJECTIONS-001 is DONE in v0.1.155. Overview, dashboard,
 progress, widget, daemon, PTY and session-update owners are thin coordinators
 over 22 responsibility modules, all at 271 lines or less. Twenty-five tests
