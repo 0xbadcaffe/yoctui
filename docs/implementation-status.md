@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-UI-WORKSPACES-001 is DONE in v0.1.184. Security, QA, maintenance,
+inspector, task, terminal, rootfs and source rendering now use 31 named
+responsibility sources. The production audit covers 126 Rust files outside
+`src/tests`; every file is at most 480 lines. All 300 UI tests pass. Inline and
+oversized test-source migration is next.
+
 REDUCE-UI-CORE-001 is DONE in v0.1.183. Shell entry, overlay and dialog
 routing plus primitives, dashboard, footer and telemetry rendering now use 19
 named production sources; the largest is 418 lines. The touched primitives

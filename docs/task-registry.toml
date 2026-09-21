@@ -8969,12 +8969,12 @@ notes = "DONE in v0.1.183. Shell entry/overlay/dialog routing, primitives, dashb
 id = "REDUCE-UI-WORKSPACES-001"
 milestone = "M73"
 title = "Decompose remaining UI workspace renderers"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2245
 required = true
 depends_on = ["REDUCE-UI-CORE-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: security_render.rs, qa_render.rs, maintenance_render.rs, inspector_workspace.rs, inspector_render.rs, task_render.rs, terminal_workspace.rs, rootfs_render.rs, source_render.rs and the final production audit. Preserve typed state and narrow-terminal safety; target approximately 500 lines per responsibility source."
+notes = "DONE in v0.1.184. Security, QA, maintenance, inspector, task, terminal, rootfs and source rendering now route through 31 named responsibility sources. The production audit covers 126 Rust files outside src/tests; every file is at most 480 lines. Typed state, narrow-terminal behavior and all 300 UI tests are preserved."
 
 [[task]]
 id = "REDUCE-UI-TESTS-001"

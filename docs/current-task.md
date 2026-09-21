@@ -1,15 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-UI-WORKSPACES-001
-**Title:** Decompose remaining UI workspace renderers
+**ID:** REDUCE-UI-TESTS-001
+**Title:** Move UI tests into responsibility folders
 **Status:** NOT_STARTED
 
-Dependency REDUCE-UI-CORE-001 is DONE. Split `security_render.rs`,
-`qa_render.rs`, `maintenance_render.rs`, `inspector_workspace.rs`,
-`inspector_render.rs`, `task_render.rs`, `terminal_workspace.rs`,
-`rootfs_render.rs` and `source_render.rs` into meaningful responsibility files
-of approximately 500 lines or less. Complete the production-source audit while
-preserving typed state, narrow-terminal safety and public APIs.
+Dependency REDUCE-UI-WORKSPACES-001 is DONE. Move all remaining inline
+`yoctui-ui` test bodies under `src/tests` and split the 18 oversized existing
+test sources into meaningful responsibility files of approximately 500 lines
+or less. Preserve fixtures, goldens, test names, assertions and platform gates.
 
 ```bash
 cargo test -p yoctui-ui --all-features
