@@ -1,0 +1,7 @@
+//! Regression tests grouped around next_generation_telemetry_strip_composes_wide_medium_and_hidden_tiers.
+
+include!("01_next_generation_telemetry_strip_composes_wide_medium_and_hidden_tiers.rs");
+
+include!("02_next_generation_system_status_is_authoritative_dense_and_responsive.rs");
+
+include!("03_next_generation_job_summary_is_shared_compact_and_authoritative.rs");

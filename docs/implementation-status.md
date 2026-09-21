@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-UI-TESTS-001 is DONE in v0.1.185. Three inline test modules, the root
+task-layout tests and 18 oversized test or fixture sources now live in 77
+responsibility files under `src/tests`. All 300 tests are preserved, no test
+body remains outside the test folder and the largest test source is 425 lines.
+The final UI crate audit is next.
+
 REDUCE-UI-WORKSPACES-001 is DONE in v0.1.184. Security, QA, maintenance,
 inspector, task, terminal, rootfs and source rendering now use 31 named
 responsibility sources. The production audit covers 126 Rust files outside

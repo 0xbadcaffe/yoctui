@@ -1,0 +1,7 @@
+//! Regression tests grouped around next_generation_transient_status_reserves_shortcuts_and_degrades_responsively.
+
+include!("01_next_generation_transient_status_reserves_shortcuts_and_degrades_respons.rs");
+
+include!("02_security_workflow_renders_sbom_document_component_drill_and_limitations.rs");
+
+include!("03_git_status_is_global_and_visible_at_supported_widths.rs");

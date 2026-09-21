@@ -1,0 +1,5 @@
+//! Regression tests grouped around ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbacks.
+
+include!("01_ux_rootfs_packages_pair_wide_pie_with_exact_table_and_accessible_fallbac.rs");
+
+include!("02_sdk_workflow_renders_all_dialogs_at_responsive_boundaries.rs");

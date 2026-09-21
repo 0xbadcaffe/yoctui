@@ -80,6 +80,7 @@ use yoctui_model::{
     notification_requires_acknowledgement, selected_config_copy_value,
 };
 #[cfg(test)]
+#[path = "tests/task_layout.rs"]
 mod task_layout_tests;
 #[cfg(test)]
 mod tests;

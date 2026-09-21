@@ -1,0 +1,5 @@
+//! Regression tests grouped around compatibility_ui_inspector_renders_identity_all_states_and_exact_evidence.
+
+include!("01_compatibility_ui_inspector_renders_identity_all_states_and_exact_evidenc.rs");
+
+include!("02_compatibility_dynamic_ui_parent_gate_uses_one_projection_across_surfaces.rs");

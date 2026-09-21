@@ -1,0 +1,422 @@
+#[test]
+fn ux_dashboard_is_responsive_accessible_and_explicit_across_lifecycle_states() {
+    let mut app = literal_reference_app();
+    app.screen = Screen::Dashboard;
+    app.focus = FocusTarget::Workspace;
+    for (width, height) in [(160, 50), (130, 40), (100, 30), (80, 24)] {
+        let output = rendered_text_at(&app, width, height, literal_now());
+        assert!(
+            output.contains("Build Overview"),
+            "{width}x{height}: {output}"
+        );
+        assert!(
+            output.contains("Log Viewer") || output.contains("Overall"),
+            "{width}x{height}: {output}"
+        );
+        assert!(
+            output.contains("core-image-minimal"),
+            "{width}x{height}: {output}"
+        );
+        assert!(!output.contains('�'), "{width}x{height}: {output}");
+    }
+
+    app.color_enabled = false;
+    app.reduced_motion = true;
+    app.build.status = BuildStatus::Failed;
+    app.build.errors = 1;
+    let failed = rendered_text_at(&app, 100, 30, literal_now());
+    assert!(failed.contains("Overall"), "{failed}");
+    assert!(failed.contains("Errors: 1"), "{failed}");
+
+    app.build.status = BuildStatus::Completed;
+    app.build.errors = 0;
+    app.logs.clear_entries();
+    let job = app
+        .background_jobs
+        .jobs
+        .iter_mut()
+        .find(|job| job.status == BackgroundJobStatus::Succeeded)
+        .expect("literal fixture retains a successful job");
+    job.result
+        .as_mut()
+        .expect("successful job has result")
+        .artifacts
+        .push("/deploy/completed.wic".into());
+    let completed = rendered_text_at(&app, 130, 40, literal_now());
+    assert!(completed.contains("Build Overview"), "{completed}");
+    assert!(completed.contains("core-image-minimal"), "{completed}");
+
+    let mut empty = App::new(16, 4_096);
+    empty.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    empty.build_environment = BuildEnvironmentState::Unconfigured;
+    empty.workspace.source_dir = None;
+    empty.workspace.build_dir = None;
+    let empty_output = rendered_text_at(&empty, 160, 50, literal_now());
+    assert!(
+        empty_output.contains("build not started · 0%"),
+        "{empty_output}"
+    );
+    assert!(
+        empty_output.contains("No completed builds or jobs retained"),
+        "{empty_output}"
+    );
+    assert!(empty_output.contains("Job History"), "{empty_output}");
+    assert!(
+        empty_output.contains("Resource Telemetry"),
+        "{empty_output}"
+    );
+    empty.build.status = BuildStatus::Failed;
+    empty.build.errors = 1;
+    let failed_without_rows = rendered_text_at(&empty, 160, 50, literal_now());
+    assert!(
+        failed_without_rows.contains("Errors: 1"),
+        "{failed_without_rows}"
+    );
+}
+
+#[test]
+fn ux_command_center_unifies_bounded_source_contexts_without_bypassing_workspaces() {
+    let mut app = literal_reference_app();
+    app.screen = Screen::Dashboard;
+    app.focus = FocusTarget::Workspace;
+    let _ = update(
+        &mut app,
+        Action::QueueBackgroundJob(yoctui_model::BackgroundJobSpec {
+            id: yoctui_model::BackgroundJobId(99),
+            kind: BackgroundJobKind::Build,
+            title: "command-center-build".into(),
+            context: yoctui_model::BackgroundJobContext {
+                workspace: Some(Screen::Recipes),
+                target: Some("core-image-minimal".into()),
+                recipe: Some("busybox".into()),
+                task: Some("do_compile".into()),
+                image: None,
+                path: None,
+            },
+            cancellation_supported: true,
+            queued_at: literal_now(),
+        }),
+    );
+    let command = yoctui_model::builtin_raw_catalog()
+        .commands
+        .iter()
+        .find(|command| {
+            command.parameters.is_empty()
+                && matches!(
+                    command.execution,
+                    yoctui_model::RawExecutionPolicy::Executable { .. }
+                )
+        })
+        .expect("the built-in catalog retains a parameterless executable command");
+    app.raw_mode.favorites.push(
+        yoctui_model::RawFavorite::new(
+            command,
+            "Env check",
+            Default::default(),
+            yoctui_model::RawAdditionalArguments::from_vec(Vec::new()).unwrap(),
+            0,
+        )
+        .unwrap(),
+    );
+    app.daemon
+        .pty_sessions
+        .push(yoctui_model::ClientDaemonPtySummary {
+            id: 99,
+            name: "sh".into(),
+            lifecycle: yoctui_model::ClientDaemonLifecycle::Running,
+            viewers: 2,
+        });
+    app.pty_selection = app.daemon.pty_sessions.len() - 1;
+
+    let wide = rendered_text_at(&app, 160, 50, literal_now());
+    for anchor in [
+        "Build Overview",
+        "Job History",
+        "Workbench Center",
+        "Terminal",
+        "1 queued",
+    ] {
+        assert!(wide.contains(anchor), "missing {anchor}: {wide}");
+    }
+
+    let compact = rendered_text_at(&app, 80, 24, literal_now());
+    for anchor in ["Navigator", "Running", "1 queued"] {
+        assert!(compact.contains(anchor), "missing {anchor}: {compact}");
+    }
+}
+#[test]
+fn next_generation_cpu_gauge_is_numeric_responsive_and_accessible() {
+    let render_gauge = |app: &App, width| {
+        let mut terminal = Terminal::new(TestBackend::new(width, 1)).unwrap();
+        terminal
+            .draw(|frame| render_cpu_gauge(frame, app, frame.area()))
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>()
+    };
+
+    let mut app = App::new(10, 1_000);
+    app.host_telemetry.cpu_utilization_percent = Some(42);
+    app.host_telemetry.logical_cpu_count = Some(16);
+    let wide = render_gauge(&app, 36);
+    assert!(wide.contains("CPU  42% · 16 cores"), "{wide}");
+    let medium = render_gauge(&app, 18);
+    assert!(medium.contains("CPU 42% · 16c"), "{medium}");
+    let narrow = render_gauge(&app, 10);
+    assert!(narrow.contains("CPU 42%"), "{narrow}");
+    assert!(!narrow.contains("16c"), "{narrow}");
+
+    app.host_telemetry.logical_cpu_count = None;
+    let unknown_cores = render_gauge(&app, 36);
+    assert!(unknown_cores.contains("CPU  42%"), "{unknown_cores}");
+    assert!(!unknown_cores.contains("cores"), "{unknown_cores}");
+
+    app.host_telemetry.cpu_utilization_percent = None;
+    let unavailable = render_gauge(&app, 24);
+    assert!(unavailable.contains("CPU ! unavailable"), "{unavailable}");
+    assert!(!unavailable.contains("0%"), "{unavailable}");
+
+    app.host_telemetry.cpu_utilization_percent = Some(87);
+    app.host_telemetry.logical_cpu_count = Some(8);
+    app.theme = Theme::HighContrast;
+    app.reduced_motion = true;
+    let reduced_motion = render_gauge(&app, 36);
+    assert!(reduced_motion.contains("CPU  87% · 8 cores"));
+    app.color_enabled = false;
+    let no_color = render_gauge(&app, 18);
+    assert!(no_color.contains("CPU 87% · 8c"), "{no_color}");
+}
+#[test]
+fn next_generation_ram_gauge_is_honest_responsive_and_accessible() {
+    let render_gauge = |app: &App, width| {
+        let mut terminal = Terminal::new(TestBackend::new(width, 1)).unwrap();
+        terminal
+            .draw(|frame| render_ram_gauge(frame, app, frame.area()))
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>()
+    };
+
+    let gib = 1024_u64.pow(3);
+    let mut app = App::new(10, 1_000);
+    app.host_telemetry.memory_total_bytes = Some(16 * gib);
+    app.host_telemetry.memory_available_bytes = Some(4 * gib);
+    let wide = render_gauge(&app, 42);
+    assert!(wide.contains("RAM  75% · 12.0 GiB / 16.0 GiB"), "{wide}");
+    let medium = render_gauge(&app, 30);
+    assert!(medium.contains("RAM 75% · 12.0/16.0 GiB"), "{medium}");
+    let narrow = render_gauge(&app, 14);
+    assert!(narrow.contains("RAM 75%"), "{narrow}");
+    assert!(!narrow.contains("GiB"), "{narrow}");
+
+    app.host_telemetry.memory_total_bytes = Some(u64::MAX);
+    app.host_telemetry.memory_available_bytes = Some(u64::MAX / 2);
+    let large = render_gauge(&app, 14);
+    assert!(large.contains("RAM 50%"), "{large}");
+
+    for (total, available) in [(None, None), (Some(0), Some(0)), (Some(10), Some(11))] {
+        app.host_telemetry.memory_total_bytes = total;
+        app.host_telemetry.memory_available_bytes = available;
+        let unavailable = render_gauge(&app, 24);
+        assert!(unavailable.contains("RAM ! unavailable"), "{unavailable}");
+        assert!(!unavailable.contains("0%"), "{unavailable}");
+    }
+
+    app.host_telemetry.memory_total_bytes = Some(8 * gib);
+    app.host_telemetry.memory_available_bytes = Some(2 * gib);
+    app.theme = Theme::HighContrast;
+    app.reduced_motion = true;
+    assert!(render_gauge(&app, 30).contains("RAM 75% · 6.0/8.0 GiB"));
+    app.color_enabled = false;
+    assert!(render_gauge(&app, 14).contains("RAM 75%"));
+}
+#[test]
+fn next_generation_disk_gauge_keeps_capacity_context_and_unavailable_honest() {
+    let render_gauge = |app: &App, width| {
+        let mut terminal = Terminal::new(TestBackend::new(width, 1)).unwrap();
+        terminal
+            .draw(|frame| render_disk_gauge(frame, app, frame.area()))
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>()
+    };
+
+    let gib = 1024_u64.pow(3);
+    let mut app = App::new(10, 1_000);
+    app.workspace.build_dir = Some("/work/build".into());
+    app.host_telemetry.disk_total_bytes = Some(100 * gib);
+    app.host_telemetry.disk_available_bytes = Some(40 * gib);
+    let wide = render_gauge(&app, 80);
+    assert!(
+        wide.contains("BUILD FS  60% · 40.0/100.0 GiB free · /work/build"),
+        "{wide}"
+    );
+    let medium = render_gauge(&app, 42);
+    assert!(
+        medium.contains("BUILD FS 60% · 40.0/100.0 GiB free"),
+        "{medium}"
+    );
+    let narrow = render_gauge(&app, 20);
+    assert!(narrow.contains("BUILD FS 60%"), "{narrow}");
+    let minimum = render_gauge(&app, 10);
+    assert!(minimum.contains("FS 60%"), "{minimum}");
+
+    app.workspace.build_dir = None;
+    let missing_context = render_gauge(&app, 28);
+    assert!(
+        missing_context.contains("BUILD FS ! unavailable"),
+        "{missing_context}"
+    );
+    assert!(!missing_context.contains("0%"), "{missing_context}");
+
+    app.workspace.build_dir = Some("/work/build".into());
+    for (total, available) in [(None, None), (Some(0), Some(0)), (Some(10), Some(11))] {
+        app.host_telemetry.disk_total_bytes = total;
+        app.host_telemetry.disk_available_bytes = available;
+        let unavailable = render_gauge(&app, 28);
+        assert!(
+            unavailable.contains("BUILD FS ! unavailable"),
+            "{unavailable}"
+        );
+        assert!(!unavailable.contains("0%"), "{unavailable}");
+    }
+
+    app.host_telemetry.disk_total_bytes = Some(8 * gib);
+    app.host_telemetry.disk_available_bytes = Some(2 * gib);
+    app.theme = Theme::HighContrast;
+    app.reduced_motion = true;
+    assert!(render_gauge(&app, 42).contains("BUILD FS 75% · 2.0/8.0 GiB free"));
+    app.color_enabled = false;
+    assert!(render_gauge(&app, 20).contains("BUILD FS 75%"));
+}
+#[test]
+fn next_generation_disk_io_sparklines_keep_current_and_history_distinct() {
+    let render_io = |app: &App, width| {
+        let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+        terminal
+            .draw(|frame| {
+                let rows = Layout::vertical([Constraint::Length(1); 2]).split(frame.area());
+                render_disk_io(frame, app, rows[0], rows[1]);
+            })
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>()
+    };
+
+    let mut app = App::new(10, 1_000);
+    app.host_telemetry.disk_read_bytes_per_second = Some(2 * 1024);
+    app.host_telemetry.disk_write_bytes_per_second = Some(4 * 1024);
+    app.host_telemetry_history
+        .disk_read_bytes_per_second
+        .extend([512, 1024, 2 * 1024]);
+    app.host_telemetry_history
+        .disk_write_bytes_per_second
+        .extend([4 * 1024, 1024, 3 * 1024, 4 * 1024]);
+    let wide = render_io(&app, 42);
+    assert!(wide.contains("Read 2.0 KiB/s"), "{wide}");
+    assert!(wide.contains("Write 4.0 KiB/s"), "{wide}");
+    assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
+
+    let narrow = render_io(&app, 16);
+    assert!(narrow.contains("R 2.0 KiB/s"), "{narrow}");
+    assert!(narrow.contains("W 4.0 KiB/s"), "{narrow}");
+
+    app.host_telemetry.disk_read_bytes_per_second = None;
+    app.host_telemetry.disk_write_bytes_per_second = None;
+    let unavailable = render_io(&app, 42);
+    assert!(unavailable.contains("Read ! unavailable"), "{unavailable}");
+    assert!(unavailable.contains("Write ! unavailable"), "{unavailable}");
+    assert!(!unavailable.contains("0 B/s"), "{unavailable}");
+    assert!(
+        unavailable
+            .chars()
+            .any(|character| "▁▂▃▄▅▆▇█".contains(character)),
+        "retained valid history should remain visible: {unavailable}"
+    );
+
+    app.host_telemetry.disk_read_bytes_per_second = Some(0);
+    app.host_telemetry.disk_write_bytes_per_second = Some(0);
+    app.theme = Theme::HighContrast;
+    app.reduced_motion = true;
+    assert!(render_io(&app, 42).contains("Read 0 B/s"));
+    app.color_enabled = false;
+    assert!(render_io(&app, 16).contains("R 0 B/s"));
+}
+#[test]
+fn next_generation_network_io_sparklines_keep_current_and_history_distinct() {
+    let render_io = |app: &App, width| {
+        let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+        terminal
+            .draw(|frame| {
+                let rows = Layout::vertical([Constraint::Length(1); 2]).split(frame.area());
+                render_network_io(frame, app, rows[0], rows[1]);
+            })
+            .unwrap();
+        terminal
+            .backend()
+            .buffer()
+            .content
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>()
+    };
+
+    let mut app = App::new(10, 1_000);
+    app.host_telemetry.network_receive_bytes_per_second = Some(3 * 1024);
+    app.host_telemetry.network_transmit_bytes_per_second = Some(6 * 1024);
+    app.host_telemetry_history
+        .network_receive_bytes_per_second
+        .extend([512, 1024, 3 * 1024]);
+    app.host_telemetry_history
+        .network_transmit_bytes_per_second
+        .extend([6 * 1024, 1024, 4 * 1024, 6 * 1024]);
+    let wide = render_io(&app, 42);
+    assert!(wide.contains("RX 3.0 KiB/s"), "{wide}");
+    assert!(wide.contains("TX 6.0 KiB/s"), "{wide}");
+    assert!(wide.chars().any(|character| "▁▂▃▄▅▆▇█".contains(character)));
+
+    let narrow = render_io(&app, 16);
+    assert!(narrow.contains("RX 3.0 KiB/s"), "{narrow}");
+    assert!(narrow.contains("TX 6.0 KiB/s"), "{narrow}");
+
+    app.host_telemetry.network_receive_bytes_per_second = None;
+    app.host_telemetry.network_transmit_bytes_per_second = None;
+    let unavailable = render_io(&app, 42);
+    assert!(unavailable.contains("RX ! unavailable"), "{unavailable}");
+    assert!(unavailable.contains("TX ! unavailable"), "{unavailable}");
+    assert!(!unavailable.contains("0 B/s"), "{unavailable}");
+    assert!(
+        unavailable
+            .chars()
+            .any(|character| "▁▂▃▄▅▆▇█".contains(character)),
+        "retained valid history should remain visible: {unavailable}"
+    );
+
+    app.host_telemetry.network_receive_bytes_per_second = Some(0);
+    app.host_telemetry.network_transmit_bytes_per_second = Some(0);
+    app.theme = Theme::HighContrast;
+    app.reduced_motion = true;
+    assert!(render_io(&app, 42).contains("RX 0 B/s"));
+    app.color_enabled = false;
+    assert!(render_io(&app, 16).contains("TX 0 B/s"));
+}

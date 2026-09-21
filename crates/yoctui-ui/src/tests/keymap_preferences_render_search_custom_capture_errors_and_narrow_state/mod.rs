@@ -1,0 +1,7 @@
+//! Regression tests grouped around ux_keymap_preferences_render_search_custom_capture_errors_and_narrow_state.
+
+include!("01_ux_keymap_preferences_render_search_custom_capture_errors_and_narrow_sta.rs");
+
+include!("02_ux_accessibility_invariants_survive_color_motion_and_responsive_modes.rs");
+
+include!("03_udev_last_rule_and_preview_remain_visible_at_all_sizes.rs");

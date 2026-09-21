@@ -8980,12 +8980,12 @@ notes = "DONE in v0.1.184. Security, QA, maintenance, inspector, task, terminal,
 id = "REDUCE-UI-TESTS-001"
 milestone = "M73"
 title = "Move UI tests into responsibility folders"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2246
 required = true
 depends_on = ["REDUCE-UI-WORKSPACES-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: all inline yoctui-ui test modules and oversized existing sources under src/tests. Preserve fixtures, goldens, test names and assertions; keep every test source approximately 500 lines or less."
+notes = "DONE in v0.1.185. Three inline test modules, the root task-layout tests and 18 oversized test/fixture sources now live in 77 responsibility files under src/tests. All 300 test names and assertions are preserved; the largest test source is 425 lines and no test body remains outside src/tests."
 
 [[task]]
 id = "REDUCE-UI-001"

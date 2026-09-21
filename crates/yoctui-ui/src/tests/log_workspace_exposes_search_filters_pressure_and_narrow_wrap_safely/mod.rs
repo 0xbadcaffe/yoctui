@@ -1,0 +1,5 @@
+//! Regression tests grouped around log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely.
+
+include!("01_log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely.rs");
+
+include!("02_signature_workspace_renders_typed_records_differences_limitations_and_fo.rs");

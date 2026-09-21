@@ -1,13 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-UI-TESTS-001
-**Title:** Move UI tests into responsibility folders
+**ID:** REDUCE-UI-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-ui
 **Status:** NOT_STARTED
 
-Dependency REDUCE-UI-WORKSPACES-001 is DONE. Move all remaining inline
-`yoctui-ui` test bodies under `src/tests` and split the 18 oversized existing
-test sources into meaningful responsibility files of approximately 500 lines
-or less. Preserve fixtures, goldens, test names, assertions and platform gates.
+Dependency REDUCE-UI-TESTS-001 is DONE. Audit all `yoctui-ui` Rust sources,
+confirm every production and test file is approximately 500 lines or less,
+confirm every test body lives under `src/tests`, run the required verification
+commands and record the final crate result. Preserve behavior, public APIs,
+assertions and platform gates.
 
 ```bash
 cargo test -p yoctui-ui --all-features
