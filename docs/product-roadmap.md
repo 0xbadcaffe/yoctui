@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-PROJECTIONS-001 is DONE in v0.1.155. Overview, dashboard,
+progress, widget, daemon, PTY and session-update owners are thin coordinators
+over 22 responsibility modules, all at 271 lines or less. Twenty-five tests
+moved to meaningful files under `src/tests`, preserving state and projection
+behavior. All model package tests/doc-tests and package Clippy pass. Oversized
+reducer transition modules are next.
+
 REDUCE-MODEL-INTERACTION-001 is DONE in v0.1.154. Text-area editing,
 keymaps and operator action catalogs are thin coordinators over 17 responsibility
 modules, all at 394 lines or less. Fifteen tests moved to meaningful files under

@@ -1,0 +1,9 @@
+use super::*;
+
+mod ux_widget_projection_preserves_exact_progress_and_exception_states;
+
+mod ux_widget_projection_bounds_large_histories_bars_tabs_and_legends;
+
+mod ux_widget_projection_keeps_empty_partial_terminal_and_scroll_text_explicit;
+
+mod ux_accessibility_every_widget_state_has_ascii_marker_label_and_exact_text;

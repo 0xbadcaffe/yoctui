@@ -1,14 +1,12 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-PROJECTIONS-001
-**Title:** Decompose dashboard progress and daemon projections
+**ID:** REDUCE-MODEL-REDUCER-001
+**Title:** Decompose oversized reducer transition modules
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-INTERACTION-001 is DONE. Split overview.rs,
-dashboard.rs, progress.rs, widget_projection.rs, daemon_state.rs, pty_session.rs
-and session_updates.rs into meaningful pure state and projection modules.
-Preserve public APIs and typed behavior while targeting approximately 500 lines
-per source.
+Dependency REDUCE-MODEL-PROJECTIONS-001 is DONE. Split reducer.rs and reducer
+modules above approximately 500 lines into meaningful transition families.
+Preserve dispatch order, state authority, public APIs and failure behavior.
 
 ```bash
 cargo test -p yoctui-model --all-features

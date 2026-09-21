@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-PROJECTIONS-001 is DONE in v0.1.155. Overview, dashboard,
+progress, widget, daemon, PTY and session-update owners are thin coordinators
+over 22 named state, projection, hierarchy, client-view, state-machine and
+workflow modules; the largest is 271 lines. All 25 inline tests now live in
+descriptive files under `src/tests`. All 492 model package tests/doc-tests and
+package Clippy pass. Oversized reducer transition modules are next.
+
 REDUCE-MODEL-INTERACTION-001 is DONE in v0.1.154. Text-area editing,
 keymaps and operator action catalogs are thin coordinators over 17 named state,
 editing, navigation, search, save, binding, metadata, projection and validation
