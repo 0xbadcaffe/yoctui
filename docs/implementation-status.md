@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-COMPATIBILITY-001 is DONE in v0.1.151. Four compatibility
+owners are now thin coordinators over 24 named identity, capability, catalog,
+projection, availability, effect and authority modules; the largest is 489
+lines. The built-in catalog routes every capability through four closed
+implementation families, and all 42 inline tests now live in descriptive files
+under `src/tests`. All 492 model package tests/doc-tests and package Clippy pass.
+Application state and action ownership decomposition is next.
+
 REDUCE-MODEL-SECURITY-TESTING-001 is DONE in v0.1.150. Security and testing are
 24-line and 17-line coordinators with 15 named capability, report, inventory,
 comparison, launch, session and transition modules; the largest is 418 lines.

@@ -1,17 +1,17 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-COMPATIBILITY-001
-**Title:** Decompose compatibility state catalogs and projections
+**ID:** REDUCE-MODEL-APP-STATE-001
+**Title:** Decompose application state and action ownership
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-SECURITY-TESTING-001 is DONE. Split compatibility.rs,
-compatibility_catalog.rs, compatibility_ui.rs and workspace_compatibility.rs
-into meaningful modules for capability identity, implementation selection,
-catalogs, UI projections and workspace behavior. Preserve public APIs and
-fail-closed authority while targeting approximately 500 lines per source.
+Dependency REDUCE-MODEL-COMPATIBILITY-001 is DONE. Split app_state.rs and
+actions.rs into meaningful modules for aggregate state construction,
+selection/accessors, action families and observed timing types. Preserve public
+APIs and typed reducer behavior while targeting approximately 500 lines per
+source.
 
 ```bash
-cargo test -p yoctui-model --all-features raw
+cargo test -p yoctui-model --all-features
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

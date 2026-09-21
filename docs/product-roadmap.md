@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-COMPATIBILITY-001 is DONE in v0.1.151. Four compatibility
+owners are thin coordinators over 24 responsibility modules, all at 489 lines
+or less. Built-in capability definitions route through four closed families,
+and 42 tests moved to descriptive files under `src/tests`. All model package
+tests/doc-tests and package Clippy pass. Application state and action ownership
+decomposition is next.
+
 REDUCE-MODEL-SECURITY-TESTING-001 is DONE in v0.1.150. Security and testing are
 small coordinators with 15 responsibility modules, all at 418 lines or less.
 Security's 45 actions route through five exhaustive handlers, and 11 tests moved

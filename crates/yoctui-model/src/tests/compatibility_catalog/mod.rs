@@ -1,0 +1,13 @@
+use super::*;
+
+mod catalog_builtin_is_versioned_complete_unique_and_valid;
+
+mod catalog_command_capabilities_do_not_require_unrelated_version_output;
+
+mod devtool_status_uses_bounded_global_help_without_running_status;
+
+mod catalog_records_safe_explicit_fallback_selectors;
+
+mod catalog_rejects_missing_duplicate_unsafe_probe_and_unselected_fallback;
+
+mod catalog_keeps_release_boundaries_advisory_and_empty_until_evidenced;
