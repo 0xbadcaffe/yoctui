@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-REMAINDER-001 is DONE in v0.1.157. A complete
+`yoctui-model/src` production audit found no remaining source above 500 lines;
+the largest is the 489-line compatibility workspace action catalog. Public
+exports and pure reducer boundaries require no further production split. Model
+test placement is next.
+
 REDUCE-MODEL-REDUCER-001 is DONE in v0.1.156. The main reducer is a
 358-line exhaustive dispatcher, and its 13 oversized transition owners route
 to 38 action-range modules while preserving guarded fallback arms atomically;

@@ -1,5 +1,10 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-REMAINDER-001 is DONE in v0.1.157. The complete model
+production audit found no source above 500 lines; the largest is 489 lines.
+Public exports and reducer boundaries need no additional decomposition. Model
+test placement is next.
+
 REDUCE-MODEL-REDUCER-001 is DONE in v0.1.156. The main reducer is a
 358-line exhaustive dispatcher and 13 former oversized transition owners route
 to 38 bounded action-range modules. Guarded and fallback arms remain atomic,
