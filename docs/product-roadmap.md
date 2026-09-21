@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-BITBAKE-TESTS-001 is DONE in v0.1.173. All 45 inline test modules,
+the source-root test module and the oversized regression source now live in 317
+descriptive Rust files under `yoctui-bitbake/src/tests`. All 285 tests are
+preserved, no inline test module remains, and every BitBake Rust file is at most
+500 lines. The final BitBake audit is next.
+
 REDUCE-BITBAKE-REMAINDER-001 is DONE in v0.1.172. Compatibility probing,
 release fixtures, QEMU execution and SDK artifact discovery now route through
 11 named sources. The production audit covers 136 BitBake Rust sources; every

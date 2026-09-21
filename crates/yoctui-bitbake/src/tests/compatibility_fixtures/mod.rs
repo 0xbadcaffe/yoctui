@@ -1,0 +1,9 @@
+use super::*;
+
+mod compatibility_fixture_catalog_has_five_unclaimed_exact_identities;
+
+mod compatibility_fixture_capability_differences_are_exact_and_complete;
+
+mod compatibility_fixture_future_enables_only_positive_direct_observations;
+
+mod compatibility_command_fixture_authorities_encode_exact_old_and_modern_surfaces;

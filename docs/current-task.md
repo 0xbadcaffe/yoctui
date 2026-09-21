@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-BITBAKE-TESTS-001
-**Title:** Move BitBake tests into responsibility folders
+**ID:** REDUCE-BITBAKE-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-bitbake
 **Status:** NOT_STARTED
 
-Dependency REDUCE-BITBAKE-REMAINDER-001 is DONE. Move inline BitBake unit-test
-bodies and oversized existing test modules into descriptive files under
-`crates/yoctui-bitbake/src/tests`. Preserve shared fixtures, platform gates,
-test names and assertions, and keep each test source near 500 lines or less.
+Dependency REDUCE-BITBAKE-TESTS-001 is DONE. Audit every BitBake source and
+test file for the approximately 500-line target and responsibility placement.
+Verify public APIs, platform gates, test names and assertions remain preserved,
+then close the parent decomposition task.
 
 ```bash
 cargo test -p yoctui-bitbake --all-features
