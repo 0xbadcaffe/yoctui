@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-UI-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-ui
+**ID:** REDUCE-UI-WORKFLOWS-001
+**Title:** Decompose UI workflow renderers
 **Status:** NOT_STARTED
 
-Dependency REDUCE-APP-001 is DONE. Audit `crates/yoctui-ui`, split sources into
-meaningful responsibility files of approximately 500 lines or less, and move
-inline unit-test bodies into descriptive folders under `src/tests`. Preserve
-UI behavior, public APIs, platform gates, test names and assertions.
+Dependency REDUCE-APP-001 is DONE. Split `sdk_render.rs`, `testing_render.rs`
+and `package_render.rs` into meaningful responsibility files of approximately
+500 lines or less. Preserve typed model rendering, responsive behavior and
+public APIs.
 
 ```bash
 cargo test -p yoctui-ui --all-features

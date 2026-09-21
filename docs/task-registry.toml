@@ -8944,13 +8944,57 @@ verify = ["cargo test -p yoctui-app --all-features", "cargo fmt --all --check", 
 notes = "Scope: crates/yoctui-app. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
 [[task]]
+id = "REDUCE-UI-WORKFLOWS-001"
+milestone = "M73"
+title = "Decompose UI workflow renderers"
+status = "NOT_STARTED"
+priority = 2243
+required = true
+depends_on = ["REDUCE-APP-001"]
+verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: sdk_render.rs, testing_render.rs and package_render.rs production responsibilities. Preserve typed model rendering and responsive behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-UI-CORE-001"
+milestone = "M73"
+title = "Decompose UI shell and primitive renderers"
+status = "NOT_STARTED"
+priority = 2244
+required = true
+depends_on = ["REDUCE-UI-WORKFLOWS-001"]
+verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: render.rs, primitives.rs, dashboard_render.rs, footer.rs and telemetry_strip.rs production responsibilities. Preserve responsive layouts, focus and accessibility behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-UI-WORKSPACES-001"
+milestone = "M73"
+title = "Decompose remaining UI workspace renderers"
+status = "NOT_STARTED"
+priority = 2245
+required = true
+depends_on = ["REDUCE-UI-CORE-001"]
+verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: security_render.rs, qa_render.rs, maintenance_render.rs, inspector_workspace.rs, inspector_render.rs, task_render.rs, terminal_workspace.rs, rootfs_render.rs, source_render.rs and the final production audit. Preserve typed state and narrow-terminal safety; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-UI-TESTS-001"
+milestone = "M73"
+title = "Move UI tests into responsibility folders"
+status = "NOT_STARTED"
+priority = 2246
+required = true
+depends_on = ["REDUCE-UI-WORKSPACES-001"]
+verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: all inline yoctui-ui test modules and oversized existing sources under src/tests. Preserve fixtures, goldens, test names and assertions; keep every test source approximately 500 lines or less."
+
+[[task]]
 id = "REDUCE-UI-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-ui"
 status = "NOT_STARTED"
 priority = 2207
 required = true
-depends_on = ["REDUCE-APP-001"]
+depends_on = ["REDUCE-UI-TESTS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-ui. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 

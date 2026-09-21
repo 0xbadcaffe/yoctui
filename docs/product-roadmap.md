@@ -1,5 +1,10 @@
 # Yoctui Product Roadmap
 
+REDUCE-UI-001 is split into four ordered tasks after an audit found 41,808
+Rust lines, 17 production sources above 500 lines, five inline test modules and
+18 oversized existing test sources. Workflow renderers are first, followed by
+the core shell, remaining workspaces and final test migration.
+
 REDUCE-APP-001 is DONE in v0.1.180. The final audit covers all 280 Rust files
 under `yoctui-app/src`: every production and test file is at most 436 lines,
 all 210 unit-test bodies live under `src/tests`, and public mapping/input paths
