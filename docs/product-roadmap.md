@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-MAINTENANCE-001 is DONE in v0.1.130. The former 2,713-line
+maintenance source is split into shared state/inspection, coordinator polling,
+typed preview and operation modules, all below 500 lines. Its 17 inline workflow
+tests now live as named files under the CLI test folder. The serial 1,692-test
+workspace suite (five existing ignored), strict Clippy, fmt, 53 bridge tests,
+roadmap/version checks and all 29 deterministic raster checks pass. Client
+runtime is next.
+
 The remaining REDUCE-CLI-001 scope is split into eight ordered implementation
 tasks: maintenance, client runtime, client transport, daemon BitBake,
 compatibility, rootfs, raw execution and PTY ownership. A final CLI audit

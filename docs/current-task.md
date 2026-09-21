@@ -1,16 +1,17 @@
 # Current Task
 
-**ID:** REDUCE-CLI-MAINTENANCE-001
-**Title:** Decompose maintenance workflows and move inline tests
+**ID:** REDUCE-CLI-CLIENT-RUNTIME-001
+**Title:** Decompose interactive daemon client runtime
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-TUI-001 is DONE. Split maintenance_cli.rs into named
-workflow, preview, runner and persistence modules targeting approximately 500
-lines each. Move its inline tests into the CLI test folder without changing
-assertions, platform behavior, process ownership, cancellation or typed effects.
+Dependency REDUCE-CLI-MAINTENANCE-001 is DONE. Split client_runtime.rs into
+named attach, replica-application, typed effect-routing and terminal-control
+modules targeting approximately 500 lines each. Move its inline tests into the
+CLI test folder without changing assertions, daemon authority, reconnect,
+request correlation or platform behavior.
 
 ```bash
-cargo test -p yoctui --all-features maintenance
+cargo test -p yoctui --all-features client_runtime
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

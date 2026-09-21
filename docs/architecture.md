@@ -4167,6 +4167,10 @@ modules handle background polling and presentation, terminal event decoding,
 paste and mouse input, ordered dialog and workspace key routing, job completion,
 and shutdown. Key stages return a typed handled/continue outcome, so extracting
 the original route chain preserves precedence and outer-loop continuation.
+Maintenance CLI state and inspection helpers remain in the parent module;
+coordinator polling, typed previews and operation execution live in separate
+private modules. Maintenance test fixtures live under `src/tests/maintenance_cli`
+and each workflow assertion remains in its own named test source.
 
 `yoctui-utils` is a leaf support crate for domain-independent path, text,
 time and operating-system helpers. Every crate may consume it directly.

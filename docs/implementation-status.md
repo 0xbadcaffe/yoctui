@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-MAINTENANCE-001 is DONE in v0.1.130. Maintenance production code is
+split into a 428-line shared state/inspection parent, 336-line coordinator,
+308-line preview router and 453-line operation runner. Seventeen workflow tests
+and their shared fixture moved from the production source into named files under
+`src/tests/maintenance_cli`. The serial 1,692-test workspace suite (five
+existing ignored), strict Clippy, fmt, 53 bridge tests, roadmap/version checks
+and all 29 deterministic raster checks pass. Client runtime decomposition is
+next.
+
 REDUCE-CLI-001 is split into eight ordered file-family tasks before further
 implementation. Maintenance workflows are first, followed by client runtime and
 transport, daemon BitBake/compatibility/rootfs/raw/PTY ownership, then a final
