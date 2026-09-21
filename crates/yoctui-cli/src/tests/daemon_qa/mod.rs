@@ -1,0 +1,6 @@
+use super::*;
+mod client_runtime_qa_adapter_rejects_unsafe_scope;
+
+mod client_runtime_qa_task_runner_rejects_invalid_request;
+
+mod client_runtime_qa_report_rejects_invalid_generation;

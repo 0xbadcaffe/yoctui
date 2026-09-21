@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-DAEMON-ADAPTER-TESTS-001 is DONE in v0.1.140. Thirteen inline tests
+from daemon devtool, maintenance, metadata and QA adapters now live in
+descriptive files under `src/tests`. Fake-process, cancellation and authority
+fixtures and every assertion are preserved. The full package and serial
+workspace suites, strict Clippy, fmt, 53 bridge tests, roadmap/version checks
+and all 29 deterministic raster checks pass. Remaining daemon workflow tests
+are next.
+
 REDUCE-CLI-CORE-TESTS-001 is DONE in v0.1.139. Twelve inline tests from build
 archive/checkpoint, clone operation, daemon job IDs and environment operation
 and setup now live in descriptive files under `src/tests`. Shared fixtures stay

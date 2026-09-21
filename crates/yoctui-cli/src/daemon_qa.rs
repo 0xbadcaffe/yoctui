@@ -346,46 +346,5 @@ pub fn inspect(input: DaemonQaCapabilityInput) -> Result<DaemonQaSnapshot, Strin
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn client_runtime_qa_adapter_rejects_unsafe_scope() {
-        let input = DaemonQaCapabilityInput {
-            generation: 1,
-            build_directory: "relative".into(),
-            source_directory: None,
-            layer_directories: Vec::new(),
-            recipe_names: Vec::new(),
-            report_roots: Vec::new(),
-            selected_recipe_name: "recipe".into(),
-            selected_recipe_file: "/tmp/recipe.bb".into(),
-        };
-        assert!(inspect(input).is_err());
-    }
-
-    #[test]
-    fn client_runtime_qa_task_runner_rejects_invalid_request() {
-        let mut supervisor = DaemonQaSupervisor::new(Default::default());
-        let result = supervisor.start(
-            0,
-            0,
-            "invalid".into(),
-            "layer".into(),
-            "relative".into(),
-            "/missing/yocto-check-layer".into(),
-            vec!["relative".into()],
-            Vec::new(),
-        );
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn client_runtime_qa_report_rejects_invalid_generation() {
-        let mut supervisor = DaemonQaReportSupervisor::new(Default::default());
-        assert!(
-            supervisor
-                .start(0, "/build".into(), vec!["/tmp/report.json".into()])
-                .is_err()
-        );
-    }
-}
+#[path = "tests/daemon_qa/mod.rs"]
+mod tests;

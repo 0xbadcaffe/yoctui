@@ -1,0 +1,11 @@
+use super::*;
+
+mod recipe_inventory_oversized_workspace_reports_error_and_keeps_journal_usable;
+
+mod daemon_startup_unready_child_is_terminated_and_reaped;
+
+mod daemon_startup_slow_inventory_does_not_block_and_can_cancel;
+
+mod daemon_startup_inventory_is_delivered_once;
+
+mod daemon_startup_failed_worker_does_not_remain_pending;
