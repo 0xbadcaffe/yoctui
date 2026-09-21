@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+REDUCE-UI-WORKFLOWS-001 is DONE in v0.1.182. SDK, Testing and package workflow
+renderers now route through 16 named workspace, dialog, inspection, editor and
+layer-browser sources; the largest is 377 lines. All 300 UI tests pass. Core
+shell and primitive renderer decomposition is next.
+
 REDUCE-UI-001 is split into four ordered tasks after an audit found 41,808
 Rust lines, 17 production sources above 500 lines, five inline test modules and
 18 oversized existing test sources. Workflow renderers are first, followed by

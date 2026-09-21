@@ -8947,12 +8947,12 @@ notes = "Scope: crates/yoctui-app. Preserve behavior, public APIs, assertions an
 id = "REDUCE-UI-WORKFLOWS-001"
 milestone = "M73"
 title = "Decompose UI workflow renderers"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2243
 required = true
 depends_on = ["REDUCE-APP-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: sdk_render.rs, testing_render.rs and package_render.rs production responsibilities. Preserve typed model rendering and responsive behavior; target approximately 500 lines per responsibility source."
+notes = "DONE in v0.1.182. SDK, Testing and package workflow renderers now route through 16 named workspace, dialog, inspection, editor and layer-browser sources; the largest is 377 lines. Typed rendering, responsive behavior and public paths are preserved; all 300 UI tests pass."
 
 [[task]]
 id = "REDUCE-UI-CORE-001"
