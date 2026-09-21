@@ -48,4 +48,12 @@ fn global_content_search_rejects_stale_results_and_opens_selected_file() {
         Some(Effect::OpenInEditor(hit.path))
     );
     assert!(!app.command_palette_open);
+    let query = app.command_palette_query.clone();
+    let selection = app.command_palette_selection;
+    let results = app.global_search_content.clone();
+    let _ = update(&mut app, Action::RestoreGlobalSearchResults);
+    assert!(app.command_palette_open);
+    assert_eq!(app.command_palette_query, query);
+    assert_eq!(app.command_palette_selection, selection);
+    assert_eq!(app.global_search_content, results);
 }

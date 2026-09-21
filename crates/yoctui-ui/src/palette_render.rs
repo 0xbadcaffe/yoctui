@@ -275,10 +275,19 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             regions[1],
         );
     } else if total == 0 && app.global_search_content.loading() {
+        let activity = if app.preferences.symbols == SymbolPreference::Unicode {
+            if app.reduced_motion {
+                "⣿"
+            } else {
+                startup_activity_symbol(app.animation_frame as usize)
+            }
+        } else {
+            "*"
+        };
         frame.render_widget(
             StateView {
                 kind: StateKind::Loading,
-                summary: "Searching build text files and generated rootfs…".into(),
+                summary: format!("{activity} Searching build text files and generated rootfs…"),
                 detail: Some("Results are bounded and generated caches are excluded.".into()),
                 action: Some("Keep typing to replace this search; Esc cancels it.".into()),
             }

@@ -66,7 +66,7 @@ pub enum Action {
     GlobalContentSearchFailed { generation: u64, query: String, message: String, },
     SelectCommandPalette { delta: isize, },
     AppendCommandPaletteQuery(char), BackspaceCommandPaletteQuery, ClearCommandPaletteQuery,
-    ActivateCommandPalette, CloseCommandPalette, OpenApplicationMenu,
+    ActivateCommandPalette, RestoreGlobalSearchResults, CloseCommandPalette, OpenApplicationMenu,
     OpenContextMenu,
     SelectMenuGroup { delta: isize, },
     SelectMenuItem { delta: isize, },

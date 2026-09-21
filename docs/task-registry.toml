@@ -9123,18 +9123,18 @@ notes = "DONE in v0.1.196. The layer browser owns tree collection input and Esca
 id = "SEARCH-RETURN-001"
 milestone = "M74"
 title = "Show search activity and restore results after viewing a file"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2303
 required = true
 depends_on = ["LAYER-NAV-001"]
 verify = ["cargo test -p yoctui-model global_search", "cargo test -p yoctui-ui global_search", "cargo test -p yoctui --all-features global_search", "cargo fmt --all --check"]
-notes = "Show the shared Braille activity phase during an active global content scan and reopen the same query, generation, selection and results when the configured editor returns."
+notes = "DONE in v0.1.197. Active global content scans render the shared animated Braille phase with reduced-motion/ASCII fallbacks. Returning from the configured editor reopens the exact query, result generation, selection and hits. Two model, three UI and three CLI focused search tests pass; full baseline intentionally deferred for the user's rapid manual bug pass."
 
 [[task]]
 id = "PACKAGE-IMAGE-NAV-001"
 milestone = "M74"
 title = "Restore package and image collection navigation"
-status = "PENDING"
+status = "IN_PROGRESS"
 priority = 2302
 required = true
 depends_on = ["SEARCH-RETURN-001"]

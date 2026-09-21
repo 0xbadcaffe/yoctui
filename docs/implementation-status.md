@@ -1,11 +1,12 @@
 # Yoctui Implementation Status
 
 M74 focused live-workbench correction is in progress. LAYER-NAV-001 is DONE
-in v0.1.196: the open layer browser now owns its tree collection keys and
-Escape before pane focus, returns to Configured Layers, and routes lazy
-directory, preview, and editor effects. Seven focused CLI layer regressions
-pass. SEARCH-RETURN-001 is current; full-suite verification remains deferred
-until the user finishes the agreed manual bug pass.
+in v0.1.196: the open layer browser owns tree keys and Escape before pane
+focus. SEARCH-RETURN-001 is DONE in v0.1.197: loading renders the shared
+Braille phase and returning from the selected file restores the exact search
+query, generation, selection and hits. Focused model, UI and CLI search checks
+pass. PACKAGE-IMAGE-NAV-001 is current; full-suite verification remains
+deferred until the user finishes the agreed manual bug pass.
 
 REDUCE-LAYOUT-GATE-001 is DONE in v0.1.195. All 2,670 maintained Rust,
 Python and shell sources are at most 500 lines, and the permanent layout gate

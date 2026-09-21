@@ -33,3 +33,21 @@ fn command_palette_input_decodes_search_edit_and_activation_keys() {
     let _ = update(&mut app, Action::AppendCommandPaletteQuery('a'));
     assert_eq!(app.command_palette_query, "a");
 }
+
+#[test]
+fn completed_global_search_reopens_after_the_editor_returns() {
+    let mut app = App::new(10, 1_000);
+    let _ = update(&mut app, Action::OpenGlobalSearch);
+    app.command_palette_open = false;
+    app.global_search_content = yoctui_model::GlobalSearchContentState::Ready {
+        generation: 7,
+        query: "needle".into(),
+        hits: Vec::new(),
+        truncated: false,
+        searched_scopes: vec!["build".into()],
+    };
+    assert_eq!(
+        global_search_return_action(&app),
+        Some(Action::RestoreGlobalSearchResults)
+    );
+}

@@ -28,6 +28,15 @@ pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
     input == Input::Esc && app.screen == Screen::Layers && app.layer_browser.is_some()
 }
 
+pub(crate) fn global_search_return_action(app: &App) -> Option<Action> {
+    (app.command_palette_mode == yoctui_model::CommandPaletteMode::GlobalRegexSearch
+        && matches!(
+            app.global_search_content,
+            yoctui_model::GlobalSearchContentState::Ready { .. }
+        ))
+    .then_some(Action::RestoreGlobalSearchResults)
+}
+
 pub(crate) fn layer_list_open_action(app: &App, input: Input) -> Option<Action> {
     (app.screen == Screen::Layers
         && app.layer_browser.is_none()

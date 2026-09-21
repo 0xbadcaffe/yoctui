@@ -174,6 +174,16 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             synchronize_focus(app);
             return update(app, command_action(app, command.id));
         }
+        Action::RestoreGlobalSearchResults => {
+            if app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch
+                && matches!(
+                    app.global_search_content,
+                    GlobalSearchContentState::Ready { .. }
+                )
+            {
+                app.command_palette_open = true;
+            }
+        }
         Action::CloseCommandPalette => {
             app.command_palette_open = false;
         }

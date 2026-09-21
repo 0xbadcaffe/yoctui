@@ -127,7 +127,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::OpenCommandPalette | Action::OpenGlobalSearch | Action::SelectCommandPalette { .. }
         | Action::AppendCommandPaletteQuery(..) | Action::BackspaceCommandPaletteQuery | Action::ClearCommandPaletteQuery
         | Action::BeginGlobalContentSearch | Action::GlobalContentSearchLoaded { .. } | Action::GlobalContentSearchFailed { .. }
-        | Action::ActivateCommandPalette | Action::CloseCommandPalette | Action::OpenApplicationMenu
+        | Action::ActivateCommandPalette | Action::RestoreGlobalSearchResults | Action::CloseCommandPalette | Action::OpenApplicationMenu
         | Action::OpenContextMenu | Action::SelectMenuGroup { .. } | Action::SelectMenuItem { .. }
         | Action::AppendMenuPrefix(..) | Action::BackspaceMenuPrefix | Action::CloseMenu
         | Action::SelectSetting { .. } | Action::ChangeSelectedSetting { .. } | Action::ResetPreferences

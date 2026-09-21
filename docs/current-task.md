@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** SEARCH-RETURN-001
-**Title:** Keep global-search loading and return state visible
+**ID:** PACKAGE-IMAGE-NAV-001
+**Title:** Restore package and image collection navigation
 **Status:** IN_PROGRESS
 
-LAYER-NAV-001 is complete in v0.1.196. Add the shared Braille activity symbol
-to a running `/` content search and restore the same result list after the
-selected file editor exits.
+SEARCH-RETURN-001 is complete in v0.1.197. Keep package and artifact selections
+visible, retain owning-recipe access, and route Images tab keys before pane
+focus so Rootfs packages and every image composition tab are reachable.
 
-Run only the focused model, UI, and CLI search tests during the agreed rapid
+Run only the focused model, UI, and CLI package/image tests during the agreed rapid
 bug pass. The user will request the full baseline after manual testing of all
 four reported bug series.

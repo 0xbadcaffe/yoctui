@@ -29,6 +29,21 @@ fn next_generation_palette_retains_typed_facts_at_every_breakpoint() {
 }
 
 #[test]
+fn global_search_loading_uses_the_shared_braille_activity_phase() {
+    let mut app = App::new(32, 8192);
+    let _ = yoctui_model::update(&mut app, Action::OpenGlobalSearch);
+    let _ = yoctui_model::update(&mut app, Action::AppendCommandPaletteQuery('x'));
+    let _ = yoctui_model::update(&mut app, Action::BeginGlobalContentSearch);
+    app.animation_frame = 3;
+    let activity = startup_activity_symbol(app.animation_frame as usize);
+    let output = rendered_text(&app, 100, 30);
+    assert!(
+        output.contains(&format!("{activity} Searching build text files")),
+        "{output}"
+    );
+}
+
+#[test]
 fn next_generation_palette_explains_local_disablement_without_false_ready_state() {
     let mut app = App::new(32, 8192);
     app.command_palette_open = true;

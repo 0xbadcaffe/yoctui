@@ -119,6 +119,9 @@ impl InteractiveRuntime {
                     runtime.editor_command.as_deref(),
                 )
                 .await;
+                if let Some(action) = global_search_return_action(&runtime.app) {
+                    let _ = compatibility_workspace_action(&mut runtime.app, action);
+                }
             }
             if global_search_edit {
                 begin_global_content_search(
