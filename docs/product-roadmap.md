@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-CORE-TESTS-001 is DONE in v0.1.139. Twelve archive, clone, job ID
+and environment lifecycle tests now live in responsibility-named CLI test
+folders with their fixtures and assertions preserved. The full package and
+serial workspace suites, strict Clippy, fmt, 53 bridge tests, roadmap/version
+checks and all 29 deterministic raster checks pass. Primary daemon adapter test
+migration is next.
+
 The final CLI audit confirms every source file is approximately 500 lines or
 less; the largest is 504 lines. Four ordered child tasks now cover the remaining
 inline-test migration across core lifecycle, daemon adapter, daemon workflow

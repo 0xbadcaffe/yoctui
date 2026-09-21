@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-CORE-TESTS-001 is DONE in v0.1.139. Twelve inline tests from build
+archive/checkpoint, clone operation, daemon job IDs and environment operation
+and setup now live in descriptive files under `src/tests`. Shared fixtures stay
+with their responsibility folders. The full package and serial workspace
+suites, strict Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. Primary daemon adapter tests are next.
+
 The final REDUCE-CLI-001 audit found no source file above 504 lines. Its
 remaining test-placement scope is split into four ordered tasks covering core
 lifecycle modules, primary daemon adapters, remaining daemon workflows and CLI

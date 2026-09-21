@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-CLI-CORE-TESTS-001
-**Title:** Move CLI core lifecycle tests into test folders
+**ID:** REDUCE-CLI-DAEMON-ADAPTER-TESTS-001
+**Title:** Move primary daemon adapter tests into test folders
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-DAEMON-PTY-001 is DONE. Move inline tests from
-build_archive.rs, clone_operation.rs, daemon_job_ids.rs,
-environment_operation.rs and environment_setup.rs into responsibility-named
-files under the CLI test folder. Preserve every fixture and assertion.
+Dependency REDUCE-CLI-CORE-TESTS-001 is DONE. Move inline tests from
+daemon_devtool.rs, daemon_maintenance.rs, daemon_metadata.rs and daemon_qa.rs
+into responsibility-named files under the CLI test folder. Preserve fake
+process, cancellation and authority fixtures and every assertion.
 
 ```bash
 cargo test -p yoctui --all-features
