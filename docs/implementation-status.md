@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-PROTOCOL-DAEMON-STATE-001 is DONE in v0.1.162. Client commands, QA
+and testing messages, terminal messages, snapshot types, snapshot journal, event
+reduction, and framing/errors now live in seven named sources; the largest is
+413 lines. Wire ordering and all 91 protocol tests/doc-tests remain unchanged.
+Transport and persistence support decomposition is next.
+
 REDUCE-PROTOCOL-DAEMON-RAW-001 is DONE in v0.1.161. Raw request/history,
 raw event/snapshot, compatibility identity and compatibility validation wire
 families now live in four named sources of 249–373 lines. They remain in the
