@@ -9057,12 +9057,12 @@ notes = "DONE in v0.1.192. The stable verify-performance.sh entry point sources 
 id = "REDUCE-TOOLS-PYTHON-001"
 milestone = "M73"
 title = "Decompose oversized Python verification tools"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2250
 required = true
 depends_on = ["REDUCE-TOOLS-PERF-SHELL-001"]
 verify = ["python3 -m pytest bridge/tests", "python3 -m compileall -q scripts", "./scripts/verify-roadmap.sh"]
-notes = "Scope: scripts/generate-raw-catalog.py, scripts/event-flood-harness.py, scripts/measure-ipc-latency.py and scripts/capture-real-poky-performance.py. Split reusable parsing, measurement and evidence responsibilities into meaningful modules of approximately 500 lines or less while preserving CLI behavior."
+notes = "DONE in v0.1.193. Four stable 13-17 line entry points load 17 named raw-catalog, event-flood, IPC-latency and real-Poky modules; the largest is 357 lines. Raw catalog verification and 17 focused harness, latency and capture tests pass with CLI behavior preserved."
 
 [[task]]
 id = "REDUCE-TOOLS-001"

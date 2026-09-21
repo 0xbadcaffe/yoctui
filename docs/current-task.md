@@ -1,14 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-TOOLS-PYTHON-001
-**Title:** Decompose oversized Python verification tools
+**ID:** REDUCE-TOOLS-001
+**Title:** Split bridge and verification tooling into named modules and test folders
 **Status:** NOT_STARTED
 
-Dependency REDUCE-TOOLS-PERF-SHELL-001 is DONE. Split
-`scripts/generate-raw-catalog.py`, `scripts/event-flood-harness.py`,
-`scripts/measure-ipc-latency.py` and `scripts/capture-real-poky-performance.py`
-into meaningful parsing, measurement and evidence modules of approximately 500
-lines or less. Preserve their command-line contracts and failure behavior.
+Dependency REDUCE-TOOLS-PYTHON-001 is DONE. Audit `bridge`, `bridge/tests`,
+repository scripts and `crates/yoctui-bitbake/bridge`; confirm every relevant
+source is approximately 500 lines or less, tests live in test folders and all
+entry points retain their command-line behavior.
 
 ```bash
 python3 -m pytest bridge/tests

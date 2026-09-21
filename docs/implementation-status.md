@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+REDUCE-TOOLS-PYTHON-001 is DONE in v0.1.193. Four stable 13-17 line entry
+points load 17 named raw-catalog, event-flood, IPC-latency and real-Poky
+modules; the largest is 357 lines. Raw catalog verification and 17 focused
+harness, latency and capture tests pass. The complete tooling audit is next.
+
 REDUCE-TOOLS-PERF-SHELL-001 is DONE in v0.1.192. The stable performance
 verification entry point now sources eight named contract, profiling,
 rendering, IPC, scheduling, coexistence and regression modules; the largest
