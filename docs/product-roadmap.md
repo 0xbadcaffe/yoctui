@@ -1,5 +1,14 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-DAEMON-PTY-001 is DONE in v0.1.137. The 885-line daemon PTY owner now
+has named supervisor routing, child runtime, request validation and typed
+terminal mapping modules, all below 500 lines. Seven unit tests and the ignored
+real-GitUI smoke test moved to descriptive CLI test files while preserving
+platform gates and PTY lifecycle behavior. The serial 1,692-test workspace suite
+(five existing ignored), strict Clippy, fmt, 53 bridge tests, roadmap/version
+checks and all 29 deterministic raster checks pass. The final CLI source audit
+is next.
+
 REDUCE-CLI-DAEMON-RAW-001 is DONE in v0.1.136. The 1,465-line raw execution
 owner now has named job, PTY, attachment/cancellation control, event reduction
 and recovery modules, all below 500 lines. Six inline tests moved to descriptive

@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-DAEMON-PTY-001 is DONE in v0.1.137. The former 885-line PTY owner is
+split into an 82-line shared state/event parent and named 204-line supervisor,
+145-line child runtime, 81-line request validation and 117-line terminal mapping
+modules. Seven unit tests and the ignored real-GitUI smoke test now live in
+descriptive files under `src/tests/daemon_pty`. Focused tests, the serial
+1,692-test workspace suite (five existing ignored), strict Clippy, fmt, 53
+bridge tests, roadmap/version checks and all 29 deterministic raster checks
+pass. The final CLI source audit is next.
+
 REDUCE-CLI-DAEMON-RAW-001 is DONE in v0.1.136. The former 1,465-line raw
 execution owner is split into a 111-line shared state/error parent and named
 297-line job, 172-line PTY, 92-line control, 139-line event reduction and

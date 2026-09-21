@@ -1,16 +1,17 @@
 # Current Task
 
-**ID:** REDUCE-CLI-DAEMON-PTY-001
-**Title:** Decompose daemon PTY ownership
+**ID:** REDUCE-CLI-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-cli
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-DAEMON-RAW-001 is DONE. Split daemon_pty.rs into named
-request-validation, child-ownership and terminal-event-mapping modules targeting
-approximately 500 lines each. Move its inline tests into the CLI test folder
-without changing platform gates or PTY lifecycle behavior.
+Dependency REDUCE-CLI-DAEMON-PTY-001 is DONE. Audit `crates/yoctui-cli`, update
+source-checker paths, and complete any remaining responsibility-based source
+splits or inline-test moves needed to keep source files approximately 500 lines.
+Preserve behavior, public APIs, assertions and platform gates. Split further
+work into atomic file/family tasks before implementation when needed.
 
 ```bash
-cargo test -p yoctui --all-features daemon_pty
+cargo test -p yoctui --all-features
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
