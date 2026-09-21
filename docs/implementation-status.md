@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-APP-001 is DONE in v0.1.180. The final audit covers all 280 Rust files
+under `yoctui-app/src`: every production and test file is at most 436 lines,
+all 210 unit-test bodies live under `src/tests`, and public mapping/input paths
+remain stable. Package tests, Clippy and repository gates pass. UI crate
+decomposition is next.
+
 REDUCE-APP-TESTS-001 is DONE in v0.1.179. Nine inline test modules and ten
 oversized regression sources now live in 227 descriptive Rust files under
 `yoctui-app/src/tests`. All 210 tests are preserved, no inline test module

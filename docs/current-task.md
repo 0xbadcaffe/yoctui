@@ -1,16 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-APP-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-app
+**ID:** REDUCE-UI-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-ui
 **Status:** NOT_STARTED
 
-Dependency REDUCE-APP-TESTS-001 is DONE. Audit every application source and test
-file for the approximately 500-line target and responsibility placement.
-Verify public APIs, platform gates, test names and assertions remain preserved,
-then close the parent decomposition task.
+Dependency REDUCE-APP-001 is DONE. Audit `crates/yoctui-ui`, split sources into
+meaningful responsibility files of approximately 500 lines or less, and move
+inline unit-test bodies into descriptive folders under `src/tests`. Preserve
+UI behavior, public APIs, platform gates, test names and assertions.
 
 ```bash
-cargo test -p yoctui-app --all-features
+cargo test -p yoctui-ui --all-features
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
