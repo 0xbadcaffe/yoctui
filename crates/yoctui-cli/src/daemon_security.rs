@@ -259,29 +259,5 @@ impl DaemonSecuritySupervisor {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn client_runtime_security_rejects_invalid_generation() {
-        assert!(
-            DaemonSecuritySupervisor::new(Default::default())
-                .start(0, vec!["/tmp/report.json".into()])
-                .is_err()
-        );
-    }
-
-    #[test]
-    fn client_runtime_security_mapper_rejects_invalid_session() {
-        assert!(
-            DaemonSecurityMapperSupervisor::new(Default::default())
-                .start(
-                    0,
-                    "/missing/cve-check-map-pkgs".into(),
-                    vec!["/tmp/report".into()],
-                    vec!["/tmp/report".into()],
-                )
-                .is_err()
-        );
-    }
-}
+#[path = "tests/daemon_security/mod.rs"]
+mod tests;

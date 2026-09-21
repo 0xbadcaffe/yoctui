@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-DAEMON-WORKFLOW-TESTS-001 is DONE in v0.1.141. Seven inline tests
+from daemon QEMU, SDK, security, test and WIC workflows now live in descriptive
+files under `src/tests`. Typed request identities, invalid-session behavior and
+failure assertions are preserved. The full package and serial workspace suites,
+strict Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. Remaining CLI runtime tests are next.
+
 REDUCE-CLI-DAEMON-ADAPTER-TESTS-001 is DONE in v0.1.140. Thirteen inline tests
 from daemon devtool, maintenance, metadata and QA adapters now live in
 descriptive files under `src/tests`. Fake-process, cancellation and authority

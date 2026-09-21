@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-DAEMON-WORKFLOW-TESTS-001 is DONE in v0.1.141. Seven QEMU, SDK,
+security, test and WIC daemon workflow tests now live in responsibility-named
+CLI test files with typed request identity and failure coverage preserved. The
+full package and serial workspace suites, strict Clippy, fmt, 53 bridge tests,
+roadmap/version checks and all 29 deterministic raster checks pass. Remaining
+CLI runtime test migration is next.
+
 REDUCE-CLI-DAEMON-ADAPTER-TESTS-001 is DONE in v0.1.140. Thirteen devtool,
 maintenance, metadata and QA adapter tests now live in responsibility-named CLI
 test files with their fake-process, cancellation and authority coverage

@@ -395,39 +395,5 @@ impl DaemonTestResultCache {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn client_runtime_test_session_rejects_unknown_family() {
-        let mut s = DaemonTestSupervisor::new(Default::default());
-        let result = s.start(
-            1,
-            DaemonTestSelftestRequest {
-                executable: "/tmp/oe-selftest".into(),
-                family: "unknown".into(),
-                selector: None,
-                parallelism: 1,
-                verbose: false,
-                skip_network: false,
-            },
-            "/tmp/build".into(),
-            Vec::new(),
-        );
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn daemon_test_result_cache_replaces_and_bounds_generations() {
-        let mut cache = DaemonTestResultCache::default();
-        for generation in 1..=10 {
-            cache.insert(DaemonTestResultSnapshot {
-                generation,
-                records: Vec::new(),
-                limitations: Vec::new(),
-                complete: true,
-            });
-        }
-        assert!(cache.get(1).is_none());
-        assert!(cache.get(10).is_some());
-    }
-}
+#[path = "tests/daemon_test/mod.rs"]
+mod tests;
