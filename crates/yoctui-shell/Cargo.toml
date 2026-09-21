@@ -6,5 +6,5 @@ license.workspace = true
 publish = false
 
 [dependencies]
-yoctui-utils = { version = "0.1.173", path = "../yoctui-utils" }
+yoctui-utils = { version = "0.1.174", path = "../yoctui-utils" }
 libc.workspace = true

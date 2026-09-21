@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-BITBAKE-001 is DONE in v0.1.174. The final audit covers all 452 Rust
+files under `yoctui-bitbake/src`: every production and test file is at most 500
+lines, all 285 unit-test bodies live under `src/tests`, and public adapter paths
+remain stable. Package tests, Clippy and repository gates pass. Application
+crate decomposition is next.
+
 REDUCE-BITBAKE-TESTS-001 is DONE in v0.1.173. All 45 inline test modules,
 the source-root test module and the oversized regression source now live in 317
 descriptive Rust files under `yoctui-bitbake/src/tests`. All 285 tests are
