@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-PROTOCOL-SUPPORT-001 is DONE in v0.1.163. Unix transport now
+separates runtime/listener, connection, and path-security code; daemon
+persistence separates recovery state from bounded private storage. The five new
+sources are at most 308 lines, and every remaining protocol production source
+is below 500 lines. Inline protocol test migration is next.
+
 REDUCE-PROTOCOL-DAEMON-STATE-001 is DONE in v0.1.162. Client commands, QA
 and testing messages, terminal messages, snapshot types, snapshot journal, event
 reduction, and framing/errors now live in seven named sources; the largest is

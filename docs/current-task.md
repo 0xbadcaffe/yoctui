@@ -1,14 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-PROTOCOL-SUPPORT-001
-**Title:** Decompose protocol transport and persistence support
+**ID:** REDUCE-PROTOCOL-TESTS-001
+**Title:** Move protocol inline tests into responsibility folders
 **Status:** NOT_STARTED
 
-Dependency REDUCE-PROTOCOL-DAEMON-STATE-001 is DONE. Split `daemon_ipc.rs` and
-`daemon_persist.rs` production responsibilities into meaningful sources of
-approximately 500 lines or less, then audit `lib.rs`, lifecycle, rootfs and
-archive production code. Preserve platform gates, permissions and recovery
-behavior.
+Dependency REDUCE-PROTOCOL-SUPPORT-001 is DONE. Move all eight remaining inline
+`yoctui-protocol` test modules into descriptive files under `src/tests`, preserve
+shared fixtures and assertions, and finish the complete source/test-placement
+audit with every Rust source at approximately 500 lines or less.
 
 ```bash
 cargo test -p yoctui-protocol --all-features
