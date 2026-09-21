@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REDUCE-LAYOUT-GATE-001 is DONE in v0.1.195. All 2,670 maintained Rust,
+Python and shell sources are at most 500 lines, and the permanent layout gate
+rejects oversized sources and inline Rust test bodies. The last oversized
+persistence suite is grouped under `tests/daemon_persist`, dependency routing
+has its own module, and raw-catalog tests run from the model test folder. M73
+source decomposition is complete.
+
 REDUCE-TOOLS-001 is DONE in v0.1.194. The audited bridge and verification
 tooling inventory contains 183 source files, all at most 488 lines. Bridge
 tests remain grouped by responsibility under `bridge/tests`; stable Python and

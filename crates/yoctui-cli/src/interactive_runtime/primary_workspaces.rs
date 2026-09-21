@@ -1,3 +1,4 @@
+use super::dependency_workspace::route_dependency_workspace;
 use super::*;
 
 impl InteractiveRuntime {
@@ -476,26 +477,7 @@ impl InteractiveRuntime {
                 )
                 .await;
             }
-        } else if runtime.app.screen == Screen::Dependencies
-            && dependency_workspace_action(runtime.app.dependency_graph_searching, input).is_some()
-        {
-            let action = dependency_workspace_action(runtime.app.dependency_graph_searching, input)
-                .expect("Dependency action was checked");
-            match compatibility_workspace_action(&mut runtime.app, action) {
-                Some(Effect::GetDependencies(recipe)) => {
-                    load_dependency_graph(&mut runtime.app, runtime.backend.as_mut(), recipe).await;
-                }
-                Some(Effect::OpenInEditor(path)) => {
-                    open_in_editor(
-                        &runtime.guard,
-                        &mut runtime.app,
-                        path,
-                        runtime.editor_command.as_deref(),
-                    )
-                    .await;
-                }
-                _ => {}
-            }
+        } else if route_dependency_workspace(runtime, input).await {
         } else {
             return Ok(None);
         }

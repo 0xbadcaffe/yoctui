@@ -4202,8 +4202,11 @@ all guarded and fallback arms for that variant remain together. Family reducers
 retain early-return behavior and the common focus synchronization tail.
 App mapping, backend adapters and UI rendering are separated by responsibility.
 Tests retain every original assertion, with shared fixtures in support modules.
-`check-library-layout.py` enforces the 1000-line root limit and utility dependency
-in CI and the completion gate. Exact test selectors follow the moved modules.
+`check-library-layout.py` inventories every Rust, Python and shell source under
+`crates`, `bridge`, `scripts` and `fuzz`. It enforces a 500-line source limit,
+rejects inline Rust test modules and rejects Rust `#[test]` bodies outside a
+`tests` directory. It also retains the workspace publication-registry and
+`yoctui-utils` dependency checks. Exact test selectors follow the moved modules.
 
 ## Concept layout rendering after REF09
 

@@ -8215,7 +8215,7 @@ priority = 1602
 required = true
 depends_on = ["SEARCH-CONTENT-001", "FRESH-CLONE-001", "DAEMON-STARTUP-002", "SEARCH-HELP-001"]
 verify = ["./scripts/verify-performance.sh --real-poky-evidence", "./scripts/verify-completion.sh"]
-notes = "External validation prerequisite: retained live evidence is bound to source base d2214e82974a5be708a7cc40f1532254d7c7de63 and has 51 source digest mismatches, including changes predating M67. Supply a new genuine source/binary-bound Yocto 6.0.2 linux-yocto compile capture using the documented release workload before the release gate can certify current code. Do not rewrite digests or treat fake-process startup timings as live evidence. See current-task.md for reproduction and verification scope."
+notes = "External validation prerequisite: retained live evidence is bound to source base d2214e82974a5be708a7cc40f1532254d7c7de63 and has 143 source digest mismatches, including changes predating M67. Supply a new genuine source/binary-bound Yocto 6.0.2 linux-yocto compile capture using the documented release workload before the release gate can certify current code. Do not rewrite digests or treat fake-process startup timings as live evidence. See current-task.md for reproduction and verification scope."
 
 [[task]]
 id = "M68-CLONE-001"
@@ -9079,12 +9079,12 @@ notes = "DONE in v0.1.194. The complete 183-file bridge and verification-tool in
 id = "REDUCE-LAYOUT-GATE-001"
 milestone = "M73"
 title = "Verify the complete source inventory and enforce the module-size convention"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2211
 required = true
 depends_on = ["REDUCE-TOOLS-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: scripts/check-library-layout.py docs/architecture.md. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+notes = "DONE in v0.1.195. The layout checker inventories 2,670 maintained Rust, Python and shell sources, enforces a 500-line maximum and rejects inline Rust test bodies. The final 598-line daemon persistence test was split by responsibility, dependency routing was extracted from the 504-line runtime module and orphaned raw-catalog test files were wired into the model test tree. Focused and baseline checks pass. No live compatibility claim."
 
 [[task]]
 id = "REDUCE-CLI-DAEMON-001"

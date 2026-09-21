@@ -3,6 +3,7 @@ use super::*;
 
 mod build_dialogs;
 mod command_dialogs;
+mod dependency_workspace;
 mod editor_dialogs;
 mod input;
 mod jobs;
