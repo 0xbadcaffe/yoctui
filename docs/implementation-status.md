@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-PROTOCOL-001 is DONE in v0.1.165. The final audit covers all 113
+Rust sources under `yoctui-protocol/src`: every production and test file is at
+most 413 lines, all unit-test bodies live under `src/tests`, and public wire
+paths and serde shapes remain stable. All 91 tests/doc-tests, Clippy and
+repository gates pass. BitBake adapter decomposition is next.
+
 REDUCE-PROTOCOL-TESTS-001 is DONE in v0.1.164. All eight inline test
 modules moved into responsibility folders under `yoctui-protocol/src/tests`;
 90 named test functions now have behavior-named files and the property test

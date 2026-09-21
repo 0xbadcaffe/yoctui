@@ -1,16 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-PROTOCOL-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-protocol
+**ID:** REDUCE-BITBAKE-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-bitbake
 **Status:** NOT_STARTED
 
-Dependency REDUCE-PROTOCOL-TESTS-001 is DONE. Perform the final protocol audit:
-every production and test source must remain at approximately 500 lines or less,
-all test bodies must live under `src/tests`, public wire APIs and serde shapes
-must be preserved, and all source-checker paths must remain valid.
+Dependency REDUCE-PROTOCOL-001 is DONE. Audit `yoctui-bitbake`, split this
+parent into atomic file or responsibility-family tasks, then reduce production
+and test sources to approximately 500 lines with test bodies under descriptive
+test folders. Preserve public APIs, assertions and platform gates.
 
 ```bash
-cargo test -p yoctui-protocol --all-features
+cargo test -p yoctui-bitbake --all-features
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
