@@ -1,16 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-model
+**ID:** REDUCE-PROTOCOL-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-protocol
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-TESTS-001 is DONE. Perform the final model audit: every
-production and test source must remain at approximately 500 lines or less, all
-test bodies must live in `src/tests`, public APIs and reducer behavior must be
-preserved, and source-checker paths must remain valid.
+Dependency REDUCE-MODEL-001 is DONE. Audit `yoctui-protocol`, split this parent
+into atomic file or responsibility-family tasks, then reduce production and test
+sources to approximately 500 lines with test bodies under descriptive test
+folders. Preserve public APIs, assertions and platform gates.
 
 ```bash
-cargo test -p yoctui-model --all-features
+cargo test -p yoctui-protocol --all-features
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-001 is DONE in v0.1.159. The final audit covers 889 Rust
+sources under `yoctui-model/src`: every production and test file is below 500
+lines, every unit-test body lives under `src/tests`, and the largest source is
+489 lines. All 492 model tests/doc-tests, Clippy, raw-catalog source mapping and
+repository gates pass. Protocol decomposition is next.
+
 REDUCE-MODEL-TESTS-001 is DONE in v0.1.158. All 31 remaining inline test
 modules and the source-root test module now live in responsibility folders under
 `yoctui-model/src/tests`. Eleven oversized grouped test sources were further
