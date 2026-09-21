@@ -1,17 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-CLI-DAEMON-COMPAT-001
-**Title:** Decompose daemon compatibility inspection
+**ID:** REDUCE-CLI-DAEMON-ROOTFS-001
+**Title:** Decompose daemon rootfs inspection
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-DAEMON-BITBAKE-001 is DONE. Split
-daemon_compatibility.rs into named probe-planning, result-reduction and runtime
-ownership modules targeting approximately 500 lines each. Move its inline
-tests into the CLI test folder without changing authoritative fail-closed
-evidence or process ownership behavior.
+Dependency REDUCE-CLI-DAEMON-COMPAT-001 is DONE. Split daemon_rootfs.rs into
+named client-query, validation, worker and bridge-mapping modules targeting
+approximately 500 lines each. Move its inline tests into the CLI test folder
+without changing identity or cancellation checks.
 
 ```bash
-cargo test -p yoctui --all-features daemon_compatibility
+cargo test -p yoctui --all-features daemon_rootfs
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-DAEMON-COMPAT-001 is DONE in v0.1.134. The 1,387-line daemon
+compatibility owner now has named coordination, runtime detection and bounded
+process helper modules, all below 500 lines. Eleven inline tests moved to
+descriptive CLI test files while preserving fail-closed authority, stale-probe
+and process-bound checks. The serial 1,692-test workspace suite (five existing
+ignored), strict Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. Daemon rootfs inspection is next.
+
 REDUCE-CLI-DAEMON-BITBAKE-001 is DONE in v0.1.133. The 1,419-line daemon
 BitBake supervisor now has named lifecycle, bounded ingress, activity
 notification and cancellation modules, all below 500 lines. Ten inline tests
