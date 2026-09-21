@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+REDUCE-E2E-001 is DONE in v0.1.188. The cohesive E2E implementation is 152
+lines, and all nine parser, PTY, keymap, navigation and focus-flow tests now
+live in three responsibility files of at most 296 lines under `src/tests`.
+Package tests and strict Clippy pass. Bridge and verification tooling is next.
+
 REDUCE-SHELL-001 is DONE in v0.1.187. The cohesive shell implementation is 142
 lines, and all three PTY and terminal-emulation tests now live in
 `src/tests/terminal_emulator.rs`. Package tests and strict Clippy pass. E2E

@@ -9013,12 +9013,12 @@ notes = "DONE in v0.1.187. The 142-line shell implementation remains cohesive; a
 id = "REDUCE-E2E-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-e2e"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2209
 required = true
 depends_on = ["REDUCE-SHELL-001"]
 verify = ["cargo test -p yoctui-e2e --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: crates/yoctui-e2e. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+notes = "DONE in v0.1.188. The 152-line E2E implementation remains cohesive; nine parser, PTY, keymap, navigation and focus-flow tests moved into three responsibility files of at most 296 lines under src/tests. Package tests and strict Clippy pass. No live compatibility claim."
 
 [[task]]
 id = "REDUCE-TOOLS-001"

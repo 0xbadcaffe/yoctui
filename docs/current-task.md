@@ -1,16 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-E2E-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-e2e
+**ID:** REDUCE-TOOLS-001
+**Title:** Split bridge and verification tooling into named modules and test folders
 **Status:** NOT_STARTED
 
-Dependency REDUCE-SHELL-001 is DONE. Audit `yoctui-e2e`, split oversized sources
-into meaningful responsibility files of approximately 500 lines or less and
-move inline test bodies under test folders. Preserve behavior, public APIs,
-assertions and platform gates.
+Dependency REDUCE-E2E-001 is DONE. Audit `bridge`, `bridge/tests`, repository
+scripts and `crates/yoctui-bitbake/bridge`; split oversized source and test
+files into meaningful modules of approximately 500 lines or less. Preserve
+behavior, public APIs, assertions and platform gates.
 
 ```bash
-cargo test -p yoctui-e2e --all-features
+python3 -m pytest bridge/tests
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
