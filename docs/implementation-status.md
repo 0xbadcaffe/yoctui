@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+REDUCE-APP-MAPPING-001 is DONE in v0.1.177. Raw protocol conversion, runner
+events and compatibility snapshot mapping now flow through 10 named sources;
+the largest is 313 lines. All 210 application tests and package Clippy pass.
+Daemon and job coordination is next.
+
 REDUCE-APP-INPUT-001 is DONE in v0.1.176. Mouse geometry, workspace keys,
 dialogs and keyboard/menu routing now flow through 14 named sources; the largest
 is 319 lines. All 210 application tests and package Clippy pass. Event mapping

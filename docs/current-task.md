@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-APP-MAPPING-001
-**Title:** Decompose application event mapping
+**ID:** REDUCE-APP-DAEMON-JOBS-001
+**Title:** Decompose application daemon and job coordination
 **Status:** NOT_STARTED
 
-Dependency REDUCE-APP-INPUT-001 is DONE. Split `raw_mapping.rs`,
-`runner_events.rs` and `compatibility_mapping.rs` into meaningful responsibility
-files of approximately 500 lines or less. Preserve typed model actions,
-backend-event semantics and public APIs.
+Dependency REDUCE-APP-MAPPING-001 is DONE. Split `daemon_client.rs` and
+`job_coordinators.rs` into meaningful responsibility files of approximately
+500 lines or less, then audit every application production source. Preserve
+request correlation, cancellation, typed outcomes and public APIs.
 
 ```bash
 cargo test -p yoctui-app --all-features
