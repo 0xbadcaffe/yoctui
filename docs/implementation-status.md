@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+REDUCE-TOOLS-BRIDGE-TESTS-001 is DONE in v0.1.191. Shared bridge fixtures now
+live in `support.py`, and the former 1,490-line suite is split into four named
+workspace, protocol, server-adapter and event test files; the largest is 416
+lines. All 53 bridge tests pass. Performance shell decomposition is next.
+
 REDUCE-TOOLS-BRIDGE-001 is DONE in v0.1.190. The stable bridge entry point now
 loads 11 named protocol, Tinfoil, adapter, typed-data, event, command and startup
 components; the largest is 425 lines. The bundled Rust source concatenates the

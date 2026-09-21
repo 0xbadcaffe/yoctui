@@ -9035,12 +9035,12 @@ notes = "DONE in v0.1.190. The stable yoctui_bridge.py entry point loads 11 name
 id = "REDUCE-TOOLS-BRIDGE-TESTS-001"
 milestone = "M73"
 title = "Split bridge tests by responsibility"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2248
 required = true
 depends_on = ["REDUCE-TOOLS-BRIDGE-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: bridge/tests/test_bridge.py. Move shared fixtures into test support and split protocol, command, process and event tests into meaningful files of approximately 500 lines or less while preserving all 53 bridge tests."
+notes = "DONE in v0.1.191. Shared bridge fixtures now live in support.py and the former 1,490-line suite is split into workspace/inventory, protocol/compatibility, server-adapter and metadata/event files; the largest is 416 lines. All 53 bridge tests pass."
 
 [[task]]
 id = "REDUCE-TOOLS-PERF-SHELL-001"
