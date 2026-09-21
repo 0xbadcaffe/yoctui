@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-DAEMON-BITBAKE-001 is DONE in v0.1.133. The former 1,419-line
+BitBake supervisor is split into a 79-line owner and named lifecycle, bounded
+ingress, activity-notification and cancellation modules; the largest is 321
+lines. Its ten inline tests now live in descriptive files under
+`src/tests/daemon_bitbake`, with embedded Python fixture bytes preserved.
+Focused tests, the serial 1,692-test workspace suite (five existing ignored),
+strict Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. Daemon compatibility decomposition is next.
+
 REDUCE-CLI-CLIENT-TRANSPORT-001 is DONE in v0.1.132. The former 798-line
 transport is split into a 95-line state/error parent plus named 145-line
 handshake, 101-line attachment lifecycle and 122-line messaging/polling

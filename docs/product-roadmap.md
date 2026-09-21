@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-DAEMON-BITBAKE-001 is DONE in v0.1.133. The 1,419-line daemon
+BitBake supervisor now has named lifecycle, bounded ingress, activity
+notification and cancellation modules, all below 500 lines. Ten inline tests
+moved to descriptive CLI test files while preserving embedded Python fixtures.
+The serial 1,692-test workspace suite (five existing ignored), strict Clippy,
+fmt, 53 bridge tests, roadmap/version checks and all 29 deterministic raster
+checks pass. Daemon compatibility inspection is next.
+
 REDUCE-CLI-CLIENT-TRANSPORT-001 is DONE in v0.1.132. The 798-line daemon client
 transport now has named handshake, attachment lifecycle and messaging/polling
 modules, all well below 500 lines, with four integration-style tests moved to

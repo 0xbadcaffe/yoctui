@@ -6,12 +6,12 @@ license.workspace = true
 publish = false
 
 [dependencies]
-yoctui-utils = { version = "0.1.132", path = "../yoctui-utils" }
+yoctui-utils = { version = "0.1.133", path = "../yoctui-utils" }
 libc.workspace = true
 
 [dev-dependencies]
 crossterm.workspace = true
 ratatui.workspace = true
-yoctui-app = { version = "0.1.132", path = "../yoctui-app" }
-yoctui-model = { version = "0.1.132", path = "../yoctui-model" }
-yoctui-ui = { version = "0.1.132", path = "../yoctui-ui" }
+yoctui-app = { version = "0.1.133", path = "../yoctui-app" }
+yoctui-model = { version = "0.1.133", path = "../yoctui-model" }
+yoctui-ui = { version = "0.1.133", path = "../yoctui-ui" }
