@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-RAW-MODE-001 is DONE in v0.1.147. The former 7,476-line raw mode
+owner is now a 66-line coordinator and 17 named identity/parameter, selector,
+argv, preview, execution, catalog, favorites and reducer modules; the largest
+is 476 lines. Its 51 inline tests now live in descriptive files under
+`src/tests`, with the reference fixture path corrected for its new location.
+All 57 raw-focused tests, catalog traceability/generator checks, package Clippy
+and the full repository gates pass. Maintenance model decomposition is next.
+
 REDUCE-MODEL-RAW-CATALOG-001 is DONE in v0.1.146. The generated 11,852-line
 built-in raw catalog is now a 441-line coordinator plus 50 deterministic
 category/part modules; the largest is 450 lines. The generator owns the full

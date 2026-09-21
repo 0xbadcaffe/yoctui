@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-RAW-MODE-001 is DONE in v0.1.147. Raw mode is a 66-line
+coordinator with 17 responsibility modules, all at 476 lines or less. Its 51
+tests now live in descriptive files under `src/tests`; exact argv, authority,
+preview, selector, favorites, history and execution behavior remains covered.
+All raw-focused tests, catalog checks, package Clippy and full repository gates
+pass. Maintenance model decomposition is next.
+
 REDUCE-MODEL-RAW-CATALOG-001 is DONE in v0.1.146. The generated built-in raw
 catalog is a 441-line coordinator and 50 deterministic command-family modules,
 all at 450 lines or less. Generator checking covers the complete file set while

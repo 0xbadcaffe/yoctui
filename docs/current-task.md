@@ -1,14 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-RAW-MODE-001
-**Title:** Decompose raw command state and behavior
+**ID:** REDUCE-MODEL-MAINTENANCE-001
+**Title:** Decompose maintenance model workflows
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-RAW-CATALOG-001 is DONE. Split the 7,476-line raw mode
-state and behavior into meaningful modules for catalog types, argv parsing,
-parameter validation, capability authority, preview construction, selectors,
-favorites/history and execution state. Preserve public APIs and reducer
-behavior while targeting approximately 500 lines per production source.
+Dependency REDUCE-MODEL-RAW-MODE-001 is DONE. Split the 4,024-line maintenance
+model into meaningful modules for shared types, service, release and sstate
+workflows, validation and state transitions. Preserve typed requests, public
+APIs, authority rules and reducer behavior while targeting approximately 500
+lines per production source.
 
 ```bash
 cargo test -p yoctui-model --all-features raw
