@@ -1,5 +1,10 @@
 # Yoctui Product Roadmap
 
+REDUCE-BITBAKE-REPORTS-001 is DONE in v0.1.169. Security, QA and test-result
+report adapters now route through 15 named acquisition, parsing, validation,
+command and runner sources; the largest is 478 lines. All 285 BitBake unit
+tests and package Clippy pass. Workflow runner decomposition is next.
+
 REDUCE-BITBAKE-ARTIFACTS-001 is DONE in v0.1.168. Wic, pkgdata,
 rootfs composition and signature adapters now route through 17 named sources;
 the largest is 458 lines. All 285 BitBake unit tests and package Clippy pass.

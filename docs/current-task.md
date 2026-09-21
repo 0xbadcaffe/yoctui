@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-BITBAKE-REPORTS-001
-**Title:** Decompose BitBake report adapters
+**ID:** REDUCE-BITBAKE-RUNNERS-001
+**Title:** Decompose BitBake workflow runners
 **Status:** NOT_STARTED
 
-Dependency REDUCE-BITBAKE-ARTIFACTS-001 is DONE. Split production
-responsibilities in `security_report.rs`, `qa_report.rs` and `test_results.rs`
-into meaningful sources of approximately 500 lines or less. Preserve public
-APIs, platform gates and adapter behavior.
+Dependency REDUCE-BITBAKE-REPORTS-001 is DONE. Split production responsibilities
+in `sdk_tool.rs`, `qa_layer.rs`, `test_runner.rs`, `security_mapper.rs` and
+`raw_job.rs` into meaningful sources of approximately 500 lines or less.
+Preserve public APIs, platform gates and adapter behavior.
 
 ```bash
 cargo test -p yoctui-bitbake --all-features
