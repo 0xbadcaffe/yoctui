@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+REDUCE-APP-INPUT-001 is DONE in v0.1.176. Mouse geometry, workspace keys,
+dialogs and keyboard/menu routing now flow through 14 named sources; the largest
+is 319 lines. All 210 application tests and package Clippy pass. Event mapping
+decomposition is next.
+
 REDUCE-APP-001 is split into four ordered tasks after an audit found 19,367
 Rust lines, nine production sources above 500 lines, eight inline test modules
 and ten oversized existing test sources. Input routing is first, followed by

@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-APP-INPUT-001
-**Title:** Decompose application input routing
+**ID:** REDUCE-APP-MAPPING-001
+**Title:** Decompose application event mapping
 **Status:** NOT_STARTED
 
-Dependency REDUCE-BITBAKE-001 is DONE. Audit `crates/yoctui-app`, split sources
-`mouse.rs`, `workspace_input.rs`, `dialog_input.rs` and `keyboard.rs` into
-meaningful responsibility files of approximately 500 lines or less. Preserve
-typed actions, focus behavior and public APIs.
+Dependency REDUCE-APP-INPUT-001 is DONE. Split `raw_mapping.rs`,
+`runner_events.rs` and `compatibility_mapping.rs` into meaningful responsibility
+files of approximately 500 lines or less. Preserve typed model actions,
+backend-event semantics and public APIs.
 
 ```bash
 cargo test -p yoctui-app --all-features
