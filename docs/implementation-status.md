@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-BITBAKE-REMAINDER-001 is DONE in v0.1.172. Compatibility probing,
+release fixtures, QEMU execution and SDK artifact discovery now route through
+11 named sources. The production audit covers 136 BitBake Rust sources; every
+production body is at most 497 lines. All 285 BitBake unit tests and package
+Clippy pass. Inline test migration is next.
+
 REDUCE-BITBAKE-BACKEND-001 is DONE in v0.1.171. Bridge transport, Devtool
 execution and BitBake server lifecycle controllers now route through 11 named
 process, event, graph, command, inspection and lifecycle sources; the largest
