@@ -9021,13 +9021,57 @@ verify = ["cargo test -p yoctui-e2e --all-features", "cargo fmt --all --check", 
 notes = "DONE in v0.1.188. The 152-line E2E implementation remains cohesive; nine parser, PTY, keymap, navigation and focus-flow tests moved into three responsibility files of at most 296 lines under src/tests. Package tests and strict Clippy pass. No live compatibility claim."
 
 [[task]]
+id = "REDUCE-TOOLS-BRIDGE-001"
+milestone = "M73"
+title = "Decompose the Python BitBake bridge"
+status = "NOT_STARTED"
+priority = 2247
+required = true
+depends_on = ["REDUCE-E2E-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: crates/yoctui-bitbake/bridge/yoctui_bridge.py. Split protocol, process, command and event responsibilities into meaningful modules of approximately 500 lines or less while preserving the deployed entry point and bridge behavior."
+
+[[task]]
+id = "REDUCE-TOOLS-BRIDGE-TESTS-001"
+milestone = "M73"
+title = "Split bridge tests by responsibility"
+status = "NOT_STARTED"
+priority = 2248
+required = true
+depends_on = ["REDUCE-TOOLS-BRIDGE-001"]
+verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: bridge/tests/test_bridge.py. Move shared fixtures into test support and split protocol, command, process and event tests into meaningful files of approximately 500 lines or less while preserving all 53 bridge tests."
+
+[[task]]
+id = "REDUCE-TOOLS-PERF-SHELL-001"
+milestone = "M73"
+title = "Decompose the performance verification shell"
+status = "NOT_STARTED"
+priority = 2249
+required = true
+depends_on = ["REDUCE-TOOLS-BRIDGE-TESTS-001"]
+verify = ["bash -n scripts/verify-performance.sh", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
+notes = "Scope: scripts/verify-performance.sh. Split reusable performance-verification responsibilities into named shell modules of approximately 500 lines or less while preserving the command-line contract and evidence checks."
+
+[[task]]
+id = "REDUCE-TOOLS-PYTHON-001"
+milestone = "M73"
+title = "Decompose oversized Python verification tools"
+status = "NOT_STARTED"
+priority = 2250
+required = true
+depends_on = ["REDUCE-TOOLS-PERF-SHELL-001"]
+verify = ["python3 -m pytest bridge/tests", "python3 -m compileall -q scripts", "./scripts/verify-roadmap.sh"]
+notes = "Scope: scripts/generate-raw-catalog.py, scripts/event-flood-harness.py, scripts/measure-ipc-latency.py and scripts/capture-real-poky-performance.py. Split reusable parsing, measurement and evidence responsibilities into meaningful modules of approximately 500 lines or less while preserving CLI behavior."
+
+[[task]]
 id = "REDUCE-TOOLS-001"
 milestone = "M73"
 title = "Split bridge and verification tooling into named modules and test folders"
 status = "NOT_STARTED"
 priority = 2210
 required = true
-depends_on = ["REDUCE-E2E-001"]
+depends_on = ["REDUCE-TOOLS-PYTHON-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: bridge/tests scripts crates/yoctui-bitbake/bridge. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 

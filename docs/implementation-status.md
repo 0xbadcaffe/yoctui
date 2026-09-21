@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-TOOLS-001 is split into four ordered tasks after an audit found seven
+oversized tooling sources: the 2,569-line bridge, 1,490-line bridge test suite,
+1,476-line performance verifier and four Python catalog or measurement tools.
+Bridge implementation decomposition is first, followed by bridge tests, shell
+verification and the remaining Python tools.
+
 REDUCE-E2E-001 is DONE in v0.1.188. The cohesive E2E implementation is 152
 lines, and all nine parser, PTY, keymap, navigation and focus-flow tests now
 live in three responsibility files of at most 296 lines under `src/tests`.
