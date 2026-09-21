@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-BITBAKE-001 is split into seven ordered tasks after an audit found
+44,502 Rust lines, 23 production sources above 500 lines, 45 inline test
+modules, and an oversized existing test source. Maintenance adapters are first,
+followed by artifacts, reports, runners, backend controllers, remaining sources
+and final test migration.
+
 REDUCE-PROTOCOL-001 is DONE in v0.1.165. The final audit covers all 113
 Rust sources under `yoctui-protocol/src`: every production and test file is at
 most 413 lines, all unit-test bodies live under `src/tests`, and public wire

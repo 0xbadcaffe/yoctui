@@ -8801,13 +8801,90 @@ verify = ["cargo test -p yoctui-protocol --all-features", "cargo fmt --all --che
 notes = "Scope: crates/yoctui-protocol. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
 [[task]]
+id = "REDUCE-BITBAKE-MAINTENANCE-001"
+milestone = "M73"
+title = "Decompose BitBake maintenance adapters"
+status = "NOT_STARTED"
+priority = 2232
+required = true
+depends_on = ["REDUCE-PROTOCOL-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: maintenance_sstate.rs, maintenance_release.rs, maintenance_service.rs and maintenance_optional.rs production responsibilities. Preserve public APIs, platform gates and adapter behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-BITBAKE-ARTIFACTS-001"
+milestone = "M73"
+title = "Decompose BitBake artifact and metadata adapters"
+status = "NOT_STARTED"
+priority = 2233
+required = true
+depends_on = ["REDUCE-BITBAKE-MAINTENANCE-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: wic.rs, package.rs, rootfs.rs and signature.rs production responsibilities. Preserve public APIs, platform gates and adapter behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-BITBAKE-REPORTS-001"
+milestone = "M73"
+title = "Decompose BitBake report adapters"
+status = "NOT_STARTED"
+priority = 2234
+required = true
+depends_on = ["REDUCE-BITBAKE-ARTIFACTS-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: security_report.rs, qa_report.rs and test_results.rs production responsibilities. Preserve public APIs, platform gates and adapter behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-BITBAKE-RUNNERS-001"
+milestone = "M73"
+title = "Decompose BitBake workflow runners"
+status = "NOT_STARTED"
+priority = 2235
+required = true
+depends_on = ["REDUCE-BITBAKE-REPORTS-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: sdk_tool.rs, qa_layer.rs, test_runner.rs, security_mapper.rs and raw_job.rs production responsibilities. Preserve public APIs, platform gates and adapter behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-BITBAKE-BACKEND-001"
+milestone = "M73"
+title = "Decompose BitBake backend controllers"
+status = "NOT_STARTED"
+priority = 2236
+required = true
+depends_on = ["REDUCE-BITBAKE-RUNNERS-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: bridge_backend.rs, devtool_runner.rs and server_controller.rs production responsibilities. Preserve public APIs, platform gates and adapter behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-BITBAKE-REMAINDER-001"
+milestone = "M73"
+title = "Decompose remaining oversized BitBake sources"
+status = "NOT_STARTED"
+priority = 2237
+required = true
+depends_on = ["REDUCE-BITBAKE-BACKEND-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: compatibility_probe.rs, compatibility_fixtures.rs, qemu.rs, sdk.rs and every remaining production source above approximately 500 lines. Preserve public APIs, platform gates and adapter behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-BITBAKE-TESTS-001"
+milestone = "M73"
+title = "Move BitBake inline tests into responsibility folders"
+status = "NOT_STARTED"
+priority = 2238
+required = true
+depends_on = ["REDUCE-BITBAKE-REMAINDER-001"]
+verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: all 45 inline test modules, the source-root test module and oversized test sources; finish the complete source/test-placement audit. Preserve public APIs, platform gates and adapter behavior; target approximately 500 lines per responsibility source."
+
+[[task]]
 id = "REDUCE-BITBAKE-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-bitbake"
 status = "NOT_STARTED"
 priority = 2205
 required = true
-depends_on = ["REDUCE-PROTOCOL-001"]
+depends_on = ["REDUCE-BITBAKE-TESTS-001"]
 verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-bitbake. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 

@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-BITBAKE-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-bitbake
+**ID:** REDUCE-BITBAKE-MAINTENANCE-001
+**Title:** Decompose BitBake maintenance adapters
 **Status:** NOT_STARTED
 
-Dependency REDUCE-PROTOCOL-001 is DONE. Audit `yoctui-bitbake`, split this
-parent into atomic file or responsibility-family tasks, then reduce production
-and test sources to approximately 500 lines with test bodies under descriptive
-test folders. Preserve public APIs, assertions and platform gates.
+Dependency REDUCE-PROTOCOL-001 is DONE. Split the production responsibilities
+in `maintenance_sstate.rs`, `maintenance_release.rs`, `maintenance_service.rs`
+and `maintenance_optional.rs` into meaningful sources of approximately 500
+lines or less. Preserve public APIs, process ownership and validation behavior.
 
 ```bash
 cargo test -p yoctui-bitbake --all-features
