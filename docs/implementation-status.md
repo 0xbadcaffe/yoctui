@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-BITBAKE-RUNNERS-001 is DONE in v0.1.170. SDK tools, layer QA,
+self-test, security mapping and Raw jobs now route through 16 named capability,
+command, validation, environment, output and runner sources; the largest is 463
+lines. All 285 BitBake unit tests and package Clippy pass. Backend controllers
+are next.
+
 REDUCE-BITBAKE-REPORTS-001 is DONE in v0.1.169. Security, QA and test-result
 report adapters now route through 15 named acquisition, parsing, validation,
 command and runner sources; the largest is 478 lines. All 285 BitBake unit
