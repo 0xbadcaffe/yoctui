@@ -1,4 +1,5 @@
 use super::*;
+use crate::mouse::{MouseRect, workspace_tab_click};
 
 #[test]
 fn ux_rootfs_images_tabs_keyboard_and_scroll_map_to_typed_drilldown_actions() {
@@ -63,5 +64,24 @@ fn ux_rootfs_images_tabs_keyboard_and_scroll_map_to_typed_drilldown_actions() {
     assert_eq!(
         workspace_collection_action(&app, Input::PageUp),
         Some(Action::SelectRootfsEntry { delta: -10 })
+    );
+
+    app.images_view = ImagesView::Artifacts;
+    assert_eq!(
+        workspace_tab_click(
+            &app,
+            MouseRect {
+                x: 0,
+                y: 0,
+                width: 120,
+                height: 30,
+            },
+            MouseInput {
+                kind: MouseKind::Down,
+                column: 20,
+                row: 1,
+            },
+        ),
+        Some(Action::ShiftImagesView { delta: 1 })
     );
 }

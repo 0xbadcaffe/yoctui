@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** PACKAGE-IMAGE-NAV-001
-**Title:** Restore package and image collection navigation
+**ID:** FIRMWARE-BRIDGE-NAV-001
+**Title:** Use authoritative bridge metadata for kernel and firmware workbenches
 **Status:** IN_PROGRESS
 
-SEARCH-RETURN-001 is complete in v0.1.197. Keep package and artifact selections
-visible, retain owning-recipe access, and route Images tab keys before pane
-focus so Rootfs packages and every image composition tab are reachable.
+PACKAGE-IMAGE-NAV-001 is complete in v0.1.198. Make an attached bridge client
+inspect authoritative Kernel and U-Boot / BIOS recipe metadata, and route both
+workbench tab keys before pane focus.
 
-Run only the focused model, UI, and CLI package/image tests during the agreed rapid
+Run only the focused CLI kernel/firmware tests during the agreed rapid
 bug pass. The user will request the full baseline after manual testing of all
 four reported bug series.

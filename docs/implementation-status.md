@@ -5,8 +5,12 @@ in v0.1.196: the open layer browser owns tree keys and Escape before pane
 focus. SEARCH-RETURN-001 is DONE in v0.1.197: loading renders the shared
 Braille phase and returning from the selected file restores the exact search
 query, generation, selection and hits. Focused model, UI and CLI search checks
-pass. PACKAGE-IMAGE-NAV-001 is current; full-suite verification remains
-deferred until the user finishes the agreed manual bug pass.
+pass. PACKAGE-IMAGE-NAV-001 is DONE in v0.1.198: package and artifact row
+selection follows the visible viewport with keyboard and mouse, package rows
+retain owning-recipe access, and all six Images tabs accept keyboard and mouse
+input before pane focus. Focused app, CLI and UI checks pass.
+FIRMWARE-BRIDGE-NAV-001 is current; full-suite verification remains deferred
+until the user finishes the agreed manual bug pass.
 
 REDUCE-LAYOUT-GATE-001 is DONE in v0.1.195. All 2,670 maintained Rust,
 Python and shell sources are at most 500 lines, and the permanent layout gate

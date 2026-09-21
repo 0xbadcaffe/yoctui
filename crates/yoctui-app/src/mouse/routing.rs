@@ -149,6 +149,16 @@ pub fn mouse_action_for_app(
             {
                 return Some(action);
             }
+            if app.screen == Screen::Packages
+                && let Some(action) = package_row_click(app, region.area, mouse)
+            {
+                return Some(action);
+            }
+            if app.screen == Screen::Images
+                && let Some(action) = image_artifact_row_click(app, region.area, mouse)
+            {
+                return Some(action);
+            }
             return Some(Action::Focus(FocusTarget::Workspace));
         }
         return None;

@@ -51,3 +51,14 @@ fn layer_browser_escape_runs_before_pane_focus() {
         Some(Action::CloseLayerBrowser)
     );
 }
+
+#[test]
+fn image_tabs_run_before_pane_focus() {
+    use yoctui_model::FocusTarget;
+
+    let mut app = App::new(10, 1_000);
+    app.focus = FocusTarget::Workspace;
+    app.screen = Screen::Images;
+    assert!(workspace_owns_focus_key(&app, Input::Tab));
+    assert!(workspace_owns_focus_key(&app, Input::BackTab));
+}

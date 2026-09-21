@@ -9134,18 +9134,18 @@ notes = "DONE in v0.1.197. Active global content scans render the shared animate
 id = "PACKAGE-IMAGE-NAV-001"
 milestone = "M74"
 title = "Restore package and image collection navigation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2302
 required = true
 depends_on = ["SEARCH-RETURN-001"]
 verify = ["cargo test -p yoctui-app images_workspace", "cargo test -p yoctui-ui packages", "cargo test -p yoctui-ui images", "cargo fmt --all --check"]
-notes = "Keep package and artifact selections visible, retain owning-recipe access, and give Images tab keys precedence over pane focus so Rootfs packages and all composition tabs are reachable."
+notes = "DONE in v0.1.198. Package and artifact tables keep keyboard and mouse selection aligned to their visible centered viewport; package rows retain owning-recipe access. Images Tab/BackTab, numbered tabs and direct tab clicks run before pane focus, reaching Rootfs packages and all six composition views. Three focused app, one CLI and fifteen UI navigation/render tests pass; full baseline intentionally deferred for the user's rapid manual bug pass."
 
 [[task]]
 id = "FIRMWARE-BRIDGE-NAV-001"
 milestone = "M74"
 title = "Use authoritative bridge metadata for kernel and firmware workbenches"
-status = "PENDING"
+status = "IN_PROGRESS"
 priority = 2301
 required = true
 depends_on = ["PACKAGE-IMAGE-NAV-001"]

@@ -8,6 +8,21 @@ pub(crate) fn workspace_tab_click(
     }
     let column = mouse.column - area.x - 1;
     match app.screen {
+        Screen::Images => image_tab_at_column(app, area.width, column).and_then(|view| {
+            (view != app.images_view).then(|| {
+                let current = yoctui_model::ImagesView::ALL
+                    .iter()
+                    .position(|candidate| *candidate == app.images_view)
+                    .unwrap_or(0) as isize;
+                let destination = yoctui_model::ImagesView::ALL
+                    .iter()
+                    .position(|candidate| *candidate == view)
+                    .unwrap_or(0) as isize;
+                Action::ShiftImagesView {
+                    delta: destination - current,
+                }
+            })
+        }),
         Screen::Security if column < 6 => (app.security.view != SecurityView::Cves)
             .then_some(Action::Security(SecurityAction::CycleView)),
         Screen::Security if (9..15).contains(&column) => (app.security.view != SecurityView::Sbom)
@@ -33,6 +48,91 @@ pub(crate) fn workspace_tab_click(
             .then_some(Action::CycleLogWorkspaceView),
         _ => None,
     }
+}
+
+fn image_tab_at_column(
+    app: &yoctui_model::App,
+    width: u16,
+    column: u16,
+) -> Option<yoctui_model::ImagesView> {
+    let mut start = 0_u16;
+    for view in yoctui_model::ImagesView::ALL {
+        let label = match view {
+            yoctui_model::ImagesView::Artifacts => "Artifacts",
+            yoctui_model::ImagesView::RootfsPackages if (78..90).contains(&width) => "Packages",
+            yoctui_model::ImagesView::RootfsPackages => "Rootfs packages",
+            yoctui_model::ImagesView::RootfsFilesystem => "Files",
+            yoctui_model::ImagesView::SystemdServices => "systemd",
+            yoctui_model::ImagesView::SystemDbus => "D-Bus",
+            yoctui_model::ImagesView::UdevRules => "udev",
+        };
+        let label = if width < 78 && view != app.images_view {
+            ""
+        } else {
+            label
+        };
+        let span = 4_u16.saturating_add(label.chars().count() as u16);
+        if (start..start.saturating_add(span)).contains(&column) {
+            return Some(view);
+        }
+        start = start.saturating_add(span).saturating_add(3);
+    }
+    None
+}
+
+pub(crate) fn package_row_click(
+    app: &yoctui_model::App,
+    area: MouseRect,
+    mouse: MouseInput,
+) -> Option<Action> {
+    let visible = app.filtered_packages();
+    let selected = visible
+        .iter()
+        .position(|package| app.package_selection.as_ref() == Some(&package.identity))
+        .unwrap_or(0);
+    let limitation_rows = matches!(
+        app.package_inventory,
+        yoctui_model::PackageInventoryState::Partial { .. }
+    ) && area.height >= 11;
+    let capacity = usize::from(area.height.saturating_sub(if limitation_rows { 8 } else { 4 }))
+        .max(1);
+    collection_row_delta(area, mouse, 3, capacity, visible.len(), selected)
+        .map(|delta| Action::SelectPackage { delta })
+}
+
+pub(crate) fn image_artifact_row_click(
+    app: &yoctui_model::App,
+    area: MouseRect,
+    mouse: MouseInput,
+) -> Option<Action> {
+    if app.images_view != yoctui_model::ImagesView::Artifacts {
+        return None;
+    }
+    let visible = app.filtered_image_artifacts();
+    let selected = visible
+        .iter()
+        .position(|artifact| app.image_artifact_selection.as_ref() == Some(&artifact.identity))
+        .unwrap_or(0);
+    let capacity = usize::from(area.height.saturating_sub(7)).max(1);
+    collection_row_delta(area, mouse, 6, capacity, visible.len(), selected)
+        .map(|delta| Action::SelectImageArtifact { delta })
+}
+
+fn collection_row_delta(
+    area: MouseRect,
+    mouse: MouseInput,
+    first_row_offset: u16,
+    capacity: usize,
+    total: usize,
+    selected: usize,
+) -> Option<isize> {
+    let first_row = area.y.saturating_add(first_row_offset);
+    if mouse.row < first_row || mouse.row >= first_row.saturating_add(capacity as u16) {
+        return None;
+    }
+    let viewport = yoctui_model::centered_viewport_range(Some(selected), total, capacity);
+    let clicked = viewport.start + usize::from(mouse.row - first_row);
+    (clicked < total).then_some(clicked as isize - selected as isize)
 }
 
 /// Shared table/log/history/telemetry row allocation for rendering and mouse hit testing.
