@@ -48,6 +48,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::GlobalContentSearchLoaded { .. }
         | Action::GlobalContentSearchFailed { .. }
         | Action::ActivateCommandPalette
+        | Action::RestoreGlobalSearchResults
         | Action::CloseCommandPalette
         | Action::OpenApplicationMenu
         | Action::OpenContextMenu

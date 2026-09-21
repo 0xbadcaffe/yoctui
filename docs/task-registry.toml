@@ -9162,3 +9162,14 @@ required = true
 depends_on = ["FIRMWARE-BRIDGE-NAV-001"]
 verify = ["cargo test -p yoctui-model function_shortcut", "cargo test -p yoctui-app keymap_function_key", "cargo test -p yoctui --all-features ux_menu_terminal_f12", "cargo test -p yoctui-ui application_menu", "cargo fmt --all --check"]
 notes = "DONE in v0.1.200. F12 is the single advertised application-menu key across the typed catalog, open/close routing, footer, Help, overlays, docs and PTY acceptance. F9/Ctrl+P remain the command palette; F10 has no built-in global action and remains decodable for embedded PTYs or explicit keymap bindings. Focused checks pass; full baseline intentionally deferred for the user's rapid manual bug pass."
+
+[[task]]
+id = "SEARCH-RESTORE-PANIC-001"
+milestone = "M75"
+title = "Route restored global-search results through the accepted reducer branch"
+status = "DONE"
+priority = 2401
+required = true
+depends_on = ["MENU-KEY-001"]
+verify = ["cargo test -p yoctui-model global_content_search_rejects_stale_results_and_opens_selected_file", "cargo fmt --all --check"]
+notes = "DONE in v0.1.201. RestoreGlobalSearchResults is accepted by the same reducer branch that implements it, so returning from an edited search hit reopens the retained result list instead of reaching the reducer's wrong-route invariant panic. The existing top-level update regression now passes; full baseline intentionally deferred for the user's rapid manual bug pass."

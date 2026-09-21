@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 SEARCH-RESTORE-PANIC-001 is DONE in v0.1.201. The top-level reducer and
+global-search reducer now agree on `RestoreGlobalSearchResults`; returning from
+an edited hit restores the retained result list without reaching the wrong-route
+invariant panic. The focused top-level reducer regression passes.
+
 M75 MENU-KEY-001 is DONE in v0.1.200. The application menu now uses F12
 through the typed function-key catalog, global routing, menu focus trap,
 footer, Help, documentation, and controlling-PTY workflow source. F9/Ctrl+P retain
