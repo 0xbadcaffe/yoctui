@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+REDUCE-SHELL-001 is DONE in v0.1.187. The cohesive shell implementation is 142
+lines, and all three PTY and terminal-emulation tests now live in
+`src/tests/terminal_emulator.rs`. Package tests and strict Clippy pass. E2E
+crate decomposition is next.
+
 REDUCE-UI-001 is DONE in v0.1.186. The final audit covers all 202 Rust files
 under `yoctui-ui/src`: every production and test file is at most 480 lines, all
 300 test bodies live in 77 files under `src/tests`, and public rendering paths,
