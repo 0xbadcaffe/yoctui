@@ -67,7 +67,7 @@ pub enum FunctionKey {
     F7,
     F8,
     F9,
-    F10,
+    F12,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -141,8 +141,8 @@ pub const FUNCTION_SHORTCUTS: [FunctionShortcut; 10] = [
         route: FunctionShortcutRoute::CommandPalette,
     },
     FunctionShortcut {
-        key: FunctionKey::F10,
-        key_label: "F10",
+        key: FunctionKey::F12,
+        key_label: "F12",
         action_label: "Menu",
         route: FunctionShortcutRoute::ApplicationMenu,
     },

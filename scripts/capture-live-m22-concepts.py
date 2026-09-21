@@ -281,7 +281,7 @@ def main() -> int:
             "navigate the bounded inventory until the inspector reports the exact busybox recipe",
             "press t to refresh authoritative Devtool status",
             "press d to open the authoritative BusyBox Devtool workspace",
-            "press F10 to compose the application menu over the recipe editor",
+            "press F12 to compose the application menu over the recipe editor",
         ]
         os.write(master, b"\x1b[18~")
         expect(

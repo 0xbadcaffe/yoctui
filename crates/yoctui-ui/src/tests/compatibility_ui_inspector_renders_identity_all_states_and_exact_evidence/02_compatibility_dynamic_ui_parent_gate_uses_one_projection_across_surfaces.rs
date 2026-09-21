@@ -156,7 +156,7 @@ fn workbench_shell_renders_project_context_and_reference_command_rail() {
         "BitBake: ✓ Running",
         "F1 Help",
         "F2 Tasks",
-        "F10 Menu",
+        "F12 Menu",
     ] {
         assert!(output.contains(expected), "missing {expected}: {output}");
     }
@@ -336,7 +336,7 @@ fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
         assert!(rail.contains("Enter open"), "{width}: {rail}");
         assert!(rail.contains("Ctrl+B prefix"), "{width}: {rail}");
         assert!(rail.contains("F1 Help"), "{width}: {rail}");
-        assert!(rail.contains("F10 Menu"), "{width}: {rail}");
+        assert!(rail.contains("F12 Menu"), "{width}: {rail}");
         assert!(rail.contains("q Quit"), "{width}: {rail}");
         assert!(footer_item_width(&rail) <= usize::from(width - 10));
     }
@@ -353,7 +353,7 @@ fn next_generation_footer_is_contextual_bounded_and_keymap_truthful() {
         "c cancel",
         "Tab Focus",
         "F1 Help",
-        "F10 Menu",
+        "F12 Menu",
         "q Quit",
     ] {
         assert!(task_rail.contains(label), "missing {label}: {task_rail}");

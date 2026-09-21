@@ -292,7 +292,7 @@ root = Path(sys.argv[1])
 reports = {
     "idle-dashboard": {
         "interactions": ["launch a real client against the idle supported-host daemon"],
-        "observed_assertions": ["Current Build · Idle", "Daemon: ✓ Connected", "F10 Menu"],
+        "observed_assertions": ["Current Build · Idle", "Daemon: ✓ Connected", "F12 Menu"],
     },
     "active-build-tasks": {
         "interactions": ["submit core-image-minimal", "press F2 while real BitBake tasks are running"],

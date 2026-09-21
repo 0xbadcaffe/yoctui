@@ -10,7 +10,7 @@ pub(crate) fn direct_menu_shortcut_action(
         return None;
     }
     match input {
-        Input::F10 => Some(Action::OpenApplicationMenu),
+        Input::F12 => Some(Action::OpenApplicationMenu),
         Input::Char('a')
             if app.active_dialog().is_none() && !yoctui_app::workspace_text_input_active(app) =>
         {
@@ -135,6 +135,7 @@ pub(crate) fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::F(8) => Some(Input::F8),
         KeyCode::F(9) => Some(Input::F9),
         KeyCode::F(10) => Some(Input::F10),
+        KeyCode::F(12) => Some(Input::F12),
         KeyCode::Tab => Some(Input::Tab),
         KeyCode::BackTab => Some(Input::BackTab),
         KeyCode::Char(character) => Some(Input::Char(character)),
@@ -188,6 +189,7 @@ pub(crate) fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
         Input::F8 => b"\x1b[19~".as_slice(),
         Input::F9 => b"\x1b[20~".as_slice(),
         Input::F10 => b"\x1b[21~".as_slice(),
+        Input::F12 => b"\x1b[24~".as_slice(),
     };
     Some(bytes.to_vec())
 }

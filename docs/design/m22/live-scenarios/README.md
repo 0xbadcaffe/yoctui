@@ -50,7 +50,7 @@ Real image artifact and installed-package composition for the built rootfs.
 
 ## 5. Recipe editor and application menu
 
-Real recipe editor with the focus-trapped F10 application menu composed above
+Real recipe editor with the focus-trapped F12 application menu composed above
 it.
 
 ![Real Yoctui regression screen: editor-application-menu](05-editor-application-menu.png)

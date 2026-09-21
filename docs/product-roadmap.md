@@ -831,17 +831,17 @@ Exit criteria:
 
 ## M17 — Responsive reference command rail
 
-Goal: keep the reference's global F1–F10 navigation visible throughout every
+Goal: keep the reference's global function-key navigation visible throughout every
 wide workbench instead of tying it to one exact terminal width and screen.
 
 M19 `FOOTER-UI-001` intentionally supersedes the fixed presentation while
 preserving every typed function-key route. The footer is now contextual and
-bounded; the complete truthful F1–F10 catalog remains in Help, and the
+bounded; the complete truthful function-key catalog remains in Help, and the
 canonical footer geometry remains unchanged.
 
 Capabilities:
 
-- stable F1–F10 rail on every screen at 130 columns or wider
+- stable function-key rail on every screen at 130 columns or wider
 - exact canonical 160×48 Tasks footer geometry remains unchanged
 - contextual action footer remains available below the wide breakpoint
 - installed release and PTY regression validation
@@ -1021,7 +1021,7 @@ Capabilities:
   correlated paused log, textual filters, and recovery actions
 - canonical-width Rootfs composition with chart, exact table, accessible batch
   selection, and filesystem drill-down visible together
-- a real recipe editor and focus-trapped F10 application menu composition
+- a real recipe editor and focus-trapped F12 application menu composition
 - live daemon-owned Terminal Sessions navigation, split, writer/read-only, and
   prefix-help evidence
 - deterministic PNG rendering from exact production TestBackend cells and styles
@@ -1100,7 +1100,7 @@ Capabilities:
 
 - two-level workbench header, M21 pane proportions, semantic title color, and
   bordered footer across all six scenes
-- concept-shaped Dashboard and integrated recipe editor/F10 menu compositions
+- concept-shaped Dashboard and integrated recipe editor/F12 menu compositions
 - ANSI SGR-aware live terminal composition serialized as exact cell/style data
 - deterministic rasters for review followed by six fresh release-binary live
   captures from the initialized Poky environment
@@ -1746,7 +1746,7 @@ and the distinction between fixture images and retained live evidence.
 
 PERF-STARTUP-001 keeps the daemon and client at normal priority while automatic
 startup recipe discovery and its metadata descendants use background priority.
-REF10-UTILS consolidates exact path, text, identifier, bounded-insertion and
+REF12-UTILS consolidates exact path, text, identifier, bounded-insertion and
 spawn-retry rules in `yoctui-utils`, including portable absolute-path handling.
 PERF-VERIFY-001 requires release-profile idle CPU below the existing 1% combined
 contract, a real initialized-workspace priority observation, the full baseline,
@@ -1793,7 +1793,7 @@ available cards retain typed values, centered percentage and capacity context;
 the fourth remains explicitly unavailable until the backend supplies an
 authoritative sstate-reuse ratio.
 
-The six-image value review keeps the editor and focus-trapped F10 application
+The six-image value review keeps the editor and focus-trapped F12 application
 menu as the first future concept investment. Its simultaneous recipe tree,
 large source buffer, validation/diff region and stable menu groups would improve
 an end-to-end editing workflow. Active Tasks and Failed Errors remain the next

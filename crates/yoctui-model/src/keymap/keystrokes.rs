@@ -36,6 +36,7 @@ pub enum KeyStroke {
     F8,
     F9,
     F10,
+    F12,
 }
 
 impl KeyStroke {
@@ -77,6 +78,7 @@ impl fmt::Display for KeyStroke {
             Self::F8 => "F8",
             Self::F9 => "F9",
             Self::F10 => "F10",
+            Self::F12 => "F12",
         };
         formatter.write_str(name)
     }
@@ -117,6 +119,7 @@ impl FromStr for KeyStroke {
             "f8" => Some(Self::F8),
             "f9" => Some(Self::F9),
             "f10" => Some(Self::F10),
+            "f12" => Some(Self::F12),
             _ => None,
         };
         if let Some(stroke) = named {

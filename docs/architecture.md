@@ -1475,7 +1475,7 @@ rendering code maintains a separate command list or availability rule.
 The ten global function keys use the same boundary. `yoctui-model` owns one
 closed `FunctionShortcut` catalog containing each key label, truthful action
 label, and typed route. `yoctui-app` maps terminal-independent `Input::F1` …
-`Input::F10` values through that catalog, while `yoctui-ui` uses the catalog
+`Input::F12` values through that catalog, while `yoctui-ui` uses the catalog
 for Help and for optional global footer destinations. Workspace and modal
 controls remain context projections of existing typed input routes; the UI may
 omit a lower-priority hint for width but may not rename or invent its action.

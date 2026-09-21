@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.199  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.200  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -11,7 +11,7 @@
 │    Layers          │││                │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
 │    Recipes         │││                │                                                          │                        ││Language: BitBake               ││
 │    Packages        │││                │                                                          │                        ││State: modified                 ││
-│    Images          │││                │Esc/F10 close · Enter open · ↑/↓ select · ←/→ groups      │}/bash                  ││                                ││
+│    Images          │││                │Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups      │}/bash                  ││                                ││
 │    Kernel          │││                └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
 │    U-Boot / BIOS   │││                      ││ 9 │ BROKEN_OVERRIDE =  [validation]                                        ││[v] Validate                    ││
 │    SDK             │││                      ││10 │ ▏                                                                      ││[p] Preview diff                ││
@@ -46,5 +46,5 @@
 │                    ││└──────────────────────┘i insert · / search · Ctrl+S save · Ctrl+B build · Tab files                  └────────────────────────────────┘│
 └────────────────────┘└────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Enter select/confirm   Esc cancel   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F8 Images   F1 Help   F10 Menu   q Quit              19:28:27│
+│Enter select/confirm   Esc cancel   F2 Tasks   F3 History   F4 Dashboard   F5 Logs   F6 Layers   F8 Images   F1 Help   F12 Menu   q Quit              19:28:27│
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

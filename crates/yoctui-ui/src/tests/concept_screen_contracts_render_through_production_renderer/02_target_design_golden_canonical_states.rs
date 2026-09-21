@@ -178,7 +178,7 @@ fn literal_shell_uses_reference_geometry_palette_and_command_rail() {
         "Ctrl+B prefix",
         "F1 Help",
         "F3 History",
-        "F10 Menu",
+        "F12 Menu",
         "q Quit",
         "▶ Build running · 1 active",
     ] {

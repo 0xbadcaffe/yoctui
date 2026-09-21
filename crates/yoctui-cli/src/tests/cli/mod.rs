@@ -126,7 +126,7 @@ mod focus_keys_decode_without_losing_direction;
 
 mod reference_function_keys_decode_without_aliasing;
 
-mod ux_menu_terminal_f10_and_right_click_decode_without_bypassing_typed_routes;
+mod ux_menu_terminal_f12_and_right_click_decode_without_bypassing_typed_routes;
 
 mod dialog_input_routing_prevents_pane_shortcuts_from_leaking;
 

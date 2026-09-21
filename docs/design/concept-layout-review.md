@@ -10,7 +10,7 @@ neighboring sizes. PNGs are deterministic cell captures, not live-build evidence
 | [Active tasks](m22/production-raster/02-active-build-tasks.png) | Build progress/table, correlated log, history and telemetry; one inspector contains task facts, paths, actions and system status. |
 | [Errors](m22/production-raster/03-failed-build-errors.png) | Failure summary and table above correlated output; recovery and filters below; readable clock times and a compact fact/action inspector. |
 | [Rootfs](m22/production-raster/04-rootfs-composition.png) | Braille pie paired with exact bytes, package selection and retained filesystem context; visible tab names and semantic colors. |
-| [Editor/menu](m22/production-raster/05-editor-application-menu.png) | File tree and inspector span the editor height, diagnostics/diff stay under the document, and the F10 menu owns focus. |
+| [Editor/menu](m22/production-raster/05-editor-application-menu.png) | File tree and inspector span the editor height, diagnostics/diff stay under the document, and the F12 menu owns focus. |
 | [Terminal sessions](m22/production-raster/06-terminal-sessions.png) | Visible session tabs, two bounded PTYs, writer/read-only status, search/history and a prefix-help rail. |
 
 Terminal cells approximate the mockup's curves, border placement and text
@@ -43,7 +43,7 @@ production captures and ranks workflow value rather than pixel similarity.
 | Active tasks | High: progress, task identity, correlated output and retained history support live build supervision. | Keep the present production composition. Polish only measured log-navigation or task-selection gaps. |
 | Failed errors | High: failure selection, correlated log search, filters and recovery actions shorten diagnosis. | Keep. Prioritize action clarity and source correlation over more decoration. |
 | Rootfs composition | High: the chart gives proportion while the table and package tree preserve exact authority. | Keep the production chart/table/tree combination; add detail only when package evidence supports it. |
-| Editor and application menu | Highest remaining value: the recipe tree, large editor, validation/diff split and focus-trapped F10 groups form one complete editing workflow. | First future fidelity target. Expand usable editor space, keep diagnostics and diff visible, and retain disabled reasons and keyboard focus inside the menu. |
+| Editor and application menu | Highest remaining value: the recipe tree, large editor, validation/diff split and focus-trapped F12 groups form one complete editing workflow. | First future fidelity target. Expand usable editor space, keep diagnostics and diff visible, and retain disabled reasons and keyboard focus inside the menu. |
 | Terminal sessions | High: tabs, split PTYs, writer ownership, search and prefix help make long-lived sessions manageable. | Keep. Native kernel and U-Boot menuconfig already use the full workspace; refine only from real PTY evidence. |
 
 Recommended delivery order is editor/menu composition first, then focused

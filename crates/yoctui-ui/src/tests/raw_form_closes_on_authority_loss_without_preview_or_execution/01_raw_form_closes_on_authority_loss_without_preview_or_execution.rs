@@ -389,7 +389,7 @@ fn raw_responsive_navigation_renders_with_exact_shell_help() {
     app.focus = FocusTarget::Workspace;
     let shortcuts = footer_shortcuts(&app);
     assert!(shortcuts.contains("f Favorite | H History"), "{shortcuts}");
-    assert!(shortcuts.contains("F1 Help | F10 Menu"), "{shortcuts}");
+    assert!(shortcuts.contains("F1 Help | F12 Menu"), "{shortcuts}");
 }
 
 #[test]

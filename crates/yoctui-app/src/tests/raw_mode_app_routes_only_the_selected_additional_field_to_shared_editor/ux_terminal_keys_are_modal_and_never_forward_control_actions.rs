@@ -51,7 +51,7 @@ fn ux_terminal_keys_are_modal_and_never_forward_control_actions() {
         Input::Esc,
         Input::Char('q'),
         Input::Char('a'),
-        Input::F10,
+        Input::F12,
     ] {
         assert!(focus_action_for_app(&app, key).is_none());
         assert!(terminal_owns_input(&app));

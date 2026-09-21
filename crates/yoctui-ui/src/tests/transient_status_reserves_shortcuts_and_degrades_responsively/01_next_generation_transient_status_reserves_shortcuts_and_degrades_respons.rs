@@ -26,7 +26,7 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
         assert!(footer.contains('…'), "{width}: {footer}");
         if width >= 160 {
             assert!(footer.contains("F1 Help"), "{width}: {footer}");
-            assert!(footer.contains("F10 Menu"), "{width}: {footer}");
+            assert!(footer.contains("F12 Menu"), "{width}: {footer}");
         } else {
             assert!(footer.contains("? Help"), "{width}: {footer}");
             assert!(footer.contains("Ctrl+P Menu"), "{width}: {footer}");

@@ -87,7 +87,7 @@
             Input::F7,
             Input::F8,
             Input::F9,
-            Input::F10,
+            Input::F12,
         ];
         let mut labels = std::collections::BTreeSet::new();
         for (input, shortcut) in function_inputs

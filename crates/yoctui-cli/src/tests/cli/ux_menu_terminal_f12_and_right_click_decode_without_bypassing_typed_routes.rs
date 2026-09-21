@@ -1,10 +1,10 @@
 use super::*;
 
 #[test]
-fn ux_menu_terminal_f10_and_right_click_decode_without_bypassing_typed_routes() {
+fn ux_menu_terminal_f12_and_right_click_decode_without_bypassing_typed_routes() {
     assert_eq!(
-        input_from_key(KeyEvent::new(KeyCode::F(10), KeyModifiers::NONE)),
-        Some(Input::F10)
+        input_from_key(KeyEvent::new(KeyCode::F(12), KeyModifiers::NONE)),
+        Some(Input::F12)
     );
     assert_eq!(
         mouse_kind_from_event(crossterm::event::MouseEventKind::Down(

@@ -162,7 +162,7 @@ pub(crate) fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(bounded_cell_text(
-            "Esc/F10 close · Enter activate · ↑/↓ items · ←/→ groups · type prefix · Backspace",
+            "Esc/F12 close · Enter activate · ↑/↓ items · ←/→ groups · type prefix · Backspace",
             regions[3].width,
         ))
         .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
@@ -275,7 +275,7 @@ pub(crate) fn application_menu_overlay(
         regions[1],
     );
     frame.render_widget(
-        Paragraph::new("Esc/F10 close · Enter open · ↑/↓ select · ←/→ groups")
+        Paragraph::new("Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups")
             .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
         regions[2],
     );

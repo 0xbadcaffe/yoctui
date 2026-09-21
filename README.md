@@ -124,7 +124,7 @@ starting the daemon from an initialized shell as shown above.
 | `F2` / `F3` / `F4` | Tasks / History / Dashboard |
 | `F5` / `F6` / `F7` / `F8` | Logs / Layers / Recipes / Images |
 | `F9` / `Ctrl+P` | Command palette |
-| `F10` / `a` | Application menu / context actions |
+| `F12` / `a` | Application menu / context actions |
 | `Tab` / `Shift+Tab` | Change focus; some workspaces use Tab for their views |
 | Arrows, `PageUp`/`PageDown`, `Home`/`End` | Move within lists and trees |
 | `Right` / `Enter` in Navigator | Expand a group, then open and focus its workspace |
@@ -312,7 +312,7 @@ Repositories without an upstream are marked accordingly. Status refreshes in the
 ### GitUI
 
 Install [GitUI](https://github.com/gitui-org/gitui#installation) on your `PATH`,
-then restart Yoctui. Choose **F10 → Tools → Open GitUI**, or search for GitUI in
+then restart Yoctui. Choose **F12 → Tools → Open GitUI**, or search for GitUI in
 **Ctrl+P**. Review the source directory and choose the embedded terminal.
 Press **o** to take writer control. GitUI provides diffs, staging, commit messages,
 branch management, fetch and push; its footer shows the active keys.

@@ -59,7 +59,7 @@ fn signature_workspace_renders_typed_records_differences_limitations_and_footer(
     assert!(wide.contains("[value] CC: gcc"), "{wide}");
     assert!(wide.contains("one malformed artifact"), "{wide}");
     assert!(wide.contains("recursive detail unavailable"), "{wide}");
-    assert!(wide.contains("F10 Menu"), "{wide}");
+    assert!(wide.contains("F12 Menu"), "{wide}");
     let contextual_footer = rendered_text(&app, 120, 34);
     assert!(
         contextual_footer.contains("1/2 sides"),
@@ -160,7 +160,7 @@ fn pkgdata_workspace_renders_typed_partial_details_footer_and_responsive_modes()
     assert!(wide.contains("libc6"), "{wide}");
     assert!(wide.contains("Image membership: unavailable"), "{wide}");
     assert!(wide.contains("image membership unavailable"), "{wide}");
-    assert!(wide.contains("F10 Menu"), "{wide}");
+    assert!(wide.contains("F12 Menu"), "{wide}");
     let contextual_footer = rendered_text(&app, 120, 30);
     assert!(
         contextual_footer.contains("Enter detail"),

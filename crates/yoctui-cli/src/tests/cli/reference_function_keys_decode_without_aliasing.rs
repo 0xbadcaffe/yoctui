@@ -13,8 +13,9 @@ fn reference_function_keys_decode_without_aliasing() {
         Input::F8,
         Input::F9,
         Input::F10,
+        Input::F12,
     ];
-    for (number, expected) in (1..=10).zip(expected) {
+    for (number, expected) in (1..=10).chain([12]).zip(expected) {
         assert_eq!(
             input_from_key(KeyEvent::new(KeyCode::F(number), KeyModifiers::NONE)),
             Some(expected)

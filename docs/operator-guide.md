@@ -58,7 +58,7 @@ the currently focused pane; disabled actions remain visible with a reason.
 - `Tab` and `Shift+Tab` move between Navigator, Workspace, and Inspector.
 - `Ctrl+P` opens the searchable command palette. Unavailable commands explain
   their prerequisites and remain inert.
-- `F10` opens the six-group application menu. Press `a` or right-click for the
+- `F12` opens the six-group application menu. Press `a` or right-click for the
   selected workspace item's contextual actions.
 - `PageUp`/`PageDown`, `Home`/`End`, and `gg`/`G` provide consistent bounded
   collection movement. `/` searches, `Ctrl+U` clears, and `n`/`N` moves among

@@ -47,7 +47,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenErrors => "e",
         CommandId::OpenConfiguration => "v",
         CommandId::OpenRawMode => "Ctrl+P raw",
-        CommandId::OpenGitUi => "F10 Tools",
+        CommandId::OpenGitUi => "F12 Tools",
         CommandId::OpenTerminalSessions => "Ctrl+B t",
         CommandId::OpenMaintenance | CommandId::OpenBuildEnvironment => "none",
         CommandId::OpenCompatibility => "none",
@@ -58,10 +58,10 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         | CommandId::FocusInspector
         | CommandId::PreviousSubfocus
         | CommandId::NextSubfocus
-        | CommandId::TogglePaneZoom => "F10 View",
+        | CommandId::TogglePaneZoom => "F12 View",
         CommandId::ScrollFirst => "gg / Home",
         CommandId::ScrollLast => "G / End",
-        CommandId::OpenOnboarding => "F10 Help",
+        CommandId::OpenOnboarding => "F12 Help",
         CommandId::OpenHelp => "? / F1",
     }
 }

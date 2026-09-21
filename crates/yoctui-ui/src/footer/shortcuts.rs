@@ -102,7 +102,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             if app.raw_mode.view == yoctui_model::RawModeView::Execution {
                 "↑/↓ Scroll | ←/→ Horizontal | 1/2 Stream | f Follow | / Search | c Cancel | d Detach | r Reattach | Esc Back"
             } else {
-                "←/→ Pane | ↑/↓ Select | Enter Open | / Search | f Favorite | H History | Tab Focus | F1 Help | F10 Menu | q Quit"
+                "←/→ Pane | ↑/↓ Select | Enter Open | / Search | f Favorite | H History | Tab Focus | F1 Help | F12 Menu | q Quit"
             }
         }
         Screen::TerminalSessions => {

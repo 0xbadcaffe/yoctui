@@ -9,7 +9,7 @@ fn focus_menu_shortcut_preserves_editor_and_search_text() {
     assert!(direct_menu_shortcut_action(&app, Input::Char('a'), false).is_none());
     assert!(pane_focus_route(&app, Input::Char('q')).is_none());
     assert_eq!(
-        direct_menu_shortcut_action(&app, Input::F10, false),
+        direct_menu_shortcut_action(&app, Input::F12, false),
         Some(Action::OpenApplicationMenu)
     );
 }

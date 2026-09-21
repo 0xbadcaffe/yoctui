@@ -79,7 +79,7 @@ pub fn menu_action(app: &yoctui_model::App, key: Input) -> Option<MenuInputResul
     }
     let reduce = |action| Some(MenuInputResult::Reduce(Box::new(action)));
     match key {
-        Input::Esc | Input::F10 => reduce(Action::CloseMenu),
+        Input::Esc | Input::F12 => reduce(Action::CloseMenu),
         Input::Left => reduce(Action::SelectMenuGroup { delta: -1 }),
         Input::Right => reduce(Action::SelectMenuGroup { delta: 1 }),
         Input::Up | Input::Char('k') => reduce(Action::SelectMenuItem { delta: -1 }),

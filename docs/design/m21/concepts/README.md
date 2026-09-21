@@ -20,7 +20,7 @@ production state.
 | Active build | [`02-active-build-tasks.png`](02-active-build-tasks.png) | Determinate progress, task table, following logs, history, telemetry, Inspector |
 | Failed build | [`03-failed-build-errors.png`](03-failed-build-errors.png) | Failure hierarchy, correlated logs, paused search, scrolling, filters, recovery actions |
 | Rootfs composition | [`04-rootfs-composition.png`](04-rootfs-composition.png) | Pie/table equivalence, package authority, checkboxes, tree drill-down, scrollbar |
-| Editor and menu | [`05-editor-application-menu.png`](05-editor-application-menu.png) | F10 menu, focus trap, disabled reason, multiline editor, diagnostics, diff preview |
+| Editor and menu | [`05-editor-application-menu.png`](05-editor-application-menu.png) | F12 menu, focus trap, disabled reason, multiline editor, diagnostics, diff preview |
 | Terminal sessions | [`06-terminal-sessions.png`](06-terminal-sessions.png) | Split PTYs, tabs, writer lease, read-only client, scrollback search, prefix help |
 
 ## Validation use

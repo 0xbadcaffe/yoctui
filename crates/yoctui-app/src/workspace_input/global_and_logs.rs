@@ -41,7 +41,7 @@ pub fn key_action(key: Input) -> Option<Action> {
         Input::F7 => Some(yoctui_model::function_shortcut_action(FunctionKey::F7)),
         Input::F8 => Some(yoctui_model::function_shortcut_action(FunctionKey::F8)),
         Input::F9 => Some(yoctui_model::function_shortcut_action(FunctionKey::F9)),
-        Input::F10 => Some(yoctui_model::function_shortcut_action(FunctionKey::F10)),
+        Input::F12 => Some(yoctui_model::function_shortcut_action(FunctionKey::F12)),
         Input::Tab => Some(Action::CycleFocus { backwards: false }),
         Input::BackTab => Some(Action::CycleFocus { backwards: true }),
         Input::Char('Y') => Some(Action::ConfirmQuit),

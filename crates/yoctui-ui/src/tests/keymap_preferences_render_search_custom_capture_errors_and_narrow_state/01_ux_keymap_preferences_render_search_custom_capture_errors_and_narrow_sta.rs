@@ -109,7 +109,7 @@ fn ux_menu_renders_groups_context_disabled_safety_and_accessible_responsive_stat
         assert!(output.contains("Help"), "{output}");
         assert!(output.contains("Edit BBMASK"), "{output}");
         assert!(output.contains("Load a Yocto workspace first"), "{output}");
-        assert!(output.contains("Esc/F10 close"), "{output}");
+        assert!(output.contains("Esc/F12 close"), "{output}");
     }
 
     let _ = update(&mut app, Action::CloseMenu);

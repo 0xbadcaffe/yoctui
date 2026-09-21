@@ -12,7 +12,7 @@ fn keymap_function_key_catalog_maps_every_named_route() {
         Input::F7,
         Input::F8,
         Input::F9,
-        Input::F10,
+        Input::F12,
     ];
     let labels = [
         ("F1", "Help"),
@@ -24,7 +24,7 @@ fn keymap_function_key_catalog_maps_every_named_route() {
         ("F7", "Recipes"),
         ("F8", "Images"),
         ("F9", "Commands"),
-        ("F10", "Menu"),
+        ("F12", "Menu"),
     ];
     for ((input, shortcut), label) in inputs
         .into_iter()

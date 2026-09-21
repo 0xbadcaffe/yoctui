@@ -21,7 +21,7 @@ fn compatibility_ui_inspector_renders_identity_all_states_and_exact_evidence() {
         "devtool.upgrade",
         "resulttool",
         "git_archive",
-        "F10 Menu",
+        "F12 Menu",
     ] {
         assert!(all.contains(expected), "missing {expected}: {all}");
     }

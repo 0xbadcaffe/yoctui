@@ -102,7 +102,7 @@ for width, height, name in ((80, 24, 'narrow'), (100, 30, 'medium'), (160, 48, '
         if 'yoctui' not in normalized.lower() or proc.returncode not in (0, 1, -9):
             raise SystemExit(f'snapshot failed at {name}: returncode={proc.returncode}')
         if name == 'wide':
-            for anchor in ('Tasks: Build', 'F1 Help', 'F10 Menu'):
+            for anchor in ('Tasks: Build', 'F1 Help', 'F12 Menu'):
                 if anchor not in normalized:
                     raise SystemExit(f'wide reference snapshot missing {anchor!r}')
 print('PTY semantic snapshots passed')

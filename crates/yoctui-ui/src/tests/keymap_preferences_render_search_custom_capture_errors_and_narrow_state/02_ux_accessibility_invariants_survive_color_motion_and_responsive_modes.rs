@@ -175,7 +175,7 @@ fn ux_accessibility_m21_surfaces_never_require_color_glyph_shape_or_motion() {
         for expected in [
             "Application menu",
             "Load a Yocto workspace first",
-            "Esc/F10 close",
+            "Esc/F12 close",
         ] {
             assert!(
                 menu_text.contains(expected),
@@ -299,7 +299,7 @@ fn images_workspace_renders_typed_artifacts_inspector_and_responsive_modes() {
         assert!(output.contains("core-image-minimal"), "{output}");
         assert!(output.contains("wic"), "{output}");
         if width >= WIDE_WORKBENCH_MIN_WIDTH {
-            assert!(output.contains("F10 Menu"), "{output}");
+            assert!(output.contains("F12 Menu"), "{output}");
         } else {
             assert!(output.contains("refresh"), "{output}");
         }

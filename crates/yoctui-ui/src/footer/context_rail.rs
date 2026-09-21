@@ -165,7 +165,7 @@ pub(crate) fn footer_rail_shortcuts(app: &App, width: u16) -> String {
     } else {
         vec![
             function_footer_item(FunctionKey::F1),
-            function_footer_item(FunctionKey::F10),
+            function_footer_item(FunctionKey::F12),
             "q Quit".into(),
         ]
     };
@@ -188,7 +188,7 @@ pub(crate) fn footer_rail_shortcuts(app: &App, width: u16) -> String {
         let optional = FUNCTION_SHORTCUTS
             .iter()
             .filter(|shortcut| {
-                !matches!(shortcut.key, FunctionKey::F1 | FunctionKey::F9 | FunctionKey::F10)
+                !matches!(shortcut.key, FunctionKey::F1 | FunctionKey::F9 | FunctionKey::F12)
                     && !matches!(shortcut.route, FunctionShortcutRoute::Open(screen) if screen == app.screen)
                     && !prefix.iter().any(|item| {
                         item.split_once(' ')

@@ -27,7 +27,7 @@ Create the Yoctui idle Dashboard with project `core-image-minimal`, machine
 Navigator grouping, Build Overview, Recent Builds, Project Inspector, and
 Quick Actions. Show exact meters for CPU `18%`, RAM `42%`, Build FS `63%`, and
 sstate reuse `87%`. Include `F1 Help`, `F4 Dashboard`, `F9 Commands`,
-`F10 Menu`, `q Quit`, and clock `19:28:27`.
+`F12 Menu`, `q Quit`, and clock `19:28:27`.
 
 ## 02 — Active build Tasks
 
@@ -60,9 +60,9 @@ The accepted output received one targeted edit changing only the secondary
 header to `Build: (none)`, `Task: (none)`, `Elapsed: 00:00:00`,
 `ETA: --:--:--`, and `Workers: 0`.
 
-## 05 — Editor and F10 application menu
+## 05 — Editor and F12 application menu
 
-Create Recipes with a two-pane `bash_5.2.bb` editor behind a focus-trapped F10
+Create Recipes with a two-pane `bash_5.2.bb` editor behind a focus-trapped F12
 menu. Show stable menu groups Workspace, Build, Navigate, View, Tools, Help;
 open Build with `Build saved recipe` selected and `Cancel active build`
 disabled because no build is running. Keep editor line numbers, syntax color,

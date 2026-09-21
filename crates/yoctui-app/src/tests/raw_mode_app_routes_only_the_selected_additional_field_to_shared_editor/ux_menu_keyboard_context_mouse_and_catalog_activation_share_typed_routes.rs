@@ -3,7 +3,7 @@ use super::*;
 #[test]
 fn ux_menu_keyboard_context_mouse_and_catalog_activation_share_typed_routes() {
     let mut app = yoctui_model::App::new(16, 4_096);
-    assert_eq!(key_action(Input::F10), Some(Action::OpenApplicationMenu));
+    assert_eq!(key_action(Input::F12), Some(Action::OpenApplicationMenu));
     let _ = yoctui_model::update(&mut app, Action::OpenApplicationMenu);
     assert_eq!(
         menu_action(&app, Input::Right),

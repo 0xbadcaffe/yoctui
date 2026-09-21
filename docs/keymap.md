@@ -18,7 +18,7 @@ considered. Disabled actions stay visible with their exact prerequisite.
 | `F7` | Recipes |
 | `F8` | Images |
 | `F9` or `Ctrl+P` | Command palette |
-| `F10` | Workspace/Build/Navigate/View/Tools/Help application menu |
+| `F12` | Workspace/Build/Navigate/View/Tools/Help application menu |
 | `B` | Image build options |
 | `a` or right-click | Context actions for the current selection |
 | `?` | Contextual Help |
@@ -37,7 +37,7 @@ groups or moves to a parent. `Tab` and `Shift+Tab` cycle relevant panes.
 `Esc` closes the innermost transient owner, then returns from Workspace to
 Navigator, then to Dashboard. Terminal writers retain these keys; `Ctrl+B`
 introduces Yoctui terminal controls. Focus and zoom commands are
-discoverable through `F10` → View and the command palette; zoom preserves the
+discoverable through `F12` → View and the command palette; zoom preserves the
 exact selection, scroll, follow, and subfocus state.
 
 | Intent | Keys |

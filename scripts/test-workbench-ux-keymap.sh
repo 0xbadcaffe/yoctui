@@ -111,7 +111,7 @@ with tempfile.TemporaryDirectory(prefix="yoctui-workbench-keymap-", dir="/tmp") 
         )
 
     # The isolated session has onboarding dismissed so every route is deterministic.
-    send_and_expect(master, b"\x1b[21~", "Application menu", "F10 application menu")
+    send_and_expect(master, b"\x1b[24~", "Application menu", "F12 application menu")
     os.write(master, b"\x1b")
     collect(master)
     send_and_expect(master, b"\x10", "Command Palette", "Ctrl+P command palette")

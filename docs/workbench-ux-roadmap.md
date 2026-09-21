@@ -76,7 +76,7 @@ or labels independently.
 
 ### Menu model
 
-`F10` opens a focus-trapped menu bar with these stable groups:
+`F12` opens a focus-trapped menu bar with these stable groups:
 
 1. **Workspace** — profiles, environment verification, terminal sessions, quit.
 2. **Build** — build options, tasks, logs, errors, cancellation, history.
@@ -100,7 +100,7 @@ popup editor.
 
 | Context | Default controls |
 |---|---|
-| Global | `F1` Help, `F2` Tasks, `F3` History, `F4` Dashboard, `F5` Logs, `F6` Layers, `F7` Recipes, `F8` Images, `F9`/`Ctrl+P` Commands, `F10` Menu, `q`/`Ctrl+C` Quit. |
+| Global | `F1` Help, `F2` Tasks, `F3` History, `F4` Dashboard, `F5` Logs, `F6` Layers, `F7` Recipes, `F8` Images, `F9`/`Ctrl+P` Commands, `F12` Menu, `q`/`Ctrl+C` Quit. |
 | Pane focus | `Tab`/`Shift+Tab` cycle; mouse click focuses; Help shows the exact next and previous target. |
 | Collection | `Up`/`k`, `Down`/`j`, `PageUp`/`PageDown`, `Home`/`End`, `gg`/`G`; mouse wheel follows the same bounded actions. |
 | Tree | `Left`/`h` collapse or move parent, `Right`/`l` expand or move child, `Enter` opens, `Space` toggles when a checkable state exists. |
@@ -381,7 +381,7 @@ dimensions, hashes, anchors, and lossless format.
 | App/input | Every keyboard, chord, menu, mouse, paste, and terminal-prefix route maps to the same typed action; modal/terminal focus traps and disabled actions cannot leak. |
 | UI | Ratatui `TestBackend` at `200x60`, `160x50`, `130x40`, `100x30`, `80x24`, and below minimum; every theme, no-color, ASCII, high contrast, and reduced motion; semantic snapshots plus deliberately reviewed goldens. |
 | Property/fuzz | Arbitrary selection/offset/content/resize sequences never panic, escape bounds, lose identity, or create inaccessible focus; rootfs input and terminal replica decoders stay bounded. |
-| PTY | Real-terminal tests for F10 menus, palette, keybinding editor, focus/zoom, mouse scrolling, bracketed paste, terminal prefix/literal prefix, split sessions, copy/search, detach/reattach, and resize. |
+| PTY | Real-terminal tests for F12 menus, palette, keybinding editor, focus/zoom, mouse scrolling, bracketed paste, terminal prefix/literal prefix, split sessions, copy/search, detach/reattach, and resize. |
 | Performance | Extend the existing five-scenario matrix with menu-heavy, rootfs-large, graph-large, editor-large, and terminal-dense scenes; retain the existing 10 ms/frame ceiling and profile regressions before caching. |
 | License/supply chain | `cargo deny check`, dependency feature audit, locked/offline build, third-party notice validation, SBOM generation, and source/checksum verification. |
 | Live Yocto | Supported older/latest environments exercise menus and availability, a real build and cancellation, log correlation, image manifest/pkgdata/rootfs composition, context terminal, menuconfig/devshell where available, reconnect, and evidence expiry. |

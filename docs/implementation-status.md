@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 MENU-KEY-001 is DONE in v0.1.200. The application menu now uses F12
+through the typed function-key catalog, global routing, menu focus trap,
+footer, Help, documentation, and controlling-PTY workflow source. F9/Ctrl+P retain
+the command palette, while unbound F10 remains available to embedded terminal
+sessions. Focused model, app, CLI and UI checks pass; the full suite remains
+deferred for the user's manual bug pass.
+
 M74 focused live-workbench correction is complete. LAYER-NAV-001 is DONE
 in v0.1.196: the open layer browser owns tree keys and Escape before pane
 focus. SEARCH-RETURN-001 is DONE in v0.1.197: loading renders the shared

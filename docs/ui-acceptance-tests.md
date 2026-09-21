@@ -47,7 +47,7 @@ entry is disabled:
 
 | Scope | Keys and required result |
 | --- | --- |
-| Global | `F1` Help; `F2` Tasks; `F3` History; `F4` Dashboard; `F5` Logs; `F6` Layers; `F7` Recipes; `F8` Images; `F9`/`Ctrl+P` command palette; `F10` application menu; `B` image build options; `a`/right-click context actions; `?` contextual Help; `/` search; `Tab`/`Shift+Tab` focus; `Esc` outward; `q` quit confirmation; `Ctrl+C` context cancel; arrows/`j`/`k`, `PageUp`/`PageDown`, `Home`/`End`, and `gg`/`G` collection movement; `Enter` activate; `Space` toggle |
+| Global | `F1` Help; `F2` Tasks; `F3` History; `F4` Dashboard; `F5` Logs; `F6` Layers; `F7` Recipes; `F8` Images; `F9`/`Ctrl+P` command palette; `F12` application menu; `B` image build options; `a`/right-click context actions; `?` contextual Help; `/` search; `Tab`/`Shift+Tab` focus; `Esc` outward; `q` quit confirmation; `Ctrl+C` context cancel; arrows/`j`/`k`, `PageUp`/`PageDown`, `Home`/`End`, and `gg`/`G` collection movement; `Enter` activate; `Space` toggle |
 | Navigator | `j/k` or `Up/Down` move; `Enter` open; `Tab` workspace; `Shift+Tab` inspector |
 | Layers/files | `Right/l` expand, `Left/h` collapse, `Enter` open/toggle, `e` edit, `o` external editor, `R` relationships, `r` refresh, `.` hidden files, `/` search, `i` Git, `m` metadata, `d` dependencies |
 | Tasks | `f` state filter, `F` field filter, `/` edit filter, `d` duration filter, `c` cancel |

@@ -102,7 +102,7 @@ The normal application layout is a dense, IDE-like operations workbench:
 │   Testing        │                                     │                                  │
 │   Security / QA  │                                     │                                  │
 ├──────────────────┴─────────────────────────────────────┴──────────────────────────────────┤
-│ ↑/↓ Select  f State  / Filter  c Cancel  F1 Help  F10 Menu  q Quit          19:28:27   │
+│ ↑/↓ Select  f State  / Filter  c Cancel  F1 Help  F12 Menu  q Quit          19:28:27   │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -819,7 +819,7 @@ functionality, render the complete workspace rail in stable `OVERVIEW`,
 `CONTENT`, `BUILD`, `VALIDATE`, and `TOOLS` groups. This distinction prevents a
 workspace-owned layer, recipe, package, or artifact tree from being duplicated
 as a fake filesystem in the Navigator. Entries that do not fit remain
-reachable through bounded scrolling, `F10 Menu`, the command palette, or their
+reachable through bounded scrolling, `F12 Menu`, the command palette, or their
 documented global shortcut.
 
 Each rail group heading and each destination is rendered exactly once per
@@ -929,7 +929,7 @@ Rules:
 - pane focus consumes only keys mapped to focus or pane navigation; every
   unmatched key continues through the active workspace and global shortcut
   routes instead of being discarded
-- global actions such as `Ctrl+P`, `F1`, `F10`, `q`, and `Ctrl+C` remain
+- global actions such as `Ctrl+P`, `F1`, `F12`, `q`, and `Ctrl+C` remain
   reachable from Navigator and every actionable Workspace focus
 - a non-dialog notification consumes `Enter` only when it has an actionable
   destination and consumes `Esc` for dismissal; a passive notification never
@@ -3606,11 +3606,11 @@ The authoritative shared function-key catalog is:
 
 ```text
 F1 Help  F2 Tasks  F3 History  F4 Dashboard  F5 Logs
-F6 Layers  F7 Recipes  F8 Images  F9 Commands  F10 Menu
+F6 Layers  F7 Recipes  F8 Images  F9 Commands  F12 Menu
 ```
 
 This catalog is shared by input dispatch, Help, and footer rendering. `F9` and
-`F10` are intentional aliases for the command palette; the bounded rail omits
+`F12` are intentional aliases for the command palette; the bounded rail omits
 the lower-priority `F9` alias instead of advertising it as a nonexistent
 global search. There is no function-key terminal route: `F4` truthfully opens
 Dashboard, while terminal/session access remains in Navigator, Dashboard, and
@@ -3619,7 +3619,7 @@ the command palette through its actual bindings.
 At the canonical `160x48` Tasks size the footer retains its exact two-row
 bordered reference geometry. With Navigator focused it prioritizes Navigator
 selection/open/prefix controls, then non-current global destinations that fit,
-then `F1 Help`, `F10 Menu`, and `q Quit`. With Workspace focused it instead
+then `F1 Help`, `F12 Menu`, and `q Quit`. With Workspace focused it instead
 prioritizes task selection/filter/cancellation and `Tab Focus`. A route
 that already names the active screen is omitted as redundant. Every displayed
 key invokes the named action; no unavailable or duplicate route is used merely
@@ -3637,7 +3637,7 @@ compound narrow tokens.
 Dashboard example:
 
 ```text
-B Options  Ctrl+B Prefix  ↑/↓ Package progress  F1 Help  F10 Menu  q Quit
+B Options  Ctrl+B Prefix  ↑/↓ Package progress  F1 Help  F12 Menu  q Quit
 ```
 
 When no dialog or editor traps input, `q` and `Ctrl+C` retain their global quit
@@ -4420,7 +4420,7 @@ rolls back confirmation preparation and emits no effect.
 ### Environment/Compatibility workspace
 
 `Compatibility` is a first-class destination under the Navigator's environment
-and maintenance area and is also searchable from `F10 Menu` / `Ctrl+P`. It is a
+and maintenance area and is also searchable from `F12 Menu` / `Ctrl+P`. It is a
 client-local view of the current daemon authority: opening it never runs a
 probe, command, or version inference. If no current authority exists, the
 workspace remains usable and shows `Snapshot: unavailable` plus the exact
@@ -4722,7 +4722,7 @@ meaning, and reduced motion changes no execution or selection state.
 The full Raw footer is:
 
 ```text
-←/→ Pane  ↑/↓ Select  Enter Open  / Search  f Favorite  H History  Tab Focus  F1 Help  F10 Menu  q Quit
+←/→ Pane  ↑/↓ Select  Enter Open  / Search  f Favorite  H History  Tab Focus  F1 Help  F12 Menu  q Quit
 ```
 
 The execution footer prioritizes `f Follow`, `/ Search`, `c Cancel`, `d
@@ -4757,7 +4757,7 @@ corrects the former false `F5` image-build hint to the real `B` route; `F5`
 remains Logs. The keymap and menu implementations extend configuration and
 presentation from these IDs without creating a second action inventory.
 
-`F10` opens a focus-trapped Workspace/Build/Navigate/View/Tools/Help menu.
+`F12` opens a focus-trapped Workspace/Build/Navigate/View/Tools/Help menu.
 Arrow keys move, `Enter` opens/activates, `Esc` moves outward, and bounded typed
 prefix selection may select by label. The selected-item action route is `a` or
 right click. Disabled entries remain visible and explain the exact missing
@@ -4769,14 +4769,14 @@ the active workspace destination's catalog actions; it never invents an
 operation for a selected row. Both overlays retain one bounded selection and a
 32-character type-ahead prefix, trap unmatched input, render their selected
 stable action ID, shortcut, safety class, and exact disabled reason, and close
-outward with `Esc` or `F10`. Activation closes the menu before invoking the
+outward with `Esc` or `F12`. Activation closes the menu before invoking the
 existing typed command action or workspace input route, so compatibility
 revalidation and normal/destructive confirmations remain unchanged. A right
 click is decoded separately from left-click focus and opens the same contextual
 projection. Reduced motion and no-color use the same textual markers and safety
 labels, and the overlay remains bounded at wide, medium, and `80x24` layouts.
 
-The shared F1–F10 destinations in section 24 remain unchanged. Collection
+The shared function-key destinations in section 24 remain unchanged. Collection
 navigation consistently supports arrows and `j`/`k`, `PageUp`/`PageDown`,
 `Home`/`End`, and `gg`/`G`; trees add `h`/`l` collapse/expand behavior. `/`
 searches, `Ctrl+U` clears, `n`/`N` moves through matches, `Enter` is the primary
@@ -4865,7 +4865,7 @@ pane-outward behavior.
 
 Six read-only global catalog commands—request focus for Navigator, Workspace,
 or Inspector; previous/next subfocus; and toggle pane zoom—make this model
-directly reachable from both the F10 View group and command palette. A pane
+directly reachable from both the F12 View group and command palette. A pane
 focus request is accepted only when that pane currently owns user-controlled
 content; otherwise focus returns to Navigator. They have no hidden single-key
 fallback and therefore do not steal workspace shortcuts. Direct actionable
@@ -5137,7 +5137,7 @@ loss and match position, textual filter selection, and recovery actions. Rootfs
 acceptance requires chart and exact composition table to coexist at the
 canonical width, with accessible checkbox semantics and a separately labelled
 filesystem tree. Editor acceptance requires the production recipe editor and
-the focus-trapped F10 application menu to be visible in the same scene with the
+the focus-trapped F12 application menu to be visible in the same scene with the
 menu owning input. Terminal acceptance requires the live client to navigate to
 Terminal Sessions, create or attach daemon-owned sessions, render split panes,
 show writer/read-only ownership, and expose prefix help.
@@ -5187,7 +5187,7 @@ supported-host evidence.
 
 Visual parity is separate from workflow-anchor parity. At the canonical
 `160x50` geometry, Dashboard, Tasks, Errors, rootfs composition, recipe editor
-with F10 menu, and terminal sessions use the M21 workbench silhouette: a
+with F12 menu, and terminal sessions use the M21 workbench silhouette: a
 two-level status header, persistent contextual footer, scene-appropriate
 navigator width, dominant center workspace, bounded right inspector, cyan
 section titles, semantic state colors, and full-row selection.
@@ -5508,7 +5508,7 @@ Dashboard restores its overview/history/telemetry/action composition and
 Project Inspector. Tasks and Errors use one outer inspector with internal
 facts and action headings, keeping paths and actions readable. Rootfs pairs a
 cell-rendered pie and exact table above the package explorer. Editor keeps its
-file tree, document, diagnostics/diff, inspector and anchored F10 menu. Terminal
+file tree, document, diagnostics/diff, inspector and anchored F12 menu. Terminal
 sessions retain tabs, two bounded PTYs, search, writer ownership and prefix help.
 All layouts respond to size instead of recognizing only one fixture rectangle.
 
@@ -5534,7 +5534,7 @@ Smaller inspectors preserve the complete diagnostic-document fallback.
 
 The integrated recipe editor preserves full-height file-tree and inspector
 columns, with validation/diff and action hints below the document column. The
-F10 menu anchors near the first quarter of the screen below the header and
+F12 menu anchors near the first quarter of the screen below the header and
 alone owns the focused border. Terminal tabs have an actual content row between
 their title and separator; a prefix rail appears below PTYs when body height is
 at least 30 rows. Retained PTY replicas always say read-only, even if a cached
@@ -5639,7 +5639,7 @@ menu geometry rules.
   preserving GitUI diff, stage, commit-message, history and synchronization
   controls. Missing GitUI has a visible installation diagnostic. Terminal keys
   stay owned by GitUI; the existing terminal prefix exits to the shell safely.
-- F10 opens the existing Workspace/Build/Navigate/View/Tools/Help application
+- F12 opens the existing Workspace/Build/Navigate/View/Tools/Help application
   menu with concept-style tabs and compact rows at supported sizes. Left/Right
   changes groups, Up/Down changes items, Enter activates and Esc closes. Menu
   operations remain context-aware and show exact unavailable reasons.
@@ -5677,7 +5677,7 @@ last fetched upstream reference; status refresh never fetches or changes files.
 The source comes from the selected environment, falling back to workspace metadata.
 Missing/non-Git sources show `Git: unavailable`; scanning has a named pending state.
 
-M68 GitUI is available through F10 Tools and Ctrl+P. Launch previews the exact
+M68 GitUI is available through F12 Tools and Ctrl+P. Launch previews the exact
 source directory and executable in the existing embedded/detached terminal dialog.
 Embedded confirmation opens Terminal Sessions and selects the new session slot;
 `o` takes writer control. GitUI owns normal keys (including arrows and Escape)
@@ -5688,7 +5688,7 @@ are initiated by the user in GitUI.
 M68 application menus use the anchored six-group concept layout from 80×24
 through wide terminals. The selected action's unavailable reason occupies the
 second menu row when no type-ahead query is active. Arrow keys select groups and
-items, Enter activates, and Esc/F10 closes. Mouse clicks select group tabs or
+items, Enter activates, and Esc/F12 closes. Mouse clicks select group tabs or
 rows; the wheel selects rows and Enter activates the selection. Outside clicks
 remain trapped. Rendering and hit testing share the same geometry.
 
@@ -5696,7 +5696,7 @@ M68 focus details: activating an expanded Navigator destination enters its
 interactive Workspace; passive Dashboard/Help/relationships retain Navigator
 focus. Escape leaves local search/edit/copy mode first, then Workspace, then the
 Navigator to Dashboard. Terminal writers retain Tab, Escape, q, a and function
-keys; Ctrl+B remains the Yoctui escape prefix. F10 can open an application menu
+keys; Ctrl+B remains the Yoctui escape prefix. F12 can open an application menu
 over an editor, while ordinary `a` stays literal in editors/searches.
 
 M68 resource meters replace dotted semicircular arcs with one-row continuous
@@ -5792,3 +5792,11 @@ backend when the interactive client is attached to a daemon. Configuration
 and Device trees tabs remain switchable with `Tab` / `BackTab`; the client
 must not fall back to a process backend that cannot provide authoritative
 recipe metadata.
+
+## M75 host-safe application-menu shortcut
+
+`F12` opens and closes the Workspace/Build/Navigate/View/Tools/Help application
+menu. The footer, Help, menu overlay, command hints, documentation, and PTY
+acceptance use `F12 Menu`. `F9` and `Ctrl+P` continue to open the command
+palette. `F10` has no built-in global action and remains available to embedded
+terminal sessions or an explicit user keymap binding.
