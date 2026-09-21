@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-RUNTIME-TESTS-001 is DONE in v0.1.142. Twenty tests from global
+search, internal tracing, PTY attachment, render scheduling, telemetry
+scheduling and PTY workflow composition now live in descriptive files under
+`src/tests`. The source-root PTY test module is gone; shared fixtures remain in
+its responsibility folder. The full package and serial workspace suites, strict
+Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29 deterministic
+raster checks pass. The final CLI audit is next.
+
 REDUCE-CLI-DAEMON-WORKFLOW-TESTS-001 is DONE in v0.1.141. Seven inline tests
 from daemon QEMU, SDK, security, test and WIC workflows now live in descriptive
 files under `src/tests`. Typed request identities, invalid-session behavior and

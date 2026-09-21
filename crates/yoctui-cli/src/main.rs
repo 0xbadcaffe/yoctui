@@ -212,6 +212,7 @@ mod maintenance_cli;
 mod pty_attach;
 
 #[cfg(test)]
+#[path = "tests/pty_workflows/mod.rs"]
 mod pty_workflow_tests;
 
 mod render_scheduler;

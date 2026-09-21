@@ -1,0 +1,20 @@
+use super::*;
+use yoctui_model::{Dialog, TaskId, TaskInfo};
+
+mod render_requests_coalesce_and_idle_checks_do_not_create_frames;
+
+mod input_is_an_immediate_invalidation_independent_of_ticks;
+
+mod ordinary_frames_are_coalesced_to_four_hertz_but_input_bypasses_the_limit;
+
+mod saturated_live_builds_reduce_visual_freshness_without_affecting_input;
+
+mod unchanged_sources_do_not_invalidate;
+
+mod animation_is_visible_only_indeterminate_and_nonterminal;
+
+mod overlays_and_reduced_motion_freeze_animation_but_not_elapsed_time;
+
+mod presentation_cadences_are_explicitly_bounded;
+
+mod four_hertz_live_budget_coalesces_many_updates_per_frame;

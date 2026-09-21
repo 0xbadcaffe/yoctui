@@ -1,14 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-CLI-RUNTIME-TESTS-001
-**Title:** Move remaining CLI runtime tests into test folders
+**ID:** REDUCE-CLI-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-cli
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-DAEMON-WORKFLOW-TESTS-001 is DONE. Move inline tests from
-global_search.rs, internal_tracing.rs, pty_attach.rs, render_scheduler.rs and
-telemetry_scheduler.rs into responsibility-named files under the CLI test
-folder. Move source-root pty_workflow_tests.rs there too, then run the final CLI
-source and test-placement audit.
+Dependency REDUCE-CLI-RUNTIME-TESTS-001 is DONE. Run the final CLI source,
+test-placement and source-checker audit. Confirm every production source is
+approximately 500 lines or less, inline tests are gone, source-checker paths
+cover all extracted modules and all task and baseline verification commands
+pass. Make only audit corrections required by those findings.
 
 ```bash
 cargo test -p yoctui --all-features

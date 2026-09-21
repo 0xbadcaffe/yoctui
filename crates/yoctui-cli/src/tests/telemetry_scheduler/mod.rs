@@ -1,0 +1,7 @@
+use super::*;
+
+mod client_sampling_is_fast_only_where_host_telemetry_is_visible;
+
+mod daemon_sampling_pauses_without_clients_and_scales_with_work;
+
+mod telemetry_cadences_are_low_frequency_and_bounded;
