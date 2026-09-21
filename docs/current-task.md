@@ -1,17 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-model
+**ID:** REDUCE-MODEL-RAW-CATALOG-001
+**Title:** Decompose the built-in raw command catalog
 **Status:** NOT_STARTED
 
-Dependency REDUCE-UTILS-001 is DONE. Audit all Rust source in crates/yoctui-model.
-Target approximately 500 lines per production source file using meaningful
-responsibility names, and move inline test bodies into responsibility-named
-files under a test folder. Split the task into atomic child tasks first if the
-implementation is too large for one coherent commit.
+Dependency REDUCE-UTILS-001 is DONE. Split the 11,852-line built-in raw command
+catalog into meaningful command-family modules targeting approximately 500
+lines each. Preserve deterministic catalog order, command/category/executable
+counts, the reviewed reference hash and every public behavior.
 
 ```bash
-cargo test -p yoctui --all-features
+cargo test -p yoctui-model --all-features raw
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -1,5 +1,7 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-001 is split into 13 ordered responsibility tasks after an audit found 76,930 production lines, 31 files above approximately 500 lines and hundreds of inline tests. Built-in raw catalog decomposition is first, followed by raw state, maintenance, QA, security/testing, compatibility, application state, workflows, interaction, projections, reducers, remaining oversized sources and final test migration.
+
 REDUCE-UTILS-001 is DONE in v0.1.144. Every utility production source is 105
 lines or less, and 13 path, process, text, time and validation tests now live in
 responsibility-named files under `src/tests`. The full package and serial

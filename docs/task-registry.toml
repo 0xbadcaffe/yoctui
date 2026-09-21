@@ -8592,13 +8592,156 @@ verify = ["cargo test -p yoctui-utils --all-features", "cargo fmt --all --check"
 notes = "Scope: crates/yoctui-utils. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
 [[task]]
+id = "REDUCE-MODEL-RAW-CATALOG-001"
+milestone = "M73"
+title = "Decompose the built-in raw command catalog"
+status = "NOT_STARTED"
+priority = 2215
+required = true
+depends_on = ["REDUCE-UTILS-001"]
+verify = ["cargo test -p yoctui-model --all-features raw", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: raw_catalog_builtin.rs. Split static command definitions by meaningful command family, keep deterministic order/count/hash behavior, and target approximately 500 lines per source file."
+
+[[task]]
+id = "REDUCE-MODEL-RAW-MODE-001"
+milestone = "M73"
+title = "Decompose raw command state and behavior"
+status = "NOT_STARTED"
+priority = 2216
+required = true
+depends_on = ["REDUCE-MODEL-RAW-CATALOG-001"]
+verify = ["cargo test -p yoctui-model --all-features raw", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: raw_mode.rs. Split catalog projection, validation, favorites, execution and state transitions into meaningful modules targeting approximately 500 lines each."
+
+[[task]]
+id = "REDUCE-MODEL-MAINTENANCE-001"
+milestone = "M73"
+title = "Decompose maintenance model workflows"
+status = "NOT_STARTED"
+priority = 2217
+required = true
+depends_on = ["REDUCE-MODEL-RAW-MODE-001"]
+verify = ["cargo test -p yoctui-model --all-features maintenance", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: maintenance.rs. Split service, release, sstate and shared maintenance state/validation by responsibility, preserving typed requests and reducer behavior."
+
+[[task]]
+id = "REDUCE-MODEL-QA-001"
+milestone = "M73"
+title = "Decompose QA report and workflow models"
+status = "NOT_STARTED"
+priority = 2218
+required = true
+depends_on = ["REDUCE-MODEL-MAINTENANCE-001"]
+verify = ["cargo test -p yoctui-model --all-features qa", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: qa.rs. Split report normalization, findings, workflow state and projections into meaningful modules targeting approximately 500 lines each."
+
+[[task]]
+id = "REDUCE-MODEL-SECURITY-TESTING-001"
+milestone = "M73"
+title = "Decompose security and test workflow models"
+status = "NOT_STARTED"
+priority = 2219
+required = true
+depends_on = ["REDUCE-MODEL-QA-001"]
+verify = ["cargo test -p yoctui-model --all-features security testing", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: security.rs and testing.rs. Split typed requests, reports, session state and comparison projections by responsibility."
+
+[[task]]
+id = "REDUCE-MODEL-COMPATIBILITY-001"
+milestone = "M73"
+title = "Decompose compatibility state catalogs and projections"
+status = "NOT_STARTED"
+priority = 2220
+required = true
+depends_on = ["REDUCE-MODEL-SECURITY-TESTING-001"]
+verify = ["cargo test -p yoctui-model --all-features compatibility", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: compatibility.rs, compatibility_catalog.rs, compatibility_ui.rs and workspace_compatibility.rs. Split capability identity, catalogs, projections and workspace behavior into named modules."
+
+[[task]]
+id = "REDUCE-MODEL-APP-STATE-001"
+milestone = "M73"
+title = "Decompose application state and action ownership"
+status = "NOT_STARTED"
+priority = 2221
+required = true
+depends_on = ["REDUCE-MODEL-COMPATIBILITY-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: app_state.rs and actions.rs. Split aggregate state construction, selection/accessors, action families and observed timing types into meaningful modules."
+
+[[task]]
+id = "REDUCE-MODEL-WORKFLOWS-001"
+milestone = "M73"
+title = "Decompose image and build workflow domain models"
+status = "NOT_STARTED"
+priority = 2222
+required = true
+depends_on = ["REDUCE-MODEL-APP-STATE-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: rootfs.rs, wic.rs, sdk.rs, image.rs and project_profile.rs. Split request, result, state and validation responsibilities while preserving public APIs."
+
+[[task]]
+id = "REDUCE-MODEL-INTERACTION-001"
+milestone = "M73"
+title = "Decompose text input keymap and action catalogs"
+status = "NOT_STARTED"
+priority = 2223
+required = true
+depends_on = ["REDUCE-MODEL-WORKFLOWS-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: textarea.rs, keymap.rs, action_catalog.rs and related interaction types. Split editing, navigation, key binding and catalog projection responsibilities."
+
+[[task]]
+id = "REDUCE-MODEL-PROJECTIONS-001"
+milestone = "M73"
+title = "Decompose dashboard progress and daemon projections"
+status = "NOT_STARTED"
+priority = 2224
+required = true
+depends_on = ["REDUCE-MODEL-INTERACTION-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: overview.rs, dashboard.rs, progress.rs, widget_projection.rs, daemon_state.rs, pty_session.rs and session_updates.rs. Split pure state and projection responsibilities into named modules."
+
+[[task]]
+id = "REDUCE-MODEL-REDUCER-001"
+milestone = "M73"
+title = "Decompose oversized reducer transition modules"
+status = "NOT_STARTED"
+priority = 2225
+required = true
+depends_on = ["REDUCE-MODEL-PROJECTIONS-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: reducer.rs and reducer modules above approximately 500 lines. Split transition families without changing dispatch order, state authority or failure behavior."
+
+[[task]]
+id = "REDUCE-MODEL-REMAINDER-001"
+milestone = "M73"
+title = "Decompose remaining oversized model sources"
+status = "NOT_STARTED"
+priority = 2226
+required = true
+depends_on = ["REDUCE-MODEL-REDUCER-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: every remaining yoctui-model production source above approximately 500 lines after the named family tasks. Preserve public exports and pure reducer boundaries."
+
+[[task]]
+id = "REDUCE-MODEL-TESTS-001"
+milestone = "M73"
+title = "Move model inline tests into responsibility folders"
+status = "NOT_STARTED"
+priority = 2227
+required = true
+depends_on = ["REDUCE-MODEL-REMAINDER-001"]
+verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: all inline yoctui-model tests and the existing source-root test module. Move test bodies into descriptive files under src/tests, preserve shared fixtures and assertions, then run the final source/test-placement audit."
+
+[[task]]
 id = "REDUCE-MODEL-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-model"
 status = "NOT_STARTED"
 priority = 2203
 required = true
-depends_on = ["REDUCE-UTILS-001"]
+depends_on = ["REDUCE-MODEL-TESTS-001"]
 verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-model. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
