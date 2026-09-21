@@ -132,54 +132,5 @@ pub struct CheckboxBatchPreview {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ux_checkbox_states_markers_focus_and_disabled_reason_are_explicit() {
-        let mut row = CheckboxState::new("pkg:a", "Package A");
-        assert_eq!((row.marker(true), row.marker(false)), ("☐", "[ ]"));
-        assert!(row.toggle());
-        assert_eq!((row.marker(true), row.semantic_state()), ("☑", "checked"));
-        row.value = CheckboxValue::Indeterminate;
-        assert_eq!(
-            (row.marker(false), row.semantic_state()),
-            ("[-]", "indeterminate")
-        );
-        row.set_disabled("not available for this image");
-        assert!(!row.toggle());
-        assert_eq!(row.semantic_state(), "disabled");
-    }
-
-    #[test]
-    fn ux_accessibility_checkbox_states_are_textual_in_ascii_mode() {
-        let mut row = CheckboxState::new("pkg:a", "Package A");
-        for (value, marker, state) in [
-            (CheckboxValue::Unchecked, "[ ]", "unchecked"),
-            (CheckboxValue::Checked, "[x]", "checked"),
-            (CheckboxValue::Indeterminate, "[-]", "indeterminate"),
-        ] {
-            row.value = value;
-            assert_eq!(row.marker(false), marker);
-            assert_eq!(row.semantic_state(), state);
-        }
-        row.set_disabled("required dependency");
-        assert_eq!(row.semantic_state(), "disabled");
-        assert_eq!(row.disabled_reason.as_deref(), Some("required dependency"));
-    }
-
-    #[test]
-    fn ux_checkbox_batch_is_bounded_and_preview_never_executes() {
-        let mut batch =
-            CheckboxBatch::new((0..CHECKBOX_MAX_BATCH_ROWS + 20).map(|index| {
-                CheckboxState::new(format!("pkg:{index}"), format!("Package {index}"))
-            }));
-        assert_eq!(batch.rows().len(), CHECKBOX_MAX_BATCH_ROWS);
-        assert!(batch.toggle_focused());
-        batch.move_cursor(1);
-        assert!(batch.toggle_focused());
-        let preview = batch.preview(true);
-        assert_eq!(preview.targets, ["pkg:0", "pkg:1"]);
-        assert!(preview.destructive);
-    }
-}
+#[path = "tests/checkbox/mod.rs"]
+mod tests;

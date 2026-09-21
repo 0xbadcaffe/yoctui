@@ -258,34 +258,5 @@ fn validate_node(node: &PaneNode) -> Result<(), PaneLayoutError> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn pane_layout_splits_focuses_resizes_and_closes() {
-        let mut layout = PaneLayout::new(PaneId(1)).unwrap();
-        let second = layout.split(PaneId(1), SplitAxis::Vertical).unwrap();
-        assert_eq!(layout.focused, second);
-        assert!(layout.resize(second, 100).is_ok());
-        layout.focus(PaneId(1)).unwrap();
-        layout.close(PaneId(1)).unwrap();
-        assert_eq!(layout.pane_ids(), vec![second]);
-        assert!(layout.validate().is_ok());
-    }
-
-    #[test]
-    fn pane_layout_collapses_to_focused_leaf_on_narrow_terminal() {
-        let mut layout = PaneLayout::new(PaneId(1)).unwrap();
-        layout.split(PaneId(1), SplitAxis::Horizontal).unwrap();
-        assert_eq!(layout.visible_panes(20, 40), vec![PaneId(2)]);
-        assert_eq!(layout.visible_panes(80, 40).len(), 2);
-    }
-
-    #[test]
-    fn pane_layout_rejects_invalid_focus() {
-        let layout = PaneLayout::new(PaneId(9)).unwrap();
-        let mut invalid = layout;
-        invalid.focused = PaneId(99);
-        assert!(invalid.validate().is_err());
-    }
-}
+#[path = "tests/pane_layout/mod.rs"]
+mod tests;

@@ -73,65 +73,9 @@ impl crate::App {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn git_status_reducer_preserves_independent_dirty_and_sync_facts() {
-        let mut app = crate::App::new(10, 1024);
-        crate::update(
-            &mut app,
-            crate::Action::SourceGitStatusUpdated(SourceGitStatus::Ready(SourceGitSummary {
-                upstream: Some("origin/master".into()),
-                staged: 2,
-                unstaged: 1,
-                ahead: 3,
-                ..Default::default()
-            })),
-        );
-        let label = app.source_git_status.label().unwrap();
-        assert!(label.contains("+2 ~1 ahead 3"));
-        assert!(!label.contains("synced"));
-    }
-}
+#[path = "tests/source_git/mod.rs"]
+mod tests;
 
 #[cfg(test)]
-mod gitui_tests {
-    use crate::*;
-    #[test]
-    fn gitui_launch_is_typed_scoped_and_reports_missing_tools() {
-        let mut app = App::new(10, 1024);
-        update(&mut app, Action::OpenGitUi);
-        assert!(app.notification.as_ref().unwrap().contains("not installed"));
-        update(
-            &mut app,
-            Action::GitUiDetected(Some("/usr/bin/gitui".into())),
-        );
-        app.workspace.source_dir = Some("/source with spaces".into());
-        app.source_git_status = SourceGitStatus::Ready(SourceGitSummary::default());
-        let command = app
-            .application_menu_items(ApplicationMenuGroup::Tools)
-            .into_iter()
-            .find(|c| c.label == "Open GitUI")
-            .unwrap();
-        assert!(command.enabled());
-        update(&mut app, Action::OpenGitUi);
-        let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog() else {
-            panic!("missing GitUI launch dialog");
-        };
-        assert_eq!(
-            dialog.request.cwd,
-            std::path::PathBuf::from("/source with spaces")
-        );
-        assert_eq!(dialog.request.kind, TerminalCreationKind::GitUi);
-        assert!(dialog.request.arguments.is_empty());
-        assert!(matches!(
-            update(&mut app, Action::ConfirmTerminalLaunch),
-            Some(Effect::Terminal(TerminalEffect::Create {
-                kind: TerminalCreationKind::GitUi,
-                ..
-            }))
-        ));
-        assert_eq!(app.screen, Screen::TerminalSessions);
-        assert_eq!(app.focus, FocusTarget::Workspace);
-    }
-}
+#[path = "tests/source_git_gitui/mod.rs"]
+mod gitui_tests;

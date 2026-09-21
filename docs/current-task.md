@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-TESTS-001
-**Title:** Move model inline tests into responsibility folders
+**ID:** REDUCE-MODEL-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-model
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-REMAINDER-001 is DONE. Move every remaining inline
-`yoctui-model` test and the existing source-root test module into descriptive
-files under `src/tests`, preserving shared fixtures and assertions. Finish with
-a complete source/test-placement audit.
+Dependency REDUCE-MODEL-TESTS-001 is DONE. Perform the final model audit: every
+production and test source must remain at approximately 500 lines or less, all
+test bodies must live in `src/tests`, public APIs and reducer behavior must be
+preserved, and source-checker paths must remain valid.
 
 ```bash
 cargo test -p yoctui-model --all-features

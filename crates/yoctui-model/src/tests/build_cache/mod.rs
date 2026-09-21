@@ -1,0 +1,8 @@
+use super::*;
+mod cache_policy_accepts_bitbake_booleans_and_keeps_missing_unknown;
+
+mod cache_summary_rejects_inconsistent_and_overflowing_counts;
+
+mod cache_outcomes_are_cumulative_not_offline_readiness;
+
+mod cache_reducer_retains_evicted_outcomes_deduplicates_and_resets;

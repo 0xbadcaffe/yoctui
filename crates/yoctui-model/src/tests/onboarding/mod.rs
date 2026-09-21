@@ -1,0 +1,10 @@
+use super::*;
+use crate::{Action, BuildEnvironmentState, ClientReplicaStatus, update};
+
+mod ux_onboarding_projection_distinguishes_current_blocked_skipped_stale_and_unavailable;
+
+mod ux_onboarding_open_and_resume_never_emit_execution_effects;
+
+mod ux_onboarding_advances_only_with_exact_evidence_and_routes_through_typed_actions;
+
+mod ux_onboarding_progress_validation_rejects_future_and_conflicting_state;

@@ -151,41 +151,5 @@ fn bounded_text(mut value: String, limit: usize) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn ux_list_tree_projection_bounds_duplicates_depth_height_and_unicode() {
-        let mut rows = vec![ListTreeRow {
-            id: "猫".into(),
-            label: "レイヤー".into(),
-            depth: usize::MAX,
-            branch: true,
-            expanded: true,
-            height: usize::MAX,
-        }];
-        rows.push(rows[0].clone());
-        rows.extend(
-            (0..LIST_TREE_MAX_ROWS + 3)
-                .map(|index| ListTreeRow::new(format!("id:{index}"), format!("row {index}"), 0)),
-        );
-        let tree = ListTreeProjection::new(rows);
-        assert_eq!(tree.rows().len(), LIST_TREE_MAX_ROWS);
-        assert_eq!(tree.limitations.duplicate_ids, 1);
-        assert!(tree.limitations.omitted_rows > 0);
-        assert_eq!(tree.rows()[0].depth, LIST_TREE_MAX_DEPTH);
-        assert_eq!(tree.rows()[0].height, LIST_TREE_MAX_ROW_HEIGHT);
-        assert!(list_tree_text(&tree.rows()[0], true, true).contains("▾ レイヤー"));
-        assert!(list_tree_text(&tree.rows()[0], true, false).contains("- レイヤー"));
-    }
-
-    #[test]
-    fn ux_list_tree_variable_height_window_keeps_selection_visible_and_bounded() {
-        let window = variable_height_window([2, 4, 1, 8, 3], Some(3), 10);
-        assert!(window.start <= 3 && window.end > 3);
-        assert!(window.end <= 5);
-        assert_eq!(window.total_height, 18);
-        assert!(window.used_height <= 10);
-        assert_eq!(variable_height_window([1, 2], Some(1), 0).end, 0);
-    }
-}
+#[path = "tests/list_tree/mod.rs"]
+mod tests;

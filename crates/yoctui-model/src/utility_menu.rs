@@ -182,24 +182,5 @@ fn parse_words(input: &str) -> Result<Vec<String>, String> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn utility_menu_catalog_exposes_typed_common_operations() {
-        let catalog = utility_menu_catalog();
-        assert!(catalog.iter().any(|entry| entry.operation == "status"));
-        assert!(catalog.iter().any(|entry| entry.operation == "lookup-pkg"));
-        assert!(catalog.iter().any(|entry| entry.destructive));
-    }
-    #[test]
-    fn utility_menu_expert_form_parses_argv_and_retains_errors() {
-        let mut form = ExpertArguments {
-            input: "--name 'core image'".into(),
-            ..Default::default()
-        };
-        assert_eq!(form.parse().unwrap(), ["--name", "core image"]);
-        form.input = "'unterminated".into();
-        assert!(form.parse().is_err());
-        assert!(form.validation_error.is_some());
-    }
-}
+#[path = "tests/utility_menu/mod.rs"]
+mod tests;

@@ -1,0 +1,24 @@
+//! Regression tests grouped around image_artifact_model_correlates_states_search_and_stable_selection.
+use super::*;
+
+mod primary_contract;
+
+mod images_workspace_preserves_build_and_routes_exact_typed_paths;
+
+mod image_artifact_build_rejects_non_recipe_deploy_outputs;
+
+mod ux_rootfs_reducer_correlates_generation_lifecycle_and_stable_drilldown_selection;
+
+mod image_console_reducer_launches_qemu_or_ssh_through_typed_terminal_effects;
+
+mod image_console_advanced_qemu_preview_preserves_argv_and_rejects_stale_authority;
+
+mod image_console_reducer_keeps_invalid_input_open_and_cancel_is_no_spawn;
+
+mod qemu_model_validates_exact_launch_identity_paths_and_options;
+
+mod qemu_model_reducer_previews_confirms_and_bounds_session_output;
+
+mod qemu_model_requires_cancellation_confirmation_and_rejects_stale_events;
+
+mod qemu_workspace_dialog_fields_are_bounded_modal_and_validation_aware;

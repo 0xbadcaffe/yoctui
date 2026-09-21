@@ -1,0 +1,22 @@
+//! Regression tests grouped around qemu_workspace_availability_reasons_are_stable_and_cancellation_is_modal.
+use super::*;
+
+mod primary_contract;
+
+mod wic_model_reducer_correlates_creation_inventory_and_lifecycle;
+
+mod wic_device_write_requires_exact_phrase_and_cancellation_warning;
+
+mod wic_device_write_discovers_only_exact_images_and_keeps_empty_failure_typed;
+
+mod wic_workspace_dialog_is_bounded_modal_and_stale_safe;
+
+mod wic_workspace_output_selection_and_creation_cancellation_are_typed;
+
+mod sdk_workflow_navigates_and_previews_exact_managed_builds;
+
+mod sdk_workflow_inventory_publication_native_and_lifecycle_are_correlated;
+
+mod test_workflow_model_navigates_previews_and_runs_bounded_selftests;
+
+mod test_workflow_launch_editor_rejects_changed_authoritative_context;

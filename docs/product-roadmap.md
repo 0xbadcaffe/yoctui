@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-TESTS-001 is DONE in v0.1.158. All 31 remaining inline test
+modules and the source-root test module now live in responsibility folders under
+`yoctui-model/src/tests`. Eleven oversized grouped test sources were further
+split into 208 behavior-named files. All model production and test sources are
+now below 500 lines, with 486 unit tests and six integration tests preserved.
+The final model completion audit is next.
+
 REDUCE-MODEL-REMAINDER-001 is DONE in v0.1.157. The complete model
 production audit found no source above 500 lines; the largest is 489 lines.
 Public exports and reducer boundaries need no additional decomposition. Model

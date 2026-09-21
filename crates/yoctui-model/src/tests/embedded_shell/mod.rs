@@ -1,0 +1,3 @@
+use super::*;
+mod embedded_shell_escape_always_returns_control_to_yoctui;
+mod embedded_shell_session_tracks_lifecycle_and_bounded_scrollback;

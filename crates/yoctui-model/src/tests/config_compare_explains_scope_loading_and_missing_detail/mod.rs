@@ -1,0 +1,26 @@
+//! Regression tests grouped around config_compare_explains_scope_loading_and_missing_detail.
+use super::*;
+
+mod primary_contract;
+
+mod config_edit_preview_requires_allowlisted_loaded_global_detail;
+
+mod config_edit_preview_rejects_read_only_scope_and_control_injection;
+
+mod config_edit_write_revalidates_request_and_preserves_detail_on_failures;
+
+mod devtool_job_spec_validates_every_typed_operation;
+
+mod devtool_job_spec_rejects_ambiguous_tokens_and_relative_finish_destinations;
+
+mod devtool_job_lifecycle_retains_typed_output_and_outcome_across_navigation;
+
+mod signature_workspace_uses_authoritative_task_picker_and_exact_provider_identity;
+
+mod signature_workspace_refresh_comparison_and_stale_results_remain_correlated;
+
+mod pkgdata_model_reducer_correlates_inventory_states_search_and_selection;
+
+mod pkgdata_model_detail_states_and_dependency_navigation_are_exact;
+
+mod pkgdata_workspace_routes_navigation_refresh_detail_and_contextual_actions;

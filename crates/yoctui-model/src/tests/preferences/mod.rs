@@ -1,0 +1,7 @@
+use super::*;
+
+mod ux_preferences_schema_rows_defaults_and_locked_choices_are_explicit;
+
+mod ux_preferences_reject_future_schema_and_invalid_keymap_without_partial_install;
+
+mod ux_preferences_preview_and_reset_are_bounded_reversible_and_persisted;
