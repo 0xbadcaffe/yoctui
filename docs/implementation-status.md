@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-CLIENT-TRANSPORT-001 is DONE in v0.1.132. The former 798-line
+transport is split into a 95-line state/error parent plus named 145-line
+handshake, 101-line attachment lifecycle and 122-line messaging/polling
+modules. Its four inline integration-style tests now live in descriptive files
+under `src/tests/client_transport`. Focused tests, the serial 1,692-test
+workspace suite (five existing ignored), strict Clippy, fmt, 53 bridge tests,
+roadmap/version checks and all 29 deterministic raster checks pass. Daemon
+BitBake decomposition is next.
+
 REDUCE-CLI-CLIENT-RUNTIME-001 is DONE in v0.1.131. The former 1,485-line
 interactive daemon client runtime is split into an 84-line state/error parent
 and named attach, replica polling, typed effect input/routing and terminal

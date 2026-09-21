@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-CLIENT-TRANSPORT-001 is DONE in v0.1.132. The 798-line daemon client
+transport now has named handshake, attachment lifecycle and messaging/polling
+modules, all well below 500 lines, with four integration-style tests moved to
+descriptive files under the CLI test folder. The serial 1,692-test workspace
+suite (five existing ignored), strict Clippy, fmt, 53 bridge tests,
+roadmap/version checks and all 29 deterministic raster checks pass. Daemon
+BitBake execution is next.
+
 REDUCE-CLI-CLIENT-RUNTIME-001 is DONE in v0.1.131. The 1,485-line daemon client
 runtime now uses named attach, replica polling, typed effect input/routing and
 terminal control modules, all below 500 lines. Thirteen inline unit tests moved

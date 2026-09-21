@@ -1,16 +1,17 @@
 # Current Task
 
-**ID:** REDUCE-CLI-CLIENT-TRANSPORT-001
-**Title:** Decompose daemon client transport
+**ID:** REDUCE-CLI-DAEMON-BITBAKE-001
+**Title:** Decompose daemon BitBake execution
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-CLIENT-RUNTIME-001 is DONE. Split client_transport.rs
-into named handshake, request/reply-correlation and event-polling modules
-targeting approximately 500 lines each. Move its inline tests into the CLI test
-folder without changing retry, deadline, framing or correlation behavior.
+Dependency REDUCE-CLI-CLIENT-TRANSPORT-001 is DONE. Split daemon_bitbake.rs
+into named ingress, build-lifecycle and cancellation modules targeting
+approximately 500 lines each. Move its inline tests into the CLI test folder
+without changing bounded-priority, wakeup, cancellation or process ownership
+behavior.
 
 ```bash
-cargo test -p yoctui --all-features client_transport
+cargo test -p yoctui --all-features daemon_bitbake
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
