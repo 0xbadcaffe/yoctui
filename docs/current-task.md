@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-PROTOCOL-TESTS-001
-**Title:** Move protocol inline tests into responsibility folders
+**ID:** REDUCE-PROTOCOL-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-protocol
 **Status:** NOT_STARTED
 
-Dependency REDUCE-PROTOCOL-SUPPORT-001 is DONE. Move all eight remaining inline
-`yoctui-protocol` test modules into descriptive files under `src/tests`, preserve
-shared fixtures and assertions, and finish the complete source/test-placement
-audit with every Rust source at approximately 500 lines or less.
+Dependency REDUCE-PROTOCOL-TESTS-001 is DONE. Perform the final protocol audit:
+every production and test source must remain at approximately 500 lines or less,
+all test bodies must live under `src/tests`, public wire APIs and serde shapes
+must be preserved, and all source-checker paths must remain valid.
 
 ```bash
 cargo test -p yoctui-protocol --all-features

@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-PROTOCOL-TESTS-001 is DONE in v0.1.164. All eight inline test
+modules moved into responsibility folders under `yoctui-protocol/src/tests`;
+90 named test functions now have behavior-named files and the property test
+remains with its shared fixture module. All 91 tests/doc-tests are preserved, no
+test body remains in production sources, and every Rust source is at most 413
+lines. The final protocol completion audit is next.
+
 REDUCE-PROTOCOL-SUPPORT-001 is DONE in v0.1.163. Unix transport now
 separates runtime/listener, connection, and path-security code; daemon
 persistence separates recovery state from bounded private storage. The five new
