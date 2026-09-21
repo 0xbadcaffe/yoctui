@@ -67,10 +67,10 @@ impl InteractiveRuntime {
         {
             match compatibility_workspace_action(&mut runtime.app, action) {
                 Some(Effect::InspectKernel) => {
-                    inspect_kernel_workbench(&mut runtime.app, runtime.backend.as_mut()).await;
+                    runtime.inspect_kernel().await;
                 }
                 Some(Effect::InspectFirmware) => {
-                    inspect_firmware_workbench(&mut runtime.app, runtime.backend.as_mut()).await;
+                    runtime.inspect_firmware().await;
                 }
                 Some(Effect::OpenWorkspaceEditor { label, root }) => {
                     open_workspace_editor(&mut runtime.app, label, root).await;

@@ -13,6 +13,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) daemon_attached: bool,
     pub(super) backend_kind: Backend,
     pub(super) backend: Box<dyn BitBakeBackend>,
+    pub(super) metadata_backend_authoritative: bool,
     pub(super) session: Session,
     pub(super) session_build_dir: PathBuf,
     pub(super) session_path: Option<PathBuf>,

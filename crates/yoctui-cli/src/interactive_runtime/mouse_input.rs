@@ -19,10 +19,10 @@ impl InteractiveRuntime {
         {
             match compatibility_workspace_action(&mut runtime.app, action) {
                 Some(Effect::InspectKernel) => {
-                    inspect_kernel_workbench(&mut runtime.app, runtime.backend.as_mut()).await;
+                    runtime.inspect_kernel().await;
                 }
                 Some(Effect::InspectFirmware) => {
-                    inspect_firmware_workbench(&mut runtime.app, runtime.backend.as_mut()).await;
+                    runtime.inspect_firmware().await;
                 }
                 Some(effect @ (Effect::GetPackageInventory(_) | Effect::GetPackageDetail(_))) => {
                     begin_package_operation(

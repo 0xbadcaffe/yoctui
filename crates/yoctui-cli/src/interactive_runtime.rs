@@ -8,6 +8,9 @@ mod editor_dialogs;
 mod input;
 mod jobs;
 mod key_input;
+mod metadata_backend;
+#[cfg(test)]
+pub(crate) use metadata_backend::metadata_backend_start_required;
 mod metadata_workspaces;
 mod mouse_input;
 mod paste_input;
@@ -132,6 +135,7 @@ pub(crate) async fn tui(
     let session_build_dir = build_dir.clone();
     // Offline browsing must not spawn BitBake or refresh live metadata.
     let mut backend: Box<dyn BitBakeBackend> = Box::new(ProcessBackend::new(build_dir.clone()));
+    let mut metadata_backend_authoritative = false;
     if startup_metadata_authority(daemon_attached) == StartupMetadataAuthority::OfflineFiles {
         if build_dir_configured {
             if let Some(source) =
@@ -251,13 +255,29 @@ pub(crate) async fn tui(
         && let Some(Effect::InspectKernel) =
             compatibility_workspace_action(&mut app, Action::InspectKernel)
     {
-        inspect_kernel_workbench(&mut app, backend.as_mut()).await;
+        metadata_backend::inspect_kernel(
+            &mut app,
+            &backend_kind,
+            &session_build_dir,
+            cancellation_timeout,
+            &mut backend,
+            &mut metadata_backend_authoritative,
+        )
+        .await;
     }
     if app.screen == Screen::Firmware
         && let Some(Effect::InspectFirmware) =
             compatibility_workspace_action(&mut app, Action::InspectFirmware)
     {
-        inspect_firmware_workbench(&mut app, backend.as_mut()).await;
+        metadata_backend::inspect_firmware(
+            &mut app,
+            &backend_kind,
+            &session_build_dir,
+            cancellation_timeout,
+            &mut backend,
+            &mut metadata_backend_authoritative,
+        )
+        .await;
     }
     if app.screen == Screen::Testing
         && let Some(effect) =
@@ -312,6 +332,7 @@ pub(crate) async fn tui(
         daemon_attached,
         backend_kind,
         backend,
+        metadata_backend_authoritative,
         session,
         session_build_dir,
         session_path,

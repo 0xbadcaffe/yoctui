@@ -62,3 +62,16 @@ fn image_tabs_run_before_pane_focus() {
     assert!(workspace_owns_focus_key(&app, Input::Tab));
     assert!(workspace_owns_focus_key(&app, Input::BackTab));
 }
+
+#[test]
+fn platform_tabs_run_before_pane_focus() {
+    use yoctui_model::FocusTarget;
+
+    let mut app = App::new(10, 1_000);
+    app.focus = FocusTarget::Workspace;
+    for screen in [Screen::Kernel, Screen::Firmware] {
+        app.screen = screen;
+        assert!(workspace_owns_focus_key(&app, Input::Tab));
+        assert!(workspace_owns_focus_key(&app, Input::BackTab));
+    }
+}

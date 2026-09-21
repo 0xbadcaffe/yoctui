@@ -26,7 +26,11 @@ pub(crate) fn pane_focus_route(app: &App, input: Input) -> Option<Action> {
 
 pub(crate) fn workspace_owns_focus_key(app: &App, input: Input) -> bool {
     (input == Input::Esc && app.screen == Screen::Layers && app.layer_browser.is_some())
-        || (matches!(input, Input::Tab | Input::BackTab) && app.screen == Screen::Images)
+        || (matches!(input, Input::Tab | Input::BackTab)
+            && matches!(
+                app.screen,
+                Screen::Images | Screen::Kernel | Screen::Firmware
+            ))
 }
 
 pub(crate) fn global_search_return_action(app: &App) -> Option<Action> {

@@ -1,13 +1,21 @@
 # Current Task
 
-**ID:** FIRMWARE-BRIDGE-NAV-001
-**Title:** Use authoritative bridge metadata for kernel and firmware workbenches
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-PACKAGE-IMAGE-NAV-001 is complete in v0.1.198. Make an attached bridge client
-inspect authoritative Kernel and U-Boot / BIOS recipe metadata, and route both
-workbench tab keys before pane focus.
+All M74 rapid manual-test corrections are complete through v0.1.199. The only
+remaining registry task requires a new genuine source/binary-bound Yocto 6.0.2
+`linux-yocto` compile capture. Existing retained evidence is bound to source
+base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
+mismatches, including changes predating M67.
 
-Run only the focused CLI kernel/firmware tests during the agreed rapid
-bug pass. The user will request the full baseline after manual testing of all
-four reported bug series.
+After new live evidence is supplied, run:
+
+```bash
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
+```
+
+Do not rewrite evidence digests or use fake-process startup timings as live
+certification.

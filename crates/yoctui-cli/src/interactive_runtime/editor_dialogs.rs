@@ -297,9 +297,9 @@ impl InteractiveRuntime {
                     effect,
                 );
             } else if let Some(Effect::InspectKernel) = effect {
-                inspect_kernel_workbench(&mut runtime.app, runtime.backend.as_mut()).await;
+                runtime.inspect_kernel().await;
             } else if let Some(Effect::InspectFirmware) = effect {
-                inspect_firmware_workbench(&mut runtime.app, runtime.backend.as_mut()).await;
+                runtime.inspect_firmware().await;
             } else if let Some(effect @ Effect::Security(_)) = effect {
                 let _ = route_independent_security_effect(
                     &runtime.guard,

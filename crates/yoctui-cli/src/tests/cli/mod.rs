@@ -250,6 +250,8 @@ mod idle_daemon_waits_on_socket_readiness_without_delaying_active_work;
 
 mod normal_render_interval_is_capped_at_ten_hertz;
 
+mod platform_metadata_backend_starts_once_and_rejects_process_mode;
+
 mod function_key_image_navigation_routes_its_local_inventory_effect;
 
 mod daemon_devtool_modify_completion_drives_client_editor_handoff;

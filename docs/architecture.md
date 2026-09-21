@@ -4333,3 +4333,12 @@ through Arc so ordinary reducer snapshots do not copy megabytes of saved logs.
 A daemon-owned background recorder checkpoints bounded evidence; atomic private
 files under XDG_STATE_HOME/yoctui/build-history are never used as live authority.
 The client loads them asynchronously even when initial daemon attachment fails.
+
+## M74 platform metadata inspection
+
+Interactive attach startup remains snapshot-only and does not probe BitBake.
+When the user opens Kernel or U-Boot / BIOS, the CLI lazily creates one bridge
+backend using the daemon-authorized compatibility snapshot and the exact attached
+build directory. The runtime caches that backend for later platform inspection
+and shuts it down with the client. Process mode reports that bridge metadata is
+required instead of attempting an incomplete recipe inspection.
