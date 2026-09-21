@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-APP-STATE-001 is DONE in v0.1.152. Application state and
+actions are thin coordinators over 12 named state, construction, navigation,
+projection, workflow, menu, terminal, event and action modules; the largest is
+443 lines. All 749 public `Action` variants and reducer call sites remain exact,
+and the state accessors are grouped in bounded `App` implementations. All 492
+model package tests/doc-tests and package Clippy pass. Image and build workflow
+domain decomposition is next.
+
 REDUCE-MODEL-COMPATIBILITY-001 is DONE in v0.1.151. Four compatibility
 owners are now thin coordinators over 24 named identity, capability, catalog,
 projection, availability, effect and authority modules; the largest is 489

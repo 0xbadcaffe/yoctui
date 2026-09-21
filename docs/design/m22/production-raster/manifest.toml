@@ -18,41 +18,41 @@ hint_metrics = "on"
 [[artifact]]
 id = "idle-dashboard"
 source = "crates/yoctui-ui/tests/golden/concept-idle-dashboard-160x50.cells"
-source_sha256 = "852c57c5325dff3550c0e011b2c676732a906030b9b4f672dcbdb446876777b4"
+source_sha256 = "67d66e45d423f7b2d1a14e3bbd2f64bececfdbef9f93b598bbd2a68b69721f94"
 file = "docs/design/m22/production-raster/01-idle-dashboard.png"
-sha256 = "0652d3c2302fa2b5dd712db4c270058927668d2af4096f9cf9c0f82b2f218297"
+sha256 = "b2969d3d7ebd738714f607206acbe425b891b1568adf1081004e5dc9e0786413"
 
 [[artifact]]
 id = "active-build-tasks"
 source = "crates/yoctui-ui/tests/golden/concept-active-build-tasks-160x50.cells"
-source_sha256 = "7a5caf469b725321d0928ffa13215442486bcae40f38b5b3c70ba6faf45e4584"
+source_sha256 = "52219a29f7d9ca7f3c63fd82ba5e2ad09b1771f487b0be9dd43202a33291e6e0"
 file = "docs/design/m22/production-raster/02-active-build-tasks.png"
-sha256 = "a4538861725383833901e38611e3448f35c1c0d05b9e2b1f2e9060fc7a07f07a"
+sha256 = "cadb31a2504df9855bb2abd50b1032086a3695c63d2665788c08c2a3505f6260"
 
 [[artifact]]
 id = "failed-build-errors"
 source = "crates/yoctui-ui/tests/golden/concept-failed-build-errors-160x50.cells"
-source_sha256 = "45b67781bb420432c87bf00186bc2301021489fb19eab89c352ed8397689205f"
+source_sha256 = "9eb4d76621a4aa42f2574680bd9394529334f0fd15662f0060849e49f3b6f8bc"
 file = "docs/design/m22/production-raster/03-failed-build-errors.png"
-sha256 = "dc95c19b3e3c6a9414fe1ae5ffc9f4eebae9de78f92a5f2179adc8a867fae539"
+sha256 = "5ffae76a33f9b078103e32086c8d30d91dd1fc2bf72b93d216b380220ee96ce0"
 
 [[artifact]]
 id = "rootfs-composition"
 source = "crates/yoctui-ui/tests/golden/concept-rootfs-composition-160x50.cells"
-source_sha256 = "546cf9d6857dd11fd560ef797c7fee7b93f759d682f92aa24d61d07008dfc00c"
+source_sha256 = "965c1ddb84894fac036d2f41f54f73ebbcb0c7af513fd187f409d2a934d81ee2"
 file = "docs/design/m22/production-raster/04-rootfs-composition.png"
-sha256 = "f9f9a34d9d25a5824a9c3a13faadcd7cf8dd6df238eff8894f4f1c29301c36e7"
+sha256 = "271d302b093018168eb2550d598179d6c0048d2b686f0a091de6ebbd170cba19"
 
 [[artifact]]
 id = "editor-application-menu"
 source = "crates/yoctui-ui/tests/golden/concept-editor-application-menu-160x50.cells"
-source_sha256 = "218b8ea4d8f6692b47ee34348ccc325a2babeb1ab038c061ae363fecdae6ea58"
+source_sha256 = "03776b3f403b07fae365cc43bef2ce45d9cbcd1a614b0d028a2c328084f8bbe6"
 file = "docs/design/m22/production-raster/05-editor-application-menu.png"
-sha256 = "bff0d86ec4c34fccf2a063c16340f0b0cef48861f5895cc080773f836aa44386"
+sha256 = "b11378dbf8a6a23597fef718789473bec9a5d649c61875815e556840cb5cb623"
 
 [[artifact]]
 id = "terminal-sessions"
 source = "crates/yoctui-ui/tests/golden/concept-terminal-sessions-160x50.cells"
-source_sha256 = "2e39f67bdde83974963abb4e0f2dc420f429e42aa23e624f3984e6c75b5e1f24"
+source_sha256 = "10dd1bdb8983a309ceaf4f11f7140d0977a673966ed2dd6189edaa5a035f365e"
 file = "docs/design/m22/production-raster/06-terminal-sessions.png"
-sha256 = "ef5afdd936e5ac0f7f283aa00b9751b8fb4ef1b02d63c4f556bfd4c18c39f984"
+sha256 = "44c8e55f97684bcec70de6a339619b44d1bae3eaf6b88a31bb5ceff59c69df2e"

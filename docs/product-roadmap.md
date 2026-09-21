@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-APP-STATE-001 is DONE in v0.1.152. Application state and
+actions are thin coordinators over 12 responsibility modules, all at 443 lines
+or less. The 749 public action variants remain source-compatible, while state
+construction, navigation, projections, workflows, menus and terminal accessors
+have bounded owners. All model package tests/doc-tests and package Clippy pass.
+Image and build workflow domain decomposition is next.
+
 REDUCE-MODEL-COMPATIBILITY-001 is DONE in v0.1.151. Four compatibility
 owners are thin coordinators over 24 responsibility modules, all at 489 lines
 or less. Built-in capability definitions route through four closed families,
