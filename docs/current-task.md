@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-PROTOCOL-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-protocol
+**ID:** REDUCE-PROTOCOL-DAEMON-RAW-001
+**Title:** Decompose daemon raw execution and compatibility wire types
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-001 is DONE. Audit `yoctui-protocol`, split this parent
-into atomic file or responsibility-family tasks, then reduce production and test
-sources to approximately 500 lines with test bodies under descriptive test
-folders. Preserve public APIs, assertions and platform gates.
+Dependency REDUCE-MODEL-001 is DONE. Split the raw execution, history, retained
+output, compatibility identity, evidence and capability protocol families out of
+`daemon.rs` into meaningful sources of approximately 500 lines or less. Preserve
+serde representations, public exports, validation semantics and assertions.
 
 ```bash
 cargo test -p yoctui-protocol --all-features

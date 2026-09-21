@@ -8746,13 +8746,57 @@ verify = ["cargo test -p yoctui-model --all-features", "cargo fmt --all --check"
 notes = "Scope: crates/yoctui-model. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
 [[task]]
+id = "REDUCE-PROTOCOL-DAEMON-RAW-001"
+milestone = "M73"
+title = "Decompose daemon raw execution and compatibility wire types"
+status = "NOT_STARTED"
+priority = 2228
+required = true
+depends_on = ["REDUCE-MODEL-001"]
+verify = ["cargo test -p yoctui-protocol --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: raw execution, history, retained output, compatibility identity, evidence and capability protocol families in daemon.rs. Preserve serde names and public exports; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-PROTOCOL-DAEMON-STATE-001"
+milestone = "M73"
+title = "Decompose daemon messages snapshots and framing"
+status = "NOT_STARTED"
+priority = 2229
+required = true
+depends_on = ["REDUCE-PROTOCOL-DAEMON-RAW-001"]
+verify = ["cargo test -p yoctui-protocol --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: client and server messages, commands, PTY types, snapshot state, journal reduction, errors, negotiation and framing in daemon.rs. Preserve wire representation and ordering; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-PROTOCOL-SUPPORT-001"
+milestone = "M73"
+title = "Decompose protocol transport and persistence support"
+status = "NOT_STARTED"
+priority = 2230
+required = true
+depends_on = ["REDUCE-PROTOCOL-DAEMON-STATE-001"]
+verify = ["cargo test -p yoctui-protocol --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_ipc.rs and daemon_persist.rs production responsibilities plus the final production-source audit for lib.rs, lifecycle, rootfs and archive modules. Preserve platform gates, permissions and recovery behavior."
+
+[[task]]
+id = "REDUCE-PROTOCOL-TESTS-001"
+milestone = "M73"
+title = "Move protocol inline tests into responsibility folders"
+status = "NOT_STARTED"
+priority = 2231
+required = true
+depends_on = ["REDUCE-PROTOCOL-SUPPORT-001"]
+verify = ["cargo test -p yoctui-protocol --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: all eight inline yoctui-protocol test modules. Move test bodies into descriptive files under src/tests, preserve shared fixtures, and complete the source and test-placement audit."
+
+[[task]]
 id = "REDUCE-PROTOCOL-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-protocol"
 status = "NOT_STARTED"
 priority = 2204
 required = true
-depends_on = ["REDUCE-MODEL-001"]
+depends_on = ["REDUCE-PROTOCOL-TESTS-001"]
 verify = ["cargo test -p yoctui-protocol --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-protocol. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 

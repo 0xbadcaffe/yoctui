@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-PROTOCOL-001 is split into four ordered tasks after an audit found
+8,831 Rust lines in seven sources, 3,205 production lines in `daemon.rs`, two
+additional production sources above 500 lines, and eight inline test modules.
+Daemon raw/compatibility types are first, followed by daemon state/framing,
+transport/persistence support, and final test migration.
+
 REDUCE-MODEL-001 is DONE in v0.1.159. The final audit covers 889 Rust
 sources under `yoctui-model/src`: every production and test file is below 500
 lines, every unit-test body lives under `src/tests`, and the largest source is
