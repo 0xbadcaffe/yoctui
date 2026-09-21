@@ -1,5 +1,16 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-TUI-001 is DONE in v0.1.128. Interactive startup is 377 lines and
+owns a typed runtime state whose private modules separate polling/presentation,
+terminal event decoding, paste/mouse handling, ordered dialog and workspace key
+routing, job completion and shutdown. The largest route module is 504 lines.
+Typed handled/continue outcomes preserve route precedence and outer-loop skips;
+performance identity and source checks include the extracted runtime files.
+The 1,692-test workspace suite (five existing ignored), strict Clippy, fmt,
+terminal harness, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. The remaining yoctui-cli source families are
+next.
+
 REDUCE-CLI-DAEMON-001 is DONE in v0.1.127. Daemon orchestration is 451
 lines; private background, telemetry, client-message and twelve command-family
 modules each remain below 500 lines. Typed daemon/client ownership retains

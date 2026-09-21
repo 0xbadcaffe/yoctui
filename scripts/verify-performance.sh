@@ -339,10 +339,12 @@ if "listener.accept(Duration::from_millis(1))" in daemon:
     raise SystemExit("daemon listener regressed to one-millisecond polling")
 if "thread::sleep(CONNECT_RETRY_INTERVAL.min(timeout))" in ipc.split("impl DaemonListener", 1)[1].split("impl Drop", 1)[0]:
     raise SystemExit("daemon listener regressed to sleep-based readiness polling")
+runtime_root = Path("crates/yoctui-cli/src/interactive_runtime")
 client = Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
-if "terminal.draw(|f| render(f, &app))?;\n        if event::poll" in client:
+client += "".join(path.read_text(encoding="utf-8") for path in sorted(runtime_root.rglob("*.rs")))
+if "runtime.terminal.draw(|f| render(f, &runtime.app))?;\n        if event::poll" in client:
     raise SystemExit("interactive client regressed to unconditional idle rendering")
-if "if build_jobs.active_job_id().is_some()" not in client:
+if "if runtime.build_jobs.active_job_id().is_some()" not in client:
     raise SystemExit("idle client must not poll the inactive local BitBake backend")
 print("event-loop source contracts valid")
 PY
@@ -356,24 +358,25 @@ verify_render() {
   python3 - <<'PY'
 from pathlib import Path
 
+runtime_root = Path("crates/yoctui-cli/src/interactive_runtime")
 source = Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
+source += "".join(path.read_text(encoding="utf-8") for path in sorted(runtime_root.rglob("*.rs")))
 scheduler = Path("crates/yoctui-cli/src/render_scheduler.rs").read_text(encoding="utf-8")
-tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
-draw = "terminal.draw(|f| render(f, &app))?;"
-if tui.count(draw) != 1:
+draw = "runtime.terminal.draw(|f| render(f, &runtime.app))?;"
+if source.count(draw) != 1:
     raise SystemExit("interactive runtime must have exactly one centralized render call")
 guarded = (
-    "if render_scheduler.take_frame_with_interval(ordinary_frame_interval(&app)) {\n"
-    "            " + draw
+    ".take_frame_with_interval(ordinary_frame_interval(&runtime.app))\n"
+    "        {\n            " + draw
 )
-if guarded not in tui:
+if guarded not in source:
     raise SystemExit("interactive render call is not guarded by coalesced invalidation")
 for required in (
     "RenderCause::Input", "RenderCause::State", "RenderCause::Telemetry",
     "RenderCause::Presentation", "RenderCause::Resize",
     "interactive_frame_interval(refresh)",
 ):
-    if required not in tui:
+    if required not in source:
         raise SystemExit(f"render invalidation source is missing: {required}")
 for required in ("requests", "frames", "coalesced", "skipped_checks"):
     if required not in scheduler:
@@ -388,17 +391,18 @@ verify_animations() {
   python3 - <<'PY'
 from pathlib import Path
 
+runtime_root = Path("crates/yoctui-cli/src/interactive_runtime")
 source = Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
+source += "".join(path.read_text(encoding="utf-8") for path in sorted(runtime_root.rglob("*.rs")))
 scheduler = Path("crates/yoctui-cli/src/render_scheduler.rs").read_text(encoding="utf-8")
-tui = source.split("async fn tui(", 1)[1].split("fn termination_receiver", 1)[0]
 for required in (
-    "has_visible_indeterminate_activity(&app)",
-    "presentation_now + animation_interval(&app)",
+    "has_visible_indeterminate_activity(&runtime.app)",
+    "presentation_now + animation_interval(&runtime.app)",
     "presentation_now + ELAPSED_REFRESH_INTERVAL",
 ):
-    if required not in tui:
+    if required not in source:
         raise SystemExit(f"animation scheduler contract is missing: {required}")
-if "Action::Tick" not in tui:
+if "Action::Tick" not in source:
     raise SystemExit("visible animation does not advance the model phase")
 for required in (
     "app.reduced_motion", "app.active_dialog().is_some()",
@@ -423,6 +427,10 @@ from pathlib import Path
 
 source = Path("crates/yoctui-cli/src/host_telemetry.rs").read_text(encoding="utf-8")
 source += Path("crates/yoctui-cli/src/interactive_runtime.rs").read_text(encoding="utf-8")
+source += "".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted(Path("crates/yoctui-cli/src/interactive_runtime").rglob("*.rs"))
+)
 scheduler = Path("crates/yoctui-cli/src/telemetry_scheduler.rs").read_text(encoding="utf-8")
 sampler = Path("crates/yoctui-cli/src/host_telemetry.rs").read_text(encoding="utf-8")
 if "ProcessCommand" in sampler or "Command::new" in sampler:

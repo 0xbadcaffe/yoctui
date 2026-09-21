@@ -4162,7 +4162,11 @@ The daemon server owns readiness, bounded fan-out and orderly shutdown;
 private modules own background publication, telemetry, client messages and typed
 command-family dispatch. Commands that defer a response or already sent one
 return no immediate outcome, preserving the original read-loop continuation.
-Interactive loop decomposition continues in the M73 runtime task.
+The interactive client constructs one typed `InteractiveRuntime` owner. Private
+modules handle background polling and presentation, terminal event decoding,
+paste and mouse input, ordered dialog and workspace key routing, job completion,
+and shutdown. Key stages return a typed handled/continue outcome, so extracting
+the original route chain preserves precedence and outer-loop continuation.
 
 `yoctui-utils` is a leaf support crate for domain-independent path, text,
 time and operating-system helpers. Every crate may consume it directly.

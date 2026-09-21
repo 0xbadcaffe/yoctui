@@ -1,5 +1,15 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-TUI-001 is DONE in v0.1.128. The 3,755-line interactive runtime
+is now a 377-line startup module with one typed state owner and named polling,
+event, input-route, job and shutdown modules. Every runtime source remains near
+500 lines or below; ordered key stages retain explicit handled and outer-loop
+continuation outcomes. Performance source contracts now cover the extracted
+runtime tree. The 1,692-test workspace suite (five existing ignored), strict
+Clippy, fmt, terminal harness, 53 bridge tests, roadmap/version checks and all
+29 deterministic raster checks pass. Remaining yoctui-cli source families are
+next.
+
 REDUCE-CLI-DAEMON-001 is DONE in v0.1.127. Daemon orchestration is 451
 lines; private background, telemetry, client-message and twelve command-family
 modules each remain below 500 lines. Typed daemon/client ownership retains

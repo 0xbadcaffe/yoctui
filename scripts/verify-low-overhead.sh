@@ -73,6 +73,7 @@ required_sources = {
     "scripts/measure-process-overhead.py",
 }
 required_sources.update(str(path) for path in Path("crates/yoctui-cli/src/daemon_server").rglob("*.rs"))
+required_sources.update(str(path) for path in Path("crates/yoctui-cli/src/interactive_runtime").rglob("*.rs"))
 if set(suite.get("sources", {})) != required_sources:
     raise SystemExit("low-overhead source identity is incomplete")
 
