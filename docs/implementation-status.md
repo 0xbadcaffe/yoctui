@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-DAEMON-RAW-001 is DONE in v0.1.136. The former 1,465-line raw
+execution owner is split into a 111-line shared state/error parent and named
+297-line job, 172-line PTY, 92-line control, 139-line event reduction and
+80-line recovery modules. Its six inline tests now live in descriptive files
+under `src/tests/daemon_raw`. Focused tests, the serial 1,692-test workspace
+suite (five existing ignored), strict Clippy, fmt, 53 bridge tests,
+roadmap/version checks and all 29 deterministic raster checks pass. Daemon PTY
+decomposition is next.
+
 REDUCE-CLI-DAEMON-ROOTFS-001 is DONE in v0.1.135. The former 1,011-line rootfs
 inspection owner is split into a 22-line public surface and named 212-line
 client IPC, 42-line authority validation, 88-line worker ownership and 190-line

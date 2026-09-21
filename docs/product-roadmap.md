@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-DAEMON-RAW-001 is DONE in v0.1.136. The 1,465-line raw execution
+owner now has named job, PTY, attachment/cancellation control, event reduction
+and recovery modules, all below 500 lines. Six inline tests moved to descriptive
+CLI test files while preserving exact request/session identity, lifecycle and
+owned child behavior. The serial 1,692-test workspace suite (five existing
+ignored), strict Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. Daemon PTY ownership is next.
+
 REDUCE-CLI-DAEMON-ROOTFS-001 is DONE in v0.1.135. The 1,011-line daemon rootfs
 owner now has named client IPC, authority validation, worker ownership and
 source acquisition modules, all below 500 lines. Six inline tests moved to
