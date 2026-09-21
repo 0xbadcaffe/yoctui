@@ -1,5 +1,14 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-DAEMON-ROOTFS-001 is DONE in v0.1.135. The 1,011-line daemon rootfs
+owner now has named client IPC, authority validation, worker ownership and
+source acquisition modules, all below 500 lines. Six inline tests moved to
+descriptive CLI test files while preserving full query identity, stale retries,
+cancellation and owned-process reaping. The serial 1,692-test workspace suite
+(five existing ignored), strict Clippy, fmt, 53 bridge tests, roadmap/version
+checks and all 29 deterministic raster checks pass. Raw daemon execution is
+next.
+
 REDUCE-CLI-DAEMON-COMPAT-001 is DONE in v0.1.134. The 1,387-line daemon
 compatibility owner now has named coordination, runtime detection and bounded
 process helper modules, all below 500 lines. Eleven inline tests moved to

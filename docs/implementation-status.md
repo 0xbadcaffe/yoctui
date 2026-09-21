@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-DAEMON-ROOTFS-001 is DONE in v0.1.135. The former 1,011-line rootfs
+inspection owner is split into a 22-line public surface and named 212-line
+client IPC, 42-line authority validation, 88-line worker ownership and 190-line
+source acquisition modules. Its six inline tests now live in descriptive files
+under `src/tests/daemon_rootfs`, with embedded Python fixture bytes preserved.
+Focused tests, the serial 1,692-test workspace suite (five existing ignored),
+strict Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. Raw daemon decomposition is next.
+
 REDUCE-CLI-DAEMON-COMPAT-001 is DONE in v0.1.134. The former 1,387-line
 compatibility owner is split into an 89-line state/error parent and named
 220-line coordination, 292-line runtime detection and 320-line bounded process
