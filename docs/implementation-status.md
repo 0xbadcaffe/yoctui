@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-UI-CORE-001 is DONE in v0.1.183. Shell entry, overlay and dialog
+routing plus primitives, dashboard, footer and telemetry rendering now use 19
+named production sources; the largest is 418 lines. The touched primitives
+tests moved into three files under `src/tests`; all 300 UI tests pass. Remaining
+workspace renderers and the final production audit are next.
+
 REDUCE-UI-WORKFLOWS-001 is DONE in v0.1.182. SDK, Testing and package workflow
 renderers now route through 16 named workspace, dialog, inspection, editor and
 layer-browser sources; the largest is 377 lines. All 300 UI tests pass. Core

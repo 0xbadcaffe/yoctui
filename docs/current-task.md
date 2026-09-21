@@ -1,13 +1,15 @@
 # Current Task
 
-**ID:** REDUCE-UI-CORE-001
-**Title:** Decompose UI shell and primitive renderers
+**ID:** REDUCE-UI-WORKSPACES-001
+**Title:** Decompose remaining UI workspace renderers
 **Status:** NOT_STARTED
 
-Dependency REDUCE-UI-WORKFLOWS-001 is DONE. Split `render.rs`, `primitives.rs`,
-`dashboard_render.rs`, `footer.rs` and `telemetry_strip.rs` into meaningful
-responsibility files of approximately 500 lines or less. Preserve responsive
-layouts, focus, accessibility behavior and public APIs.
+Dependency REDUCE-UI-CORE-001 is DONE. Split `security_render.rs`,
+`qa_render.rs`, `maintenance_render.rs`, `inspector_workspace.rs`,
+`inspector_render.rs`, `task_render.rs`, `terminal_workspace.rs`,
+`rootfs_render.rs` and `source_render.rs` into meaningful responsibility files
+of approximately 500 lines or less. Complete the production-source audit while
+preserving typed state, narrow-terminal safety and public APIs.
 
 ```bash
 cargo test -p yoctui-ui --all-features

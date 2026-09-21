@@ -8958,12 +8958,12 @@ notes = "DONE in v0.1.182. SDK, Testing and package workflow renderers now route
 id = "REDUCE-UI-CORE-001"
 milestone = "M73"
 title = "Decompose UI shell and primitive renderers"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2244
 required = true
 depends_on = ["REDUCE-UI-WORKFLOWS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: render.rs, primitives.rs, dashboard_render.rs, footer.rs and telemetry_strip.rs production responsibilities. Preserve responsive layouts, focus and accessibility behavior; target approximately 500 lines per responsibility source."
+notes = "DONE in v0.1.183. Shell entry/overlay/dialog routing, primitives, dashboard, footer and telemetry rendering now route through 19 named production sources; the largest is 418 lines. The touched primitives tests moved into three responsibility files under src/tests, with all 300 UI tests preserved."
 
 [[task]]
 id = "REDUCE-UI-WORKSPACES-001"
