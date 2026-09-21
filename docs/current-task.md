@@ -1,14 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-INTERACTION-001
-**Title:** Decompose text input keymap and action catalogs
+**ID:** REDUCE-MODEL-PROJECTIONS-001
+**Title:** Decompose dashboard progress and daemon projections
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-WORKFLOWS-001 is DONE. Split textarea.rs, keymap.rs,
-action_catalog.rs and related interaction types into meaningful editing,
-navigation, key binding and catalog projection modules. Preserve public APIs
-and typed interaction behavior while targeting approximately 500 lines per
-source.
+Dependency REDUCE-MODEL-INTERACTION-001 is DONE. Split overview.rs,
+dashboard.rs, progress.rs, widget_projection.rs, daemon_state.rs, pty_session.rs
+and session_updates.rs into meaningful pure state and projection modules.
+Preserve public APIs and typed behavior while targeting approximately 500 lines
+per source.
 
 ```bash
 cargo test -p yoctui-model --all-features

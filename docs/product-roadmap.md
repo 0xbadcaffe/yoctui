@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-INTERACTION-001 is DONE in v0.1.154. Text-area editing,
+keymaps and operator action catalogs are thin coordinators over 17 responsibility
+modules, all at 394 lines or less. Fifteen tests moved to meaningful files under
+`src/tests`, with editing, binding and catalog behavior preserved. All model
+package tests/doc-tests and package Clippy pass. Dashboard, progress and daemon
+projection decomposition is next.
+
 REDUCE-MODEL-WORKFLOWS-001 is DONE in v0.1.153. Root filesystem, Wic,
 SDK, image artifact and project profile models are thin coordinators over 19
 responsibility modules, all at 254 lines or less. Seventeen tests moved to

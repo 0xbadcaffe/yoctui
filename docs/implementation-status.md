@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-INTERACTION-001 is DONE in v0.1.154. Text-area editing,
+keymaps and operator action catalogs are thin coordinators over 17 named state,
+editing, navigation, search, save, binding, metadata, projection and validation
+modules; the largest is 394 lines. All 15 inline tests now live in descriptive
+files under `src/tests`. All 492 model package tests/doc-tests and package
+Clippy pass. Dashboard, progress and daemon projection decomposition is next.
+
 REDUCE-MODEL-WORKFLOWS-001 is DONE in v0.1.153. Root filesystem, Wic,
 SDK, image artifact and project profile models are thin coordinators over 19
 named capability, request, artifact, normalization, inventory, session, state
