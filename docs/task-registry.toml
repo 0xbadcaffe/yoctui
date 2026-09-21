@@ -9068,12 +9068,12 @@ notes = "DONE in v0.1.193. Four stable 13-17 line entry points load 17 named raw
 id = "REDUCE-TOOLS-001"
 milestone = "M73"
 title = "Split bridge and verification tooling into named modules and test folders"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2210
 required = true
 depends_on = ["REDUCE-TOOLS-PYTHON-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: bridge/tests scripts crates/yoctui-bitbake/bridge. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+notes = "DONE in v0.1.194. The complete 183-file bridge and verification-tool inventory is at most 488 lines per source. Bridge tests live in five responsibility suites plus shared support under bridge/tests; stable Python and shell entry points retain their command-line contracts. Baseline, bridge, syntax and focused tool checks pass. No live compatibility claim."
 
 [[task]]
 id = "REDUCE-LAYOUT-GATE-001"

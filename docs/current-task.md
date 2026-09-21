@@ -1,21 +1,20 @@
 # Current Task
 
-**ID:** REDUCE-TOOLS-001
-**Title:** Split bridge and verification tooling into named modules and test folders
+**ID:** REDUCE-LAYOUT-GATE-001
+**Title:** Verify the complete source inventory and enforce the module-size convention
 **Status:** NOT_STARTED
 
-Dependency REDUCE-TOOLS-PYTHON-001 is DONE. Audit `bridge`, `bridge/tests`,
-repository scripts and `crates/yoctui-bitbake/bridge`; confirm every relevant
-source is approximately 500 lines or less, tests live in test folders and all
-entry points retain their command-line behavior.
+Dependency REDUCE-TOOLS-001 is DONE. Extend `scripts/check-library-layout.py`
+to inventory the complete maintained source tree, enforce the approximately
+500-line module convention and reject inline Rust test bodies. Document the
+enforced layout boundary in `docs/architecture.md`.
 
 ```bash
+python3 scripts/check-library-layout.py
 python3 -m pytest bridge/tests
-python3 -m compileall -q scripts
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
-python3 -m pytest bridge/tests
 ./scripts/verify-roadmap.sh
 ```
 

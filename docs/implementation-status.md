@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-TOOLS-001 is DONE in v0.1.194. The audited bridge and verification
+tooling inventory contains 183 source files, all at most 488 lines. Bridge
+tests remain grouped by responsibility under `bridge/tests`; stable Python and
+shell entry points retain their command-line contracts. The repository-wide
+layout gate is next.
+
 REDUCE-TOOLS-PYTHON-001 is DONE in v0.1.193. Four stable 13-17 line entry
 points load 17 named raw-catalog, event-flood, IPC-latency and real-Poky
 modules; the largest is 357 lines. Raw catalog verification and 17 focused
