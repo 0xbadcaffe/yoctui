@@ -1,0 +1,26 @@
+//! Regression tests grouped around test_results_junit_events_keep_terminal_outcomes_distinct.
+use super::*;
+
+mod primary_contract;
+
+mod security_workflow_maps_workspace_search_and_modal_keys_without_leakage;
+
+mod qa_workflow_maps_workspace_search_and_drill_keys_without_leakage;
+
+mod qa_workflow_maps_task_capability_response_without_reinterpreting_it;
+
+mod qa_workflow_maps_report_adapter_outcomes_without_parsing_them;
+
+mod qa_workflow_maps_layer_capability_and_runner_events_mechanically;
+
+mod qa_workflow_dialogs_map_only_typed_confirmation_and_edit_actions;
+
+mod cache_snapshot_progress_matches_live_batches_after_eviction_and_reset;
+
+mod snapshot_progress_survives_completed_task_compaction;
+
+mod worker_count_snapshot_live_batch_and_reconnect_share_identity_authority;
+
+mod snapshot_timing_legacy_never_invents_attachment_start;
+
+mod task_identity_unknown_statistics_and_known_lifecycle_never_create_ghost_rows;

@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-APP-TESTS-001 is DONE in v0.1.179. Nine inline test modules and ten
+oversized regression sources now live in 227 descriptive Rust files under
+`yoctui-app/src/tests`. All 210 tests are preserved, no inline test module
+remains, and every application Rust file is at most 436 lines. The final app
+audit is next.
+
 REDUCE-APP-DAEMON-JOBS-001 is DONE in v0.1.178. Daemon snapshot handling,
 backend translation and build/Devtool coordination now flow through five named
 sources; the largest is 315 lines. The production audit covers 54 application

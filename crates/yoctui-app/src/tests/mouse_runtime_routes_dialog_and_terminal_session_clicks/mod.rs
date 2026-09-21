@@ -1,0 +1,34 @@
+//! Regression tests grouped around mouse_runtime_routes_dialog_and_terminal_session_clicks.
+use super::*;
+
+mod primary_contract;
+
+mod daemon_state_jobs_cross_app_boundary_without_replacing_presentation;
+
+mod daemon_state_runtime_reduces_authority_and_exposes_current_replica;
+
+mod rootfs_daemon_authority_retains_full_instance_beyond_display_prefix;
+
+mod daemon_snapshot_client_applies_ordered_events_and_replaces_stale_state;
+
+mod daemon_client_batches_contiguous_logs_with_one_model_install;
+
+mod daemon_client_batches_task_progress_without_losing_failure;
+
+mod daemon_log_context_survives_snapshot_and_live_event_mapping;
+
+mod logs_open_with_navigator_focus_until_tab_selects_the_scrollable_workspace;
+
+mod daemon_snapshot_resync_preserves_paused_live_log_scroll;
+
+mod daemon_cancel_terminal_clears_pending_build_state;
+
+mod next_generation_pty_screen_crosses_replica_as_typed_bounded_rows;
+
+mod daemon_compatibility_snapshot_is_identical_on_attach_reconnect_and_update;
+
+mod daemon_status_event_updates_client_telemetry_without_mutating_snapshot_shape;
+
+mod client_replica_installs_authority_without_replacing_presentation;
+
+mod daemon_jobs_populate_shared_job_history;

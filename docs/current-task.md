@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-APP-TESTS-001
-**Title:** Move application tests into responsibility folders
+**ID:** REDUCE-APP-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-app
 **Status:** NOT_STARTED
 
-Dependency REDUCE-APP-DAEMON-JOBS-001 is DONE. Move inline application unit-test
-bodies and oversized existing test sources into descriptive files under
-`crates/yoctui-app/src/tests`. Preserve shared fixtures, platform gates, test
-names and assertions, and keep each test source near 500 lines or less.
+Dependency REDUCE-APP-TESTS-001 is DONE. Audit every application source and test
+file for the approximately 500-line target and responsibility placement.
+Verify public APIs, platform gates, test names and assertions remain preserved,
+then close the parent decomposition task.
 
 ```bash
 cargo test -p yoctui-app --all-features
