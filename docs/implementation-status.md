@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-001 is DONE in v0.1.143. Every CLI production source is 504 lines or
+less, and no production file contains inline test bodies. The final audit fixed
+IPC and performance source contracts so daemon BitBake lifecycle/ingress and
+client replica modules remain covered after extraction. Eight source-checker
+mutation/measurement tests and the direct log, task, IPC and saturation source
+contracts pass. The full package and serial workspace suites, strict Clippy,
+fmt, 53 bridge tests, roadmap/version checks and all 29 deterministic raster
+checks pass. The yoctui-utils audit is next.
+
 REDUCE-CLI-RUNTIME-TESTS-001 is DONE in v0.1.142. Twenty tests from global
 search, internal tracing, PTY attachment, render scheduling, telemetry
 scheduling and PTY workflow composition now live in descriptive files under

@@ -9,6 +9,10 @@ from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPERVISOR = "crates/yoctui-cli/src/daemon_bitbake.rs"
+SUPERVISOR_CANCELLATION = "crates/yoctui-cli/src/daemon_bitbake/cancellation.rs"
+SUPERVISOR_INGRESS = "crates/yoctui-cli/src/daemon_bitbake/ingress.rs"
+SUPERVISOR_LIFECYCLE = "crates/yoctui-cli/src/daemon_bitbake/lifecycle.rs"
+SUPERVISOR_NOTIFICATION = "crates/yoctui-cli/src/daemon_bitbake/notification.rs"
 TRANSPORT = "crates/yoctui-protocol/src/daemon_ipc.rs"
 DAEMON = "crates/yoctui-cli/src/daemon_server.rs"
 SCHEDULING = "crates/yoctui-cli/src/daemon_scheduling.rs"
@@ -26,7 +30,18 @@ class IpcSourceContractTests(unittest.TestCase):
             "exec",
         )
         cls.sources = {
-            name: (ROOT / name).read_text() for name in (SUPERVISOR, TRANSPORT, DAEMON, SCHEDULING, CLIENT_REQUESTS)
+            name: (ROOT / name).read_text()
+            for name in (
+                SUPERVISOR,
+                SUPERVISOR_CANCELLATION,
+                SUPERVISOR_INGRESS,
+                SUPERVISOR_LIFECYCLE,
+                SUPERVISOR_NOTIFICATION,
+                TRANSPORT,
+                DAEMON,
+                SCHEDULING,
+                CLIENT_REQUESTS,
+            )
         }
 
     def run_checker(self, **replacements: str) -> str:
@@ -41,8 +56,8 @@ class IpcSourceContractTests(unittest.TestCase):
     def test_actual_explicit_constructor_and_separate_cancellation_channel_pass(
         self,
     ) -> None:
-        self.assertIn("pub fn new(job_ids:", self.sources[SUPERVISOR])
-        self.assertIn("mpsc::unbounded_channel()", self.sources[SUPERVISOR])
+        self.assertIn("pub fn new(job_ids:", self.sources[SUPERVISOR_LIFECYCLE])
+        self.assertIn("mpsc::unbounded_channel()", self.sources[SUPERVISOR_LIFECYCLE])
         self.assertIn("bounded IPC source contracts valid", self.run_checker())
 
     def test_each_event_ingress_must_use_its_exact_bounded_capacity(self) -> None:
@@ -54,27 +69,31 @@ class IpcSourceContractTests(unittest.TestCase):
             for replacement in ("mpsc::unbounded_channel()", "mpsc::channel(999)"):
                 with self.subTest(capacity=capacity, replacement=replacement):
                     original = f"mpsc::channel({capacity})"
-                    self.assertIn(original, self.sources[SUPERVISOR])
-                    mutated = self.sources[SUPERVISOR].replace(original, replacement, 1)
+                    self.assertIn(original, self.sources[SUPERVISOR_LIFECYCLE])
+                    mutated = self.sources[SUPERVISOR_LIFECYCLE].replace(
+                        original, replacement, 1
+                    )
                     with self.assertRaisesRegex(SystemExit, "bounded.*ingress"):
-                        self.run_checker(**{SUPERVISOR: mutated})
+                        self.run_checker(**{SUPERVISOR_LIFECYCLE: mutated})
 
     def test_missing_constructor_fails_with_an_actionable_diagnostic(self) -> None:
-        mutated = self.sources[SUPERVISOR].replace("pub fn new(", "pub fn renamed(", 1)
+        mutated = self.sources[SUPERVISOR_LIFECYCLE].replace(
+            "pub fn new(", "pub fn renamed(", 1
+        )
         with self.assertRaisesRegex(SystemExit, "supervisor constructor"):
-            self.run_checker(**{SUPERVISOR: mutated})
+            self.run_checker(**{SUPERVISOR_LIFECYCLE: mutated})
 
     def test_bounded_calls_outside_constructor_cannot_mask_unbounded_ingress(
         self,
     ) -> None:
-        mutated = self.sources[SUPERVISOR].replace(
+        mutated = self.sources[SUPERVISOR_LIFECYCLE].replace(
             "mpsc::channel(BITBAKE_RELIABLE_EVENT_CAPACITY)",
             "mpsc::unbounded_channel()",
             1,
         )
         mutated += "\nfn decoy() { mpsc::channel(BITBAKE_RELIABLE_EVENT_CAPACITY); }\n"
         with self.assertRaisesRegex(SystemExit, "bounded.*ingress"):
-            self.run_checker(**{SUPERVISOR: mutated})
+            self.run_checker(**{SUPERVISOR_LIFECYCLE: mutated})
 
     def test_transport_and_slow_client_requirements_remain_enforced(self) -> None:
         for name, token, diagnostic in (

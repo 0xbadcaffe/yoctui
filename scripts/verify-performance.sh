@@ -462,7 +462,9 @@ verify_logs() {
 from pathlib import Path
 
 model = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-model/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
+runtime_root = Path("crates/yoctui-cli/src/client_runtime")
 runtime = Path("crates/yoctui-cli/src/client_runtime.rs").read_text(encoding="utf-8")
+runtime += "".join(path.read_text(encoding="utf-8") for path in sorted(runtime_root.rglob("*.rs")))
 app = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-app/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 filtered = model.split("pub fn filtered(&self)", 1)[1].split("pub fn diagnostics", 1)[0]
 if "e.message.to_lowercase()" in filtered:
@@ -492,7 +494,9 @@ verify_tasks() {
 from pathlib import Path
 
 model = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-model/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
+runtime_root = Path("crates/yoctui-cli/src/client_runtime")
 runtime = Path("crates/yoctui-cli/src/client_runtime.rs").read_text(encoding="utf-8")
+runtime += "".join(path.read_text(encoding="utf-8") for path in sorted(runtime_root.rglob("*.rs")))
 app = "\n".join(path.read_text(encoding="utf-8") for path in sorted(Path("crates/yoctui-app/src").rglob("*.rs")) if "tests" not in path.parts and path.name != "tests.rs")
 for required in (
     "pub enum TaskEvent", "Action::TaskEvents", "apply_task_batch",
@@ -577,7 +581,9 @@ if not any("format_escaped_str" in item.get("symbol", "") and item.get("self_per
 protocol = Path("crates/yoctui-protocol/src/daemon.rs").read_text(encoding="utf-8")
 transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
 daemon = Path("crates/yoctui-cli/src/daemon_server.rs").read_text(encoding="utf-8")
+supervisor_root = Path("crates/yoctui-cli/src/daemon_bitbake")
 supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
+supervisor += "".join(path.read_text(encoding="utf-8") for path in sorted(supervisor_root.rglob("*.rs")))
 for required in (
     "snapshot_bytes_upper_bound", "snapshot_serializations", "synchronize_bounded",
 ):

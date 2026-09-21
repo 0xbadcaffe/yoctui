@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-001 is DONE in v0.1.143. Every CLI production source is 504 lines or
+less and all CLI test bodies live under `src/tests`. IPC and performance source
+contracts now traverse the extracted daemon BitBake and client runtime modules;
+all eight mutation/measurement checks and the direct log, task, IPC and
+saturation contracts pass. The full package and serial workspace suites,
+strict Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29
+deterministic raster checks pass. The yoctui-utils audit is next.
+
 REDUCE-CLI-RUNTIME-TESTS-001 is DONE in v0.1.142. Twenty global-search,
 tracing, PTY attachment, render/telemetry scheduler and PTY workflow tests now
 live in responsibility-named CLI test files. The source-root PTY test file is

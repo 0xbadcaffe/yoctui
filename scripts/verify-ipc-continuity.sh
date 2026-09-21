@@ -151,7 +151,15 @@ verify_source_and_unit_contracts() {
 from pathlib import Path
 import re
 
-supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
+supervisor_root = Path("crates/yoctui-cli/src/daemon_bitbake.rs")
+supervisor_lifecycle = Path("crates/yoctui-cli/src/daemon_bitbake/lifecycle.rs").read_text(
+    encoding="utf-8"
+)
+supervisor = supervisor_root.read_text(encoding="utf-8")
+supervisor += "".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted(supervisor_root.with_suffix("").rglob("*.rs"))
+)
 transport = Path("crates/yoctui-protocol/src/daemon_ipc.rs").read_text(encoding="utf-8")
 daemon = Path("crates/yoctui-cli/src/daemon_server.rs").read_text(encoding="utf-8")
 daemon += Path("crates/yoctui-cli/src/daemon_scheduling.rs").read_text(encoding="utf-8")
@@ -163,7 +171,7 @@ daemon += Path("crates/yoctui-cli/src/daemon_server/client_requests.rs").read_te
 constructor = re.search(
     r"impl DaemonBitBakeSupervisor\s*\{\s*pub fn new\([^)]*\)\s*->\s*Self\s*\{"
     r"(?P<body>.*?)^    \}",
-    supervisor, re.DOTALL | re.MULTILINE,
+    supervisor_lifecycle, re.DOTALL | re.MULTILINE,
 )
 if constructor is None:
     raise SystemExit("bounded supervisor constructor is missing or changed; update its source contract")

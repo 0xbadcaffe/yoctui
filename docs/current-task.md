@@ -1,14 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-CLI-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-cli
+**ID:** REDUCE-UTILS-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-utils
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-RUNTIME-TESTS-001 is DONE. Run the final CLI source,
-test-placement and source-checker audit. Confirm every production source is
-approximately 500 lines or less, inline tests are gone, source-checker paths
-cover all extracted modules and all task and baseline verification commands
-pass. Make only audit corrections required by those findings.
+Dependency REDUCE-CLI-001 is DONE. Audit all Rust source in crates/yoctui-utils.
+Target approximately 500 lines per production source file using meaningful
+responsibility names, and move inline test bodies into responsibility-named
+files under a test folder. Split the task into atomic child tasks first if the
+implementation is too large for one coherent commit.
 
 ```bash
 cargo test -p yoctui --all-features
