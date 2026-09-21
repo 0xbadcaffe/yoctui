@@ -9046,12 +9046,12 @@ notes = "DONE in v0.1.191. Shared bridge fixtures now live in support.py and the
 id = "REDUCE-TOOLS-PERF-SHELL-001"
 milestone = "M73"
 title = "Decompose the performance verification shell"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2249
 required = true
 depends_on = ["REDUCE-TOOLS-BRIDGE-TESTS-001"]
 verify = ["bash -n scripts/verify-performance.sh", "python3 -m pytest bridge/tests", "./scripts/verify-roadmap.sh"]
-notes = "Scope: scripts/verify-performance.sh. Split reusable performance-verification responsibilities into named shell modules of approximately 500 lines or less while preserving the command-line contract and evidence checks."
+notes = "DONE in v0.1.192. The stable verify-performance.sh entry point sources eight named contract, profiling, rendering, IPC, scheduling, coexistence and regression modules; the largest source is 252 lines. Shell syntax and the --contract mode pass with the CLI and evidence checks preserved."
 
 [[task]]
 id = "REDUCE-TOOLS-PYTHON-001"

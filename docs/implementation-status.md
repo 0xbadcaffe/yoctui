@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-TOOLS-PERF-SHELL-001 is DONE in v0.1.192. The stable performance
+verification entry point now sources eight named contract, profiling,
+rendering, IPC, scheduling, coexistence and regression modules; the largest
+source is 252 lines. Shell syntax and `--contract` pass. Oversized Python tools
+are next.
+
 REDUCE-TOOLS-BRIDGE-TESTS-001 is DONE in v0.1.191. Shared bridge fixtures now
 live in `support.py`, and the former 1,490-line suite is split into four named
 workspace, protocol, server-adapter and event test files; the largest is 416

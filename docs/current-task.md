@@ -1,17 +1,18 @@
 # Current Task
 
-**ID:** REDUCE-TOOLS-PERF-SHELL-001
-**Title:** Decompose the performance verification shell
+**ID:** REDUCE-TOOLS-PYTHON-001
+**Title:** Decompose oversized Python verification tools
 **Status:** NOT_STARTED
 
-Dependency REDUCE-TOOLS-BRIDGE-TESTS-001 is DONE. Split
-`scripts/verify-performance.sh` into named shell modules of approximately 500
-lines or less. Preserve its command-line contract, measurement orchestration,
-evidence validation and failure behavior.
+Dependency REDUCE-TOOLS-PERF-SHELL-001 is DONE. Split
+`scripts/generate-raw-catalog.py`, `scripts/event-flood-harness.py`,
+`scripts/measure-ipc-latency.py` and `scripts/capture-real-poky-performance.py`
+into meaningful parsing, measurement and evidence modules of approximately 500
+lines or less. Preserve their command-line contracts and failure behavior.
 
 ```bash
 python3 -m pytest bridge/tests
-bash -n scripts/verify-performance.sh
+python3 -m compileall -q scripts
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
