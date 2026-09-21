@@ -1,13 +1,14 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-RAW-CATALOG-001
-**Title:** Decompose the built-in raw command catalog
+**ID:** REDUCE-MODEL-RAW-MODE-001
+**Title:** Decompose raw command state and behavior
 **Status:** NOT_STARTED
 
-Dependency REDUCE-UTILS-001 is DONE. Split the 11,852-line built-in raw command
-catalog into meaningful command-family modules targeting approximately 500
-lines each. Preserve deterministic catalog order, command/category/executable
-counts, the reviewed reference hash and every public behavior.
+Dependency REDUCE-MODEL-RAW-CATALOG-001 is DONE. Split the 7,476-line raw mode
+state and behavior into meaningful modules for catalog types, argv parsing,
+parameter validation, capability authority, preview construction, selectors,
+favorites/history and execution state. Preserve public APIs and reducer
+behavior while targeting approximately 500 lines per production source.
 
 ```bash
 cargo test -p yoctui-model --all-features raw

@@ -1,5 +1,12 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-RAW-CATALOG-001 is DONE in v0.1.146. The generated built-in raw
+catalog is a 441-line coordinator and 50 deterministic command-family modules,
+all at 450 lines or less. Generator checking covers the complete file set while
+preserving 32 categories, 464 commands, 288 executable entries, ordering and
+the reference hash. Focused raw tests, traceability/generator checks, package
+Clippy and the full repository gates pass. Raw mode state decomposition is next.
+
 REDUCE-MODEL-001 is split into 13 ordered responsibility tasks after an audit found 76,930 production lines, 31 files above approximately 500 lines and hundreds of inline tests. Built-in raw catalog decomposition is first, followed by raw state, maintenance, QA, security/testing, compatibility, application state, workflows, interaction, projections, reducers, remaining oversized sources and final test migration.
 
 REDUCE-UTILS-001 is DONE in v0.1.144. Every utility production source is 105
