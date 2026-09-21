@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-BITBAKE-ARTIFACTS-001
-**Title:** Decompose BitBake artifact and metadata adapters
+**ID:** REDUCE-BITBAKE-REPORTS-001
+**Title:** Decompose BitBake report adapters
 **Status:** NOT_STARTED
 
-Dependency REDUCE-BITBAKE-MAINTENANCE-001 is DONE. Split production
-responsibilities in `wic.rs`, `package.rs`, `rootfs.rs` and `signature.rs` into
-meaningful sources of approximately 500 lines or less. Preserve public APIs,
-filesystem containment, process ownership and typed outcomes.
+Dependency REDUCE-BITBAKE-ARTIFACTS-001 is DONE. Split production
+responsibilities in `security_report.rs`, `qa_report.rs` and `test_results.rs`
+into meaningful sources of approximately 500 lines or less. Preserve public
+APIs, platform gates and adapter behavior.
 
 ```bash
 cargo test -p yoctui-bitbake --all-features

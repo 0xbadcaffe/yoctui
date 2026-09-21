@@ -1,5 +1,10 @@
 # Yoctui Product Roadmap
 
+REDUCE-BITBAKE-ARTIFACTS-001 is DONE in v0.1.168. Wic, pkgdata,
+rootfs composition and signature adapters now route through 17 named sources;
+the largest is 458 lines. All 285 BitBake unit tests and package Clippy pass.
+Report adapter decomposition is next.
+
 REDUCE-BITBAKE-MAINTENANCE-001 is DONE in v0.1.167. Sstate, release,
 service and optional maintenance adapters now route through 15 named capability,
 validation, command, evidence, endpoint and runner sources; the largest is 466
