@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-TOOLS-BRIDGE-001
-**Title:** Decompose the Python BitBake bridge
+**ID:** REDUCE-TOOLS-BRIDGE-TESTS-001
+**Title:** Split bridge tests by responsibility
 **Status:** NOT_STARTED
 
-Dependency REDUCE-E2E-001 is DONE. Split
-`crates/yoctui-bitbake/bridge/yoctui_bridge.py` into meaningful protocol,
-process, command and event modules of approximately 500 lines or less. Preserve
-the deployed entry point, wire behavior, public APIs and platform gates.
+Dependency REDUCE-TOOLS-BRIDGE-001 is DONE. Split
+`bridge/tests/test_bridge.py` into meaningful protocol, command, process and
+event test files of approximately 500 lines or less. Move shared fixtures into
+test support while preserving all 53 bridge tests and their assertions.
 
 ```bash
 python3 -m pytest bridge/tests

@@ -9024,12 +9024,12 @@ notes = "DONE in v0.1.188. The 152-line E2E implementation remains cohesive; nin
 id = "REDUCE-TOOLS-BRIDGE-001"
 milestone = "M73"
 title = "Decompose the Python BitBake bridge"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2247
 required = true
 depends_on = ["REDUCE-E2E-001"]
 verify = ["python3 -m pytest bridge/tests", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: crates/yoctui-bitbake/bridge/yoctui_bridge.py. Split protocol, process, command and event responsibilities into meaningful modules of approximately 500 lines or less while preserving the deployed entry point and bridge behavior."
+notes = "DONE in v0.1.190. The stable yoctui_bridge.py entry point loads 11 named protocol, Tinfoil, adapter, typed-data, event, command and startup components; the largest is 425 lines. The bundled Rust source concatenates the same components, all 53 bridge tests pass and the no-checkout bundled smoke succeeds."
 
 [[task]]
 id = "REDUCE-TOOLS-BRIDGE-TESTS-001"

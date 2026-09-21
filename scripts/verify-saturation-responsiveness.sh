@@ -86,7 +86,12 @@ supervisor_root = Path("crates/yoctui-cli/src/daemon_bitbake")
 supervisor = Path("crates/yoctui-cli/src/daemon_bitbake.rs").read_text(encoding="utf-8")
 supervisor += "".join(path.read_text(encoding="utf-8") for path in sorted(supervisor_root.rglob("*.rs")))
 backend = Path("crates/yoctui-bitbake/src/bridge_backend.rs").read_text(encoding="utf-8")
-bridge = Path("crates/yoctui-bitbake/bridge/yoctui_bridge.py").read_text(encoding="utf-8")
+bridge_root = Path("crates/yoctui-bitbake/bridge")
+bridge = (bridge_root / "yoctui_bridge.py").read_text(encoding="utf-8")
+bridge += "".join(
+    path.read_text(encoding="utf-8")
+    for path in sorted((bridge_root / "yoctui_bridge_components").glob("*.py"))
+)
 
 next_event = backend.split(
     "async fn next_event(&mut self) -> Result<BackendEvent, BackendError> {", 2

@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-TOOLS-BRIDGE-001 is DONE in v0.1.190. The stable bridge entry point now
+loads 11 named protocol, Tinfoil, adapter, typed-data, event, command and startup
+components; the largest is 425 lines. The bundled Rust source concatenates the
+same components, all 53 bridge tests pass and the no-checkout smoke succeeds.
+Bridge test decomposition is next.
+
 REDUCE-TOOLS-001 is split into four ordered tasks after an audit found seven
 oversized tooling sources: the 2,569-line bridge, 1,490-line bridge test suite,
 1,476-line performance verifier and four Python catalog or measurement tools.

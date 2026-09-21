@@ -108,4 +108,16 @@ where
     }
 }
 
-pub(crate) const BUNDLED_BRIDGE_SOURCE: &str = include_str!("../../bridge/yoctui_bridge.py");
+pub(crate) const BUNDLED_BRIDGE_SOURCE: &str = concat!(
+    include_str!("../../bridge/yoctui_bridge_components/protocol_and_compatibility.py"),
+    include_str!("../../bridge/yoctui_bridge_components/tinfoil_workspace.py"),
+    include_str!("../../bridge/yoctui_bridge_components/tinfoil_metadata.py"),
+    include_str!("../../bridge/yoctui_bridge_components/tinfoil_runtime.py"),
+    include_str!("../../bridge/yoctui_bridge_components/adapter.py"),
+    include_str!("../../bridge/yoctui_bridge_components/adapter_selection.py"),
+    include_str!("../../bridge/yoctui_bridge_components/workspace_types.py"),
+    include_str!("../../bridge/yoctui_bridge_components/dependency_types.py"),
+    include_str!("../../bridge/yoctui_bridge_components/events.py"),
+    include_str!("../../bridge/yoctui_bridge_components/commands.py"),
+    include_str!("../../bridge/yoctui_bridge_components/entrypoint.py"),
+);
