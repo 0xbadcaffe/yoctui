@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-MODEL-QA-001 is DONE in v0.1.149. QA is a 29-line coordinator with 14
+responsibility modules, all at 390 lines or less. Its 61 actions route through
+seven exhaustive workflow handlers, and 16 tests moved to descriptive files
+under `src/tests`. All QA-focused tests, package Clippy and full repository gates
+pass. Security and testing model decomposition is next.
+
 REDUCE-MODEL-MAINTENANCE-001 is DONE in v0.1.148. Maintenance is a 30-line
 coordinator with 18 responsibility modules, all at 385 lines or less. The
 56-action reducer is separated into nine typed workflow handlers, and 20 tests

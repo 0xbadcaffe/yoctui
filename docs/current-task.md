@@ -1,14 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-MODEL-QA-001
-**Title:** Decompose QA report and workflow models
+**ID:** REDUCE-MODEL-SECURITY-TESTING-001
+**Title:** Decompose security and test workflow models
 **Status:** NOT_STARTED
 
-Dependency REDUCE-MODEL-MAINTENANCE-001 is DONE. Split the 3,707-line QA model
-into meaningful modules for report identity, finding normalization, imports,
-workflow state, filters/projections and transitions. Preserve typed requests,
-public APIs, authority rules and reducer behavior while targeting approximately
-500 lines per production source.
+Dependency REDUCE-MODEL-QA-001 is DONE. Split security.rs and testing.rs into
+meaningful modules for typed requests, reports, findings, sessions, comparison
+projections and state transitions. Preserve public APIs, authority rules and
+reducer behavior while targeting approximately 500 lines per production source.
 
 ```bash
 cargo test -p yoctui-model --all-features raw

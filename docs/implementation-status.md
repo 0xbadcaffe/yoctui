@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+REDUCE-MODEL-QA-001 is DONE in v0.1.149. The former 3,707-line QA owner is now
+a 29-line coordinator and 14 named capability, check, session, report,
+inventory, state and transition modules; the largest is 390 lines. Its 61
+actions route exhaustively through seven workflow handlers, and 16 inline tests
+now live in descriptive files under `src/tests`. All 18 QA-focused tests,
+package Clippy and the full repository gates pass. Security and testing model
+decomposition is next.
+
 REDUCE-MODEL-MAINTENANCE-001 is DONE in v0.1.148. The former 4,024-line
 maintenance owner is now a 30-line coordinator and 18 named capability,
 service, integration, operation, draft, state and transition modules; the
