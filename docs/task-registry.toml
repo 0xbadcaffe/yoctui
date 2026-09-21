@@ -8889,13 +8889,57 @@ verify = ["cargo test -p yoctui-bitbake --all-features", "cargo fmt --all --chec
 notes = "Scope: crates/yoctui-bitbake. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
 [[task]]
+id = "REDUCE-APP-INPUT-001"
+milestone = "M73"
+title = "Decompose application input routing"
+status = "NOT_STARTED"
+priority = 2239
+required = true
+depends_on = ["REDUCE-BITBAKE-001"]
+verify = ["cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: mouse.rs, workspace_input.rs, dialog_input.rs and keyboard.rs production responsibilities. Preserve typed actions, focus behavior and public APIs; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-APP-MAPPING-001"
+milestone = "M73"
+title = "Decompose application event mapping"
+status = "NOT_STARTED"
+priority = 2240
+required = true
+depends_on = ["REDUCE-APP-INPUT-001"]
+verify = ["cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: raw_mapping.rs, runner_events.rs and compatibility_mapping.rs production responsibilities. Preserve typed model actions and backend-event semantics; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-APP-DAEMON-JOBS-001"
+milestone = "M73"
+title = "Decompose application daemon and job coordination"
+status = "NOT_STARTED"
+priority = 2241
+required = true
+depends_on = ["REDUCE-APP-MAPPING-001"]
+verify = ["cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_client.rs and job_coordinators.rs production responsibilities plus the final production audit. Preserve request correlation, cancellation and typed outcomes; target approximately 500 lines per responsibility source."
+
+[[task]]
+id = "REDUCE-APP-TESTS-001"
+milestone = "M73"
+title = "Move application tests into responsibility folders"
+status = "NOT_STARTED"
+priority = 2242
+required = true
+depends_on = ["REDUCE-APP-DAEMON-JOBS-001"]
+verify = ["cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: all inline yoctui-app test modules and oversized existing sources under src/tests. Preserve shared fixtures, platform gates, test names and assertions; keep every test source approximately 500 lines or less."
+
+[[task]]
 id = "REDUCE-APP-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-app"
 status = "NOT_STARTED"
 priority = 2206
 required = true
-depends_on = ["REDUCE-BITBAKE-001"]
+depends_on = ["REDUCE-APP-TESTS-001"]
 verify = ["cargo test -p yoctui-app --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-app. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 

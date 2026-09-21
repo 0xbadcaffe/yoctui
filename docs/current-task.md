@@ -1,13 +1,13 @@
 # Current Task
 
-**ID:** REDUCE-APP-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-app
+**ID:** REDUCE-APP-INPUT-001
+**Title:** Decompose application input routing
 **Status:** NOT_STARTED
 
 Dependency REDUCE-BITBAKE-001 is DONE. Audit `crates/yoctui-app`, split sources
-into meaningful responsibility files of approximately 500 lines or less, and
-move inline unit-test bodies into descriptive folders under `src/tests`.
-Preserve public APIs, platform gates, test names and assertions.
+`mouse.rs`, `workspace_input.rs`, `dialog_input.rs` and `keyboard.rs` into
+meaningful responsibility files of approximately 500 lines or less. Preserve
+typed actions, focus behavior and public APIs.
 
 ```bash
 cargo test -p yoctui-app --all-features
