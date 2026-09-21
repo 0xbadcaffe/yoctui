@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-UI-001 is DONE in v0.1.186. The final audit covers all 202 Rust files
+under `yoctui-ui/src`: every production and test file is at most 480 lines, all
+300 test bodies live in 77 files under `src/tests`, and public rendering paths,
+responsive behavior and platform gates are preserved. Shell crate decomposition
+is next.
+
 REDUCE-UI-TESTS-001 is DONE in v0.1.185. Three inline test modules, the root
 task-layout tests and 18 oversized test or fixture sources now live in 77
 responsibility files under `src/tests`. All 300 tests are preserved, no test

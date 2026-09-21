@@ -1,17 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-UI-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-ui
+**ID:** REDUCE-SHELL-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-shell
 **Status:** NOT_STARTED
 
-Dependency REDUCE-UI-TESTS-001 is DONE. Audit all `yoctui-ui` Rust sources,
-confirm every production and test file is approximately 500 lines or less,
-confirm every test body lives under `src/tests`, run the required verification
-commands and record the final crate result. Preserve behavior, public APIs,
+Dependency REDUCE-UI-001 is DONE. Audit `yoctui-shell`, split oversized sources
+into meaningful responsibility files of approximately 500 lines or less and
+move inline test bodies under test folders. Preserve behavior, public APIs,
 assertions and platform gates.
 
 ```bash
-cargo test -p yoctui-ui --all-features
+cargo test -p yoctui-shell --all-features
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

@@ -8991,12 +8991,12 @@ notes = "DONE in v0.1.185. Three inline test modules, the root task-layout tests
 id = "REDUCE-UI-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-ui"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 2207
 required = true
 depends_on = ["REDUCE-UI-TESTS-001"]
 verify = ["cargo test -p yoctui-ui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Scope: crates/yoctui-ui. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
+notes = "DONE in v0.1.186. The final audit covers all 202 Rust files under yoctui-ui/src: every production and test file is at most 480 lines, all 300 test bodies live in 77 files under src/tests, and public rendering paths, responsive behavior and platform gates are preserved. No live compatibility claim."
 
 [[task]]
 id = "REDUCE-SHELL-001"
