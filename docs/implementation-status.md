@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-001 is split into eight ordered file-family tasks before further
+implementation. Maintenance workflows are first, followed by client runtime and
+transport, daemon BitBake/compatibility/rootfs/raw/PTY ownership, then a final
+CLI audit. Each task moves its inline tests and targets approximately 500 lines
+per responsibility-based source file.
+
 REDUCE-CLI-TUI-001 is DONE in v0.1.128. Interactive startup is 377 lines and
 owns a typed runtime state whose private modules separate polling/presentation,
 terminal event decoding, paste/mouse handling, ordered dialog and workspace key

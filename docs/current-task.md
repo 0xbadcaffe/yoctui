@@ -1,19 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-CLI-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-cli
+**ID:** REDUCE-CLI-MAINTENANCE-001
+**Title:** Decompose maintenance workflows and move inline tests
 **Status:** NOT_STARTED
 
-Dependencies REDUCE-CLI-MAIN-001, REDUCE-CLI-DAEMON-001 and
-REDUCE-CLI-TUI-001 are DONE. Review the remaining yoctui-cli sources and split
-this broad task into atomic file-family tasks before implementation. Current
-files above the approximate 500-line target include maintenance CLI, client
-runtime/transport, daemon backend families and PTY integration. Preserve public
-interfaces, platform gates, runtime behavior and every existing assertion; move
-remaining inline test bodies into test folders.
+Dependency REDUCE-CLI-TUI-001 is DONE. Split maintenance_cli.rs into named
+workflow, preview, runner and persistence modules targeting approximately 500
+lines each. Move its inline tests into the CLI test folder without changing
+assertions, platform behavior, process ownership, cancellation or typed effects.
 
 ```bash
-cargo test -p yoctui --all-features
+cargo test -p yoctui --all-features maintenance
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings

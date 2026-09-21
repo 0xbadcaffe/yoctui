@@ -1,5 +1,10 @@
 # Yoctui Product Roadmap
 
+The remaining REDUCE-CLI-001 scope is split into eight ordered implementation
+tasks: maintenance, client runtime, client transport, daemon BitBake,
+compatibility, rootfs, raw execution and PTY ownership. A final CLI audit
+completes the parent task after those file families and their inline tests move.
+
 REDUCE-CLI-TUI-001 is DONE in v0.1.128. The 3,755-line interactive runtime
 is now a 377-line startup module with one typed state owner and named polling,
 event, input-route, job and shutdown modules. Every runtime source remains near

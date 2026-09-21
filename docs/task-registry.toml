@@ -8438,13 +8438,101 @@ verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./s
 notes = "Scope: crates/yoctui-cli/src/main.rs. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
 [[task]]
+id = "REDUCE-CLI-MAINTENANCE-001"
+milestone = "M73"
+title = "Decompose maintenance workflows and move inline tests"
+status = "NOT_STARTED"
+priority = 2202
+required = true
+depends_on = ["REDUCE-CLI-TUI-001"]
+verify = ["cargo test -p yoctui --all-features maintenance", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: maintenance_cli.rs. Extract responsibility-based workflow, preview, runner and persistence modules near 500 lines; move inline tests into the CLI test folder without changing assertions or process boundaries."
+
+[[task]]
+id = "REDUCE-CLI-CLIENT-RUNTIME-001"
+milestone = "M73"
+title = "Decompose interactive daemon client runtime"
+status = "NOT_STARTED"
+priority = 2203
+required = true
+depends_on = ["REDUCE-CLI-MAINTENANCE-001"]
+verify = ["cargo test -p yoctui --all-features client_runtime", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: client_runtime.rs. Separate attach, replica application, typed effect routing and terminal control; move inline tests into the CLI test folder and preserve daemon authority semantics."
+
+[[task]]
+id = "REDUCE-CLI-CLIENT-TRANSPORT-001"
+milestone = "M73"
+title = "Decompose daemon client transport"
+status = "NOT_STARTED"
+priority = 2204
+required = true
+depends_on = ["REDUCE-CLI-CLIENT-RUNTIME-001"]
+verify = ["cargo test -p yoctui --all-features client_transport", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: client_transport.rs. Separate handshake, request/reply correlation and event polling near 500 lines; move inline tests into the CLI test folder and preserve retry/deadline behavior."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-BITBAKE-001"
+milestone = "M73"
+title = "Decompose daemon BitBake execution"
+status = "NOT_STARTED"
+priority = 2205
+required = true
+depends_on = ["REDUCE-CLI-CLIENT-TRANSPORT-001"]
+verify = ["cargo test -p yoctui --all-features daemon_bitbake", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_bitbake.rs. Separate ingress, build lifecycle and cancellation responsibility modules near 500 lines; move inline tests into the CLI test folder while retaining bounded priority and wakeup behavior."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-COMPAT-001"
+milestone = "M73"
+title = "Decompose daemon compatibility inspection"
+status = "NOT_STARTED"
+priority = 2206
+required = true
+depends_on = ["REDUCE-CLI-DAEMON-BITBAKE-001"]
+verify = ["cargo test -p yoctui --all-features daemon_compatibility", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_compatibility.rs. Separate probe planning, result reduction and runtime ownership near 500 lines; move inline tests into the CLI test folder and preserve authoritative fail-closed evidence."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-ROOTFS-001"
+milestone = "M73"
+title = "Decompose daemon rootfs inspection"
+status = "NOT_STARTED"
+priority = 2207
+required = true
+depends_on = ["REDUCE-CLI-DAEMON-COMPAT-001"]
+verify = ["cargo test -p yoctui --all-features daemon_rootfs", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_rootfs.rs. Separate client query, validation, worker and bridge mapping near 500 lines; move inline tests into the CLI test folder and preserve identity/cancellation checks."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-RAW-001"
+milestone = "M73"
+title = "Decompose raw daemon execution"
+status = "NOT_STARTED"
+priority = 2208
+required = true
+depends_on = ["REDUCE-CLI-DAEMON-ROOTFS-001"]
+verify = ["cargo test -p yoctui --all-features daemon_raw", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_raw.rs. Separate job, output attachment, PTY and history supervisors near 500 lines; move inline tests into the CLI test folder and retain exact identity and lifecycle behavior."
+
+[[task]]
+id = "REDUCE-CLI-DAEMON-PTY-001"
+milestone = "M73"
+title = "Decompose daemon PTY ownership"
+status = "NOT_STARTED"
+priority = 2209
+required = true
+depends_on = ["REDUCE-CLI-DAEMON-RAW-001"]
+verify = ["cargo test -p yoctui --all-features daemon_pty", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Scope: daemon_pty.rs. Separate request validation, child ownership and terminal event mapping near 500 lines; move inline tests into the CLI test folder and retain platform gates and PTY lifecycle behavior."
+
+[[task]]
 id = "REDUCE-CLI-001"
 milestone = "M73"
 title = "Finish responsibility-based modules and test folders in yoctui-cli"
 status = "NOT_STARTED"
-priority = 2201
+priority = 2210
 required = true
-depends_on = ["REDUCE-CLI-TUI-001"]
+depends_on = ["REDUCE-CLI-DAEMON-PTY-001"]
 verify = ["cargo test -p yoctui --all-features", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
 notes = "Scope: crates/yoctui-cli. Preserve behavior, public APIs, assertions and platform gates. Target approximately 500 lines per source file using meaningful responsibility names; move inline test bodies into test folders. Split this task into atomic file/family tasks before implementation when needed. Done requires the task and baseline checks, source-checker path updates, registry/status/current-task updates and a coherent commit. No live compatibility claim."
 
