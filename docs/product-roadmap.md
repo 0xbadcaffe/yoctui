@@ -1,5 +1,11 @@
 # Yoctui Product Roadmap
 
+REDUCE-UTILS-001 is DONE in v0.1.144. Every utility production source is 105
+lines or less, and 13 path, process, text, time and validation tests now live in
+responsibility-named files under `src/tests`. The full package and serial
+workspace suites, strict Clippy, fmt, 53 bridge tests, roadmap/version checks
+and all 29 deterministic raster checks pass. The yoctui-model audit is next.
+
 REDUCE-CLI-001 is DONE in v0.1.143. Every CLI production source is 504 lines or
 less and all CLI test bodies live under `src/tests`. IPC and performance source
 contracts now traverse the extracted daemon BitBake and client runtime modules;

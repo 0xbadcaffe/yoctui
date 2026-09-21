@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+REDUCE-UTILS-001 is DONE in v0.1.144. All six utility production sources are
+105 lines or less. Thirteen path, process, text, time and validation tests now
+live in responsibility-named files under `src/tests`; no production utility
+file contains a test body. The full package and serial workspace suites, strict
+Clippy, fmt, 53 bridge tests, roadmap/version checks and all 29 deterministic
+raster checks pass. The yoctui-model audit is next.
+
 REDUCE-CLI-001 is DONE in v0.1.143. Every CLI production source is 504 lines or
 less, and no production file contains inline test bodies. The final audit fixed
 IPC and performance source contracts so daemon BitBake lifecycle/ingress and

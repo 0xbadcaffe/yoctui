@@ -1,10 +1,10 @@
 # Current Task
 
-**ID:** REDUCE-UTILS-001
-**Title:** Finish responsibility-based modules and test folders in yoctui-utils
+**ID:** REDUCE-MODEL-001
+**Title:** Finish responsibility-based modules and test folders in yoctui-model
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-001 is DONE. Audit all Rust source in crates/yoctui-utils.
+Dependency REDUCE-UTILS-001 is DONE. Audit all Rust source in crates/yoctui-model.
 Target approximately 500 lines per production source file using meaningful
 responsibility names, and move inline test bodies into responsibility-named
 files under a test folder. Split the task into atomic child tasks first if the

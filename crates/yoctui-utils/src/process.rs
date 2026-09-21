@@ -75,48 +75,5 @@ impl Drop for ProcessGroupGuard {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[cfg(unix)]
-    #[test]
-    fn process_group_guard_terminates_owned_child_on_drop() {
-        use std::os::unix::process::{CommandExt, ExitStatusExt};
-        let mut child = std::process::Command::new("sleep")
-            .arg("30")
-            .process_group(0)
-            .spawn()
-            .unwrap();
-        drop(ProcessGroupGuard::new(child.id()));
-        assert_eq!(child.wait().unwrap().signal(), Some(libc::SIGKILL));
-        drop(ProcessGroupGuard::new(0));
-        drop(ProcessGroupGuard::new(u32::MAX));
-    }
-
-    #[test]
-    fn priority_rejects_values_outside_the_portable_nice_range() {
-        assert_eq!(
-            lower_process_priority(u32::MAX, -1).unwrap_err().kind(),
-            io::ErrorKind::InvalidInput
-        );
-        assert_eq!(
-            lower_process_priority(u32::MAX, 20).unwrap_err().kind(),
-            io::ErrorKind::InvalidInput
-        );
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn spawned_background_process_receives_requested_priority() {
-        let mut child = std::process::Command::new("sleep")
-            .arg("30")
-            .spawn()
-            .unwrap();
-        lower_process_priority(child.id(), 10).unwrap();
-        // SAFETY: getpriority reads kernel state for the live child PID.
-        let nice = unsafe { libc::getpriority(libc::PRIO_PROCESS, child.id()) };
-        let _ = child.kill();
-        let _ = child.wait();
-        assert_eq!(nice, 10);
-    }
-}
+#[path = "tests/process/mod.rs"]
+mod tests;

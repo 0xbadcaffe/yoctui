@@ -52,56 +52,5 @@ pub fn state_dir() -> Option<PathBuf> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn xdg_overrides_require_absolute_paths_and_preserve_non_ascii_paths() {
-        let home = std::env::temp_dir().join("home with spaces-λ");
-        let custom = std::env::temp_dir().join("custom-λ");
-        assert_eq!(
-            xdg_directory(Some(custom.clone()), Some(home.clone()), ".config"),
-            Some(custom)
-        );
-        for invalid in [PathBuf::new(), PathBuf::from("relative")] {
-            assert_eq!(
-                xdg_directory(Some(invalid), Some(home.clone()), ".config"),
-                Some(home.join(".config"))
-            );
-        }
-        assert_eq!(
-            xdg_directory(None, Some("relative".into()), ".config"),
-            None
-        );
-        assert_eq!(xdg_directory(None, None, ".config"), None);
-    }
-
-    #[test]
-    fn path_entry_detection_distinguishes_missing_and_present_entries() {
-        let root = std::env::temp_dir().join(format!("yoctui-utils-entry-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&root);
-        std::fs::create_dir_all(&root).unwrap();
-        let path = root.join("output");
-        assert!(!path_entry_exists(&path).unwrap());
-        std::fs::write(&path, b"present").unwrap();
-        assert!(path_entry_exists(&path).unwrap());
-        std::fs::remove_dir_all(root).unwrap();
-    }
-
-    #[cfg(unix)]
-    #[test]
-    fn path_entry_detection_includes_dangling_symbolic_links() {
-        use std::os::unix::fs::symlink;
-
-        let root = std::env::temp_dir().join(format!(
-            "yoctui-utils-dangling-entry-{}",
-            std::process::id()
-        ));
-        let _ = std::fs::remove_dir_all(&root);
-        std::fs::create_dir_all(&root).unwrap();
-        let link = root.join("output");
-        symlink(root.join("missing"), &link).unwrap();
-        assert!(path_entry_exists(&link).unwrap());
-        std::fs::remove_dir_all(root).unwrap();
-    }
-}
+#[path = "tests/paths/mod.rs"]
+mod tests;
