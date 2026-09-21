@@ -1,0 +1,20 @@
+use super::attach::restore_local_build_dir;
+use super::*;
+use std::path::PathBuf;
+use yoctui_app::PrefixCommand;
+use yoctui_model::{App, ClientDaemonLifecycle, Effect};
+use yoctui_protocol::daemon::{DaemonCommand, DaemonDevtoolOperation};
+
+mod client_runtime_devtool_maps_every_effect_to_closed_wire_type;
+mod client_runtime_effect_mapping_uses_daemon_global_state;
+mod client_runtime_jobs_routes_maintenance_to_daemon;
+mod client_runtime_qa_report_maps_import_to_daemon_worker;
+mod client_runtime_qa_task_maps_capability_inspection_to_typed_daemon_input;
+mod client_runtime_random_identity_is_nonzero;
+mod image_console_terminal_kinds_keep_protocol_identity;
+mod raw_job_effects_map_only_to_typed_daemon_commands;
+mod raw_output_attachment_effect_maps_only_request_identity_and_state;
+mod raw_pty_effect_maps_to_confirmed_request_and_bounded_dimensions;
+mod standalone_mode_remains_an_explicit_local_fallback;
+mod ux_terminal_runtime_prefix_maps_create_and_writer_commands;
+mod ux_terminal_runtime_preserves_explicit_local_build_authority;

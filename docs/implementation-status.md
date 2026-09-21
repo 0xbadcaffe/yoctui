@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+REDUCE-CLI-CLIENT-RUNTIME-001 is DONE in v0.1.131. The former 1,485-line
+interactive daemon client runtime is split into an 84-line state/error parent
+and named attach, replica polling, typed effect input/routing and terminal
+control modules; the largest is 470 lines. Its 13 inline tests now live in
+named files under `src/tests/client_runtime`. Focused tests, the serial
+1,692-test workspace suite (five existing ignored), strict Clippy, fmt, 53
+bridge tests, roadmap/version checks and all 29 deterministic raster checks
+pass. Client transport decomposition is next.
+
 REDUCE-CLI-MAINTENANCE-001 is DONE in v0.1.130. Maintenance production code is
 split into a 428-line shared state/inspection parent, 336-line coordinator,
 308-line preview router and 453-line operation runner. Seventeen workflow tests

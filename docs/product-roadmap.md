@@ -1,5 +1,13 @@
 # Yoctui Product Roadmap
 
+REDUCE-CLI-CLIENT-RUNTIME-001 is DONE in v0.1.131. The 1,485-line daemon client
+runtime now uses named attach, replica polling, typed effect input/routing and
+terminal control modules, all below 500 lines. Thirteen inline unit tests moved
+to descriptive files under the CLI test folder. The serial 1,692-test workspace
+suite (five existing ignored), strict Clippy, fmt, 53 bridge tests,
+roadmap/version checks and all 29 deterministic raster checks pass. Client
+transport is next.
+
 REDUCE-CLI-MAINTENANCE-001 is DONE in v0.1.130. The former 2,713-line
 maintenance source is split into shared state/inspection, coordinator polling,
 typed preview and operation modules, all below 500 lines. Its 17 inline workflow

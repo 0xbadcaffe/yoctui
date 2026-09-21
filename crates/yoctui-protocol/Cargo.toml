@@ -10,8 +10,8 @@ readme.workspace = true
 description = "Typed bridge and daemon protocols for Yoctui"
 publish = ["crates-io"]
 [dependencies]
-yoctui-model = { version = "0.1.130", path = "../yoctui-model" }
-yoctui-utils = { version = "0.1.130", path = "../yoctui-utils" }
+yoctui-model = { version = "0.1.131", path = "../yoctui-model" }
+yoctui-utils = { version = "0.1.131", path = "../yoctui-utils" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

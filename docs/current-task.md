@@ -1,17 +1,16 @@
 # Current Task
 
-**ID:** REDUCE-CLI-CLIENT-RUNTIME-001
-**Title:** Decompose interactive daemon client runtime
+**ID:** REDUCE-CLI-CLIENT-TRANSPORT-001
+**Title:** Decompose daemon client transport
 **Status:** NOT_STARTED
 
-Dependency REDUCE-CLI-MAINTENANCE-001 is DONE. Split client_runtime.rs into
-named attach, replica-application, typed effect-routing and terminal-control
-modules targeting approximately 500 lines each. Move its inline tests into the
-CLI test folder without changing assertions, daemon authority, reconnect,
-request correlation or platform behavior.
+Dependency REDUCE-CLI-CLIENT-RUNTIME-001 is DONE. Split client_transport.rs
+into named handshake, request/reply-correlation and event-polling modules
+targeting approximately 500 lines each. Move its inline tests into the CLI test
+folder without changing retry, deadline, framing or correlation behavior.
 
 ```bash
-cargo test -p yoctui --all-features client_runtime
+cargo test -p yoctui --all-features client_transport
 cargo fmt --all --check
 cargo test --workspace --all-features
 cargo clippy --workspace --all-targets --all-features -- -D warnings
