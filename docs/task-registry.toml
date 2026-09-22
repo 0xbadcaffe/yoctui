@@ -9173,3 +9173,14 @@ required = true
 depends_on = ["MENU-KEY-001"]
 verify = ["cargo test -p yoctui-model global_content_search_rejects_stale_results_and_opens_selected_file", "cargo fmt --all --check"]
 notes = "DONE in v0.1.201. RestoreGlobalSearchResults is accepted by the same reducer branch that implements it, so returning from an edited search hit reopens the retained result list instead of reaching the reducer's wrong-route invariant panic. The existing top-level update regression now passes; full baseline intentionally deferred for the user's rapid manual bug pass."
+
+[[task]]
+id = "MENU-SIZE-001"
+milestone = "M75"
+title = "Increase the responsive F12 application menu size"
+status = "DONE"
+priority = 2402
+required = true
+depends_on = ["SEARCH-RESTORE-PANIC-001"]
+verify = ["cargo test -p yoctui-app concept_menu_mouse_matches_compact_bounds_and_traps_outside_clicks", "cargo test -p yoctui-ui application_menu", "cargo fmt --all --check"]
+notes = "DONE in v0.1.202. Shared rendering and pointer bounds expand the application menu from the old 60x18 cap to 76x18 at 80x24, 96x24 at 100x30 and 100x28 at 160x50, retaining two-column margins and expanding around the original center so the wide editor Inspector remains visible. Focused geometry, mouse and UI checks pass; full baseline intentionally deferred for the user's rapid manual bug pass."

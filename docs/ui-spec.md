@@ -3609,10 +3609,9 @@ F1 Help  F2 Tasks  F3 History  F4 Dashboard  F5 Logs
 F6 Layers  F7 Recipes  F8 Images  F9 Commands  F12 Menu
 ```
 
-This catalog is shared by input dispatch, Help, and footer rendering. `F9` and
-`F12` are intentional aliases for the command palette; the bounded rail omits
-the lower-priority `F9` alias instead of advertising it as a nonexistent
-global search. There is no function-key terminal route: `F4` truthfully opens
+This catalog is shared by input dispatch, Help, and footer rendering. `F9`
+opens the command palette and `F12` opens the application menu. There is no
+function-key terminal route: `F4` truthfully opens
 Dashboard, while terminal/session access remains in Navigator, Dashboard, and
 the command palette through its actual bindings.
 
@@ -5692,6 +5691,11 @@ items, Enter activates, and Esc/F12 closes. Mouse clicks select group tabs or
 rows; the wheel selects rows and Enter activates the selection. Outside clicks
 remain trapped. Rendering and hit testing share the same geometry.
 
+The menu uses the available workbench area instead of a compact 60-column cap:
+76×18 cells at 80×24, 96×24 at 100×30, and 100×28 at 160×50. It retains at
+least two columns of outer margin and expands around the established menu center
+so the wide editor's Recipe Inspector remains visible.
+
 M68 focus details: activating an expanded Navigator destination enters its
 interactive Workspace; passive Dashboard/Help/relationships retain Navigator
 focus. Escape leaves local search/edit/copy mode first, then Workspace, then the
@@ -5800,3 +5804,7 @@ menu. The footer, Help, menu overlay, command hints, documentation, and PTY
 acceptance use `F12 Menu`. `F9` and `Ctrl+P` continue to open the command
 palette. `F10` has no built-in global action and remains available to embedded
 terminal sessions or an explicit user keymap binding.
+
+The F12 menu grows to the bounded responsive dimensions defined in the M68 menu
+contract so action names, shortcuts, descriptions, and unavailable reasons have
+substantially more horizontal and vertical room.

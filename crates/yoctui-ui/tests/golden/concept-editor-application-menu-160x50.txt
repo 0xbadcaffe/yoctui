@@ -1,36 +1,36 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.201  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
+│yoctui v0.1.202  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
 │──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator───────────┐┌modal · Recipe ed┌modal · Application menu · focus trapped──────────────────┐───────────────────────────────────────────────────────────┐
-│▾ OVERVIEW          ││┌Workspace file t│ Workspace  Build  Navigate  View  Tools  Help            │Col 1───────────────────┐┌Recipe Inspector────────────────┐│
-│  ▱ Dashboard       │││▶ bash_5.2.bb   │No active build is available to cancel.                   │                        ││Recipe                          ││
-│  ▱ Insights        │││  files/0001-fix│  Build image           B          No current environment │                        ││Name: bash                      ││
-│▾ CONTENT           │││.patch          │  Build selected recipe b          No current environment │2.tar.gz"               ││Layer: poky                     ││
-│    Layers          │││                │> Cancel active build   c          No active build is avai│                        ││File: bash_5.2.bb               ││
-│    Recipes         │││                │                                                          │                        ││Language: BitBake               ││
-│    Packages        │││                │                                                          │                        ││State: modified                 ││
-│    Images          │││                │Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups      │}/bash                  ││                                ││
-│    Kernel          │││                └──────────────────────────────────────────────────────────┘                        ││Actions                         ││
-│    U-Boot / BIOS   │││                      ││ 9 │ BROKEN_OVERRIDE =  [validation]                                        ││[v] Validate                    ││
-│    SDK             │││                      ││10 │ ▏                                                                      ││[p] Preview diff                ││
-│▾ BUILD             │││                      ││                                                                            ││[Ctrl+S] Save                   ││
-│    Tasks           │││                      ││                                                                            ││[Ctrl+B] Build recipe           ││
-│  ▱ Logs        LIVE│││                      ││                                                                            ││[e] External editor             ││
-│  ▱ Errors          │││                      ││                                                                            ││                                ││
-│    Configuration   │││                      ││                                                                            ││                                ││
-│    Dependencies    │││                      ││                                                                            ││                                ││
-│▾ VALIDATE          │││                      ││                                                                            ││                                ││
-│    Testing         │││                      ││                                                                            ││                                ││
-│    Security        │││                      ││                                                                            ││                                ││
-│    QA              │││                      ││                                                                            ││                                ││
-│▾ TOOLS             │││                      ││                                                                            ││                                ││
-│    Raw Mode        │││                      ││                                                                            ││                                ││
-│    Terminal Session│││                      ││                                                                            ││                                ││
-│    Devtool         │││                      ││                                                                            ││                                ││
-│    QEMU / Wic      │││                      ││                                                                            ││                                ││
-│    Maintenance     │││                      ││                                                                            ││                                ││
+┌Navigator──────────┌modal · Application menu · focus trapped──────────────────────────────────────────────────────────┐───────────────────────────────────────┐
+│▾ OVERVIEW         │ Workspace  Build  Navigate  View  Tools  Help                                                    │────┐┌Recipe Inspector────────────────┐│
+│  ▱ Dashboard      │No active build is available to cancel.                                                           │    ││Recipe                          ││
+│  ▱ Insights       │  Build image                               B          No current environment capability snaps    │    ││Name: bash                      ││
+│▾ CONTENT          │  Build selected recipe                     b          No current environment capability snaps    │    ││Layer: poky                     ││
+│    Layers         │> Cancel active build                       c          No active build is available to cancel.    │    ││File: bash_5.2.bb               ││
+│    Recipes        │                                                                                                  │    ││Language: BitBake               ││
+│    Packages       │                                                                                                  │    ││State: modified                 ││
+│    Images         │                                                                                                  │    ││                                ││
+│    Kernel         │                                                                                                  │    ││Actions                         ││
+│    U-Boot / BIOS  │                                                                                                  │    ││[v] Validate                    ││
+│    SDK            │                                                                                                  │    ││[p] Preview diff                ││
+│▾ BUILD            │                                                                                                  │    ││[Ctrl+S] Save                   ││
+│    Tasks          │                                                                                                  │    ││[Ctrl+B] Build recipe           ││
+│  ▱ Logs        LIV│                                                                                                  │    ││[e] External editor             ││
+│  ▱ Errors         │                                                                                                  │    ││                                ││
+│    Configuration  │                                                                                                  │    ││                                ││
+│    Dependencies   │                                                                                                  │    ││                                ││
+│▾ VALIDATE         │                                                                                                  │    ││                                ││
+│    Testing        │                                                                                                  │    ││                                ││
+│    Security       │                                                                                                  │    ││                                ││
+│    QA             │                                                                                                  │    ││                                ││
+│▾ TOOLS            │                                                                                                  │    ││                                ││
+│    Raw Mode       │                                                                                                  │    ││                                ││
+│    Terminal Sessio│                                                                                                  │    ││                                ││
+│    Devtool        │                                                                                                  │    ││                                ││
+│    QEMU / Wic     │Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups                                              │    ││                                ││
+│    Maintenance    └──────────────────────────────────────────────────────────────────────────────────────────────────┘    ││                                ││
 │  ▱ Build environmen│││                      ││                                                                            ││                                ││
 │  ▱ Compatibility   │││                      ││                                                                            ││                                ││
 │  ▱ Settings        │││                      ││                                                                            ││                                ││

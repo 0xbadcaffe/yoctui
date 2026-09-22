@@ -32,20 +32,20 @@ pub fn application_menu_bounds(
     app: &App,
     width: u16,
     height: u16,
-    items: usize,
+    _items: usize,
 ) -> Option<(u16, u16, u16, u16)> {
     if width < 64 || height < 16 {
         return None;
     }
-    let menu_width = 60.min(width.saturating_sub(4));
-    let menu_height = u16::try_from(items)
-        .unwrap_or(u16::MAX)
-        .saturating_add(5)
-        .clamp(10, 18)
-        .min(height.saturating_sub(8));
+    let menu_width = 100.min(width.saturating_sub(4));
+    let menu_height = 28.min(height.saturating_sub(6));
     let top = workbench_chrome_heights(app, width, height)[0];
+    let centered_expansion = menu_width.saturating_sub(60) / 2;
     Some((
-        (width / 4).min(width.saturating_sub(menu_width)),
+        (width / 4)
+            .saturating_sub(centered_expansion)
+            .min(width.saturating_sub(menu_width).saturating_sub(2))
+            .max(2),
         top,
         menu_width,
         menu_height,

@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 MENU-SIZE-001 is DONE in v0.1.202. The F12 application menu now expands
+from the old 60×18 cap to 76×18 at 80×24, 96×24 at 100×30, and 100×28 at
+160×50. Rendering and mouse hit-testing share those bounds, retain outer
+margin, and expand around the original center so the wide editor Inspector
+remains visible. Focused app and UI checks
+pass; the full suite remains deferred for the user's manual bug pass.
+
 M75 SEARCH-RESTORE-PANIC-001 is DONE in v0.1.201. The top-level reducer and
 global-search reducer now agree on `RestoreGlobalSearchResults`; returning from
 an edited hit restores the retained result list without reaching the wrong-route
