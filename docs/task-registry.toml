@@ -9206,3 +9206,36 @@ required = true
 depends_on = ["BUILD-ERROR-INVESTIGATION-001"]
 verify = ["cargo test -p yoctui-model rootfs_tabs_resolve_the_built_image_instead_of_an_unowned_deploy_file", "cargo fmt --all --check"]
 notes = "DONE in v0.1.204. Rootfs tabs no longer query unowned deploy names such as fit-image as recipes. They preserve a selected recipe-owned artifact or resolve the current build target's rootfs artifact through the authoritative workspace recipe inventory. Focused model and formatting checks pass; full baseline intentionally deferred for the user's rapid manual bug pass."
+
+[[task]]
+id = "SEARCH-NAV-PERF-001"
+milestone = "M75"
+title = "Repair global-search paging, viewport movement, and scan latency"
+status = "DONE"
+priority = 2405
+required = true
+depends_on = ["ROOTFS-ARTIFACT-OWNER-001"]
+verify = ["cargo test -p yoctui --all-features global_search", "cargo test -p yoctui-app command_palette_pages_move_ten_results", "cargo test -p yoctui-ui global_search_selection_moves_within_pages", "cargo fmt --all --check"]
+notes = "DONE in v0.1.205. PageUp/PageDown move ten bounded results, the selected row advances within stable pages, and build-file scanning uses a cancellation-aware bounded four-worker pipeline without sorting every traversed directory."
+
+[[task]]
+id = "TASK-STATUS-ORDER-001"
+milestone = "M75"
+title = "Order build tasks by lifecycle status"
+status = "DONE"
+priority = 2406
+required = true
+depends_on = ["SEARCH-NAV-PERF-001"]
+verify = ["cargo test -p yoctui-model task_rows_prioritize_running_waiting_and_terminal_states", "cargo fmt --all --check"]
+notes = "DONE in v0.1.205. Running tasks precede queued and aggregate waiting work, failure states follow, and succeeded rows render last; timestamps and identity order rows only within lifecycle groups."
+
+[[task]]
+id = "DASHBOARD-TASK-METERS-001"
+milestone = "M75"
+title = "Reuse Tasks resource meters on the Dashboard"
+status = "DONE"
+priority = 2407
+required = true
+depends_on = ["TASK-STATUS-ORDER-001"]
+verify = ["cargo test -p yoctui-ui dashboard_reuses_task_resource_meters", "cargo fmt --all --check"]
+notes = "DONE in v0.1.205. Dashboard resource telemetry now uses the exact shared dense CPU, RAM and build-filesystem meter renderer used by Tasks, including bounded history, segmented bars, percentages and details."

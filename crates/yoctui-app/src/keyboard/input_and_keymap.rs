@@ -226,6 +226,17 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
     }
 }
 
+pub fn command_palette_navigation_action(key: Input) -> Option<Action> {
+    let delta = match key {
+        Input::Up => -1,
+        Input::Down => 1,
+        Input::PageUp => -10,
+        Input::PageDown => 10,
+        _ => return None,
+    };
+    Some(Action::SelectCommandPalette { delta })
+}
+
 /// Screen-local editors and searches retain text, Escape and navigation keys.
 pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
     (app.screen == yoctui_model::Screen::BuildEnvironment

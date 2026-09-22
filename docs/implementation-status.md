@@ -1,5 +1,17 @@
 # Yoctui Implementation Status
 
+M75 SEARCH-NAV-PERF-001 is DONE in v0.1.205. Global search accepts bounded
+PageUp/PageDown movement, advances the highlight within stable pages, and uses
+a cancellation-aware four-worker scan pipeline without per-directory sorting.
+
+M75 TASK-STATUS-ORDER-001 is DONE in v0.1.205. The Tasks projection orders
+running work first, queued and aggregate waiting work next, failure states
+next, and succeeded work last before applying stable within-group ordering.
+
+M75 DASHBOARD-TASK-METERS-001 is DONE in v0.1.205. Dashboard CPU, RAM, and
+build-filesystem resources now use the same dense history, segmented bar, exact
+percentage, and detail renderer as the Tasks workspace.
+
 M75 ROOTFS-ARTIFACT-OWNER-001 is DONE in v0.1.204. Rootfs tabs reject unowned
 deploy names such as `fit-image` as recipe query authority and resolve the
 current build target's rootfs artifact from the authoritative recipe inventory.

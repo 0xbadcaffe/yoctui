@@ -230,10 +230,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     );
 
     let visible_count = usize::from(regions[1].height.saturating_sub(3)).max(1);
-    let maximum_start = total.saturating_sub(visible_count);
-    let start = selection
-        .saturating_sub(visible_count / 2)
-        .min(maximum_start);
+    let start = selection / visible_count * visible_count;
     let end = start.saturating_add(visible_count).min(total);
     let result_label = if global_search { "Results" } else { "Commands" };
     let content_state = match &app.global_search_content {
@@ -477,7 +474,7 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     frame.render_widget(
         Paragraph::new(bounded_cell_text(
             if global_search {
-                "Content regex · build files + rootfs + text artifacts · Enter open · Esc close"
+                "Content regex · ↑/↓ select · PgUp/PgDn page · Enter open · Esc close"
             } else {
                 "Esc close · Enter run · ↑/↓ select · Type search · Backspace edit · Ctrl+U clear"
             },

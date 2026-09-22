@@ -4245,9 +4245,12 @@ remain explicit when current runtime or rendering sources differ.
 ## Requested startup and content-search boundaries
 
 The CLI scanner searches only build-directory text contents and returns typed
-file/line hits. The model keeps command results out of global search. Blank
-queries produce no scan or results. Generated rootfs and textual deployment
-artifacts use the same bounded scanner; binary files are skipped.
+file/line hits. A bounded four-worker pipeline scans files concurrently while
+one traversal owns directory limits and symlink rejection; cancellation, file
+size, per-kind, and total-hit bounds remain shared authority. Only the bounded
+final hits are sorted. The model keeps command results out of global search.
+Blank queries produce no scan or results. Generated rootfs and textual
+deployment artifacts use the same bounded scanner; binary files are skipped.
 
 The environment adapter validates prospective build paths before sourcing the
 selected setup script; filesystem creation belongs to that script. Daemon

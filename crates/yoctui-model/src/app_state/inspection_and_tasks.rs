@@ -200,17 +200,17 @@ impl App {
             let (_, left, left_state) = left;
             let (_, right, right_state) = right;
             (
+                task_state_order(*left_state),
                 left.started.is_none(),
                 left.started,
-                task_state_order(*left_state),
                 left.recipe.as_str(),
                 left.task.as_str(),
                 left.id.0.as_str(),
             )
                 .cmp(&(
+                    task_state_order(*right_state),
                     right.started.is_none(),
                     right.started,
-                    task_state_order(*right_state),
                     right.recipe.as_str(),
                     right.task.as_str(),
                     right.id.0.as_str(),
@@ -223,9 +223,15 @@ impl App {
             && self.task_filters.task.is_empty()
             && self.task_filters.worker.is_empty()
             && self.task_filters.minimum_duration.is_none();
+        let waiting_position = rows.partition_point(|(_, _, state)| {
+            task_state_order(*state) <= task_state_order(TaskState::Waiting)
+        });
         let mut projection = rows.into_iter().map(|(key, _, _)| key).collect::<Vec<_>>();
         if waiting > 0 && waiting_filter_matches {
-            projection.push(TaskProjectionKey::WaitingSummary(waiting));
+            projection.insert(
+                waiting_position.min(projection.len()),
+                TaskProjectionKey::WaitingSummary(waiting),
+            );
         }
         let mut cache = self.task_projection_cache.0.borrow_mut();
         cache.generation = self.task_projection_generation;

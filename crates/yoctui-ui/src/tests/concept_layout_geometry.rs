@@ -22,12 +22,12 @@ fn dashboard_concept_has_distinct_regions_and_resizes_without_mutation() {
         assert!(region_text(nav, 14, work, height - 35).contains("Recent Builds"));
         let telemetry = region_text(nav, height - 18, work, 8);
         assert!(telemetry.contains("Resource Telemetry"));
-        assert!(telemetry.contains("0.72 / 4.00 cores"));
-        assert!(telemetry.contains("6.72 / 16.00 GiB"));
-        assert!(telemetry.contains("94.50 / 150.00 GiB"));
+        assert!(telemetry.contains("4 cores"));
+        assert!(telemetry.contains("6.7/16.0 GiB"));
+        assert!(telemetry.contains("55.5 GiB free"));
         assert!(
             !telemetry.contains('⣿'),
-            "Dashboard capacity uses continuous bars rather than dotted glyphs"
+            "Dashboard reuses the Tasks segmented bars rather than dotted arcs"
         );
         assert!(region_text(nav, height - 10, work, 7).contains("Quick Actions"));
         assert!(

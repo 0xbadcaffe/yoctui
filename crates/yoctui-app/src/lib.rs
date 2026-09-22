@@ -105,9 +105,10 @@ pub use backend_mapping::model_action_from_backend_event;
 mod keyboard;
 pub use keyboard::{
     CheckboxInputAction, Input, KeymapInputResult, MenuInputResult, checkbox_input_action,
-    collection_scroll_delta, context_menu_activation_input, global_search_action, input_key_stroke,
-    keymap_action_for_app, keymap_preferences_action, menu_action, notification_popup_action,
-    onboarding_action, terminal_context_action, terminal_workspace_action,
+    collection_scroll_delta, command_palette_navigation_action, context_menu_activation_input,
+    global_search_action, input_key_stroke, keymap_action_for_app, keymap_preferences_action,
+    menu_action, notification_popup_action, onboarding_action, terminal_context_action,
+    terminal_workspace_action,
 };
 
 mod mouse;

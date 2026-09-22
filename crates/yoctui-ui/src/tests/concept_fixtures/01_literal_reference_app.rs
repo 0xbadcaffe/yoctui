@@ -115,7 +115,7 @@ pub(crate) fn literal_reference_app() -> App {
             ..Default::default()
         };
     app.tasks.insert(active.id.clone(), active);
-    app.task_progress_scroll = 4;
+    app.task_progress_scroll = 0;
     for message in [
         "NOTE: Executing Tasks",
         "NOTE: Started: do_compile",

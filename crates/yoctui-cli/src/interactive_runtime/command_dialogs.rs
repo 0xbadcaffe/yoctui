@@ -13,34 +13,31 @@ impl InteractiveRuntime {
             let global_search_close = runtime.app.command_palette_mode
                 == yoctui_model::CommandPaletteMode::GlobalRegexSearch
                 && input == Input::Esc;
-            let effect = match input {
-                Input::Up => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::SelectCommandPalette { delta: -1 },
-                ),
-                Input::Down => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::SelectCommandPalette { delta: 1 },
-                ),
-                Input::Enter => {
-                    compatibility_workspace_action(&mut runtime.app, Action::ActivateCommandPalette)
-                }
-                Input::Esc => {
-                    compatibility_workspace_action(&mut runtime.app, Action::CloseCommandPalette)
-                }
-                Input::Backspace => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::BackspaceCommandPaletteQuery,
-                ),
-                Input::CtrlU => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::ClearCommandPaletteQuery,
-                ),
-                Input::Char(character) => compatibility_workspace_action(
-                    &mut runtime.app,
-                    Action::AppendCommandPaletteQuery(character),
-                ),
-                _ => None,
+            let effect = match command_palette_navigation_action(input) {
+                Some(action) => compatibility_workspace_action(&mut runtime.app, action),
+                None => match input {
+                    Input::Enter => compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::ActivateCommandPalette,
+                    ),
+                    Input::Esc => compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::CloseCommandPalette,
+                    ),
+                    Input::Backspace => compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::BackspaceCommandPaletteQuery,
+                    ),
+                    Input::CtrlU => compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::ClearCommandPaletteQuery,
+                    ),
+                    Input::Char(character) => compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::AppendCommandPaletteQuery(character),
+                    ),
+                    _ => None,
+                },
             };
             if let Some(effect @ Effect::GetImageArtifacts(_)) = effect {
                 begin_image_artifact_operation(

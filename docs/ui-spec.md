@@ -19,9 +19,9 @@ backpressured client retains an ordered partial IPC frame and retries without
 blocking other clients. Genuine disconnections retain the existing reconnect
 and stale-authority behavior.
 
-Dashboard resource cards use three adjacent rows (label, continuous bar, exact
-value) without the former dial's vertical padding. Sstate and Downloads appear
-below them as compact typed build-cache summaries. Report BitBake's sstate
+Dashboard resource cards reuse the Tasks resource-meter renderer: each adjacent
+CPU, RAM, and build-filesystem cell shows its exact percentage, bounded recent
+history, segmented capacity bar, and exact detail. Report BitBake's sstate
 summary when available, and observed fetch outcomes plus configured network
 policy. Offline readiness must remain explicitly unverified without an exact
 target-scoped fetch verification; an existing DL_DIR or successful retained
@@ -1356,6 +1356,11 @@ Task lifecycle presentation has seven exact text-and-marker labels:
 | failed terminal task | `✕ Failed` | error, bold and underlined |
 | explicitly cancelled task | `■ Cancelled` | warning, bold |
 | task whose backend lifecycle was lost | `? Lost` | error, bold and underlined |
+
+The Tasks collection orders lifecycle groups before timestamps: executing rows
+first, identified queued rows and the aggregate waiting row next, failed or
+cancelled terminal rows next, and succeeded rows last. Timestamps, recipe,
+task, and identity provide stable ordering only within a lifecycle group.
 
 The words are stable ASCII text and carry the meaning if a terminal substitutes
 a marker glyph. No-color changes only the resolved colors, never the marker or
@@ -5794,7 +5799,11 @@ open browser.
 Global content search shows the shared Braille activity symbol while its
 current generation is loading. Opening a result in the configured editor and
 returning restores the same query, result generation, selection, and result
-list.
+list. Up/Down move visibly within a stable result page; PageUp/PageDown move ten
+bounded results. The viewport changes only at a page boundary instead of
+recentering the highlighted row after every selection. Content traversal uses
+a bounded worker pool, retains cancellation and file-size limits, and sorts
+only the bounded final hits for stable presentation.
 
 Packages and Images keep their selected rows inside a selection-centered
 viewport. Package rows retain their authoritative owning-recipe column and
