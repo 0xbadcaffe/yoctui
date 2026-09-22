@@ -1,4 +1,5 @@
 use super::*;
+use crate::image_updates::rootfs_image_identity;
 
 pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     match action {
@@ -255,14 +256,12 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             ));
         }
         Action::BeginSelectedRootfsComposition => {
-            let Some(image) = app
-                .selected_image_artifact()
-                .map(|artifact| artifact.identity.clone())
-            else {
+            let Some(image) = rootfs_image_identity(app) else {
                 app.notification =
-                    Some("Select an authoritative deployed image artifact first.".into());
+                    Some("Select a deployed artifact owned by an image recipe first.".into());
                 return None;
             };
+            app.image_artifact_selection = Some(image.clone());
             app.images_view = ImagesView::RootfsPackages;
             return begin_rootfs_composition(app, image);
         }
@@ -270,17 +269,15 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.images_view = app.images_view.shifted(delta);
             app.image_artifact_searching = false;
             if app.images_view != ImagesView::Artifacts {
-                let Some(image) = app
-                    .selected_image_artifact()
-                    .map(|artifact| artifact.identity.clone())
-                else {
+                let Some(image) = rootfs_image_identity(app) else {
                     app.notification = Some(
-                        "Select an authoritative deployed image artifact before opening rootfs composition."
+                        "Select a deployed artifact owned by an image recipe before opening rootfs composition."
                             .into(),
                     );
                     app.images_view = ImagesView::Artifacts;
                     return None;
                 };
+                app.image_artifact_selection = Some(image.clone());
                 let is_current = app
                     .rootfs_composition
                     .request()

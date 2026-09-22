@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M75 ROOTFS-ARTIFACT-OWNER-001 is DONE in v0.1.204. Rootfs tabs reject unowned
+deploy names such as `fit-image` as recipe query authority and resolve the
+current build target's rootfs artifact from the authoritative recipe inventory.
+Focused model and formatting checks pass; the full suite remains deferred for
+the user's manual bug pass.
+
 M75 BUILD-ERROR-INVESTIGATION-001 is DONE in v0.1.203. Native BitBake
 `CRITICAL` and `FATAL` records retain Error severity, task-process correlation
 attaches the authoritative `log.do_*` path, and Errors can open the failed

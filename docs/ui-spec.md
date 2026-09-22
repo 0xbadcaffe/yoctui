@@ -2400,6 +2400,12 @@ Partial state keeps valid rows usable and shows the limitation count. A
 selected artifact never changes merely because an asynchronous stale result
 arrives.
 
+Opening a Rootfs composition tab requires an artifact whose image identity
+matches an authoritative workspace recipe. If the selected deploy file has an
+unowned name such as `fit-image`, Yoctui selects a rootfs artifact for the
+current successful build target when available, then queries that image recipe.
+It never sends a deploy filename to BitBake as a recipe name.
+
 The Inspector shows:
 
 - exact machine and image target

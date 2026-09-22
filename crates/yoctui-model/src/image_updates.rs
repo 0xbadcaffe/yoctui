@@ -50,6 +50,50 @@ pub(crate) fn set_image_artifact_selection_to_current_or_first(
         .or_else(|| visible.first().cloned());
 }
 
+pub(crate) fn rootfs_image_identity(app: &App) -> Option<ImageArtifactIdentity> {
+    let artifacts = app.image_artifacts.artifacts()?;
+    let is_recipe = |name: &str| {
+        app.workspace
+            .recipes
+            .iter()
+            .any(|recipe| recipe.name == name)
+    };
+    if let Some(selected) = app
+        .image_artifact_selection
+        .as_ref()
+        .filter(|identity| is_recipe(&identity.image))
+    {
+        return Some(selected.clone());
+    }
+    let rootfs_rank = |artifact: &&ImageArtifact| match artifact.kind {
+        ImageArtifactKind::RootFilesystem => 0,
+        ImageArtifactKind::Wic => 1,
+        ImageArtifactKind::Manifest => 2,
+        _ => 3,
+    };
+    let candidate = |target: &str| {
+        artifacts
+            .iter()
+            .filter(|artifact| artifact.identity.image == target)
+            .filter(|artifact| rootfs_rank(artifact) < 3)
+            .min_by_key(rootfs_rank)
+            .map(|artifact| artifact.identity.clone())
+    };
+    app.build
+        .target
+        .as_deref()
+        .filter(|target| is_recipe(target))
+        .and_then(candidate)
+        .or_else(|| {
+            artifacts
+                .iter()
+                .filter(|artifact| is_recipe(&artifact.identity.image))
+                .filter(|artifact| rootfs_rank(artifact) < 3)
+                .min_by_key(rootfs_rank)
+                .map(|artifact| artifact.identity.clone())
+        })
+}
+
 pub(crate) fn set_image_artifact_inventory(
     app: &mut App,
     request: ImageArtifactRequest,

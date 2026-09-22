@@ -9195,3 +9195,14 @@ required = true
 depends_on = ["MENU-SIZE-001"]
 verify = ["python3 -m pytest bridge/tests/test_metadata_events.py", "cargo test -p yoctui-bitbake --all-features bridge_preserves_critical_and_fatal_diagnostics_as_errors", "cargo fmt --all --check"]
 notes = "DONE in v0.1.203. Native CRITICAL/FATAL LogRecords normalize to Error, PID correlation retains recipe/task identity plus the authoritative task logfile, and Errors opens log.do_* rather than BitBake's internal logger source. Focused bridge/backend checks pass; full baseline intentionally deferred for the user's rapid manual bug pass."
+
+[[task]]
+id = "ROOTFS-ARTIFACT-OWNER-001"
+milestone = "M75"
+title = "Resolve rootfs tabs through an authoritative image recipe"
+status = "DONE"
+priority = 2404
+required = true
+depends_on = ["BUILD-ERROR-INVESTIGATION-001"]
+verify = ["cargo test -p yoctui-model rootfs_tabs_resolve_the_built_image_instead_of_an_unowned_deploy_file", "cargo fmt --all --check"]
+notes = "DONE in v0.1.204. Rootfs tabs no longer query unowned deploy names such as fit-image as recipes. They preserve a selected recipe-owned artifact or resolve the current build target's rootfs artifact through the authoritative workspace recipe inventory. Focused model and formatting checks pass; full baseline intentionally deferred for the user's rapid manual bug pass."
