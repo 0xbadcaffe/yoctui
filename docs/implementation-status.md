@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 BUILD-ERROR-INVESTIGATION-001 is DONE in v0.1.203. Native BitBake
+`CRITICAL` and `FATAL` records retain Error severity, task-process correlation
+attaches the authoritative `log.do_*` path, and Errors can open the failed
+task log instead of BitBake's internal logging module. Focused Python bridge,
+Rust backend and formatting checks pass; the full suite remains deferred for
+the user's manual bug pass.
+
 M75 MENU-SIZE-001 is DONE in v0.1.202. The F12 application menu now expands
 from the old 60×18 cap to 76×18 at 80×24, 96×24 at 100×30, and 100×28 at
 160×50. Rendering and mouse hit-testing share those bounds, retain outer

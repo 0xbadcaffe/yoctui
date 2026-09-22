@@ -16,3 +16,25 @@ fn cache_bridge_only_promotes_native_unscoped_info() {
         );
     }
 }
+
+#[test]
+fn bridge_preserves_critical_and_fatal_diagnostics_as_errors() {
+    for level in ["critical", "fatal"] {
+        let event = crate::BridgeBackend::event(yoctui_protocol::Event::Log {
+            level: level.into(),
+            message: "build failed".into(),
+            recipe: Some("obmc-phosphor-image".into()),
+            task: Some("do_image_complete".into()),
+            path: Some("/tmp/log.do_image_complete.42".into()),
+        })
+        .unwrap();
+        let crate::BackendEvent::Log(entry) = event else {
+            panic!("diagnostic was not retained as a log entry");
+        };
+        assert_eq!(entry.severity, yoctui_model::Severity::Error);
+        assert_eq!(
+            entry.path.as_deref(),
+            Some(std::path::Path::new("/tmp/log.do_image_complete.42"))
+        );
+    }
+}

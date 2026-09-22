@@ -288,7 +288,7 @@ impl BridgeBackend {
             } => {
                 let severity = match level.as_str() {
                     "warning" => Severity::Warning,
-                    "error" => Severity::Error,
+                    "error" | "critical" | "fatal" => Severity::Error,
                     _ => Severity::Info,
                 };
                 if severity == Severity::Info

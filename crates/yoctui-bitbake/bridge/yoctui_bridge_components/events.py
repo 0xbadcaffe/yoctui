@@ -76,6 +76,19 @@ def task_recipe(event):
     return None
 
 
+def correlated_task(task_identities_by_pid, pid):
+    if task_identities_by_pid is None or pid is None:
+        return None
+    identity = task_identities_by_pid.get(pid)
+    if not isinstance(identity, (list, tuple)) or len(identity) < 2:
+        return None
+    recipe, task = identity[:2]
+    if not all(isinstance(value, str) and value for value in (recipe, task)):
+        return None
+    log_path = identity[2] if len(identity) > 2 else None
+    return recipe, task, log_path if isinstance(log_path, str) else None
+
+
 def normalize_event(event, task_identities_by_pid=None):
     kind = event_value(event, "type", "event_type")
     if not isinstance(kind, str) and event is not None:
@@ -166,15 +179,16 @@ def normalize_event(event, task_identities_by_pid=None):
     ):
         pid = normalized_nonnegative_integer(event_value(event, "pid"))
         worker = event_value(event, "worker")
+        log_path = event_value(event, "logfile")
         if task_identities_by_pid is not None and pid is not None:
-            task_identities_by_pid[pid] = (recipe, task)
+            task_identities_by_pid[pid] = (recipe, task, log_path)
         return {
             "type": "task_started",
             "recipe": recipe,
             "task": task,
             "pid": pid,
             "worker": str(worker) if worker is not None else None,
-            "log_path": event_value(event, "logfile"),
+            "log_path": log_path,
             "stats": normalized_task_stats(event),
         }
     if normalized_kind in ("runqueuetaskstarted", "scenequeuetaskstarted"):
@@ -191,14 +205,10 @@ def normalize_event(event, task_identities_by_pid=None):
     if normalized_kind in ("taskprogress", "task_progress"):
         pid = normalized_nonnegative_integer(event_value(event, "pid"))
         if not all(isinstance(value, str) for value in (recipe, task)):
-            identity = (
-                task_identities_by_pid.get(pid)
-                if task_identities_by_pid is not None and pid is not None
-                else None
-            )
+            identity = correlated_task(task_identities_by_pid, pid)
             if identity is None:
                 return None
-            recipe, task = identity
+            recipe, task, _ = identity
         return {
             "type": "task_progress",
             "recipe": recipe,
@@ -212,6 +222,7 @@ def normalize_event(event, task_identities_by_pid=None):
         "warning": "warning",
         "warn": "warning",
         "error": "error",
+        "critical": "error",
         "fatal": "error",
     }
     if normalized_kind in ("log", "logrecord", *diagnostic_levels) and isinstance(
@@ -220,27 +231,29 @@ def normalize_event(event, task_identities_by_pid=None):
         pid = normalized_nonnegative_integer(
             event_value(event, "taskpid", "pid", "process")
         )
+        identity = correlated_task(task_identities_by_pid, pid)
         if not all(isinstance(value, str) for value in (recipe, task)):
-            identity = (
-                task_identities_by_pid.get(pid)
-                if task_identities_by_pid is not None and pid is not None
-                else None
-            )
             if identity is not None:
-                recipe, task = identity
+                recipe, task, _ = identity
         level = event_value(
             event,
             "level",
             "levelname",
             default=diagnostic_levels.get(normalized_kind, "info"),
         )
+        level = level.lower() if isinstance(level, str) else "info"
+        level = diagnostic_levels.get(level, level)
         return {
             "type": "log",
-            "level": level.lower() if isinstance(level, str) else "info",
+            "level": level,
             "message": message,
             "recipe": recipe,
             "task": task,
-            "path": event_value(event, "path", "pathname", "filename"),
+            "path": (
+                identity[2]
+                if identity is not None and identity[2] is not None
+                else event_value(event, "path", "pathname", "filename")
+            ),
         }
     if normalized_kind in ("commandcompleted", "command_completed"):
         return None

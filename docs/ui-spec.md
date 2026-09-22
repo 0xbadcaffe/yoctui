@@ -1838,6 +1838,11 @@ diagnostic opens that exact retained entry in Logs without overwriting the
 user's existing query or filters. `o` opens its source path when present.
 `↑`/`↓` or `k`/`j` changes the bounded diagnostic selection.
 
+Native BitBake `CRITICAL` and `FATAL` records are errors. When BitBake reports
+one from a correlated task process, its source path is the authoritative
+`log.do_*` path supplied by that task's start event, so `o` opens the task log
+rather than BitBake's internal logging module.
+
 The completion dialog uses the same outcome distinctions as notifications.
 For failures with retained diagnostics, `Enter` opens Errors while any other
 key dismisses the dialog. Backend loss is an actionable failure diagnostic,

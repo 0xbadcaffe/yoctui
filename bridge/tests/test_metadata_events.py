@@ -87,7 +87,9 @@ server = Server()
             Path(directory, "bb.py").write_text(
                 """__version__ = "2.8.1"
 class TaskStarted:
- def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
+ def __init__(self):
+  self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
+  self.logfile = "/build/tmp/work/busybox/temp/log.do_compile.42"
 class TaskSucceeded:
  def __init__(self): self.pn = "busybox"; self.task = "do_compile"
 class Stats:
@@ -148,7 +150,9 @@ class ProcessStarted:
 class ProcessProgress:
  def __init__(self, progress): self.progress = progress
 class TaskStarted:
- def __init__(self): self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
+ def __init__(self):
+  self.pn = "busybox"; self.task = "do_compile"; self.pid = 42
+  self.logfile = "/build/tmp/work/busybox/temp/log.do_compile.42"
 class TaskProgress:
  def __init__(self, pid, progress): self.pid = pid; self.progress = progress
 class LogRecord:
@@ -214,6 +218,10 @@ server = Server()
         self.assertEqual(messages[7]["pid"], 42)
         self.assertEqual(messages[8]["recipe"], "busybox")
         self.assertEqual(messages[8]["task"], "do_compile")
+        self.assertEqual(
+            messages[8]["path"],
+            "/build/tmp/work/busybox/temp/log.do_compile.42",
+        )
         self.assertEqual(messages[9]["recipe"], "busybox")
         self.assertEqual(messages[9]["task"], "do_compile")
         self.assertEqual(messages[9]["progress"], 63)
@@ -244,6 +252,28 @@ server = Server()
         self.assertEqual(
             normalized["path"], "/build/tmp/work/busybox/temp/log.do_compile"
         )
+
+    def test_critical_task_log_uses_error_severity_and_authoritative_log(self) -> None:
+        spec = importlib.util.spec_from_file_location("yoctui_bridge_critical", BRIDGE)
+        if spec is None or spec.loader is None:
+            self.fail(f"could not load bridge module from {BRIDGE}")
+        bridge = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(bridge)
+
+        class LogRecord:
+            taskpid = 42
+            message = "shared deploy ownership collision"
+            levelname = "CRITICAL"
+            pathname = "/bitbake/lib/bb/__init__.py"
+
+        normalized = bridge.normalize_event(
+            LogRecord(),
+            {42: ("obmc-phosphor-image", "do_image_complete", "/tmp/log.do_image_complete.42")},
+        )
+        self.assertEqual(normalized["level"], "error")
+        self.assertEqual(normalized["recipe"], "obmc-phosphor-image")
+        self.assertEqual(normalized["task"], "do_image_complete")
+        self.assertEqual(normalized["path"], "/tmp/log.do_image_complete.42")
 
     def test_real_build_completion_shape_infers_success_from_failures(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
