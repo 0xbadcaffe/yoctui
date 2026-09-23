@@ -9239,3 +9239,14 @@ required = true
 depends_on = ["TASK-STATUS-ORDER-001"]
 verify = ["cargo test -p yoctui-ui dashboard_reuses_task_resource_meters", "cargo fmt --all --check"]
 notes = "DONE in v0.1.205. Dashboard resource telemetry now uses the exact shared dense CPU, RAM and build-filesystem meter renderer used by Tasks, including bounded history, segmented bars, percentages and details."
+
+[[task]]
+id = "CONFIG-DETAIL-INVENTORY-001"
+milestone = "M75"
+title = "Keep effective configuration rows while loading variable detail"
+status = "DONE"
+priority = 2408
+required = true
+depends_on = ["DASHBOARD-TASK-METERS-001"]
+verify = ["cargo test -p yoctui-model unavailable_global_detail_preserves_the_effective_variable_row", "cargo fmt --all --check"]
+notes = "DONE in v0.1.206. Empty or unavailable authoritative detail no longer deletes the selected effective-variable summary row, and the process backend reports unsupported detail inspection as a typed failure rather than an empty success."

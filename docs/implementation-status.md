@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 CONFIG-DETAIL-INVENTORY-001 is DONE in v0.1.206. Loading authoritative
+detail no longer removes an effective-configuration row when the backend has
+no expanded value, and the process backend reports its missing detail support
+as an error instead of returning an empty successful record.
+
 M75 SEARCH-NAV-PERF-001 is DONE in v0.1.205. Global search accepts bounded
 PageUp/PageDown movement, advances the highlight within stable pages, and uses
 a cancellation-aware four-worker scan pipeline without per-directory sorting.

@@ -212,8 +212,6 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     app.workspace
                         .variables
                         .insert(detail.identity.name.clone(), value);
-                } else {
-                    app.workspace.variables.remove(&detail.identity.name);
                 }
                 if let Some(provenance) = detail.provenance.clone() {
                     app.workspace

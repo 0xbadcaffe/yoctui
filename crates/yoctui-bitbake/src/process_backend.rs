@@ -232,7 +232,10 @@ impl BitBakeBackend for ProcessBackend {
         _name: String,
         _recipe: Option<String>,
     ) -> Result<VariableValue, BackendError> {
-        Ok(VariableValue::default())
+        Err(BackendError::Bridge(
+            "the process backend cannot inspect authoritative variable detail; use the Yoctui bridge"
+                .into(),
+        ))
     }
     async fn get_dependencies(
         &mut self,

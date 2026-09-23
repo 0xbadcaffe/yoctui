@@ -2217,7 +2217,9 @@ The workspace begins with the backend's effective global-variable summary and
 is read-only. `↑`/`↓` or `k`/`j` moves through the filtered, sorted variables;
 `/` edits the shared metadata search; and `Enter` lazily refreshes the selected
 global `VariableIdentity`. Selection remains attached to the same identity
-when a refreshed summary still contains it.
+when a refreshed summary still contains it. Detail loading never removes or
+reorders the effective-variable inventory; an unavailable detail value leaves
+the selected summary row intact.
 
 The Inspector distinguishes not loaded, loading, failed, available-empty, and
 populated detail. Populated detail shows scope, effective and unexpanded

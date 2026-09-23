@@ -435,7 +435,8 @@ the active `OVERRIDES` context. The Python bridge is the only component that
 interprets Tinfoil varhistory dictionaries. Rust converts paths and stores
 detail by `(name, recipe)` identity, so a recipe-scoped or stale response
 cannot overwrite the global workspace summary. Older bridge responses default
-new fields to unavailable/empty without fabricating history.
+new fields to unavailable/empty without fabricating history. An absent detail
+value never deletes the independently loaded global summary row.
 
 Confirmed configuration edits cross the model/CLI boundary as a typed request
 containing the global identity, value, exact escaped assignment, and

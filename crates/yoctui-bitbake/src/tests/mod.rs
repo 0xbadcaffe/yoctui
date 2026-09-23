@@ -241,6 +241,7 @@ pub(crate) fn fake_devtool_command(name: &str, body: &str) -> (PathBuf, DevtoolC
     (script, command)
 }
 mod dependency_graph_process_backend_is_shell_free_and_rejects_failures;
+mod process_backend_rejects_unavailable_variable_detail;
 mod task_identity_statistics_decode_without_recipe_or_task_inference;
 
 use super::bridge_backend::BridgeStderrTail;

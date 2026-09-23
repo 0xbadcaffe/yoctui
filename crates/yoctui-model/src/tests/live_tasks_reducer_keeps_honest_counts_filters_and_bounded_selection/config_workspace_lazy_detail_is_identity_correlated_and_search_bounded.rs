@@ -53,3 +53,33 @@ fn config_workspace_lazy_detail_is_identity_correlated_and_search_bounded() {
         Some("server unavailable")
     );
 }
+
+#[test]
+fn unavailable_global_detail_preserves_the_effective_variable_row() {
+    let mut app = App::new(20, 4_000);
+    app.workspace
+        .variables
+        .insert("MACHINE".into(), "romulus".into());
+    let identity = VariableIdentity {
+        name: "MACHINE".into(),
+        recipe: None,
+    };
+
+    let _ = update(
+        &mut app,
+        Action::VariableLoaded(VariableDetail {
+            identity: identity.clone(),
+            effective_value: None,
+            unexpanded_value: None,
+            provenance: None,
+            operations: vec![],
+            active_overrides: vec![],
+        }),
+    );
+
+    assert_eq!(
+        app.workspace.variables.get("MACHINE").map(String::as_str),
+        Some("romulus")
+    );
+    assert_eq!(selected_config_identity(&app), Some(identity));
+}
