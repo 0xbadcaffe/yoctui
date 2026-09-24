@@ -32,6 +32,7 @@ mod mouse_input;
 mod paste_input;
 mod polling;
 mod primary_workspaces;
+mod recipe_inspection_operation;
 mod remaining_workspaces;
 mod runtime_loop;
 mod sdk_test_dialogs;
@@ -306,6 +307,7 @@ pub(crate) async fn tui(
     let frame_interval = interactive_frame_interval(refresh);
     let render_scheduler = RenderScheduler::default();
     let environment_browser_io = environment_setup::EnvironmentBrowserIo::default();
+    let recipe_inspection_operation = None;
     let render_measurement_started = Instant::now();
     let prefix_state = PrefixState::default();
     #[cfg(unix)]
@@ -379,6 +381,7 @@ pub(crate) async fn tui(
         frame_interval,
         render_scheduler,
         environment_browser_io,
+        recipe_inspection_operation,
         render_measurement_started,
         prefix_state,
         startup_platform_inspection,

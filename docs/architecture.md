@@ -494,6 +494,15 @@ authoritatively provide that field; an available empty list means BitBake
 reported no values. Inventory refresh preserves stable recipe-name selection
 and evicts detail state for recipes no longer present.
 
+The interactive runtime moves its metadata backend into one bounded recipe
+inspection worker while a selected-provider query is active. The worker starts
+the capability-authorized bridge on demand, returns the backend to the runtime
+after completion, and publishes only typed success or failure actions. The
+terminal event loop therefore continues accepting navigation, Logs, and quit
+input during cold BitBake parsing. A patch-review intent may follow a successful
+metadata result, but the reducer always opens the typed patch picker before an
+external-editor effect.
+
 For local `file://` patch entries, the Tinfoil bridge asks BitBake's fetcher
 for the resolved local path in the parsed recipe datastore. Unresolved or
 remote entries remain URIs. The model exposes only absolute resolved paths to

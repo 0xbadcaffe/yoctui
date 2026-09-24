@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 RECIPE-IDLE-INSPECTION-001 is DONE in v0.1.209. Selected-recipe metadata
+uses the capability-authorized bridge even when no build is running and runs in
+a bounded background operation so navigation, Logs, and quit remain responsive;
+the advertised `g` dependency query uses that same nonblocking path.
+Patch review loads missing metadata and opens a picker, including for one patch,
+before any explicit external-editor launch.
+
 M75 PLATFORM-IDLE-RESPONSIVENESS-001 is DONE in v0.1.208. The metadata bridge
 negotiates its Tinfoil variable endpoint when command getvar remains selected
 for process workflows, restored platform workspaces render before cold parsing,

@@ -57,7 +57,7 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('e') => Some(Action::OpenSelectedRecipeProvider),
         Input::Char('o') => Some(Action::BeginSelectedRecipeTaskLog),
         Input::Char('p') => Some(Action::BeginSelectedRecipePatchReview),
-        Input::Char('A') => Some(Action::BeginSelectedRecipeDependencies),
+        Input::Char('g') | Input::Char('A') => Some(Action::BeginSelectedRecipeDependencies),
         Input::Char('f') => Some(Action::BeginSelectedRecipeForceTask),
         Input::Char('v') => Some(Action::BeginSelectedRecipeDevshell),
         Input::Char('K') => Some(Action::BeginSelectedRecipeDiffconfig),

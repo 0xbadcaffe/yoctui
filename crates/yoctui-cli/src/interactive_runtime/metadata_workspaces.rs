@@ -103,7 +103,29 @@ impl InteractiveRuntime {
                 .await;
             }
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('p') {
-            if let Some(Effect::OpenInEditor(path)) = compatibility_workspace_action(
+            let selected = runtime
+                .app
+                .workspace
+                .recipes
+                .get(runtime.app.recipe_selection)
+                .map(|recipe| recipe.name.clone());
+            if selected
+                .as_ref()
+                .is_some_and(|recipe| !runtime.app.recipe_metadata.contains_key(recipe))
+            {
+                let effect = compatibility_workspace_action(
+                    &mut runtime.app,
+                    Action::BeginSelectedRecipeMetadata,
+                );
+                if let Some(Effect::GetRecipeMetadata(recipe)) = effect {
+                    runtime.begin_recipe_metadata(
+                        recipe,
+                        Some(
+                            super::recipe_inspection_operation::RecipeMetadataFollowup::PatchReview,
+                        ),
+                    );
+                }
+            } else if let Some(Effect::OpenInEditor(path)) = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipePatchReview,
             ) {
@@ -168,35 +190,21 @@ impl InteractiveRuntime {
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDevtoolDeploy,
             );
-        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('A') {
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes
+            && matches!(input, Input::Char('g') | Input::Char('A'))
+        {
             if let Some(Effect::GetDependencies(recipe)) = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeDependencies,
             ) {
-                load_dependency_graph(&mut runtime.app, runtime.backend.as_mut(), recipe).await;
+                runtime.begin_recipe_dependency_graph(recipe);
             }
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Enter {
             if let Some(Effect::GetRecipeMetadata(recipe)) = compatibility_workspace_action(
                 &mut runtime.app,
                 Action::BeginSelectedRecipeMetadata,
             ) {
-                match runtime.backend.get_recipe_metadata(recipe.clone()).await {
-                    Ok(metadata) => {
-                        let _ = compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::RecipeMetadataLoaded(metadata),
-                        );
-                    }
-                    Err(error) => {
-                        let _ = compatibility_workspace_action(
-                            &mut runtime.app,
-                            Action::RecipeMetadataFailed {
-                                recipe,
-                                message: error.to_string(),
-                            },
-                        );
-                    }
-                }
+                runtime.begin_recipe_metadata(recipe, None);
             }
             inspect_selected_devtool(&mut runtime.app, &runtime.session_build_dir).await;
         } else if input == Input::Char('b') {

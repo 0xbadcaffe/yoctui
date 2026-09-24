@@ -53,35 +53,6 @@ pub(crate) async fn inspect_selected_config_variable(
     }
 }
 
-pub(crate) async fn load_dependency_graph(
-    app: &mut App,
-    backend: &mut dyn BitBakeBackend,
-    recipe: String,
-) {
-    match backend.get_dependency_graph(recipe.clone()).await {
-        Ok(response) => {
-            let action = if response.limitations.is_empty() {
-                Action::DependencyGraphLoaded(response.graph)
-            } else {
-                Action::DependencyGraphPartial {
-                    graph: response.graph,
-                    limitations: response.limitations,
-                }
-            };
-            let _ = update(app, action);
-        }
-        Err(error) => {
-            let _ = update(
-                app,
-                Action::DependencyGraphFailed {
-                    root: yoctui_model::DependencyNodeId::recipe(recipe),
-                    message: error.to_string(),
-                },
-            );
-        }
-    }
-}
-
 pub(crate) fn config_copy_effect(app: &mut App, input: Input) -> Option<Effect> {
     config_workspace_action(false, input)
         .and_then(|action| compatibility_workspace_action(app, action))

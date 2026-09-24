@@ -13,7 +13,7 @@ pub(super) async fn route_dependency_workspace(
     };
     match compatibility_workspace_action(&mut runtime.app, action) {
         Some(Effect::GetDependencies(recipe)) => {
-            load_dependency_graph(&mut runtime.app, runtime.backend.as_mut(), recipe).await;
+            runtime.begin_recipe_dependency_graph(recipe);
         }
         Some(Effect::OpenInEditor(path)) => {
             open_in_editor(

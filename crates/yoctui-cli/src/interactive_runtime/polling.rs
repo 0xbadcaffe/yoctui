@@ -8,6 +8,10 @@ impl InteractiveRuntime {
             runtime.environment_browser_io.poll(&mut runtime.app).await,
             RenderCause::State,
         );
+        let recipe_metadata_changed = runtime.poll_recipe_inspection().await;
+        runtime
+            .render_scheduler
+            .invalidate_if(recipe_metadata_changed, RenderCause::State);
         if ingress_dropped > 0 {
             let _ = update(
                 &mut runtime.app,
@@ -117,6 +121,7 @@ impl InteractiveRuntime {
             || runtime.image_artifact_operation.is_some()
             || runtime.rootfs_composition_operation.is_some()
             || runtime.global_content_search_operation.is_some()
+            || runtime.recipe_inspection_operation.is_some()
             || runtime.sdk_artifact_operation.is_some()
             || runtime.sdk_capability_operation.is_some()
             || runtime.sdk_operation.is_some()

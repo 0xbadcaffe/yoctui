@@ -9272,3 +9272,14 @@ required = true
 depends_on = ["IDLE-METADATA-PROVIDER-001"]
 verify = ["cargo test -p yoctui-bitbake compatibility_api_", "cargo test -p yoctui-app platform_numbered_tabs_are_mouse_selectable", "cargo test -p yoctui --all-features restored_platform_workspace_defers_inspection_until_after_first_frame", "cargo fmt --all --check"]
 notes = "DONE in v0.1.208. An authorized Tinfoil metadata bridge negotiates getvar even when the daemon selected command getvar for process workflows; restored Kernel/Firmware sessions render Loading before cold metadata parsing; numbered tabs have exact keyboard and mouse selection actions."
+
+[[task]]
+id = "RECIPE-IDLE-INSPECTION-001"
+milestone = "M75"
+title = "Keep idle recipe and patch inspection responsive"
+status = "DONE"
+priority = 2411
+required = true
+depends_on = ["PLATFORM-IDLE-RESPONSIVENESS-001"]
+verify = ["cargo test -p yoctui-model recipe_navigation_uses_authoritative_provider_logs_and_local_patches", "cargo test -p yoctui-app recipes_workspace_maps_search_selection_detail_and_dependencies", "cargo test -p yoctui --all-features recipe_navigation_terminal_keys_and_missing_paths_are_typed", "cargo fmt --all --check"]
+notes = "DONE in v0.1.209. Recipe detail and the advertised g dependency query start an authorized metadata bridge in a bounded background worker, input remains live while BitBake parses, p loads missing metadata, and every nonempty local patch set opens the explicit picker before an editor."

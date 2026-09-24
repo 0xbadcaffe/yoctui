@@ -71,4 +71,16 @@ fn recipe_navigation_uses_authoritative_provider_logs_and_local_patches() {
             "/layers/meta/recipes-core/busybox/files/b.patch".into()
         ))
     );
+
+    app.recipe_metadata.get_mut("busybox").unwrap().patches =
+        Some(vec!["/layers/meta/files/only.patch".into()]);
+    assert_eq!(
+        update(&mut app, Action::BeginSelectedRecipePatchReview),
+        None
+    );
+    assert!(matches!(
+        app.active_dialog(),
+        Some(Dialog::RecipePatchPicker(picker))
+            if picker.patches == vec![PathBuf::from("/layers/meta/files/only.patch")]
+    ));
 }

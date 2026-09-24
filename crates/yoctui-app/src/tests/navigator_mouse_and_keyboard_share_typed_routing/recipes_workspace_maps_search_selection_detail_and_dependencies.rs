@@ -10,10 +10,12 @@ fn recipes_workspace_maps_search_selection_detail_and_dependencies() {
         recipes_workspace_action(false, Input::Enter),
         Some(Action::BeginSelectedRecipeMetadata)
     );
-    assert_eq!(
-        recipes_workspace_action(false, Input::Char('A')),
-        Some(Action::BeginSelectedRecipeDependencies)
-    );
+    for key in ['g', 'A'] {
+        assert_eq!(
+            recipes_workspace_action(false, Input::Char(key)),
+            Some(Action::BeginSelectedRecipeDependencies)
+        );
+    }
     assert_eq!(
         recipes_workspace_action(true, Input::Char('b')),
         Some(Action::AppendMetadataQuery('b'))

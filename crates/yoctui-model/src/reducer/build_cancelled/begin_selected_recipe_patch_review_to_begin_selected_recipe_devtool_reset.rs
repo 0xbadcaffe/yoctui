@@ -33,8 +33,6 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         "The patches for {recipe_name} are remote or unresolved; no authoritative local path is available."
                     )
                 });
-            } else if local_patches.len() == 1 {
-                return Some(Effect::OpenInEditor(local_patches.remove(0)));
             } else {
                 open_dialog(
                     app,

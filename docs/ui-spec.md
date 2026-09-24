@@ -1877,10 +1877,20 @@ Required:
 The recipe inventory obtains resolved version, provider file/layer, and append
 count from BitBake's parsed provider tables. `Enter` lazily refreshes the
 selected recipe's authoritative tasks, metadata sources/appends, patch URIs,
-and package outputs. Fields the backend cannot supply, including workspace,
-per-recipe build status, or history, remain explicitly unavailable until a
-typed source provides them. Inventory refresh preserves selection by recipe
-name and removes details for recipes that disappeared.
+and package outputs. The refresh runs as a bounded background operation: input,
+screen shortcuts, logging, and quit remain responsive while the idle metadata
+bridge starts or parses the selected provider. `p` starts the same refresh when
+patch metadata has not been loaded, then opens a patch picker. Patch review
+never launches an external editor merely because only one patch was reported;
+the picker requires explicit `Enter`, and `Esc` returns to Recipes. Fields the
+backend cannot supply, including workspace, per-recipe build status, or
+history, remain explicitly unavailable until a typed source provides them.
+Inventory refresh preserves selection by recipe name and removes details for
+recipes that disappeared.
+
+`g` queries the selected recipe's dependency graph through the same background
+bridge operation; `A` remains an alias. Navigation and quit remain responsive
+while BitBake resolves the graph.
 
 Recipe rows show resolved and preferred version separately, provider layer,
 append count, workspace/Devtool status, and build status. Search matches recipe

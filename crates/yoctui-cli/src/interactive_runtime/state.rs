@@ -75,6 +75,8 @@ pub(super) struct InteractiveRuntime {
     pub(super) frame_interval: Duration,
     pub(super) render_scheduler: RenderScheduler,
     pub(super) environment_browser_io: environment_setup::EnvironmentBrowserIo,
+    pub(super) recipe_inspection_operation:
+        Option<super::recipe_inspection_operation::RecipeInspectionOperation>,
     pub(super) render_measurement_started: Instant,
     pub(super) prefix_state: PrefixState,
     pub(super) startup_platform_inspection: Option<Screen>,
