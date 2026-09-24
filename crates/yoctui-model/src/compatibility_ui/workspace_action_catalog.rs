@@ -75,6 +75,11 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "d",
                 Id::DevtoolModify,
             ),
+            Action::local(
+                "recipes.devtool_gitui",
+                "Open Devtool workspace GitUI",
+                "F12 Actions",
+            ),
             Action::capability(
                 "recipes.devtool_update",
                 "Devtool update-recipe",
@@ -396,6 +401,11 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             ),
             Action::capability("devtool.edit", "Edit recipe", "e", Id::DevtoolEditRecipe),
             Action::capability("devtool.modify", "Modify recipe", "d", Id::DevtoolModify),
+            Action::local(
+                "devtool.gitui",
+                "Open workspace GitUI",
+                "F12 Actions",
+            ),
             Action::capability(
                 "devtool.update",
                 "Update recipe",

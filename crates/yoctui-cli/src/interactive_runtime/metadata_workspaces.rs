@@ -170,6 +170,11 @@ impl InteractiveRuntime {
             }
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('t') {
             runtime.begin_selected_devtool_status();
+        } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('J') {
+            let _ = compatibility_workspace_action(
+                &mut runtime.app,
+                Action::BeginSelectedRecipeDevtoolGitUi,
+            );
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,

@@ -277,3 +277,51 @@ pub(crate) fn devtool_terminal_request(
         arguments: Vec::new(),
     })
 }
+
+pub(crate) fn devtool_gitui_request(app: &mut App) -> Option<TerminalLaunchRequest> {
+    let identity = match selected_recipe_identity(app) {
+        Ok(identity) => identity,
+        Err(message) => {
+            app.notification = Some(message.to_owned());
+            return None;
+        }
+    };
+    let Some(program) = app.gitui_program.clone() else {
+        app.notification =
+            Some("Install GitUI before opening the Devtool workspace repository.".into());
+        return None;
+    };
+    let Some(status) = app.devtool_statuses.get(&identity) else {
+        app.notification =
+            Some("Refresh Devtool status before opening the workspace repository.".into());
+        return None;
+    };
+    if status.capability != DevtoolCapability::Available || status.error.is_some() {
+        app.notification = Some(
+            status
+                .disabled_reason(DevtoolAction::ModifyOrEdit)
+                .unwrap_or_else(|| "The Devtool workspace is unavailable.".into()),
+        );
+        return None;
+    }
+    let source_path = match &status.workspace {
+        DevtoolWorkspace::Present { source_path, .. } if source_path.is_absolute() => {
+            source_path.clone()
+        }
+        DevtoolWorkspace::Present { .. } => {
+            app.notification = Some("The Devtool workspace source path is not absolute.".into());
+            return None;
+        }
+        DevtoolWorkspace::NotMember | DevtoolWorkspace::MissingDirectory { .. } => {
+            app.notification = Some("Run Devtool modify before opening GitUI.".into());
+            return None;
+        }
+    };
+    Some(TerminalLaunchRequest {
+        name: format!("GitUI · devtool {}", identity.name),
+        kind: TerminalCreationKind::GitUi,
+        cwd: source_path,
+        program,
+        arguments: Vec::new(),
+    })
+}

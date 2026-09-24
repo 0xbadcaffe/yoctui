@@ -283,7 +283,8 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::SelectError { .. } | Action::JumpToSelectedError | Action::OpenSelectedErrorSource
         | Action::SelectRecipe { .. } | Action::ScrollRecipePreview { .. } | Action::BeginSelectedRecipeBuild
         | Action::BeginSelectedRecipeClean | Action::BeginSelectedRecipeMenuConfig | Action::BeginSelectedRecipeCleanState
-        | Action::BeginSelectedRecipeDevshell | Action::BeginSelectedRecipeDevtoolWorkspaceShell | Action::BeginSelectedRecipeDevtoolEditRecipe
+        | Action::BeginSelectedRecipeDevshell | Action::BeginSelectedRecipeDevtoolWorkspaceShell | Action::BeginSelectedRecipeDevtoolGitUi
+        | Action::BeginSelectedRecipeDevtoolEditRecipe
         | Action::BeginSelectedRecipeDiffconfig | Action::BeginSelectedRecipeDiffsigs | Action::BeginSelectedRecipeSignatures
         | Action::BeginSelectedRecipeCveCheck | Action::BeginSelectedRecipeSpdx | Action::BeginSelectedRecipeTask { .. }
         | Action::BeginSelectedRecipeForceTask | Action::SelectRecipeTask { .. } | Action::PreviewSelectedRecipeTask

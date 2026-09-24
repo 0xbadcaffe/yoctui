@@ -3442,8 +3442,8 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 160 validated definitions: 37
-global command targets and 123 contextual workspace targets. `OperatorActionId`
+`yoctui-model::action_catalog` now supplies 162 validated definitions: 37
+global command targets and 125 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
 requirement, safety, footer priority, Help group, and typed target travel
@@ -4353,6 +4353,10 @@ M68 GitUI reuses the terminal launch request and daemon utility PTY protocol.
 A typed GitUi creation kind selects the source workbench without introducing a
 second terminal emulator or parsing GitUI output in widgets. Capability detection
 supplies an executable path; launch uses exact argv and the selected source cwd.
+The same typed request is used for recipe development, but its cwd comes only
+from an exact `DevtoolStatus` identity whose workspace is present and absolute.
+The model rejects missing GitUI, stale/missing status, and absent workspaces
+before the terminal effect reaches the CLI.
 
 GitUI integration verification includes the real executable (0.28.1) under the
 daemon PTY supervisor: temporary committed repository, unstaged diff, writer

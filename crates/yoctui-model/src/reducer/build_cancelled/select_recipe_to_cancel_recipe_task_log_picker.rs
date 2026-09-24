@@ -49,6 +49,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 open_terminal_launch(app, request);
             }
         }
+        Action::BeginSelectedRecipeDevtoolGitUi => {
+            if let Some(request) = devtool_gitui_request(app) {
+                open_terminal_launch(app, request);
+            }
+        }
         Action::BeginSelectedRecipeDevtoolEditRecipe => {
             if let Some(request) = devtool_terminal_request(app, true) {
                 open_terminal_launch(app, request);

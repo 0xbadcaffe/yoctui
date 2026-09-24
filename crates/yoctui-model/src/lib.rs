@@ -246,9 +246,9 @@ use log_export::{
 
 mod recipe_operations;
 use recipe_operations::{
-    begin_recipe_task, begin_recipe_task_for, begin_terminal_creation, devtool_terminal_request,
-    open_terminal_launch, recipe_matches_query, select_first_matching_layer_entry,
-    select_first_matching_recipe, selected_recipe_identity,
+    begin_recipe_task, begin_recipe_task_for, begin_terminal_creation, devtool_gitui_request,
+    devtool_terminal_request, open_terminal_launch, recipe_matches_query,
+    select_first_matching_layer_entry, select_first_matching_recipe, selected_recipe_identity,
 };
 
 mod config_operations;

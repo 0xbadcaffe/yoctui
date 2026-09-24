@@ -57,6 +57,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BeginSelectedRecipeCleanState
         | Action::BeginSelectedRecipeDevshell
         | Action::BeginSelectedRecipeDevtoolWorkspaceShell
+        | Action::BeginSelectedRecipeDevtoolGitUi
         | Action::BeginSelectedRecipeDevtoolEditRecipe
         | Action::BeginSelectedRecipeDiffconfig
         | Action::BeginSelectedRecipeDiffsigs

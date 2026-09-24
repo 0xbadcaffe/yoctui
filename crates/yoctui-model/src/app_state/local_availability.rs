@@ -32,6 +32,34 @@ pub(crate) fn context_action_local_disabled_reason(
     {
         return Some("Select a recipe first.".into());
     }
+    if matches!(action_id, "recipes.devtool_gitui" | "devtool.gitui") {
+        let identity = match selected_recipe_identity(app) {
+            Ok(identity) => identity,
+            Err(message) => return Some(message.into()),
+        };
+        if app.gitui_program.is_none() {
+            return Some("Install GitUI first.".into());
+        }
+        let Some(status) = app.devtool_statuses.get(&identity) else {
+            return Some("Refresh Devtool status after running modify.".into());
+        };
+        if status.capability != DevtoolCapability::Available || status.error.is_some() {
+            return Some(
+                status
+                    .disabled_reason(DevtoolAction::ModifyOrEdit)
+                    .unwrap_or_else(|| "The Devtool workspace is unavailable.".into()),
+            );
+        }
+        match &status.workspace {
+            DevtoolWorkspace::Present { source_path, .. } if source_path.is_absolute() => {}
+            DevtoolWorkspace::Present { .. } => {
+                return Some("The Devtool workspace source path is not absolute.".into());
+            }
+            DevtoolWorkspace::NotMember | DevtoolWorkspace::MissingDirectory { .. } => {
+                return Some("Run Devtool modify first.".into());
+            }
+        }
+    }
     if destination == WorkspaceDestination::Packages
         && action_id != "packages.inventory"
         && action_id != "packages.cancel"

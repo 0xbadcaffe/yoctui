@@ -9349,3 +9349,14 @@ required = true
 depends_on = ["MAINTENANCE-NAVIGATION-001"]
 verify = ["cargo test -p yoctui-model qemu_and_wic_launch_inspect_capability_then_resume", "cargo fmt --all --check"]
 notes = "DONE in v0.1.215. QEMU/Wic actions inspect missing capability and resume automatically, choosing only an exact compatible deployed artifact reported by the typed result instead of requiring cross-screen selection."
+
+[[task]]
+id = "DEVTOOL-WORKSPACE-GITUI-001"
+milestone = "M75"
+title = "Open GitUI in the selected recipe's Devtool workspace"
+status = "DONE"
+priority = 2418
+required = true
+depends_on = ["QEMU-WIC-DIRECT-LAUNCH-001"]
+verify = ["cargo test -p yoctui-model devwork_terminal_devtool_routes_use_authoritative_recipe_and_workspace", "cargo test -p yoctui-model ux_action_catalog_is_unique_complete_and_safe", "cargo fmt --all --check"]
+notes = "DONE in v0.1.216. Recipes and Devtool Actions launch the detected GitUI executable in the exact absolute source directory reported by selected-recipe Devtool status, with explicit unavailable reasons before modify/status/tool readiness."

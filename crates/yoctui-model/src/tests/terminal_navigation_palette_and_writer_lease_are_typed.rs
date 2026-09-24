@@ -177,6 +177,7 @@ fn devwork_terminal_chooser_is_zero_spawn_defaults_embedded_and_gates_detached()
 #[test]
 fn devwork_terminal_devtool_routes_use_authoritative_recipe_and_workspace() {
     let mut app = App::new(10, 1_000);
+    app.gitui_program = Some("/usr/bin/gitui".into());
     let identity = RecipeIdentity {
         name: "busybox".into(),
         file: "/layers/meta/recipes-core/busybox/busybox.bb".into(),
@@ -216,6 +217,16 @@ fn devwork_terminal_devtool_routes_use_authoritative_recipe_and_workspace() {
             if request.kind == TerminalCreationKind::DevtoolShell
                 && request.cwd.as_path() == Path::new("/work/build/workspace/sources/busybox")
                 && request.program.as_path() == Path::new("/bin/sh")
+    ));
+    let _ = update(&mut app, Action::CancelTerminalLaunch);
+    let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolGitUi);
+    assert!(matches!(
+        app.active_dialog(),
+        Some(Dialog::TerminalLaunch(TerminalLaunchDialog { request, .. }))
+            if request.kind == TerminalCreationKind::GitUi
+                && request.cwd.as_path() == Path::new("/work/build/workspace/sources/busybox")
+                && request.program.as_path() == Path::new("/usr/bin/gitui")
+                && request.arguments.is_empty()
     ));
     let _ = update(&mut app, Action::CancelTerminalLaunch);
     let _ = update(&mut app, Action::BeginSelectedRecipeDevtoolEditRecipe);

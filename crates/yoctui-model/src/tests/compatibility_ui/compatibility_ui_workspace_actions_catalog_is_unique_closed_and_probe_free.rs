@@ -17,6 +17,7 @@ fn compatibility_ui_workspace_actions_catalog_is_unique_closed_and_probe_free() 
     for expected in [
         "dashboard.build",
         "recipes.devtool_modify",
+        "recipes.devtool_gitui",
         "layers.remove",
         "configuration.getvar",
         "tasks.cancel",
@@ -29,6 +30,7 @@ fn compatibility_ui_workspace_actions_catalog_is_unique_closed_and_probe_free() 
         "security.spdx",
         "qa.layer",
         "devtool.upgrade",
+        "devtool.gitui",
         "qemu_wic.wic",
         "maintenance.cleanup",
         "terminal.menuconfig",

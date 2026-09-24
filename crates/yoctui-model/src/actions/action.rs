@@ -332,6 +332,7 @@ pub enum Action {
     ScrollRecipePreview { delta: isize, },
     BeginSelectedRecipeBuild, BeginSelectedRecipeClean, BeginSelectedRecipeMenuConfig,
     BeginSelectedRecipeCleanState, BeginSelectedRecipeDevshell, BeginSelectedRecipeDevtoolWorkspaceShell,
+    BeginSelectedRecipeDevtoolGitUi,
     BeginSelectedRecipeDevtoolEditRecipe, BeginSelectedRecipeDiffconfig, BeginSelectedRecipeDiffsigs,
     BeginSelectedRecipeSignatures, BeginSelectedRecipeCveCheck, BeginSelectedRecipeSpdx,
     BeginSelectedRecipeForceTask,

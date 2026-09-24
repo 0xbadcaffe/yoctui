@@ -5308,6 +5308,12 @@ identity; `finish` retains its existing clean-commit and configured-layer
 picker requirements. Job output, cancellation, navigation retention, and
 failure recovery remain the existing persistent typed Devtool behavior.
 
+The Recipes and Devtool Actions menus expose this sequence without requiring
+operators to remember a second shortcut set. After `modify` reports a present
+workspace, **Open workspace GitUI** launches the detected GitUI executable with
+that exact absolute source directory as its working directory. It stays disabled
+with a specific status, tool, or workspace reason until the route is valid.
+
 ### Source and recipe editor
 
 Recipe metadata and Devtool source trees use the same two-pane editor shell:

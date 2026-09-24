@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 DEVTOOL-WORKSPACE-GITUI-001 is DONE in v0.1.216. Recipes and Devtool
+Actions now open GitUI in the exact absolute source directory reported for the
+selected recipe's active Devtool workspace. Missing tools, status and workspace
+membership remain visible disabled reasons.
+
 M75 QEMU-WIC-DIRECT-LAUNCH-001 is DONE in v0.1.215. Launch QEMU and Create Wic
 now start missing capability inspection and resume the requested workflow.
 They select only an exact compatible deployed identity from the typed result,
