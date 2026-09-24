@@ -12,9 +12,14 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::OpenBuildOptions
         | Action::CloseBuildOptions
         | Action::OpenImagePicker(..)
+        | Action::OpenImageBuildPicker(..)
+        | Action::OpenRecipePicker(..)
         | Action::SelectImage { .. }
         | Action::ConfirmImagePicker
         | Action::CancelImagePicker
+        | Action::SelectRecipePicker { .. }
+        | Action::ConfirmRecipePicker
+        | Action::CancelRecipePicker
         | Action::BeginCurrentImageBuild
         | Action::BeginImageArtifactInventory
         | Action::RefreshImageArtifactInventory

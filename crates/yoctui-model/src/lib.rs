@@ -214,7 +214,8 @@ pub use signatures::{
 mod layer_browser;
 pub use layer_browser::{
     GitFileState, ImagePicker, LayerBrowser, LayerBrowserEntry, LayerInspectorMode,
-    LayerRelationship, LayerRelationships, MAX_BUILD_HISTORY, PreviewKind,
+    LayerRelationship, LayerRelationships, MAX_BUILD_HISTORY, PreviewKind, RecipePicker,
+    RecipePickerPurpose,
 };
 
 mod log_state;

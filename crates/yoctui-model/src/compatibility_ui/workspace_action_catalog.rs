@@ -183,7 +183,7 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
         Destination::Dependencies => vec![
             Action::alternatives(
                 "dependencies.refresh",
-                "Refresh dependency graph",
+                "Choose or refresh dependency root",
                 "r",
                 &[Id::BitBakeRecipeDependencies, Id::BitBakeDependencyGraph],
             ),
@@ -399,13 +399,24 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
                 "r",
                 Id::DevtoolStatus,
             ),
-            Action::capability("devtool.edit", "Edit recipe", "e", Id::DevtoolEditRecipe),
             Action::capability("devtool.modify", "Modify recipe", "d", Id::DevtoolModify),
             Action::local(
                 "devtool.gitui",
                 "Open workspace GitUI",
                 "F12 Actions",
             ),
+            Action::local(
+                "devtool.shell",
+                "Open workspace shell",
+                "F12 Actions",
+            ),
+            Action::capability(
+                "devtool.build",
+                "Compile workspace recipe",
+                "F12 Actions",
+                Id::BitBakeBuild,
+            ),
+            Action::capability("devtool.edit", "Edit recipe file", "E", Id::DevtoolEditRecipe),
             Action::capability(
                 "devtool.update",
                 "Update recipe",

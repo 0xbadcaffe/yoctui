@@ -30,7 +30,7 @@ fn render_setup_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Machine: {machine}\nCurrent image target: {}\n\nb  Build image\nc  Clean image\nm  Run menuconfig\ne  Enter a different image target\n\nEsc closes this menu.",
+                "Machine: {machine}\nCurrent image target: {}\n\nb  Build image\nc  Clean image\nm  Run menuconfig\ni  Choose image recipe\ne  Enter a target name\n\nEsc closes this menu.",
                 app.build.target.as_deref().unwrap_or("not selected")
             ))
             .block(dialog_block(

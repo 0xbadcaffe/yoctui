@@ -206,6 +206,27 @@ impl InteractiveRuntime {
                 }
                 _ => None,
             };
+        } else if matches!(runtime.app.active_dialog(), Some(Dialog::RecipePicker(_))) {
+            let effect = match input {
+                Input::Up => compatibility_workspace_action(
+                    &mut runtime.app,
+                    Action::SelectRecipePicker { delta: -1 },
+                ),
+                Input::Down => compatibility_workspace_action(
+                    &mut runtime.app,
+                    Action::SelectRecipePicker { delta: 1 },
+                ),
+                Input::Enter => {
+                    compatibility_workspace_action(&mut runtime.app, Action::ConfirmRecipePicker)
+                }
+                Input::Esc => {
+                    compatibility_workspace_action(&mut runtime.app, Action::CancelRecipePicker)
+                }
+                _ => None,
+            };
+            if let Some(Effect::GetDependencies(recipe)) = effect {
+                runtime.begin_recipe_dependency_graph(recipe);
+            }
         } else if matches!(
             runtime.app.active_dialog(),
             Some(Dialog::SignatureTaskPicker(_))
@@ -404,6 +425,21 @@ impl InteractiveRuntime {
                 ),
                 Input::Char('e') => {
                     compatibility_workspace_action(&mut runtime.app, Action::BeginBuildTargetEdit)
+                }
+                Input::Char('i') => {
+                    let images = runtime
+                        .app
+                        .workspace
+                        .recipes
+                        .iter()
+                        .map(|recipe| recipe.name.as_str())
+                        .filter(|name| name.contains("image"))
+                        .map(str::to_owned)
+                        .collect();
+                    compatibility_workspace_action(
+                        &mut runtime.app,
+                        Action::OpenImageBuildPicker(images),
+                    )
                 }
                 Input::Esc => {
                     compatibility_workspace_action(&mut runtime.app, Action::CloseBuildOptions)

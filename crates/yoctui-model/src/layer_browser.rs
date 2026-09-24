@@ -154,6 +154,17 @@ pub struct ImagePicker {
     pub images: Vec<String>,
     pub selection: usize,
 }
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecipePickerPurpose {
+    Build,
+    Dependencies,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RecipePicker {
+    pub recipes: Vec<RecipeIdentity>,
+    pub selection: usize,
+    pub purpose: RecipePickerPurpose,
+}
 pub const MAX_BUILD_HISTORY: usize = 50;
 impl Default for BuildState {
     fn default() -> Self {

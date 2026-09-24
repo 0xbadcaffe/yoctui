@@ -21,6 +21,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         | Dialog::RecipeTaskPicker(_)
         | Dialog::RecipeTaskLogPicker(_)
         | Dialog::RecipePatchPicker(_)
+        | Dialog::RecipePicker(_)
         | Dialog::ConfigSourcePicker(_)
         | Dialog::ConfigScopePicker(_)
         | Dialog::ConfigComparison(_)
@@ -168,4 +169,3 @@ fn maintenance_dialog_requirement(dialog: &MaintenanceDialog) -> WorkspaceEffect
         MaintenanceDialog::ConfirmCancellation(_) => WorkspaceEffectRequirement::ClientLocal,
     }
 }
-

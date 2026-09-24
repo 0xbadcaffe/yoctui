@@ -40,6 +40,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                 | Action::OpenCommandPalette
                 | Action::OpenBuildOptions
                 | Action::OpenImagePicker(_)
+                | Action::OpenRecipePicker(_)
         )
     {
         return None;
@@ -157,8 +158,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::ApplyBuildEnvironmentProfile | Action::BeginBuildEnvironmentVerification | Action::BuildEnvironmentVerified { .. }
         | Action::BuildEnvironmentVerificationFailed { .. } | Action::CycleFocus { .. } | Action::CyclePaneSubfocus { .. } => confirm_keymap_capture::reduce_actions(app, action),
         Action::ResetPaneSubfocus | Action::TogglePaneZoom | Action::OpenBuildOptions
-        | Action::CloseBuildOptions | Action::OpenImagePicker(..) | Action::SelectImage { .. }
-        | Action::ConfirmImagePicker | Action::CancelImagePicker | Action::BeginCurrentImageBuild
+        | Action::CloseBuildOptions | Action::OpenImagePicker(..) | Action::OpenImageBuildPicker(..)
+        | Action::OpenRecipePicker(..) | Action::SelectImage { .. } | Action::ConfirmImagePicker
+        | Action::CancelImagePicker | Action::SelectRecipePicker { .. } | Action::ConfirmRecipePicker
+        | Action::CancelRecipePicker | Action::BeginCurrentImageBuild
         | Action::BeginImageArtifactInventory | Action::RefreshImageArtifactInventory | Action::CancelImageArtifactOperation
         | Action::ImageArtifactInventoryLoaded { .. } | Action::ImageArtifactInventoryPartial { .. } | Action::ImageArtifactInventoryFailed { .. }
         | Action::SelectImageArtifact { .. } | Action::BeginImageArtifactSearch | Action::AppendImageArtifactQuery(..)

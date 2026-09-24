@@ -40,6 +40,8 @@ pub struct App {
     pub build_environment_draft: Option<BuildEnvironmentDraft>,
     pub environment_setup_generation: u64,
     pub available_images: Vec<String>,
+    pub pending_image_build_options: bool,
+    pub resume_build_options_on_image_picker_cancel: bool,
     pub color_enabled: bool,
     pub color_forced_off: bool,
     pub theme: Theme,

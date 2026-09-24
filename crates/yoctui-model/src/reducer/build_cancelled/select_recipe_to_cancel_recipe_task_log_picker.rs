@@ -30,7 +30,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             };
         }
         Action::BeginSelectedRecipeBuild => {
-            begin_recipe_task(app, None, false);
+            if app.screen == Screen::Recipes {
+                begin_recipe_task(app, None, false);
+            } else {
+                return update(app, Action::OpenRecipePicker(RecipePickerPurpose::Build));
+            }
         }
         Action::BeginSelectedRecipeClean => {
             begin_recipe_task(app, Some("clean".into()), false);

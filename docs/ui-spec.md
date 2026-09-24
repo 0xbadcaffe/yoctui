@@ -1294,6 +1294,11 @@ Running actions:
 contextual selected-target action, including the selected-recipe build in
 Recipes.
 
+When no image target is selected, either build route first opens the
+machine-aware image-recipe picker in place and continues to Build options after
+selection. Build options also provides **Choose image recipe**, so changing the
+target does not require leaving the dialog or visiting another workspace.
+
 Example:
 
 ```text
@@ -2181,7 +2186,8 @@ Workspace shortcuts:
   recipe exists in the authoritative inventory
 - `o`: open only the selected node's absolute typed provider path
 - `L`: open only the selected task's absolute typed log path
-- `r`: refresh the same typed graph root
+- `r`: refresh the same typed graph root; when none is loaded, choose a recipe
+  in an in-place picker and start that root
 - `←`/`→` or `h`/`l`: collapse or expand the selected identity
 - `Space`: toggle selected expansion
 - `/`: edit the bounded identity filter; `Ctrl+U` clears it
@@ -2197,7 +2203,7 @@ but never a task log unless the backend explicitly supplies one.
 
 State presentation is explicit:
 
-- not loaded: explain that Recipes `A` starts dependency inspection
+- not loaded: offer `r` and F12 Actions to choose the dependency root in place
 - loading: show the exact requested root and no stale graph rows
 - available-empty: show the root and `no dependency edges reported`
 - available: show the typed rows and Inspector
@@ -5313,6 +5319,8 @@ operators to remember a second shortcut set. After `modify` reports a present
 workspace, **Open workspace GitUI** launches the detected GitUI executable with
 that exact absolute source directory as its working directory. It stays disabled
 with a specific status, tool, or workspace reason until the route is valid.
+The same menu then exposes **Open workspace shell**, **Compile workspace
+recipe**, `update-recipe`, and `finish` in workflow order.
 
 ### Source and recipe editor
 

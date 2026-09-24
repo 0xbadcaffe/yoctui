@@ -45,6 +45,8 @@ impl App {
             build_environment_generation: 0,
             build_environment_draft: None,
             available_images: Vec::new(),
+            pending_image_build_options: false,
+            resume_build_options_on_image_picker_cancel: false,
             color_enabled: true,
             color_forced_off: false,
             theme: Theme::DarkPro,

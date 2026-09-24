@@ -1,6 +1,28 @@
 use super::*;
 use crate::image_updates::rootfs_image_identity;
 
+fn open_image_picker(app: &mut App, images: &mut Vec<String>) {
+    images.sort();
+    images.dedup();
+    let selection = app
+        .build
+        .target
+        .as_ref()
+        .and_then(|target| images.iter().position(|image| image == target))
+        .unwrap_or(0);
+    if images.is_empty() {
+        app.notification = Some("No image recipes were discovered in the active layers.".into());
+    } else {
+        open_dialog(
+            app,
+            Dialog::ImagePicker(ImagePicker {
+                images: std::mem::take(images),
+                selection,
+            }),
+        );
+    }
+}
+
 pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     match action {
         Action::ResetPaneSubfocus => match app.focus {
@@ -18,7 +40,19 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::TogglePaneZoom => {}
         Action::OpenBuildOptions => {
             if app.build_environment.connected() {
-                open_dialog(app, Dialog::BuildOptions);
+                if app.build.target.is_some() {
+                    open_dialog(app, Dialog::BuildOptions);
+                } else {
+                    let images = app
+                        .workspace
+                        .recipes
+                        .iter()
+                        .map(|recipe| recipe.name.as_str())
+                        .filter(|name| name.contains("image"))
+                        .map(str::to_owned)
+                        .collect();
+                    return update(app, Action::OpenImageBuildPicker(images));
+                }
             } else {
                 app.notification = Some("Configure and verify a BitBake environment first".into());
             }
@@ -29,19 +63,97 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::OpenImagePicker(mut images) => {
-            images.sort();
-            images.dedup();
-            let selection = app
-                .build
-                .target
+            app.pending_image_build_options = false;
+            app.resume_build_options_on_image_picker_cancel = false;
+            open_image_picker(app, &mut images);
+        }
+        Action::OpenImageBuildPicker(mut images) => {
+            let resume_on_cancel = matches!(app.active_dialog(), Some(Dialog::BuildOptions));
+            if resume_on_cancel {
+                close_dialog(app);
+            }
+            app.pending_image_build_options = true;
+            app.resume_build_options_on_image_picker_cancel = resume_on_cancel;
+            open_image_picker(app, &mut images);
+            if !matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
+                app.pending_image_build_options = false;
+                app.resume_build_options_on_image_picker_cancel = false;
+                if resume_on_cancel {
+                    open_dialog(app, Dialog::BuildOptions);
+                }
+            }
+        }
+        Action::OpenRecipePicker(purpose) => {
+            let mut recipes = app
+                .workspace
+                .recipes
+                .iter()
+                .filter_map(|recipe| {
+                    let file = recipe.file.clone()?;
+                    file.is_absolute().then(|| RecipeIdentity {
+                        name: recipe.name.clone(),
+                        file,
+                    })
+                })
+                .collect::<Vec<_>>();
+            recipes
+                .sort_by(|left, right| left.name.cmp(&right.name).then(left.file.cmp(&right.file)));
+            recipes.dedup();
+            let selected = selected_recipe_identity(app).ok();
+            let selection = selected
                 .as_ref()
-                .and_then(|target| images.iter().position(|image| image == target))
+                .and_then(|identity| recipes.iter().position(|recipe| recipe == identity))
                 .unwrap_or(0);
-            if images.is_empty() {
+            if recipes.is_empty() {
                 app.notification =
-                    Some("No image recipes were discovered in the active layers.".into());
+                    Some("No recipes with authoritative provider paths were discovered.".into());
             } else {
-                open_dialog(app, Dialog::ImagePicker(ImagePicker { images, selection }));
+                open_dialog(
+                    app,
+                    Dialog::RecipePicker(RecipePicker {
+                        recipes,
+                        selection,
+                        purpose,
+                    }),
+                );
+            }
+        }
+        Action::SelectRecipePicker { delta } => {
+            if let Some(Dialog::RecipePicker(picker)) = app.active_dialog_mut() {
+                picker.selection = shifted_index(picker.selection, delta, picker.recipes.len());
+            }
+        }
+        Action::ConfirmRecipePicker => {
+            let selected = match app.active_dialog() {
+                Some(Dialog::RecipePicker(picker)) => picker
+                    .recipes
+                    .get(picker.selection)
+                    .cloned()
+                    .map(|identity| (identity, picker.purpose)),
+                _ => None,
+            };
+            if let Some((identity, purpose)) = selected {
+                if let Some(index) = app.workspace.recipes.iter().position(|recipe| {
+                    recipe.name == identity.name && recipe.file.as_ref() == Some(&identity.file)
+                }) {
+                    app.recipe_selection = index;
+                }
+                close_dialog(app);
+                return match purpose {
+                    RecipePickerPurpose::Build => {
+                        begin_recipe_task(app, None, false);
+                        None
+                    }
+                    RecipePickerPurpose::Dependencies => {
+                        app.screen = Screen::Dependencies;
+                        update(app, Action::BeginSelectedRecipeDependencies)
+                    }
+                };
+            }
+        }
+        Action::CancelRecipePicker => {
+            if matches!(app.active_dialog(), Some(Dialog::RecipePicker(_))) {
+                close_dialog(app);
             }
         }
         Action::SelectImage { delta } => {
@@ -62,12 +174,20 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 if let Some(image) = image {
                     app.build.target = Some(image);
                     close_dialog(app);
+                    if std::mem::take(&mut app.pending_image_build_options) {
+                        app.resume_build_options_on_image_picker_cancel = false;
+                        open_dialog(app, Dialog::BuildOptions);
+                    }
                 }
             }
         }
         Action::CancelImagePicker => {
             if matches!(app.active_dialog(), Some(Dialog::ImagePicker(_))) {
                 close_dialog(app);
+                app.pending_image_build_options = false;
+                if std::mem::take(&mut app.resume_build_options_on_image_picker_cancel) {
+                    open_dialog(app, Dialog::BuildOptions);
+                }
             }
         }
         Action::BeginCurrentImageBuild => {
@@ -86,7 +206,15 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     }),
                 );
             } else {
-                app.notification = Some("Select an image first with i.".into());
+                let images = app
+                    .workspace
+                    .recipes
+                    .iter()
+                    .map(|recipe| recipe.name.as_str())
+                    .filter(|name| name.contains("image"))
+                    .map(str::to_owned)
+                    .collect();
+                return update(app, Action::OpenImageBuildPicker(images));
             }
         }
         Action::BeginImageArtifactInventory | Action::RefreshImageArtifactInventory => {

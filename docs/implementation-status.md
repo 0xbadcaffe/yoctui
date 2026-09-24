@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M75 INPLACE-OPERATION-SELECTION-001 is DONE in v0.1.217. Image builds with no
+target now choose an image recipe and continue to Build options in place;
+Build options can change that recipe directly. An unloaded Dependencies
+workspace chooses its exact provider-backed recipe root in place and starts
+the graph query without a trip through Recipes.
+
 M75 DEVTOOL-WORKSPACE-GITUI-001 is DONE in v0.1.216. Recipes and Devtool
 Actions now open GitUI in the exact absolute source directory reported for the
 selected recipe's active Devtool workspace. Missing tools, status and workspace

@@ -116,6 +116,7 @@ pub enum Dialog {
         task: Option<String>,
     },
     ImagePicker(ImagePicker),
+    RecipePicker(RecipePicker),
     ImageConsole(ImageConsoleDialog),
     QemuLaunch(QemuLaunchDialog),
     QemuLaunchConfirmation(QemuLaunchPreview),
@@ -247,6 +248,7 @@ impl Dialog {
             | Self::BuildOptions
             | Self::BuildTarget { .. }
             | Self::ImagePicker(_)
+            | Self::RecipePicker(_)
             | Self::ImageConsole(_)
             | Self::QemuLaunch(_)
             | Self::WicCreate(_)

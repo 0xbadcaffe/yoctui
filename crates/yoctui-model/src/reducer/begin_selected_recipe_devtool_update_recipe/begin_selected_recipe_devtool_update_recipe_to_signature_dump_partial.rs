@@ -209,8 +209,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::RefreshDependencyGraph => {
             let Some(root) = app.dependency_graph.root().cloned() else {
-                app.notification = Some("No dependency graph root is available to refresh.".into());
-                return None;
+                return update(
+                    app,
+                    Action::OpenRecipePicker(RecipePickerPurpose::Dependencies),
+                );
             };
             return update(app, Action::BeginDependencyGraph { root });
         }

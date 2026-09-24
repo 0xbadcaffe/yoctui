@@ -3442,8 +3442,8 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 162 validated definitions: 37
-global command targets and 125 contextual workspace targets. `OperatorActionId`
+`yoctui-model::action_catalog` now supplies 164 validated definitions: 37
+global command targets and 127 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
 requirement, safety, footer priority, Help group, and typed target travel
@@ -4368,6 +4368,13 @@ and argv, modal focus at supported widths, and embedded-session navigation.
 M68 application-menu bounds live in the app layer and are shared by the renderer
 and pointer routing. Mouse input emits existing group/row selection actions;
 activation remains the existing keyboard/menu action route with availability checks.
+
+M75 in-place target selection is model-owned. Image build requests without a
+target open the existing image picker and retain only the typed continuation to
+Build options. Dependency requests without a graph root open a provider-backed
+recipe picker; confirmation stores the exact inventory identity and emits the
+normal dependency effect. The UI renders picker state and the CLI only routes
+typed selection/confirmation actions.
 
 M68 input ownership is explicit in the app layer: active screen text fields and
 terminal writer/transient modes precede pane-focus routing. The CLI menu shortcut

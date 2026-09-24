@@ -103,8 +103,10 @@ pub enum Action {
     BuildEnvironmentVerified { generation: u64, },
     BuildEnvironmentVerificationFailed { generation: u64, message: String, },
     OpenBuildOptions, CloseBuildOptions, OpenImagePicker(Vec<String>),
+    OpenImageBuildPicker(Vec<String>), OpenRecipePicker(RecipePickerPurpose),
     SelectImage { delta: isize, },
     ConfirmImagePicker, CancelImagePicker, BeginCurrentImageBuild,
+    SelectRecipePicker { delta: isize, }, ConfirmRecipePicker, CancelRecipePicker,
 
     // Image, root filesystem, and package workflows.
     BeginImageArtifactInventory, RefreshImageArtifactInventory, CancelImageArtifactOperation,

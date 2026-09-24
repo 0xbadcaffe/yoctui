@@ -45,6 +45,7 @@ pub(crate) fn dialog_mouse_action(
         }
         yoctui_model::Dialog::ThemePicker { .. } => Some(Action::SelectTheme { delta }),
         yoctui_model::Dialog::ImagePicker(_) => Some(Action::SelectImage { delta }),
+        yoctui_model::Dialog::RecipePicker(_) => Some(Action::SelectRecipePicker { delta }),
         yoctui_model::Dialog::RecipeTaskPicker(_) => Some(Action::SelectRecipeTask { delta }),
         yoctui_model::Dialog::RecipeTaskLogPicker(_) => Some(Action::SelectRecipeTaskLog { delta }),
         yoctui_model::Dialog::RecipePatchPicker(_) => Some(Action::SelectRecipePatch { delta }),

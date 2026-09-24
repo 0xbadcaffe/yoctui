@@ -413,6 +413,46 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
             popup,
         );
         return true;
+    } else if let Some(Dialog::RecipePicker(picker)) = app.active_dialog() {
+        let width = area.width.saturating_sub(20).clamp(48, 100);
+        let height = area.height.saturating_sub(8).clamp(10, 26);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            (area.height.saturating_sub(height)) / 2,
+            width,
+            height,
+        );
+        let viewport = yoctui_model::centered_viewport_range(
+            (!picker.recipes.is_empty()).then_some(picker.selection),
+            picker.recipes.len(),
+            usize::from(popup.height.saturating_sub(5)).max(1),
+        );
+        let recipes = picker.recipes[viewport.clone()]
+            .iter()
+            .enumerate()
+            .map(|(offset, recipe)| {
+                let index = viewport.start + offset;
+                format!(
+                    "{} {}  {}",
+                    if index == picker.selection { "▶" } else { " " },
+                    recipe.name,
+                    recipe.file.display()
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        let title = match picker.purpose {
+            yoctui_model::RecipePickerPurpose::Build => "Choose recipe to build",
+            yoctui_model::RecipePickerPurpose::Dependencies => "Choose dependency root",
+        };
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Paragraph::new(format!("{recipes}\n\nUp/Down select  Enter continue  Esc cancel"))
+                .block(dialog_block(app, title, DialogTone::Standard))
+                .wrap(Wrap { trim: false }),
+            popup,
+        );
+        return true;
     }
     false
 }

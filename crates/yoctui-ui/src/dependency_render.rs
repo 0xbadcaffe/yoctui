@@ -131,7 +131,8 @@ pub(crate) fn dependency_tree_label(
 pub(crate) fn dependency_inspector(app: &App) -> String {
     match &app.dependency_graph {
         DependencyGraphState::NotLoaded => {
-            "Dependency graph: not loaded\n\nSelect a recipe in Recipes and press g.".into()
+            "Dependency graph: not loaded\n\nPress r to choose a recipe, or use F12 > Actions."
+                .into()
         }
         DependencyGraphState::Loading { root } => format!(
             "Dependency graph: loading\nRoot: {}\n\nNo stale graph is shown while the authoritative query runs.",
@@ -215,7 +216,7 @@ pub(crate) fn dependencies(frame: &mut Frame, app: &App, area: Rect) {
         DependencyGraphState::NotLoaded => {
             frame.render_widget(
                 Paragraph::new(
-                    "Dependency graph is not loaded.\n\nSelect a recipe in Recipes and press g.",
+                    "Dependency graph is not loaded.\n\nPress r to choose a recipe, or use F12 > Actions.",
                 )
                 .block(
                     Block::default()

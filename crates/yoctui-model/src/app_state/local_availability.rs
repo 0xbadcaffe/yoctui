@@ -32,12 +32,17 @@ pub(crate) fn context_action_local_disabled_reason(
     {
         return Some("Select a recipe first.".into());
     }
-    if matches!(action_id, "recipes.devtool_gitui" | "devtool.gitui") {
+    if matches!(
+        action_id,
+        "recipes.devtool_gitui" | "devtool.gitui" | "devtool.shell" | "devtool.build"
+    ) {
         let identity = match selected_recipe_identity(app) {
             Ok(identity) => identity,
             Err(message) => return Some(message.into()),
         };
-        if app.gitui_program.is_none() {
+        if matches!(action_id, "recipes.devtool_gitui" | "devtool.gitui")
+            && app.gitui_program.is_none()
+        {
             return Some("Install GitUI first.".into());
         }
         let Some(status) = app.devtool_statuses.get(&identity) else {

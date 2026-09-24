@@ -31,6 +31,8 @@ fn compatibility_ui_workspace_actions_catalog_is_unique_closed_and_probe_free() 
         "qa.layer",
         "devtool.upgrade",
         "devtool.gitui",
+        "devtool.shell",
+        "devtool.build",
         "qemu_wic.wic",
         "maintenance.cleanup",
         "terminal.menuconfig",
