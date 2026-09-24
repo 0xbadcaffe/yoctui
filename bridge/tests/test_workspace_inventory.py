@@ -307,7 +307,7 @@ class BridgeWorkspaceInventoryTests(unittest.TestCase):  # noqa: F405
                 stateForceShutdown=noop,
                 setEventMask=noop,
             ),
-            CommandsAsync=SimpleNamespace(buildTargets=noop),
+            CommandsAsync=SimpleNamespace(buildTargets=noop, generateDepTreeEvent=noop),
         )
         with patch.object(bridge.importlib, "import_module", return_value=commands):
             capabilities = bridge.tinfoil_probe_capabilities(tinfoil)
@@ -318,6 +318,7 @@ class BridgeWorkspaceInventoryTests(unittest.TestCase):  # noqa: F405
                 "build",
                 "cancel",
                 "native_events",
+                "dependency_graph",
             ]:
                 self.assertIn(expected, capabilities)
             commands.CommandsAsync.buildTargets = None

@@ -7,11 +7,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 &app.rootfs_composition,
                 RootfsCompositionState::Loading { request: pending } if pending == &request
             ) {
-                app.rootfs_composition = RootfsCompositionState::Failed {
-                    request,
-                    message: message.clone(),
-                };
-                app.notification = Some(format!("Rootfs composition failed: {message}"));
+                app.rootfs_composition = RootfsCompositionState::Failed { request, message };
             }
         }
         Action::SelectRootfsGroup { delta } => {

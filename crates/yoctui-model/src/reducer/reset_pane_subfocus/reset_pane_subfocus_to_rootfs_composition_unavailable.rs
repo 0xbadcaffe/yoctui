@@ -331,11 +331,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 &app.rootfs_composition,
                 RootfsCompositionState::Loading { request: pending } if pending == &request
             ) {
-                app.rootfs_composition = RootfsCompositionState::Unavailable {
-                    request,
-                    reason: reason.clone(),
-                };
-                app.notification = Some(format!("Rootfs composition is unavailable: {reason}"));
+                app.rootfs_composition = RootfsCompositionState::Unavailable { request, reason };
             }
         }
         _ => unreachable!("action routed to the wrong reducer"),

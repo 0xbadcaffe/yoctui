@@ -246,6 +246,13 @@ Protocol version 1 retains the legacy direct-dependencies event; a new graph
 command/event is additive, and the Rust bridge client falls back to the legacy
 query only when an older peer rejects the new command.
 
+Compatibility discovery advertises that structured dependency endpoint only
+when the metadata server, event transport, and `generateDepTreeEvent` command
+are all present. Recipe detail first acquires metadata and then starts the graph
+request without leaving Recipes. A broken pipe, reset connection, aborted
+connection, or unexpected EOF invalidates the cached bridge so the next recipe
+inspection creates a fresh metadata authority.
+
 The process backend invokes `bitbake -g <recipe>` directly without a shell,
 with a fixed timeout and discarded process output. It removes the known stale
 `task-depends.dot` before invocation, accepts only a bounded regular file whose
@@ -3522,9 +3529,13 @@ environment for recipe queries, and owns bounded asynchronous metadata workers.
 Only one metadata query may run at a time; startup inventory or active builds
 reject competing queries. Disconnect/timeout cancels and reaps the worker.
 The client acquires sources off the input loop, checks correlation/current
-authority before installation, then reuses the existing contained scan. Old
-daemons without the capability remain explicitly unavailable. Optional absent
-paths are distinct from reported paths that have since been cleaned.
+authority before installation, then reuses the existing contained scan. If the
+live source query fails, an artifact-correlated deployed manifest and the
+workspace's reported pkgdata directory remain lower-authority inputs and the
+result records the query failure as a limitation. Old daemons without the
+capability remain explicitly unavailable when no deployed evidence exists.
+Optional absent paths are distinct from reported paths that have since been
+cleaned.
 
 Schema v1 binds a non-zero request generation to one exact machine/image/path
 artifact identity. Installed-package and logical-filesystem authorities remain

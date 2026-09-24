@@ -9305,3 +9305,14 @@ required = true
 depends_on = ["DEVTOOL-STATUS-RESPONSIVENESS-001"]
 verify = ["cargo test -p yoctui --all-features platform_inspection_worker_is_cancellable_while_metadata_is_pending", "cargo test -p yoctui --all-features restored_platform_workspace_defers_inspection_until_after_first_frame", "cargo fmt --all --check"]
 notes = "DONE in v0.1.211. Kernel and firmware inspection run on an owned background bridge with a 120-second deadline, shutdown cancellation reaps the bridge, and Devtool status releases its owned child after 30 seconds."
+
+[[task]]
+id = "METADATA-RECOVERY-ROOTFS-DEPENDENCIES-001"
+milestone = "M75"
+title = "Recover recipe dependency and Rootfs inspection after metadata failures"
+status = "DONE"
+priority = 2414
+required = true
+depends_on = ["PLATFORM-INSPECTION-RESPONSIVENESS-001"]
+verify = ["python3 -m pytest bridge/tests/test_workspace_inventory.py", "cargo test -p yoctui-model ux_rootfs_reducer_correlates_generation_lifecycle_and_stable_drilldown_selection", "cargo test -p yoctui --all-features daemon_client_rootfs_uses_selected_manifest_and_workspace_pkgdata", "cargo fmt --all --check"]
+notes = "DONE in v0.1.212. Recipe Enter automatically follows metadata with the structured dependency graph while remaining on Recipes; bridge capability discovery advertises the Tinfoil dependency command; broken connections are invalidated for recreation; attached Rootfs inspection falls back to correlated deployed manifest/pkgdata evidence and reports failures inline without a modal."

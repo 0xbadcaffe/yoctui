@@ -3,6 +3,7 @@ use super::*;
 #[derive(Clone, Copy)]
 pub(super) enum RecipeMetadataFollowup {
     PatchReview,
+    DependencyGraph,
 }
 
 #[derive(Clone)]
@@ -13,6 +14,7 @@ enum RecipeInspectionRequest {
     },
     DependencyGraph {
         recipe: String,
+        remain_on_recipes: bool,
     },
 }
 
@@ -24,6 +26,7 @@ enum RecipeInspectionResult {
     },
     DependencyGraph {
         recipe: String,
+        remain_on_recipes: bool,
         result: std::result::Result<yoctui_bitbake::DependencyGraphResponse, String>,
     },
 }
@@ -45,7 +48,10 @@ impl InteractiveRuntime {
     }
 
     pub(super) fn begin_recipe_dependency_graph(&mut self, recipe: String) {
-        self.begin_recipe_inspection(RecipeInspectionRequest::DependencyGraph { recipe });
+        self.begin_recipe_inspection(RecipeInspectionRequest::DependencyGraph {
+            recipe,
+            remain_on_recipes: false,
+        });
     }
 
     fn begin_recipe_inspection(&mut self, request: RecipeInspectionRequest) {
@@ -68,7 +74,7 @@ impl InteractiveRuntime {
             if !ready {
                 match select_backend_with_timeout(
                     Backend::Bridge,
-                    build_dir,
+                    build_dir.clone(),
                     Some(cancellation_timeout),
                 )
                 .await
@@ -87,26 +93,40 @@ impl InteractiveRuntime {
                     }
                 }
             }
-            let result = match worker_request {
+            let (result, connection_lost) = match worker_request {
                 RecipeInspectionRequest::Metadata { recipe, followup } => {
-                    let result = backend
-                        .get_recipe_metadata(recipe.clone())
-                        .await
-                        .map_err(|error| error.to_string());
-                    RecipeInspectionResult::Metadata {
-                        recipe,
-                        followup,
-                        result,
-                    }
+                    let result = backend.get_recipe_metadata(recipe.clone()).await;
+                    let connection_lost = result.as_ref().is_err_and(backend_connection_lost);
+                    (
+                        RecipeInspectionResult::Metadata {
+                            recipe,
+                            followup,
+                            result: result.map_err(|error| error.to_string()),
+                        },
+                        connection_lost,
+                    )
                 }
-                RecipeInspectionRequest::DependencyGraph { recipe } => {
-                    let result = backend
-                        .get_dependency_graph(recipe.clone())
-                        .await
-                        .map_err(|error| error.to_string());
-                    RecipeInspectionResult::DependencyGraph { recipe, result }
+                RecipeInspectionRequest::DependencyGraph {
+                    recipe,
+                    remain_on_recipes,
+                } => {
+                    let result = backend.get_dependency_graph(recipe.clone()).await;
+                    let connection_lost = result.as_ref().is_err_and(backend_connection_lost);
+                    (
+                        RecipeInspectionResult::DependencyGraph {
+                            recipe,
+                            remain_on_recipes,
+                            result: result.map_err(|error| error.to_string()),
+                        },
+                        connection_lost,
+                    )
                 }
             };
+            if connection_lost {
+                let _ = backend.shutdown().await;
+                backend = Box::new(ProcessBackend::new(build_dir));
+                ready = false;
+            }
             (backend, ready, result)
         });
         self.recipe_inspection_operation = Some(RecipeInspectionOperation { request, handle });
@@ -157,7 +177,11 @@ impl InteractiveRuntime {
                     message,
                 ),
             },
-            RecipeInspectionResult::DependencyGraph { recipe, result } => match result {
+            RecipeInspectionResult::DependencyGraph {
+                recipe,
+                remain_on_recipes,
+                result,
+            } => match result {
                 Ok(response) => {
                     let action = if response.limitations.is_empty() {
                         Action::DependencyGraphLoaded(response.graph)
@@ -168,9 +192,22 @@ impl InteractiveRuntime {
                         }
                     };
                     let _ = compatibility_workspace_action(&mut self.app, action);
+                    if remain_on_recipes
+                        && self
+                            .app
+                            .workspace
+                            .recipes
+                            .get(self.app.recipe_selection)
+                            .is_some_and(|selected| selected.name == recipe)
+                    {
+                        self.app.screen = Screen::Recipes;
+                    }
                 }
                 Err(message) => self.fail_recipe_inspection(
-                    RecipeInspectionRequest::DependencyGraph { recipe },
+                    RecipeInspectionRequest::DependencyGraph {
+                        recipe,
+                        remain_on_recipes,
+                    },
                     message,
                 ),
             },
@@ -196,9 +233,23 @@ impl InteractiveRuntime {
                 &mut self.app,
                 Action::BeginSelectedRecipePatchReview,
             );
+        } else if matches!(followup, Some(RecipeMetadataFollowup::DependencyGraph))
+            && self.app.screen == Screen::Recipes
+            && selected_recipe == Some(recipe)
+        {
+            let effect = compatibility_workspace_action(
+                &mut self.app,
+                Action::BeginSelectedRecipeDependencies,
+            );
+            if let Some(Effect::GetDependencies(recipe)) = effect {
+                self.begin_recipe_inspection(RecipeInspectionRequest::DependencyGraph {
+                    recipe,
+                    remain_on_recipes: true,
+                });
+            }
         } else if followup.is_some() {
             self.app.notification = Some(format!(
-                "Metadata for {recipe} loaded; patch review was not opened because the selection changed."
+                "Metadata for {recipe} loaded; the requested follow-up was not opened because the selection changed."
             ));
         }
     }
@@ -208,10 +259,12 @@ impl InteractiveRuntime {
             RecipeInspectionRequest::Metadata { recipe, .. } => {
                 Action::RecipeMetadataFailed { recipe, message }
             }
-            RecipeInspectionRequest::DependencyGraph { recipe } => Action::DependencyGraphFailed {
-                root: yoctui_model::DependencyNodeId::recipe(recipe),
-                message,
-            },
+            RecipeInspectionRequest::DependencyGraph { recipe, .. } => {
+                Action::DependencyGraphFailed {
+                    root: yoctui_model::DependencyNodeId::recipe(recipe),
+                    message,
+                }
+            }
         };
         let _ = compatibility_workspace_action(&mut self.app, action);
     }
@@ -233,11 +286,27 @@ fn failed_result(request: RecipeInspectionRequest, message: String) -> RecipeIns
                 result: Err(message),
             }
         }
-        RecipeInspectionRequest::DependencyGraph { recipe } => {
-            RecipeInspectionResult::DependencyGraph {
-                recipe,
-                result: Err(message),
-            }
-        }
+        RecipeInspectionRequest::DependencyGraph {
+            recipe,
+            remain_on_recipes,
+        } => RecipeInspectionResult::DependencyGraph {
+            recipe,
+            remain_on_recipes,
+            result: Err(message),
+        },
     }
+}
+
+fn backend_connection_lost(error: &yoctui_bitbake::BackendError) -> bool {
+    matches!(
+        error,
+        yoctui_bitbake::BackendError::Process(error)
+            if matches!(
+                error.kind(),
+                std::io::ErrorKind::BrokenPipe
+                    | std::io::ErrorKind::ConnectionAborted
+                    | std::io::ErrorKind::ConnectionReset
+                    | std::io::ErrorKind::UnexpectedEof
+            )
+    )
 }

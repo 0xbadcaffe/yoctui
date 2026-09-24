@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 METADATA-RECOVERY-ROOTFS-DEPENDENCIES-001 is DONE in v0.1.212. Recipe
+Enter automatically follows metadata with the structured dependency graph,
+dependency capability discovery checks the real Tinfoil command, broken bridge
+connections are discarded for recreation, and attached Rootfs inspection falls
+back to correlated deployed manifests/pkgdata with inline limitations instead
+of a blocking failure dialog.
+
 M75 PLATFORM-INSPECTION-RESPONSIVENESS-001 is DONE in v0.1.211. Restored,
 keyboard, mouse, and editor-return Kernel/U-Boot inspection starts an owned
 background bridge instead of awaiting metadata in the input loop. Logs,

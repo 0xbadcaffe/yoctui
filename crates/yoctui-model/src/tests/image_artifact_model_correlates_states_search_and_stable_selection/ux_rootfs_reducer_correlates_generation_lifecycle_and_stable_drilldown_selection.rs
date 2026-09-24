@@ -32,6 +32,10 @@ fn ux_rootfs_reducer_correlates_generation_lifecycle_and_stable_drilldown_select
         },
     };
     app.image_artifact_selection = Some(artifact.identity.clone());
+    app.workspace.recipes.push(Recipe {
+        name: artifact.identity.image.clone(),
+        ..Recipe::default()
+    });
     let request = RootfsCompositionRequest {
         generation: 1,
         image: artifact.identity.clone(),
@@ -194,6 +198,7 @@ fn ux_rootfs_reducer_correlates_generation_lifecycle_and_stable_drilldown_select
         app.rootfs_composition,
         RootfsCompositionState::Unavailable { .. }
     ));
+    assert!(app.notification.is_none());
 
     let Effect::GetRootfsComposition(failed) =
         update(&mut app, Action::RefreshRootfsComposition).unwrap()
@@ -211,4 +216,5 @@ fn ux_rootfs_reducer_correlates_generation_lifecycle_and_stable_drilldown_select
         app.rootfs_composition,
         RootfsCompositionState::Failed { .. }
     ));
+    assert!(app.notification.is_none());
 }

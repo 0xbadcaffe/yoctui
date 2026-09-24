@@ -204,7 +204,12 @@ impl InteractiveRuntime {
                 &mut runtime.app,
                 Action::BeginSelectedRecipeMetadata,
             ) {
-                runtime.begin_recipe_metadata(recipe, None);
+                runtime.begin_recipe_metadata(
+                    recipe,
+                    Some(
+                        super::recipe_inspection_operation::RecipeMetadataFollowup::DependencyGraph,
+                    ),
+                );
             }
             runtime.begin_selected_devtool_status();
         } else if input == Input::Char('b') {

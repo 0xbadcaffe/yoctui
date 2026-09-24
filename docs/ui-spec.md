@@ -1877,7 +1877,8 @@ Required:
 The recipe inventory obtains resolved version, provider file/layer, and append
 count from BitBake's parsed provider tables. `Enter` lazily refreshes the
 selected recipe's authoritative tasks, metadata sources/appends, patch URIs,
-and package outputs. The refresh runs as a bounded background operation: input,
+package outputs, and dependency graph while keeping Recipes selected. The
+refresh runs as bounded background operations: input,
 screen shortcuts, logging, and quit remain responsive while the idle metadata
 bridge starts or parses the selected provider. `p` starts the same refresh when
 patch metadata has not been loaded, then opens a patch picker. Patch review
@@ -1888,9 +1889,9 @@ history, remain explicitly unavailable until a typed source provides them.
 Inventory refresh preserves selection by recipe name and removes details for
 recipes that disappeared.
 
-`g` queries the selected recipe's dependency graph through the same background
-bridge operation; `A` remains an alias. Navigation and quit remain responsive
-while BitBake resolves the graph.
+`g` explicitly refreshes and opens the selected recipe's dependency graph
+through the same background bridge operation; `A` remains an alias. Navigation
+and quit remain responsive while BitBake resolves the graph.
 
 Selected-recipe Devtool status from `t` or the combined `Enter` inspection also
 runs as one bounded background operation. A slow or wedged `devtool status`
@@ -5054,10 +5055,14 @@ BitBake-reported `IMAGE_ROOTFS` for the selected image/build identity.
 
 An attached client's source lookup runs asynchronously through current daemon
 metadata authority; the client shell need not be initialized. Loading preserves
-input/navigation responsiveness. Unsupported daemon capability, busy metadata,
-query failure/timeout, disconnected or replaced authority remain explicit
-unavailable/failed states with refresh, never guessed paths. A reported path
-that no longer exists is described as cleaned/unavailable, not unreported.
+input/navigation responsiveness. When that live lookup fails or times out, an
+existing manifest correlated to the selected deployed artifact and the
+workspace's reported `PKGDATA_DIR` remain usable as a Partial result with the
+live-query limitation. If neither source exists, unsupported capability, busy
+metadata, query failure/timeout, disconnected or replaced authority remain
+explicit inline unavailable/failed states with refresh and no blocking message
+dialog. A reported path that no longer exists is described as cleaned/unavailable,
+not unreported.
 Only a matching image/request and current daemon instance/compatibility may
 install the result. This acquisition correction does not change the layout.
 

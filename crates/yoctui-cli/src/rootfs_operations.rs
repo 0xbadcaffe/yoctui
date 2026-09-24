@@ -116,38 +116,49 @@ pub(crate) async fn begin_rootfs_composition_operation(
             .and_then(|result| {
                 result.map_err(|error| format!("rootfs source lookup failed: {error:#}"))
             });
-            let sources = match result {
-                Ok(sources) => sources,
-                Err(message) => {
-                    return BackendEvent::RootfsCompositionFailed {
-                        request: worker_request,
-                        message,
-                    };
-                }
-            };
-            let sources = RootfsCompositionSources {
-                image: worker_request.image.clone(),
-                manifest: fallback
-                    .manifest
-                    .or_else(|| sources.image_manifest.map(PathBuf::from)),
-                pkgdata_directory: sources
-                    .pkgdata_dir
-                    .map(PathBuf::from)
-                    .or(fallback.pkgdata_directory),
-                image_rootfs: sources.image_rootfs.map(PathBuf::from),
+            let (sources, metadata_limitation) = match result {
+                Ok(sources) => (
+                    RootfsCompositionSources {
+                        image: worker_request.image.clone(),
+                        manifest: fallback
+                            .manifest
+                            .or_else(|| sources.image_manifest.map(PathBuf::from)),
+                        pkgdata_directory: sources
+                            .pkgdata_dir
+                            .map(PathBuf::from)
+                            .or(fallback.pkgdata_directory),
+                        image_rootfs: sources.image_rootfs.map(PathBuf::from),
+                    },
+                    None,
+                ),
+                Err(message) => (
+                    fallback,
+                    Some(format!(
+                        "BitBake rootfs metadata was unavailable; deployed artifacts were used: {message}"
+                    )),
+                ),
             };
             match RootfsCompositionAdapter::new(build, sources, worker_request.generation)
                 .scan_with_cancellation(worker_request.clone(), worker_cancellation)
                 .await
             {
-                Ok(response) if response.composition.is_unavailable() => {
+                Ok(mut response) if response.composition.is_unavailable() => {
+                    if let Some(limitation) = metadata_limitation {
+                        response.limitations.push(limitation);
+                    }
                     BackendEvent::RootfsCompositionUnavailable {
                         request: response.request,
-                        reason: "the selected image manifest and IMAGE_ROOTFS are unavailable"
-                            .into(),
+                        reason: response.limitations.first().cloned().unwrap_or_else(|| {
+                            "the selected image manifest and IMAGE_ROOTFS are unavailable".into()
+                        }),
                     }
                 }
-                Ok(response) => response.into(),
+                Ok(mut response) => {
+                    if let Some(limitation) = metadata_limitation {
+                        response.limitations.push(limitation);
+                    }
+                    response.into()
+                }
                 Err(error) => BackendEvent::RootfsCompositionFailed {
                     request: worker_request,
                     message: error.to_string(),

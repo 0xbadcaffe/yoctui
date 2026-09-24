@@ -187,6 +187,9 @@ def tinfoil_probe_capabilities(tinfoil):
         and methods(tinfoil, "parse_recipes")
         and methods(sync, "getRecipes", "getRecipeVersions"),
         "recipe_dependencies": metadata and methods(data, "getVar"),
+        "dependency_graph": metadata
+        and events
+        and methods(asynchronous, "generateDepTreeEvent"),
         "recipe_sources": metadata and methods(tinfoil, "get_file_appends"),
         "recipe_metadata": metadata
         and methods(tinfoil, "get_file_appends", "parse_recipe_file"),
