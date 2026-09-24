@@ -5383,7 +5383,8 @@ authority. Narrow, no-color, and ASCII layouts retain their existing
 accessible table fallback.
 
 Kernel is a dedicated Content destination with Configuration and Device trees
-tabs. Up/Down selects an authoritative artifact, `Tab` switches tabs, `m`
+tabs. Up/Down selects an authoritative artifact, `Tab` switches tabs, `1` and
+`2` select the exact tab, and clicking either numbered tab selects it. `m`
 opens provider-verified menuconfig in a persistent PTY, `Enter`/`e` opens text
 in the in-app explorer/editor, `o` explores the selected root, `c` compiles a
 DTS, `d` decompiles a DTB/DTBO, and `r` refreshes the inventory. Binary device
@@ -5393,7 +5394,9 @@ starts the metadata server on demand and resolves `virtual/kernel` through
 BitBake's configured best provider; it does not require a running build or a
 previous successful kernel build. Missing generated artifacts remain an
 explicit empty inventory while provider metadata and source actions remain
-available.
+available. Restoring a saved Kernel or U-Boot / BIOS destination renders its
+loading state before beginning the cold metadata query, so first-frame startup
+does not wait for BitBake parsing.
 
 U-Boot / BIOS is the adjacent Content destination. It selects the active
 image's boot provider from authoritative BitBake variables and recipe metadata,
@@ -5824,7 +5827,10 @@ and Device trees tabs remain switchable with `Tab` / `BackTab`; the client
 must not fall back to a process backend that cannot provide authoritative
 recipe metadata. The bridge starts BitBake metadata services on demand and
 resolves virtual targets to their configured providers independently of build
-activity; only artifact-backed views require generated files.
+activity. A daemon snapshot may select the bounded command-line getvar
+implementation for process workflows; the same positively authorized metadata
+bridge negotiates its own Tinfoil getvar endpoint for platform inspection.
+Only artifact-backed views require generated files.
 
 ## M75 host-safe application-menu shortcut
 

@@ -9261,3 +9261,14 @@ required = true
 depends_on = ["CONFIG-DETAIL-INVENTORY-001"]
 verify = ["python3 -m pytest bridge/tests/test_metadata_events.py", "cargo fmt --all --check"]
 notes = "DONE in v0.1.207. The on-demand Tinfoil bridge asks BitBake for the configured best provider before recipe metadata inspection, so virtual/kernel works without an active or prior successful build. A live idle Romulus query resolved linux-aspeed_git.bb and 60 tasks."
+
+[[task]]
+id = "PLATFORM-IDLE-RESPONSIVENESS-001"
+milestone = "M75"
+title = "Keep idle platform metadata loading responsive and navigable"
+status = "DONE"
+priority = 2410
+required = true
+depends_on = ["IDLE-METADATA-PROVIDER-001"]
+verify = ["cargo test -p yoctui-bitbake compatibility_api_", "cargo test -p yoctui-app platform_numbered_tabs_are_mouse_selectable", "cargo test -p yoctui --all-features restored_platform_workspace_defers_inspection_until_after_first_frame", "cargo fmt --all --check"]
+notes = "DONE in v0.1.208. An authorized Tinfoil metadata bridge negotiates getvar even when the daemon selected command getvar for process workflows; restored Kernel/Firmware sessions render Loading before cold metadata parsing; numbered tabs have exact keyboard and mouse selection actions."

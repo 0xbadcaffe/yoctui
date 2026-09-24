@@ -11,6 +11,22 @@ mod key_input;
 mod metadata_backend;
 #[cfg(test)]
 pub(crate) use metadata_backend::metadata_backend_start_required;
+
+pub(crate) fn begin_startup_platform_inspection(app: &mut App) -> Option<Screen> {
+    match app.screen {
+        Screen::Kernel => matches!(
+            compatibility_workspace_action(app, Action::InspectKernel),
+            Some(Effect::InspectKernel)
+        )
+        .then_some(Screen::Kernel),
+        Screen::Firmware => matches!(
+            compatibility_workspace_action(app, Action::InspectFirmware),
+            Some(Effect::InspectFirmware)
+        )
+        .then_some(Screen::Firmware),
+        _ => None,
+    }
+}
 mod metadata_workspaces;
 mod mouse_input;
 mod paste_input;
@@ -134,8 +150,8 @@ pub(crate) async fn tui(
     app.logs.build_filter = session.log_build_filter.clone();
     let session_build_dir = build_dir.clone();
     // Offline browsing must not spawn BitBake or refresh live metadata.
-    let mut backend: Box<dyn BitBakeBackend> = Box::new(ProcessBackend::new(build_dir.clone()));
-    let mut metadata_backend_authoritative = false;
+    let backend: Box<dyn BitBakeBackend> = Box::new(ProcessBackend::new(build_dir.clone()));
+    let metadata_backend_authoritative = false;
     if startup_metadata_authority(daemon_attached) == StartupMetadataAuthority::OfflineFiles {
         if build_dir_configured {
             if let Some(source) =
@@ -251,34 +267,7 @@ pub(crate) async fn tui(
             effect,
         );
     }
-    if app.screen == Screen::Kernel
-        && let Some(Effect::InspectKernel) =
-            compatibility_workspace_action(&mut app, Action::InspectKernel)
-    {
-        metadata_backend::inspect_kernel(
-            &mut app,
-            &backend_kind,
-            &session_build_dir,
-            cancellation_timeout,
-            &mut backend,
-            &mut metadata_backend_authoritative,
-        )
-        .await;
-    }
-    if app.screen == Screen::Firmware
-        && let Some(Effect::InspectFirmware) =
-            compatibility_workspace_action(&mut app, Action::InspectFirmware)
-    {
-        metadata_backend::inspect_firmware(
-            &mut app,
-            &backend_kind,
-            &session_build_dir,
-            cancellation_timeout,
-            &mut backend,
-            &mut metadata_backend_authoritative,
-        )
-        .await;
-    }
+    let startup_platform_inspection = begin_startup_platform_inspection(&mut app);
     if app.screen == Screen::Testing
         && let Some(effect) =
             compatibility_workspace_action(&mut app, Action::InspectTestCapability)
@@ -392,6 +381,7 @@ pub(crate) async fn tui(
         environment_browser_io,
         render_measurement_started,
         prefix_state,
+        startup_platform_inspection,
         #[cfg(unix)]
         termination,
     };

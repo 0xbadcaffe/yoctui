@@ -31,6 +31,12 @@ fn ux_preferences_disable_mouse_and_route_preview_reset_keys_exactly() {
 #[test]
 fn kernel_workbench_keys_route_to_typed_actions() {
     assert_eq!(
+        platform_workspace_action(Input::Char('2')),
+        Some(Action::SetKernelView(
+            yoctui_model::PlatformView::DeviceTrees
+        ))
+    );
+    assert_eq!(
         platform_workspace_action(Input::Tab),
         Some(Action::CycleKernelView)
     );
@@ -51,6 +57,12 @@ fn kernel_workbench_keys_route_to_typed_actions() {
 #[test]
 fn firmware_workbench_keys_route_to_typed_actions() {
     assert_eq!(
+        firmware_workspace_action(Input::Char('2')),
+        Some(Action::SetFirmwareView(
+            yoctui_model::PlatformView::DeviceTrees
+        ))
+    );
+    assert_eq!(
         firmware_workspace_action(Input::Tab),
         Some(Action::CycleFirmwareView)
     );
@@ -66,6 +78,37 @@ fn firmware_workbench_keys_route_to_typed_actions() {
         firmware_workspace_action(Input::Char('d')),
         Some(Action::DecompileSelectedFirmwareDtb)
     );
+}
+
+#[test]
+fn platform_numbered_tabs_are_mouse_selectable() {
+    use crate::mouse::{MouseRect, workspace_tab_click};
+
+    let area = MouseRect {
+        x: 10,
+        y: 5,
+        width: 80,
+        height: 20,
+    };
+    let click = MouseInput {
+        column: 10 + 1 + 20,
+        row: 6,
+        kind: MouseKind::Down,
+    };
+    for (screen, expected) in [
+        (
+            Screen::Kernel,
+            Action::SetKernelView(yoctui_model::PlatformView::DeviceTrees),
+        ),
+        (
+            Screen::Firmware,
+            Action::SetFirmwareView(yoctui_model::PlatformView::DeviceTrees),
+        ),
+    ] {
+        let mut app = yoctui_model::App::new(8, 1_000);
+        app.screen = screen;
+        assert_eq!(workspace_tab_click(&app, area, click), Some(expected));
+    }
 }
 
 #[test]

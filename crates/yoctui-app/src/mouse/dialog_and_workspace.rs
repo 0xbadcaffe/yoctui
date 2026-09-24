@@ -160,6 +160,12 @@ pub fn platform_workspace_action(key: Input) -> Option<Action> {
         Input::PageUp => Some(Action::SelectKernelFile { delta: -10 }),
         Input::PageDown => Some(Action::SelectKernelFile { delta: 10 }),
         Input::Tab | Input::BackTab => Some(Action::CycleKernelView),
+        Input::Char('1') => Some(Action::SetKernelView(
+            yoctui_model::PlatformView::Configuration,
+        )),
+        Input::Char('2') => Some(Action::SetKernelView(
+            yoctui_model::PlatformView::DeviceTrees,
+        )),
         Input::Char('m') => Some(Action::LaunchKernelMenuconfig),
         Input::Enter | Input::Char('e') => Some(Action::OpenSelectedKernelFile),
         Input::Char('o') => Some(Action::ExploreSelectedKernelRoot),
@@ -177,6 +183,12 @@ pub fn firmware_workspace_action(key: Input) -> Option<Action> {
         Input::PageUp => Some(Action::SelectFirmwareFile { delta: -10 }),
         Input::PageDown => Some(Action::SelectFirmwareFile { delta: 10 }),
         Input::Tab | Input::BackTab => Some(Action::CycleFirmwareView),
+        Input::Char('1') => Some(Action::SetFirmwareView(
+            yoctui_model::PlatformView::Configuration,
+        )),
+        Input::Char('2') => Some(Action::SetFirmwareView(
+            yoctui_model::PlatformView::DeviceTrees,
+        )),
         Input::Char('m') => Some(Action::LaunchFirmwareMenuconfig),
         Input::Enter | Input::Char('e') => Some(Action::OpenSelectedFirmwareFile),
         Input::Char('o') => Some(Action::ExploreSelectedFirmwareRoot),

@@ -23,6 +23,18 @@ pub(crate) fn workspace_tab_click(
                 }
             })
         }),
+        Screen::Kernel if column < 17 => {
+            Some(Action::SetKernelView(yoctui_model::PlatformView::Configuration))
+        }
+        Screen::Kernel if (20..36).contains(&column) => {
+            Some(Action::SetKernelView(yoctui_model::PlatformView::DeviceTrees))
+        }
+        Screen::Firmware if column < 17 => Some(Action::SetFirmwareView(
+            yoctui_model::PlatformView::Configuration,
+        )),
+        Screen::Firmware if (20..36).contains(&column) => Some(Action::SetFirmwareView(
+            yoctui_model::PlatformView::DeviceTrees,
+        )),
         Screen::Security if column < 6 => (app.security.view != SecurityView::Cves)
             .then_some(Action::Security(SecurityAction::CycleView)),
         Screen::Security if (9..15).contains(&column) => (app.security.view != SecurityView::Sbom)

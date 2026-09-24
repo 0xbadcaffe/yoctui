@@ -132,11 +132,11 @@ impl BitBakeApiAuthority {
             .iter()
             .filter(|record| record.state.is_enabled())
             .filter_map(|record| {
-                let implementation = self.compatibility.implementations.get(&record.id)?;
-                is_api_implementation(record.id, &implementation.id).then(|| BridgeCapabilityData {
-                    id: record.id.as_str().into(),
-                    implementation: implementation.id.clone(),
-                })
+                self.bridge_implementation(record.id)
+                    .map(|implementation| BridgeCapabilityData {
+                        id: record.id.as_str().into(),
+                        implementation: implementation.into(),
+                    })
             })
             .collect();
         BridgeCompatibilityData {
@@ -220,9 +220,11 @@ impl BitBakeApiAuthority {
                 self.compatibility.implementations.get(id).ok_or(
                     BitBakeApiCompatibilityError::ImplementationMissing { capability: *id },
                 )?;
-            if implementation.id != *direct_implementation
-                && !implementation.id.starts_with(VERSION_ADAPTER_PREFIX)
-            {
+            let bridge_implementation = self.bridge_implementation(*id);
+            if !bridge_implementation.is_some_and(|implementation| {
+                implementation == *direct_implementation
+                    || implementation.starts_with(VERSION_ADAPTER_PREFIX)
+            }) {
                 return Err(BitBakeApiCompatibilityError::ImplementationMismatch {
                     capability: *id,
                     selected: implementation.id.clone(),
@@ -237,6 +239,31 @@ impl BitBakeApiAuthority {
             }
         }
         Ok(())
+    }
+
+    fn bridge_implementation(&self, id: CapabilityId) -> Option<&str> {
+        let implementation = &self.compatibility.implementations.get(&id)?.id;
+        if is_api_implementation(id, implementation) {
+            return Some(implementation);
+        }
+        if id == CapabilityId::BitBakeGetVar && self.metadata_bridge_is_authorized() {
+            return Some("tinfoil.getvar");
+        }
+        None
+    }
+
+    fn metadata_bridge_is_authorized(&self) -> bool {
+        self.compatibility
+            .snapshot
+            .capability(CapabilityId::BitBakeRecipeMetadata)
+            .is_some_and(|record| record.state.is_enabled())
+            && self
+                .compatibility
+                .implementations
+                .get(&CapabilityId::BitBakeRecipeMetadata)
+                .is_some_and(|implementation| {
+                    is_api_implementation(CapabilityId::BitBakeRecipeMetadata, &implementation.id)
+                })
     }
 }
 

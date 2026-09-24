@@ -4348,4 +4348,10 @@ and shuts it down with the client. Process mode reports that bridge metadata is
 required instead of attempting an incomplete recipe inspection. The bridge
 starts Tinfoil's metadata server on demand and asks BitBake for the best
 provider before inspecting virtual targets such as `virtual/kernel`; this path
-does not depend on an active or previously successful build.
+does not depend on an active or previously successful build. When the daemon
+selects a command implementation for `BitBakeGetVar`, an already-authorized
+Tinfoil recipe-metadata capability permits the bridge handshake to negotiate
+`tinfoil.getvar` without changing the daemon snapshot used by process
+workflows. Restored platform workspaces render one loading frame before their
+cold metadata request runs. Numbered platform tabs emit exact typed view
+actions for keyboard and mouse input.

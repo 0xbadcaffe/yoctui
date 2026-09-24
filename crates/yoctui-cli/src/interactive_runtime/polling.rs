@@ -274,6 +274,15 @@ impl InteractiveRuntime {
         {
             runtime.terminal.draw(|f| render(f, &runtime.app))?;
         }
+        let startup_platform_inspection = runtime.startup_platform_inspection.take();
+        match startup_platform_inspection {
+            Some(Screen::Kernel) => runtime.inspect_kernel().await,
+            Some(Screen::Firmware) => runtime.inspect_firmware().await,
+            _ => {}
+        }
+        if startup_platform_inspection.is_some() {
+            runtime.render_scheduler.invalidate(RenderCause::State);
+        }
         Ok(false)
     }
 }

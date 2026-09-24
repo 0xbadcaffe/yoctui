@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 PLATFORM-IDLE-RESPONSIVENESS-001 is DONE in v0.1.208. The metadata bridge
+negotiates its Tinfoil variable endpoint when command getvar remains selected
+for process workflows, restored platform workspaces render before cold parsing,
+and Kernel/U-Boot numbered tabs respond to both keys and mouse clicks.
+
 M75 IDLE-METADATA-PROVIDER-001 is DONE in v0.1.207. Kernel inspection now
 resolves `virtual/kernel` through BitBake's configured best provider when it
 starts the metadata server on demand, independently of build activity. A live

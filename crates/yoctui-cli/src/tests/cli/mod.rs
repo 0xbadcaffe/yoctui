@@ -252,6 +252,8 @@ mod normal_render_interval_is_capped_at_ten_hertz;
 
 mod platform_metadata_backend_starts_once_and_rejects_process_mode;
 
+mod restored_platform_workspace_defers_inspection_until_after_first_frame;
+
 mod function_key_image_navigation_routes_its_local_inventory_effect;
 
 mod daemon_devtool_modify_completion_drives_client_editor_handoff;

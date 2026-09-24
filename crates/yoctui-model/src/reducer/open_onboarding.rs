@@ -147,6 +147,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::KernelLoaded(..)
         | Action::KernelFailed(..)
         | Action::CycleKernelView
+        | Action::SetKernelView(..)
         | Action::SelectKernelFile { .. }
         | Action::LaunchKernelMenuconfig
         | Action::OpenSelectedKernelFile
@@ -157,6 +158,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::FirmwareLoaded(..)
         | Action::FirmwareFailed(..)
         | Action::CycleFirmwareView
+        | Action::SetFirmwareView(..)
         | Action::SelectFirmwareFile { .. }
         | Action::LaunchFirmwareMenuconfig
         | Action::OpenSelectedFirmwareFile => {

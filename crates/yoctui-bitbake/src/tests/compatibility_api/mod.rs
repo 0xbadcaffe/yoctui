@@ -74,6 +74,8 @@ fn negotiate_all(authority: &mut BitBakeApiAuthority) {
 
 mod compatibility_api_accepts_old_and_future_adapters_from_snapshot_not_version_policy;
 
+mod compatibility_api_authorizes_bridge_getvar_from_metadata_authority;
+
 mod compatibility_api_rejects_stale_environment_command_fallback_and_missing_negotiation;
 
 mod compatibility_api_rejects_stale_or_unoffered_bridge_negotiation;

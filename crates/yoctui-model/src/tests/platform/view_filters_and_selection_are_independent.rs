@@ -1,4 +1,5 @@
 use super::*;
+use crate::{Action, App, update};
 
 #[test]
 fn view_filters_and_selection_are_independent() {
@@ -46,4 +47,16 @@ fn view_filters_and_selection_are_independent() {
         state.selected_file().map(|file| file.kind),
         Some(PlatformFileKind::DotConfig)
     );
+}
+
+#[test]
+fn numbered_platform_view_actions_select_exact_tabs() {
+    let mut app = App::new(8, 1_000);
+    let _ = update(&mut app, Action::SetKernelView(PlatformView::DeviceTrees));
+    let _ = update(&mut app, Action::SetFirmwareView(PlatformView::DeviceTrees));
+    assert_eq!(app.kernel.view, PlatformView::DeviceTrees);
+    assert_eq!(app.firmware.view, PlatformView::DeviceTrees);
+
+    let _ = update(&mut app, Action::SetKernelView(PlatformView::Configuration));
+    assert_eq!(app.kernel.view, PlatformView::Configuration);
 }

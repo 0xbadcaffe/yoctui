@@ -19,7 +19,7 @@ pub enum Action {
 
     // Platform workbenches.
     InspectKernel, KernelLoaded(PlatformInventory), KernelFailed(String),
-    CycleKernelView,
+    CycleKernelView, SetKernelView(PlatformView),
     SelectKernelFile { delta: isize, },
     LaunchKernelMenuconfig, OpenSelectedKernelFile, ExploreSelectedKernelRoot,
     CompileSelectedKernelDts, DecompileSelectedKernelDtb,
@@ -27,6 +27,7 @@ pub enum Action {
     AdjustDtcCompileOption { delta: isize, },
     ConfirmDtcCompileOptions, CancelDtcCompileOptions, InspectFirmware,
     FirmwareLoaded(PlatformInventory), FirmwareFailed(String), CycleFirmwareView,
+    SetFirmwareView(PlatformView),
     SelectFirmwareFile { delta: isize, },
     LaunchFirmwareMenuconfig, OpenSelectedFirmwareFile, ExploreSelectedFirmwareRoot,
     CompileSelectedFirmwareDts, DecompileSelectedFirmwareDtb,

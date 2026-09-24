@@ -188,6 +188,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!("Kernel inspection failed: {message}"));
         }
         Action::CycleKernelView => app.kernel.cycle_view(),
+        Action::SetKernelView(view) => app.kernel.view = view,
         Action::SelectKernelFile { delta } => app.kernel.select(delta),
         Action::LaunchKernelMenuconfig => {
             if app.daemon.status != ClientReplicaStatus::Current {
@@ -273,6 +274,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.notification = Some(format!("Firmware inspection failed: {message}"));
         }
         Action::CycleFirmwareView => app.firmware.cycle_view(),
+        Action::SetFirmwareView(view) => app.firmware.view = view,
         Action::SelectFirmwareFile { delta } => app.firmware.select(delta),
         Action::LaunchFirmwareMenuconfig => {
             if app.daemon.status != ClientReplicaStatus::Current {

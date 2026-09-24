@@ -35,7 +35,7 @@ async fn ensure_authoritative_metadata_backend(
         Some(cancellation_timeout),
     )
     .await
-    .map_err(|error| error.to_string())?;
+    .map_err(|error| format!("{error:#}"))?;
     let mut placeholder = std::mem::replace(backend, replacement);
     if let Err(error) = placeholder.shutdown().await {
         tracing::debug!(%error, "placeholder metadata backend shutdown failed");

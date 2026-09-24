@@ -102,11 +102,13 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::ProjectProfileGenerated(..) | Action::ProjectProfileGenerationFailed(..) | Action::SelectProjectProfileItem { .. }
         | Action::ActivateProjectProfileItem | Action::OpenRawFavorites | Action::InspectKernel
         | Action::KernelLoaded(..) | Action::KernelFailed(..) | Action::CycleKernelView
+        | Action::SetKernelView(..)
         | Action::SelectKernelFile { .. } | Action::LaunchKernelMenuconfig | Action::OpenSelectedKernelFile
         | Action::ExploreSelectedKernelRoot | Action::CompileSelectedKernelDts | Action::DecompileSelectedKernelDtb
         | Action::SelectDtcCompileOption { .. } | Action::AdjustDtcCompileOption { .. } | Action::ConfirmDtcCompileOptions
         | Action::CancelDtcCompileOptions | Action::InspectFirmware | Action::FirmwareLoaded(..)
-        | Action::FirmwareFailed(..) | Action::CycleFirmwareView | Action::SelectFirmwareFile { .. }
+        | Action::FirmwareFailed(..) | Action::CycleFirmwareView | Action::SetFirmwareView(..)
+        | Action::SelectFirmwareFile { .. }
         | Action::LaunchFirmwareMenuconfig | Action::OpenSelectedFirmwareFile | Action::ExploreSelectedFirmwareRoot
         | Action::CompileSelectedFirmwareDts | Action::DecompileSelectedFirmwareDtb | Action::ShiftOverviewView { .. }
         | Action::SelectOverviewView(..) | Action::Open(..) | Action::SelectNavigator { .. }

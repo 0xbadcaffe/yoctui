@@ -77,6 +77,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) environment_browser_io: environment_setup::EnvironmentBrowserIo,
     pub(super) render_measurement_started: Instant,
     pub(super) prefix_state: PrefixState,
+    pub(super) startup_platform_inspection: Option<Screen>,
     #[cfg(unix)]
     pub(super) termination: tokio::sync::mpsc::Receiver<()>,
 }
