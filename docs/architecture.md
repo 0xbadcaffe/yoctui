@@ -3417,10 +3417,11 @@ capability evaluation remains outside renderers. Menu selection cannot execute
 an action directly; it emits the same typed activation action and effects as
 the existing palette or shortcut route.
 
-`yoctui-model::menu` owns the fixed six-group application taxonomy, menu kind,
+`yoctui-model::menu` owns the fixed seven-group application taxonomy, menu kind,
 bounded selection, and bounded type-ahead state. `App::application_menu_items`
 composes global catalog commands with the same local and daemon availability
-used by the palette; `App::context_menu_items` composes the current workspace
+used by the palette, and its Actions group reuses `App::context_menu_items` for
+the current workspace
 catalog definitions with exact selection/workspace and capability denials.
 `yoctui-app::menu_action` traps keyboard input and resolves enabled targets only:
 global targets return their existing `CommandId`, while contextual targets map
@@ -3430,8 +3431,8 @@ adapter, confirmation, and effect-routing path. Crossterm right-button input is
 normalized to a distinct context action; renderers receive only typed menu
 state and cannot activate anything.
 
-`yoctui-model::action_catalog` now supplies 137 validated definitions: 27
-global command targets and 110 contextual workspace targets. `OperatorActionId`
+`yoctui-model::action_catalog` now supplies 160 validated definitions: 37
+global command targets and 123 contextual workspace targets. `OperatorActionId`
 is the stable identity; scope, menu path, label, description, aliases, palette
 keywords, displayed and default bindings, local requirement, compatibility
 requirement, safety, footer priority, Help group, and typed target travel
@@ -3441,6 +3442,11 @@ palette from the global catalog, composes local selection/workspace failures
 with daemon-owned compatibility availability, and retains the exact disabled
 reason. UI palette search/detail, contextual action lists, and Help consume the
 same metadata; renderers do not classify capabilities or safety.
+
+The UI crate's build script records a caller-supplied `YOCTUI_BUILD_SHA` or the
+current Git source SHA as compile-time display metadata. Help renders that value
+with the package version; it is informational and never participates in runtime
+authority or compatibility decisions.
 
 `yoctui-model::keymap` owns schema-versioned preferences, closed key strokes,
 one-to-three-stroke sequences, exact global/workspace scopes, effective

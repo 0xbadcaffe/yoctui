@@ -8,6 +8,7 @@ pub const MAX_MENU_PREFIX_CHARS: usize = 32;
 pub enum ApplicationMenuGroup {
     Workspace,
     Build,
+    Actions,
     Navigate,
     View,
     Tools,
@@ -15,9 +16,10 @@ pub enum ApplicationMenuGroup {
 }
 
 impl ApplicationMenuGroup {
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 7] = [
         Self::Workspace,
         Self::Build,
+        Self::Actions,
         Self::Navigate,
         Self::View,
         Self::Tools,
@@ -28,6 +30,7 @@ impl ApplicationMenuGroup {
         match self {
             Self::Workspace => "Workspace",
             Self::Build => "Build",
+            Self::Actions => "Actions",
             Self::Navigate => "Navigate",
             Self::View => "View",
             Self::Tools => "Tools",
@@ -70,7 +73,7 @@ impl ApplicationMenuGroup {
             | CommandId::OpenBuildEnvironment
             | CommandId::OpenCompatibility
             | CommandId::OpenSettings => Self::Tools,
-            CommandId::OpenOnboarding | CommandId::OpenHelp => Self::Help,
+            CommandId::OpenOnboarding | CommandId::OpenHelp | CommandId::OpenAbout => Self::Help,
         }
     }
 }

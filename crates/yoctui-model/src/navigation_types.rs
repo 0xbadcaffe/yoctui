@@ -337,6 +337,7 @@ pub enum CommandId {
     ScrollLast,
     OpenOnboarding,
     OpenHelp,
+    OpenAbout,
 }
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum CommandPaletteMode {

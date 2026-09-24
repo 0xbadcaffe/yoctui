@@ -9,7 +9,15 @@ fn ux_menu_groups_context_availability_prefix_and_focus_are_typed_and_bounded() 
     assert_eq!(app.focus, FocusTarget::Dialog);
     assert_eq!(
         ApplicationMenuGroup::ALL.map(ApplicationMenuGroup::label),
-        ["Workspace", "Build", "Navigate", "View", "Tools", "Help"]
+        [
+            "Workspace",
+            "Build",
+            "Actions",
+            "Navigate",
+            "View",
+            "Tools",
+            "Help"
+        ]
     );
     assert_eq!(app.active_menu_items()[0].label, "Edit BBMASK");
     assert_eq!(
@@ -18,6 +26,12 @@ fn ux_menu_groups_context_availability_prefix_and_focus_are_typed_and_bounded() 
     );
 
     let _ = update(&mut app, Action::SelectMenuGroup { delta: 2 });
+    assert!(
+        app.active_menu_items()
+            .iter()
+            .any(|item| item.action_id.as_str() == "tasks.cancel")
+    );
+    let _ = update(&mut app, Action::SelectMenuGroup { delta: 1 });
     for character in "open layers".chars() {
         let _ = update(&mut app, Action::AppendMenuPrefix(character));
     }

@@ -139,7 +139,8 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::OpenErrors
         | CommandId::OpenCompatibility
         | CommandId::OpenSettings
-        | CommandId::OpenHelp => CompatibilityUiActionDefinition::local(),
+        | CommandId::OpenHelp
+        | CommandId::OpenAbout => CompatibilityUiActionDefinition::local(),
         CommandId::OpenLayers => compatibility_ui_destination_action_definition(Screen::Layers),
         CommandId::OpenRecipes => compatibility_ui_destination_action_definition(Screen::Recipes),
         CommandId::OpenPackages => compatibility_ui_destination_action_definition(Screen::Packages),
@@ -241,4 +242,3 @@ pub fn compatibility_ui_dialog_action_availability(
         &compatibility_ui_dialog_action_definition(dialog),
     )
 }
-

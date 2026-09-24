@@ -118,6 +118,9 @@ impl App {
             .flatten()
     }
     pub fn application_menu_items(&self, group: ApplicationMenuGroup) -> Vec<MenuItem> {
+        if group == ApplicationMenuGroup::Actions {
+            return self.context_menu_items(workspace_screen_destination(self.screen));
+        }
         let mut items = self
             .command_palette_commands()
             .into_iter()

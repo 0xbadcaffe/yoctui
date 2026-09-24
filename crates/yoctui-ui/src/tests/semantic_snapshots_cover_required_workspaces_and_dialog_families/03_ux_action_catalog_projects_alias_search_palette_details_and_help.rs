@@ -11,12 +11,13 @@ fn ux_action_catalog_projects_alias_search_palette_details_and_help() {
     app.command_palette_query.clear();
     app.screen = Screen::Help;
     let output = rendered_text(&app, 160, 50);
-    assert!(output.contains("Action catalog"), "{output}");
+    assert!(output.contains("Operator guide"), "{output}");
+    assert!(output.contains("Global action shortcuts"), "{output}");
     assert!(output.contains("Build > Build image"), "{output}");
     assert!(output.contains("[Navigate]"), "{output}");
     assert!(output.contains("Open Tasks"), "{output}");
-    assert!(output.contains("Enter/Right open or expand"), "{output}");
-    assert!(output.contains("Right expands a group"), "{output}");
+    assert!(output.contains("About Yoctui"), "{output}");
+    assert!(output.contains("Build SHA:"), "{output}");
 }
 #[test]
 fn command_palette_selection_description_and_shortcut_render_in_all_themes() {

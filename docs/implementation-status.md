@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M75 APPLICATION-MENU-OPERATOR-GUIDE-001 is DONE in v0.1.213. The F12 menu has
+a contrasting double-border surface, exposes current-screen operations through
+Actions, removes internal focus-management wording, and adds Operator Guide and
+About entries. Help now carries the concise operator flow, bound shortcut
+catalog, package version, and compile-time source build SHA.
+
 M75 METADATA-RECOVERY-ROOTFS-DEPENDENCIES-001 is DONE in v0.1.212. Recipe
 Enter automatically follows metadata with the structured dependency graph,
 dependency capability discovery checks the real Tinfoil command, broken bridge

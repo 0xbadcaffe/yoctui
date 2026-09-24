@@ -9316,3 +9316,14 @@ required = true
 depends_on = ["PLATFORM-INSPECTION-RESPONSIVENESS-001"]
 verify = ["python3 -m pytest bridge/tests/test_workspace_inventory.py", "cargo test -p yoctui-model ux_rootfs_reducer_correlates_generation_lifecycle_and_stable_drilldown_selection", "cargo test -p yoctui --all-features daemon_client_rootfs_uses_selected_manifest_and_workspace_pkgdata", "cargo fmt --all --check"]
 notes = "DONE in v0.1.212. Recipe Enter automatically follows metadata with the structured dependency graph while remaining on Recipes; bridge capability discovery advertises the Tinfoil dependency command; broken connections are invalidated for recreation; attached Rootfs inspection falls back to correlated deployed manifest/pkgdata evidence and reports failures inline without a modal."
+
+[[task]]
+id = "APPLICATION-MENU-OPERATOR-GUIDE-001"
+milestone = "M75"
+title = "Make the application menu the primary complex-operation surface"
+status = "DONE"
+priority = 2415
+required = true
+depends_on = ["METADATA-RECOVERY-ROOTFS-DEPENDENCIES-001"]
+verify = ["cargo test -p yoctui-model ux_menu_groups_context_availability_prefix_and_focus_are_typed_and_bounded", "cargo test -p yoctui-ui ux_action_catalog_projects_alias_search_palette_details_and_help", "cargo test -p yoctui-ui concept_editor_application_menu_composes_focus_validation_and_diff", "cargo fmt --all --check"]
+notes = "DONE in v0.1.213. F12 uses a contrasting double-border menu, Actions exposes the current screen's typed workflows, internal focus-trap copy is removed, and Help provides an operator guide, the retained shortcut catalog, version and compile-time source SHA."

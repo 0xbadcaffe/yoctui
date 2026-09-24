@@ -1213,9 +1213,15 @@ boundary. Empty, disconnected, stale, and unavailable sources remain explicit.
 Compact layouts preserve one line for context, active work/attention, artifact,
 favorite, and terminal state under an Operational Command Center title.
 
-### Guided workflow onboarding
+### Operator guide, shortcut reference, and About
 
-The Help menu and command palette expose one focus-trapped **Workflow guide**
+The Help screen is the dedicated operator reference. It gives a short operating
+sequence, the complete function-key and bound global-action reference, and About information
+containing the exact package version, compile-time source build SHA, and product
+purpose. Complex screen-specific operations remain available from F12 Actions,
+while their direct shortcuts continue to work and remain documented here.
+
+The Help menu and command palette expose one **Operator guide**
 overlay. A legacy or new session with no saved guide state opens it once on
 first interactive startup; dismissal prevents later automatic reopening, while
 the Help route always resumes the saved cursor. Opening, resuming, selecting,
@@ -4779,8 +4785,8 @@ reason. Application menus, context menus, command palette, Help, footer, mouse
 routes, keybinding settings, and keymap tests are projections of that catalog.
 They cannot define independent actions or bypass typed confirmation.
 
-The implemented catalog currently contains 27 global commands and 110
-contextual workspace operations, 137 definitions in total. Every entry has a
+The implemented catalog currently contains 37 global commands and 123
+contextual workspace operations, 160 definitions in total. Every entry has a
 validated lowercase stable ID, typed scope and target, complete
 presentation/search metadata, explicit
 local and environment requirements, safety class, footer priority, and Help
@@ -4790,14 +4796,18 @@ corrects the former false `F5` image-build hint to the real `B` route; `F5`
 remains Logs. The keymap and menu implementations extend configuration and
 presentation from these IDs without creating a second action inventory.
 
-`F12` opens a focus-trapped Workspace/Build/Navigate/View/Tools/Help menu.
+`F12` opens a visually distinct Workspace/Build/Actions/Navigate/View/Tools/Help
+application menu. Its double border and contrasting menu surface distinguish it
+from the workspace behind it in color themes; no-color uses the same border and
+selection markers.
 Arrow keys move, `Enter` opens/activates, `Esc` moves outward, and bounded typed
 prefix selection may select by label. The selected-item action route is `a` or
 right click. Disabled entries remain visible and explain the exact missing
 selection, authority, capability, or safety prerequisite.
 
-The implemented application menu keeps those six groups in a fixed order and
-projects its rows from the global command catalog. The contextual menu projects
+The implemented application menu keeps those seven groups in a fixed order.
+Actions projects the active screen's contextual operations, while the other
+groups project global commands. The contextual menu projects
 the active workspace destination's catalog actions; it never invents an
 operation for a selected row. Both overlays retain one bounded selection and a
 32-character type-ahead prefix, trap unmatched input, render their selected

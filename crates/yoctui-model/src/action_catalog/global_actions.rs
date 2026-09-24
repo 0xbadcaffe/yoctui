@@ -63,6 +63,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::ScrollLast => "G / End",
         CommandId::OpenOnboarding => "F12 Help",
         CommandId::OpenHelp => "? / F1",
+        CommandId::OpenAbout => "F12 Help",
     }
 }
 
@@ -89,7 +90,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenBuildEnvironment => Some(WorkspaceDestination::BuildEnvironment),
         CommandId::OpenCompatibility => Some(WorkspaceDestination::Compatibility),
         CommandId::OpenSettings => Some(WorkspaceDestination::Settings),
-        CommandId::OpenHelp => Some(WorkspaceDestination::Help),
+        CommandId::OpenHelp | CommandId::OpenAbout => Some(WorkspaceDestination::Help),
         CommandId::BuildImage
         | CommandId::SelectImage
         | CommandId::BuildSelectedRecipe

@@ -31,9 +31,9 @@ pub(crate) fn menu_overlay(frame: &mut Frame, app: &App, area: Rect) {
     clear_popup(frame, app, popup);
     let palette = ThemePalette::for_app(app);
     let title = match app.menu.kind {
-        Some(yoctui_model::MenuKind::Application) => "Application menu · focus trapped".into(),
+        Some(yoctui_model::MenuKind::Application) => "Yoctui Application Menu".into(),
         Some(yoctui_model::MenuKind::Context(destination)) => {
-            format!("{} actions · focus trapped", destination.label())
+            format!("{} actions", destination.label())
         }
         None => return,
     };
@@ -198,10 +198,27 @@ pub(crate) fn application_menu_overlay(
             app.preferences.symbols == SymbolPreference::Unicode,
         )
         .map_or_else(
-            || "Application menu · focus trapped".into(),
-            |cue| format!("Application menu · {cue} · focus trapped"),
+            || "Yoctui Application Menu".into(),
+            |cue| format!("Yoctui Application Menu · {cue}"),
         );
-    let outer = dialog_block(app, title, DialogTone::Standard);
+    let menu_base = if palette.attribute_only {
+        palette.base().add_modifier(Modifier::BOLD)
+    } else {
+        Style::default()
+            .fg(palette.selection_foreground)
+            .bg(palette.selection_background)
+    };
+    let menu_selected = if palette.attribute_only {
+        Style::default().add_modifier(Modifier::REVERSED | Modifier::BOLD)
+    } else {
+        palette.base().add_modifier(Modifier::BOLD)
+    };
+    let outer = Block::default()
+        .title(Line::styled(title, menu_base.add_modifier(Modifier::BOLD)))
+        .borders(Borders::ALL)
+        .border_type(BorderType::Double)
+        .border_style(menu_base.add_modifier(Modifier::BOLD))
+        .style(menu_base);
     let inner = outer.inner(popup);
     frame.render_widget(outer, popup);
     if inner.is_empty() {
@@ -218,9 +235,9 @@ pub(crate) fn application_menu_overlay(
         .enumerate()
         .map(|(index, group)| {
             if index == app.menu.group_selection {
-                Span::styled(format!(" {} ", group.label()), palette.selected())
+                Span::styled(format!(" {} ", group.label()), menu_selected)
             } else {
-                Span::raw(format!(" {} ", group.label()))
+                Span::styled(format!(" {} ", group.label()), menu_base)
             }
         })
         .collect::<Vec<_>>();
@@ -233,7 +250,7 @@ pub(crate) fn application_menu_overlay(
         format!("Jump: {}_", app.menu.typed_prefix)
     };
     frame.render_widget(
-        Paragraph::new(vec![Line::from(groups), Line::from(prefix)]),
+        Paragraph::new(vec![Line::from(groups), Line::styled(prefix, menu_base)]).style(menu_base),
         regions[0],
     );
     debug_assert_eq!(item_viewport_height, usize::from(regions[1].height).max(1));
@@ -256,11 +273,11 @@ pub(crate) fn application_menu_overlay(
                 suffix.to_owned(),
             ])
             .style(if index == selected {
-                selected_style(app, true)
+                menu_selected
             } else if item.enabled() {
-                palette.base()
+                menu_base
             } else {
-                palette.role(palette.disabled, Modifier::DIM)
+                menu_base.add_modifier(Modifier::DIM)
             })
         });
     frame.render_widget(
@@ -276,7 +293,7 @@ pub(crate) fn application_menu_overlay(
     );
     frame.render_widget(
         Paragraph::new("Esc/F12 close · Enter open · ↑/↓ select · ←/→ groups")
-            .style(palette.role(palette.secondary_foreground, Modifier::DIM)),
+            .style(menu_base.add_modifier(Modifier::DIM)),
         regions[2],
     );
 }

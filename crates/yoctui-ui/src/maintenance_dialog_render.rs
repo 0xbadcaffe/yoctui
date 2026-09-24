@@ -325,7 +325,7 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         .join("\n");
     let catalog_actions = yoctui_model::global_operator_action_definitions()
         .into_iter()
-        .filter(|action| action.footer_priority >= 55)
+        .filter(|action| action.shortcut != "none")
         .map(|action| {
             format!(
                 "[{}] {:>10}  {:<24}  {}",
@@ -338,7 +338,9 @@ pub(crate) fn help(frame: &mut Frame, app: &App, area: Rect) {
         .collect::<Vec<_>>()
         .join("\n");
     let text = format!(
-        "{function_keys}\n\nAction catalog\n{catalog_actions}\nB Image build options for the effective MACHINE; b build, c clean, m menuconfig, e choose target\n! Open an inherited Yocto shell; exit returns to Yoctui\nb Choose target and start build; h build history; Dashboard Up/Down scrolls observed package task progress\nc Cancel active build\nl Logs   f toggle follow   w toggle wrapping   s cycle severity\nR cycle recipe filter   T cycle task filter   n/N previous/next match\ne Errors   o open selected source log, layer directory, or config provenance\nr Recipes: z confirmed diffsigs task, Z signature inspection, e provider, o logs, p patches, b/f tasks, V CVE, X SPDX, d modify, u update, F finish, P deploy, D reset\nRaw Mode: Left/Right browser pane, Up/Down select, Enter open, f favorite, H history.\ny Layers: Enter/Right open or expand, Left collapse/parent, e in-TUI edit, o external editor\nNavigator: Right expands a group or opens Workspace; Enter opens; Left collapses; Esc returns outward\nv Configuration   x effective BBMASK, e edit with preview\n/ Case-insensitive content regex: build text files, generated rootfs and text image artifacts\nSearch opens empty; type a query for file-content matches. Enter opens the file at its matching line.\nRootfs hits name their image; invalid syntax is explained inline\na Context actions (including local workspace search)   Esc Dashboard   q Quit\n\nTerminal writers and active text editors retain literal /; Terminal search is Ctrl+B /.\nSignatures: Up/Down select, 1/2 choose sides, c compare, r refresh, e provider, Esc back/cancel.\nCVE/SPDX, cleansstate, forced tasks, Devtool reset/update-recipe/finish/deploy, BBMASK changes, and quitting an active build require confirmation."
+        "Operator guide\n1. Configure the build environment, machine, and image from F12 > Workspace/Build.\n2. Start and monitor work from Dashboard or Tasks; inspect failures in Errors and Logs.\n3. Browse Recipes, Images, Kernel, and Firmware. Use F12 > Actions for operations on the current screen.\n4. Use Devtool modify to create a workspace source tree, edit/build it, then update-recipe or finish into a layer.\n5. Use QEMU / Wic to boot a compatible deployed image or create/write Wic media.\n\nAbout Yoctui\nYoctui {}\nBuild SHA: {}\nA terminal workbench for operating, inspecting, building, and debugging Yocto/OpenBMC workspaces.\n\nGlobal shortcuts\n{function_keys}\n\nGlobal action shortcuts\n{catalog_actions}\n\nNavigation: arrows move, Enter opens, Esc returns, F12 opens the application menu, ?/F1 opens this screen, q quits.\nSearch: / opens content search; type a regular expression and Enter opens the selected matching file.\nTerminal writers and editors retain literal keys; terminal search is Ctrl+B /.\nDestructive and publishing operations show an exact confirmation before execution.",
+        env!("CARGO_PKG_VERSION"),
+        env!("YOCTUI_BUILD_SHA")
     );
     frame.render_widget(
         Paragraph::new(text)

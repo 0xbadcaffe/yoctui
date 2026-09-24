@@ -93,7 +93,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 36] = [
+const GLOBAL_COMMANDS: [CommandId; 37] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -130,6 +130,7 @@ const GLOBAL_COMMANDS: [CommandId; 36] = [
     CommandId::ScrollLast,
     CommandId::OpenOnboarding,
     CommandId::OpenHelp,
+    CommandId::OpenAbout,
 ];
 
 struct GlobalMetadata {
@@ -146,4 +147,3 @@ struct GlobalMetadata {
     footer_priority: u8,
     help_group: OperatorActionHelpGroup,
 }
-

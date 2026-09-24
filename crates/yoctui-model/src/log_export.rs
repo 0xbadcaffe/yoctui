@@ -276,5 +276,6 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::ScrollLast => Action::ScrollCurrent { to_end: true },
         CommandId::OpenOnboarding => Action::OpenOnboarding,
         CommandId::OpenHelp => Action::Open(Screen::Help),
+        CommandId::OpenAbout => Action::Open(Screen::Help),
     }
 }
