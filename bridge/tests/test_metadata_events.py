@@ -327,6 +327,7 @@ class Tinfoil:
   if command == "getLayerPriorities": return [("core", "", "^/layers/meta/", 5)]
   if command == "getRecipes": return [("base-files", ["/layers/meta/recipes-core/base-files/base-files_3.0.14.bb"])]
   if command == "getRecipeVersions": return {"/layers/meta/recipes-core/base-files/base-files_3.0.14.bb": ("", "3.0.14", "r0")}
+  if command == "findBestProvider" and args == ("virtual/kernel",): return (None, None, None, "/layers/meta/recipes-kernel/linux/linux-yocto.bb")
   if command == "findProviders": return ({}, {"base-files": (("", "3.0.14", "r0"), "/layers/meta/recipes-core/base-files/base-files_3.0.14.bb")}, {})
   if command == "getAllAppends": return [("base-files_%.bb", "/layers/meta-extra/recipes-core/base-files/base-files_%.bbappend")]
   return None
@@ -346,7 +347,8 @@ class Tinfoil:
                 b'{"protocol_version":1,"sequence":1,"message":{"type":"inspect_workspace"}}',
                 b'{"protocol_version":1,"sequence":2,"message":{"type":"list_recipes","filter":"base-files"}}',
                 b'{"protocol_version":1,"sequence":3,"message":{"type":"get_recipe_metadata","recipe":"base-files"}}',
-                b'{"protocol_version":1,"sequence":4,"message":{"type":"shutdown"}}',
+                b'{"protocol_version":1,"sequence":4,"message":{"type":"get_recipe_metadata","recipe":"virtual/kernel"}}',
+                b'{"protocol_version":1,"sequence":5,"message":{"type":"shutdown"}}',
                 environment={"PYTHONPATH": directory},
             )
         messages = [json.loads(line)["message"] for line in result.stdout.splitlines()]
@@ -369,7 +371,13 @@ class Tinfoil:
             messages[2]["data"]["packages"], ["base-files", "base-files-doc"]
         )
         self.assertIsNone(messages[2]["data"]["history"])
-        self.assertEqual(messages[3]["type"], "bridge_shutdown")
+        self.assertEqual(messages[3]["type"], "recipe_metadata")
+        self.assertEqual(messages[3]["data"]["recipe"], "virtual/kernel")
+        self.assertEqual(
+            messages[3]["data"]["sources"][0],
+            "/layers/meta/recipes-kernel/linux/linux-yocto.bb",
+        )
+        self.assertEqual(messages[4]["type"], "bridge_shutdown")
 
     def test_parent_eof_exits_cleanly(self) -> None:
         result = run_bridge()

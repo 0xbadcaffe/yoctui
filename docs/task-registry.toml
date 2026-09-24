@@ -9250,3 +9250,14 @@ required = true
 depends_on = ["DASHBOARD-TASK-METERS-001"]
 verify = ["cargo test -p yoctui-model unavailable_global_detail_preserves_the_effective_variable_row", "cargo fmt --all --check"]
 notes = "DONE in v0.1.206. Empty or unavailable authoritative detail no longer deletes the selected effective-variable summary row, and the process backend reports unsupported detail inspection as a typed failure rather than an empty success."
+
+[[task]]
+id = "IDLE-METADATA-PROVIDER-001"
+milestone = "M75"
+title = "Resolve virtual content providers from an idle build environment"
+status = "DONE"
+priority = 2409
+required = true
+depends_on = ["CONFIG-DETAIL-INVENTORY-001"]
+verify = ["python3 -m pytest bridge/tests/test_metadata_events.py", "cargo fmt --all --check"]
+notes = "DONE in v0.1.207. The on-demand Tinfoil bridge asks BitBake for the configured best provider before recipe metadata inspection, so virtual/kernel works without an active or prior successful build. A live idle Romulus query resolved linux-aspeed_git.bb and 60 tasks."

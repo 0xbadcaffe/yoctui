@@ -99,6 +99,16 @@ def _tinfoil_get_dependency_graph(self, recipe):
 def _tinfoil_preferred_recipe_file(self, recipe):
     if recipe in self.recipe_files:
         return self.recipe_files[recipe]
+    try:
+        best = self.tinfoil.run_command("findBestProvider", recipe) or ()
+    except Exception:
+        best = ()
+    if (
+        isinstance(best, (list, tuple))
+        and len(best) > 3
+        and isinstance(best[3], str)
+    ):
+        return best[3]
     providers = self.tinfoil.run_command("findProviders", "") or ()
     preferred = (
         providers[1]

@@ -4345,4 +4345,7 @@ When the user opens Kernel or U-Boot / BIOS, the CLI lazily creates one bridge
 backend using the daemon-authorized compatibility snapshot and the exact attached
 build directory. The runtime caches that backend for later platform inspection
 and shuts it down with the client. Process mode reports that bridge metadata is
-required instead of attempting an incomplete recipe inspection.
+required instead of attempting an incomplete recipe inspection. The bridge
+starts Tinfoil's metadata server on demand and asks BitBake for the best
+provider before inspecting virtual targets such as `virtual/kernel`; this path
+does not depend on an active or previously successful build.

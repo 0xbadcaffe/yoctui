@@ -5388,7 +5388,12 @@ opens provider-verified menuconfig in a persistent PTY, `Enter`/`e` opens text
 in the in-app explorer/editor, `o` explores the selected root, `c` compiles a
 DTS, `d` decompiles a DTB/DTBO, and `r` refreshes the inventory. Binary device
 trees do not enter the text viewer. Compile/decompile actions preview exact
-argv and refuse to overwrite an existing `.yoctui` output.
+argv and refuse to overwrite an existing `.yoctui` output. Opening Kernel
+starts the metadata server on demand and resolves `virtual/kernel` through
+BitBake's configured best provider; it does not require a running build or a
+previous successful kernel build. Missing generated artifacts remain an
+explicit empty inventory while provider metadata and source actions remain
+available.
 
 U-Boot / BIOS is the adjacent Content destination. It selects the active
 image's boot provider from authoritative BitBake variables and recipe metadata,
@@ -5817,7 +5822,9 @@ Kernel and U-Boot / BIOS inspection uses the configured bridge metadata
 backend when the interactive client is attached to a daemon. Configuration
 and Device trees tabs remain switchable with `Tab` / `BackTab`; the client
 must not fall back to a process backend that cannot provide authoritative
-recipe metadata.
+recipe metadata. The bridge starts BitBake metadata services on demand and
+resolves virtual targets to their configured providers independently of build
+activity; only artifact-backed views require generated files.
 
 ## M75 host-safe application-menu shortcut
 
