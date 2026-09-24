@@ -9393,3 +9393,14 @@ required = true
 depends_on = ["DAEMON-BUILD-DISCOVERY-GIT-WATCH-001"]
 verify = ["cargo test -p yoctui source_git_refreshes_after_a_worktree_event", "cargo fmt --all --check"]
 notes = "DONE in v0.1.219. The watcher ignores read-access notifications produced by Git status itself, preventing an idle scan loop while retaining immediate refresh after a real worktree edit."
+
+[[task]]
+id = "GIT-REFRESH-PRESENTATION-001"
+milestone = "M75"
+title = "Keep the last Git status visible during background refresh"
+status = "DONE"
+priority = 2422
+required = true
+depends_on = ["GIT-WATCH-ACCESS-FILTER-001"]
+verify = ["cargo test -p yoctui source_git_refreshes_after_a_worktree_event", "cargo fmt --all --check"]
+notes = "DONE in v0.1.220. Initial discovery still exposes scanning, while event and fallback probes retain the last ready Git projection until their replacement result arrives."

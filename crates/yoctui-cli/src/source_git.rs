@@ -73,10 +73,15 @@ impl SourceGitPoller {
         }
 
         if self.pending.is_none() && self.next.is_none_or(|next| Instant::now() >= next) {
-            compatibility_workspace_action(
-                app,
-                Action::SourceGitStatusUpdated(yoctui_model::SourceGitStatus::Scanning),
-            );
+            if !matches!(
+                app.source_git_status,
+                yoctui_model::SourceGitStatus::Ready(_)
+            ) {
+                compatibility_workspace_action(
+                    app,
+                    Action::SourceGitStatusUpdated(yoctui_model::SourceGitStatus::Scanning),
+                );
+            }
             self.pending = Some(tokio::spawn(async move {
                 match source {
                     Some(source) => yoctui_bitbake::inspect_source_git(&source).await,
@@ -192,6 +197,24 @@ mod tests {
                 !poller.poll(&mut app).await,
                 "a read-only Git status probe must not trigger itself"
             );
+            assert!(matches!(
+                app.source_git_status,
+                yoctui_model::SourceGitStatus::Ready(_)
+            ));
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+
+        poller.next = Some(Instant::now());
+        assert!(poller.poll(&mut app).await);
+        assert!(
+            matches!(
+                app.source_git_status,
+                yoctui_model::SourceGitStatus::Ready(_)
+            ),
+            "a background refresh must keep the last known Git status visible"
+        );
+        while poller.pending.is_some() {
+            poller.poll(&mut app).await;
             assert!(matches!(
                 app.source_git_status,
                 yoctui_model::SourceGitStatus::Ready(_)

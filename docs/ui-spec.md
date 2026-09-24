@@ -5761,7 +5761,8 @@ Missing/non-Git sources show `Git: unavailable`; scanning has a named pending st
 Worktree and Git metadata filesystem events request an immediate status refresh.
 Read-only file access and build-directory output are ignored, so the status
 probe cannot trigger itself. A bounded periodic refresh remains as a recovery
-path when the host watcher cannot report an event.
+path when the host watcher cannot report an event. Initial discovery shows the
+pending state; subsequent refreshes keep the last known badge visible.
 
 M68 GitUI is available through F12 Tools and Ctrl+P. Launch previews the exact
 source directory and executable in the existing embedded/detached terminal dialog.

@@ -4360,7 +4360,9 @@ and `.git/objects` churn are excluded. A 30-second fallback refresh covers
 unavailable or coalesced platform events. Changing the selected source discards
 its stale task and watcher. The adapter bounds output to 1 MiB and elapsed time
 to five seconds. Rename paths are consumed as data and cannot become branch
-metadata. No implicit fetch occurs.
+metadata. Initial discovery exposes the typed scanning state; later event and
+fallback probes keep the last ready projection visible until replacement.
+No implicit fetch occurs.
 
 M68 GitUI reuses the terminal launch request and daemon utility PTY protocol.
 A typed GitUi creation kind selects the source workbench without introducing a
