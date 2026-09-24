@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 DAEMON-BUILD-DISCOVERY-GIT-WATCH-001 is DONE in v0.1.218. Starting the
+daemon from an existing OpenBMC build directory now derives and initializes its
+source environment, including the repository's symlinked `oe-init-build-env`,
+so layer and recipe discovery receives real compatibility authority. The source
+Git badge refreshes from filesystem events, excludes build output, and retains a
+bounded fallback probe.
+
 M75 INPLACE-OPERATION-SELECTION-001 is DONE in v0.1.217. Image builds with no
 target now choose an image recipe and continue to Build options in place;
 Build options can change that recipe directly. An unloaded Dependencies

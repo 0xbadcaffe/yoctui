@@ -9371,3 +9371,14 @@ required = true
 depends_on = ["DEVTOOL-WORKSPACE-GITUI-001"]
 verify = ["cargo test -p yoctui-model build_image_chooses_a_recipe_in_place_before_showing_options", "cargo test -p yoctui-model recipe_operations_choose_their_recipe_without_leaving_the_current_flow", "cargo fmt --all --check"]
 notes = "DONE in v0.1.217. Image build routes choose and retain their image recipe before continuing to Build options, while unloaded Dependencies chooses an exact provider-backed recipe and starts the normal graph effect in place."
+
+[[task]]
+id = "DAEMON-BUILD-DISCOVERY-GIT-WATCH-001"
+milestone = "M75"
+title = "Discover an unsourced build directory and refresh Git status from events"
+status = "DONE"
+priority = 2420
+required = true
+depends_on = ["INPLACE-OPERATION-SELECTION-001"]
+verify = ["cargo test -p yoctui daemon_start_infers_initialized_build_directory_and_canonical_script", "cargo test -p yoctui source_git_refreshes_after_a_worktree_event", "cargo fmt --all --check"]
+notes = "DONE in v0.1.218. Daemon start derives an existing configured build from its cwd, resolves symlinked environment scripts, and supplies the captured environment to the foreground daemon so layers and recipes can load. Source Git status uses filesystem events with build-output exclusion and a bounded fallback refresh."

@@ -5758,6 +5758,9 @@ M68 global Git status appears beside the application name. `+N` means staged,
 last fetched upstream reference; status refresh never fetches or changes files.
 The source comes from the selected environment, falling back to workspace metadata.
 Missing/non-Git sources show `Git: unavailable`; scanning has a named pending state.
+Worktree and Git metadata filesystem events request an immediate status refresh.
+Build-directory output is ignored, and a bounded periodic refresh remains as a
+recovery path when the host watcher cannot report an event.
 
 M68 GitUI is available through F12 Tools and Ctrl+P. Launch previews the exact
 source directory and executable in the existing embedded/detached terminal dialog.

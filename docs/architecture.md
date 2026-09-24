@@ -3019,6 +3019,14 @@ exact BitBake version and read-only datastore variables through the detected
 layer configuration. Host `PATH` without an initialized build never creates
 authority.
 
+`yoctui daemon start` also accepts an unsourced shell when its current directory
+is an existing build directory containing `conf/local.conf` and
+`conf/bblayers.conf`. It walks toward the source root, resolves a symlinked
+`oe-init-build-env` to its canonical script, captures the initialized child
+environment, and supplies that environment only to the foreground daemon.
+The caller's environment remains unchanged. A directory that does not prove
+both build configuration files still cannot create compatibility authority.
+
 Detected identity records only direct evidence: canonical build and layer
 roots, BitBake version, Poky/OE-Core/DISTRO/MACHINE values, COREBASE-backed core
 layer-series compatibility, exact utility paths, and daemon protocol version.
@@ -4344,10 +4352,14 @@ Environment initialization plus backend metadata inspection uses a generation-bo
 client task; replacement backend cleanup also runs outside the input loop.
 
 Source Git status is a typed model projection from a read-only adapter running
-`git --no-optional-locks status --porcelain=2 --branch -z`. The CLI refreshes every
-five seconds without awaiting unfinished probes and discards changed-source tasks.
-The adapter bounds output to 1 MiB and elapsed time to five seconds. Rename paths
-are consumed as data and cannot become branch metadata. No implicit fetch occurs.
+`git --no-optional-locks status --porcelain=2 --branch -z`. The CLI watches the
+source repository and refreshes after filesystem events without awaiting an
+unfinished probe; an event received during a probe schedules one replacement
+probe. The build subtree and `.git/objects` churn are excluded, and a 30-second
+fallback refresh covers unavailable or coalesced platform events. Changing the
+selected source discards its stale task and watcher. The adapter bounds output
+to 1 MiB and elapsed time to five seconds. Rename paths are consumed as data and
+cannot become branch metadata. No implicit fetch occurs.
 
 M68 GitUI reuses the terminal launch request and daemon utility PTY protocol.
 A typed GitUi creation kind selects the source workbench without introducing a

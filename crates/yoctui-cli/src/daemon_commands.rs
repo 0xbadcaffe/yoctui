@@ -4,7 +4,7 @@ use super::*;
 #[cfg(unix)]
 pub(crate) async fn daemon_cli(command: DaemonCliCommand) -> Result<()> {
     match command {
-        DaemonCliCommand::Start => start_daemon(),
+        DaemonCliCommand::Start => start_daemon().await,
         DaemonCliCommand::Build { targets } => daemon_start_build(targets),
         DaemonCliCommand::Status => daemon_status(),
         DaemonCliCommand::Stop => stop_daemon(),
@@ -12,7 +12,7 @@ pub(crate) async fn daemon_cli(command: DaemonCliCommand) -> Result<()> {
             if daemon_is_available().is_ok() {
                 stop_daemon()?;
             }
-            start_daemon()
+            start_daemon().await
         }
         DaemonCliCommand::Foreground => {
             let mut termination = termination_receiver()?;
@@ -59,7 +59,7 @@ impl Drop for DaemonStartupChild {
 }
 
 #[cfg(unix)]
-pub(crate) fn start_daemon() -> Result<()> {
+pub(crate) async fn start_daemon() -> Result<()> {
     use yoctui_protocol::daemon_ipc::{DaemonConnection, runtime_paths};
     let paths = runtime_paths()?;
     if DaemonConnection::connect(&paths, Duration::from_millis(50)).is_ok() {
@@ -71,6 +71,17 @@ pub(crate) fn start_daemon() -> Result<()> {
     let executable = env::current_exe().context("could not resolve the Yoctui executable")?;
     let mut command = ProcessCommand::new(executable);
     command.args(["daemon", "foreground"]).stdin(Stdio::null());
+    if env::var_os("BUILDDIR").is_none()
+        && let Some(profile) = inferred_build_environment_profile(&env::current_dir()?)
+    {
+        let initialized = BuildEnvironmentAdapter::default()
+            .initialize(profile)
+            .await
+            .context(
+                "could not initialize the Yocto environment from the current build directory",
+            )?;
+        command.env_clear().envs(initialized.environment);
+    }
     if let Some(log_path) = env::var_os("YOCTUI_DAEMON_LOG") {
         let log = fs::OpenOptions::new()
             .create(true)
@@ -138,6 +149,60 @@ pub(crate) fn start_daemon() -> Result<()> {
             );
         }
         std::thread::sleep(Duration::from_millis(25));
+    }
+}
+
+#[cfg(unix)]
+pub(crate) fn inferred_build_environment_profile(
+    working_directory: &Path,
+) -> Option<yoctui_model::BuildEnvironmentProfile> {
+    let build_dir = working_directory.canonicalize().ok()?;
+    if !build_dir.join("conf/local.conf").is_file()
+        || !build_dir.join("conf/bblayers.conf").is_file()
+    {
+        return None;
+    }
+    let source_dir = build_dir
+        .ancestors()
+        .find(|candidate| candidate.join("oe-init-build-env").is_file())?
+        .to_path_buf();
+    let init_script = source_dir.join("oe-init-build-env").canonicalize().ok()?;
+    Some(yoctui_model::BuildEnvironmentProfile {
+        source_dir,
+        build_dir,
+        init_script,
+    })
+}
+
+#[cfg(all(test, unix))]
+mod startup_environment_tests {
+    use super::*;
+
+    #[test]
+    fn daemon_start_infers_initialized_build_directory_and_canonical_script() {
+        use std::os::unix::fs::symlink;
+        let root = std::env::temp_dir().join(format!(
+            "yoctui-daemon-cwd-{}-{}",
+            std::process::id(),
+            yoctui_utils::unix_ms()
+        ));
+        let build = root.join("build/romulus");
+        let upstream = root.join("upstream");
+        std::fs::create_dir_all(build.join("conf")).unwrap();
+        std::fs::create_dir_all(&upstream).unwrap();
+        std::fs::write(build.join("conf/local.conf"), "MACHINE = \"romulus\"\n").unwrap();
+        std::fs::write(build.join("conf/bblayers.conf"), "BBLAYERS = \"\"\n").unwrap();
+        std::fs::write(upstream.join("oe-init-build-env"), "#!/bin/sh\n").unwrap();
+        symlink("upstream/oe-init-build-env", root.join("oe-init-build-env")).unwrap();
+
+        let profile = inferred_build_environment_profile(&build).unwrap();
+        assert_eq!(profile.source_dir, root.canonicalize().unwrap());
+        assert_eq!(profile.build_dir, build.canonicalize().unwrap());
+        assert_eq!(
+            profile.init_script,
+            upstream.join("oe-init-build-env").canonicalize().unwrap()
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 }
 
