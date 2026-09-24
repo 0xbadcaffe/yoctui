@@ -79,11 +79,12 @@ impl DevtoolInspector {
                 };
             }
         };
-        let output = TokioCommand::new(command.executable())
+        let mut process = TokioCommand::new(command.executable());
+        process
             .args(command.arguments())
             .current_dir(build_dir)
-            .output()
-            .await;
+            .kill_on_drop(true);
+        let output = process.output().await;
         let output = match output {
             Ok(output) => output,
             Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
@@ -215,12 +216,13 @@ pub(crate) fn parse_devtool_status(
 }
 
 pub(crate) async fn inspect_git(program: &Path, source_path: &Path) -> DevtoolGitState {
-    let output = TokioCommand::new(program)
+    let mut process = TokioCommand::new(program);
+    process
         .arg("-C")
         .arg(source_path)
         .args(["status", "--porcelain=v2", "--branch"])
-        .output()
-        .await;
+        .kill_on_drop(true);
+    let output = process.output().await;
     let output = match output {
         Ok(output) => output,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {

@@ -169,7 +169,7 @@ impl InteractiveRuntime {
                 open_workspace_editor(&mut runtime.app, recipe, root).await;
             }
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('t') {
-            inspect_selected_devtool(&mut runtime.app, &runtime.session_build_dir).await;
+            runtime.begin_selected_devtool_status();
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('D') {
             let _ = compatibility_workspace_action(
                 &mut runtime.app,
@@ -206,7 +206,7 @@ impl InteractiveRuntime {
             ) {
                 runtime.begin_recipe_metadata(recipe, None);
             }
-            inspect_selected_devtool(&mut runtime.app, &runtime.session_build_dir).await;
+            runtime.begin_selected_devtool_status();
         } else if input == Input::Char('b') {
             let _ =
                 compatibility_workspace_action(&mut runtime.app, Action::BeginCurrentImageBuild);

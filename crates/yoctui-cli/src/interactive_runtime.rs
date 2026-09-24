@@ -4,6 +4,7 @@ use super::*;
 mod build_dialogs;
 mod command_dialogs;
 mod dependency_workspace;
+mod devtool_status_operation;
 mod editor_dialogs;
 mod input;
 mod jobs;
@@ -308,6 +309,7 @@ pub(crate) async fn tui(
     let render_scheduler = RenderScheduler::default();
     let environment_browser_io = environment_setup::EnvironmentBrowserIo::default();
     let recipe_inspection_operation = None;
+    let devtool_status_operation = None;
     let render_measurement_started = Instant::now();
     let prefix_state = PrefixState::default();
     #[cfg(unix)]
@@ -382,6 +384,7 @@ pub(crate) async fn tui(
         render_scheduler,
         environment_browser_io,
         recipe_inspection_operation,
+        devtool_status_operation,
         render_measurement_started,
         prefix_state,
         startup_platform_inspection,

@@ -35,6 +35,8 @@ mod devtool_metadata_rejects_malformed_external_records;
 
 mod devtool_metadata_ignores_bounded_bitbake_diagnostics;
 
+mod devtool_status_cancellation_kills_the_probe;
+
 mod ansi_and_severity;
 mod typed_event_preserves_unknown_progress_and_ignores_future_events;
 

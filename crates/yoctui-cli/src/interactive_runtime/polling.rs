@@ -12,6 +12,10 @@ impl InteractiveRuntime {
         runtime
             .render_scheduler
             .invalidate_if(recipe_metadata_changed, RenderCause::State);
+        let devtool_status_changed = runtime.poll_devtool_status().await;
+        runtime
+            .render_scheduler
+            .invalidate_if(devtool_status_changed, RenderCause::State);
         if ingress_dropped > 0 {
             let _ = update(
                 &mut runtime.app,
@@ -122,6 +126,7 @@ impl InteractiveRuntime {
             || runtime.rootfs_composition_operation.is_some()
             || runtime.global_content_search_operation.is_some()
             || runtime.recipe_inspection_operation.is_some()
+            || runtime.devtool_status_operation.is_some()
             || runtime.sdk_artifact_operation.is_some()
             || runtime.sdk_capability_operation.is_some()
             || runtime.sdk_operation.is_some()

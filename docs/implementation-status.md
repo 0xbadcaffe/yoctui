@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 DEVTOOL-STATUS-RESPONSIVENESS-001 is DONE in v0.1.210. Recipe `t` and
+combined `Enter` inspection run `devtool status` in a bounded background worker,
+so a slow probe cannot block Logs, navigation, or confirmed quit. Shutdown
+aborts the worker and kill-on-drop terminates the owned Devtool or Git child.
+
 M75 RECIPE-IDLE-INSPECTION-001 is DONE in v0.1.209. Selected-recipe metadata
 uses the capability-authorized bridge even when no build is running and runs in
 a bounded background operation so navigation, Logs, and quit remain responsive;

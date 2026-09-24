@@ -37,6 +37,7 @@ impl InteractiveRuntime {
             let _ = operation.handle.await;
         }
         runtime.stop_recipe_inspection().await;
+        runtime.stop_devtool_status().await;
         if let Some(operation) = runtime.image_artifact_operation.take() {
             operation.cancellation.cancel();
             let _ = operation.handle.await;

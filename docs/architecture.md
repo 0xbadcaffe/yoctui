@@ -503,6 +503,13 @@ input during cold BitBake parsing. A patch-review intent may follow a successful
 metadata result, but the reducer always opens the typed patch picker before an
 external-editor effect.
 
+Devtool status inspection follows the same runtime rule through a separate
+single-operation slot. The worker receives an immutable compatibility authority
+snapshot and publishes `DevtoolStatusLoaded` only after the owned native probe
+finishes. The CLI aborts the worker during shutdown, while the adapter marks its
+Devtool and Git children kill-on-drop so cancellation cannot leave an orphaned
+probe.
+
 For local `file://` patch entries, the Tinfoil bridge asks BitBake's fetcher
 for the resolved local path in the parsed recipe datastore. Unresolved or
 remote entries remain URIs. The model exposes only absolute resolved paths to

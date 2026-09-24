@@ -1892,6 +1892,11 @@ recipes that disappeared.
 bridge operation; `A` remains an alias. Navigation and quit remain responsive
 while BitBake resolves the graph.
 
+Selected-recipe Devtool status from `t` or the combined `Enter` inspection also
+runs as one bounded background operation. A slow or wedged `devtool status`
+process never blocks navigation, Logs, or quit. Confirmed quit cancels the
+operation and terminates its owned process before returning to the shell.
+
 Recipe rows show resolved and preferred version separately, provider layer,
 append count, workspace/Devtool status, and build status. Search matches recipe
 name, both versions, layer, and provider path; the selected absolute recipe

@@ -1,22 +1,21 @@
 //! Devtool completion.
 use super::*;
 
-pub(crate) async fn inspect_selected_devtool(app: &mut App, build_dir: &Path) {
-    if let Some(Effect::InspectDevtoolStatus(identity)) =
-        compatibility_workspace_action(app, Action::BeginSelectedRecipeDevtoolStatus)
-    {
-        let status = inspect_devtool_status(app, build_dir, identity).await;
-        let _ = update(app, Action::DevtoolStatusLoaded(status));
-    }
-}
-
 pub(crate) async fn inspect_devtool_status(
     app: &App,
     build_dir: &Path,
     identity: RecipeIdentity,
 ) -> yoctui_model::DevtoolStatus {
-    let inspector = DevtoolInspector::default();
     let authority = app.workspace_compatibility.authority().cloned();
+    inspect_devtool_status_with_authority(build_dir, identity, authority).await
+}
+
+pub(crate) async fn inspect_devtool_status_with_authority(
+    build_dir: &Path,
+    identity: RecipeIdentity,
+    authority: Option<yoctui_model::DaemonCompatibilitySnapshot>,
+) -> yoctui_model::DevtoolStatus {
+    let inspector = DevtoolInspector::default();
     match authority {
         Some(authority) => {
             inspector

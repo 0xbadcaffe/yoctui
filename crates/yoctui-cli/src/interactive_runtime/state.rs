@@ -77,6 +77,8 @@ pub(super) struct InteractiveRuntime {
     pub(super) environment_browser_io: environment_setup::EnvironmentBrowserIo,
     pub(super) recipe_inspection_operation:
         Option<super::recipe_inspection_operation::RecipeInspectionOperation>,
+    pub(super) devtool_status_operation:
+        Option<super::devtool_status_operation::DevtoolStatusOperation>,
     pub(super) render_measurement_started: Instant,
     pub(super) prefix_state: PrefixState,
     pub(super) startup_platform_inspection: Option<Screen>,
