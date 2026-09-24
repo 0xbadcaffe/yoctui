@@ -297,9 +297,13 @@ impl InteractiveRuntime {
                     effect,
                 );
             } else if let Some(Effect::InspectKernel) = effect {
-                runtime.inspect_kernel().await;
+                runtime.begin_platform_inspection(
+                    platform_inspection_operation::PlatformInspectionRequest::Kernel,
+                );
             } else if let Some(Effect::InspectFirmware) = effect {
-                runtime.inspect_firmware().await;
+                runtime.begin_platform_inspection(
+                    platform_inspection_operation::PlatformInspectionRequest::Firmware,
+                );
             } else if let Some(effect @ Effect::Security(_)) = effect {
                 let _ = route_independent_security_effect(
                     &runtime.guard,

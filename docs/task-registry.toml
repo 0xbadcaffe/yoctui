@@ -9294,3 +9294,14 @@ required = true
 depends_on = ["RECIPE-IDLE-INSPECTION-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_status_cancellation_kills_the_probe", "cargo test -p yoctui --all-features devtool", "cargo fmt --all --check"]
 notes = "DONE in v0.1.210. Recipe t and combined Enter inspection start Devtool status in a bounded background worker; input remains live, shutdown aborts the worker, and kill-on-drop terminates owned Devtool and Git children."
+
+[[task]]
+id = "PLATFORM-INSPECTION-RESPONSIVENESS-001"
+milestone = "M75"
+title = "Keep Kernel and firmware metadata inspection responsive and bounded"
+status = "DONE"
+priority = 2413
+required = true
+depends_on = ["DEVTOOL-STATUS-RESPONSIVENESS-001"]
+verify = ["cargo test -p yoctui --all-features platform_inspection_worker_is_cancellable_while_metadata_is_pending", "cargo test -p yoctui --all-features restored_platform_workspace_defers_inspection_until_after_first_frame", "cargo fmt --all --check"]
+notes = "DONE in v0.1.211. Kernel and firmware inspection run on an owned background bridge with a 120-second deadline, shutdown cancellation reaps the bridge, and Devtool status releases its owned child after 30 seconds."

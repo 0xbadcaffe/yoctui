@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M75 PLATFORM-INSPECTION-RESPONSIVENESS-001 is DONE in v0.1.211. Restored,
+keyboard, mouse, and editor-return Kernel/U-Boot inspection starts an owned
+background bridge instead of awaiting metadata in the input loop. Logs,
+navigation, and quit remain responsive; platform queries fail after 120 seconds
+and Devtool status fails after 30 seconds, with owned children terminated.
+
 M75 DEVTOOL-STATUS-RESPONSIVENESS-001 is DONE in v0.1.210. Recipe `t` and
 combined `Enter` inspection run `devtool status` in a bounded background worker,
 so a slow probe cannot block Logs, navigation, or confirmed quit. Shutdown

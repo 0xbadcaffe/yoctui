@@ -510,6 +510,12 @@ finishes. The CLI aborts the worker during shutdown, while the adapter marks its
 Devtool and Git children kill-on-drop so cancellation cannot leave an orphaned
 probe.
 
+Kernel and firmware inspection runs in a separate single-operation slot with an
+owned bridge. The input loop only starts and polls that worker. A 120-second
+deadline produces the typed platform failure state, and shutdown aborts the
+worker; bridge kill-on-drop reaps a pending metadata process. Devtool status has
+a 30-second deadline so it cannot retain BitBake access indefinitely.
+
 For local `file://` patch entries, the Tinfoil bridge asks BitBake's fetcher
 for the resolved local path in the parsed recipe datastore. Unresolved or
 remote entries remain URIs. The model exposes only absolute resolved paths to

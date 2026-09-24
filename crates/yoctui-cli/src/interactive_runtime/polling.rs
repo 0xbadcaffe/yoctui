@@ -16,6 +16,10 @@ impl InteractiveRuntime {
         runtime
             .render_scheduler
             .invalidate_if(devtool_status_changed, RenderCause::State);
+        let platform_inspection_changed = runtime.poll_platform_inspection().await;
+        runtime
+            .render_scheduler
+            .invalidate_if(platform_inspection_changed, RenderCause::State);
         if ingress_dropped > 0 {
             let _ = update(
                 &mut runtime.app,
@@ -127,6 +131,7 @@ impl InteractiveRuntime {
             || runtime.global_content_search_operation.is_some()
             || runtime.recipe_inspection_operation.is_some()
             || runtime.devtool_status_operation.is_some()
+            || runtime.platform_inspection_operation.is_some()
             || runtime.sdk_artifact_operation.is_some()
             || runtime.sdk_capability_operation.is_some()
             || runtime.sdk_operation.is_some()
@@ -286,8 +291,12 @@ impl InteractiveRuntime {
         }
         let startup_platform_inspection = runtime.startup_platform_inspection.take();
         match startup_platform_inspection {
-            Some(Screen::Kernel) => runtime.inspect_kernel().await,
-            Some(Screen::Firmware) => runtime.inspect_firmware().await,
+            Some(Screen::Kernel) => runtime.begin_platform_inspection(
+                platform_inspection_operation::PlatformInspectionRequest::Kernel,
+            ),
+            Some(Screen::Firmware) => runtime.begin_platform_inspection(
+                platform_inspection_operation::PlatformInspectionRequest::Firmware,
+            ),
             _ => {}
         }
         if startup_platform_inspection.is_some() {

@@ -5409,9 +5409,12 @@ starts the metadata server on demand and resolves `virtual/kernel` through
 BitBake's configured best provider; it does not require a running build or a
 previous successful kernel build. Missing generated artifacts remain an
 explicit empty inventory while provider metadata and source actions remain
-available. Restoring a saved Kernel or U-Boot / BIOS destination renders its
-loading state before beginning the cold metadata query, so first-frame startup
-does not wait for BitBake parsing.
+available. Kernel and U-Boot / BIOS inspection uses one owned background bridge,
+so navigation, Logs, and quit remain responsive while metadata is pending.
+Inspection fails explicitly after 120 seconds and confirmed quit terminates the
+owned bridge. Restoring either destination renders its loading state before
+beginning the cold metadata query, so first-frame startup does not wait for
+BitBake parsing.
 
 U-Boot / BIOS is the adjacent Content destination. It selects the active
 image's boot provider from authoritative BitBake variables and recipe metadata,

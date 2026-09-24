@@ -1,5 +1,7 @@
 use super::*;
 
+const DEVTOOL_STATUS_TIMEOUT: Duration = Duration::from_secs(30);
+
 pub(super) struct DevtoolStatusOperation {
     identity: RecipeIdentity,
     handle: tokio::task::JoinHandle<yoctui_model::DevtoolStatus>,
@@ -20,7 +22,27 @@ impl InteractiveRuntime {
         let authority = self.app.workspace_compatibility.authority().cloned();
         let worker_identity = identity.clone();
         let handle = tokio::spawn(async move {
-            inspect_devtool_status_with_authority(&build_dir, worker_identity, authority).await
+            match tokio::time::timeout(
+                DEVTOOL_STATUS_TIMEOUT,
+                inspect_devtool_status_with_authority(
+                    &build_dir,
+                    worker_identity.clone(),
+                    authority,
+                ),
+            )
+            .await
+            {
+                Ok(status) => status,
+                Err(_) => yoctui_model::DevtoolStatus {
+                    identity: worker_identity,
+                    capability: yoctui_model::DevtoolCapability::Unavailable {
+                        reason: "Devtool status timed out after 30 seconds.".into(),
+                    },
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: yoctui_model::DevtoolGitState::NotApplicable,
+                    error: None,
+                },
+            }
         });
         self.devtool_status_operation = Some(DevtoolStatusOperation { identity, handle });
     }

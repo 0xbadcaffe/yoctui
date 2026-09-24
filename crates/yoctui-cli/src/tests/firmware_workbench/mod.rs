@@ -2,3 +2,4 @@ use super::*;
 
 mod firmware_candidates_are_bounded_to_single_native_targets;
 mod firmware_detection_classifies_provider_identity_without_guessing_unknowns;
+mod platform_inspection_worker_is_cancellable_while_metadata_is_pending;

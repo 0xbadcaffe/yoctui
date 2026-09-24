@@ -66,8 +66,13 @@ pub(crate) fn classify_firmware_component(
     }
 }
 
-pub(crate) async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn BitBakeBackend) {
-    let image = app.build.target.as_deref();
+pub(crate) async fn inspect_firmware_workbench(
+    image: Option<String>,
+    recipes: Vec<String>,
+    deploy_dir: Option<PathBuf>,
+    backend: &mut dyn BitBakeBackend,
+) -> Action {
+    let image = image.as_deref();
     let preferred =
         firmware_variable_hint(backend, "PREFERRED_PROVIDER_virtual/bootloader", image).await;
     let runtime = firmware_variable_hint(backend, "VIRTUAL-RUNTIME_bootloader", image).await;
@@ -88,8 +93,8 @@ pub(crate) async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn 
         push_firmware_candidate(&mut candidates, candidate);
     }
     push_firmware_candidate(&mut candidates, "virtual/bootloader");
-    for recipe in &app.workspace.recipes {
-        let name = recipe.name.to_ascii_lowercase();
+    for recipe in recipes {
+        let name = recipe.to_ascii_lowercase();
         if [
             "u-boot",
             "uboot",
@@ -104,7 +109,7 @@ pub(crate) async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn 
         .iter()
         .any(|needle| name.contains(needle))
         {
-            push_firmware_candidate(&mut candidates, &recipe.name);
+            push_firmware_candidate(&mut candidates, &recipe);
         }
     }
 
@@ -124,13 +129,9 @@ pub(crate) async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn 
             "no boot firmware candidate was reported".to_owned(),
             Clone::clone,
         );
-        let _ = compatibility_workspace_action(
-            app,
-            Action::FirmwareFailed(format!(
-                "could not resolve U-Boot or BIOS/UEFI for the active image ({detail})"
-            )),
-        );
-        return;
+        return Action::FirmwareFailed(format!(
+            "could not resolve U-Boot or BIOS/UEFI for the active image ({detail})"
+        ));
     };
 
     let mut roots = Vec::new();
@@ -162,8 +163,8 @@ pub(crate) async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn 
             Err(error) => limitations.push(format!("Could not query firmware {variable}: {error}")),
         }
     }
-    if let Some(deploy) = app.workspace.variables.get("DEPLOY_DIR_IMAGE") {
-        roots.push(PathBuf::from(deploy));
+    if let Some(deploy) = deploy_dir {
+        roots.push(deploy);
     }
     let component = classify_firmware_component(
         &target,
@@ -175,28 +176,18 @@ pub(crate) async fn inspect_firmware_workbench(app: &mut App, backend: &mut dyn 
     match scan {
         Ok(Ok(scan)) => {
             limitations.extend(scan.limitations);
-            let _ = compatibility_workspace_action(
-                app,
-                Action::FirmwareLoaded(PlatformInventory {
-                    component,
-                    target,
-                    provider,
-                    tasks: metadata.tasks.unwrap_or_default(),
-                    roots: scan.roots,
-                    files: scan.files,
-                    dtc: scan.dtc,
-                    limitations,
-                }),
-            );
+            Action::FirmwareLoaded(PlatformInventory {
+                component,
+                target,
+                provider,
+                tasks: metadata.tasks.unwrap_or_default(),
+                roots: scan.roots,
+                files: scan.files,
+                dtc: scan.dtc,
+                limitations,
+            })
         }
-        Ok(Err(error)) => {
-            let _ = compatibility_workspace_action(app, Action::FirmwareFailed(error.to_string()));
-        }
-        Err(error) => {
-            let _ = compatibility_workspace_action(
-                app,
-                Action::FirmwareFailed(format!("artifact scanner did not complete: {error}")),
-            );
-        }
+        Ok(Err(error)) => Action::FirmwareFailed(error.to_string()),
+        Err(error) => Action::FirmwareFailed(format!("artifact scanner did not complete: {error}")),
     }
 }

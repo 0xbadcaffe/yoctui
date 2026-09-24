@@ -31,6 +31,7 @@ pub(crate) fn begin_startup_platform_inspection(app: &mut App) -> Option<Screen>
 mod metadata_workspaces;
 mod mouse_input;
 mod paste_input;
+mod platform_inspection_operation;
 mod polling;
 mod primary_workspaces;
 mod recipe_inspection_operation;
@@ -310,6 +311,7 @@ pub(crate) async fn tui(
     let environment_browser_io = environment_setup::EnvironmentBrowserIo::default();
     let recipe_inspection_operation = None;
     let devtool_status_operation = None;
+    let platform_inspection_operation = None;
     let render_measurement_started = Instant::now();
     let prefix_state = PrefixState::default();
     #[cfg(unix)]
@@ -385,6 +387,7 @@ pub(crate) async fn tui(
         environment_browser_io,
         recipe_inspection_operation,
         devtool_status_operation,
+        platform_inspection_operation,
         render_measurement_started,
         prefix_state,
         startup_platform_inspection,

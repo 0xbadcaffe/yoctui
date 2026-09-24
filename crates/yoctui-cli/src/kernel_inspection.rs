@@ -1,13 +1,15 @@
 //! Kernel inspection.
 use super::*;
 
-pub(crate) async fn inspect_kernel_workbench(app: &mut App, backend: &mut dyn BitBakeBackend) {
+pub(crate) async fn inspect_kernel_workbench(
+    deploy_dir: Option<PathBuf>,
+    backend: &mut dyn BitBakeBackend,
+) -> Action {
     let target = "virtual/kernel".to_owned();
     let metadata = match backend.get_recipe_metadata(target.clone()).await {
         Ok(metadata) => metadata,
         Err(error) => {
-            let _ = compatibility_workspace_action(app, Action::KernelFailed(error.to_string()));
-            return;
+            return Action::KernelFailed(error.to_string());
         }
     };
     let mut roots = Vec::new();
@@ -39,35 +41,25 @@ pub(crate) async fn inspect_kernel_workbench(app: &mut App, backend: &mut dyn Bi
             Err(error) => limitations.push(format!("Could not query kernel {variable}: {error}")),
         }
     }
-    if let Some(deploy) = app.workspace.variables.get("DEPLOY_DIR_IMAGE") {
-        roots.push(PathBuf::from(deploy));
+    if let Some(deploy) = deploy_dir {
+        roots.push(deploy);
     }
     let scan = tokio::task::spawn_blocking(move || PlatformArtifactAdapter.scan(roots)).await;
     match scan {
         Ok(Ok(scan)) => {
             limitations.extend(scan.limitations);
-            let _ = compatibility_workspace_action(
-                app,
-                Action::KernelLoaded(PlatformInventory {
-                    component: PlatformComponent::Kernel,
-                    target,
-                    provider,
-                    tasks: metadata.tasks.unwrap_or_default(),
-                    roots: scan.roots,
-                    files: scan.files,
-                    dtc: scan.dtc,
-                    limitations,
-                }),
-            );
+            Action::KernelLoaded(PlatformInventory {
+                component: PlatformComponent::Kernel,
+                target,
+                provider,
+                tasks: metadata.tasks.unwrap_or_default(),
+                roots: scan.roots,
+                files: scan.files,
+                dtc: scan.dtc,
+                limitations,
+            })
         }
-        Ok(Err(error)) => {
-            let _ = compatibility_workspace_action(app, Action::KernelFailed(error.to_string()));
-        }
-        Err(error) => {
-            let _ = compatibility_workspace_action(
-                app,
-                Action::KernelFailed(format!("artifact scanner did not complete: {error}")),
-            );
-        }
+        Ok(Err(error)) => Action::KernelFailed(error.to_string()),
+        Err(error) => Action::KernelFailed(format!("artifact scanner did not complete: {error}")),
     }
 }
