@@ -3065,6 +3065,12 @@ most 32 bounded runqemu keyword tokens: quoting, escaping, whitespace inside a
 token, leading option markers, control characters, and shell metacharacters
 are rejected.
 
+Choosing Launch QEMU or Create Wic is self-contained. If capability inspection
+has not run, the requested operation starts it and resumes automatically. If
+the current artifact is incompatible but inspection reports a compatible
+deployed artifact, that exact identity becomes the operation target; the user
+does not have to leave QEMU / Wic to select it on another screen.
+
 `p` validates the editable draft and replaces it with a deterministic argument
 preview. `Enter` in that preview starts the session. `Esc`
 from either launch step returns without starting a process. Missing runqemu,

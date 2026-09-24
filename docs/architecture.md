@@ -1288,6 +1288,12 @@ artifact paths supplied by typed capability inspection. The pure reducer never
 looks for `runqemu`, reads the filesystem, parses process output, or owns a
 terminal.
 
+The model retains a bounded pending-launch bit for QEMU and Wic. An operation
+requested before inspection emits the typed inspection effect; the correlated
+capability result clears the bit, selects only an exact compatible identity
+from that result, and re-enters the ordinary preview reducer. Failure results
+therefore use the same visible unavailable states and never fabricate paths.
+
 A `QemuSession` associates the validated request with a disjoint
 `BackgroundJobKind::Qemu` ID. The shared background-job collection remains the
 single owner of queued, starting, running, cancelling, succeeded, failed,

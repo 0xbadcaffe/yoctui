@@ -4,6 +4,21 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     match action {
         Action::QemuCapabilityLoaded(capability) => {
             app.qemu_capability = capability;
+            if app.pending_qemu_launch {
+                app.pending_qemu_launch = false;
+                if let QemuCapability::Available {
+                    compatible_images, ..
+                } = &app.qemu_capability
+                    && !compatible_images.is_empty()
+                    && !app
+                        .image_artifact_selection
+                        .as_ref()
+                        .is_some_and(|selected| compatible_images.contains(selected))
+                {
+                    app.image_artifact_selection = compatible_images.first().cloned();
+                }
+                return update(app, Action::BeginSelectedQemuLaunch);
+            }
         }
         Action::SshClientCapabilityDetected(capability) => {
             app.ssh_client_capability = capability;
@@ -113,6 +128,21 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::BeginSelectedQemuLaunch => {
+            if matches!(app.qemu_capability, QemuCapability::NotInspected) {
+                app.pending_qemu_launch = true;
+                return Some(Effect::InspectQemuCapability);
+            }
+            if let QemuCapability::Available {
+                compatible_images, ..
+            } = &app.qemu_capability
+                && !compatible_images.is_empty()
+                && !app
+                    .image_artifact_selection
+                    .as_ref()
+                    .is_some_and(|selected| compatible_images.contains(selected))
+            {
+                app.image_artifact_selection = compatible_images.first().cloned();
+            }
             if let Some(reason) = app.qemu_launch_unavailable_reason() {
                 app.notification = Some(reason);
                 return None;

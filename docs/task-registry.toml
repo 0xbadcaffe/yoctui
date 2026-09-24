@@ -9338,3 +9338,14 @@ required = true
 depends_on = ["APPLICATION-MENU-OPERATOR-GUIDE-001"]
 verify = ["cargo test -p yoctui-app maintenance_workflow_maps_first_class_screen_and_typed_keys", "cargo fmt --all --check"]
 notes = "DONE in v0.1.214. Maintenance capability/service inspection is a client-local background probe, so compatibility no longer rolls back navigation when an optional maintenance executable is missing; operation effects remain gated."
+
+[[task]]
+id = "QEMU-WIC-DIRECT-LAUNCH-001"
+milestone = "M75"
+title = "Resume QEMU and Wic operations after in-place capability inspection"
+status = "DONE"
+priority = 2417
+required = true
+depends_on = ["MAINTENANCE-NAVIGATION-001"]
+verify = ["cargo test -p yoctui-model qemu_and_wic_launch_inspect_capability_then_resume", "cargo fmt --all --check"]
+notes = "DONE in v0.1.215. QEMU/Wic actions inspect missing capability and resume automatically, choosing only an exact compatible deployed artifact reported by the typed result instead of requiring cross-screen selection."

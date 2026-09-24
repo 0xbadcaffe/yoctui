@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 QEMU-WIC-DIRECT-LAUNCH-001 is DONE in v0.1.215. Launch QEMU and Create Wic
+now start missing capability inspection and resume the requested workflow.
+They select only an exact compatible deployed identity from the typed result,
+removing the need to visit another Images view before using QEMU / Wic.
+
 M75 MAINTENANCE-NAVIGATION-001 is DONE in v0.1.214. Maintenance navigation no
 longer rolls back while trying to inspect the tools it is meant to detect.
 Capability and service discovery enter the existing background coordinator as

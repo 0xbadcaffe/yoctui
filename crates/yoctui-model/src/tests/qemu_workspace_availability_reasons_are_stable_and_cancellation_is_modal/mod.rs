@@ -3,6 +3,8 @@ use super::*;
 
 mod primary_contract;
 
+mod qemu_and_wic_launch_inspect_capability_then_resume;
+
 mod wic_model_reducer_correlates_creation_inventory_and_lifecycle;
 
 mod wic_device_write_requires_exact_phrase_and_cancellation_warning;

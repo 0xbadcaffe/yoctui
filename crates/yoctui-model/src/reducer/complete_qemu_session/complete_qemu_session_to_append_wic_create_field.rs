@@ -240,8 +240,44 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         }
         Action::WicCapabilityLoaded(capability) => {
             app.wic_capability = normalize_wic_capability(capability);
+            if app.pending_wic_create {
+                app.pending_wic_create = false;
+                if let WicCapability::Available { image_targets, .. } = &app.wic_capability
+                    && !image_targets.is_empty()
+                    && !app
+                        .selected_image_artifact()
+                        .is_some_and(|artifact| image_targets.contains(&artifact.identity.image))
+                {
+                    app.image_artifact_selection = app
+                        .image_artifacts
+                        .artifacts()
+                        .unwrap_or_default()
+                        .iter()
+                        .find(|artifact| image_targets.contains(&artifact.identity.image))
+                        .map(|artifact| artifact.identity.clone());
+                }
+                return update(app, Action::BeginSelectedWicCreate);
+            }
         }
         Action::BeginSelectedWicCreate => {
+            if matches!(app.wic_capability, WicCapability::NotInspected) {
+                app.pending_wic_create = true;
+                return Some(Effect::InspectWicCapability);
+            }
+            if let WicCapability::Available { image_targets, .. } = &app.wic_capability
+                && !image_targets.is_empty()
+                && !app
+                    .selected_image_artifact()
+                    .is_some_and(|artifact| image_targets.contains(&artifact.identity.image))
+            {
+                app.image_artifact_selection = app
+                    .image_artifacts
+                    .artifacts()
+                    .unwrap_or_default()
+                    .iter()
+                    .find(|artifact| image_targets.contains(&artifact.identity.image))
+                    .map(|artifact| artifact.identity.clone());
+            }
             if let Some(reason) = app.wic_create_unavailable_reason() {
                 app.notification = Some(reason);
                 return None;
