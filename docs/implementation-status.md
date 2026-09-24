@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M75 MAINTENANCE-NAVIGATION-001 is DONE in v0.1.214. Maintenance navigation no
+longer rolls back while trying to inspect the tools it is meant to detect.
+Capability and service discovery enter the existing background coordinator as
+local probes; actual maintenance previews and executions keep exact capability
+gates.
+
 M75 APPLICATION-MENU-OPERATOR-GUIDE-001 is DONE in v0.1.213. The F12 menu has
 a contrasting double-border surface, exposes current-screen operations through
 Actions, removes internal focus-management wording, and adds Operator Guide and

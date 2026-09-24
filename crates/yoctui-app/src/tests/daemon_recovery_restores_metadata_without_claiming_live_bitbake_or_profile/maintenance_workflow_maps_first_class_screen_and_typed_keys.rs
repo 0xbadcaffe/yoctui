@@ -4,12 +4,13 @@ use super::*;
 fn maintenance_workflow_maps_first_class_screen_and_typed_keys() {
     let mut app = App::new(10, 1_000);
     assert_eq!(
-        update(&mut app, Action::Open(Screen::Maintenance)),
+        compatibility_workspace_action(&mut app, Action::Open(Screen::Maintenance)),
         Some(yoctui_model::Effect::Maintenance(
             yoctui_model::MaintenanceEffect::InspectCapability { request: 1 }
         ))
     );
     assert_eq!(app.screen, Screen::Maintenance);
+    assert!(app.notification.is_none());
     assert_eq!(
         maintenance_workspace_action(MaintenanceView::Sstate, 4, Input::Char(']')),
         Some(Action::Maintenance(MaintenanceAction::CycleView {

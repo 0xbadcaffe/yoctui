@@ -1136,6 +1136,11 @@ access, raw process parsing, or command construction. Existing Signatures,
 Security, QA, and recipe patch-review state remains authoritative and is
 reached through typed navigation actions.
 
+Maintenance capability and service discovery are client-local inspection
+effects. The compatibility gate authorizes those probes without requiring the
+tools they are trying to detect; individual previews and executions remain
+gated by their exact advertised capability.
+
 The Sstate readiness and cleanup entry points own shared bounded `PopupEditor`
 documents in model state. Parsing accepts named TOML fields, native booleans
 and integers, and exact readiness mode values, then converts them into the

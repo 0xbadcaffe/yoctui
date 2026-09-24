@@ -3246,6 +3246,10 @@ typed views in this fixed order:
 3. `Release`
 4. `Integrations`
 
+Opening Maintenance always changes screens immediately. Its local capability
+and service inspection then runs in the existing bounded background worker;
+missing external tools appear inside Maintenance and never prevent navigation.
+
 `[` and `]` change view and preserve the selected row in every view. The wide
 layout uses a capability/operation list in Workspace and exact configuration,
 preview, result, and evidence in Inspector. Medium layout uses the standard

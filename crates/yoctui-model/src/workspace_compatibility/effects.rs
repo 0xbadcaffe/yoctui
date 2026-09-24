@@ -207,17 +207,8 @@ fn qa_effect_requirement(effect: &QaEffect) -> WorkspaceEffectRequirement {
 fn maintenance_effect_requirement(effect: &MaintenanceEffect) -> WorkspaceEffectRequirement {
     use CapabilityId as Id;
     match effect {
-        MaintenanceEffect::InspectCapability { .. } => WorkspaceEffectRequirement::probe(&[
-            Id::SstateReadiness,
-            Id::SstateCleanup,
-            Id::LockedSignatures,
-            Id::BuildHistoryCompare,
-            Id::BuildCompare,
-            Id::GitArchive,
-        ]),
-        MaintenanceEffect::InspectServices { .. } => {
-            WorkspaceEffectRequirement::probe(&[Id::HashservDiagnostics, Id::PrservDiagnostics])
-        }
+        MaintenanceEffect::InspectCapability { .. }
+        | MaintenanceEffect::InspectServices { .. } => WorkspaceEffectRequirement::ClientLocal,
         MaintenanceEffect::PreviewReadiness { .. } => {
             WorkspaceEffectRequirement::one(Id::SstateReadiness)
         }
@@ -263,4 +254,3 @@ fn maintenance_effect_requirement(effect: &MaintenanceEffect) -> WorkspaceEffect
         }
     }
 }
-
