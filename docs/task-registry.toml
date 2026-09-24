@@ -9382,3 +9382,14 @@ required = true
 depends_on = ["INPLACE-OPERATION-SELECTION-001"]
 verify = ["cargo test -p yoctui daemon_start_infers_initialized_build_directory_and_canonical_script", "cargo test -p yoctui source_git_refreshes_after_a_worktree_event", "cargo fmt --all --check"]
 notes = "DONE in v0.1.218. Daemon start derives an existing configured build from its cwd, resolves symlinked environment scripts, and supplies the captured environment to the foreground daemon so layers and recipes can load. Source Git status uses filesystem events with build-output exclusion and a bounded fallback refresh."
+
+[[task]]
+id = "GIT-WATCH-ACCESS-FILTER-001"
+milestone = "M75"
+title = "Keep event-driven Git status stable while the repository is quiet"
+status = "DONE"
+priority = 2421
+required = true
+depends_on = ["DAEMON-BUILD-DISCOVERY-GIT-WATCH-001"]
+verify = ["cargo test -p yoctui source_git_refreshes_after_a_worktree_event", "cargo fmt --all --check"]
+notes = "DONE in v0.1.219. The watcher ignores read-access notifications produced by Git status itself, preventing an idle scan loop while retaining immediate refresh after a real worktree edit."

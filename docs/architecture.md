@@ -4355,11 +4355,12 @@ Source Git status is a typed model projection from a read-only adapter running
 `git --no-optional-locks status --porcelain=2 --branch -z`. The CLI watches the
 source repository and refreshes after filesystem events without awaiting an
 unfinished probe; an event received during a probe schedules one replacement
-probe. The build subtree and `.git/objects` churn are excluded, and a 30-second
-fallback refresh covers unavailable or coalesced platform events. Changing the
-selected source discards its stale task and watcher. The adapter bounds output
-to 1 MiB and elapsed time to five seconds. Rename paths are consumed as data and
-cannot become branch metadata. No implicit fetch occurs.
+probe. Read-access events caused by the status probe itself, the build subtree,
+and `.git/objects` churn are excluded. A 30-second fallback refresh covers
+unavailable or coalesced platform events. Changing the selected source discards
+its stale task and watcher. The adapter bounds output to 1 MiB and elapsed time
+to five seconds. Rename paths are consumed as data and cannot become branch
+metadata. No implicit fetch occurs.
 
 M68 GitUI reuses the terminal launch request and daemon utility PTY protocol.
 A typed GitUi creation kind selects the source workbench without introducing a

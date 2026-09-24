@@ -1,6 +1,6 @@
 //! Event-driven source status probes never delay the input loop or apply stale results.
 use super::*;
-use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::sync::mpsc::{Receiver, TryRecvError};
 
 const FALLBACK_REFRESH: Duration = Duration::from_secs(30);
@@ -126,12 +126,15 @@ impl SourceGitPoller {
         loop {
             match events.try_recv() {
                 Ok(Ok(event)) => {
-                    relevant |= event.paths.is_empty()
-                        || event.paths.iter().any(|path| {
-                            !build_dir.is_some_and(|build| path.starts_with(build))
-                                && !source
-                                    .is_some_and(|root| path.starts_with(root.join(".git/objects")))
-                        });
+                    if !matches!(event.kind, EventKind::Access(_)) {
+                        relevant |= event.paths.is_empty()
+                            || event.paths.iter().any(|path| {
+                                !build_dir.is_some_and(|build| path.starts_with(build))
+                                    && !source.is_some_and(|root| {
+                                        path.starts_with(root.join(".git/objects"))
+                                    })
+                            });
+                    }
                 }
                 Ok(Err(_)) => relevant = true,
                 Err(TryRecvError::Empty | TryRecvError::Disconnected) => break,
@@ -180,6 +183,19 @@ mod tests {
         ) {
             poller.poll(&mut app).await;
             assert!(Instant::now() < deadline, "initial Git status timed out");
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+
+        let quiet_deadline = Instant::now() + Duration::from_millis(500);
+        while Instant::now() < quiet_deadline {
+            assert!(
+                !poller.poll(&mut app).await,
+                "a read-only Git status probe must not trigger itself"
+            );
+            assert!(matches!(
+                app.source_git_status,
+                yoctui_model::SourceGitStatus::Ready(_)
+            ));
             tokio::time::sleep(Duration::from_millis(20)).await;
         }
 
