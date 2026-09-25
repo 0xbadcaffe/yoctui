@@ -71,6 +71,9 @@ impl InteractiveDaemonRuntime {
                     app.notification = Some(format!("Daemon resynchronization required: {reason}"));
                 }
                 ClientServerEvent::CommandResult(result) => {
+                    if matches!(result.outcome, CommandOutcome::Rejected { .. }) {
+                        app.cancel_pending_platform_menuconfig();
+                    }
                     app.notification = command_result_notification(result);
                 }
                 ClientServerEvent::ShuttingDown => {

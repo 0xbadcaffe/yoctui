@@ -218,6 +218,7 @@ pub fn global_search_action(app: &yoctui_model::App, key: Input) -> Option<Actio
         || app.command_palette_open
         || matches!(app.focus, FocusTarget::Dialog | FocusTarget::CommandPalette)
         || app.screen == yoctui_model::Screen::TerminalSessions
+        || app.platform_menuconfig_visible()
         || workspace_text_input_active(app)
     {
         None
@@ -271,7 +272,7 @@ pub fn workspace_text_input_active(app: &yoctui_model::App) -> bool {
 }
 
 pub fn terminal_owns_input(app: &yoctui_model::App) -> bool {
-    app.screen == yoctui_model::Screen::TerminalSessions
+    (app.screen == yoctui_model::Screen::TerminalSessions || app.platform_menuconfig_visible())
         && app.focus == FocusTarget::Workspace
         && (app.selected_terminal_is_writer()
             || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live)

@@ -223,6 +223,12 @@ impl App {
                 text: activity.label().into(),
             });
         }
+        if let Some(text) = self.platform_menuconfig_waiting_label() {
+            return Some(TransientStatus {
+                kind: TransientStatusKind::Activity,
+                text,
+            });
+        }
 
         let notification = self
             .notification

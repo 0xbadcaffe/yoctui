@@ -56,6 +56,31 @@ pub(crate) fn run_background_job(app: &mut App, id: u64) {
     );
     let _ = update(app, Action::RunBackgroundJob { id });
 }
+
+pub(crate) fn install_test_bitbake_tool(app: &mut App) {
+    install_workspace_compatibility(
+        app,
+        DaemonCompatibilitySnapshot {
+            snapshot: CapabilitySnapshot {
+                generation: 1,
+                environment: YoctoEnvironmentIdentity {
+                    available_tools: AuthoritativeValue::detected(
+                        vec![ToolIdentity {
+                            id: "bitbake".into(),
+                            executable: "/opt/bitbake/bin/bitbake".into(),
+                            version: Some("2.19.0".into()),
+                        }],
+                        IdentityAuthority::ExecutableProbe,
+                    ),
+                    ..YoctoEnvironmentIdentity::default()
+                },
+                capabilities: Vec::new(),
+            },
+            implementations: std::collections::BTreeMap::new(),
+        },
+    )
+    .expect("test BitBake identity must be valid");
+}
 pub(crate) fn signature_record(
     recipe: &str,
     task: &str,

@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 PLATFORM-MENUCONFIG-EMBED-001 is DONE in v0.1.223. Kernel and U-Boot
+menuconfig now forces BitBake's custom terminal adapter onto its daemon PTY and
+renders inside the originating full-width platform Workspace. The launch keeps
+Braille waiting activity until a real screen arrives, acquires writer control,
+retains global function-key navigation, and uses the exact detected BitBake
+argv for the detached terminal destination.
+
 M75 UI-COPY-CLEANUP-001 is DONE in v0.1.222. Informational footer messages no
 longer carry a redundant `i`; guidance popups are titled `Notice`; dialog
 headings use plain operation and semantic tone wording; missing DTC guidance

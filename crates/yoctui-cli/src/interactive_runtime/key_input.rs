@@ -146,7 +146,9 @@ impl InteractiveRuntime {
                             "Command palette opened".into()
                         }
                         PrefixCommand::Help => {
-                            let action = if runtime.app.screen == Screen::TerminalSessions {
+                            let action = if runtime.app.screen == Screen::TerminalSessions
+                                || runtime.app.platform_menuconfig_visible()
+                            {
                                 Action::TerminalToggleHelp
                             } else {
                                 Action::Open(Screen::Help)

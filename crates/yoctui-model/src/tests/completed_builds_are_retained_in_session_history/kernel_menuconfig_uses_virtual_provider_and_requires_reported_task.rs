@@ -5,6 +5,7 @@ fn kernel_menuconfig_uses_virtual_provider_and_requires_reported_task() {
     let mut app = App::new(10, 1_000);
     app.daemon.status = ClientReplicaStatus::Current;
     app.workspace.build_dir = Some("/work/build".into());
+    install_test_bitbake_tool(&mut app);
     app.kernel.inventory = PlatformInventoryState::Available(PlatformInventory {
         component: PlatformComponent::Kernel,
         target: "virtual/kernel".into(),
@@ -22,6 +23,14 @@ fn kernel_menuconfig_uses_virtual_provider_and_requires_reported_task() {
             request: TerminalLaunchRequest { arguments, .. },
             destination: TerminalLaunchDestination::Embedded,
             ..
-        })) if arguments == &vec!["bitbake", "virtual/kernel", "-c", "menuconfig"]
+        })) if arguments == &vec![
+            "BB_ENV_PASSTHROUGH_ADDITIONS=OE_TERMINAL OE_TERMINAL_CUSTOMCMD",
+            "OE_TERMINAL=custom",
+            "OE_TERMINAL_CUSTOMCMD={command}",
+            "/opt/bitbake/bin/bitbake",
+            "virtual/kernel",
+            "-c",
+            "menuconfig",
+        ]
     ));
 }

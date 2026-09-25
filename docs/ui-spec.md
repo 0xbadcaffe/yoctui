@@ -4110,6 +4110,12 @@ advertised by authoritative BitBake metadata. Kernel menuconfig and U-Boot
 menuconfig resolve their current provider identities. The confirmation shows
 the exact recipe, task, executable identity, and build directory; acceptance
 creates/focuses a daemon terminal session without suspending the Yoctui client.
+For Kernel and U-Boot, an embedded destination keeps the current Content
+screen selected and replaces that screen's Workspace with the new menuconfig
+PTY replica. Global navigation and the application menu remain available, so
+the operator can visit Dashboard, Recipes, Logs, or another screen while the
+session continues and return to the same menuconfig session. Yoctui selects the
+new session by its daemon identity and automatically requests its writer lease.
 Unavailable or stale providers/tasks show a refresh reason instead of falling
 back to a guessed recipe or free-form command.
 
@@ -5161,13 +5167,19 @@ Terminal Sessions is a normal discoverable destination with context-aware
 creation, session list/tabs, splits, zoom, rename, writer/read-only and
 take-control state, copy/search, paste, dropped-history accounting,
 detach/reattach, close, and separately confirmed process-group termination.
-All terminal input except the configured prefix goes to the writer-owned PTY.
+Ordinary terminal input goes to the writer-owned PTY. The configured prefix and
+the dedicated global function-key routes remain owned by Yoctui, allowing the
+operator to open the application menu or another workspace while a terminal
+session continues.
 Prefix Help exposes session/pane navigation, copy/search, detach, and literal
 prefix. Disconnect, daemon restart, terminal exit, and process loss remain
 distinct outcomes.
 
-When the selected session is kernel or U-Boot menuconfig, the wide layout
-omits the passive Inspector and assigns its cells to the terminal Workspace.
+When the selected session is kernel or U-Boot menuconfig, including the
+in-place Kernel or U-Boot Workspace, the wide layout omits the passive
+Inspector and assigns its cells to the terminal Workspace. An in-place
+menuconfig renders one full terminal pane even when the general Terminal
+Sessions layout has retained splits.
 The live writer PTY follows the visible terminal content dimensions, including
 window changes, so ncurses composes against the actual available area. The
 renderer preserves the daemon's indexed/RGB colors, attributes, cursor, and
@@ -5359,8 +5371,9 @@ Devtool workspace shell, or interactive `devtool edit-recipe` first opens one
 focus-trapped chooser. It shows the exact session kind, recipe when applicable,
 working directory, executable/argv summary, and two destinations:
 
-1. `Embedded in Yoctui` (default): create the existing daemon-owned PTY and
-   navigate/attach to Terminal Sessions.
+1. `Embedded in Yoctui` (default): create the existing daemon-owned PTY.
+   Kernel and U-Boot menuconfig remains embedded in its current platform
+   Workspace; other interactive requests navigate/attach to Terminal Sessions.
 2. `Detached terminal`: start a supported local desktop terminal emulator with
    the same validated native argv, working directory, and initialized build
    environment. The terminal lives independently after launch.
@@ -5372,6 +5385,15 @@ client has no graphical session; Yoctui never constructs a shell command.
 Menuconfig and devshell remain interactive PTY operations rather than ordinary
 captured BitBake jobs. Noninteractive Devtool modify/update/finish/deploy/reset
 remain persistent background jobs.
+
+Kernel and U-Boot menuconfig use the exact BitBake executable reported by the
+current compatibility snapshot and force BitBake's custom terminal adapter to
+run its generated task wrapper on the selected PTY. This prevents desktop
+terminal auto-detection from opening an unrelated graphical window. The same
+native argv is used by the detached destination, where the desktop emulator is
+the owning terminal. After embedded confirmation, the footer retains a typed
+Braille activity status until the daemon reports a running PTY with a screen
+snapshot; accepting the request does not clear that waiting state.
 
 ## 38. Embedded Image Console
 

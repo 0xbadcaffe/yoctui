@@ -35,7 +35,13 @@ pub(super) fn workspace(
         Screen::Recipes => recipes(frame, app, area),
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
+        Screen::Kernel if app.platform_menuconfig_visible() => {
+            terminal_sessions_workspace(frame, app, area)
+        }
         Screen::Kernel => platform_workspace(frame, app, &app.kernel, area, "Kernel"),
+        Screen::Firmware if app.platform_menuconfig_visible() => {
+            terminal_sessions_workspace(frame, app, area)
+        }
         Screen::Firmware => platform_workspace(frame, app, &app.firmware, area, "U-Boot / BIOS"),
         Screen::Sdk => sdk_workspace(frame, app, area),
         Screen::Testing => testing_workspace(frame, app, area),

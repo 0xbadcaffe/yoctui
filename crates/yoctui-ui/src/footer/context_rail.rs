@@ -36,6 +36,10 @@ pub(crate) fn current_search_state(app: &App) -> Option<(bool, bool)> {
             let editing = app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Search;
             (editing, editing && !app.terminal.query.is_empty())
         }
+        Screen::Kernel | Screen::Firmware if app.platform_menuconfig_visible() => {
+            let editing = app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Search;
+            (editing, editing && !app.terminal.query.is_empty())
+        }
         Screen::Compatibility => (
             app.compatibility_ui.searching,
             !app.compatibility_ui.query.is_empty(),

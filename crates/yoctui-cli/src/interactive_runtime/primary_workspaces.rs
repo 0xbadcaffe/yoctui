@@ -8,7 +8,9 @@ impl InteractiveRuntime {
         replayed_context_action: bool,
     ) -> Result<Option<KeyRouteOutcome>> {
         let runtime = self;
-        if runtime.app.screen == Screen::TerminalSessions {
+        if runtime.app.screen == Screen::TerminalSessions
+            || runtime.app.platform_menuconfig_visible()
+        {
             let terminal_action = if replayed_context_action {
                 yoctui_app::terminal_context_action(input)
             } else {

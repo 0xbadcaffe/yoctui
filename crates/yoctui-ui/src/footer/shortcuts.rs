@@ -36,6 +36,16 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             ),
         );
     }
+    if app.platform_menuconfig_visible() {
+        return with_compatibility_footer(
+            app,
+            yoctui_model::workspace_screen_destination(app.screen),
+            with_focus_shortcuts(
+                app,
+                "Ctrl+B prefix | [ copy | / search | O release | K confirmed kill | o take (viewer)",
+            ),
+        );
+    }
     let shortcuts = match app.screen {
         Screen::Dashboard => {
             "B build | f favorites | t terminals | F2 Tasks | e errors | Ctrl+B prefix | F8 artifacts | l logs | F3 work | E environment | M sstate | Ctrl+P commands | Tab focus | c cancel | ? help | q quit"

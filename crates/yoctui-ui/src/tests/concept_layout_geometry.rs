@@ -76,7 +76,7 @@ fn concept_terminal_tabs_prefix_and_panes_stay_visible_across_resize() {
         assert!(row(6).contains("1:shell"), "tabs must occupy a content row");
         assert!(row(6).contains("2:devshell"));
         assert_eq!(buffer[(nav, 9)].symbol(), "┌");
-        assert!(row(height - 6).contains("Prefix help"));
+        assert!(row(height - 7).contains("Prefix help"));
         assert_eq!(app.pty_selection, 0);
     }
 }

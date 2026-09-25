@@ -9426,3 +9426,14 @@ required = true
 depends_on = ["FOOTER-STATUS-ROW-001"]
 verify = ["cargo test -p yoctui-model device_tree_compile", "cargo test -p yoctui-ui next_generation_transient_status_reserves_shortcuts_and_degrades_responsively", "cargo test -p yoctui-ui renders_notification", "cargo test -p yoctui-ui next_generation_dialogs_name_standard_confirmation_destructive_and_result_shells", "cargo fmt --all --check"]
 notes = "DONE in v0.1.222. Informational footer text has no redundant marker, guidance popups use the plain Notice title, shared dialog headings omit implementation terminology, and missing DTC guidance omits the misleading authority adjective."
+
+[[task]]
+id = "PLATFORM-MENUCONFIG-EMBED-001"
+milestone = "M75"
+title = "Embed Kernel and U-Boot menuconfig in their platform workspaces"
+status = "DONE"
+priority = 2425
+required = true
+depends_on = ["UI-COPY-CLEANUP-001"]
+verify = ["cargo test -p yoctui-model menuconfig", "cargo test -p yoctui-app selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells", "cargo test -p yoctui function_navigation_remains_global_while_an_embedded_menuconfig_owns_input", "cargo test -p yoctui devwork_terminal_detached_plan_preserves_argv_without_shell_evaluation", "cargo test -p yoctui-ui terminal", "cargo fmt --all --check"]
+notes = "DONE in v0.1.223. Kernel and U-Boot menuconfig force BitBake's custom terminal adapter onto the selected daemon PTY, remain in the originating full-width platform Workspace, retain global function-key navigation and typed Braille waiting activity until the screen replica is ready, automatically request writer control, and launch the same exact BitBake argv in detached terminals."

@@ -5,6 +5,7 @@ fn firmware_menuconfig_uses_detected_provider_and_requires_reported_task() {
     let mut app = App::new(10, 1_000);
     app.daemon.status = ClientReplicaStatus::Current;
     app.workspace.build_dir = Some("/work/build".into());
+    install_test_bitbake_tool(&mut app);
     app.firmware.inventory = PlatformInventoryState::Available(PlatformInventory {
         component: PlatformComponent::UBoot,
         target: "u-boot-fslc".into(),
@@ -22,6 +23,14 @@ fn firmware_menuconfig_uses_detected_provider_and_requires_reported_task() {
             request: TerminalLaunchRequest { arguments, .. },
             destination: TerminalLaunchDestination::Embedded,
             ..
-        })) if arguments == &vec!["bitbake", "u-boot-fslc", "-c", "menuconfig"]
+        })) if arguments == &vec![
+            "BB_ENV_PASSTHROUGH_ADDITIONS=OE_TERMINAL OE_TERMINAL_CUSTOMCMD",
+            "OE_TERMINAL=custom",
+            "OE_TERMINAL_CUSTOMCMD={command}",
+            "/opt/bitbake/bin/bitbake",
+            "u-boot-fslc",
+            "-c",
+            "menuconfig",
+        ]
     ));
 }

@@ -1,11 +1,16 @@
 pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
     let layout = &app.pane_layout;
+    let selected_index = app.selected_terminal_index().unwrap_or(app.pty_selection);
     let mut panes = Vec::new();
-    collect_terminal_panes(&layout.root, area, &mut panes);
+    if app.platform_menuconfig_visible() {
+        panes.push((area, layout.focused));
+    } else {
+        collect_terminal_panes(&layout.root, area, &mut panes);
+    }
     let pane_count = panes.len();
     for (index, (rect, id)) in panes.into_iter().enumerate() {
         let session_index = if pane_count == 1 {
-            app.pty_selection
+            selected_index
         } else {
             index
         };
@@ -25,7 +30,7 @@ pub(crate) fn terminal_session_panes(frame: &mut Frame, app: &App, area: Rect) {
                 .iter()
                 .find(|details| details.id == session.id)
         });
-        let block = pane_block(app, &title, session_index == app.pty_selection);
+        let block = pane_block(app, &title, session_index == selected_index);
         let inner = block.inner(rect);
         frame.render_widget(block, rect);
         let status = session.map_or_else(

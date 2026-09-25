@@ -257,6 +257,15 @@ pub struct PlatformWorkbench {
     pub inventory: PlatformInventoryState,
     pub config_selection: usize,
     pub device_tree_selection: usize,
+    pub menuconfig_terminal: PlatformTerminalState,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct PlatformTerminalState {
+    pub name: Option<String>,
+    pub prior_session_ids: Vec<u64>,
+    pub session_id: Option<u64>,
+    pub writer_control_requested: bool,
 }
 
 impl PlatformWorkbench {

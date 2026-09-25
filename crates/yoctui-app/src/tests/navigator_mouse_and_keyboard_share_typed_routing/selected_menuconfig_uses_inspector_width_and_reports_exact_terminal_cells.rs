@@ -31,11 +31,27 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
         terminal_workspace_dimensions(&app, 160, 50),
         Some(yoctui_model::PtyDimensions {
             columns: 131,
-            rows: 35,
+            rows: 34,
         })
     );
 
     app.daemon.pty_details[0].kind = yoctui_model::ClientDaemonPtyKind::BuildShell;
     assert_eq!(workbench_pane_widths(&app, 160, 50), [27, 100, 33]);
     assert_eq!(terminal_workspace_dimensions(&app, 160, 50), None);
+
+    app.screen = Screen::Kernel;
+    app.daemon.pty_details[0].kind = yoctui_model::ClientDaemonPtyKind::Menuconfig;
+    app.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
+        name: Some("kernel menuconfig".into()),
+        session_id: Some(9),
+        ..yoctui_model::PlatformTerminalState::default()
+    };
+    assert_eq!(workbench_pane_widths(&app, 160, 50), [22, 138, 0]);
+    assert_eq!(
+        terminal_workspace_dimensions(&app, 160, 50),
+        Some(yoctui_model::PtyDimensions {
+            columns: 136,
+            rows: 34,
+        })
+    );
 }

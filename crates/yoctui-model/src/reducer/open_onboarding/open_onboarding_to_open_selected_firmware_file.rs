@@ -206,6 +206,13 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     "The kernel provider did not report an authoritative menuconfig task.".into(),
                 );
             } else if let Some(cwd) = app.workspace.build_dir.clone() {
+                let Some(arguments) = platform_menuconfig_arguments(app, "virtual/kernel") else {
+                    app.notification = Some(
+                        "The detected BitBake executable is unavailable; refresh the build environment."
+                            .into(),
+                    );
+                    return None;
+                };
                 open_terminal_launch(
                     app,
                     TerminalLaunchRequest {
@@ -213,12 +220,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         kind: TerminalCreationKind::Menuconfig,
                         cwd,
                         program: PathBuf::from("/usr/bin/env"),
-                        arguments: vec![
-                            "bitbake".into(),
-                            "virtual/kernel".into(),
-                            "-c".into(),
-                            "menuconfig".into(),
-                        ],
+                        arguments,
                     },
                 );
             } else {
@@ -298,6 +300,13 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             {
                 let target = inventory.target.clone();
                 let component = inventory.component.label().to_lowercase();
+                let Some(arguments) = platform_menuconfig_arguments(app, &target) else {
+                    app.notification = Some(
+                        "The detected BitBake executable is unavailable; refresh the build environment."
+                            .into(),
+                    );
+                    return None;
+                };
                 open_terminal_launch(
                     app,
                     TerminalLaunchRequest {
@@ -305,7 +314,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         kind: TerminalCreationKind::Menuconfig,
                         cwd,
                         program: PathBuf::from("/usr/bin/env"),
-                        arguments: vec!["bitbake".into(), target, "-c".into(), "menuconfig".into()],
+                        arguments,
                     },
                 );
             } else {
@@ -336,4 +345,28 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     }
     synchronize_focus(app);
     None
+}
+
+fn platform_menuconfig_arguments(app: &App, target: &str) -> Option<Vec<String>> {
+    let bitbake = app
+        .workspace_compatibility
+        .authority()?
+        .snapshot
+        .environment
+        .available_tools
+        .value()?
+        .iter()
+        .find(|tool| tool.id == "bitbake")?
+        .executable
+        .display()
+        .to_string();
+    Some(vec![
+        "BB_ENV_PASSTHROUGH_ADDITIONS=OE_TERMINAL OE_TERMINAL_CUSTOMCMD".into(),
+        "OE_TERMINAL=custom".into(),
+        "OE_TERMINAL_CUSTOMCMD={command}".into(),
+        bitbake,
+        target.into(),
+        "-c".into(),
+        "menuconfig".into(),
+    ])
 }

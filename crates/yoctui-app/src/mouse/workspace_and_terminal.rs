@@ -270,14 +270,27 @@ pub(crate) fn terminal_session_mouse_action(
     match mouse.kind {
         MouseKind::Down => {
             let mut leaves = Vec::new();
-            collect_terminal_mouse_panes(&app.pane_layout.root, shell, &mut leaves);
+            if app.platform_menuconfig_visible() {
+                leaves.push((shell, app.pane_layout.focused));
+            } else {
+                collect_terminal_mouse_panes(&app.pane_layout.root, shell, &mut leaves);
+            }
+            let single_pane = leaves.len() == 1;
             leaves
                 .into_iter()
                 .enumerate()
-                .find(|(index, (area, _))| {
-                    *index < app.daemon.pty_sessions.len() && area.contains(mouse)
+                .find_map(|(index, (area, pane))| {
+                    let session_index = if single_pane {
+                        app.selected_terminal_index().unwrap_or(app.pty_selection)
+                    } else {
+                        index
+                    };
+                    (session_index < app.daemon.pty_sessions.len() && area.contains(mouse))
+                        .then_some(Action::SelectPtyPane {
+                            pane,
+                            index: session_index,
+                        })
                 })
-                .map(|(index, (_, pane))| Action::SelectPtyPane { pane, index })
         }
         MouseKind::ContextDown => None,
         MouseKind::Drag => terminal_resize_action(mouse, app, shell),

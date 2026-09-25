@@ -5,11 +5,10 @@
 **Status:** BLOCKED
 
 All M74 corrections and M75 rapid bug corrections are complete through
-v0.1.222. The only
-remaining registry task requires a new genuine source/binary-bound Yocto 6.0.2
-`linux-yocto` compile capture. Existing retained evidence is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
+v0.1.223. The only remaining registry task requires a new genuine
+source/binary-bound Yocto 6.0.2 `linux-yocto` compile capture. Existing retained
+evidence is bound to source base `d2214e82974a5be708a7cc40f1532254d7c7de63`
+and has 143 source digest mismatches, including changes predating M67.
 
 After new live evidence is supplied, run:
 

@@ -73,9 +73,14 @@ impl InteractiveRuntime {
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
             match effect {
                 Some(effect @ Effect::Terminal(_)) => {
-                    if submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect)
-                        .is_none()
-                    {
+                    let routed = submit_daemon_effect(
+                        &mut runtime.daemon_runtime,
+                        &mut runtime.app,
+                        &effect,
+                    );
+                    if routed == Some(false) {
+                        runtime.app.cancel_pending_platform_menuconfig();
+                    } else if routed.is_none() {
                         if let Effect::Terminal(yoctui_model::TerminalEffect::Create {
                             kind: yoctui_model::TerminalCreationKind::GitUi,
                             program,
@@ -109,6 +114,7 @@ impl InteractiveRuntime {
                                 });
                             }
                         } else {
+                            runtime.app.cancel_pending_platform_menuconfig();
                             runtime.app.notification = Some("Embedded terminal unavailable: connect to the daemon or choose a detached terminal.".into());
                         }
                     }

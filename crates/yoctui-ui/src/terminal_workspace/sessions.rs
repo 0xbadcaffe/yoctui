@@ -53,16 +53,19 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         Constraint::Length(prefix_help_height),
     ])
     .split(area);
+    let selected_index = app.selected_terminal_index();
+    let embedded = app.embedded_platform_terminal_label();
     let tabs = app
         .daemon
         .pty_sessions
         .iter()
         .enumerate()
+        .filter(|(index, _)| embedded.is_none() || Some(*index) == selected_index)
         .flat_map(|(index, session)| {
             [
                 Span::styled(
                     format!(" {}:{} ", session.id, session.name),
-                    if index == app.pty_selection {
+                    if Some(index) == selected_index {
                         palette.selected()
                     } else {
                         palette.base()
@@ -81,7 +84,7 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         Paragraph::new(Line::from(tabs)).block(
             Block::default()
                 .borders(Borders::TOP | Borders::BOTTOM | terminal_edge_border)
-                .title("Terminal Sessions"),
+                .title(embedded.unwrap_or("Terminal Sessions")),
         ),
         regions[0],
     );

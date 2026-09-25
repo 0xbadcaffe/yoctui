@@ -6,7 +6,25 @@ pub(crate) fn direct_menu_shortcut_action(
     input: Input,
     replayed: bool,
 ) -> Option<Action> {
-    if replayed || app.command_palette_open || yoctui_app::terminal_owns_input(app) {
+    if replayed || app.command_palette_open {
+        return None;
+    }
+    if yoctui_app::terminal_owns_input(app) {
+        if matches!(
+            input,
+            Input::F1
+                | Input::F2
+                | Input::F3
+                | Input::F4
+                | Input::F5
+                | Input::F6
+                | Input::F7
+                | Input::F8
+                | Input::F9
+                | Input::F12
+        ) {
+            return yoctui_app::key_action(input);
+        }
         return None;
     }
     match input {

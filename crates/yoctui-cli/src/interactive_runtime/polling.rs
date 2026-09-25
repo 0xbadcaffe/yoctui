@@ -270,7 +270,23 @@ impl InteractiveRuntime {
             runtime.terminal.clear()?;
             runtime.render_scheduler.invalidate(RenderCause::Resize);
         }
-        if runtime.app.screen == Screen::TerminalSessions
+        if let Some(effect) = runtime.app.pending_platform_writer_effect()
+            && let Some(daemon_client) = runtime.daemon_runtime.as_mut()
+        {
+            let session_id = match &effect {
+                yoctui_model::TerminalEffect::TakeControl { session_id, .. } => *session_id,
+                _ => unreachable!("platform writer request is always take-control"),
+            };
+            if let Err(error) = daemon_client.route_effect(&runtime.app, &Effect::Terminal(effect))
+            {
+                runtime.app.retry_platform_writer_control(session_id);
+                runtime.app.notification = Some(format!(
+                    "Could not take menuconfig terminal control: {error}"
+                ));
+            }
+        }
+        if (runtime.app.screen == Screen::TerminalSessions
+            || runtime.app.platform_menuconfig_visible())
             && runtime.app.selected_terminal_is_menuconfig()
             && runtime.app.terminal.mode == yoctui_model::TerminalWorkbenchMode::Live
             && let Some(daemon_client) = runtime.daemon_runtime.as_mut()

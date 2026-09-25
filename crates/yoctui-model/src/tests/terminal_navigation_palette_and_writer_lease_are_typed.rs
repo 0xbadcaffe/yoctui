@@ -175,6 +175,126 @@ fn devwork_terminal_chooser_is_zero_spawn_defaults_embedded_and_gates_detached()
 }
 
 #[test]
+fn platform_menuconfig_stays_in_its_workspace_until_the_pty_screen_is_ready() {
+    let mut app = App::new(10, 1_000);
+    app.screen = Screen::Kernel;
+    app.focus = FocusTarget::Workspace;
+    app.daemon.status = ClientReplicaStatus::Current;
+    app.terminal.client_id = Some([7; 16]);
+    app.dialogs
+        .push_back(Dialog::TerminalLaunch(TerminalLaunchDialog {
+            request: TerminalLaunchRequest {
+                name: "kernel menuconfig".into(),
+                kind: TerminalCreationKind::Menuconfig,
+                cwd: "/work/build".into(),
+                program: "/usr/bin/env".into(),
+                arguments: vec!["/opt/bitbake/bin/bitbake".into()],
+            },
+            destination: TerminalLaunchDestination::Embedded,
+            output_must_not_exist: None,
+        }));
+
+    assert!(matches!(
+        update(&mut app, Action::ConfirmTerminalLaunch),
+        Some(Effect::Terminal(TerminalEffect::Create {
+            kind: TerminalCreationKind::Menuconfig,
+            ..
+        }))
+    ));
+    assert_eq!(app.screen, Screen::Kernel);
+    assert!(app.platform_menuconfig_waiting());
+    assert_eq!(
+        app.transient_status(),
+        Some(TransientStatus {
+            kind: TransientStatusKind::Activity,
+            text: "Starting Kernel menuconfig".into(),
+        })
+    );
+
+    app.daemon.pty_sessions.push(ClientDaemonPtySummary {
+        id: 52,
+        name: "kernel menuconfig".into(),
+        lifecycle: ClientDaemonLifecycle::Running,
+        viewers: 1,
+    });
+    app.daemon.pty_details.push(ClientDaemonPtyDetails {
+        id: 52,
+        kind: ClientDaemonPtyKind::Menuconfig,
+        cwd: "/work/build".into(),
+        columns: 120,
+        rows: 40,
+        writer: None,
+        writer_epoch: 0,
+        exit_code: None,
+        restartable: true,
+    });
+    app.reconcile_platform_menuconfigs();
+    assert!(app.platform_menuconfig_visible());
+    assert_eq!(
+        app.selected_terminal_session().map(|session| session.id),
+        Some(52)
+    );
+    assert_eq!(
+        app.pending_platform_writer_effect(),
+        Some(TerminalEffect::TakeControl {
+            session_id: 52,
+            expected_epoch: 0,
+        })
+    );
+    assert!(app.platform_menuconfig_waiting());
+
+    app.daemon.pty_screens.push(ClientDaemonPtyScreen {
+        session_id: 52,
+        columns: 120,
+        rows_count: 40,
+        cursor_column: 0,
+        cursor_row: 0,
+        cursor_hidden: false,
+        scrollback_offset: 0,
+        rows: vec!["Linux Kernel Configuration".into()],
+        cells: Vec::new(),
+        scrollback_lines: 0,
+        dropped_line_feeds_lower_bound: 0,
+    });
+    assert!(!app.platform_menuconfig_waiting());
+}
+
+#[test]
+fn firmware_menuconfig_stays_in_the_u_boot_workspace() {
+    let mut app = App::new(10, 1_000);
+    app.screen = Screen::Firmware;
+    app.dialogs
+        .push_back(Dialog::TerminalLaunch(TerminalLaunchDialog {
+            request: TerminalLaunchRequest {
+                name: "u-boot menuconfig".into(),
+                kind: TerminalCreationKind::Menuconfig,
+                cwd: "/work/build".into(),
+                program: "/usr/bin/env".into(),
+                arguments: vec!["/opt/bitbake/bin/bitbake".into()],
+            },
+            destination: TerminalLaunchDestination::Embedded,
+            output_must_not_exist: None,
+        }));
+
+    assert!(matches!(
+        update(&mut app, Action::ConfirmTerminalLaunch),
+        Some(Effect::Terminal(TerminalEffect::Create {
+            kind: TerminalCreationKind::Menuconfig,
+            ..
+        }))
+    ));
+    assert_eq!(app.screen, Screen::Firmware);
+    assert_eq!(
+        app.firmware.menuconfig_terminal.name.as_deref(),
+        Some("u-boot menuconfig")
+    );
+    assert_eq!(
+        app.platform_menuconfig_waiting_label().as_deref(),
+        Some("Starting U-Boot menuconfig")
+    );
+}
+
+#[test]
 fn devwork_terminal_devtool_routes_use_authoritative_recipe_and_workspace() {
     let mut app = App::new(10, 1_000);
     app.gitui_program = Some("/usr/bin/gitui".into());

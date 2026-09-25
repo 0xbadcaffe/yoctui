@@ -133,6 +133,7 @@ impl DaemonClientSnapshot {
             std::time::SystemTime::now(),
         );
         app.daemon = daemon_client_view(self.status, self.snapshot.as_ref(), self.telemetry);
+        app.reconcile_platform_menuconfigs();
         if self.status == yoctui_model::ClientReplicaStatus::Current
             && let Some(progress) = self
                 .snapshot

@@ -58,6 +58,10 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
             | Screen::Images
             | Screen::TerminalSessions
     );
+    if app.platform_menuconfig_visible() {
+        let navigator = if compact { 18 } else { 22 };
+        return [navigator, width.saturating_sub(navigator), 0];
+    }
     if !concept
         && width == 160
         && height == 50
@@ -115,7 +119,7 @@ pub fn terminal_workspace_dimensions(
     width: u16,
     height: u16,
 ) -> Option<yoctui_model::PtyDimensions> {
-    if app.screen != Screen::TerminalSessions
+    if (app.screen != Screen::TerminalSessions && !app.platform_menuconfig_visible())
         || !app.selected_terminal_is_menuconfig()
         || app.terminal.mode != yoctui_model::TerminalWorkbenchMode::Live
     {
@@ -151,7 +155,11 @@ pub fn terminal_workspace_dimensions(
         height: workspace_height.saturating_sub(3 + 1 + prefix_help),
     };
     let mut panes = Vec::new();
-    collect_terminal_mouse_panes(&app.pane_layout.root, terminal_area, &mut panes);
+    if app.platform_menuconfig_visible() {
+        panes.push((terminal_area, app.pane_layout.focused));
+    } else {
+        collect_terminal_mouse_panes(&app.pane_layout.root, terminal_area, &mut panes);
+    }
     let pane = if panes.len() == 1 {
         panes.first()
     } else {

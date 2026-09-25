@@ -35,7 +35,8 @@ pub(crate) fn has_visible_indeterminate_activity(app: &App) -> bool {
         .is_some_and(|status| status.kind == yoctui_model::TransientStatusKind::Activity)
         && (app.daemon.bitbake == yoctui_model::ClientDaemonLifecycle::Connecting
             || jobs.active > 0
-            || jobs.queued > 0)
+            || jobs.queued > 0
+            || app.platform_menuconfig_waiting())
     {
         return true;
     }

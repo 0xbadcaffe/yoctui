@@ -3802,6 +3802,22 @@ terminal identities remain unchanged. Kernel and U-Boot menuconfig therefore
 emit native ncurses colors and attributes through the existing sparse cell
 protocol and `tui-term` renderer.
 
+Kernel and U-Boot launch state is retained in the corresponding typed platform
+workbench. It records the pre-launch PTY identity set, binds only the newly
+reported matching `Menuconfig` session, and derives waiting, visibility, and
+writer acquisition from daemon lifecycle, detail, and screen replicas. The
+screen router can therefore render the existing terminal widget inside the
+Kernel or U-Boot Workspace without changing the active navigation destination.
+The client requests the writer lease when that session becomes running and
+resizes it from the same shared geometry used by rendering and mouse routing.
+
+Platform menuconfig argv uses the exact BitBake executable from the current
+compatibility environment. `/usr/bin/env` supplies `OE_TERMINAL=custom`, the
+custom `{command}` adapter, and the matching BitBake environment passthrough
+allowlist. BitBake consequently starts its generated task wrapper on the
+daemon PTY or selected detached emulator instead of auto-selecting a graphical
+terminal. No widget parses BitBake output or owns process state.
+
 ## M43 Dashboard focus and sparse-browser layout
 
 `focus_target_is_relevant` classifies Dashboard Workspace and every Inspector

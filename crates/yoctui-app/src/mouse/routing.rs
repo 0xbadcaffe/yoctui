@@ -62,7 +62,9 @@ pub fn mouse_action_for_app(
         return Some(Action::OpenContextMenu);
     }
     if let Some(zoomed) = app.zoomed_pane
-        && !(app.screen == Screen::TerminalSessions && !app.daemon.pty_sessions.is_empty())
+        && !((matches!(app.screen, Screen::TerminalSessions)
+            || app.platform_menuconfig_visible())
+            && !app.daemon.pty_sessions.is_empty())
         && matches!(mouse.kind, MouseKind::Down)
     {
         return Some(Action::Focus(zoomed));
@@ -85,7 +87,7 @@ pub fn mouse_action_for_app(
     if !yoctui_model::focus_target_is_relevant(app, region.target) {
         return None;
     }
-    if app.screen == Screen::TerminalSessions
+    if (app.screen == Screen::TerminalSessions || app.platform_menuconfig_visible())
         && !app.daemon.pty_sessions.is_empty()
         && region.target == FocusTarget::Workspace
     {

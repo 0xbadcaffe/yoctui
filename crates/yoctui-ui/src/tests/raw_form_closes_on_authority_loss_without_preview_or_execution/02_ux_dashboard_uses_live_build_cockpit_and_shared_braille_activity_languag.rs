@@ -127,6 +127,38 @@ fn ux_terminal_workbench_renders_writer_read_only_recovery_and_help_states() {
 }
 
 #[test]
+fn platform_menuconfig_terminal_renders_in_place_and_keeps_waiting_activity_visible() {
+    let mut waiting = App::new(16, 4_096);
+    waiting.screen = Screen::Kernel;
+    waiting.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
+        name: Some("kernel menuconfig".into()),
+        ..yoctui_model::PlatformTerminalState::default()
+    };
+    let waiting_output = rendered_text(&waiting, 120, 35);
+    assert!(
+        waiting_output.contains("Starting Kernel menuconfig"),
+        "{waiting_output}"
+    );
+
+    let mut app = ux_terminal_render_fixture();
+    app.screen = Screen::Kernel;
+    app.pane_layout =
+        yoctui_model::PaneLayout::new(yoctui_model::PaneId(1)).expect("valid single pane");
+    app.daemon.pty_sessions[0].name = "kernel menuconfig".into();
+    app.daemon.pty_details[0].kind = yoctui_model::ClientDaemonPtyKind::Menuconfig;
+    app.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
+        name: Some("kernel menuconfig".into()),
+        session_id: Some(app.daemon.pty_sessions[0].id),
+        ..yoctui_model::PlatformTerminalState::default()
+    };
+    let output = rendered_text(&app, 160, 50);
+    assert!(output.contains("Kernel menuconfig"), "{output}");
+    assert!(output.contains("shell: bounded output"), "{output}");
+    assert!(output.contains("Ctrl+B prefix"), "{output}");
+    assert!(!output.contains("Inspector:"), "{output}");
+}
+
+#[test]
 fn ux_preferences_render_real_settings_across_sizes_and_accessibility_modes() {
     let mut app = App::new(32, 4_096);
     app.screen = Screen::Settings;
