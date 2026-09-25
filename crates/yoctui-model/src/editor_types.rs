@@ -187,6 +187,8 @@ pub enum Dialog {
     DevtoolModifyConfirmation(RecipeIdentity),
     DevtoolResetConfirmation(DevtoolResetPlan),
     DevtoolUpdateConfirmation(RecipeIdentity),
+    DevtoolPatchPicker(DevtoolPatchPicker),
+    DevtoolPatchConfirmation(DevtoolPatchPlan),
     DevtoolFinishPicker(DevtoolFinishPicker),
     DevtoolFinishConfirmation(DevtoolFinishPlan),
     DevtoolDeploy(DevtoolDeployDraft),
@@ -228,6 +230,7 @@ impl Dialog {
             | Self::DevtoolModifyConfirmation(_)
             | Self::DevtoolResetConfirmation(_)
             | Self::DevtoolUpdateConfirmation(_)
+            | Self::DevtoolPatchConfirmation(_)
             | Self::DevtoolFinishConfirmation(_)
             | Self::DevtoolDeployConfirmation(_)
             | Self::DevtoolUndeployConfirmation(_)
@@ -281,6 +284,7 @@ impl Dialog {
             | Self::ConfigComparison(_)
             | Self::ConfigEdit { .. }
             | Self::DevtoolFinishPicker(_)
+            | Self::DevtoolPatchPicker(_)
             | Self::DevtoolDeploy(_)
             | Self::DevtoolUndeploy(_)
             | Self::BbmaskEdit(_)

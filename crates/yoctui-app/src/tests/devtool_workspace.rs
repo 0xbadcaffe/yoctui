@@ -20,7 +20,7 @@ fn devtool_workspace_routes_the_ordered_recipe_development_loop() {
     );
     assert_eq!(
         devtool_workspace_action(false, Input::Char('u')),
-        Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe)
+        Some(Action::BeginSelectedRecipeDevtoolPatch)
     );
     assert_eq!(
         devtool_workspace_action(false, Input::Char('F')),
@@ -29,6 +29,26 @@ fn devtool_workspace_routes_the_ordered_recipe_development_loop() {
     assert_eq!(
         devtool_workspace_action(false, Input::Char('G')),
         Some(Action::BeginSelectedRecipeDevtoolGitUi)
+    );
+}
+
+#[test]
+fn devtool_patch_dialogs_route_only_bounded_selection_preview_and_confirmation() {
+    assert_eq!(
+        devtool_patch_picker_action(Input::Up),
+        Some(Action::SelectDevtoolPatchLayer { delta: -1 })
+    );
+    assert_eq!(
+        devtool_patch_picker_action(Input::Enter),
+        Some(Action::PreviewDevtoolPatch)
+    );
+    assert_eq!(
+        devtool_patch_confirmation_action(Input::Enter),
+        Some(Action::ConfirmDevtoolPatch)
+    );
+    assert_eq!(
+        devtool_patch_confirmation_action(Input::Esc),
+        Some(Action::CancelDevtoolPatchConfirmation)
     );
 }
 

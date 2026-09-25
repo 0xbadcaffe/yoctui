@@ -38,6 +38,9 @@ impl DevtoolJobCoordinator {
         let (label, target, path) = match &operation {
             DevtoolOperation::Modify { .. } => ("modify", None, None),
             DevtoolOperation::UpdateRecipe { .. } => ("update-recipe", None, None),
+            DevtoolOperation::UpdateRecipePatch { destination, .. } => {
+                ("update-recipe patches", None, Some(destination.clone()))
+            }
             DevtoolOperation::Finish { destination, .. } => {
                 ("finish", None, Some(destination.clone()))
             }

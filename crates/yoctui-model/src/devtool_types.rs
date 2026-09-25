@@ -17,6 +17,25 @@ pub struct DevtoolFinishPlan {
     pub identity: RecipeIdentity,
     pub layer: Layer,
 }
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolPatchPicker {
+    pub identity: RecipeIdentity,
+    pub layers: Vec<Layer>,
+    pub selection: usize,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolPatchPlan {
+    pub identity: RecipeIdentity,
+    pub layer: Layer,
+}
+impl DevtoolPatchPlan {
+    pub fn operation(&self) -> DevtoolOperation {
+        DevtoolOperation::UpdateRecipePatch {
+            recipe: self.identity.name.clone(),
+            destination: self.layer.path.clone(),
+        }
+    }
+}
 impl DevtoolFinishPlan {
     pub fn request(&self) -> DevtoolFinishRequest {
         DevtoolFinishRequest {
@@ -97,6 +116,10 @@ pub enum DevtoolOperation {
     UpdateRecipe {
         recipe: String,
     },
+    UpdateRecipePatch {
+        recipe: String,
+        destination: PathBuf,
+    },
     Finish {
         recipe: String,
         destination: PathBuf,
@@ -124,12 +147,15 @@ pub enum DevtoolOperationError {
     InvalidTarget,
     #[error("Devtool finish destination must be an absolute path")]
     RelativeFinishDestination,
+    #[error("Devtool patch destination must be an absolute path")]
+    RelativePatchDestination,
 }
 impl DevtoolOperation {
     pub fn recipe(&self) -> &str {
         match self {
             Self::Modify { recipe }
             | Self::UpdateRecipe { recipe }
+            | Self::UpdateRecipePatch { recipe, .. }
             | Self::Finish { recipe, .. }
             | Self::DeployTarget { recipe, .. }
             | Self::UndeployTarget { recipe, .. }
@@ -150,6 +176,9 @@ impl DevtoolOperation {
             return Err(DevtoolOperationError::InvalidRecipe);
         }
         match self {
+            Self::UpdateRecipePatch { destination, .. } if !destination.is_absolute() => {
+                Err(DevtoolOperationError::RelativePatchDestination)
+            }
             Self::Finish { destination, .. } if !destination.is_absolute() => {
                 Err(DevtoolOperationError::RelativeFinishDestination)
             }

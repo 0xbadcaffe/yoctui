@@ -61,6 +61,7 @@ pub enum Effect {
     DevtoolModify(RecipeIdentity),
     DevtoolReset(DevtoolResetPlan),
     DevtoolUpdateRecipe(RecipeIdentity),
+    DevtoolUpdateRecipePatch(DevtoolPatchPlan),
     DevtoolFinish(DevtoolFinishPlan),
     DevtoolDeploy(DevtoolDeployPlan),
     DevtoolUndeploy(DevtoolUndeployPlan),

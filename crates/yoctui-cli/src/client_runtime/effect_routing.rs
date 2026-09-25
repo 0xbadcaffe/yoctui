@@ -163,6 +163,13 @@ pub(super) fn daemon_command_for_effect(
             },
             build_directory: build_directory()?,
         },
+        Effect::DevtoolUpdateRecipePatch(plan) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::UpdateRecipePatch {
+                recipe: plan.identity.name.clone(),
+                destination: plan.layer.path.display().to_string(),
+            },
+            build_directory: build_directory()?,
+        },
         Effect::DevtoolFinish(plan) => DaemonCommand::StartDevtool {
             operation: DaemonDevtoolOperation::Finish {
                 recipe: plan.identity.name.clone(),

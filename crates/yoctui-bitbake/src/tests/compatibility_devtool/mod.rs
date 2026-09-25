@@ -102,6 +102,21 @@ fn all_operations() -> Vec<(DevtoolOperation, CapabilityId, &'static [&'static s
             &["update-recipe", "busybox"],
         ),
         (
+            DevtoolOperation::UpdateRecipePatch {
+                recipe: "busybox".into(),
+                destination: PathBuf::from("/layers/meta-custom"),
+            },
+            CapabilityId::DevtoolUpdateRecipe,
+            &[
+                "update-recipe",
+                "--mode",
+                "patch",
+                "--append",
+                "/layers/meta-custom",
+                "busybox",
+            ],
+        ),
+        (
             DevtoolOperation::Finish {
                 recipe: "busybox".into(),
                 destination: PathBuf::from("/layers/meta-custom"),

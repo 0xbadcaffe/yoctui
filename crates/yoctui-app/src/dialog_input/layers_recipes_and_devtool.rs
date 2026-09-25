@@ -108,7 +108,7 @@ pub fn devtool_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('d') | Input::Char('e') => Some(Action::BeginSelectedRecipeDevtoolModify),
         Input::Char('b') => Some(Action::BeginSelectedRecipeBuild),
         Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
-        Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe),
+        Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolPatch),
         Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
         Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
         Input::Char('s') => Some(Action::BeginSelectedRecipeDevtoolWorkspaceShell),
@@ -188,6 +188,24 @@ pub fn devtool_update_confirmation_action(key: Input) -> Option<Action> {
     match key {
         Input::Enter => Some(Action::ConfirmDevtoolUpdateRecipe),
         Input::Esc => Some(Action::CancelDevtoolUpdateRecipe),
+        _ => None,
+    }
+}
+
+pub fn devtool_patch_picker_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectDevtoolPatchLayer { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectDevtoolPatchLayer { delta: 1 }),
+        Input::Enter => Some(Action::PreviewDevtoolPatch),
+        Input::Esc => Some(Action::CancelDevtoolPatch),
+        _ => None,
+    }
+}
+
+pub fn devtool_patch_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmDevtoolPatch),
+        Input::Esc => Some(Action::CancelDevtoolPatchConfirmation),
         _ => None,
     }
 }

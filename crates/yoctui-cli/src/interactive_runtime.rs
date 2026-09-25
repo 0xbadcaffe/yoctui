@@ -183,6 +183,7 @@ pub(crate) async fn tui(
     let devtool_runner = None;
     let pending_devtool_modify = None;
     let pending_daemon_devtool_modify = None;
+    let pending_daemon_devtool_update = None;
     let pending_devtool_update = None;
     let pending_devtool_finish = None;
     let pending_devtool_deploy = None;
@@ -343,6 +344,7 @@ pub(crate) async fn tui(
         devtool_runner,
         pending_devtool_modify,
         pending_daemon_devtool_modify,
+        pending_daemon_devtool_update,
         pending_devtool_update,
         pending_devtool_finish,
         pending_devtool_deploy,

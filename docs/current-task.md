@@ -1,22 +1,20 @@
 # Current Task
 
-**ID:** DEVTOOL-WORKSPACE-PATCH-001
-**Title:** Create and install recipe patches into a configured layer
+**ID:** DEVTOOL-WORKSPACE-RELEASE-001
+**Title:** Package and install the Devtool Workspace feature series
 **Status:** IN_PROGRESS
 
-Add a typed configured-layer plan for
-`devtool update-recipe --mode patch --append <layer> <recipe>`. The picker must
-retain the exact recipe identity, list only absolute configured layers, validate
-workspace eligibility and layer membership before execution, run through the
-daemon-owned Devtool job, refresh status on success, and keep the existing
-`devtool finish` publication path available.
+Bump the workspace release to v0.1.229, update version-bearing artifacts, run
+the focused Devtool Workspace and patch checks plus strict workspace Clippy,
+build and install the release binary, stop stale Yoctui daemons, start one fresh
+daemon from the initialized Romulus build environment, commit, and push. Keep
+the user's existing untracked capture artifacts untouched. The full workspace
+test suite remains deferred until the user requests it.
 
 Verify with:
 
 ```bash
-cargo test -p yoctui-model devtool_patch
-cargo test -p yoctui-bitbake devtool_patch
-cargo test -p yoctui-app devtool_patch
-cargo test -p yoctui-ui devtool_patch
 cargo fmt --all --check
+cargo clippy --workspace --all-targets --all-features -- -D warnings
+./scripts/verify-roadmap.sh
 ```

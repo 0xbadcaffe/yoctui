@@ -13,6 +13,10 @@ pub(crate) fn devtool_test_command(
             yoctui_model::CapabilityId::DevtoolUpdateRecipe,
             yoctui_bitbake::DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION,
         ),
+        DevtoolOperation::UpdateRecipePatch { .. } => (
+            yoctui_model::CapabilityId::DevtoolUpdateRecipe,
+            yoctui_bitbake::DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION,
+        ),
         DevtoolOperation::Finish { .. } => (
             yoctui_model::CapabilityId::DevtoolFinish,
             yoctui_bitbake::DEVTOOL_FINISH_IMPLEMENTATION,

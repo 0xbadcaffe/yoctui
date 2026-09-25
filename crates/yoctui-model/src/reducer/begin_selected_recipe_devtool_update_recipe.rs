@@ -8,6 +8,7 @@ mod signature_dump_failed_to_package_detail_failed;
 pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     match &action {
         Action::BeginSelectedRecipeDevtoolUpdateRecipe
+        | Action::BeginSelectedRecipeDevtoolPatch
         | Action::BeginSelectedRecipeDevtoolFinish
         | Action::BeginSelectedRecipeDevtoolDeploy
         | Action::BeginSelectedRecipeDevtoolUndeploy

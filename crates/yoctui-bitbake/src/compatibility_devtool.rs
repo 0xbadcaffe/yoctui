@@ -100,6 +100,18 @@ impl<'a> DevtoolCommandPlanner<'a> {
                 DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION,
                 vec!["update-recipe".into(), recipe],
             ),
+            DevtoolOperation::UpdateRecipePatch { destination, .. } => (
+                CapabilityId::DevtoolUpdateRecipe,
+                DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION,
+                vec![
+                    "update-recipe".into(),
+                    "--mode".into(),
+                    "patch".into(),
+                    "--append".into(),
+                    destination.as_os_str().to_owned(),
+                    recipe,
+                ],
+            ),
             DevtoolOperation::Finish { destination, .. } => (
                 CapabilityId::DevtoolFinish,
                 DEVTOOL_FINISH_IMPLEMENTATION,

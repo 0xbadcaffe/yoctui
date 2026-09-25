@@ -47,6 +47,13 @@ impl InteractiveRuntime {
             let effect = devtool_update_confirmation_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
             if let Some(Effect::DevtoolUpdateRecipe(identity)) = effect {
+                let known_jobs = runtime
+                    .app
+                    .daemon
+                    .jobs
+                    .iter()
+                    .map(|job| job.id)
+                    .collect::<Vec<_>>();
                 if submit_daemon_effect(
                     &mut runtime.daemon_runtime,
                     &mut runtime.app,
@@ -54,6 +61,7 @@ impl InteractiveRuntime {
                 )
                 .is_some()
                 {
+                    runtime.pending_daemon_devtool_update = Some((identity, known_jobs));
                     return Ok(Some(KeyRouteOutcome::ContinueLoop));
                 }
                 let recipe = identity.name.clone();
@@ -71,6 +79,51 @@ impl InteractiveRuntime {
                     runtime.pending_devtool_update = Some(identity);
                 }
             }
+        } else if matches!(
+            runtime.app.active_dialog(),
+            Some(Dialog::DevtoolPatchConfirmation(_))
+        ) {
+            let effect = devtool_patch_confirmation_action(input)
+                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
+            if let Some(Effect::DevtoolUpdateRecipePatch(plan)) = effect {
+                let known_jobs = runtime
+                    .app
+                    .daemon
+                    .jobs
+                    .iter()
+                    .map(|job| job.id)
+                    .collect::<Vec<_>>();
+                if submit_daemon_effect(
+                    &mut runtime.daemon_runtime,
+                    &mut runtime.app,
+                    &Effect::DevtoolUpdateRecipePatch(plan.clone()),
+                )
+                .is_some()
+                {
+                    runtime.pending_daemon_devtool_update = Some((plan.identity, known_jobs));
+                    return Ok(Some(KeyRouteOutcome::ContinueLoop));
+                }
+                let operation = plan.operation();
+                if begin_devtool_job(
+                    &mut runtime.app,
+                    &mut runtime.devtool_jobs,
+                    &mut runtime.devtool_runner,
+                    &runtime.session_build_dir,
+                    runtime.cancellation_timeout,
+                    None,
+                    operation,
+                )
+                .await
+                {
+                    runtime.pending_devtool_update = Some(plan.identity);
+                }
+            }
+        } else if matches!(
+            runtime.app.active_dialog(),
+            Some(Dialog::DevtoolPatchPicker(_))
+        ) {
+            let _ = devtool_patch_picker_action(input)
+                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
         } else if matches!(
             runtime.app.active_dialog(),
             Some(Dialog::DevtoolFinishConfirmation(_))

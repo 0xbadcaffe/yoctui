@@ -63,7 +63,9 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         Effect::CancelRaw(_) | Effect::SetRawAttachment { .. } => Requirement::ClientLocal,
         Effect::DevtoolModify(_) => Requirement::one(Id::DevtoolModify),
         Effect::DevtoolReset(_) => Requirement::one(Id::DevtoolReset),
-        Effect::DevtoolUpdateRecipe(_) => Requirement::one(Id::DevtoolUpdateRecipe),
+        Effect::DevtoolUpdateRecipe(_) | Effect::DevtoolUpdateRecipePatch(_) => {
+            Requirement::one(Id::DevtoolUpdateRecipe)
+        }
         Effect::DevtoolFinish(_) => Requirement::one(Id::DevtoolFinish),
         Effect::DevtoolDeploy(_) => Requirement::one(Id::DevtoolDeployTarget),
         Effect::DevtoolUndeploy(_) => Requirement::one(Id::DevtoolUndeployTarget),

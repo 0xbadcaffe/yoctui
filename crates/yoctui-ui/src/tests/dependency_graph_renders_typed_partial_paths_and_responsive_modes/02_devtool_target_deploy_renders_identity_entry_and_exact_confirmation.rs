@@ -19,7 +19,7 @@ fn devtool_target_deploy_renders_identity_entry_and_exact_confirmation() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(output.contains("Devtool deploy target"));
+    assert!(output.contains("Deploy build with SSH/SCP"));
     assert!(output.contains("busybox.bb"));
     assert!(output.contains("qemuarm"));
 
@@ -38,7 +38,7 @@ fn devtool_target_deploy_renders_identity_entry_and_exact_confirmation() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(output.contains("Confirm Devtool deploy-target"));
+    assert!(output.contains("Confirm SSH/SCP deployment"));
     assert!(output.contains("devtool deploy-target busybox qemuarm"));
     assert!(output.contains("busybox.bb"));
 }

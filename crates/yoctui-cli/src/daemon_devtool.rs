@@ -250,6 +250,13 @@ fn model_operation(
         DaemonDevtoolOperation::UpdateRecipe { recipe } => {
             DevtoolOperation::UpdateRecipe { recipe }
         }
+        DaemonDevtoolOperation::UpdateRecipePatch {
+            recipe,
+            destination,
+        } => DevtoolOperation::UpdateRecipePatch {
+            recipe,
+            destination: destination.into(),
+        },
         DaemonDevtoolOperation::Finish {
             recipe,
             destination,

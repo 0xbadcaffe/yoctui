@@ -22,6 +22,52 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
             open_dialog(app, Dialog::DevtoolUpdateConfirmation(identity));
         }
+        Action::BeginSelectedRecipeDevtoolPatch => {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
+                    return None;
+                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification =
+                    Some("Refresh authoritative Devtool status before creating patches.".into());
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::UpdateRecipe) {
+                app.notification = Some(reason);
+                return None;
+            }
+            let layers = app
+                .workspace
+                .layers
+                .iter()
+                .filter(|layer| layer.path.is_absolute())
+                .cloned()
+                .collect::<Vec<_>>();
+            if layers.is_empty() {
+                app.notification =
+                    Some("No configured layer has an absolute patch destination.".into());
+                return None;
+            }
+            let provider_layer = app
+                .workspace
+                .recipes
+                .get(app.recipe_selection)
+                .and_then(|recipe| recipe.layer.as_deref());
+            let selection = provider_layer
+                .and_then(|name| layers.iter().position(|layer| layer.name == name))
+                .unwrap_or(0);
+            open_dialog(
+                app,
+                Dialog::DevtoolPatchPicker(DevtoolPatchPicker {
+                    identity,
+                    layers,
+                    selection,
+                }),
+            );
+        }
         Action::BeginSelectedRecipeDevtoolFinish => {
             let identity = match selected_recipe_identity(app) {
                 Ok(identity) => identity,

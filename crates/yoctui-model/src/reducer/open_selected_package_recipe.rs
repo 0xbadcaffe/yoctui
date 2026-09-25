@@ -23,6 +23,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::CancelDevtoolReset
         | Action::ConfirmDevtoolUpdateRecipe
         | Action::CancelDevtoolUpdateRecipe
+        | Action::SelectDevtoolPatchLayer { .. }
+        | Action::PreviewDevtoolPatch
+        | Action::CancelDevtoolPatch
+        | Action::ConfirmDevtoolPatch
+        | Action::CancelDevtoolPatchConfirmation
         | Action::SelectDevtoolFinishLayer { .. }
         | Action::PreviewDevtoolFinish
         | Action::CancelDevtoolFinish

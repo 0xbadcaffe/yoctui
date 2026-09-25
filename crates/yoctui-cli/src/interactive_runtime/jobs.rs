@@ -36,6 +36,17 @@ impl InteractiveRuntime {
                         .await;
                 }
             }
+            Some(DevtoolOperation::UpdateRecipePatch { recipe, .. })
+                if runtime
+                    .pending_devtool_update
+                    .as_ref()
+                    .is_some_and(|identity| identity.name == recipe) =>
+            {
+                if let Some(identity) = runtime.pending_devtool_update.take() {
+                    complete_devtool_update(&mut runtime.app, &runtime.session_build_dir, identity)
+                        .await;
+                }
+            }
             Some(DevtoolOperation::Finish { recipe, .. })
                 if runtime
                     .pending_devtool_finish

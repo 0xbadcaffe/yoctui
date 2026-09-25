@@ -9,7 +9,7 @@ use thiserror::Error;
 use crate::{TaskStatsData, WorkspaceData};
 
 pub const PROTOCOL_MAJOR: u16 = 1;
-pub const PROTOCOL_MINOR: u16 = 4;
+pub const PROTOCOL_MINOR: u16 = 5;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_CAPABILITIES: usize = 128;
 pub const MAX_RETAINED_EVENTS: usize = 65_536;

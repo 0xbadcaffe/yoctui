@@ -27,6 +27,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) devtool_runner: Option<DevtoolJobRunner>,
     pub(super) pending_devtool_modify: Option<RecipeIdentity>,
     pub(super) pending_daemon_devtool_modify: Option<RecipeIdentity>,
+    pub(super) pending_daemon_devtool_update: Option<(RecipeIdentity, Vec<u64>)>,
     pub(super) pending_devtool_update: Option<RecipeIdentity>,
     pub(super) pending_devtool_finish: Option<RecipeIdentity>,
     pub(super) pending_devtool_deploy: Option<RecipeIdentity>,

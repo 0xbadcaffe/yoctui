@@ -30,6 +30,20 @@ fn client_runtime_devtool_maps_every_effect_to_closed_wire_type() {
             },
         ),
         (
+            Effect::DevtoolUpdateRecipePatch(yoctui_model::DevtoolPatchPlan {
+                identity: identity.clone(),
+                layer: yoctui_model::Layer {
+                    name: "meta-test".into(),
+                    path: "/layers/meta-test".into(),
+                    priority: Some(7),
+                },
+            }),
+            DaemonDevtoolOperation::UpdateRecipePatch {
+                recipe: "busybox".into(),
+                destination: "/layers/meta-test".into(),
+            },
+        ),
+        (
             Effect::DevtoolReset(yoctui_model::DevtoolResetPlan {
                 identity: identity.clone(),
                 source_path: "/workspace/busybox".into(),

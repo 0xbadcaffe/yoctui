@@ -155,7 +155,8 @@ mod devtool_types;
 pub use devtool_types::{
     DevtoolDeployDraft, DevtoolDeployPlan, DevtoolDeployRequest, DevtoolFinishPicker,
     DevtoolFinishPlan, DevtoolFinishRequest, DevtoolOperation, DevtoolOperationError,
-    DevtoolResetPlan, DevtoolUndeployDraft, DevtoolUndeployPlan, DevtoolUpgradePlan,
+    DevtoolPatchPicker, DevtoolPatchPlan, DevtoolResetPlan, DevtoolUndeployDraft,
+    DevtoolUndeployPlan, DevtoolUpgradePlan,
 };
 
 mod workspace_types;

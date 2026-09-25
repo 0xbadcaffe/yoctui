@@ -32,6 +32,24 @@ pub(crate) fn daemon_devtool_modify_completion(
     }
 }
 
+pub(crate) fn daemon_devtool_completion_after(
+    app: &App,
+    known_jobs: &[u64],
+) -> DaemonDevtoolModifyCompletion {
+    let Some(job) = app.daemon.jobs.iter().rev().find(|job| {
+        job.kind == yoctui_model::ClientDaemonJobKind::Devtool && !known_jobs.contains(&job.id)
+    }) else {
+        return DaemonDevtoolModifyCompletion::Pending;
+    };
+    match job.lifecycle {
+        yoctui_model::ClientDaemonLifecycle::Exited => DaemonDevtoolModifyCompletion::Succeeded,
+        yoctui_model::ClientDaemonLifecycle::Failed | yoctui_model::ClientDaemonLifecycle::Lost => {
+            DaemonDevtoolModifyCompletion::Failed
+        }
+        _ => DaemonDevtoolModifyCompletion::Pending,
+    }
+}
+
 pub(crate) fn local_workspace_effect_route(effect: &Effect) -> LocalWorkspaceEffectRoute {
     match effect {
         Effect::GetImageArtifacts(_) => LocalWorkspaceEffectRoute::ImageArtifacts,

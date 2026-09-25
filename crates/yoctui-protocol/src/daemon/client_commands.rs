@@ -277,6 +277,7 @@ pub enum DaemonCommand {
 pub enum DaemonDevtoolOperation {
     Modify { recipe: String },
     UpdateRecipe { recipe: String },
+    UpdateRecipePatch { recipe: String, destination: String },
     Finish { recipe: String, destination: String },
     DeployTarget { recipe: String, target: String },
     UndeployTarget { recipe: String, target: String },

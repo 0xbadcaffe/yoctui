@@ -42,3 +42,39 @@ fn compatibility_devtool_generates_exact_argv_for_each_independently_probed_subc
         assert_eq!(command.executable(), executable);
     }
 }
+
+#[test]
+fn devtool_patch_planner_preserves_the_native_configured_layer_argument() {
+    use std::os::unix::ffi::OsStringExt;
+
+    let build = Path::new("/work/build");
+    let executable = Path::new("/work/poky/scripts/devtool");
+    let authority = authority(
+        build,
+        executable,
+        9,
+        &[(
+            CapabilityId::DevtoolUpdateRecipe,
+            DEVTOOL_UPDATE_RECIPE_IMPLEMENTATION,
+        )],
+        &[],
+    );
+    let destination = PathBuf::from(std::ffi::OsString::from_vec(
+        b"/layers/meta-custom-\xff".to_vec(),
+    ));
+    let operation = DevtoolOperation::UpdateRecipePatch {
+        recipe: "busybox".into(),
+        destination: destination.clone(),
+    };
+
+    let command = DevtoolCommandPlanner::new(&authority, 9, build, executable)
+        .unwrap()
+        .operation(&operation)
+        .unwrap();
+    assert_eq!(command.arguments()[0], "update-recipe");
+    assert_eq!(command.arguments()[1], "--mode");
+    assert_eq!(command.arguments()[2], "patch");
+    assert_eq!(command.arguments()[3], "--append");
+    assert_eq!(command.arguments()[4], destination.as_os_str());
+    assert_eq!(command.arguments()[5], "busybox");
+}

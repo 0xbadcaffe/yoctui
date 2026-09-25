@@ -302,7 +302,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::BeginSelectedRecipePatchReview | Action::SelectRecipePatch { .. } | Action::OpenSelectedRecipePatch
         | Action::CancelRecipePatchPicker | Action::BeginSelectedRecipeDevtoolModify | Action::BeginSelectedRecipeDevtoolStatus
         | Action::DevtoolStatusLoaded(..) | Action::BeginSelectedRecipeDevtoolReset => build_cancelled::reduce_actions(app, action),
-        Action::BeginSelectedRecipeDevtoolUpdateRecipe | Action::BeginSelectedRecipeDevtoolFinish | Action::BeginSelectedRecipeDevtoolDeploy
+        Action::BeginSelectedRecipeDevtoolUpdateRecipe | Action::BeginSelectedRecipeDevtoolPatch | Action::BeginSelectedRecipeDevtoolFinish | Action::BeginSelectedRecipeDevtoolDeploy
         | Action::BeginSelectedRecipeDevtoolUndeploy | Action::BeginSelectedRecipeDevtoolUpgrade
         | Action::BeginSelectedRecipeDependencies | Action::BeginDependencyGraph { .. } | Action::DependencyGraphLoaded(..)
         | Action::DependencyGraphPartial { .. } | Action::DependencyGraphFailed { .. } | Action::SelectDependencyGraphNode { .. }
@@ -329,7 +329,9 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::SelectDependency { .. } | Action::OpenSelectedDependency | Action::ConfirmRecipeTask
         | Action::CancelRecipeTask | Action::ConfirmDevtoolModify | Action::CancelDevtoolModify
         | Action::ConfirmDevtoolReset | Action::CancelDevtoolReset | Action::ConfirmDevtoolUpdateRecipe
-        | Action::CancelDevtoolUpdateRecipe | Action::SelectDevtoolFinishLayer { .. } | Action::PreviewDevtoolFinish
+        | Action::CancelDevtoolUpdateRecipe | Action::SelectDevtoolPatchLayer { .. } | Action::PreviewDevtoolPatch
+        | Action::CancelDevtoolPatch | Action::ConfirmDevtoolPatch | Action::CancelDevtoolPatchConfirmation
+        | Action::SelectDevtoolFinishLayer { .. } | Action::PreviewDevtoolFinish
         | Action::CancelDevtoolFinish | Action::ConfirmDevtoolFinish | Action::CancelDevtoolFinishConfirmation
         | Action::AppendDevtoolDeployTarget(..) | Action::BackspaceDevtoolDeployTarget | Action::PreviewDevtoolDeploy
         | Action::CancelDevtoolDeploy | Action::ConfirmDevtoolDeploy | Action::CancelDevtoolDeployConfirmation

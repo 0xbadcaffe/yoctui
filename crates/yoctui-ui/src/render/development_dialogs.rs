@@ -213,6 +213,81 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
             popup,
         );
         return true;
+    } else if let Some(Dialog::DevtoolPatchConfirmation(plan)) = app.active_dialog() {
+        let width = area.width.saturating_sub(8).clamp(48, 110);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(10) / 2,
+            width,
+            10,
+        );
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Create and install patches for {}?\n\nCommand: `devtool update-recipe --mode patch --append {} {}`\nProvider: {}\nConfigured layer: {}\n\nEnter continues; Esc cancels.",
+                plan.identity.name,
+                plan.layer.path.display(),
+                plan.identity.name,
+                plan.identity.file.display(),
+                plan.layer.name,
+            ))
+            .block(dialog_block(
+                app,
+                "Confirm patch installation",
+                DialogTone::Confirmation,
+            ))
+            .wrap(Wrap { trim: true }),
+            popup,
+        );
+        return true;
+    } else if let Some(Dialog::DevtoolPatchPicker(picker)) = app.active_dialog() {
+        let width = area.width.saturating_sub(12).clamp(48, 110);
+        let height = (picker.layers.len() as u16)
+            .saturating_add(6)
+            .min(area.height.saturating_sub(4))
+            .max(8);
+        let popup = Rect::new(
+            (area.width.saturating_sub(width)) / 2,
+            area.height.saturating_sub(height) / 2,
+            width,
+            height,
+        );
+        clear_popup(frame, app, popup);
+        let viewport = selected_table_viewport(picker.selection, picker.layers.len(), popup);
+        frame.render_widget(
+            Table::new(
+                picker.layers[viewport.clone()]
+                    .iter()
+                    .enumerate()
+                    .map(|(offset, layer)| {
+                        let index = viewport.start + offset;
+                        Row::new([
+                            format!(
+                                "{} {}",
+                                if index == picker.selection { "▶" } else { " " },
+                                layer.name
+                            ),
+                            layer.path.display().to_string(),
+                        ])
+                        .style(selected_style(app, index == picker.selection))
+                    }),
+                [Constraint::Length(24), Constraint::Min(20)],
+            )
+            .header(
+                Row::new(["Configured layer", "Patch destination"])
+                    .style(Style::default().bold()),
+            )
+            .block(dialog_block(
+                app,
+                format!(
+                    "Create/update patches for {} — ↑/↓ select, Enter preview, Esc cancel",
+                    picker.identity.name
+                ),
+                DialogTone::Standard,
+            )),
+            popup,
+        );
+        return true;
     } else if let Some(Dialog::DevtoolFinishConfirmation(plan)) = app.active_dialog() {
         let width = area.width.saturating_sub(12).clamp(44, 100);
         let popup = Rect::new(

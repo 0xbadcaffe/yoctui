@@ -58,3 +58,39 @@ fn devtool_workspace_deploy_dialog_names_the_ssh_scp_transport() {
     assert!(output.contains("built install tree"));
     assert!(output.contains("devtool deploy-target phosphor-state-manager root@bmc"));
 }
+
+#[test]
+fn devtool_patch_picker_and_confirmation_render_exact_configured_layer_argv() {
+    let identity = yoctui_model::RecipeIdentity {
+        name: "busybox".into(),
+        file: "/layers/meta-core/recipes-core/busybox/busybox.bb".into(),
+    };
+    let layer = yoctui_model::Layer {
+        name: "meta-custom".into(),
+        path: "/layers/meta-custom".into(),
+        priority: Some(8),
+    };
+    let mut app = App::new(10, 1_000);
+    app.screen = Screen::Devtool;
+    app.dialogs.push_back(Dialog::DevtoolPatchPicker(
+        yoctui_model::DevtoolPatchPicker {
+            identity: identity.clone(),
+            layers: vec![layer.clone()],
+            selection: 0,
+        },
+    ));
+    let picker = rendered_text(&app, 120, 35);
+    assert!(picker.contains("Create/update patches for busybox"));
+    assert!(picker.contains("meta-custom"));
+
+    app.dialogs.clear();
+    app.dialogs.push_back(Dialog::DevtoolPatchConfirmation(
+        yoctui_model::DevtoolPatchPlan { identity, layer },
+    ));
+    let confirmation = rendered_text(&app, 120, 35);
+    assert!(confirmation.contains("Confirm patch installation"));
+    assert!(
+        confirmation
+            .contains("devtool update-recipe --mode patch --append /layers/meta-custom busybox")
+    );
+}

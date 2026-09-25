@@ -419,14 +419,14 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::capability("devtool.edit", "Edit recipe file", "E", Id::DevtoolEditRecipe),
             Action::capability(
                 "devtool.update",
-                "Update recipe",
+                "Create/update patches in layer",
                 "u",
                 Id::DevtoolUpdateRecipe,
             ),
             Action::capability("devtool.finish", "Finish recipe", "F", Id::DevtoolFinish),
             Action::capability(
                 "devtool.deploy",
-                "Deploy target",
+                "Deploy build with SSH/SCP",
                 "P",
                 Id::DevtoolDeployTarget,
             ),

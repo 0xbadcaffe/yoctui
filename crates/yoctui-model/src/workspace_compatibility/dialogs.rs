@@ -86,6 +86,9 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         Dialog::DevtoolUpdateConfirmation(_) => {
             WorkspaceEffectRequirement::one(Id::DevtoolUpdateRecipe)
         }
+        Dialog::DevtoolPatchPicker(_) | Dialog::DevtoolPatchConfirmation(_) => {
+            WorkspaceEffectRequirement::one(Id::DevtoolUpdateRecipe)
+        }
         Dialog::DevtoolFinishPicker(_) | Dialog::DevtoolFinishConfirmation(_) => {
             WorkspaceEffectRequirement::one(Id::DevtoolFinish)
         }

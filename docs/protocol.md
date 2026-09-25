@@ -1,5 +1,12 @@
 # Bridge protocol
 
+Daemon protocol 1.5 adds the closed `update_recipe_patch` Devtool operation.
+Its payload contains one validated recipe token and one absolute configured
+layer destination. The daemon converts it to the model operation and the
+authorized adapter constructs `devtool update-recipe --mode patch --append`
+native argv. Client and daemon negotiate the exact current protocol version
+before any command is accepted.
+
 Recipe inventory requests may opt into `chunked: true`. Only opted-in callers
 receive `recipes_chunk` records: zero-based `offset`, fixed `total`, explicit
 `complete`, and `recipes`. Legacy callers retain the single `recipes` response;

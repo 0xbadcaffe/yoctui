@@ -3971,3 +3971,13 @@ dedicated screen and use their existing typed owners. Target deployment now
 states that Devtool deploys the built install tree through SSH/SCP and previews
 the exact command, recipe, provider and target. DEVTOOL-WORKSPACE-PATCH-001 is
 now IN_PROGRESS.
+
+DEVTOOL-WORKSPACE-PATCH-001 is DONE in the v0.1.229 feature series. The
+Devtool Workspace's patch action chooses only absolute configured layers,
+previews and revalidates the exact recipe/layer plan, and runs
+`devtool update-recipe --mode patch --append <layer> <recipe>` through protocol
+1.5 and the daemon-owned cancellable job. Native path bytes are preserved by the
+adapter, stale layers fail closed, and successful local or daemon completion
+refreshes the original recipe status. The existing clean-commit `finish` flow
+remains the second publication option. DEVTOOL-WORKSPACE-RELEASE-001 is now
+IN_PROGRESS.

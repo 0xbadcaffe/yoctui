@@ -630,6 +630,11 @@ the SSH/SCP transport and maps the recipe's built install tree to its installed
 paths. No renderer parses build output to find binaries or constructs `scp`
 commands.
 
+Daemon protocol 1.5 adds the closed `UpdateRecipePatch` operation carrying the
+validated recipe token and configured-layer destination. Client and daemon are
+version-locked, so an older daemon rejects attachment before it can interpret
+the new operation incorrectly.
+
 Update-recipe carries the same absolute `RecipeIdentity` from reducer
 eligibility through its confirmation and CLI pending-completion state, while
 the process adapter receives only the validated recipe token. A successful

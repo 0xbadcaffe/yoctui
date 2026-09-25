@@ -211,6 +211,77 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
+        Action::SelectDevtoolPatchLayer { delta } => {
+            if let Some(Dialog::DevtoolPatchPicker(picker)) = app.active_dialog_mut() {
+                picker.selection = shifted_index(picker.selection, delta, picker.layers.len());
+            }
+        }
+        Action::PreviewDevtoolPatch => {
+            if let Some(Dialog::DevtoolPatchPicker(picker)) = app.active_dialog() {
+                let Some(layer) = picker.layers.get(picker.selection).cloned() else {
+                    app.notification = Some("Select a configured patch layer.".into());
+                    return None;
+                };
+                if !layer.path.is_absolute()
+                    || !app.workspace.layers.iter().any(|configured| {
+                        configured.name == layer.name && configured.path == layer.path
+                    })
+                {
+                    app.notification =
+                        Some("The selected patch layer is no longer configured.".into());
+                    return None;
+                }
+                replace_dialog(
+                    app,
+                    Dialog::DevtoolPatchConfirmation(DevtoolPatchPlan {
+                        identity: picker.identity.clone(),
+                        layer,
+                    }),
+                );
+            }
+        }
+        Action::CancelDevtoolPatch => {
+            if matches!(app.active_dialog(), Some(Dialog::DevtoolPatchPicker(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmDevtoolPatch => {
+            if let Some(Dialog::DevtoolPatchConfirmation(plan)) = app.active_dialog().cloned() {
+                let Some(status) = app.devtool_statuses.get(&plan.identity) else {
+                    app.notification = Some(
+                        "Authoritative Devtool status expired; refresh before creating patches."
+                            .into(),
+                    );
+                    return None;
+                };
+                if let Some(reason) = status.disabled_reason(DevtoolAction::UpdateRecipe) {
+                    app.notification = Some(reason);
+                    return None;
+                }
+                if !app.workspace.layers.iter().any(|configured| {
+                    configured.name == plan.layer.name && configured.path == plan.layer.path
+                }) {
+                    app.notification =
+                        Some("The selected patch layer is no longer configured.".into());
+                    return None;
+                }
+                if let Err(error) = plan.operation().validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
+                }
+                close_dialog(app);
+                synchronize_focus(app);
+                return Some(Effect::DevtoolUpdateRecipePatch(plan));
+            }
+        }
+        Action::CancelDevtoolPatchConfirmation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolPatchConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
         Action::SelectDevtoolFinishLayer { delta } => {
             if let Some(Dialog::DevtoolFinishPicker(picker)) = app.active_dialog_mut() {
                 picker.selection = if delta.is_negative() {

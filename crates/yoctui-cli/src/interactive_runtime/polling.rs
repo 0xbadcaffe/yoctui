@@ -109,6 +109,31 @@ impl InteractiveRuntime {
                 }
             }
         }
+        if let Some((_, known_jobs)) = runtime.pending_daemon_devtool_update.as_ref() {
+            match daemon_devtool_completion_after(&runtime.app, known_jobs) {
+                DaemonDevtoolModifyCompletion::Pending => {}
+                DaemonDevtoolModifyCompletion::Succeeded => {
+                    let (identity, _) = runtime
+                        .pending_daemon_devtool_update
+                        .take()
+                        .expect("daemon Devtool update identity was present");
+                    complete_devtool_update(&mut runtime.app, &runtime.session_build_dir, identity)
+                        .await;
+                    runtime.render_scheduler.invalidate(RenderCause::State);
+                }
+                DaemonDevtoolModifyCompletion::Failed => {
+                    let (identity, _) = runtime
+                        .pending_daemon_devtool_update
+                        .take()
+                        .expect("daemon Devtool update identity was present");
+                    runtime.app.notification = Some(format!(
+                        "Devtool patch update for {} failed in the daemon; inspect Jobs and Logs.",
+                        identity.name
+                    ));
+                    runtime.render_scheduler.invalidate(RenderCause::State);
+                }
+            }
+        }
         if build_archive::poll_load(
             &mut runtime.app,
             &mut runtime.history_load,
