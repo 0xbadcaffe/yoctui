@@ -3959,3 +3959,10 @@ surface. Every documented positional argument and option has a typed field;
 mutually exclusive modes, paths, targets, recipe lists, ports, and conditional
 arguments validate before exact shell-free argv preview. Focused model, app, UI,
 adapter, compatibility, formatting, and strict workspace Clippy checks pass.
+
+DEVTOOL-WORKSPACE-SURFACE-001 is IN_PROGRESS. The requested recipe-centered
+Devtool feature is split into a first-class Navigator/workspace projection, the
+start/edit/build/deploy loop, configured-layer patch creation, and final release
+verification. Existing Devtool and Recipes operations remain the execution
+authority; the missing product pieces are the dedicated owning surface and a
+typed `update-recipe --mode patch --append` plan.

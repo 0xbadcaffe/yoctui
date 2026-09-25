@@ -613,6 +613,23 @@ same typed `BuildRequest` confirmation and background BitBake coordinator path
 as a Recipes workspace build. Refresh and editor failures update recoverable
 model notifications without rewriting the retained Devtool job.
 
+The first-class Devtool Workspace is a distinct `Screen::Devtool` presentation
+over the existing authoritative recipe inventory, selected `RecipeIdentity`,
+typed Devtool statuses, editor, build coordinator, and Devtool job coordinator.
+It does not create a second recipe or process authority. Screen-specific
+projection orders the development loop and preserves the selected recipe while
+dialogs, editors, terminal sessions, and background jobs run.
+
+Patch installation extends the typed operation boundary with an update plan
+containing the exact recipe identity, `Patch` mode, and an absolute configured
+layer. The model validates current workspace/Git eligibility and configured
+layer membership; `yoctui-bitbake` alone translates the plan to native
+`devtool update-recipe --mode patch --append <layer> <recipe>` argv. Target
+deployment remains the existing `DeployTarget` operation because Devtool owns
+the SSH/SCP transport and maps the recipe's built install tree to its installed
+paths. No renderer parses build output to find binaries or constructs `scp`
+commands.
+
 Update-recipe carries the same absolute `RecipeIdentity` from reducer
 eligibility through its confirmation and CLI pending-completion state, while
 the process adapter receives only the validated recipe token. A successful

@@ -5314,6 +5314,37 @@ capability authority immediately before any backend effect is emitted.
 
 ## 35. Integrated Devtool editing and shell workflow
 
+The Navigator's **Devtool** destination opens a first-class Devtool Workspace,
+not the general Recipes workspace. It keeps the authoritative recipe inventory
+and selected absolute provider identity, but presents the development loop as
+ordered actions: start or refresh workspace, edit source, build recipe, deploy
+the built install tree to a running target, create/update patches, install the
+finished change in a configured layer, and reset. Returning from an editor,
+dialog, terminal session, or job keeps the same selected recipe and Devtool
+screen.
+
+The workspace lists every authoritative recipe so work can start without first
+navigating to Recipes. Rows distinguish uninspected, loading, outside workspace,
+present, missing source, and failed status, and show the reported source/Git and
+latest build state. `Enter` refreshes the selected recipe's Devtool status.
+Search and recipe selection use the same bounded identity-preserving behavior as
+Recipes.
+
+Deployment is labelled **Deploy build with SSH/SCP**. It uses the initialized
+environment's capability-authorized `devtool deploy-target <recipe> <target>`
+operation, which deploys the recipe's built install output with Devtool's SSH/SCP
+transport. The target is validated as one native argument and the exact recipe,
+provider, target, and operation are previewed. Yoctui does not guess an output
+binary or remote path from logs.
+
+Patch publication has two explicit choices. **Create/update patches** runs
+`devtool update-recipe --mode patch --append <configured-layer> <recipe>` after
+the operator selects an absolute configured layer. **Finish into layer** keeps
+the existing clean committed-worktree requirement and runs `devtool finish`.
+Both flows retain the selected recipe identity, preview the native destination,
+run as cancellable daemon jobs, refresh status on success, and keep failures and
+output visible in the workspace.
+
 The Recipes workspace is the owning surface for one continuous development
 loop:
 

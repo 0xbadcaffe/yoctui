@@ -1,21 +1,20 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** DEVTOOL-WORKSPACE-SURFACE-001
+**Title:** Add a first-class recipe-centered Devtool Workspace
+**Status:** IN_PROGRESS
 
-All M74 corrections and M75 rapid bug corrections are complete through
-v0.1.228. The only remaining registry task requires a new genuine
-source/binary-bound Yocto 6.0.2 `linux-yocto` compile capture. Existing retained
-evidence is bound to source base `d2214e82974a5be708a7cc40f1532254d7c7de63`
-and has 143 source digest mismatches, including changes predating M67.
+Implement a distinct `Screen::Devtool` reached by the Navigator's Devtool row.
+It must reuse the authoritative recipe inventory, stable selected recipe
+identity, typed Devtool status, and existing process owners while presenting the
+ordered development workflow. It must not route the Devtool row to the general
+Recipes screen.
 
-After new live evidence is supplied, run:
+Verify with:
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model devtool_workspace
+cargo test -p yoctui-app devtool_workspace
+cargo test -p yoctui-ui devtool_workspace
+cargo fmt --all --check
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.

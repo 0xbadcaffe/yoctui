@@ -1888,3 +1888,16 @@ covering all 25 initialized-environment subcommands and every documented option.
 Typed validation, exact argv previews, per-command compatibility authority, and
 daemon-owned terminal execution pass focused checks and strict Clippy; the full
 suite remains deferred for the user's rapid manual bug pass.
+
+## M76 — Recipe-centered Devtool Workspace
+
+Goal: turn the existing Devtool primitives into one first-class workspace where
+an operator can select a recipe, create its workspace, edit and build it, deploy
+the built install tree to a running target through Devtool's SSH/SCP transport,
+and publish patches into a configured layer without changing screens.
+
+The work is split into DEVTOOL-WORKSPACE-SURFACE-001,
+DEVTOOL-WORKSPACE-LOOP-001, DEVTOOL-WORKSPACE-PATCH-001, and
+DEVTOOL-WORKSPACE-RELEASE-001. The implementation reuses authoritative recipe
+identity, Devtool status, editor, build, terminal, and daemon job owners; it adds
+only the first-class projection and the missing configured-layer patch plan.
