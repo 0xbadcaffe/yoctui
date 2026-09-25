@@ -1901,3 +1901,9 @@ DEVTOOL-WORKSPACE-LOOP-001, DEVTOOL-WORKSPACE-PATCH-001, and
 DEVTOOL-WORKSPACE-RELEASE-001. The implementation reuses authoritative recipe
 identity, Devtool status, editor, build, terminal, and daemon job owners; it adds
 only the first-class projection and the missing configured-layer patch plan.
+
+M76 is complete in v0.1.229. The dedicated workspace supports recipe selection,
+modify/edit, exact recipe builds, workspace shell and GitUI, Devtool SSH/SCP
+deployment to a running target, and previewed patch installation into a
+configured layer. Focused tests, version policy, formatting, and strict Clippy
+pass; the full workspace suite remains deferred for the user's manual bug pass.

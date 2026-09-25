@@ -1,20 +1,21 @@
 # Current Task
 
-**ID:** DEVTOOL-WORKSPACE-RELEASE-001
-**Title:** Package and install the Devtool Workspace feature series
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Bump the workspace release to v0.1.229, update version-bearing artifacts, run
-the focused Devtool Workspace and patch checks plus strict workspace Clippy,
-build and install the release binary, stop stale Yoctui daemons, start one fresh
-daemon from the initialized Romulus build environment, commit, and push. Keep
-the user's existing untracked capture artifacts untouched. The full workspace
-test suite remains deferred until the user requests it.
+All M74, M75, and M76 work is complete through v0.1.229. The only remaining
+registry task requires a new genuine source/binary-bound Yocto 6.0.2
+`linux-yocto` compile capture. Existing retained evidence is bound to source
+base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has at least 143 source
+digest mismatches, including changes predating M67.
 
-Verify with:
+After new live evidence is supplied, run:
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-./scripts/verify-roadmap.sh
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
+
+Do not rewrite evidence digests or use fake-process startup timings as live
+certification.

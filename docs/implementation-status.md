@@ -3969,8 +3969,7 @@ DONE in the v0.1.229 feature series. Start/edit, exact recipe build, workspace
 shell, GitUI, reset, update, finish and target deployment all remain on the
 dedicated screen and use their existing typed owners. Target deployment now
 states that Devtool deploys the built install tree through SSH/SCP and previews
-the exact command, recipe, provider and target. DEVTOOL-WORKSPACE-PATCH-001 is
-now IN_PROGRESS.
+the exact command, recipe, provider and target.
 
 DEVTOOL-WORKSPACE-PATCH-001 is DONE in the v0.1.229 feature series. The
 Devtool Workspace's patch action chooses only absolute configured layers,
@@ -3980,4 +3979,9 @@ previews and revalidates the exact recipe/layer plan, and runs
 adapter, stale layers fail closed, and successful local or daemon completion
 refreshes the original recipe status. The existing clean-commit `finish` flow
 remains the second publication option. DEVTOOL-WORKSPACE-RELEASE-001 is now
-IN_PROGRESS.
+DONE in v0.1.229. Focused model, adapter, app, UI, CLI wire, protocol, version
+policy, formatting, and strict workspace Clippy checks pass. The release binary
+is installed and a fresh daemon runs from the initialized Romulus environment.
+The full workspace suite remains deferred until the user requests it. All 860
+implementation tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED on a new
+genuine current-source real-Poky performance capture.
