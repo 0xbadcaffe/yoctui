@@ -1,3 +1,5 @@
+use crate::DevtoolUtilityCommand;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct OperatorActionId(&'static str);
 
@@ -93,7 +95,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 52] = [
+const GLOBAL_COMMANDS: [CommandId; 77] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -115,6 +117,31 @@ const GLOBAL_COMMANDS: [CommandId; 52] = [
     CommandId::OpenRawMode,
     CommandId::OpenTerminalSessions,
     CommandId::OpenGitUi,
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Add),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Modify),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Upgrade),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Status),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::LatestVersion),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::CheckUpgradeStatus),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Search),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Build),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::IdeSdk),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Rename),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::EditRecipe),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::FindRecipe),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::ConfigureHelp),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::UpdateRecipe),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Reset),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Finish),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::DeployTarget),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::UndeployTarget),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::BuildImage),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::CreateWorkspace),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Export),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Extract),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Sync),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Import),
+    CommandId::OpenDevtool(DevtoolUtilityCommand::Menuconfig),
     CommandId::OpenBitBakeConfigBuild,
     CommandId::OpenBitBakeLayersShowLayers,
     CommandId::OpenBitBakeLayersShowRecipes,

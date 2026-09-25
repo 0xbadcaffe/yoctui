@@ -322,6 +322,7 @@ pub enum CommandId {
     OpenRawMode,
     OpenTerminalSessions,
     OpenGitUi,
+    OpenDevtool(DevtoolUtilityCommand),
     OpenBitBakeConfigBuild,
     OpenBitBakeLayersShowLayers,
     OpenBitBakeLayersShowRecipes,

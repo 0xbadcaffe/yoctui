@@ -5999,3 +5999,22 @@ pairs are validated before preview. Every form traps focus and advances to the
 shared exact-command terminal preview with Enter; Esc cancels without spawning.
 Read-only commands are labeled read-only in the menu, while filesystem,
 configuration, fetch, flatten, and export commands require confirmation.
+
+### M75 complete Devtool menu
+
+F12 exposes Devtool as a dedicated top-level menu group. It contains every
+subcommand reported by the initialized environment: add, modify, upgrade,
+status, latest-version, check-upgrade-status, search, build, ide-sdk, rename,
+edit-recipe, find-recipe, configure-help, update-recipe, reset, finish,
+deploy-target, undeploy-target, build-image, create-workspace, export, extract,
+sync, import, and menuconfig.
+
+Each entry opens a typed form containing only that subcommand's documented
+positional arguments and options. Text remains manually editable, Boolean and
+enumerated options use the established choice control, and multi-value fields
+state their separator. Empty optional values omit their argument. Enter opens
+the shared exact-command terminal preview; Esc cancels without spawning.
+Compatibility authority disables commands whose exact subcommand or exposed
+option surface was not observed. Read-only discovery commands are labeled
+read-only; commands that build, write, deploy, import, export, or alter the
+workspace require confirmation, with reset and undeploy marked destructive.

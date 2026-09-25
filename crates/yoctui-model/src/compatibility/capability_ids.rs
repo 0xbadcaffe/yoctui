@@ -126,6 +126,38 @@ pub enum CapabilityId {
     DevtoolReset,
     #[serde(rename = "devtool.upgrade")]
     DevtoolUpgrade,
+    #[serde(rename = "devtool.add")]
+    DevtoolAdd,
+    #[serde(rename = "devtool.latest_version")]
+    DevtoolLatestVersion,
+    #[serde(rename = "devtool.check_upgrade_status")]
+    DevtoolCheckUpgradeStatus,
+    #[serde(rename = "devtool.search")]
+    DevtoolSearch,
+    #[serde(rename = "devtool.build")]
+    DevtoolBuild,
+    #[serde(rename = "devtool.ide_sdk")]
+    DevtoolIdeSdk,
+    #[serde(rename = "devtool.rename")]
+    DevtoolRename,
+    #[serde(rename = "devtool.find_recipe")]
+    DevtoolFindRecipe,
+    #[serde(rename = "devtool.configure_help")]
+    DevtoolConfigureHelp,
+    #[serde(rename = "devtool.build_image")]
+    DevtoolBuildImage,
+    #[serde(rename = "devtool.create_workspace")]
+    DevtoolCreateWorkspace,
+    #[serde(rename = "devtool.export")]
+    DevtoolExport,
+    #[serde(rename = "devtool.extract")]
+    DevtoolExtract,
+    #[serde(rename = "devtool.sync")]
+    DevtoolSync,
+    #[serde(rename = "devtool.import")]
+    DevtoolImport,
+    #[serde(rename = "devtool.menuconfig")]
+    DevtoolMenuconfig,
     #[serde(rename = "recipetool.create")]
     RecipetoolCreate,
     #[serde(rename = "recipetool.create_outfile")]
@@ -247,7 +279,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 122] = [
+    pub const ALL: [Self; 138] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -311,6 +343,22 @@ impl CapabilityId {
         Self::DevtoolUndeployTarget,
         Self::DevtoolReset,
         Self::DevtoolUpgrade,
+        Self::DevtoolAdd,
+        Self::DevtoolLatestVersion,
+        Self::DevtoolCheckUpgradeStatus,
+        Self::DevtoolSearch,
+        Self::DevtoolBuild,
+        Self::DevtoolIdeSdk,
+        Self::DevtoolRename,
+        Self::DevtoolFindRecipe,
+        Self::DevtoolConfigureHelp,
+        Self::DevtoolBuildImage,
+        Self::DevtoolCreateWorkspace,
+        Self::DevtoolExport,
+        Self::DevtoolExtract,
+        Self::DevtoolSync,
+        Self::DevtoolImport,
+        Self::DevtoolMenuconfig,
         Self::RecipetoolCreate,
         Self::RecipetoolCreateOutfile,
         Self::RecipetoolAppendFile,

@@ -158,6 +158,9 @@ pub fn compatibility_ui_command_action_definition(
         }
         CommandId::OpenRawMode => compatibility_ui_destination_action_definition(Screen::RawMode),
         CommandId::OpenGitUi => CompatibilityUiActionDefinition::local(),
+        CommandId::OpenDevtool(command) => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(command.capability()),
+        ),
         CommandId::OpenBitBakeConfigBuild => CompatibilityUiActionDefinition::gated(
             WorkspaceEffectRequirement::one(Id::BitBakeConfigBuildListFragments),
         ),

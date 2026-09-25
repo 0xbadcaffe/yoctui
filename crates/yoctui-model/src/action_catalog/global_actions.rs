@@ -48,6 +48,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenConfiguration => "v",
         CommandId::OpenRawMode => "Ctrl+P raw",
         CommandId::OpenGitUi => "F12 Tools",
+        CommandId::OpenDevtool(_) => "F12 Devtool",
         CommandId::OpenBitBakeConfigBuild
         | CommandId::OpenBitBakeLayersShowLayers
         | CommandId::OpenBitBakeLayersShowRecipes
@@ -100,6 +101,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenConfiguration => Some(WorkspaceDestination::Configuration),
         CommandId::OpenRawMode => Some(WorkspaceDestination::RawMode),
         CommandId::OpenGitUi => None,
+        CommandId::OpenDevtool(_) => None,
         CommandId::OpenBitBakeConfigBuild
         | CommandId::OpenBitBakeLayersShowLayers
         | CommandId::OpenBitBakeLayersShowRecipes

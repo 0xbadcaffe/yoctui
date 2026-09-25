@@ -260,6 +260,9 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenRawMode => Action::Open(Screen::RawMode),
         CommandId::OpenGitUi => Action::OpenGitUi,
+        CommandId::OpenDevtool(command) => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::Devtool(command))
+        }
         CommandId::OpenBitBakeConfigBuild => {
             Action::OpenYoctoUtility(YoctoUtilityCommand::ConfigBuild)
         }

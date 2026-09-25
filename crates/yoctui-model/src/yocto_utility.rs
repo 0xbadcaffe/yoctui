@@ -1,12 +1,13 @@
 mod layers;
 pub use layers::*;
 
-use crate::CapabilityId;
+use crate::{CapabilityId, DevtoolUtilityCommand, DevtoolUtilityDraft};
 
 pub const MAX_YOCTO_UTILITY_TEXT_BYTES: usize = 512;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum YoctoUtilityCommand {
+    Devtool(DevtoolUtilityCommand),
     ConfigBuild,
     LayersShowLayers,
     LayersShowRecipes,
@@ -27,6 +28,7 @@ pub enum YoctoUtilityCommand {
 impl YoctoUtilityCommand {
     pub const fn label(self) -> &'static str {
         match self {
+            Self::Devtool(command) => command.label(),
             Self::ConfigBuild => "BitBake config build",
             command => match command.layer_subcommand() {
                 Some(subcommand) => subcommand.label(),
@@ -37,6 +39,7 @@ impl YoctoUtilityCommand {
 
     pub const fn tool(self) -> &'static str {
         match self {
+            Self::Devtool(_) => "devtool",
             Self::ConfigBuild => "bitbake-config-build",
             _ => "bitbake-layers",
         }
@@ -44,6 +47,7 @@ impl YoctoUtilityCommand {
 
     pub const fn layer_subcommand(self) -> Option<LayerUtilitySubcommand> {
         Some(match self {
+            Self::Devtool(_) => return None,
             Self::ConfigBuild => return None,
             Self::LayersShowLayers => LayerUtilitySubcommand::ShowLayers,
             Self::LayersShowRecipes => LayerUtilitySubcommand::ShowRecipes,
@@ -126,6 +130,7 @@ impl ConfigBuildOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum YoctoUtilityDraft {
+    Devtool(DevtoolUtilityDraft),
     ConfigBuild {
         operation: ConfigBuildOperation,
         fragments: String,
@@ -150,6 +155,9 @@ pub struct YoctoUtilityDialog {
 impl YoctoUtilityDialog {
     pub fn new(command: YoctoUtilityCommand) -> Self {
         let draft = match command {
+            YoctoUtilityCommand::Devtool(command) => {
+                YoctoUtilityDraft::Devtool(DevtoolUtilityDraft::new(command))
+            }
             YoctoUtilityCommand::ConfigBuild => YoctoUtilityDraft::ConfigBuild {
                 operation: ConfigBuildOperation::ListFragments,
                 fragments: String::new(),
@@ -170,6 +178,7 @@ impl YoctoUtilityDialog {
 
     pub fn fields(&self) -> Vec<(&'static str, String, YoctoUtilityFieldKind)> {
         match &self.draft {
+            YoctoUtilityDraft::Devtool(draft) => draft.fields(),
             YoctoUtilityDraft::ConfigBuild {
                 operation,
                 fragments,
@@ -211,6 +220,7 @@ impl YoctoUtilityDialog {
 
     pub fn cycle_choice(&mut self, delta: isize) {
         match &mut self.draft {
+            YoctoUtilityDraft::Devtool(draft) => draft.cycle_choice(self.selected_field, delta),
             YoctoUtilityDraft::ConfigBuild { operation, .. } if self.selected_field == 0 => {
                 *operation = operation.shifted(delta);
                 self.selected_field = self.selected_field.min(self.fields().len() - 1);
@@ -248,6 +258,7 @@ impl YoctoUtilityDialog {
 
     fn selected_text_mut(&mut self) -> Option<&mut String> {
         match &mut self.draft {
+            YoctoUtilityDraft::Devtool(draft) => draft.selected_text_mut(self.selected_field),
             YoctoUtilityDraft::ConfigBuild { fragments, .. } if self.selected_field == 1 => {
                 Some(fragments)
             }
@@ -258,6 +269,7 @@ impl YoctoUtilityDialog {
 
     pub fn capability(&self) -> CapabilityId {
         match &self.draft {
+            YoctoUtilityDraft::Devtool(draft) => draft.command.capability(),
             YoctoUtilityDraft::ConfigBuild { operation, .. } => operation.capability(),
             YoctoUtilityDraft::Layers(draft) => draft.capability(),
         }
@@ -265,6 +277,7 @@ impl YoctoUtilityDialog {
 
     pub fn arguments(&self) -> Result<Vec<String>, String> {
         match &self.draft {
+            YoctoUtilityDraft::Devtool(draft) => draft.arguments(),
             YoctoUtilityDraft::ConfigBuild {
                 operation,
                 fragments,

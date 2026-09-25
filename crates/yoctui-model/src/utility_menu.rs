@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::CapabilityId;
+use crate::{CapabilityId, DevtoolUtilityCommand, DevtoolUtilityDraft, OperatorActionSafety};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum UtilityMenuKind {
@@ -47,21 +47,30 @@ impl ExpertArguments {
 }
 
 pub fn utility_menu_catalog() -> Vec<UtilityMenuEntry> {
-    vec![
-        (
-            UtilityMenuKind::Devtool,
-            "status",
-            Some(CapabilityId::DevtoolStatus),
-            false,
-            false,
-        ),
-        (
-            UtilityMenuKind::Devtool,
-            "modify",
-            Some(CapabilityId::DevtoolModify),
-            true,
-            false,
-        ),
+    let mut entries = DevtoolUtilityCommand::ALL
+        .into_iter()
+        .map(|command| UtilityMenuEntry {
+            kind: UtilityMenuKind::Devtool,
+            operation: command.subcommand().into(),
+            capability: Some(command.capability()),
+            typed_fields: DevtoolUtilityDraft::new(command)
+                .fields()
+                .into_iter()
+                .map(|(label, _, _)| label.into())
+                .collect(),
+            destructive: command.safety() == OperatorActionSafety::DestructiveConfirmation,
+            network: matches!(
+                command,
+                DevtoolUtilityCommand::Add
+                    | DevtoolUtilityCommand::Upgrade
+                    | DevtoolUtilityCommand::LatestVersion
+                    | DevtoolUtilityCommand::CheckUpgradeStatus
+                    | DevtoolUtilityCommand::DeployTarget
+                    | DevtoolUtilityCommand::UndeployTarget
+            ),
+        })
+        .collect::<Vec<_>>();
+    let other_entries = vec![
         (
             UtilityMenuKind::Recipetool,
             "create",
@@ -224,9 +233,8 @@ pub fn utility_menu_catalog() -> Vec<UtilityMenuEntry> {
             false,
         ),
         (UtilityMenuKind::Advanced, "expert-argv", None, false, false),
-    ]
-    .into_iter()
-    .map(
+    ];
+    entries.extend(other_entries.into_iter().map(
         |(kind, operation, capability, destructive, network)| UtilityMenuEntry {
             kind,
             operation: operation.into(),
@@ -235,8 +243,8 @@ pub fn utility_menu_catalog() -> Vec<UtilityMenuEntry> {
             destructive,
             network,
         },
-    )
-    .collect()
+    ));
+    entries
 }
 
 fn parse_words(input: &str) -> Result<Vec<String>, String> {

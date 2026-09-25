@@ -4512,3 +4512,19 @@ to typed drafts, the app layer maps terminal input to field actions, and the UI
 only renders field projections. Execution continues through the existing
 daemon-owned utility terminal request with the initialized executable and build
 directory supplied by the current compatibility snapshot.
+
+## M75 complete Devtool command surface
+
+The model owns a closed Devtool utility command catalog for every subcommand
+reported by the initialized environment. Declarative field definitions drive
+the dedicated application-menu group and typed form, while command-specific
+builders validate required values, mutually exclusive choices, paths, targets,
+recipe lists, and exact shell-free argv. The form does not expose a general
+shell command field.
+
+Each Devtool command maps to one independently discovered capability. The
+compatibility catalog probes the exact subcommand and every option exposed by
+its form. After validation the existing utility-terminal preview receives the
+initialized Devtool executable, build directory, and argv as separate values;
+the daemon remains the sole process owner and UI widgets never parse Devtool
+output.

@@ -11,17 +11,19 @@ pub enum ApplicationMenuGroup {
     Actions,
     Navigate,
     View,
+    Devtool,
     Tools,
     Help,
 }
 
 impl ApplicationMenuGroup {
-    pub const ALL: [Self; 7] = [
+    pub const ALL: [Self; 8] = [
         Self::Workspace,
         Self::Build,
         Self::Actions,
         Self::Navigate,
         Self::View,
+        Self::Devtool,
         Self::Tools,
         Self::Help,
     ];
@@ -33,6 +35,7 @@ impl ApplicationMenuGroup {
             Self::Actions => "Actions",
             Self::Navigate => "Navigate",
             Self::View => "View",
+            Self::Devtool => "Devtool",
             Self::Tools => "Tools",
             Self::Help => "Help",
         }
@@ -66,6 +69,7 @@ impl ApplicationMenuGroup {
             | CommandId::PreviousSubfocus
             | CommandId::NextSubfocus
             | CommandId::TogglePaneZoom => Self::View,
+            CommandId::OpenDevtool(_) => Self::Devtool,
             CommandId::OpenGitUi
             | CommandId::OpenBitBakeConfigBuild
             | CommandId::OpenBitBakeLayersShowLayers

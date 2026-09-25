@@ -1,4 +1,7 @@
 fn global_metadata(command: CommandId) -> GlobalMetadata {
+    if let Some(metadata) = devtool_utility_global_metadata(command) {
+        return metadata;
+    }
     if let Some(metadata) = yocto_utility_global_metadata(command) {
         return metadata;
     }
@@ -212,6 +215,9 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             metadata.help_group = Group::Operate;
             metadata
         }
+        CommandId::OpenDevtool(_) => {
+            unreachable!("Devtool utility metadata returned before the main catalog match")
+        }
         CommandId::OpenBitBakeConfigBuild
         | CommandId::OpenBitBakeLayersShowLayers
         | CommandId::OpenBitBakeLayersShowRecipes
@@ -380,6 +386,8 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
         },
     }
 }
+
+include!("global_devtool_metadata.rs");
 
 fn focus_metadata(
     id: &'static str,

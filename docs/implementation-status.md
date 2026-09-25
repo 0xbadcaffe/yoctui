@@ -3952,3 +3952,10 @@ DONE — GitHub CI exposed six production-renderer goldens that still expected
 the prior build count after the 0.1.123 versioned fixture update. Regenerated
 the target, literal, concept and README goldens through the production
 renderer, bumped the workspace to 0.1.124, and ran the full workspace suite.
+
+DEVTOOL-ALL-MENU-001 is DONE in v0.1.228. The dedicated F12 Devtool group
+contains all 25 subcommands reported by the authoritative Romulus Devtool 2.19
+surface. Every documented positional argument and option has a typed field;
+mutually exclusive modes, paths, targets, recipe lists, ports, and conditional
+arguments validate before exact shell-free argv preview. Focused model, app, UI,
+adapter, compatibility, formatting, and strict workspace Clippy checks pass.

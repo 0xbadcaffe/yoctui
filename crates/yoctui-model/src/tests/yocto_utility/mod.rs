@@ -1,5 +1,7 @@
 use super::*;
 
+mod devtool_utility;
+
 fn install_utility_authority(app: &mut App, capabilities: &[CapabilityId]) {
     let implementations = capabilities
         .iter()
@@ -31,6 +33,11 @@ fn install_utility_authority(app: &mut App, capabilities: &[CapabilityId]) {
                         ToolIdentity {
                             id: "bitbake-layers".into(),
                             executable: "/work/bitbake/bin/bitbake-layers".into(),
+                            version: None,
+                        },
+                        ToolIdentity {
+                            id: "devtool".into(),
+                            executable: "/work/bitbake/bin/devtool".into(),
                             version: None,
                         },
                     ],

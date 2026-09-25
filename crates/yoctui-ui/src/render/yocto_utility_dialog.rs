@@ -24,7 +24,15 @@ fn render_yocto_utility_dialog(frame: &mut Frame, app: &App, area: Rect) -> bool
         lines.push(Line::from("This command has no arguments."));
     } else {
         for (index, (label, value, kind)) in fields.iter().enumerate() {
-            let value = if value.is_empty() { "<required>" } else { value };
+            let value = if value.is_empty() {
+                if label.contains("optional") {
+                    "<not set>"
+                } else {
+                    "<required>"
+                }
+            } else {
+                value
+            };
             let suffix = if *kind == yoctui_model::YoctoUtilityFieldKind::Choice {
                 "  ←/→"
             } else {

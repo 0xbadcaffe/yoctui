@@ -15,6 +15,7 @@ fn ux_menu_groups_context_availability_prefix_and_focus_are_typed_and_bounded() 
             "Actions",
             "Navigate",
             "View",
+            "Devtool",
             "Tools",
             "Help"
         ]

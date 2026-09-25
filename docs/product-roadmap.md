@@ -1882,3 +1882,9 @@ bitbake-layers utility. Typed validation, per-command capability and option
 probes, exact argv previews, and daemon-owned execution remain enforced.
 Focused checks and strict Clippy pass; the full suite remains deferred for the
 user's rapid manual bug pass.
+
+DEVTOOL-ALL-MENU-001 is DONE in v0.1.228. F12 has a dedicated Devtool group
+covering all 25 initialized-environment subcommands and every documented option.
+Typed validation, exact argv previews, per-command compatibility authority, and
+daemon-owned terminal execution pass focused checks and strict Clippy; the full
+suite remains deferred for the user's rapid manual bug pass.

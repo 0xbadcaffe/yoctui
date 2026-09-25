@@ -57,3 +57,53 @@ fn complete_layer_forms_render_all_command_specific_options() {
         assert!(output.contains(expected), "{expected}: {output}");
     }
 }
+
+#[test]
+fn complete_devtool_form_renders_command_specific_options() {
+    let mut app = App::new(16, 4096);
+    app.dialogs
+        .push_back(Dialog::YoctoUtility(yoctui_model::YoctoUtilityDialog::new(
+            yoctui_model::YoctoUtilityCommand::Devtool(yoctui_model::DevtoolUtilityCommand::Add),
+        )));
+    let mut terminal = Terminal::new(TestBackend::new(110, 36)).unwrap();
+    terminal
+        .draw(|frame| render_at(frame, &app, UNIX_EPOCH))
+        .unwrap();
+    let output = terminal
+        .backend()
+        .buffer()
+        .content
+        .iter()
+        .map(|cell| cell.symbol())
+        .collect::<String>();
+    for expected in [
+        "Tool: devtool",
+        "Fetch URI syntax",
+        "Build directory",
+        "Source revision",
+        "Also add native variant",
+        "Provides alias",
+    ] {
+        assert!(output.contains(expected), "{expected}: {output}");
+    }
+}
+
+#[test]
+fn application_menu_renders_the_dedicated_devtool_group() {
+    let mut app = App::new(16, 4096);
+    let _ = yoctui_model::update(&mut app, yoctui_model::Action::OpenApplicationMenu);
+    let mut terminal = Terminal::new(TestBackend::new(120, 30)).unwrap();
+    terminal
+        .draw(|frame| render_at(frame, &app, UNIX_EPOCH))
+        .unwrap();
+    let output = terminal
+        .backend()
+        .buffer()
+        .content
+        .iter()
+        .map(|cell| cell.symbol())
+        .collect::<String>();
+    assert!(output.contains("Devtool"), "{output}");
+    assert!(output.contains("Workspace"), "{output}");
+    assert!(output.contains("Tools"), "{output}");
+}

@@ -4,18 +4,41 @@ fn definition_development(id: CapabilityId) -> Option<Definition> {
     use CapabilityToolId as Tool;
 
     Some(match id {
+        Id::DevtoolAdd => tool_command(
+            "Devtool add",
+            Tool::Devtool,
+            Some("add"),
+            &[
+                "--same-dir", "--no-same-dir", "--fetch", "--npm-dev", "--no-pypi",
+                "--version", "--no-git", "--srcrev", "--autorev", "--srcbranch",
+                "--binary", "--also-native", "--src-subdir", "--mirrors", "--provides",
+            ],
+            "devtool.add.argv",
+        ),
         Id::DevtoolModify => tool_command(
             "Devtool modify",
             Tool::Devtool,
             Some("modify"),
-            &[],
+            &[
+                "--wildcard", "--extract", "--no-extract", "--same-dir", "--no-same-dir",
+                "--branch", "--no-overrides", "--keep-temp", "--debug-build",
+            ],
             "devtool.modify.argv",
+        ),
+        Id::DevtoolUpgrade => tool_command(
+            "Devtool upgrade",
+            Tool::Devtool,
+            Some("upgrade"),
+            &[
+                "--stable", "--version", "--srcrev", "--srcbranch", "--branch",
+                "--no-patch", "--no-overrides", "--same-dir", "--no-same-dir",
+                "--keep-temp", "--keep-failure",
+            ],
+            "devtool.upgrade.argv",
         ),
         // `devtool status --help` initializes workspace context on supported
         // Poky releases and can exceed the bounded read-only probe deadline.
-        // The global help command is side-effect free and authoritatively
-        // enumerates the status subcommand, so probe that command list while
-        // retaining the exact `devtool status` execution requirement.
+        // Global help authoritatively enumerates this option-free subcommand.
         Id::DevtoolStatus => (
             "Devtool status",
             vec![Tool::Devtool],
@@ -31,54 +54,110 @@ fn definition_development(id: CapabilityId) -> Option<Definition> {
             implementation("devtool.status.argv", Kind::Command),
             None,
         ),
+        Id::DevtoolLatestVersion => tool_command(
+            "Devtool latest-version", Tool::Devtool, Some("latest-version"), &["--stable"],
+            "devtool.latest_version.argv",
+        ),
+        Id::DevtoolCheckUpgradeStatus => tool_command(
+            "Devtool check-upgrade-status", Tool::Devtool, Some("check-upgrade-status"),
+            &["--stable", "--all"], "devtool.check_upgrade_status.argv",
+        ),
+        Id::DevtoolSearch => tool_command(
+            "Devtool search", Tool::Devtool, Some("search"), &[], "devtool.search.argv",
+        ),
+        Id::DevtoolBuild => tool_command(
+            "Devtool build", Tool::Devtool, Some("build"),
+            &["--disable-parallel-make", "--clean"], "devtool.build.argv",
+        ),
+        Id::DevtoolIdeSdk => tool_command(
+            "Devtool ide-sdk", Tool::Devtool, Some("ide-sdk"),
+            &[
+                "--mode", "--ide", "--target", "--gdbserver-port-start", "--no-host-check",
+                "--ssh-exec", "--port", "--key", "--skip-bitbake", "--bitbake-k",
+                "--no-strip", "--dry-run", "--show-status", "--no-preserve",
+                "--no-check-space",
+            ],
+            "devtool.ide_sdk.argv",
+        ),
+        Id::DevtoolRename => tool_command(
+            "Devtool rename", Tool::Devtool, Some("rename"),
+            &["--version", "--no-srctree"], "devtool.rename.argv",
+        ),
         Id::DevtoolEditRecipe => tool_command(
-            "Devtool edit-recipe",
-            Tool::Devtool,
-            Some("edit-recipe"),
-            &[],
+            "Devtool edit-recipe", Tool::Devtool, Some("edit-recipe"), &["--any-recipe"],
             "devtool.edit_recipe.argv",
         ),
+        Id::DevtoolFindRecipe => tool_command(
+            "Devtool find-recipe", Tool::Devtool, Some("find-recipe"), &["--any-recipe"],
+            "devtool.find_recipe.argv",
+        ),
+        Id::DevtoolConfigureHelp => tool_command(
+            "Devtool configure-help", Tool::Devtool, Some("configure-help"),
+            &["--no-pager", "--no-header", "--arg"], "devtool.configure_help.argv",
+        ),
         Id::DevtoolUpdateRecipe => tool_command(
-            "Devtool update-recipe",
-            Tool::Devtool,
-            Some("update-recipe"),
-            &[],
+            "Devtool update-recipe", Tool::Devtool, Some("update-recipe"),
+            &[
+                "--mode", "--initial-rev", "--append", "--wildcard-version", "--no-remove",
+                "--no-overrides", "--dry-run", "--force-patch-refresh",
+            ],
             "devtool.update_recipe.argv",
         ),
+        Id::DevtoolReset => tool_command(
+            "Devtool reset", Tool::Devtool, Some("reset"),
+            &["--all", "--no-clean", "--remove-work"], "devtool.reset.argv",
+        ),
         Id::DevtoolFinish => tool_command(
-            "Devtool finish",
-            Tool::Devtool,
-            Some("finish"),
-            &[],
+            "Devtool finish", Tool::Devtool, Some("finish"),
+            &[
+                "--mode", "--initial-rev", "--force", "--remove-work", "--no-clean",
+                "--no-overrides", "--dry-run", "--force-patch-refresh",
+            ],
             "devtool.finish.argv",
         ),
         Id::DevtoolDeployTarget => tool_command(
-            "Devtool deploy-target",
-            Tool::Devtool,
-            Some("deploy-target"),
-            &[],
+            "Devtool deploy-target", Tool::Devtool, Some("deploy-target"),
+            &[
+                "--no-host-check", "--show-status", "--dry-run", "--no-preserve",
+                "--no-check-space", "--ssh-exec", "--port", "--key", "--strip", "--no-strip",
+            ],
             "devtool.deploy_target.argv",
         ),
         Id::DevtoolUndeployTarget => tool_command(
-            "Devtool undeploy-target",
-            Tool::Devtool,
-            Some("undeploy-target"),
-            &[],
+            "Devtool undeploy-target", Tool::Devtool, Some("undeploy-target"),
+            &[
+                "--no-host-check", "--show-status", "--all", "--dry-run", "--ssh-exec",
+                "--port", "--key",
+            ],
             "devtool.undeploy_target.argv",
         ),
-        Id::DevtoolReset => tool_command(
-            "Devtool reset",
-            Tool::Devtool,
-            Some("reset"),
-            &[],
-            "devtool.reset.argv",
+        Id::DevtoolBuildImage => tool_command(
+            "Devtool build-image", Tool::Devtool, Some("build-image"), &["--add-packages"],
+            "devtool.build_image.argv",
         ),
-        Id::DevtoolUpgrade => tool_command(
-            "Devtool upgrade",
-            Tool::Devtool,
-            Some("upgrade"),
-            &[],
-            "devtool.upgrade.argv",
+        Id::DevtoolCreateWorkspace => tool_command(
+            "Devtool create-workspace", Tool::Devtool, Some("create-workspace"),
+            &["--layerseries", "--create-only"], "devtool.create_workspace.argv",
+        ),
+        Id::DevtoolExport => tool_command(
+            "Devtool export", Tool::Devtool, Some("export"),
+            &["--file", "--overwrite", "--include", "--exclude"], "devtool.export.argv",
+        ),
+        Id::DevtoolExtract => tool_command(
+            "Devtool extract", Tool::Devtool, Some("extract"),
+            &["--branch", "--no-overrides", "--keep-temp"], "devtool.extract.argv",
+        ),
+        Id::DevtoolSync => tool_command(
+            "Devtool sync", Tool::Devtool, Some("sync"), &["--branch", "--keep-temp"],
+            "devtool.sync.argv",
+        ),
+        Id::DevtoolImport => tool_command(
+            "Devtool import", Tool::Devtool, Some("import"), &["--overwrite"],
+            "devtool.import.argv",
+        ),
+        Id::DevtoolMenuconfig => tool_command(
+            "Devtool menuconfig", Tool::Devtool, Some("menuconfig"), &[],
+            "devtool.menuconfig.argv",
         ),
         Id::RecipetoolCreate => tool_command(
             "Recipetool create",
