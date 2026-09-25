@@ -55,7 +55,7 @@ pub(crate) fn navigator(
             Screen::TerminalSessions,
             WorkspaceDestination::TerminalSessions,
         ),
-        ("Devtool", Screen::Recipes, WorkspaceDestination::Devtool),
+        ("Devtool", Screen::Devtool, WorkspaceDestination::Devtool),
         ("QEMU / Wic", Screen::Images, WorkspaceDestination::QemuWic),
         (
             "Maintenance",
@@ -336,7 +336,7 @@ pub(crate) fn literal_project_navigator(
         ("Build", Screen::Tasks),
         ("Test", Screen::Testing),
         ("QA", Screen::Qa),
-        ("Devtool", Screen::Recipes),
+        ("Devtool", Screen::Devtool),
         ("Wic", Screen::Images),
         ("SDK", Screen::Sdk),
         ("Security", Screen::Security),

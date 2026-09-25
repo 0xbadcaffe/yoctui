@@ -79,6 +79,44 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
     }
 }
 
+pub fn devtool_workspace_action(searching: bool, key: Input) -> Option<Action> {
+    if searching {
+        return match key {
+            Input::Char(character) => Some(Action::AppendMetadataQuery(character)),
+            Input::Backspace => Some(Action::BackspaceMetadataQuery),
+            Input::CtrlU => Some(Action::ClearMetadataQuery),
+            Input::Enter | Input::Esc => Some(Action::FinishMetadataSearch),
+            _ => None,
+        };
+    }
+    if matches!(key, Input::Char('G') | Input::Char('J')) {
+        return Some(Action::BeginSelectedRecipeDevtoolGitUi);
+    }
+    if let Some(delta) = collection_scroll_delta(key) {
+        return Some(Action::SelectRecipe { delta });
+    }
+    match key {
+        Input::Up | Input::Char('k') => Some(Action::SelectRecipe { delta: -1 }),
+        Input::Down | Input::Char('j') => Some(Action::SelectRecipe { delta: 1 }),
+        Input::Char('[') => Some(Action::ScrollRecipePreview { delta: -10 }),
+        Input::Char(']') => Some(Action::ScrollRecipePreview { delta: 10 }),
+        Input::Enter | Input::Char('t') | Input::Char('r') => {
+            Some(Action::BeginSelectedRecipeDevtoolStatus)
+        }
+        Input::Char('/') => Some(Action::BeginMetadataSearch),
+        Input::CtrlU => Some(Action::ClearMetadataQuery),
+        Input::Char('d') | Input::Char('e') => Some(Action::BeginSelectedRecipeDevtoolModify),
+        Input::Char('b') => Some(Action::BeginSelectedRecipeBuild),
+        Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
+        Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe),
+        Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
+        Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
+        Input::Char('s') => Some(Action::BeginSelectedRecipeDevtoolWorkspaceShell),
+        Input::Char('E') => Some(Action::BeginSelectedRecipeDevtoolEditRecipe),
+        _ => None,
+    }
+}
+
 pub fn terminal_launch_dialog_action(key: Input) -> Option<Action> {
     match key {
         Input::Up | Input::Left | Input::Char('k') | Input::Char('h') => {

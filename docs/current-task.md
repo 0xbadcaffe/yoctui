@@ -1,14 +1,14 @@
 # Current Task
 
-**ID:** DEVTOOL-WORKSPACE-SURFACE-001
-**Title:** Add a first-class recipe-centered Devtool Workspace
+**ID:** DEVTOOL-WORKSPACE-LOOP-001
+**Title:** Connect start edit build and SSH/SCP deployment in the Devtool Workspace
 **Status:** IN_PROGRESS
 
-Implement a distinct `Screen::Devtool` reached by the Navigator's Devtool row.
-It must reuse the authoritative recipe inventory, stable selected recipe
-identity, typed Devtool status, and existing process owners while presenting the
-ordered development workflow. It must not route the Devtool row to the general
-Recipes screen.
+Connect the dedicated Devtool Workspace to the existing typed modify, source
+editor, workspace shell, GitUI, exact recipe build, and deploy-target workflows.
+Every dialog or job must retain the selected recipe and return to the Devtool
+screen. Label deployment as Devtool's SSH/SCP transport and preview its exact
+target without guessing a binary path.
 
 Verify with:
 

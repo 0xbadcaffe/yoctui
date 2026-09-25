@@ -266,8 +266,8 @@ use recipe_render::{recipe_build_state, recipe_inspector, recipe_workspace_state
 
 mod package_render;
 use package_render::{
-    layer_browser, layer_entry_metadata, layers, package_inspector_text, packages_workspace,
-    recipes,
+    devtool_workspace, layer_browser, layer_entry_metadata, layers, package_inspector_text,
+    packages_workspace, recipes,
 };
 
 mod config_render;

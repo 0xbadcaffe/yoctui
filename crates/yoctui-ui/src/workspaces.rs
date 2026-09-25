@@ -33,6 +33,7 @@ pub(super) fn workspace(
         Screen::Logs => logs(frame, app, area),
         Screen::Errors => errors(frame, app, area),
         Screen::Recipes => recipes(frame, app, area),
+        Screen::Devtool => devtool_workspace(frame, app, area),
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
         Screen::Kernel if app.platform_menuconfig_visible() => {

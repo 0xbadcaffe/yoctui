@@ -101,6 +101,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Dependencies => dependency_workspace_action(app.dependency_graph_searching, key),
         Screen::Signatures => signature_workspace_action(key),
         Screen::Recipes => recipes_workspace_action(app.metadata_searching, key),
+        Screen::Devtool => devtool_workspace_action(app.metadata_searching, key),
         Screen::Packages => package_workspace_action(app.package_searching, key),
         Screen::Images => {
             images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)

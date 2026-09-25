@@ -42,6 +42,28 @@ impl InteractiveRuntime {
                 .collect();
             let _ =
                 compatibility_workspace_action(&mut runtime.app, Action::OpenImagePicker(images));
+        } else if runtime.app.screen == yoctui_model::Screen::Devtool
+            && devtool_workspace_action(runtime.app.metadata_searching, input).is_some()
+        {
+            let action = devtool_workspace_action(runtime.app.metadata_searching, input)
+                .expect("Devtool workspace action was checked");
+            match action {
+                Action::BeginSelectedRecipeDevtoolStatus => {
+                    runtime.begin_selected_devtool_status();
+                }
+                Action::BeginSelectedRecipeDevtoolModify => {
+                    let root = match compatibility_workspace_action(&mut runtime.app, action) {
+                        Some(Effect::OpenWorkspaceEditor { label, root }) => Some((label, root)),
+                        _ => None,
+                    };
+                    if let Some((recipe, root)) = root {
+                        open_workspace_editor(&mut runtime.app, recipe, root).await;
+                    }
+                }
+                _ => {
+                    let _ = compatibility_workspace_action(&mut runtime.app, action);
+                }
+            }
         } else if runtime.app.screen == yoctui_model::Screen::Recipes && input == Input::Char('b') {
             let _ =
                 compatibility_workspace_action(&mut runtime.app, Action::BeginSelectedRecipeBuild);

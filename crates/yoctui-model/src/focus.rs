@@ -67,6 +67,7 @@ pub const fn workspace_subfocus_count(screen: Screen) -> usize {
         Screen::Tasks => 3,
         Screen::Logs
         | Screen::Recipes
+        | Screen::Devtool
         | Screen::Layers
         | Screen::Packages
         | Screen::Images

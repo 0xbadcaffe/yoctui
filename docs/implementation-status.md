@@ -3960,9 +3960,9 @@ mutually exclusive modes, paths, targets, recipe lists, ports, and conditional
 arguments validate before exact shell-free argv preview. Focused model, app, UI,
 adapter, compatibility, formatting, and strict workspace Clippy checks pass.
 
-DEVTOOL-WORKSPACE-SURFACE-001 is IN_PROGRESS. The requested recipe-centered
-Devtool feature is split into a first-class Navigator/workspace projection, the
-start/edit/build/deploy loop, configured-layer patch creation, and final release
-verification. Existing Devtool and Recipes operations remain the execution
-authority; the missing product pieces are the dedicated owning surface and a
-typed `update-recipe --mode patch --append` plan.
+DEVTOOL-WORKSPACE-SURFACE-001 is DONE in the v0.1.229 feature series. The
+Navigator's Devtool row opens a distinct screen with an identity-preserving
+recipe list, compact workspace/Git/build states, an ordered workflow panel,
+search, responsive rendering, and its own key routing. Existing recipe and
+backend state remain the only authority. DEVTOOL-WORKSPACE-LOOP-001 is now
+IN_PROGRESS.

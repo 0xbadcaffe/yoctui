@@ -67,6 +67,9 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         Screen::Recipes => {
             "↑/↓ select | [/] preview scroll | e provider | o logs | p patches | b/f tasks | v devshell | s workspace shell | E edit-recipe | V CVE | X SPDX | d modify | u update | F finish | P deploy | D reset | / search"
         }
+        Screen::Devtool => {
+            "↑/↓ recipe | Enter refresh | d start/edit | e source | b build | P deploy SSH/SCP | u create patches | F finish into layer | s shell | G GitUI | D reset | / search"
+        }
         Screen::Packages => {
             "↑/↓ select | Enter detail | / search | R refresh | D dep kind | [/] dep | d follow | u back | o recipe | e provider | c cancel"
         }

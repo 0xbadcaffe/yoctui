@@ -246,6 +246,7 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Signatures => WorkspaceDestination::Signatures,
         Screen::LayerRelationships => WorkspaceDestination::Layers,
         Screen::Recipes => WorkspaceDestination::Recipes,
+        Screen::Devtool => WorkspaceDestination::Devtool,
         Screen::Packages => WorkspaceDestination::Packages,
         Screen::Images => WorkspaceDestination::Images,
         Screen::Kernel => WorkspaceDestination::Kernel,
@@ -267,4 +268,3 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Settings => WorkspaceDestination::Settings,
     }
 }
-

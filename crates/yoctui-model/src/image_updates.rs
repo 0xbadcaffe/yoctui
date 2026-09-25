@@ -294,7 +294,7 @@ pub(crate) fn current_collection_edge_action(app: &App, to_end: bool) -> Option<
         Screen::BuildHistory => Action::SelectBuildHistory { delta },
         Screen::Dependencies => Action::SelectDependencyGraphNode { delta },
         Screen::Signatures => Action::SelectSignatureRecord { delta },
-        Screen::Recipes => Action::SelectRecipe { delta },
+        Screen::Recipes | Screen::Devtool => Action::SelectRecipe { delta },
         Screen::Packages => Action::SelectPackage { delta },
         Screen::Images => Action::SelectImageArtifact { delta },
         Screen::Kernel => Action::SelectKernelFile { delta },

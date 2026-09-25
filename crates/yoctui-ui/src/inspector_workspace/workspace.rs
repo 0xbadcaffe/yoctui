@@ -39,7 +39,7 @@ pub(crate) fn inspector(
         return;
     }
     let details = match app.screen {
-        Screen::Recipes => app.workspace.recipes.get(app.recipe_selection).map_or_else(
+        Screen::Recipes | Screen::Devtool => app.workspace.recipes.get(app.recipe_selection).map_or_else(
             || "No recipe selected.".into(),
             |recipe| recipe_inspector(app, recipe),
         ),
@@ -202,6 +202,7 @@ pub(crate) fn inspector(
         app.screen,
         Screen::Errors
             | Screen::Recipes
+            | Screen::Devtool
             | Screen::BuildHistory
             | Screen::Images
             | Screen::Sdk

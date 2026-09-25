@@ -9,7 +9,7 @@ impl App {
             Screen::BuildHistory => InspectorMode::Job,
             Screen::Dependencies | Screen::LayerRelationships => InspectorMode::Dependency,
             Screen::Signatures => InspectorMode::Signature,
-            Screen::Recipes => InspectorMode::Recipe,
+            Screen::Recipes | Screen::Devtool => InspectorMode::Recipe,
             Screen::Packages => InspectorMode::Package,
             Screen::Images | Screen::Kernel | Screen::Firmware | Screen::Sdk => {
                 InspectorMode::Artifact
