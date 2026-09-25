@@ -3812,11 +3812,15 @@ The client requests the writer lease when that session becomes running and
 resizes it from the same shared geometry used by rendering and mouse routing.
 
 Platform menuconfig argv uses the exact BitBake executable from the current
-compatibility environment. `/usr/bin/env` supplies `OE_TERMINAL=custom`, the
-custom `{command}` adapter, and the matching BitBake environment passthrough
-allowlist. BitBake consequently starts its generated task wrapper on the
-daemon PTY or selected detached emulator instead of auto-selecting a graphical
-terminal. No widget parses BitBake output or owns process state.
+compatibility environment. The CLI wraps that typed request in a hidden relay
+process for embedded and detached destinations. The daemon adds the stable
+custom terminal variables to its captured BitBake environment before any
+metadata server starts. The relay accepts the generated wrapper path over one
+private runtime socket, bounds and validates that path beneath the active build
+directory, then executes the wrapper while inheriting the selected PTY. The
+worker-side helper waits for the wrapper result before BitBake completes the
+task. The socket is removed on every exit.
+No widget parses BitBake output or owns process state.
 
 ## M43 Dashboard focus and sparse-browser layout
 

@@ -68,6 +68,12 @@ pub(super) fn validate_dimensions(dimensions: TerminalDimensions) -> Result<(), 
 pub(super) fn inherited_environment() -> BTreeMap<String, String> {
     let mut environment = std::env::vars().collect();
     ensure_interactive_terminal_environment(&mut environment);
+    if let (Ok(executable), Ok(socket)) = (
+        std::env::current_exe().and_then(|path| path.canonicalize()),
+        crate::menuconfig_relay::socket_path(),
+    ) {
+        crate::menuconfig_relay::configure_environment(&mut environment, &executable, &socket);
+    }
     environment
 }
 

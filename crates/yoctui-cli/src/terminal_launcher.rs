@@ -99,10 +99,15 @@ pub(crate) fn detached_terminal_command(
     if !request.program.is_absolute() {
         anyhow::bail!("detached terminal command must be an absolute executable");
     }
-    let program = request
-        .program
+    let (requested_program, arguments) =
+        if matches!(request.kind, yoctui_model::TerminalCreationKind::Menuconfig) {
+            crate::menuconfig_relay::command(&request.program, &request.arguments)?
+        } else {
+            (request.program.clone(), request.arguments.clone())
+        };
+    let program = requested_program
         .canonicalize()
-        .with_context(|| format!("could not resolve {}", request.program.display()))?;
+        .with_context(|| format!("could not resolve {}", requested_program.display()))?;
     let metadata = fs::metadata(&program)?;
     if !metadata.is_file() {
         anyhow::bail!("detached terminal command is not a regular file");
@@ -111,7 +116,7 @@ pub(crate) fn detached_terminal_command(
     command
         .arg(launcher.command_separator)
         .arg(program)
-        .args(&request.arguments)
+        .args(arguments)
         .current_dir(&request.cwd)
         .stdin(Stdio::null())
         .stdout(Stdio::null())

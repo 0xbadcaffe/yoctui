@@ -5387,8 +5387,12 @@ captured BitBake jobs. Noninteractive Devtool modify/update/finish/deploy/reset
 remain persistent background jobs.
 
 Kernel and U-Boot menuconfig use the exact BitBake executable reported by the
-current compatibility snapshot and force BitBake's custom terminal adapter to
-run its generated task wrapper on the selected PTY. This prevents desktop
+current compatibility snapshot. The daemon's stable BitBake environment uses
+a Yoctui custom terminal handoff. A bounded local relay receives the generated
+task-wrapper path over its private runtime socket, validates that it remains
+inside the active build directory, and runs
+that wrapper on the selected PTY. This prevents BitBake's server worker from
+running ncurses without a controlling terminal and prevents desktop
 terminal auto-detection from opening an unrelated graphical window. The same
 native argv is used by the detached destination, where the desktop emulator is
 the owning terminal. After embedded confirmation, the footer retains a typed
@@ -5468,7 +5472,9 @@ tabs. Up/Down selects an authoritative artifact, `Tab` switches tabs, `1` and
 opens provider-verified menuconfig in a persistent PTY, `Enter`/`e` opens text
 in the in-app explorer/editor, `o` explores the selected root, `c` compiles a
 DTS, `d` decompiles a DTB/DTBO, and `r` refreshes the inventory. Binary device
-trees do not enter the text viewer. Compile/decompile actions preview exact
+trees do not enter the text viewer. `Enter`/`e` on a DTB or DTBO invokes the
+same decompile flow as `d`; when `dtc` is missing, the notice tells the operator
+to install the compiler. Compile/decompile actions preview exact
 argv and refuse to overwrite an existing `.yoctui` output. Opening Kernel
 starts the metadata server on demand and resolves `virtual/kernel` through
 BitBake's configured best provider; it does not require a running build or a

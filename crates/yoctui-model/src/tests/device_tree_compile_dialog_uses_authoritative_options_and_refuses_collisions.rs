@@ -155,8 +155,65 @@ fn device_tree_compile_reports_missing_dtc_plainly() {
     assert_eq!(update(&mut app, Action::CompileSelectedKernelDts), None);
     assert_eq!(
         app.notification.as_deref(),
-        Some("No dtc executable was found in PATH.")
+        Some("Install the dtc compiler to work with device-tree binaries.")
     );
+}
+
+#[test]
+fn opening_a_dtb_uses_decompile_and_reports_missing_dtc() {
+    for (component, action) in [
+        (PlatformComponent::Kernel, Action::OpenSelectedKernelFile),
+        (PlatformComponent::UBoot, Action::OpenSelectedFirmwareFile),
+    ] {
+        let mut app = App::new(8, 512);
+        let source = PathBuf::from(format!("/workspace/{}/board.dtb", component.label()));
+        let mut state = inventory(component, source);
+        let PlatformInventoryState::Available(inventory) = &mut state else {
+            unreachable!();
+        };
+        inventory.files[0].kind = PlatformFileKind::Dtb;
+        inventory.dtc = None;
+        let workbench = if component == PlatformComponent::Kernel {
+            &mut app.kernel
+        } else {
+            &mut app.firmware
+        };
+        workbench.view = PlatformView::DeviceTrees;
+        workbench.inventory = state;
+
+        assert_eq!(update(&mut app, action), None);
+        assert!(app.active_dialog().is_none());
+        assert_eq!(
+            app.notification.as_deref(),
+            Some("Install the dtc compiler to work with device-tree binaries.")
+        );
+    }
+}
+
+#[test]
+fn opening_a_dtb_starts_the_decompile_flow_when_dtc_is_available() {
+    let mut app = App::new(8, 512);
+    let source = PathBuf::from("/workspace/kernel/board.dtb");
+    let mut state = inventory(PlatformComponent::Kernel, source.clone());
+    let PlatformInventoryState::Available(inventory) = &mut state else {
+        unreachable!();
+    };
+    inventory.files[0].kind = PlatformFileKind::Dtb;
+    app.kernel.view = PlatformView::DeviceTrees;
+    app.kernel.inventory = state;
+
+    assert_eq!(update(&mut app, Action::OpenSelectedKernelFile), None);
+    assert!(matches!(
+        app.active_dialog(),
+        Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
+            request: TerminalLaunchRequest {
+                kind: TerminalCreationKind::Utility,
+                arguments,
+                ..
+            },
+            ..
+        })) if arguments.last() == Some(&source.display().to_string())
+    ));
 }
 
 #[cfg(unix)]

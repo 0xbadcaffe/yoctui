@@ -39,6 +39,20 @@ impl std::fmt::Display for Backend {
 
 #[derive(Subcommand, Debug)]
 pub(crate) enum Command {
+    #[command(name = "__menuconfig-relay", hide = true)]
+    MenuconfigRelay {
+        #[arg(long)]
+        bitbake: PathBuf,
+        #[arg(last = true, allow_hyphen_values = true)]
+        arguments: Vec<String>,
+    },
+    #[command(name = "__menuconfig-handoff", hide = true)]
+    MenuconfigHandoff {
+        #[arg(long)]
+        socket: PathBuf,
+        #[arg(last = true, required = true)]
+        command: Vec<PathBuf>,
+    },
     Inspect,
     Profile,
     Build {

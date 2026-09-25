@@ -9437,3 +9437,14 @@ required = true
 depends_on = ["UI-COPY-CLEANUP-001"]
 verify = ["cargo test -p yoctui-model menuconfig", "cargo test -p yoctui-app selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells", "cargo test -p yoctui function_navigation_remains_global_while_an_embedded_menuconfig_owns_input", "cargo test -p yoctui devwork_terminal_detached_plan_preserves_argv_without_shell_evaluation", "cargo test -p yoctui-ui terminal", "cargo fmt --all --check"]
 notes = "DONE in v0.1.223. Kernel and U-Boot menuconfig force BitBake's custom terminal adapter onto the selected daemon PTY, remain in the originating full-width platform Workspace, retain global function-key navigation and typed Braille waiting activity until the screen replica is ready, automatically request writer control, and launch the same exact BitBake argv in detached terminals."
+
+[[task]]
+id = "PLATFORM-MENUCONFIG-RELAY-DTB-001"
+milestone = "M75"
+title = "Relay menuconfig into its PTY and activate DTB decompile with Enter"
+status = "DONE"
+priority = 2426
+required = true
+depends_on = ["PLATFORM-MENUCONFIG-EMBED-001"]
+verify = ["cargo test -p yoctui-model menuconfig", "cargo test -p yoctui-model device_tree", "cargo test -p yoctui menuconfig_relay", "cargo fmt --all --check"]
+notes = "DONE in v0.1.224. BitBake server workers hand their generated custom-terminal command to a validated local relay, which runs it from the reported task directory in the selected PTY; live Romulus linux-aspeed menuconfig rendered its ncurses screen there. Enter on DTB/DTBO follows the typed decompile flow and reports the direct dtc install requirement when the compiler is absent."

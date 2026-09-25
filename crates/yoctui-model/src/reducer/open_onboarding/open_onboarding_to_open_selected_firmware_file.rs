@@ -206,7 +206,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     "The kernel provider did not report an authoritative menuconfig task.".into(),
                 );
             } else if let Some(cwd) = app.workspace.build_dir.clone() {
-                let Some(arguments) = platform_menuconfig_arguments(app, "virtual/kernel") else {
+                let Some((program, arguments)) = platform_menuconfig_command(app, "virtual/kernel")
+                else {
                     app.notification = Some(
                         "The detected BitBake executable is unavailable; refresh the build environment."
                             .into(),
@@ -219,7 +220,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         name: "kernel menuconfig".into(),
                         kind: TerminalCreationKind::Menuconfig,
                         cwd,
-                        program: PathBuf::from("/usr/bin/env"),
+                        program,
                         arguments,
                     },
                 );
@@ -233,7 +234,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             };
             if !file.kind.is_text() {
-                app.notification = Some("A DTB is binary; press d to decompile it to DTS.".into());
+                begin_platform_dtc_decompile(app, true);
                 return None;
             }
             let Ok(relative) = file.path.strip_prefix(&file.root) else {
@@ -300,7 +301,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             {
                 let target = inventory.target.clone();
                 let component = inventory.component.label().to_lowercase();
-                let Some(arguments) = platform_menuconfig_arguments(app, &target) else {
+                let Some((program, arguments)) = platform_menuconfig_command(app, &target) else {
                     app.notification = Some(
                         "The detected BitBake executable is unavailable; refresh the build environment."
                             .into(),
@@ -313,7 +314,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         name: format!("{component} menuconfig"),
                         kind: TerminalCreationKind::Menuconfig,
                         cwd,
-                        program: PathBuf::from("/usr/bin/env"),
+                        program,
                         arguments,
                     },
                 );
@@ -327,7 +328,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 return None;
             };
             if !file.kind.is_text() {
-                app.notification = Some("A DTB is binary; press d to decompile it to DTS.".into());
+                begin_platform_dtc_decompile(app, false);
                 return None;
             }
             let Ok(relative) = file.path.strip_prefix(&file.root) else {
@@ -347,7 +348,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
     None
 }
 
-fn platform_menuconfig_arguments(app: &App, target: &str) -> Option<Vec<String>> {
+fn platform_menuconfig_command(app: &App, target: &str) -> Option<(PathBuf, Vec<String>)> {
     let bitbake = app
         .workspace_compatibility
         .authority()?
@@ -358,15 +359,9 @@ fn platform_menuconfig_arguments(app: &App, target: &str) -> Option<Vec<String>>
         .iter()
         .find(|tool| tool.id == "bitbake")?
         .executable
-        .display()
-        .to_string();
-    Some(vec![
-        "BB_ENV_PASSTHROUGH_ADDITIONS=OE_TERMINAL OE_TERMINAL_CUSTOMCMD".into(),
-        "OE_TERMINAL=custom".into(),
-        "OE_TERMINAL_CUSTOMCMD={command}".into(),
+        .to_path_buf();
+    Some((
         bitbake,
-        target.into(),
-        "-c".into(),
-        "menuconfig".into(),
-    ])
+        vec![target.into(), "-c".into(), "menuconfig".into()],
+    ))
 }

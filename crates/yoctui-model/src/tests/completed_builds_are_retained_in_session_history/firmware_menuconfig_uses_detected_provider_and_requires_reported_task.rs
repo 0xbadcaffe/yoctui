@@ -23,14 +23,13 @@ fn firmware_menuconfig_uses_detected_provider_and_requires_reported_task() {
             request: TerminalLaunchRequest { arguments, .. },
             destination: TerminalLaunchDestination::Embedded,
             ..
-        })) if arguments == &vec![
-            "BB_ENV_PASSTHROUGH_ADDITIONS=OE_TERMINAL OE_TERMINAL_CUSTOMCMD",
-            "OE_TERMINAL=custom",
-            "OE_TERMINAL_CUSTOMCMD={command}",
-            "/opt/bitbake/bin/bitbake",
-            "u-boot-fslc",
-            "-c",
-            "menuconfig",
-        ]
+        })) if arguments == &vec!["u-boot-fslc", "-c", "menuconfig"]
     ));
+    let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog() else {
+        unreachable!();
+    };
+    assert_eq!(
+        dialog.request.program,
+        PathBuf::from("/opt/bitbake/bin/bitbake")
+    );
 }

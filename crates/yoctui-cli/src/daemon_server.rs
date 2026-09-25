@@ -74,7 +74,12 @@ pub(crate) async fn run_daemon_foreground(
     if let Some(persisted) = &persisted {
         recover_daemon_model_metadata(&mut daemon_state, persisted, &record.boot_id)?;
     }
-    let startup_environment = env::vars().collect::<BTreeMap<_, _>>();
+    let mut startup_environment = env::vars().collect::<BTreeMap<_, _>>();
+    menuconfig_relay::configure_environment(
+        &mut startup_environment,
+        &record.executable,
+        &paths.directory.join("menuconfig.sock"),
+    );
     let startup_compatibility = daemon_compatibility::spawn_startup(startup_environment.clone());
     let snapshot = daemon_protocol_snapshot(&daemon_state);
     let snapshot = persisted

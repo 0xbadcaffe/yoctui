@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M75 PLATFORM-MENUCONFIG-RELAY-DTB-001 is DONE in v0.1.224. BitBake's worker
+hands its generated custom-terminal command to a validated local relay, which
+runs it from the reported task directory in the selected PTY. A live Romulus
+linux-aspeed invocation rendered the ncurses menuconfig screen there. Enter on
+a DTB/DTBO now starts the typed decompile flow and directly asks for `dtc`
+installation when the compiler is absent.
+
 M75 PLATFORM-MENUCONFIG-EMBED-001 is DONE in v0.1.223. Kernel and U-Boot
 menuconfig now forces BitBake's custom terminal adapter onto its daemon PTY and
 renders inside the originating full-width platform Workspace. The launch keeps

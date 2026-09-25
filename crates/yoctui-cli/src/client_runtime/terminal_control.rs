@@ -64,24 +64,32 @@ impl InteractiveDaemonRuntime {
                 cwd,
                 program,
                 arguments,
-            } => self.transport.command(CommandRequest {
-                request_id,
-                expected_generation: Some(app.daemon.generation),
-                command: DaemonCommand::CreatePty {
-                    name: name.clone(),
-                    kind: wire_terminal_kind(*kind),
-                    cwd: cwd.display().to_string(),
-                    command: yoctui_protocol::daemon::PtyCommand {
-                        program: program.display().to_string(),
-                        arguments: arguments.clone(),
-                        environment_profile_id: None,
+            } => {
+                let (program, arguments) =
+                    if matches!(kind, yoctui_model::TerminalCreationKind::Menuconfig) {
+                        crate::menuconfig_relay::command(program, arguments)?
+                    } else {
+                        (program.clone(), arguments.clone())
+                    };
+                self.transport.command(CommandRequest {
+                    request_id,
+                    expected_generation: Some(app.daemon.generation),
+                    command: DaemonCommand::CreatePty {
+                        name: name.clone(),
+                        kind: wire_terminal_kind(*kind),
+                        cwd: cwd.display().to_string(),
+                        command: yoctui_protocol::daemon::PtyCommand {
+                            program: program.display().to_string(),
+                            arguments,
+                            environment_profile_id: None,
+                        },
+                        dimensions: TerminalDimensions {
+                            columns: 120,
+                            rows: 40,
+                        },
                     },
-                    dimensions: TerminalDimensions {
-                        columns: 120,
-                        rows: 40,
-                    },
-                },
-            })?,
+                })?
+            }
             TerminalEffect::TakeControl {
                 session_id,
                 expected_epoch,

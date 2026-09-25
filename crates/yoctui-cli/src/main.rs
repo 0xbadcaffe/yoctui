@@ -242,6 +242,12 @@ fn uses_interactive_terminal(cli: &Cli) -> bool {
 async fn main() -> Result<()> {
     install_panic_hook();
     let cli = Cli::parse();
+    if let Some(Command::MenuconfigRelay { bitbake, arguments }) = &cli.command {
+        return menuconfig_relay::run(bitbake, arguments);
+    }
+    if let Some(Command::MenuconfigHandoff { socket, command }) = &cli.command {
+        return menuconfig_relay::handoff(socket, command);
+    }
     if let Some(Command::Daemon { command }) = &cli.command {
         return daemon_cli(command.clone()).await;
     }
@@ -287,6 +293,9 @@ async fn main() -> Result<()> {
         | None => {}
         Some(Command::Sessions | Command::Session { .. }) => unreachable!(),
         Some(Command::Daemon { .. }) => unreachable!("daemon command handled before config"),
+        Some(Command::MenuconfigRelay { .. } | Command::MenuconfigHandoff { .. }) => {
+            unreachable!("menuconfig helper handled before config")
+        }
     }
     let targets = match &cli.command {
         Some(Command::Build { targets }) => targets.clone(),
@@ -407,6 +416,8 @@ use qa_effects::*;
 mod terminal_launcher;
 use terminal_launcher::*;
 mod maintenance_effects;
+#[cfg(unix)]
+mod menuconfig_relay;
 use maintenance_effects::*;
 mod test_capabilities;
 use test_capabilities::*;
