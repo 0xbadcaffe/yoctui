@@ -54,6 +54,71 @@ pub fn reduce_raw_mode(
         RawModeAction::ChooseParameter { parameter, value } => {
             choose_raw_parameter(state, catalog, &parameter, value)
         }
+        RawModeAction::OpenRecipePicker {
+            parameter,
+            mut recipes,
+        } => {
+            let valid_parameter = state.form.as_ref().is_some_and(|form| {
+                form.fields.contains_key(&parameter)
+                    && catalog.command(&form.command).is_some_and(|command| {
+                        command.parameters.iter().any(|candidate| {
+                            candidate.id == parameter && candidate.kind == RawParameterKind::Recipe
+                        })
+                    })
+            });
+            recipes.retain(|recipe| {
+                !recipe.is_empty()
+                    && !recipe.starts_with('-')
+                    && recipe.chars().all(|character| {
+                        !character.is_whitespace() && !character.is_control()
+                    })
+            });
+            recipes.sort();
+            recipes.dedup();
+            if valid_parameter && !recipes.is_empty() {
+                state.recipe_picker = Some(RawRecipePicker {
+                    parameter,
+                    recipes,
+                    query: String::new(),
+                    selection: 0,
+                });
+            } else {
+                state.notification = Some("No authoritative recipes are available to choose.".into());
+            }
+        }
+        RawModeAction::SelectRecipePicker { delta } => {
+            if let Some(picker) = state.recipe_picker.as_mut() {
+                let count = picker.filtered().len();
+                picker.selection = shifted_index(picker.selection, count, delta);
+            }
+        }
+        RawModeAction::AppendRecipePickerQuery(character) => {
+            if let Some(picker) = state.recipe_picker.as_mut()
+                && !character.is_control()
+                && picker.query.len() + character.len_utf8() <= MAX_RAW_SEARCH_BYTES
+            {
+                picker.query.push(character);
+                picker.selection = 0;
+            }
+        }
+        RawModeAction::BackspaceRecipePickerQuery => {
+            if let Some(picker) = state.recipe_picker.as_mut() {
+                picker.query.pop();
+                picker.selection = 0;
+            }
+        }
+        RawModeAction::ConfirmRecipePicker => {
+            let selected = state.recipe_picker.as_ref().and_then(|picker| {
+                picker.filtered().get(picker.selection).map(|recipe| {
+                    (picker.parameter.clone(), RawParameterValue::Recipe((*recipe).into()))
+                })
+            });
+            if let Some((parameter, value)) = selected {
+                choose_raw_parameter(state, catalog, &parameter, value);
+                state.recipe_picker = None;
+            }
+        }
+        RawModeAction::CancelRecipePicker => state.recipe_picker = None,
         RawModeAction::EditParameterInput { parameter, command } => {
             edit_raw_parameter_input(state, catalog, &parameter, command)
         }

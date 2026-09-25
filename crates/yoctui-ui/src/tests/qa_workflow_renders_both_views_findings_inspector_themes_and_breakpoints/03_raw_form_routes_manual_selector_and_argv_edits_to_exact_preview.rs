@@ -69,3 +69,61 @@ fn raw_form_routes_manual_selector_and_argv_edits_to_exact_preview() {
     assert_eq!(app.raw_mode.view, yoctui_model::RawModeView::Browser);
     assert_eq!(app.focus, FocusTarget::Workspace);
 }
+
+#[test]
+fn raw_recipe_picker_renders_searchable_inventory_above_the_form() {
+    let mut app = raw_command_list_app();
+    let command = yoctui_model::builtin_raw_catalog()
+        .commands
+        .iter()
+        .find(|command| {
+            command.parameters.iter().any(|parameter| {
+                parameter.kind == yoctui_model::RawParameterKind::Recipe
+            })
+        })
+        .unwrap();
+    let parameter = command.parameters[0].id.clone();
+    app.workspace.recipes = ["bash", "busybox", "linux-aspeed"]
+        .into_iter()
+        .map(|name| Recipe {
+            name: name.into(),
+            file: Some(format!("/layers/{name}.bb").into()),
+            ..Recipe::default()
+        })
+        .collect();
+    app.raw_mode.view = yoctui_model::RawModeView::Form;
+    app.raw_mode.form = Some(yoctui_model::RawCommandForm {
+        command: command.id.clone(),
+        fields: std::collections::BTreeMap::from([(
+            parameter.clone(),
+            yoctui_model::RawFormField {
+                parameter: parameter.clone(),
+                editor: yoctui_model::PopupEditor::new(String::new()),
+                value: None,
+                validation_error: None,
+            },
+        )]),
+        field_order: vec![parameter],
+        field_selection: 0,
+        additional_arguments: yoctui_model::RawArgvEditor::new("").unwrap(),
+        capability_generation: 19,
+        build_directory: "/work/build".into(),
+    });
+
+    let open = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Char('r')).unwrap();
+    let _ = update(&mut app, Action::RawMode(open));
+    for character in "linux".chars() {
+        let filter = yoctui_app::raw_mode_input(&app, yoctui_app::Input::Char(character)).unwrap();
+        let _ = update(&mut app, Action::RawMode(filter));
+    }
+    let output = rendered_text(&app, 120, 36);
+    for expected in [
+        "Choose recipe",
+        "Search: linux",
+        "linux-aspeed",
+        "Enter use recipe",
+    ] {
+        assert!(output.contains(expected), "missing {expected:?}: {output}");
+    }
+    assert!(!output.contains(" busybox\n"), "filtered list leaked: {output}");
+}

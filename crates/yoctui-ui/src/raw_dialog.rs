@@ -217,6 +217,89 @@ pub(crate) fn raw_command_form_dialog(
     );
 }
 
+pub(crate) fn raw_recipe_picker_dialog(
+    frame: &mut Frame,
+    app: &App,
+    picker: &yoctui_model::RawRecipePicker,
+    area: Rect,
+) {
+    let popup = dialog_popup_rect(area, 78, 24);
+    clear_popup(frame, app, popup);
+    let block = dialog_block(app, "Choose recipe", DialogTone::Standard);
+    let inner = block.inner(popup);
+    frame.render_widget(block, popup);
+    if inner.is_empty() {
+        return;
+    }
+    let rows = Layout::vertical([
+        Constraint::Length(2),
+        Constraint::Min(3),
+        Constraint::Length(2),
+    ])
+    .split(inner);
+    frame.render_widget(
+        Paragraph::new(format!(
+            "Search: {}\nType to filter · Backspace edits",
+            if picker.query.is_empty() {
+                "<all>"
+            } else {
+                &picker.query
+            }
+        )),
+        rows[0],
+    );
+    let filtered = picker.filtered();
+    let viewport_height = usize::from(rows[1].height).max(1);
+    let viewport = yoctui_model::centered_viewport_range(
+        (!filtered.is_empty()).then_some(picker.selection.min(filtered.len().saturating_sub(1))),
+        filtered.len(),
+        viewport_height,
+    );
+    let palette = ThemePalette::for_app(app);
+    let lines = filtered[viewport.clone()]
+        .iter()
+        .enumerate()
+        .map(|(offset, recipe)| {
+            let index = viewport.start + offset;
+            Line::styled(
+                bounded_cell_text(
+                    &format!(
+                        "{} {}",
+                        if index == picker.selection {
+                            "▶"
+                        } else {
+                            " "
+                        },
+                        recipe
+                    ),
+                    rows[1].width,
+                ),
+                if index == picker.selection {
+                    palette.selected()
+                } else {
+                    palette.base()
+                },
+            )
+        })
+        .collect::<Vec<_>>();
+    frame.render_widget(
+        Paragraph::new(if lines.is_empty() {
+            vec![Line::raw("No recipes match the search.")]
+        } else {
+            lines
+        })
+        .block(Block::default().title(format!(
+            "Recipes · {}",
+            BoundedScrollIndicator::new(viewport.start, viewport.len(), filtered.len()).label()
+        ))),
+        rows[1],
+    );
+    frame.render_widget(
+        Paragraph::new("↑/↓ or PgUp/PgDn select · Enter use recipe · Esc keep manual value"),
+        rows[2],
+    );
+}
+
 pub fn render_raw_execution_preview(
     frame: &mut Frame,
     preview: &yoctui_model::RawExecutionPreview,

@@ -13,6 +13,7 @@ impl RawModeState {
             search: RawSearchState::default(),
             form: None,
             preview: None,
+            recipe_picker: None,
             execution: None,
             execution_states: BTreeMap::new(),
             output: RawOutputViewState::default(),
@@ -45,10 +46,8 @@ impl RawModeState {
     }
 
     pub fn selected_execution(&self) -> Option<&RawExecutionState> {
-        if let Some(request) = &self.output.request
-            && let Some(execution) = self.execution_states.get(request)
-        {
-            return Some(execution);
+        if let Some(request) = &self.output.request {
+            return self.execution_states.get(request);
         }
         let command = self.execution.as_ref()?;
         self.execution_states

@@ -1861,8 +1861,10 @@ blocked prerequisite and does not prevent implementing or pushing these fixes.
 
 ## M75 — Rapid live-workbench bug corrections
 
-DEVTOOL-MENU-DAEMON-001 is DONE in v0.1.225. Devtool status now uses
-daemon-owned initialized environment authority, F12 Devtool actions have
-distinct executable routes, and unavailable actions report their reason after
-closing the menu. Focused model, app, CLI, daemon and TestBackend checks pass;
-the user continues manual bug testing before requesting the full suite.
+DEVTOOL-MENU-DAEMON-001 and RAW-RECIPE-REPEAT-001 are DONE in v0.1.225.
+Devtool status now uses daemon-owned initialized environment authority, F12
+Devtool actions have distinct executable routes and unavailable actions report
+their reason after closing the menu. Raw recipe arguments have an in-place
+searchable picker, wrapped field traversal and exact repeat-request correlation.
+Focused model, app, CLI, daemon and TestBackend checks pass; the user continues
+manual bug testing before requesting the full suite.

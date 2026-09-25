@@ -5940,7 +5940,7 @@ The F12 menu grows to the bounded responsive dimensions defined in the M68 menu
 contract so action names, shortcuts, descriptions, and unavailable reasons have
 substantially more horizontal and vertical room.
 
-### M75 Devtool menu and daemon corrections
+### M75 Devtool and Raw command corrections
 
 Devtool status launched from Recipes or the F12 Actions menu runs through the
 attached daemon's initialized Yocto environment. The client remains responsive
@@ -5949,3 +5949,12 @@ maps status, workspace editor, workspace shell, GitUI, build, modify, update,
 finish, deploy, undeploy, reset, and upgrade to distinct workflows. Undeploy and
 upgrade retain explicit previews and confirmation. Activating an unavailable
 menu item closes the menu and reports its displayed reason in the status row.
+
+In a Raw command form, `r` on a recipe parameter opens a searchable popup of the
+authoritative recipe inventory. Typing filters the list, arrows and paging move
+selection, Enter copies the selected recipe into the argument and returns to the
+form, and Escape preserves the current manual value. Manual recipe entry remains
+available through the normal field editor. Tab and Shift+Tab wrap across every
+parameter plus Additional arguments in both normal and insert modes. A confirmed
+execution waits for its newly generated request identity; it never shows an
+older execution of the same command while the daemon accepts the new request.

@@ -278,7 +278,7 @@ use maintenance_render::{maintenance_inspector_text, maintenance_workspace};
 
 mod raw_dialog;
 pub use raw_dialog::render_raw_execution_preview;
-use raw_dialog::{indexed_arguments, raw_command_form_dialog};
+use raw_dialog::{indexed_arguments, raw_command_form_dialog, raw_recipe_picker_dialog};
 
 mod maintenance_dialog_render;
 use maintenance_dialog_render::{

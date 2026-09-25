@@ -15,6 +15,13 @@ fn render_shell_overlays(frame: &mut Frame, app: &App, area: Rect) -> bool {
         command_palette(frame, app, area);
         return true;
     } else if app.screen == Screen::RawMode
+        && let Some(picker) = app.raw_mode.recipe_picker.as_ref()
+        && let Some(form) = app.raw_mode.form.as_ref()
+    {
+        raw_command_form_dialog(frame, app, form, area);
+        raw_recipe_picker_dialog(frame, app, picker, area);
+        return true;
+    } else if app.screen == Screen::RawMode
         && let Some(form) = app
             .raw_mode
             .form

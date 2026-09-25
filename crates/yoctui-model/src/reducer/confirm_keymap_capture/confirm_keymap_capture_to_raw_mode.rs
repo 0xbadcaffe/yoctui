@@ -144,6 +144,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         authority.as_ref(),
                         RawModeAction::OpenExecution(request.command.clone()),
                     );
+                    app.raw_mode.output.request = Some(request.id.clone());
                     return Some(Effect::StartRaw(request));
                 }
                 Err(error) => app.raw_mode.notification = Some(error.to_string()),

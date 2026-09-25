@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M75 RAW-RECIPE-REPEAT-001 is DONE in v0.1.225. Raw recipe arguments expose a
+searchable `r` picker while retaining manual entry; Enter returns the selected
+recipe to the form, Tab and Shift+Tab wrap all fields even during insertion, and
+repeated commands wait for the exact new request rather than displaying an old
+matching execution.
+
 M75 DEVTOOL-MENU-DAEMON-001 is DONE in v0.1.225. Devtool status now executes in
 the daemon's initialized Yocto environment through protocol 1.4. F12 status,
 editor, shell, GitUI, build and existing Devtool workflows route correctly;

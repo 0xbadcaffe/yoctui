@@ -388,10 +388,13 @@ fn select_raw_form_field(state: &mut RawModeState, delta: isize) {
             field.editor.editing = false;
         }
         form.additional_arguments.editor.editing = false;
-        form.field_selection = shifted_index(
-            form.field_selection,
-            form.field_order.len().saturating_add(1),
-            delta,
-        );
+        let count = form.field_order.len().saturating_add(1);
+        if count > 0 {
+            form.field_selection = if delta.is_negative() {
+                (form.field_selection + count - delta.unsigned_abs() % count) % count
+            } else {
+                (form.field_selection + delta as usize % count) % count
+            };
+        }
     }
 }

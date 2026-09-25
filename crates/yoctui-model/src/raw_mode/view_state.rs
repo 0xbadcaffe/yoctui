@@ -52,6 +52,25 @@ pub struct RawCommandForm {
     pub build_directory: PathBuf,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RawRecipePicker {
+    pub parameter: RawParameterId,
+    pub recipes: Vec<String>,
+    pub query: String,
+    pub selection: usize,
+}
+
+impl RawRecipePicker {
+    pub fn filtered(&self) -> Vec<&str> {
+        let query = self.query.to_lowercase();
+        self.recipes
+            .iter()
+            .map(String::as_str)
+            .filter(|recipe| query.is_empty() || recipe.to_lowercase().contains(&query))
+            .collect()
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(transparent)]
 pub struct RawFavoriteTemplateDigest(pub [u8; 32]);
@@ -241,6 +260,7 @@ pub struct RawModeState {
     pub search: RawSearchState,
     pub form: Option<RawCommandForm>,
     pub preview: Option<RawExecutionPreview>,
+    pub recipe_picker: Option<RawRecipePicker>,
     pub execution: Option<RawCommandId>,
     pub execution_states: BTreeMap<RawRequestId, RawExecutionState>,
     pub output: RawOutputViewState,
@@ -278,6 +298,17 @@ pub enum RawModeAction {
         parameter: RawParameterId,
         value: RawParameterValue,
     },
+    OpenRecipePicker {
+        parameter: RawParameterId,
+        recipes: Vec<String>,
+    },
+    SelectRecipePicker {
+        delta: isize,
+    },
+    AppendRecipePickerQuery(char),
+    BackspaceRecipePickerQuery,
+    ConfirmRecipePicker,
+    CancelRecipePicker,
     EditParameterInput {
         parameter: RawParameterId,
         command: PopupEditorCommand,

@@ -110,6 +110,20 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
     use yoctui_model::{RawBrowserColumn, RawModeAction, RawModeView};
     let state = context.raw_mode_state();
 
+    if state.recipe_picker.is_some() {
+        return match key {
+            Input::Up | Input::Char('k') => Some(RawModeAction::SelectRecipePicker { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(RawModeAction::SelectRecipePicker { delta: 1 }),
+            Input::PageUp => Some(RawModeAction::SelectRecipePicker { delta: -10 }),
+            Input::PageDown => Some(RawModeAction::SelectRecipePicker { delta: 10 }),
+            Input::Enter => Some(RawModeAction::ConfirmRecipePicker),
+            Input::Esc => Some(RawModeAction::CancelRecipePicker),
+            Input::Backspace => Some(RawModeAction::BackspaceRecipePickerQuery),
+            Input::Char(character) => Some(RawModeAction::AppendRecipePickerQuery(character)),
+            _ => None,
+        };
+    }
+
     if state.favorite_confirmation.is_some() {
         return match key {
             Input::Enter => Some(RawModeAction::ConfirmFavorite),
@@ -187,15 +201,48 @@ pub fn raw_mode_input<C: RawModeInputContext + ?Sized>(
                 .map_or(form.additional_arguments.editor.editing, |field| {
                     field.editor.editing
                 });
+            match key {
+                Input::Tab => return Some(RawModeAction::SelectFormField { delta: 1 }),
+                Input::BackTab => return Some(RawModeAction::SelectFormField { delta: -1 }),
+                _ => {}
+            }
             if !editing {
                 match key {
-                    Input::Tab | Input::Down | Input::Char('j') => {
+                    Input::Down | Input::Char('j') => {
                         return Some(RawModeAction::SelectFormField { delta: 1 });
                     }
-                    Input::BackTab | Input::Up | Input::Char('k') => {
+                    Input::Up | Input::Char('k') => {
                         return Some(RawModeAction::SelectFormField { delta: -1 });
                     }
                     Input::Char('q') | Input::Esc => return Some(RawModeAction::Back),
+                    Input::Char('r') if parameter.is_some() => {
+                        let parameter = parameter?;
+                        let command = yoctui_model::builtin_raw_catalog().command(&form.command)?;
+                        let definition = command
+                            .parameters
+                            .iter()
+                            .find(|definition| &definition.id == parameter)?;
+                        if definition.kind == yoctui_model::RawParameterKind::Recipe {
+                            let app = context.raw_mode_app()?;
+                            let selector =
+                                raw_form_parameter_selector(app, command, parameter).ok()?;
+                            let recipes = selector
+                                .inventory
+                                .choices()?
+                                .iter()
+                                .filter_map(|choice| match &choice.value {
+                                    yoctui_model::RawParameterValue::Recipe(recipe) => {
+                                        Some(recipe.clone())
+                                    }
+                                    _ => None,
+                                })
+                                .collect();
+                            return Some(RawModeAction::OpenRecipePicker {
+                                parameter: parameter.clone(),
+                                recipes,
+                            });
+                        }
+                    }
                     Input::Left if parameter.is_some() => {
                         if let Some(action) = context
                             .raw_mode_app()

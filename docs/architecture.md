@@ -4463,7 +4463,7 @@ workflows. Restored platform workspaces render one loading frame before their
 cold metadata request runs. Numbered platform tabs emit exact typed view
 actions for keyboard and mouse input.
 
-## M75 Devtool daemon authority
+## M75 Devtool daemon authority and Raw form selection
 
 Devtool status is a daemon-owned inspection because only the daemon is launched
 inside the initialized Yocto environment. Protocol 1.4 adds the typed status
@@ -4473,3 +4473,10 @@ app converts that result into the existing model action, and widgets render the
 model state. Client-local inspection remains a fallback when no daemon route is
 available. Devtool undeploy and upgrade use the same typed model/effect/protocol
 path and retain separate confirmation state.
+
+Raw recipe selection is model-owned popup state containing a bounded query,
+selection, parameter identity, and recipe inventory. App input maps keys to Raw
+actions and the UI only renders the typed picker. Form navigation wraps by the
+model-owned field order. A newly confirmed request writes its exact request ID
+into the output selection before daemon submission; an explicit request that has
+not appeared in the replica cannot fall back to a previous command-matching job.
