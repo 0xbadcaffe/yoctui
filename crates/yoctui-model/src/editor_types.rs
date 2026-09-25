@@ -191,6 +191,9 @@ pub enum Dialog {
     DevtoolFinishConfirmation(DevtoolFinishPlan),
     DevtoolDeploy(DevtoolDeployDraft),
     DevtoolDeployConfirmation(DevtoolDeployPlan),
+    DevtoolUndeploy(DevtoolUndeployDraft),
+    DevtoolUndeployConfirmation(DevtoolUndeployPlan),
+    DevtoolUpgradeConfirmation(DevtoolUpgradePlan),
     BbmaskEdit(PopupEditor),
     BbmaskConfirmation(String),
     DtcCompile(DtcCompileDialog),
@@ -226,6 +229,8 @@ impl Dialog {
             | Self::DevtoolUpdateConfirmation(_)
             | Self::DevtoolFinishConfirmation(_)
             | Self::DevtoolDeployConfirmation(_)
+            | Self::DevtoolUndeployConfirmation(_)
+            | Self::DevtoolUpgradeConfirmation(_)
             | Self::BbmaskConfirmation(_)
             | Self::BuildCancellationConfirmation
             | Self::QuitConfirmation => true,
@@ -276,6 +281,7 @@ impl Dialog {
             | Self::ConfigEdit { .. }
             | Self::DevtoolFinishPicker(_)
             | Self::DevtoolDeploy(_)
+            | Self::DevtoolUndeploy(_)
             | Self::BbmaskEdit(_)
             | Self::DtcCompile(_)
             | Self::TerminalLaunch(_)

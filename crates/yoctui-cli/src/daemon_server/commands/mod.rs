@@ -24,7 +24,9 @@ pub(super) fn dispatch(
         DaemonCommand::StartBuild { .. } | DaemonCommand::CancelJob { .. } => {
             build::handle(request, services, client)
         }
-        DaemonCommand::StartDevtool { .. } => devtool::handle(request, services, client),
+        DaemonCommand::StartDevtool { .. } | DaemonCommand::InspectDevtoolStatus { .. } => {
+            devtool::handle(request, services, client)
+        }
         DaemonCommand::StartRaw { .. }
         | DaemonCommand::StartRawPty { .. }
         | DaemonCommand::CancelRaw { .. }

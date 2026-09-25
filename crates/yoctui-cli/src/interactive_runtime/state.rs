@@ -30,6 +30,8 @@ pub(super) struct InteractiveRuntime {
     pub(super) pending_devtool_update: Option<RecipeIdentity>,
     pub(super) pending_devtool_finish: Option<RecipeIdentity>,
     pub(super) pending_devtool_deploy: Option<RecipeIdentity>,
+    pub(super) pending_devtool_undeploy: Option<RecipeIdentity>,
+    pub(super) pending_devtool_upgrade: Option<RecipeIdentity>,
     pub(super) pending_devtool_reset: Option<RecipeIdentity>,
 
     pub(super) signature_adapter: SignatureAdapter,

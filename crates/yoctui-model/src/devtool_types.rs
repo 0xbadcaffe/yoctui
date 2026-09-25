@@ -49,6 +49,35 @@ impl DevtoolDeployPlan {
     }
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolUndeployDraft {
+    pub identity: RecipeIdentity,
+    pub target: String,
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolUndeployPlan {
+    pub identity: RecipeIdentity,
+    pub target: String,
+}
+impl DevtoolUndeployPlan {
+    pub fn operation(&self) -> DevtoolOperation {
+        DevtoolOperation::UndeployTarget {
+            recipe: self.identity.name.clone(),
+            target: self.target.clone(),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DevtoolUpgradePlan {
+    pub identity: RecipeIdentity,
+}
+impl DevtoolUpgradePlan {
+    pub fn operation(&self) -> DevtoolOperation {
+        DevtoolOperation::Upgrade {
+            recipe: self.identity.name.clone(),
+        }
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DevtoolResetPlan {
     pub identity: RecipeIdentity,
     pub source_path: PathBuf,

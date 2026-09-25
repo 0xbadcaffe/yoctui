@@ -1,4 +1,7 @@
 fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
+    if render_extended_devtool_dialogs(frame, app, area) {
+        return true;
+    }
     if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog() {
         let popup = dialog_popup_rect(area, 84, 16);
         clear_popup(frame, app, popup);

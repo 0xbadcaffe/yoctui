@@ -40,6 +40,6 @@ async fn compatibility_devtool_daemon_runner_uses_owned_snapshot_and_survives_cl
         tokio::time::sleep(Duration::from_millis(5)).await;
     };
     assert!(saw_output);
-    assert_eq!(terminal.job_id(), job);
+    assert_eq!(terminal.job_id(), Some(job));
     fs::remove_dir_all(root).unwrap();
 }

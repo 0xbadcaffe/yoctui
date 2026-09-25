@@ -13,7 +13,7 @@ fn ux_focus_menu_activation_and_outward_escape_use_the_same_typed_reducer() {
     let _ = update(&mut app, Action::ResetPaneSubfocus);
 
     let _ = update(&mut app, Action::OpenApplicationMenu);
-    let _ = update(&mut app, Action::SelectMenuGroup { delta: 3 });
+    let _ = update(&mut app, Action::SelectMenuGroup { delta: 4 });
     let inspector_index = app
         .active_menu_items()
         .iter()
@@ -30,7 +30,12 @@ fn ux_focus_menu_activation_and_outward_escape_use_the_same_typed_reducer() {
             .and_then(|item| item.disabled_reason),
         Some("The Inspector is read-only".into())
     );
-    assert!(menu_action(&app, Input::Enter).is_none());
+    assert_eq!(
+        menu_action(&app, Input::Enter),
+        Some(MenuInputResult::ActivateDisabled(
+            "The Inspector is read-only".into()
+        ))
+    );
 
     let workspace_index = app
         .active_menu_items()

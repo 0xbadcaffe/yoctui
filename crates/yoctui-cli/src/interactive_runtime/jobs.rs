@@ -58,6 +58,36 @@ impl InteractiveRuntime {
                         .await;
                 }
             }
+            Some(DevtoolOperation::UndeployTarget { recipe, .. })
+                if runtime
+                    .pending_devtool_undeploy
+                    .as_ref()
+                    .is_some_and(|identity| identity.name == recipe) =>
+            {
+                if let Some(identity) = runtime.pending_devtool_undeploy.take() {
+                    complete_devtool_undeploy(
+                        &mut runtime.app,
+                        &runtime.session_build_dir,
+                        identity,
+                    )
+                    .await;
+                }
+            }
+            Some(DevtoolOperation::Upgrade { recipe })
+                if runtime
+                    .pending_devtool_upgrade
+                    .as_ref()
+                    .is_some_and(|identity| identity.name == recipe) =>
+            {
+                if let Some(identity) = runtime.pending_devtool_upgrade.take() {
+                    complete_devtool_upgrade(
+                        &mut runtime.app,
+                        &runtime.session_build_dir,
+                        identity,
+                    )
+                    .await;
+                }
+            }
             Some(DevtoolOperation::Reset { recipe })
                 if runtime
                     .pending_devtool_reset
@@ -74,6 +104,8 @@ impl InteractiveRuntime {
                 runtime.pending_devtool_update = None;
                 runtime.pending_devtool_finish = None;
                 runtime.pending_devtool_deploy = None;
+                runtime.pending_devtool_undeploy = None;
+                runtime.pending_devtool_upgrade = None;
                 runtime.pending_devtool_reset = None;
             }
             _ => {}

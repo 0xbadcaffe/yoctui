@@ -10,6 +10,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::BeginSelectedRecipeDevtoolUpdateRecipe
         | Action::BeginSelectedRecipeDevtoolFinish
         | Action::BeginSelectedRecipeDevtoolDeploy
+        | Action::BeginSelectedRecipeDevtoolUndeploy
+        | Action::BeginSelectedRecipeDevtoolUpgrade
         | Action::BeginSelectedRecipeDependencies
         | Action::BeginDependencyGraph { .. }
         | Action::DependencyGraphLoaded(..)

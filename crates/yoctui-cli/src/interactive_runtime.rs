@@ -6,6 +6,7 @@ mod command_dialogs;
 mod dependency_workspace;
 mod devtool_status_operation;
 mod editor_dialogs;
+mod extended_devtool_dialogs;
 mod input;
 mod jobs;
 mod key_input;
@@ -185,6 +186,8 @@ pub(crate) async fn tui(
     let pending_devtool_update = None;
     let pending_devtool_finish = None;
     let pending_devtool_deploy = None;
+    let pending_devtool_undeploy = None;
+    let pending_devtool_upgrade = None;
     let pending_devtool_reset = None;
     let signature_adapter = SignatureAdapter::new(session_build_dir.clone());
     let signature_operation = None;
@@ -343,6 +346,8 @@ pub(crate) async fn tui(
         pending_devtool_update,
         pending_devtool_finish,
         pending_devtool_deploy,
+        pending_devtool_undeploy,
+        pending_devtool_upgrade,
         pending_devtool_reset,
         signature_adapter,
         signature_operation,

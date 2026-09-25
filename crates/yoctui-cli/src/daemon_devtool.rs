@@ -3,14 +3,18 @@ use std::{collections::HashMap, fs, path::PathBuf, time::Duration};
 use thiserror::Error;
 use tokio::sync::mpsc;
 use yoctui_bitbake::{
-    DevtoolCommandSpec, DevtoolCompatibilityError, DevtoolJobRunner, DevtoolOutputStream,
-    DevtoolRunnerEvent,
+    DevtoolCommandSpec, DevtoolCompatibilityError, DevtoolInspector, DevtoolJobRunner,
+    DevtoolOutputStream, DevtoolRunnerEvent,
 };
-use yoctui_model::{DaemonCompatibilitySnapshot, DevtoolOperation};
+use yoctui_model::{
+    DaemonCompatibilitySnapshot, DevtoolCapability, DevtoolGitState, DevtoolOperation,
+    DevtoolStatus, DevtoolWorkspace, RecipeIdentity,
+};
 use yoctui_protocol::daemon::{DaemonDevtoolOperation, JobId};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DaemonDevtoolEvent {
+    Status(DevtoolStatus),
     Started {
         job_id: JobId,
         label: String,
@@ -147,6 +151,45 @@ impl DaemonDevtoolSupervisor {
         Ok(job_id)
     }
 
+    pub fn inspect_status(
+        &self,
+        identity: RecipeIdentity,
+        build_directory: PathBuf,
+    ) -> Result<(), DaemonDevtoolError> {
+        let build_directory = canonical_build_directory(build_directory)?;
+        let compatibility = self
+            .compatibility
+            .clone()
+            .ok_or(DaemonDevtoolError::CompatibilityUnavailable)?;
+        let events = self.events_tx.clone();
+        tokio::spawn(async move {
+            let status = match tokio::time::timeout(
+                Duration::from_secs(30),
+                DevtoolInspector::default().inspect_with_compatibility(
+                    &build_directory,
+                    identity.clone(),
+                    &compatibility,
+                    compatibility.snapshot.generation,
+                ),
+            )
+            .await
+            {
+                Ok(status) => status,
+                Err(_) => DevtoolStatus {
+                    identity,
+                    capability: DevtoolCapability::Unavailable {
+                        reason: "Devtool status timed out after 30 seconds.".into(),
+                    },
+                    workspace: DevtoolWorkspace::NotMember,
+                    git: DevtoolGitState::NotApplicable,
+                    error: None,
+                },
+            };
+            let _ = events.send(DaemonDevtoolEvent::Status(status));
+        });
+        Ok(())
+    }
+
     pub fn cancel(&mut self, job_id: JobId) -> Result<(), DaemonDevtoolError> {
         self.active
             .get(&job_id)
@@ -158,27 +201,29 @@ impl DaemonDevtoolSupervisor {
     pub fn try_event(&mut self) -> Option<DaemonDevtoolEvent> {
         let event = self.events_rx.try_recv().ok()?;
         if matches!(
-            event,
+            &event,
             DaemonDevtoolEvent::Completed { .. }
                 | DaemonDevtoolEvent::Failed { .. }
                 | DaemonDevtoolEvent::Cancelled { .. }
                 | DaemonDevtoolEvent::Lost { .. }
-        ) {
-            self.active.remove(&event.job_id());
+        ) && let Some(job_id) = event.job_id()
+        {
+            self.active.remove(&job_id);
         }
         Some(event)
     }
 }
 
 impl DaemonDevtoolEvent {
-    pub fn job_id(&self) -> JobId {
+    pub fn job_id(&self) -> Option<JobId> {
         match self {
+            Self::Status(_) => None,
             Self::Started { job_id, .. }
             | Self::Output { job_id, .. }
             | Self::Completed { job_id, .. }
             | Self::Failed { job_id, .. }
             | Self::Cancelled { job_id, .. }
-            | Self::Lost { job_id, .. } => *job_id,
+            | Self::Lost { job_id, .. } => Some(*job_id),
         }
     }
 }

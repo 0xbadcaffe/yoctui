@@ -6,6 +6,9 @@ impl InteractiveRuntime {
         input: Input,
     ) -> Result<Option<KeyRouteOutcome>> {
         let runtime = self;
+        if let Some(outcome) = runtime.route_extended_devtool_dialogs(input).await? {
+            return Ok(Some(outcome));
+        }
         if matches!(
             runtime.app.active_dialog(),
             Some(Dialog::DevtoolResetConfirmation(_))

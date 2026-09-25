@@ -36,6 +36,24 @@ pub(super) fn handle(
                 current_generation: services.daemon_journal.snapshot().generation,
             },
         },
+        DaemonCommand::InspectDevtoolStatus {
+            recipe,
+            recipe_file,
+            build_directory,
+        } => match services.devtool_supervisor.inspect_status(
+            yoctui_model::RecipeIdentity {
+                name: recipe,
+                file: recipe_file.into(),
+            },
+            build_directory.into(),
+        ) {
+            Ok(()) => CommandOutcome::Accepted,
+            Err(error) => CommandOutcome::Rejected {
+                code: yoctui_protocol::daemon::ProtocolErrorCode::MalformedMessage,
+                message: error.to_string(),
+                current_generation: services.daemon_journal.snapshot().generation,
+            },
+        },
         _ => unreachable!("command family was checked by dispatch"),
     }))
 }

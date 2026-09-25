@@ -67,6 +67,9 @@ use raw_mapping::{
     install_raw_execution_snapshots, install_raw_history_snapshots, raw_form_selector_choice,
 };
 
+mod devtool_mapping;
+pub use devtool_mapping::{devtool_status_from_protocol, devtool_status_to_protocol};
+
 mod daemon_snapshot;
 pub use daemon_snapshot::{
     client_replica_from_daemon, daemon_protocol_snapshot, recover_daemon_model_metadata,
@@ -149,8 +152,10 @@ pub use dialog_input::{
     devtool_deploy_confirmation_action, devtool_deploy_dialog_action,
     devtool_finish_confirmation_action, devtool_finish_picker_action,
     devtool_modify_confirmation_action, devtool_reset_confirmation_action,
-    devtool_update_confirmation_action, dtc_compile_dialog_action, image_console_dialog_action,
-    layer_tree_action, qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
+    devtool_undeploy_confirmation_action, devtool_undeploy_dialog_action,
+    devtool_update_confirmation_action, devtool_upgrade_confirmation_action,
+    dtc_compile_dialog_action, image_console_dialog_action, layer_tree_action,
+    qemu_cancellation_confirmation_action, qemu_launch_confirmation_action,
     qemu_launch_dialog_action, recipe_editor_action, recipes_workspace_action,
     terminal_launch_dialog_action, test_cancellation_confirmation_action,
     test_comparison_confirmation_action, test_comparison_dialog_action,

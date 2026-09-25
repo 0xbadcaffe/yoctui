@@ -83,6 +83,11 @@ pub enum DaemonCommand {
         operation: DaemonDevtoolOperation,
         build_directory: String,
     },
+    InspectDevtoolStatus {
+        recipe: String,
+        recipe_file: String,
+        build_directory: String,
+    },
     StartSdk {
         session_id: u64,
         operation: DaemonSdkOperation,

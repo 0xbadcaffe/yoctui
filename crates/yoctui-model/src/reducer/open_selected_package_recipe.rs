@@ -38,6 +38,18 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 app, action,
             )
         }
+        Action::AppendDevtoolUndeployTarget(..)
+        | Action::BackspaceDevtoolUndeployTarget
+        | Action::PreviewDevtoolUndeploy
+        | Action::CancelDevtoolUndeploy
+        | Action::ConfirmDevtoolUndeploy
+        | Action::CancelDevtoolUndeployConfirmation
+        | Action::ConfirmDevtoolUpgrade
+        | Action::CancelDevtoolUpgrade => {
+            open_selected_package_recipe_to_cancel_devtool_deploy_confirmation::reduce_actions(
+                app, action,
+            )
+        }
         Action::OpenRecipeEditor { .. }
         | Action::SelectRecipeEditorFile { .. }
         | Action::LoadRecipeEditorContent(..)

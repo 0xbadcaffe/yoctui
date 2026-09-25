@@ -4462,3 +4462,14 @@ Tinfoil recipe-metadata capability permits the bridge handshake to negotiate
 workflows. Restored platform workspaces render one loading frame before their
 cold metadata request runs. Numbered platform tabs emit exact typed view
 actions for keyboard and mouse input.
+
+## M75 Devtool daemon authority
+
+Devtool status is a daemon-owned inspection because only the daemon is launched
+inside the initialized Yocto environment. Protocol 1.4 adds the typed status
+request and transient typed result event. The CLI daemon supervisor owns the
+bounded process lifetime, protocol carries only structured status fields, the
+app converts that result into the existing model action, and widgets render the
+model state. Client-local inspection remains a fallback when no daemon route is
+available. Devtool undeploy and upgrade use the same typed model/effect/protocol
+path and retain separate confirmation state.

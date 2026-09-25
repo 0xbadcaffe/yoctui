@@ -91,7 +91,9 @@ pub enum DevtoolAction {
     UpdateRecipe,
     Finish,
     Deploy,
+    Undeploy,
     Reset,
+    Upgrade,
 }
 impl DevtoolStatus {
     pub fn disabled_reason(&self, action: DevtoolAction) -> Option<String> {

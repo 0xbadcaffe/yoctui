@@ -9,7 +9,15 @@ pub(crate) fn publish_daemon_devtool_event(
     use yoctui_protocol::daemon::{
         DaemonEvent, JobKind, JobSummary, LifecycleState, LogRecord, LogSeverity,
     };
-    let job_id = event.job_id();
+    if let DaemonDevtoolEvent::Status(status) = event {
+        journal.publish(DaemonEvent::DevtoolStatusChanged(Box::new(
+            yoctui_app::devtool_status_to_protocol(&status),
+        )))?;
+        return Ok(());
+    }
+    let job_id = event
+        .job_id()
+        .expect("non-status Devtool event has a job identity");
     let existing = journal
         .snapshot()
         .jobs
@@ -21,6 +29,7 @@ pub(crate) fn publish_daemon_devtool_event(
         .map(|job| job.label.clone())
         .unwrap_or_else(|| "Devtool".into());
     let mapped = match event {
+        DaemonDevtoolEvent::Status(_) => unreachable!("status returned before job mapping"),
         DaemonDevtoolEvent::Started { label, .. } => DaemonEvent::JobChanged(JobSummary {
             id: job_id,
             kind: JobKind::Devtool,

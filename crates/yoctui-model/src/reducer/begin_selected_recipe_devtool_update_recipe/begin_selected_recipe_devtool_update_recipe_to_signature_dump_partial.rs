@@ -94,6 +94,54 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 }),
             );
         }
+        Action::BeginSelectedRecipeDevtoolUndeploy => {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
+                    return None;
+                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification = Some(
+                    "Refresh authoritative Devtool status with t before undeploy-target.".into(),
+                );
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::Undeploy) {
+                app.notification = Some(reason);
+                return None;
+            }
+            open_dialog(
+                app,
+                Dialog::DevtoolUndeploy(DevtoolUndeployDraft {
+                    identity,
+                    target: String::new(),
+                }),
+            );
+        }
+        Action::BeginSelectedRecipeDevtoolUpgrade => {
+            let identity = match selected_recipe_identity(app) {
+                Ok(identity) => identity,
+                Err(message) => {
+                    app.notification = Some(message.into());
+                    return None;
+                }
+            };
+            let Some(status) = app.devtool_statuses.get(&identity) else {
+                app.notification =
+                    Some("Refresh authoritative Devtool status with t before upgrade.".into());
+                return None;
+            };
+            if let Some(reason) = status.disabled_reason(DevtoolAction::Upgrade) {
+                app.notification = Some(reason);
+                return None;
+            }
+            open_dialog(
+                app,
+                Dialog::DevtoolUpgradeConfirmation(DevtoolUpgradePlan { identity }),
+            );
+        }
         Action::BeginSelectedRecipeDependencies => {
             if let Some(recipe) = app.workspace.recipes.get(app.recipe_selection) {
                 return update(

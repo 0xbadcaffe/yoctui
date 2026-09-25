@@ -9,7 +9,7 @@ use thiserror::Error;
 use crate::{TaskStatsData, WorkspaceData};
 
 pub const PROTOCOL_MAJOR: u16 = 1;
-pub const PROTOCOL_MINOR: u16 = 3;
+pub const PROTOCOL_MINOR: u16 = 4;
 pub const MAX_FRAME_BYTES: usize = 4 * 1024 * 1024;
 pub const MAX_CAPABILITIES: usize = 128;
 pub const MAX_RETAINED_EVENTS: usize = 65_536;
@@ -77,6 +77,7 @@ pub struct PaneId(pub u64);
 
 include!("daemon/raw_request_history.rs");
 include!("daemon/raw_events_snapshot.rs");
+include!("daemon/devtool_status.rs");
 include!("daemon/compatibility_identity.rs");
 include!("daemon/compatibility_validation.rs");
 

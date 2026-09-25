@@ -345,6 +345,90 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
+        Action::AppendDevtoolUndeployTarget(character) => {
+            if let Some(Dialog::DevtoolUndeploy(draft)) = app.active_dialog_mut() {
+                draft.target.push(character);
+            }
+        }
+        Action::BackspaceDevtoolUndeployTarget => {
+            if let Some(Dialog::DevtoolUndeploy(draft)) = app.active_dialog_mut() {
+                draft.target.pop();
+            }
+        }
+        Action::PreviewDevtoolUndeploy => {
+            if let Some(Dialog::DevtoolUndeploy(draft)) = app.active_dialog() {
+                let plan = DevtoolUndeployPlan {
+                    identity: draft.identity.clone(),
+                    target: draft.target.clone(),
+                };
+                if let Err(error) = plan.operation().validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
+                }
+                replace_dialog(app, Dialog::DevtoolUndeployConfirmation(plan));
+            }
+        }
+        Action::CancelDevtoolUndeploy => {
+            if matches!(app.active_dialog(), Some(Dialog::DevtoolUndeploy(_))) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmDevtoolUndeploy => {
+            if let Some(Dialog::DevtoolUndeployConfirmation(plan)) = app.active_dialog().cloned() {
+                let Some(status) = app.devtool_statuses.get(&plan.identity) else {
+                    app.notification =
+                        Some("Authoritative Devtool status expired; refresh with t.".into());
+                    return None;
+                };
+                if let Some(reason) = status.disabled_reason(DevtoolAction::Undeploy) {
+                    app.notification = Some(reason);
+                    return None;
+                }
+                if let Err(error) = plan.operation().validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
+                }
+                close_dialog(app);
+                synchronize_focus(app);
+                return Some(Effect::DevtoolUndeploy(plan));
+            }
+        }
+        Action::CancelDevtoolUndeployConfirmation => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolUndeployConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
+        Action::ConfirmDevtoolUpgrade => {
+            if let Some(Dialog::DevtoolUpgradeConfirmation(plan)) = app.active_dialog().cloned() {
+                let Some(status) = app.devtool_statuses.get(&plan.identity) else {
+                    app.notification =
+                        Some("Authoritative Devtool status expired; refresh with t.".into());
+                    return None;
+                };
+                if let Some(reason) = status.disabled_reason(DevtoolAction::Upgrade) {
+                    app.notification = Some(reason);
+                    return None;
+                }
+                if let Err(error) = plan.operation().validate() {
+                    app.notification = Some(error.to_string());
+                    return None;
+                }
+                close_dialog(app);
+                synchronize_focus(app);
+                return Some(Effect::DevtoolUpgrade(plan));
+            }
+        }
+        Action::CancelDevtoolUpgrade => {
+            if matches!(
+                app.active_dialog(),
+                Some(Dialog::DevtoolUpgradeConfirmation(_))
+            ) {
+                close_dialog(app);
+            }
+        }
         _ => unreachable!("action routed to the wrong reducer"),
     }
     synchronize_focus(app);

@@ -15,7 +15,9 @@ fn ux_menu_keyboard_context_mouse_and_catalog_activation_share_typed_routes() {
     assert_eq!(app.menu.group(), yoctui_model::ApplicationMenuGroup::Build);
     assert_eq!(
         menu_action(&app, Input::Enter),
-        None,
+        Some(MenuInputResult::ActivateDisabled(
+            "Load a Yocto workspace first".into()
+        )),
         "build stays disabled without a workspace"
     );
 

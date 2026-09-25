@@ -9448,3 +9448,14 @@ required = true
 depends_on = ["PLATFORM-MENUCONFIG-EMBED-001"]
 verify = ["cargo test -p yoctui-model menuconfig", "cargo test -p yoctui-model device_tree", "cargo test -p yoctui menuconfig_relay", "cargo fmt --all --check"]
 notes = "DONE in v0.1.224. BitBake server workers hand their generated custom-terminal command to a validated local relay, which runs it from the reported task directory in the selected PTY; live Romulus linux-aspeed menuconfig rendered its ncurses screen there. Enter on DTB/DTBO follows the typed decompile flow and reports the direct dtc install requirement when the compiler is absent."
+
+[[task]]
+id = "DEVTOOL-MENU-DAEMON-001"
+milestone = "M75"
+title = "Run every F12 Devtool workflow through its correct initialized route"
+status = "DONE"
+priority = 2427
+required = true
+depends_on = ["PLATFORM-MENUCONFIG-RELAY-DTB-001"]
+verify = ["cargo test -p yoctui daemon_devtool", "cargo test -p yoctui client_runtime_devtool_maps_every_effect_to_closed_wire_type", "cargo test -p yoctui-model devtool_undeploy_and_upgrade_use_distinct_validated_confirmations", "cargo test -p yoctui-ui devtool_undeploy_and_upgrade_render_exact_distinct_commands", "cargo fmt --all --check"]
+notes = "DONE in v0.1.225. Protocol 1.4 moves status inspection into the daemon's initialized Yocto environment, every advertised Devtool F12 action has a distinct route, undeploy/upgrade retain typed confirmation, and unavailable Enter closes the menu with its exact reason. Focused tests pass; the full baseline remains intentionally deferred for the user's rapid manual bug pass."

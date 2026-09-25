@@ -91,6 +91,12 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         Dialog::DevtoolDeploy(_) | Dialog::DevtoolDeployConfirmation(_) => {
             WorkspaceEffectRequirement::one(Id::DevtoolDeployTarget)
         }
+        Dialog::DevtoolUndeploy(_) | Dialog::DevtoolUndeployConfirmation(_) => {
+            WorkspaceEffectRequirement::one(Id::DevtoolUndeployTarget)
+        }
+        Dialog::DevtoolUpgradeConfirmation(_) => {
+            WorkspaceEffectRequirement::one(Id::DevtoolUpgrade)
+        }
     }
 }
 

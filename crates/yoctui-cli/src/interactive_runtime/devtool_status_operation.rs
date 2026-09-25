@@ -18,6 +18,10 @@ impl InteractiveRuntime {
         else {
             return;
         };
+        let effect = Effect::InspectDevtoolStatus(identity.clone());
+        if submit_daemon_effect(&mut self.daemon_runtime, &mut self.app, &effect) == Some(true) {
+            return;
+        }
         let build_dir = self.session_build_dir.clone();
         let authority = self.app.workspace_compatibility.authority().cloned();
         let worker_identity = identity.clone();

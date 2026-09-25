@@ -140,6 +140,11 @@ pub(super) fn daemon_command_for_effect(
             request_id: request.as_str().into(),
             attached: *attached,
         },
+        Effect::InspectDevtoolStatus(identity) => DaemonCommand::InspectDevtoolStatus {
+            recipe: identity.name.clone(),
+            recipe_file: identity.file.display().to_string(),
+            build_directory: build_directory()?,
+        },
         Effect::DevtoolModify(identity) => DaemonCommand::StartDevtool {
             operation: DaemonDevtoolOperation::Modify {
                 recipe: identity.name.clone(),
@@ -169,6 +174,19 @@ pub(super) fn daemon_command_for_effect(
             operation: DaemonDevtoolOperation::DeployTarget {
                 recipe: plan.identity.name.clone(),
                 target: plan.target.clone(),
+            },
+            build_directory: build_directory()?,
+        },
+        Effect::DevtoolUndeploy(plan) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::UndeployTarget {
+                recipe: plan.identity.name.clone(),
+                target: plan.target.clone(),
+            },
+            build_directory: build_directory()?,
+        },
+        Effect::DevtoolUpgrade(plan) => DaemonCommand::StartDevtool {
+            operation: DaemonDevtoolOperation::Upgrade {
+                recipe: plan.identity.name.clone(),
             },
             build_directory: build_directory()?,
         },

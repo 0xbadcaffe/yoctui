@@ -71,6 +71,7 @@ pub enum MenuInputResult {
     Reduce(Box<Action>),
     ActivateCommand(yoctui_model::CommandId),
     ActivateContext(Input),
+    ActivateDisabled(String),
 }
 
 pub fn menu_action(app: &yoctui_model::App, key: Input) -> Option<MenuInputResult> {
@@ -88,7 +89,11 @@ pub fn menu_action(app: &yoctui_model::App, key: Input) -> Option<MenuInputResul
         Input::Enter => {
             let item = app.selected_menu_item()?;
             if !item.enabled() {
-                return None;
+                return Some(MenuInputResult::ActivateDisabled(
+                    item.disabled_reason
+                        .clone()
+                        .unwrap_or_else(|| "This action is unavailable.".into()),
+                ));
             }
             match item.target {
                 yoctui_model::OperatorActionTarget::Command(command) => {
@@ -151,7 +156,8 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         | "packages.detail"
         | "raw.inspect" => Input::Enter,
         "logs.inspect" => Input::Char('/'),
-        "dependencies.refresh" | "signatures.dump" | "devtool.status" => Input::Char('r'),
+        "dependencies.refresh" | "signatures.dump" => Input::Char('r'),
+        "devtool.status" => Input::Char('t'),
         "signatures.compare" => Input::Char('c'),
         "signatures.open" => Input::Char('e'),
         "packages.inventory" => Input::Char('R'),
@@ -205,7 +211,8 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "devtool.modify" => Input::Char('d'),
         "devtool.update" => Input::Char('u'),
         "devtool.finish" => Input::Char('F'),
-        "devtool.deploy" | "devtool.undeploy" => Input::Char('P'),
+        "devtool.deploy" => Input::Char('P'),
+        "devtool.undeploy" => Input::Char('N'),
         "devtool.reset" => Input::Char('D'),
         "devtool.upgrade" => Input::Char('U'),
         "maintenance.readiness" => Input::Char('c'),

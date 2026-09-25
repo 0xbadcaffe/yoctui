@@ -42,6 +42,33 @@ fn devtool_target_deploy_renders_identity_entry_and_exact_confirmation() {
     assert!(output.contains("devtool deploy-target busybox qemuarm"));
     assert!(output.contains("busybox.bb"));
 }
+
+#[test]
+fn devtool_undeploy_and_upgrade_render_exact_distinct_commands() {
+    let identity = yoctui_model::RecipeIdentity {
+        name: "busybox".into(),
+        file: "/layers/busybox.bb".into(),
+    };
+    let mut app = App::new(10, 1_000);
+    app.dialogs.push_back(Dialog::DevtoolUndeployConfirmation(
+        yoctui_model::DevtoolUndeployPlan {
+            identity: identity.clone(),
+            target: "root@board".into(),
+        },
+    ));
+    let undeploy = rendered_text(&app, 120, 25);
+    assert!(
+        undeploy.contains("devtool undeploy-target busybox root@board"),
+        "{undeploy}"
+    );
+
+    app.dialogs.clear();
+    app.dialogs.push_back(Dialog::DevtoolUpgradeConfirmation(
+        yoctui_model::DevtoolUpgradePlan { identity },
+    ));
+    let upgrade = rendered_text(&app, 120, 25);
+    assert!(upgrade.contains("devtool upgrade busybox"), "{upgrade}");
+}
 #[test]
 fn devwork_editor_renders_confirmation_and_workspace_editor_build_shortcut() {
     let mut confirmation = App::new(10, 1_000);

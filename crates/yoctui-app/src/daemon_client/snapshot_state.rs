@@ -77,6 +77,21 @@ impl DaemonClientSnapshot {
             yoctui_protocol::daemon::DaemonEvent::Log(record) => {
                 let _ = yoctui_model::update(app, daemon_log_action(record));
             }
+            yoctui_protocol::daemon::DaemonEvent::DevtoolStatusChanged(status) => {
+                match crate::devtool_status_from_protocol(status) {
+                    Ok(status) => {
+                        let _ = yoctui_model::update(
+                            app,
+                            yoctui_model::Action::DevtoolStatusLoaded(status),
+                        );
+                    }
+                    Err(error) => {
+                        app.notification = Some(format!(
+                            "Devtool status response could not be decoded: {error}"
+                        ));
+                    }
+                }
+            }
             _ => {}
         }
         self.install_app(app);

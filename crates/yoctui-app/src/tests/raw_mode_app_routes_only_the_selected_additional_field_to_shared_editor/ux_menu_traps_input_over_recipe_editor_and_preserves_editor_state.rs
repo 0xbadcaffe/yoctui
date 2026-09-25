@@ -32,7 +32,12 @@ fn ux_menu_traps_input_over_recipe_editor_and_preserves_editor_state() {
             .and_then(|item| item.disabled_reason),
         Some("No active build is available to cancel.".into())
     );
-    assert_eq!(menu_action(&app, Input::Enter), None);
+    assert_eq!(
+        menu_action(&app, Input::Enter),
+        Some(MenuInputResult::ActivateDisabled(
+            "No active build is available to cancel.".into()
+        ))
+    );
     assert_eq!(
         menu_action(&app, Input::Char('c')),
         Some(MenuInputResult::Reduce(Box::new(Action::AppendMenuPrefix(

@@ -195,6 +195,11 @@ impl InteractiveRuntime {
                     input = replay;
                     replayed_context_action = true;
                 }
+                Some(MenuInputResult::ActivateDisabled(reason)) => {
+                    let _ = compatibility_workspace_action(&mut runtime.app, Action::CloseMenu);
+                    runtime.app.notification = Some(reason);
+                    return Ok(true);
+                }
                 None => return Ok(true),
             }
         }

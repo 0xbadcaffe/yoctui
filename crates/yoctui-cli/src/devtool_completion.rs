@@ -168,6 +168,36 @@ pub(crate) fn apply_completed_devtool_deploy_status(
     app.notification = Some(notification);
 }
 
+pub(crate) async fn complete_devtool_undeploy(
+    app: &mut App,
+    build_dir: &Path,
+    identity: RecipeIdentity,
+) {
+    let status = inspect_devtool_status(app, build_dir, identity).await;
+    let notification = if let Some(error) = &status.error {
+        format!("Devtool undeploy-target completed, but status refresh failed: {error:?}")
+    } else {
+        "Devtool undeploy-target completed and workspace status was refreshed.".into()
+    };
+    let _ = update(app, Action::DevtoolStatusLoaded(status));
+    app.notification = Some(notification);
+}
+
+pub(crate) async fn complete_devtool_upgrade(
+    app: &mut App,
+    build_dir: &Path,
+    identity: RecipeIdentity,
+) {
+    let status = inspect_devtool_status(app, build_dir, identity).await;
+    let notification = if let Some(error) = &status.error {
+        format!("Devtool upgrade completed, but status refresh failed: {error:?}")
+    } else {
+        "Devtool upgrade completed and workspace status was refreshed.".into()
+    };
+    let _ = update(app, Action::DevtoolStatusLoaded(status));
+    app.notification = Some(notification);
+}
+
 pub(crate) async fn complete_devtool_reset(
     app: &mut App,
     build_dir: &Path,

@@ -8,6 +8,14 @@ fn client_runtime_devtool_maps_every_effect_to_closed_wire_type() {
         name: "busybox".into(),
         file: "/layers/busybox.bb".into(),
     };
+    assert_eq!(
+        daemon_command_for_effect(&app, &Effect::InspectDevtoolStatus(identity.clone())).unwrap(),
+        Some(DaemonCommand::InspectDevtoolStatus {
+            recipe: "busybox".into(),
+            recipe_file: "/layers/busybox.bb".into(),
+            build_directory: "/build".into(),
+        })
+    );
     let cases = [
         (
             Effect::DevtoolModify(identity.clone()),
@@ -46,12 +54,28 @@ fn client_runtime_devtool_maps_every_effect_to_closed_wire_type() {
         ),
         (
             Effect::DevtoolDeploy(yoctui_model::DevtoolDeployPlan {
-                identity,
+                identity: identity.clone(),
                 target: "root@example".into(),
             }),
             DaemonDevtoolOperation::DeployTarget {
                 recipe: "busybox".into(),
                 target: "root@example".into(),
+            },
+        ),
+        (
+            Effect::DevtoolUndeploy(yoctui_model::DevtoolUndeployPlan {
+                identity: identity.clone(),
+                target: "root@example".into(),
+            }),
+            DaemonDevtoolOperation::UndeployTarget {
+                recipe: "busybox".into(),
+                target: "root@example".into(),
+            },
+        ),
+        (
+            Effect::DevtoolUpgrade(yoctui_model::DevtoolUpgradePlan { identity }),
+            DaemonDevtoolOperation::Upgrade {
+                recipe: "busybox".into(),
             },
         ),
     ];

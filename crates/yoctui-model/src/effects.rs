@@ -63,6 +63,8 @@ pub enum Effect {
     DevtoolUpdateRecipe(RecipeIdentity),
     DevtoolFinish(DevtoolFinishPlan),
     DevtoolDeploy(DevtoolDeployPlan),
+    DevtoolUndeploy(DevtoolUndeployPlan),
+    DevtoolUpgrade(DevtoolUpgradePlan),
     InspectDevtoolStatus(RecipeIdentity),
     GetDependencies(String),
     GetSignatureDump(SignatureTarget),

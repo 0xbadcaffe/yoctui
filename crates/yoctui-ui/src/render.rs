@@ -9,6 +9,8 @@ include!("render/workflow_dialogs.rs");
 
 include!("render/project_dialogs.rs");
 
+include!("render/extended_devtool_dialogs.rs");
+
 include!("render/development_dialogs.rs");
 
 include!("render/setup_dialogs.rs");

@@ -118,6 +118,7 @@ pub enum DaemonEvent {
     RawExecutionRemoved {
         request_id: String,
     },
+    DevtoolStatusChanged(Box<DaemonDevtoolStatusData>),
     PtyChanged(PtySessionSummary),
     PtyRemoved {
         session_id: PtySessionId,

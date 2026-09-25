@@ -70,6 +70,8 @@ pub fn recipes_workspace_action(searching: bool, key: Input) -> Option<Action> {
         Input::Char('u') => Some(Action::BeginSelectedRecipeDevtoolUpdateRecipe),
         Input::Char('F') => Some(Action::BeginSelectedRecipeDevtoolFinish),
         Input::Char('P') => Some(Action::BeginSelectedRecipeDevtoolDeploy),
+        Input::Char('N') => Some(Action::BeginSelectedRecipeDevtoolUndeploy),
+        Input::Char('U') => Some(Action::BeginSelectedRecipeDevtoolUpgrade),
         Input::Char('D') => Some(Action::BeginSelectedRecipeDevtoolReset),
         Input::Char('s') => Some(Action::BeginSelectedRecipeDevtoolWorkspaceShell),
         Input::Char('E') => Some(Action::BeginSelectedRecipeDevtoolEditRecipe),
@@ -157,6 +159,32 @@ pub fn devtool_deploy_confirmation_action(key: Input) -> Option<Action> {
     match key {
         Input::Enter => Some(Action::ConfirmDevtoolDeploy),
         Input::Esc => Some(Action::CancelDevtoolDeployConfirmation),
+        _ => None,
+    }
+}
+
+pub fn devtool_undeploy_dialog_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Char(character) => Some(Action::AppendDevtoolUndeployTarget(character)),
+        Input::Backspace => Some(Action::BackspaceDevtoolUndeployTarget),
+        Input::Enter => Some(Action::PreviewDevtoolUndeploy),
+        Input::Esc => Some(Action::CancelDevtoolUndeploy),
+        _ => None,
+    }
+}
+
+pub fn devtool_undeploy_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmDevtoolUndeploy),
+        Input::Esc => Some(Action::CancelDevtoolUndeployConfirmation),
+        _ => None,
+    }
+}
+
+pub fn devtool_upgrade_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter => Some(Action::ConfirmDevtoolUpgrade),
+        Input::Esc => Some(Action::CancelDevtoolUpgrade),
         _ => None,
     }
 }

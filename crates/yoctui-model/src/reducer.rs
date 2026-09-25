@@ -298,6 +298,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::CancelRecipePatchPicker | Action::BeginSelectedRecipeDevtoolModify | Action::BeginSelectedRecipeDevtoolStatus
         | Action::DevtoolStatusLoaded(..) | Action::BeginSelectedRecipeDevtoolReset => build_cancelled::reduce_actions(app, action),
         Action::BeginSelectedRecipeDevtoolUpdateRecipe | Action::BeginSelectedRecipeDevtoolFinish | Action::BeginSelectedRecipeDevtoolDeploy
+        | Action::BeginSelectedRecipeDevtoolUndeploy | Action::BeginSelectedRecipeDevtoolUpgrade
         | Action::BeginSelectedRecipeDependencies | Action::BeginDependencyGraph { .. } | Action::DependencyGraphLoaded(..)
         | Action::DependencyGraphPartial { .. } | Action::DependencyGraphFailed { .. } | Action::SelectDependencyGraphNode { .. }
         | Action::SelectDependencyGraphNodeAt { .. } | Action::ToggleDependencyGraphReverse | Action::CollapseSelectedDependencyGraphNode
@@ -327,6 +328,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::CancelDevtoolFinish | Action::ConfirmDevtoolFinish | Action::CancelDevtoolFinishConfirmation
         | Action::AppendDevtoolDeployTarget(..) | Action::BackspaceDevtoolDeployTarget | Action::PreviewDevtoolDeploy
         | Action::CancelDevtoolDeploy | Action::ConfirmDevtoolDeploy | Action::CancelDevtoolDeployConfirmation
+        | Action::AppendDevtoolUndeployTarget(..) | Action::BackspaceDevtoolUndeployTarget
+        | Action::PreviewDevtoolUndeploy | Action::CancelDevtoolUndeploy
+        | Action::ConfirmDevtoolUndeploy | Action::CancelDevtoolUndeployConfirmation
+        | Action::ConfirmDevtoolUpgrade | Action::CancelDevtoolUpgrade
         | Action::OpenRecipeEditor { .. } | Action::SelectRecipeEditorFile { .. } | Action::LoadRecipeEditorContent(..)
         | Action::LoadRecipeEditorExternalContent(..) | Action::FocusRecipeEditor(..) | Action::EditRecipeEditor(..)
         | Action::BeginRecipeEditorSearch | Action::AppendRecipeEditorSearch(..) | Action::BackspaceRecipeEditorSearch

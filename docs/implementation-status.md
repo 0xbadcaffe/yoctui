@@ -1,5 +1,11 @@
 # Yoctui Implementation Status
 
+M75 DEVTOOL-MENU-DAEMON-001 is DONE in v0.1.225. Devtool status now executes in
+the daemon's initialized Yocto environment through protocol 1.4. F12 status,
+editor, shell, GitUI, build and existing Devtool workflows route correctly;
+undeploy and upgrade have distinct typed confirmation/execution paths. Enter on
+an unavailable menu action closes the menu and reports the exact reason.
+
 M75 PLATFORM-MENUCONFIG-RELAY-DTB-001 is DONE in v0.1.224. BitBake's worker
 hands its generated custom-terminal command to a validated local relay, which
 runs it from the reported task directory in the selected PTY. A live Romulus

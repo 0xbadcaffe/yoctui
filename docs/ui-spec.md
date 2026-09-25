@@ -5939,3 +5939,13 @@ terminal sessions or an explicit user keymap binding.
 The F12 menu grows to the bounded responsive dimensions defined in the M68 menu
 contract so action names, shortcuts, descriptions, and unavailable reasons have
 substantially more horizontal and vertical room.
+
+### M75 Devtool menu and daemon corrections
+
+Devtool status launched from Recipes or the F12 Actions menu runs through the
+attached daemon's initialized Yocto environment. The client remains responsive
+while the daemon inspects status and installs the typed result. The Actions menu
+maps status, workspace editor, workspace shell, GitUI, build, modify, update,
+finish, deploy, undeploy, reset, and upgrade to distinct workflows. Undeploy and
+upgrade retain explicit previews and confirmation. Activating an unavailable
+menu item closes the menu and reports its displayed reason in the status row.

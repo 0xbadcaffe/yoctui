@@ -117,6 +117,7 @@ pub fn apply_sequenced_event(
             snapshot.pty_screens.push(screen.clone());
         }
         DaemonEvent::PtyOutput { .. }
+        | DaemonEvent::DevtoolStatusChanged(_)
         | DaemonEvent::TestResults(_)
         | DaemonEvent::TestComparison(_)
         | DaemonEvent::TestResultTool(_)

@@ -28,28 +28,41 @@ fn compatibility(
                 ),
                 ..YoctoEnvironmentIdentity::default()
             },
-            capabilities: vec![CapabilityRecord {
-                id: CapabilityId::DevtoolModify,
-                state: CapabilityState::Available,
-                evidence: vec![CapabilityEvidence {
-                    kind: CapabilityEvidenceKind::DirectProbe,
-                    outcome: CapabilityEvidenceOutcome::Positive,
-                    subject: "devtool modify --help".into(),
-                    detail: "Fixture exposes modify.".into(),
-                    argv: vec![executable.display().to_string(), "--help".into()],
-                }],
-            }],
+            capabilities: [CapabilityId::DevtoolModify, CapabilityId::DevtoolStatus]
+                .into_iter()
+                .map(|id| CapabilityRecord {
+                    id,
+                    state: CapabilityState::Available,
+                    evidence: vec![CapabilityEvidence {
+                        kind: CapabilityEvidenceKind::DirectProbe,
+                        outcome: CapabilityEvidenceOutcome::Positive,
+                        subject: format!("{} --help", id.as_str()),
+                        detail: "Fixture exposes the Devtool operation.".into(),
+                        argv: vec![executable.display().to_string(), "--help".into()],
+                    }],
+                })
+                .collect(),
         },
-        implementations: std::collections::BTreeMap::from([(
-            CapabilityId::DevtoolModify,
-            CapabilityImplementation {
-                id: yoctui_bitbake::DEVTOOL_MODIFY_IMPLEMENTATION.into(),
-                kind: CapabilityImplementationKind::Command,
-            },
-        )]),
+        implementations: std::collections::BTreeMap::from([
+            (
+                CapabilityId::DevtoolModify,
+                CapabilityImplementation {
+                    id: yoctui_bitbake::DEVTOOL_MODIFY_IMPLEMENTATION.into(),
+                    kind: CapabilityImplementationKind::Command,
+                },
+            ),
+            (
+                CapabilityId::DevtoolStatus,
+                CapabilityImplementation {
+                    id: yoctui_bitbake::DEVTOOL_STATUS_IMPLEMENTATION.into(),
+                    kind: CapabilityImplementationKind::Command,
+                },
+            ),
+        ]),
     }
     .normalize()
     .unwrap()
 }
 
 mod compatibility_devtool_daemon_runner_uses_owned_snapshot_and_survives_client_scope;
+mod devtool_status_inspection_runs_in_the_daemon_worker;

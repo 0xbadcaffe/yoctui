@@ -66,6 +66,8 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         Effect::DevtoolUpdateRecipe(_) => Requirement::one(Id::DevtoolUpdateRecipe),
         Effect::DevtoolFinish(_) => Requirement::one(Id::DevtoolFinish),
         Effect::DevtoolDeploy(_) => Requirement::one(Id::DevtoolDeployTarget),
+        Effect::DevtoolUndeploy(_) => Requirement::one(Id::DevtoolUndeployTarget),
+        Effect::DevtoolUpgrade(_) => Requirement::one(Id::DevtoolUpgrade),
         Effect::InspectDevtoolStatus(_) => Requirement::one(Id::DevtoolStatus),
         Effect::GetDependencies(_) => Requirement::one(Id::BitBakeRecipeDependencies),
         Effect::GetSignatureDump(_) => Requirement::one(Id::BitBakeDumpSig),

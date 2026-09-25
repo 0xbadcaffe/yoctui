@@ -1858,3 +1858,11 @@ status and GitUI, concept menus, arrow/Escape focus, clean meters and a readable
 Braille pie. Ten atomic tasks end with updated front README screens and a
 non-force push to master. M67 live performance evidence remains a separate
 blocked prerequisite and does not prevent implementing or pushing these fixes.
+
+## M75 — Rapid live-workbench bug corrections
+
+DEVTOOL-MENU-DAEMON-001 is DONE in v0.1.225. Devtool status now uses
+daemon-owned initialized environment authority, F12 Devtool actions have
+distinct executable routes, and unavailable actions report their reason after
+closing the menu. Focused model, app, CLI, daemon and TestBackend checks pass;
+the user continues manual bug testing before requesting the full suite.
