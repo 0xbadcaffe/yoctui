@@ -19,4 +19,9 @@ fn animation_is_visible_only_indeterminate_and_nonterminal() {
 
     app.build.status = BuildStatus::Completed;
     assert!(!has_visible_indeterminate_activity(&app));
+
+    app.screen = Screen::Recipes;
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Connecting;
+    assert!(has_visible_indeterminate_activity(&app));
 }

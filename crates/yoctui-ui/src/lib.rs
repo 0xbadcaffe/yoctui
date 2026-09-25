@@ -105,6 +105,8 @@ use footer::{
 };
 
 mod header;
+#[cfg(test)]
+use header::clock_label;
 use header::{
     clock_text, daemon_lifecycle_label, daemon_lifecycle_tone, workbench_footer, workbench_header,
 };

@@ -238,14 +238,15 @@ Shell
 │       ├── Contextual actions
 │       └── System or compatibility status
 └── Footer
-    ├── Contextual shortcut rail
-    └── Transient status and fixed-width clock
+    ├── Transient status row
+    └── Contextual shortcut rail and labeled UTC clock
 ```
 
-Header and footer are each exactly two terminal rows in every supported
-layout. The body owns every remaining row. Panels use one-cell borders and
-one-cell title rows; adjacent rectangles must not overlap. A renderer must
-return before attempting to split an empty rectangle.
+The wide shell uses its reviewed bordered chrome, while compact terminals keep
+the status and command rows plus the footer's bottom border. The body owns every
+remaining row. Panels use one-cell borders and one-cell title rows; adjacent
+rectangles must not overlap. A renderer must return before attempting to split
+an empty rectangle.
 
 #### Dimensions and breakpoints
 
@@ -401,15 +402,14 @@ provides that severity. Stale daemon state says `Daemon state stale`; it is not
 misrepresented as reconnecting. Disconnected state stays in Header/System
 Status instead of creating permanent transient noise.
 
-The status slot is inserted immediately before the clock. Its desired width is
-44 cells at 180+, 36 at 130–179, 28 at 100–129, and 26 below 100 columns, but
-it shrinks or disappears before consuming the 36-cell wide/medium or 32-cell
-narrow critical-shortcut reservation. Text whitespace is normalized onto one
-line and bounded with a visible ellipsis. Semantic marker-plus-text forms are
-`✕` error, `!` confirmation/warning, `✓` success, `i` information, `…`
-synchronizing, and `▶` activity, so no-color and reduced-motion retain the
-same meaning. The fixed-width clock remains last at 100+ columns and is hidden
-below 100 columns.
+Transient status owns the full row immediately above the shortcut rail. Text
+whitespace is normalized onto one line and uses the full available width before
+bounded ellipsis is required. Semantic marker-plus-text forms are `✕` error,
+`!` confirmation/warning, `✓` success, `i` information, `…` synchronizing, and
+Braille activity for an accepted daemon request that is still waiting or other
+typed activity. Reduced motion keeps a stable Braille marker. The shortcut row
+ends with the fixed-width `UTC HH:MM:SS` clock label at 100+ columns and hides
+the clock below 100 columns.
 
 #### Search behavior
 
@@ -3577,11 +3577,13 @@ including build completion review, remain modal overlays and take precedence.
 
 The footer projects informational, success, warning, error, reconnecting, and
 activity marker-plus-text forms from existing model state. Routine strings are
-informational. Guidance/failure popup eligibility is a single shared model
-predicate used by rendering and input routing. Exact retained error/warning
-logs and typed build completion/cancellation supply result severity. Repeated
-backend log lines remain in bounded log retention and do not become one footer
-notification per line.
+informational. An accepted daemon command clears its submission notice so the
+typed daemon, job, or build waiting state is visible with Braille activity until
+the authoritative state advances. Guidance/failure popup eligibility is a
+single shared model predicate used by rendering and input routing. Exact
+retained error/warning logs and typed build completion/cancellation supply
+result severity. Repeated backend log lines remain in bounded log retention and
+do not become one footer notification per line.
 
 Do not flood the UI with one notification per BitBake log line.
 
@@ -3671,23 +3673,23 @@ function-key terminal route: `F4` truthfully opens
 Dashboard, while terminal/session access remains in Navigator, Dashboard, and
 the command palette through its actual bindings.
 
-At the canonical `160x48` Tasks size the footer retains its exact two-row
-bordered reference geometry. With Navigator focused it prioritizes Navigator
+At the canonical `160x48` Tasks size the footer has a bordered status row above
+the bordered command row. With Navigator focused it prioritizes Navigator
 selection/open/prefix controls, then non-current global destinations that fit,
 then `F1 Help`, `F12 Menu`, and `q Quit`. With Workspace focused it instead
 prioritizes task selection/filter/cancellation and `Tab Focus`. A route
 that already names the active screen is omitted as redundant. Every displayed
 key invokes the named action; no unavailable or duplicate route is used merely
-to resemble concept art. When transient status is present it takes the bounded
-slot before the clock, removing lower-priority optional routes first while
-preserving Help, Menu, and Quit.
+to resemble concept art. Transient status cannot consume shortcut width because
+it occupies the separate row above the rail.
 
-The clock is fixed at eight digits and right aligned at `100+` columns. It is
-hidden at `80..99` columns so current workspace actions and Help/Menu/Quit do
-not clip. Items are measured using terminal cell width and are appended only
-as complete hints. At constrained widths the rail uses compact highlighted key
-tokens; complex SDK, Testing, Security, and QA workspaces retain their existing
-compound narrow tokens.
+The clock is labeled `UTC HH:MM:SS` and right aligned at `100+` columns. It is
+UTC wall-clock time, not daemon uptime; daemon uptime remains a separate typed
+System Status metric. The clock is hidden at `80..99` columns so current
+workspace actions and Help/Menu/Quit do not clip. Items are measured using
+terminal cell width and are appended only as complete hints. At constrained
+widths the rail uses compact highlighted key tokens; complex SDK, Testing,
+Security, and QA workspaces retain their existing compound narrow tokens.
 
 Dashboard example:
 
@@ -5583,8 +5585,10 @@ unchanged visual references. Production screens must reproduce their region
 hierarchy and approximate proportions on the terminal grid, using real typed
 state and the existing keymap. At wide/tall sizes the six concept workspaces have two header content
 rows separated by a rule (five rows including borders), and the footer has a
-bordered command row (three rows). Compact terminals retain two-row header and
-footer. This supersedes the earlier unconditional two-row chrome rule.
+bordered status and command pair (four rows including borders). Compact
+terminals retain a two-row header and a three-row footer whose bottom border
+follows the status and command rows. This supersedes the earlier unconditional
+two-row chrome rule.
 
 Dashboard restores its overview/history/telemetry/action composition and
 Project Inspector. Tasks and Errors use one outer inspector with internal

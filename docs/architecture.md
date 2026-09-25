@@ -1526,8 +1526,13 @@ Transient footer status follows the same projection boundary.
 the active typed dialog, exact notification/log correlation, daemon replica
 and BitBake lifecycle, local background jobs, or build lifecycle. Its priority
 is reducer/model policy. `yoctui-ui` only assigns semantic theme roles, bounds
-the one-line text, and measures the footer columns; it does not parse message
-wording, infer reconnect attempts, or manufacture activity.
+the one-line text on the dedicated row above shortcuts, and measures the footer
+geometry; it does not parse message wording, infer reconnect attempts, or
+manufacture activity. A daemon `CommandResult::Accepted` clears the temporary
+submission notice so the current typed daemon/job/build lifecycle projects the
+waiting state. The render scheduler animates that typed activity while it is
+pending. The UI labels its wall clock as UTC; daemon uptime remains telemetry
+authority in the model.
 
 Search remains domain-owned. Metadata, logs, packages, image/SDK artifacts,
 test results, Security, QA, Compatibility, and the command palette retain

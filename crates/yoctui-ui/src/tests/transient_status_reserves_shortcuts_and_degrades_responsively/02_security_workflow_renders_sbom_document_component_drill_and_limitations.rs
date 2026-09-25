@@ -396,7 +396,7 @@ fn clone_progress_is_visible_across_terminal_widths() {
         },
     );
     for width in [80, 100, 160] {
-        let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(width, 3)).unwrap();
         terminal
             .draw(|frame| workbench_footer(frame, &app, frame.area(), UNIX_EPOCH))
             .unwrap();

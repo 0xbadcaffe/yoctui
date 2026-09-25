@@ -1,6 +1,7 @@
 use std::time::{Duration, Instant};
 
 use yoctui_model::App;
+use yoctui_protocol::daemon::{CommandOutcome, CommandResult};
 
 use crate::client_transport::ClientServerEvent;
 
@@ -70,10 +71,7 @@ impl InteractiveDaemonRuntime {
                     app.notification = Some(format!("Daemon resynchronization required: {reason}"));
                 }
                 ClientServerEvent::CommandResult(result) => {
-                    app.notification = Some(format!(
-                        "Daemon request {}: {:?}",
-                        result.request_id.0, result.outcome
-                    ));
+                    app.notification = command_result_notification(result);
                 }
                 ClientServerEvent::ShuttingDown => {
                     self.replica.disconnect_app(app);
@@ -116,5 +114,22 @@ impl InteractiveDaemonRuntime {
         pending.clear();
         restore_local_build_dir(app, self.local_build_dir.as_ref());
         Ok(())
+    }
+}
+
+pub(crate) fn command_result_notification(result: CommandResult) -> Option<String> {
+    match result.outcome {
+        CommandOutcome::Accepted => None,
+        CommandOutcome::Completed => {
+            Some(format!("Daemon request {} completed.", result.request_id.0))
+        }
+        CommandOutcome::Rejected { message, .. } => Some(format!(
+            "Daemon request {} was rejected: {message}",
+            result.request_id.0
+        )),
+        outcome => Some(format!(
+            "Daemon request {}: {outcome:?}",
+            result.request_id.0
+        )),
     }
 }

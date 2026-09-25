@@ -9404,3 +9404,14 @@ required = true
 depends_on = ["GIT-WATCH-ACCESS-FILTER-001"]
 verify = ["cargo test -p yoctui source_git_refreshes_after_a_worktree_event", "cargo fmt --all --check"]
 notes = "DONE in v0.1.220. Initial discovery still exposes scanning, while event and fallback probes retain the last ready Git projection until their replacement result arrives."
+
+[[task]]
+id = "FOOTER-STATUS-ROW-001"
+milestone = "M75"
+title = "Give daemon activity a dedicated footer row and label the clock"
+status = "DONE"
+priority = 2423
+required = true
+depends_on = ["GIT-REFRESH-PRESENTATION-001"]
+verify = ["cargo test -p yoctui-ui transient_status_reserves_shortcuts_and_degrades_responsively", "cargo test -p yoctui command_result_notifications", "cargo test -p yoctui render_scheduler", "cargo fmt --all --check"]
+notes = "DONE in v0.1.221. Transient status renders across the row above shortcuts; accepted requests expose typed daemon/job waiting activity with a Braille indicator; the shortcut-row wall clock is labeled UTC and remains distinct from daemon uptime."

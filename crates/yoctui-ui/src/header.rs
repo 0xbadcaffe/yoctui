@@ -330,6 +330,10 @@ pub(crate) fn clock_text(now: SystemTime) -> String {
     )
 }
 
+pub(crate) fn clock_label(now: SystemTime) -> String {
+    format!("UTC {}", clock_text(now))
+}
+
 pub(crate) fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
     let palette = ThemePalette::for_app(app);
     let mut spans = Vec::new();
@@ -362,7 +366,7 @@ pub(crate) fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
 pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
     let palette = ThemePalette::for_app(app);
     let block = Block::default()
-        .borders(if area.height >= 3 {
+        .borders(if area.height >= 4 {
             Borders::ALL
         } else if area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks {
             Borders::LEFT | Borders::RIGHT | Borders::BOTTOM
@@ -376,29 +380,19 @@ pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: Sy
     if inner.is_empty() {
         return;
     }
-    let clock_width = if area.width >= 100 { 10 } else { 0 };
-    let transient = app.transient_status();
-    let desired_status_width = match area.width {
-        180.. => 44,
-        130..=179 => 36,
-        100..=129 => 28,
-        _ => 26,
+    let [status_row, command_row] = if inner.height >= 2 {
+        let rows = Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).split(inner);
+        [rows[0], rows[1]]
+    } else {
+        [Rect::default(), inner]
     };
-    let shortcut_minimum = if area.width < 100 { 32 } else { 36 };
-    let available_status_width = inner
-        .width
-        .saturating_sub(clock_width)
-        .saturating_sub(shortcut_minimum);
-    let status_width = transient
-        .as_ref()
-        .map_or(0, |_| desired_status_width.min(available_status_width));
-    let status_width = if status_width >= 12 { status_width } else { 0 };
+    let clock_width = if area.width >= 100 { 14 } else { 0 };
+    let transient = app.transient_status();
     let columns = Layout::horizontal([
-        Constraint::Min(shortcut_minimum),
-        Constraint::Length(status_width),
+        Constraint::Min(if area.width < 100 { 32 } else { 36 }),
         Constraint::Length(clock_width),
     ])
-    .split(inner);
+    .split(command_row);
     let shortcuts = if app.preferences.footer_shortcuts {
         footer_rail_shortcuts(app, columns[0].width)
     } else {
@@ -408,14 +402,14 @@ pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: Sy
         Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
         columns[0],
     );
-    if let Some(status) = transient.filter(|_| status_width > 0) {
+    if let Some(status) = transient.filter(|_| !status_row.is_empty()) {
         let tone = transient_status_tone(status.kind);
         let responsive_text =
             if app.build.status == BuildStatus::Running && app.background_activities.is_empty() {
                 let jobs = app.job_summary();
-                if jobs.queued > 0 && status_width < 30 {
+                if jobs.queued > 0 && status_row.width < 30 {
                     format!("Running · {} queued", jobs.queued)
-                } else if jobs.queued > 0 && status_width < 40 {
+                } else if jobs.queued > 0 && status_row.width < 40 {
                     let active = app
                         .tasks
                         .values()
@@ -428,10 +422,8 @@ pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: Sy
             } else {
                 status.text.split_whitespace().collect::<Vec<_>>().join(" ")
             };
-        let text = bounded_status_line(responsive_text, status_width.saturating_sub(2));
-        let spans = if status.kind == TransientStatusKind::Activity
-            && !app.background_activities.is_empty()
-        {
+        let text = bounded_status_line(responsive_text, status_row.width.saturating_sub(2));
+        let spans = if status.kind == TransientStatusKind::Activity {
             vec![Span::styled(
                 format!("{} {text}", task_activity(app, None)),
                 status_tone_style(&palette, tone),
@@ -440,16 +432,16 @@ pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: Sy
             vec![status_label(tone, text, status_tone_style(&palette, tone))]
         };
         frame.render_widget(
-            Paragraph::new(Line::from(spans)).alignment(Alignment::Right),
-            columns[1],
+            Paragraph::new(Line::from(spans)).alignment(Alignment::Left),
+            status_row,
         );
     }
     if clock_width > 0 {
         frame.render_widget(
-            Paragraph::new(clock_text(now))
+            Paragraph::new(clock_label(now))
                 .alignment(Alignment::Right)
                 .style(palette.role(palette.primary_foreground, Modifier::DIM)),
-            columns[2],
+            columns[1],
         );
     }
 }

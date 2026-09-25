@@ -104,7 +104,7 @@ fn notification_transient_status_uses_typed_priority_and_dismisses() {
     assert_eq!(
         app.transient_status(),
         Some(TransientStatus {
-            kind: TransientStatusKind::Reconnecting,
+            kind: TransientStatusKind::Activity,
             text: "BitBake connecting".into(),
         })
     );

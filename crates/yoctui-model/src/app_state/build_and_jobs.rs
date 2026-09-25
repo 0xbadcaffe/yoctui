@@ -303,7 +303,7 @@ impl App {
                 if self.daemon.bitbake == ClientDaemonLifecycle::Connecting =>
             {
                 return Some(TransientStatus {
-                    kind: TransientStatusKind::Reconnecting,
+                    kind: TransientStatusKind::Activity,
                     text: "BitBake connecting".into(),
                 });
             }

@@ -25,7 +25,22 @@ pub(crate) fn has_visible_indeterminate_activity(app: &App) -> bool {
         || app.active_dialog().is_some()
         || app.menu.is_open()
         || app.command_palette_open
-        || !matches!(app.screen, Screen::Dashboard | Screen::Tasks)
+    {
+        return false;
+    }
+
+    let jobs = app.job_summary();
+    if app
+        .transient_status()
+        .is_some_and(|status| status.kind == yoctui_model::TransientStatusKind::Activity)
+        && (app.daemon.bitbake == yoctui_model::ClientDaemonLifecycle::Connecting
+            || jobs.active > 0
+            || jobs.queued > 0)
+    {
+        return true;
+    }
+
+    if !matches!(app.screen, Screen::Dashboard | Screen::Tasks)
         || !matches!(
             app.build.status,
             BuildStatus::LoadingWorkspace

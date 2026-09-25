@@ -41,9 +41,9 @@ pub fn workbench_chrome_heights(app: &yoctui_model::App, width: u16, height: u16
             | Screen::TerminalSessions
     );
     if (width == 160 && height == 50) || (concept && width >= 150 && height >= 50) {
-        [5, 3]
+        [5, 4]
     } else {
-        [2, 2]
+        [2, 3]
     }
 }
 

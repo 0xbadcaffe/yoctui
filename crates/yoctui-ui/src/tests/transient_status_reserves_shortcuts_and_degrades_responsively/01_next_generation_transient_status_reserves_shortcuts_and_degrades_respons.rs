@@ -4,10 +4,10 @@ use super::*;
 fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively() {
     let mut app = App::new(32, 8192);
     app.focus = FocusTarget::Workspace;
-    app.notification =
-        Some("Profile saved with a deliberately long status that must remain on one line".into());
+    let notice = "Profile saved with a deliberately long status that must remain on one line";
+    app.notification = Some(notice.into());
     let render_footer = |app: &App, width| {
-        let mut terminal = Terminal::new(TestBackend::new(width, 2)).unwrap();
+        let mut terminal = Terminal::new(TestBackend::new(width, 3)).unwrap();
         terminal
             .draw(|frame| workbench_footer(frame, app, frame.area(), UNIX_EPOCH))
             .unwrap();
@@ -22,9 +22,8 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
 
     for width in [200_u16, 160, 130, 100] {
         let footer = render_footer(&app, width);
-        assert!(footer.contains("i Profile saved"), "{width}: {footer}");
-        assert!(footer.contains('…'), "{width}: {footer}");
-        if width >= 160 {
+        assert!(footer.contains(&format!("i {notice}")), "{width}: {footer}");
+        if width >= 130 {
             assert!(footer.contains("F1 Help"), "{width}: {footer}");
             assert!(footer.contains("F12 Menu"), "{width}: {footer}");
         } else {
@@ -32,19 +31,56 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
             assert!(footer.contains("Ctrl+P Menu"), "{width}: {footer}");
         }
         assert!(footer.contains("q Quit"), "{width}: {footer}");
-        assert!(footer.contains("00:00:00"), "{width}: {footer}");
+        assert!(footer.contains("UTC 00:00:00"), "{width}: {footer}");
     }
     let narrow = render_footer(&app, 80);
     assert!(narrow.contains("i Profile saved"), "{narrow}");
     assert!(narrow.contains("? Help"), "{narrow}");
     assert!(narrow.contains("Ctrl+P Menu"), "{narrow}");
     assert!(narrow.contains("q Quit"), "{narrow}");
-    assert!(!narrow.contains("00:00:00"), "{narrow}");
+    assert!(!narrow.contains("UTC 00:00:00"), "{narrow}");
 
     app.notification = None;
     let idle = render_footer(&app, 160);
     assert!(!idle.contains("Profile saved"), "{idle}");
     assert!(idle.contains("F3 History"), "{idle}");
+}
+
+#[test]
+fn transient_status_uses_the_row_above_shortcuts_and_daemon_waiting_is_braille() {
+    let mut app = App::new(32, 8192);
+    app.focus = FocusTarget::Workspace;
+    app.daemon.status = yoctui_model::ClientReplicaStatus::Current;
+    app.daemon.bitbake = yoctui_model::ClientDaemonLifecycle::Connecting;
+
+    let mut terminal = Terminal::new(TestBackend::new(120, 3)).unwrap();
+    terminal
+        .draw(|frame| workbench_footer(frame, &app, frame.area(), UNIX_EPOCH))
+        .unwrap();
+    let row = |y: u16| {
+        let start = usize::from(y) * 120;
+        terminal
+            .backend()
+            .buffer()
+            .content
+            [start..start + 120]
+            .iter()
+            .map(|cell| cell.symbol())
+            .collect::<String>()
+    };
+    let status = row(0);
+    let shortcuts = row(1);
+    assert!(
+        throbber_widgets_tui::BRAILLE_EIGHT_DOUBLE
+            .symbols
+            .iter()
+            .any(|symbol| status.starts_with(symbol)),
+        "{status}"
+    );
+    assert!(status.contains("BitBake connecting"), "{status}");
+    assert!(!shortcuts.contains("BitBake connecting"), "{shortcuts}");
+    assert!(shortcuts.contains("q Quit"), "{shortcuts}");
+    assert!(shortcuts.contains("UTC 00:00:00"), "{shortcuts}");
 }
 
 #[test]
@@ -291,6 +327,7 @@ fn workbench_shell_clock_is_a_fixed_width_terminal_clock() {
         clock_text(UNIX_EPOCH + Duration::from_secs(90_061)),
         "01:01:01"
     );
+    assert_eq!(clock_label(UNIX_EPOCH), "UTC 00:00:00");
 }
 
 #[test]

@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 FOOTER-STATUS-ROW-001 is DONE in v0.1.221. Transient daemon and operation
+status uses a dedicated row above shortcuts, accepted waiting requests show
+typed Braille activity, and the lower-right wall clock is labeled UTC. Daemon
+uptime remains the separate System Status metric.
+
 M75 GIT-REFRESH-PRESENTATION-001 is DONE in v0.1.220. Event and fallback Git
 refreshes keep the last ready badge visible while the bounded probe runs;
 `scanning…` remains the explicit initial-discovery state.
