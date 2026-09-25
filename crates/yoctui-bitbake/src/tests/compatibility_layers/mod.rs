@@ -79,7 +79,7 @@ fn authority(
     .unwrap()
 }
 
-fn all_records() -> [(CapabilityId, &'static str, bool); 7] {
+fn all_records() -> [(CapabilityId, &'static str, bool); 15] {
     [
         (
             CapabilityId::BitBakeLayersShowLayers,
@@ -94,6 +94,16 @@ fn all_records() -> [(CapabilityId, &'static str, bool); 7] {
         (
             CapabilityId::BitBakeLayersShowOverlayed,
             BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersShowAppends,
+            BITBAKE_LAYERS_SHOW_APPENDS_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersShowCrossDepends,
+            BITBAKE_LAYERS_SHOW_CROSS_DEPENDS_IMPLEMENTATION,
             true,
         ),
         (
@@ -114,6 +124,36 @@ fn all_records() -> [(CapabilityId, &'static str, bool); 7] {
         (
             CapabilityId::BitBakeLayersRemoveLayer,
             BITBAKE_LAYERS_REMOVE_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersFlatten,
+            BITBAKE_LAYERS_FLATTEN_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersLayerIndexFetch,
+            BITBAKE_LAYERS_LAYERINDEX_FETCH_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersLayerIndexShowDepends,
+            BITBAKE_LAYERS_LAYERINDEX_SHOW_DEPENDS_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersShowMachines,
+            BITBAKE_LAYERS_SHOW_MACHINES_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersSaveBuildConf,
+            BITBAKE_LAYERS_SAVE_BUILD_CONF_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersCreateLayersSetup,
+            BITBAKE_LAYERS_CREATE_LAYERS_SETUP_IMPLEMENTATION,
             true,
         ),
     ]

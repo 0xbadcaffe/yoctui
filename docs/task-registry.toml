@@ -9481,3 +9481,14 @@ required = true
 depends_on = ["RAW-RECIPE-REPEAT-001"]
 verify = ["cargo test -p yoctui-model yocto_utility", "cargo test -p yoctui-app yocto_utility", "cargo test -p yoctui-ui yocto_utility", "cargo test -p yoctui-bitbake compatibility_layers", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.226. F12 Tools exposes typed forms for every bitbake-config-build fragment operation plus show-layers, show-recipes, show-overlayed, and create-layer. Operation-specific validation produces shell-free argv, the current compatibility snapshot gates each route, and the shared terminal preview launches through the daemon-owned utility PTY. Focused model, app, UI, planner, catalog, formatting, and strict Clippy checks pass; the full baseline remains intentionally deferred for the user's rapid manual bug pass."
+
+[[task]]
+id = "BITBAKE-LAYERS-ALL-001"
+milestone = "M75"
+title = "Expose every supported bitbake-layers subcommand"
+status = "DONE"
+priority = 2430
+required = true
+depends_on = ["YOCTO-UTILITY-MENUS-001"]
+verify = ["cargo test -p yoctui-model yocto_utility", "cargo test -p yoctui-model bitbake_layers", "cargo test -p yoctui-app yocto_utility", "cargo test -p yoctui-ui yocto_utility", "cargo test -p yoctui-bitbake compatibility_layers", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.227. F12 Tools covers all 14 subcommands and every command-specific option advertised by the initialized BitBake 2.19 bitbake-layers utility. Typed forms validate operation-specific values, compatibility probes each command and exposed option, and the model and adapter planner share exact shell-free argv before daemon-owned terminal execution. Focused model, app, UI, planner, catalog, formatting, and strict Clippy checks pass; the full baseline remains intentionally deferred for the user's rapid manual bug pass."

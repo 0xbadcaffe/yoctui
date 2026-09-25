@@ -25,3 +25,35 @@ fn yocto_utility_dialog_renders_typed_fields_validation_and_controls() {
     assert!(output.contains("layer directory is required"), "{output}");
     assert!(output.contains("Enter reviews exact command"), "{output}");
 }
+
+#[test]
+fn complete_layer_forms_render_all_command_specific_options() {
+    let mut app = App::new(16, 4096);
+    app.dialogs
+        .push_back(Dialog::YoctoUtility(yoctui_model::YoctoUtilityDialog::new(
+            yoctui_model::YoctoUtilityCommand::LayersShowRecipes,
+        )));
+    let mut terminal = Terminal::new(TestBackend::new(100, 24)).unwrap();
+    terminal
+        .draw(|frame| render_at(frame, &app, UNIX_EPOCH))
+        .unwrap();
+    let output = terminal
+        .backend()
+        .buffer()
+        .content
+        .iter()
+        .map(|cell| cell.symbol())
+        .collect::<String>();
+    for expected in [
+        "Recipe patterns",
+        "Show filenames",
+        "Recipes only",
+        "Multiple providers only",
+        "Inherited classes",
+        "Bare names",
+        "Show variants",
+        "Multiconfig",
+    ] {
+        assert!(output.contains(expected), "{expected}: {output}");
+    }
+}

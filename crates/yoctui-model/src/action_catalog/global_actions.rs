@@ -52,7 +52,17 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         | CommandId::OpenBitBakeLayersShowLayers
         | CommandId::OpenBitBakeLayersShowRecipes
         | CommandId::OpenBitBakeLayersShowOverlayed
-        | CommandId::OpenBitBakeLayersCreateLayer => "F12 Tools",
+        | CommandId::OpenBitBakeLayersShowAppends
+        | CommandId::OpenBitBakeLayersShowCrossDepends
+        | CommandId::OpenBitBakeLayersAddLayer
+        | CommandId::OpenBitBakeLayersRemoveLayer
+        | CommandId::OpenBitBakeLayersFlatten
+        | CommandId::OpenBitBakeLayersLayerIndexFetch
+        | CommandId::OpenBitBakeLayersLayerIndexShowDepends
+        | CommandId::OpenBitBakeLayersCreateLayer
+        | CommandId::OpenBitBakeLayersShowMachines
+        | CommandId::OpenBitBakeLayersSaveBuildConf
+        | CommandId::OpenBitBakeLayersCreateLayersSetup => "F12 Tools",
         CommandId::OpenTerminalSessions => "Ctrl+B t",
         CommandId::OpenMaintenance | CommandId::OpenBuildEnvironment => "none",
         CommandId::OpenCompatibility => "none",
@@ -94,7 +104,17 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         | CommandId::OpenBitBakeLayersShowLayers
         | CommandId::OpenBitBakeLayersShowRecipes
         | CommandId::OpenBitBakeLayersShowOverlayed
-        | CommandId::OpenBitBakeLayersCreateLayer => None,
+        | CommandId::OpenBitBakeLayersShowAppends
+        | CommandId::OpenBitBakeLayersShowCrossDepends
+        | CommandId::OpenBitBakeLayersAddLayer
+        | CommandId::OpenBitBakeLayersRemoveLayer
+        | CommandId::OpenBitBakeLayersFlatten
+        | CommandId::OpenBitBakeLayersLayerIndexFetch
+        | CommandId::OpenBitBakeLayersLayerIndexShowDepends
+        | CommandId::OpenBitBakeLayersCreateLayer
+        | CommandId::OpenBitBakeLayersShowMachines
+        | CommandId::OpenBitBakeLayersSaveBuildConf
+        | CommandId::OpenBitBakeLayersCreateLayersSetup => None,
         CommandId::OpenTerminalSessions => Some(WorkspaceDestination::TerminalSessions),
         CommandId::OpenMaintenance => Some(WorkspaceDestination::Maintenance),
         CommandId::OpenBuildEnvironment => Some(WorkspaceDestination::BuildEnvironment),

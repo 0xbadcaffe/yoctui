@@ -272,8 +272,38 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenBitBakeLayersShowOverlayed => {
             Action::OpenYoctoUtility(YoctoUtilityCommand::LayersShowOverlayed)
         }
+        CommandId::OpenBitBakeLayersShowAppends => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersShowAppends)
+        }
+        CommandId::OpenBitBakeLayersShowCrossDepends => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersShowCrossDepends)
+        }
+        CommandId::OpenBitBakeLayersAddLayer => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersAddLayer)
+        }
+        CommandId::OpenBitBakeLayersRemoveLayer => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersRemoveLayer)
+        }
+        CommandId::OpenBitBakeLayersFlatten => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersFlatten)
+        }
+        CommandId::OpenBitBakeLayersLayerIndexFetch => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersLayerIndexFetch)
+        }
+        CommandId::OpenBitBakeLayersLayerIndexShowDepends => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersLayerIndexShowDepends)
+        }
         CommandId::OpenBitBakeLayersCreateLayer => {
             Action::OpenYoctoUtility(YoctoUtilityCommand::LayersCreateLayer)
+        }
+        CommandId::OpenBitBakeLayersShowMachines => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersShowMachines)
+        }
+        CommandId::OpenBitBakeLayersSaveBuildConf => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersSaveBuildConf)
+        }
+        CommandId::OpenBitBakeLayersCreateLayersSetup => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersCreateLayersSetup)
         }
         CommandId::OpenTerminalSessions => Action::Open(Screen::TerminalSessions),
         CommandId::OpenMaintenance => Action::Open(Screen::Maintenance),

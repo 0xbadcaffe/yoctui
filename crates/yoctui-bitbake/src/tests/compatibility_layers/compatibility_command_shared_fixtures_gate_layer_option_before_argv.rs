@@ -12,6 +12,10 @@ fn compatibility_command_shared_fixtures_gate_layer_option_before_argv() {
     let operation = BitBakeLayersOperation::CreateLayer {
         directory: "/layers/meta-demo".into(),
         add: true,
+        layer_id: None,
+        priority: None,
+        example_recipe: None,
+        example_version: None,
     };
 
     let old = authority(CompatibilityFixtureRole::OldestPolicyCandidate, 37);

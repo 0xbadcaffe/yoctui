@@ -1,4 +1,7 @@
 fn global_metadata(command: CommandId) -> GlobalMetadata {
+    if let Some(metadata) = yocto_utility_global_metadata(command) {
+        return metadata;
+    }
     use OperatorActionHelpGroup as Group;
     use OperatorActionLocalRequirement as Local;
     use OperatorActionSafety as Safety;
@@ -209,41 +212,23 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             metadata.help_group = Group::Operate;
             metadata
         }
-        CommandId::OpenBitBakeConfigBuild => yocto_utility_metadata(
-            "tools.config-build",
-            "BitBake config build",
-            "List, inspect, enable, or disable BitBake configuration fragments",
-            &["bitbake-config-build", "fragments", "toolcfg"],
-            Safety::ConfirmationRequired,
-        ),
-        CommandId::OpenBitBakeLayersShowLayers => yocto_utility_metadata(
-            "tools.layers-show-layers",
-            "Show configured layers",
-            "Run bitbake-layers show-layers in the active build",
-            &["bitbake-layers", "show-layers", "layers"],
-            Safety::ReadOnly,
-        ),
-        CommandId::OpenBitBakeLayersShowRecipes => yocto_utility_metadata(
-            "tools.layers-show-recipes",
-            "Show matching recipes",
-            "Run bitbake-layers show-recipes with an optional wildcard pattern",
-            &["bitbake-layers", "show-recipes", "providers"],
-            Safety::ReadOnly,
-        ),
-        CommandId::OpenBitBakeLayersShowOverlayed => yocto_utility_metadata(
-            "tools.layers-show-overlayed",
-            "Show overlayed recipes",
-            "Run bitbake-layers show-overlayed in the active build",
-            &["bitbake-layers", "show-overlayed", "overlays"],
-            Safety::ReadOnly,
-        ),
-        CommandId::OpenBitBakeLayersCreateLayer => yocto_utility_metadata(
-            "tools.layers-create-layer",
-            "Create layer",
-            "Create a layer skeleton and optionally add it to bblayers.conf",
-            &["bitbake-layers", "create-layer", "layer"],
-            Safety::ConfirmationRequired,
-        ),
+        CommandId::OpenBitBakeConfigBuild
+        | CommandId::OpenBitBakeLayersShowLayers
+        | CommandId::OpenBitBakeLayersShowRecipes
+        | CommandId::OpenBitBakeLayersShowOverlayed
+        | CommandId::OpenBitBakeLayersShowAppends
+        | CommandId::OpenBitBakeLayersShowCrossDepends
+        | CommandId::OpenBitBakeLayersAddLayer
+        | CommandId::OpenBitBakeLayersRemoveLayer
+        | CommandId::OpenBitBakeLayersFlatten
+        | CommandId::OpenBitBakeLayersLayerIndexFetch
+        | CommandId::OpenBitBakeLayersLayerIndexShowDepends
+        | CommandId::OpenBitBakeLayersCreateLayer
+        | CommandId::OpenBitBakeLayersShowMachines
+        | CommandId::OpenBitBakeLayersSaveBuildConf
+        | CommandId::OpenBitBakeLayersCreateLayersSetup => {
+            unreachable!("Yocto utility metadata returned before the main catalog match")
+        }
         CommandId::OpenTerminalSessions => navigation(
             "navigate.terminal-sessions",
             "Open Terminal Sessions",
@@ -396,29 +381,6 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
     }
 }
 
-fn yocto_utility_metadata(
-    id: &'static str,
-    label: &'static str,
-    description: &'static str,
-    keywords: &'static [&'static str],
-    safety: OperatorActionSafety,
-) -> GlobalMetadata {
-    GlobalMetadata {
-        id,
-        scope: OperatorActionScope::Global,
-        menu_path: vec!["Tools", label],
-        label,
-        description,
-        aliases: keywords,
-        keywords,
-        bindings: &[],
-        local_requirement: OperatorActionLocalRequirement::WorkspaceLoaded,
-        safety,
-        footer_priority: 45,
-        help_group: OperatorActionHelpGroup::Operate,
-    }
-}
-
 fn focus_metadata(
     id: &'static str,
     label: &'static str,
@@ -464,3 +426,5 @@ fn navigation(
         help_group: OperatorActionHelpGroup::Navigate,
     }
 }
+
+include!("global_yocto_metadata.rs");

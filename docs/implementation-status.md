@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+M75 BITBAKE-LAYERS-ALL-001 is DONE in v0.1.227. F12 Tools covers all 14
+subcommands and every command-specific option advertised by the initialized
+BitBake 2.19 `bitbake-layers --help`. Typed forms validate operation-specific
+paths, names, lists, flags, priorities, branches, templates, and references;
+the model and compatibility planner share exact shell-free argv. Focused model,
+app, UI, adapter, catalog, formatting, and strict Clippy checks pass; the full
+baseline remains deferred for the agreed rapid manual bug pass.
+
 M75 YOCTO-UTILITY-MENUS-001 is DONE in v0.1.226. F12 Tools now exposes typed
 forms for every `bitbake-config-build` fragment operation and the requested
 `bitbake-layers` inspection and creation commands. Forms validate only their

@@ -9,11 +9,24 @@ use yoctui_model::{BitBakeLayersOperation, CapabilityId, DaemonCompatibilitySnap
 pub const BITBAKE_LAYERS_SHOW_IMPLEMENTATION: &str = "bitbake_layers.show_layers.argv";
 pub const BITBAKE_LAYERS_SHOW_RECIPES_IMPLEMENTATION: &str = "bitbake_layers.show_recipes.argv";
 pub const BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION: &str = "bitbake_layers.show_overlayed.argv";
+pub const BITBAKE_LAYERS_SHOW_APPENDS_IMPLEMENTATION: &str = "bitbake_layers.show_appends.argv";
+pub const BITBAKE_LAYERS_SHOW_CROSS_DEPENDS_IMPLEMENTATION: &str =
+    "bitbake_layers.show_cross_depends.argv";
 pub const BITBAKE_LAYERS_CREATE_IMPLEMENTATION: &str = "bitbake_layers.create_layer.argv";
 pub const BITBAKE_LAYERS_CREATE_ADD_IMPLEMENTATION: &str =
     "bitbake_layers.create_and_add_layer.argv";
 pub const BITBAKE_LAYERS_ADD_IMPLEMENTATION: &str = "bitbake_layers.add_layer.argv";
 pub const BITBAKE_LAYERS_REMOVE_IMPLEMENTATION: &str = "bitbake_layers.remove_layer.argv";
+pub const BITBAKE_LAYERS_FLATTEN_IMPLEMENTATION: &str = "bitbake_layers.flatten.argv";
+pub const BITBAKE_LAYERS_LAYERINDEX_FETCH_IMPLEMENTATION: &str =
+    "bitbake_layers.layerindex_fetch.argv";
+pub const BITBAKE_LAYERS_LAYERINDEX_SHOW_DEPENDS_IMPLEMENTATION: &str =
+    "bitbake_layers.layerindex_show_depends.argv";
+pub const BITBAKE_LAYERS_SHOW_MACHINES_IMPLEMENTATION: &str = "bitbake_layers.show_machines.argv";
+pub const BITBAKE_LAYERS_SAVE_BUILD_CONF_IMPLEMENTATION: &str =
+    "bitbake_layers.save_build_conf.argv";
+pub const BITBAKE_LAYERS_CREATE_LAYERS_SETUP_IMPLEMENTATION: &str =
+    "bitbake_layers.create_layers_setup.argv";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BitBakeLayersCommandSpec {
@@ -111,59 +124,14 @@ impl<'a> BitBakeLayersCommandPlanner<'a> {
         operation
             .validate()
             .map_err(|error| BitBakeLayersCompatibilityError::InvalidRequest(error.to_string()))?;
-        match operation {
-            BitBakeLayersOperation::ShowLayers => self.command(
-                CapabilityId::BitBakeLayersShowLayers,
-                BITBAKE_LAYERS_SHOW_IMPLEMENTATION,
-                vec!["show-layers".into()],
-            ),
-            BitBakeLayersOperation::ShowRecipes { pattern } => self.command(
-                CapabilityId::BitBakeLayersShowRecipes,
-                BITBAKE_LAYERS_SHOW_RECIPES_IMPLEMENTATION,
-                std::iter::once(OsString::from("show-recipes"))
-                    .chain(pattern.iter().map(OsString::from))
-                    .collect(),
-            ),
-            BitBakeLayersOperation::ShowOverlayed => self.command(
-                CapabilityId::BitBakeLayersShowOverlayed,
-                BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION,
-                vec!["show-overlayed".into()],
-            ),
-            BitBakeLayersOperation::CreateLayer {
-                directory,
-                add: false,
-            } => self.command(
-                CapabilityId::BitBakeLayersCreateLayer,
-                BITBAKE_LAYERS_CREATE_IMPLEMENTATION,
-                vec!["create-layer".into(), directory.as_os_str().to_owned()],
-            ),
-            BitBakeLayersOperation::CreateLayer {
-                directory,
-                add: true,
-            } => self.command(
-                CapabilityId::BitBakeLayersCreateAndAddLayer,
-                BITBAKE_LAYERS_CREATE_ADD_IMPLEMENTATION,
-                vec![
-                    "create-layer".into(),
-                    "--add-layer".into(),
-                    directory.as_os_str().to_owned(),
-                ],
-            ),
-            BitBakeLayersOperation::AddLayers { directories } => self.command(
-                CapabilityId::BitBakeLayersAddLayer,
-                BITBAKE_LAYERS_ADD_IMPLEMENTATION,
-                std::iter::once(OsString::from("add-layer"))
-                    .chain(directories.iter().map(|path| path.as_os_str().to_owned()))
-                    .collect(),
-            ),
-            BitBakeLayersOperation::RemoveLayers { directories } => self.command(
-                CapabilityId::BitBakeLayersRemoveLayer,
-                BITBAKE_LAYERS_REMOVE_IMPLEMENTATION,
-                std::iter::once(OsString::from("remove-layer"))
-                    .chain(directories.iter().map(|path| path.as_os_str().to_owned()))
-                    .collect(),
-            ),
-        }
+        let capability = operation.capability();
+        let arguments = operation
+            .arguments()
+            .map_err(|error| BitBakeLayersCompatibilityError::InvalidRequest(error.to_string()))?
+            .into_iter()
+            .map(OsString::from)
+            .collect();
+        self.command(capability, implementation_for(capability), arguments)
     }
 
     fn command(
@@ -208,6 +176,35 @@ impl<'a> BitBakeLayersCommandPlanner<'a> {
             generation: self.authority.snapshot.generation,
             capability,
         })
+    }
+}
+
+fn implementation_for(capability: CapabilityId) -> &'static str {
+    match capability {
+        CapabilityId::BitBakeLayersShowLayers => BITBAKE_LAYERS_SHOW_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersShowRecipes => BITBAKE_LAYERS_SHOW_RECIPES_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersShowOverlayed => BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersShowAppends => BITBAKE_LAYERS_SHOW_APPENDS_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersShowCrossDepends => {
+            BITBAKE_LAYERS_SHOW_CROSS_DEPENDS_IMPLEMENTATION
+        }
+        CapabilityId::BitBakeLayersCreateLayer => BITBAKE_LAYERS_CREATE_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersCreateAndAddLayer => BITBAKE_LAYERS_CREATE_ADD_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersAddLayer => BITBAKE_LAYERS_ADD_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersRemoveLayer => BITBAKE_LAYERS_REMOVE_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersFlatten => BITBAKE_LAYERS_FLATTEN_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersLayerIndexFetch => {
+            BITBAKE_LAYERS_LAYERINDEX_FETCH_IMPLEMENTATION
+        }
+        CapabilityId::BitBakeLayersLayerIndexShowDepends => {
+            BITBAKE_LAYERS_LAYERINDEX_SHOW_DEPENDS_IMPLEMENTATION
+        }
+        CapabilityId::BitBakeLayersShowMachines => BITBAKE_LAYERS_SHOW_MACHINES_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersSaveBuildConf => BITBAKE_LAYERS_SAVE_BUILD_CONF_IMPLEMENTATION,
+        CapabilityId::BitBakeLayersCreateLayersSetup => {
+            BITBAKE_LAYERS_CREATE_LAYERS_SETUP_IMPLEMENTATION
+        }
+        _ => unreachable!("non-bitbake-layers capability routed to layer planner"),
     }
 }
 

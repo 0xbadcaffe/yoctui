@@ -5978,3 +5978,24 @@ the exact program, working directory, and arguments. Esc cancels without
 spawning. Mutating fragment and layer operations always cross this explicit
 preview boundary. Missing tools or unsupported subcommands remain visible as
 disabled menu reasons derived from current compatibility authority.
+
+### M75 complete bitbake-layers menus
+
+F12 Tools exposes every subcommand reported by the initialized environment's
+`bitbake-layers --help`: show-layers, show-overlayed, show-recipes, show-appends,
+show-cross-depends, add-layer, remove-layer, flatten, layerindex-fetch,
+layerindex-show-depends, create-layer, show-machines, save-build-conf, and
+create-layers-setup. Each entry opens a typed form containing only that
+subcommand's supported positional arguments and options. Existing show-recipes,
+show-overlayed, and create-layer forms include their complete command-specific
+option surface.
+
+Boolean options use the established Left/Right or Space choice control. Text
+fields remain manually editable; fields accepting multiple values use
+space-separated values and describe that convention in their label. Empty
+optional values omit their flag and argument. Required paths, names, numeric
+priorities, comma-separated lists, multiconfig names, and custom-reference
+pairs are validated before preview. Every form traps focus and advances to the
+shared exact-command terminal preview with Enter; Esc cancels without spawning.
+Read-only commands are labeled read-only in the menu, while filesystem,
+configuration, fetch, flatten, and export commands require confirmation.

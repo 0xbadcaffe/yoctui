@@ -93,7 +93,7 @@ pub struct OperatorActionDefinition {
     pub target: OperatorActionTarget,
 }
 
-const GLOBAL_COMMANDS: [CommandId; 42] = [
+const GLOBAL_COMMANDS: [CommandId; 52] = [
     CommandId::BuildImage,
     CommandId::SelectImage,
     CommandId::BuildSelectedRecipe,
@@ -119,7 +119,17 @@ const GLOBAL_COMMANDS: [CommandId; 42] = [
     CommandId::OpenBitBakeLayersShowLayers,
     CommandId::OpenBitBakeLayersShowRecipes,
     CommandId::OpenBitBakeLayersShowOverlayed,
+    CommandId::OpenBitBakeLayersShowAppends,
+    CommandId::OpenBitBakeLayersShowCrossDepends,
+    CommandId::OpenBitBakeLayersAddLayer,
+    CommandId::OpenBitBakeLayersRemoveLayer,
+    CommandId::OpenBitBakeLayersFlatten,
+    CommandId::OpenBitBakeLayersLayerIndexFetch,
+    CommandId::OpenBitBakeLayersLayerIndexShowDepends,
     CommandId::OpenBitBakeLayersCreateLayer,
+    CommandId::OpenBitBakeLayersShowMachines,
+    CommandId::OpenBitBakeLayersSaveBuildConf,
+    CommandId::OpenBitBakeLayersCreateLayersSetup,
     CommandId::OpenMaintenance,
     CommandId::OpenBuildEnvironment,
     CommandId::OpenCompatibility,

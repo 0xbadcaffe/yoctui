@@ -35,12 +35,20 @@ fn compatibility_layers_old_surface_disables_only_absent_mutations_and_options()
         .operation(&BitBakeLayersOperation::CreateLayer {
             directory: "/layers/meta-demo".into(),
             add: false,
+            layer_id: None,
+            priority: None,
+            example_recipe: None,
+            example_version: None,
         })
         .unwrap();
     assert!(matches!(
         planner.operation(&BitBakeLayersOperation::CreateLayer {
             directory: "/layers/meta-demo".into(),
-            add: true
+            add: true,
+            layer_id: None,
+            priority: None,
+            example_recipe: None,
+            example_version: None,
         }),
         Err(BitBakeLayersCompatibilityError::Unavailable {
             capability: CapabilityId::BitBakeLayersCreateAndAddLayer,

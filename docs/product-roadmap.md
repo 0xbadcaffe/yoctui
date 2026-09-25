@@ -1875,3 +1875,10 @@ recipe-provider, overlay, and layer-creation commands. Current capability
 authority gates exact shell-free argv previews and daemon-owned terminal
 execution. Focused checks and strict Clippy pass; the full suite remains
 deferred for the user's rapid manual bug pass.
+
+BITBAKE-LAYERS-ALL-001 is DONE in v0.1.227. F12 Tools covers all 14 subcommands
+and every command-specific option advertised by the active BitBake 2.19
+bitbake-layers utility. Typed validation, per-command capability and option
+probes, exact argv previews, and daemon-owned execution remain enforced.
+Focused checks and strict Clippy pass; the full suite remains deferred for the
+user's rapid manual bug pass.

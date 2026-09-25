@@ -1,6 +1,7 @@
-use std::path::PathBuf;
+mod layers;
+pub use layers::*;
 
-use crate::{BitBakeLayersOperation, CapabilityId};
+use crate::CapabilityId;
 
 pub const MAX_YOCTO_UTILITY_TEXT_BYTES: usize = 512;
 
@@ -10,17 +11,27 @@ pub enum YoctoUtilityCommand {
     LayersShowLayers,
     LayersShowRecipes,
     LayersShowOverlayed,
+    LayersShowAppends,
+    LayersShowCrossDepends,
+    LayersAddLayer,
+    LayersRemoveLayer,
+    LayersFlatten,
+    LayersLayerIndexFetch,
+    LayersLayerIndexShowDepends,
     LayersCreateLayer,
+    LayersShowMachines,
+    LayersSaveBuildConf,
+    LayersCreateLayersSetup,
 }
 
 impl YoctoUtilityCommand {
     pub const fn label(self) -> &'static str {
         match self {
             Self::ConfigBuild => "BitBake config build",
-            Self::LayersShowLayers => "Show configured layers",
-            Self::LayersShowRecipes => "Show matching recipes",
-            Self::LayersShowOverlayed => "Show overlayed recipes",
-            Self::LayersCreateLayer => "Create layer",
+            command => match command.layer_subcommand() {
+                Some(subcommand) => subcommand.label(),
+                None => "BitBake layers",
+            },
         }
     }
 
@@ -29,6 +40,26 @@ impl YoctoUtilityCommand {
             Self::ConfigBuild => "bitbake-config-build",
             _ => "bitbake-layers",
         }
+    }
+
+    pub const fn layer_subcommand(self) -> Option<LayerUtilitySubcommand> {
+        Some(match self {
+            Self::ConfigBuild => return None,
+            Self::LayersShowLayers => LayerUtilitySubcommand::ShowLayers,
+            Self::LayersShowRecipes => LayerUtilitySubcommand::ShowRecipes,
+            Self::LayersShowOverlayed => LayerUtilitySubcommand::ShowOverlayed,
+            Self::LayersShowAppends => LayerUtilitySubcommand::ShowAppends,
+            Self::LayersShowCrossDepends => LayerUtilitySubcommand::ShowCrossDepends,
+            Self::LayersAddLayer => LayerUtilitySubcommand::AddLayer,
+            Self::LayersRemoveLayer => LayerUtilitySubcommand::RemoveLayer,
+            Self::LayersFlatten => LayerUtilitySubcommand::Flatten,
+            Self::LayersLayerIndexFetch => LayerUtilitySubcommand::LayerIndexFetch,
+            Self::LayersLayerIndexShowDepends => LayerUtilitySubcommand::LayerIndexShowDepends,
+            Self::LayersCreateLayer => LayerUtilitySubcommand::CreateLayer,
+            Self::LayersShowMachines => LayerUtilitySubcommand::ShowMachines,
+            Self::LayersSaveBuildConf => LayerUtilitySubcommand::SaveBuildConf,
+            Self::LayersCreateLayersSetup => LayerUtilitySubcommand::CreateLayersSetup,
+        })
     }
 }
 
@@ -99,15 +130,7 @@ pub enum YoctoUtilityDraft {
         operation: ConfigBuildOperation,
         fragments: String,
     },
-    LayersShowLayers,
-    LayersShowRecipes {
-        pattern: String,
-    },
-    LayersShowOverlayed,
-    LayersCreateLayer {
-        directory: String,
-        add_to_bblayers: bool,
-    },
+    Layers(LayerUtilityDraft),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -131,15 +154,11 @@ impl YoctoUtilityDialog {
                 operation: ConfigBuildOperation::ListFragments,
                 fragments: String::new(),
             },
-            YoctoUtilityCommand::LayersShowLayers => YoctoUtilityDraft::LayersShowLayers,
-            YoctoUtilityCommand::LayersShowRecipes => YoctoUtilityDraft::LayersShowRecipes {
-                pattern: "linux-*".into(),
-            },
-            YoctoUtilityCommand::LayersShowOverlayed => YoctoUtilityDraft::LayersShowOverlayed,
-            YoctoUtilityCommand::LayersCreateLayer => YoctoUtilityDraft::LayersCreateLayer {
-                directory: String::new(),
-                add_to_bblayers: false,
-            },
+            command => YoctoUtilityDraft::Layers(LayerUtilityDraft::new(
+                command
+                    .layer_subcommand()
+                    .expect("non-config command has a layer subcommand"),
+            )),
         };
         Self {
             command,
@@ -173,29 +192,7 @@ impl YoctoUtilityDialog {
                 }
                 fields
             }
-            YoctoUtilityDraft::LayersShowLayers | YoctoUtilityDraft::LayersShowOverlayed => {
-                Vec::new()
-            }
-            YoctoUtilityDraft::LayersShowRecipes { pattern } => vec![(
-                "Recipe pattern",
-                pattern.clone(),
-                YoctoUtilityFieldKind::Text,
-            )],
-            YoctoUtilityDraft::LayersCreateLayer {
-                directory,
-                add_to_bblayers,
-            } => vec![
-                (
-                    "Layer directory",
-                    directory.clone(),
-                    YoctoUtilityFieldKind::Text,
-                ),
-                (
-                    "Add to bblayers.conf",
-                    if *add_to_bblayers { "yes" } else { "no" }.into(),
-                    YoctoUtilityFieldKind::Choice,
-                ),
-            ],
+            YoctoUtilityDraft::Layers(draft) => draft.fields(),
         }
     }
 
@@ -218,9 +215,7 @@ impl YoctoUtilityDialog {
                 *operation = operation.shifted(delta);
                 self.selected_field = self.selected_field.min(self.fields().len() - 1);
             }
-            YoctoUtilityDraft::LayersCreateLayer {
-                add_to_bblayers, ..
-            } if self.selected_field == 1 => *add_to_bblayers = !*add_to_bblayers,
+            YoctoUtilityDraft::Layers(draft) => draft.cycle_choice(self.selected_field),
             _ => {}
         }
         self.validation_error = None;
@@ -256,12 +251,7 @@ impl YoctoUtilityDialog {
             YoctoUtilityDraft::ConfigBuild { fragments, .. } if self.selected_field == 1 => {
                 Some(fragments)
             }
-            YoctoUtilityDraft::LayersShowRecipes { pattern } if self.selected_field == 0 => {
-                Some(pattern)
-            }
-            YoctoUtilityDraft::LayersCreateLayer { directory, .. } if self.selected_field == 0 => {
-                Some(directory)
-            }
+            YoctoUtilityDraft::Layers(draft) => draft.selected_text_mut(self.selected_field),
             _ => None,
         }
     }
@@ -269,14 +259,7 @@ impl YoctoUtilityDialog {
     pub fn capability(&self) -> CapabilityId {
         match &self.draft {
             YoctoUtilityDraft::ConfigBuild { operation, .. } => operation.capability(),
-            YoctoUtilityDraft::LayersShowLayers => CapabilityId::BitBakeLayersShowLayers,
-            YoctoUtilityDraft::LayersShowRecipes { .. } => CapabilityId::BitBakeLayersShowRecipes,
-            YoctoUtilityDraft::LayersShowOverlayed => CapabilityId::BitBakeLayersShowOverlayed,
-            YoctoUtilityDraft::LayersCreateLayer {
-                add_to_bblayers: true,
-                ..
-            } => CapabilityId::BitBakeLayersCreateAndAddLayer,
-            YoctoUtilityDraft::LayersCreateLayer { .. } => CapabilityId::BitBakeLayersCreateLayer,
+            YoctoUtilityDraft::Layers(draft) => draft.capability(),
         }
     }
 
@@ -296,36 +279,7 @@ impl YoctoUtilityDialog {
                 }
                 Ok(arguments)
             }
-            YoctoUtilityDraft::LayersShowLayers => Ok(vec!["show-layers".into()]),
-            YoctoUtilityDraft::LayersShowRecipes { pattern } => {
-                let pattern = pattern.trim();
-                let operation = BitBakeLayersOperation::ShowRecipes {
-                    pattern: (!pattern.is_empty()).then(|| pattern.to_owned()),
-                };
-                operation.validate().map_err(|error| error.to_string())?;
-                let mut arguments = vec!["show-recipes".into()];
-                if !pattern.is_empty() {
-                    arguments.push(pattern.into());
-                }
-                Ok(arguments)
-            }
-            YoctoUtilityDraft::LayersShowOverlayed => Ok(vec!["show-overlayed".into()]),
-            YoctoUtilityDraft::LayersCreateLayer {
-                directory,
-                add_to_bblayers,
-            } => {
-                let operation = BitBakeLayersOperation::CreateLayer {
-                    directory: PathBuf::from(directory.trim()),
-                    add: *add_to_bblayers,
-                };
-                operation.validate().map_err(|error| error.to_string())?;
-                let mut arguments = vec!["create-layer".into()];
-                if *add_to_bblayers {
-                    arguments.push("--add-layer".into());
-                }
-                arguments.push(directory.trim().into());
-                Ok(arguments)
-            }
+            YoctoUtilityDraft::Layers(draft) => draft.arguments(),
         }
     }
 }

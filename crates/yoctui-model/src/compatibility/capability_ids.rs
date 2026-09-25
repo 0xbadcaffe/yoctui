@@ -138,6 +138,10 @@ pub enum CapabilityId {
     BitBakeLayersShowRecipes,
     #[serde(rename = "bitbake_layers.show_overlayed")]
     BitBakeLayersShowOverlayed,
+    #[serde(rename = "bitbake_layers.show_appends")]
+    BitBakeLayersShowAppends,
+    #[serde(rename = "bitbake_layers.show_cross_depends")]
+    BitBakeLayersShowCrossDepends,
     #[serde(rename = "bitbake_layers.create_layer")]
     BitBakeLayersCreateLayer,
     #[serde(rename = "bitbake_layers.create_and_add_layer")]
@@ -146,6 +150,18 @@ pub enum CapabilityId {
     BitBakeLayersAddLayer,
     #[serde(rename = "bitbake_layers.remove_layer")]
     BitBakeLayersRemoveLayer,
+    #[serde(rename = "bitbake_layers.flatten")]
+    BitBakeLayersFlatten,
+    #[serde(rename = "bitbake_layers.layerindex_fetch")]
+    BitBakeLayersLayerIndexFetch,
+    #[serde(rename = "bitbake_layers.layerindex_show_depends")]
+    BitBakeLayersLayerIndexShowDepends,
+    #[serde(rename = "bitbake_layers.show_machines")]
+    BitBakeLayersShowMachines,
+    #[serde(rename = "bitbake_layers.save_build_conf")]
+    BitBakeLayersSaveBuildConf,
+    #[serde(rename = "bitbake_layers.create_layers_setup")]
+    BitBakeLayersCreateLayersSetup,
     #[serde(rename = "bitbake_config_build.list_fragments")]
     BitBakeConfigBuildListFragments,
     #[serde(rename = "bitbake_config_build.show_fragment")]
@@ -231,7 +247,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 114] = [
+    pub const ALL: [Self; 122] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -301,10 +317,18 @@ impl CapabilityId {
         Self::BitBakeLayersShowLayers,
         Self::BitBakeLayersShowRecipes,
         Self::BitBakeLayersShowOverlayed,
+        Self::BitBakeLayersShowAppends,
+        Self::BitBakeLayersShowCrossDepends,
         Self::BitBakeLayersCreateLayer,
         Self::BitBakeLayersCreateAndAddLayer,
         Self::BitBakeLayersAddLayer,
         Self::BitBakeLayersRemoveLayer,
+        Self::BitBakeLayersFlatten,
+        Self::BitBakeLayersLayerIndexFetch,
+        Self::BitBakeLayersLayerIndexShowDepends,
+        Self::BitBakeLayersShowMachines,
+        Self::BitBakeLayersSaveBuildConf,
+        Self::BitBakeLayersCreateLayersSetup,
         Self::BitBakeConfigBuildListFragments,
         Self::BitBakeConfigBuildShowFragment,
         Self::BitBakeConfigBuildEnableFragment,
@@ -383,130 +407,15 @@ impl CapabilityId {
     ];
 
     pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::BitBakeWorkspaceInspection => "bitbake.workspace_inspection",
-            Self::BitBakeRecipeInventory => "bitbake.recipe_inventory",
-            Self::BitBakeRecipeDependencies => "bitbake.recipe_dependencies",
-            Self::BitBakeRecipeSources => "bitbake.recipe_sources",
-            Self::BitBakeRecipeMetadata => "bitbake.recipe_metadata",
-            Self::BitBakeLayerInventory => "bitbake.layer_inventory",
-            Self::BitBakeLayerRelationships => "bitbake.layer_relationships",
-            Self::BitBakeBuild => "bitbake.build",
-            Self::BitBakeCancellation => "bitbake.cancellation",
-            Self::BitBakeTaskList => "bitbake.task_list",
-            Self::BitBakeForceTask => "bitbake.force_task",
-            Self::BitBakeEnvironmentDump => "bitbake.environment_dump",
-            Self::BitBakeGraphGeneration => "bitbake.graph_generation",
-            Self::BitBakeDependencyGraph => "bitbake.dependency_graph",
-            Self::BitBakeGetVar => "bitbake.getvar",
-            Self::BitBakeVariableHistory => "bitbake.variable_history",
-            Self::BitBakeDiffSigs => "bitbake.diffsigs",
-            Self::BitBakeDumpSig => "bitbake.dumpsig",
-            Self::BitBakeServerSocket => "bitbake.server_socket",
-            Self::BitBakeServerStatus => "bitbake.server_status",
-            Self::BitBakeServerStart => "bitbake.server_start",
-            Self::BitBakeServerStop => "bitbake.server_stop",
-            Self::BitBakeNativeEvents => "bitbake.native_events",
-            Self::BitBakeRawCli => "bitbake.raw.cli",
-            Self::BitBakeRawShowVersions => "bitbake.raw.show_versions",
-            Self::BitBakeRawTaskExecution => "bitbake.raw.task_execution",
-            Self::BitBakeRawClearStamp => "bitbake.raw.clear_stamp",
-            Self::BitBakeRawDryRun => "bitbake.raw.dry_run",
-            Self::BitBakeRawParseOnly => "bitbake.raw.parse_only",
-            Self::BitBakeRawContinue => "bitbake.raw.continue",
-            Self::BitBakeRawProfile => "bitbake.raw.profile",
-            Self::BitBakeRawDumpSignatures => "bitbake.raw.dump_signatures",
-            Self::BitBakeRawRevisionsChanged => "bitbake.raw.revisions_changed",
-            Self::BitBakeRawBuildFile => "bitbake.raw.buildfile",
-            Self::BitBakeRawDebug => "bitbake.raw.debug",
-            Self::BitBakeRawLogDomains => "bitbake.raw.log_domains",
-            Self::BitBakeRawVerbose => "bitbake.raw.verbose",
-            Self::BitBakeRawQuiet => "bitbake.raw.quiet",
-            Self::BitBakeRawEventLog => "bitbake.raw.event_log",
-            Self::BitBakeRawUi => "bitbake.raw.ui",
-            Self::BitBakeRawServerBind => "bitbake.raw.server_bind",
-            Self::BitBakeRawServerIdleTimeout => "bitbake.raw.server_idle_timeout",
-            Self::BitBakeRawServerRemote => "bitbake.raw.server_remote",
-            Self::BitBakeRawServerToken => "bitbake.raw.server_token",
-            Self::BitBakeRawServerObserve => "bitbake.raw.server_observe",
-            Self::BitBakeRawConfigRead => "bitbake.raw.config_read",
-            Self::BitBakeRawConfigPostRead => "bitbake.raw.config_postread",
-            Self::BitBakeRawIgnoreDeps => "bitbake.raw.ignore_deps",
-            Self::BitBakeRawMulticonfig => "bitbake.raw.multiconfig",
-            Self::BitBakeRawRunAll => "bitbake.raw.runall",
-            Self::BitBakeRawRunOnly => "bitbake.raw.runonly",
-            Self::BitBakeRawNoSetscene => "bitbake.raw.no_setscene",
-            Self::BitBakeRawSkipSetscene => "bitbake.raw.skip_setscene",
-            Self::BitBakeRawSetsceneOnly => "bitbake.raw.setscene_only",
-            Self::DevtoolModify => "devtool.modify",
-            Self::DevtoolStatus => "devtool.status",
-            Self::DevtoolEditRecipe => "devtool.edit_recipe",
-            Self::DevtoolUpdateRecipe => "devtool.update_recipe",
-            Self::DevtoolFinish => "devtool.finish",
-            Self::DevtoolDeployTarget => "devtool.deploy_target",
-            Self::DevtoolUndeployTarget => "devtool.undeploy_target",
-            Self::DevtoolReset => "devtool.reset",
-            Self::DevtoolUpgrade => "devtool.upgrade",
-            Self::RecipetoolCreate => "recipetool.create",
-            Self::RecipetoolCreateOutfile => "recipetool.create_outfile",
-            Self::RecipetoolAppendFile => "recipetool.appendfile",
-            Self::BitBakeLayersShowLayers => "bitbake_layers.show_layers",
-            Self::BitBakeLayersShowRecipes => "bitbake_layers.show_recipes",
-            Self::BitBakeLayersShowOverlayed => "bitbake_layers.show_overlayed",
-            Self::BitBakeLayersCreateLayer => "bitbake_layers.create_layer",
-            Self::BitBakeLayersCreateAndAddLayer => "bitbake_layers.create_and_add_layer",
-            Self::BitBakeLayersAddLayer => "bitbake_layers.add_layer",
-            Self::BitBakeLayersRemoveLayer => "bitbake_layers.remove_layer",
-            Self::BitBakeConfigBuildListFragments => "bitbake_config_build.list_fragments",
-            Self::BitBakeConfigBuildShowFragment => "bitbake_config_build.show_fragment",
-            Self::BitBakeConfigBuildEnableFragment => "bitbake_config_build.enable_fragment",
-            Self::BitBakeConfigBuildDisableFragment => "bitbake_config_build.disable_fragment",
-            Self::BitBakeConfigBuildDisableAllFragments => {
-                "bitbake_config_build.disable_all_fragments"
-            }
-            Self::PkgDataLookupPackage => "pkgdata.lookup_pkg",
-            Self::PkgDataFindPath => "pkgdata.find_path",
-            Self::PkgDataGenerated => "pkgdata.generated",
-            Self::PkgDataListPackages => "pkgdata.list_packages",
-            Self::PkgDataPackageInfo => "pkgdata.package_info",
-            Self::PkgDataListPackageFiles => "pkgdata.list_package_files",
-            Self::PkgDataReadValue => "pkgdata.read_value",
-            Self::WicCreate => "wic.create",
-            Self::RunQemu => "runqemu",
-            Self::SdkPopulate => "sdk.populate",
-            Self::SdkExtensible => "sdk.extensible",
-            Self::SdkPublish => "sdk.publish",
-            Self::SdkNativeTools => "sdk.native_tools",
-            Self::CveCheck => "cve.check",
-            Self::SpdxCreate => "spdx.create",
-            Self::YoctoCheckLayer => "yocto_check_layer",
-            Self::ResultTool => "resulttool",
-            Self::OeSelftest => "oe_selftest",
-            Self::BitBakeSelftest => "bitbake_selftest",
-            Self::TestImage => "testimage",
-            Self::TestSdk => "testsdk",
-            Self::TestSdkExtensible => "testsdk_extensible",
-            Self::Ptest => "ptest",
-            Self::QaTask => "qa.task",
-            Self::MenuConfig => "menuconfig",
-            Self::DevShell => "devshell",
-            Self::BuildHistory => "buildhistory",
-            Self::BuildHistoryCompare => "buildhistory.compare",
-            Self::LockedSignatures => "locked_signatures",
-            Self::HashservDiagnostics => "hashserv.diagnostics",
-            Self::PrservDiagnostics => "prserv.diagnostics",
-            Self::SstateReadiness => "sstate.readiness",
-            Self::SstateCleanup => "sstate.cleanup",
-            Self::PrservManagement => "prserv.management",
-            Self::BuildCompare => "build_compare",
-            Self::GitArchive => "git_archive",
-        }
+        capability_id_name(self)
     }
 
     pub fn from_stable_name(value: &str) -> Option<Self> {
         Self::ALL.into_iter().find(|id| id.as_str() == value)
     }
 }
+
+include!("capability_names.rs");
 
 impl std::fmt::Display for CapabilityId {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

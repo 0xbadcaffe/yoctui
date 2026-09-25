@@ -71,7 +71,17 @@ impl ApplicationMenuGroup {
             | CommandId::OpenBitBakeLayersShowLayers
             | CommandId::OpenBitBakeLayersShowRecipes
             | CommandId::OpenBitBakeLayersShowOverlayed
+            | CommandId::OpenBitBakeLayersShowAppends
+            | CommandId::OpenBitBakeLayersShowCrossDepends
+            | CommandId::OpenBitBakeLayersAddLayer
+            | CommandId::OpenBitBakeLayersRemoveLayer
+            | CommandId::OpenBitBakeLayersFlatten
+            | CommandId::OpenBitBakeLayersLayerIndexFetch
+            | CommandId::OpenBitBakeLayersLayerIndexShowDepends
             | CommandId::OpenBitBakeLayersCreateLayer
+            | CommandId::OpenBitBakeLayersShowMachines
+            | CommandId::OpenBitBakeLayersSaveBuildConf
+            | CommandId::OpenBitBakeLayersCreateLayersSetup
             | CommandId::OpenRawMode
             | CommandId::OpenTerminalSessions
             | CommandId::OpenMaintenance

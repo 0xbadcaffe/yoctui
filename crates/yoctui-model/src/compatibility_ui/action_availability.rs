@@ -170,8 +170,40 @@ pub fn compatibility_ui_command_action_definition(
         CommandId::OpenBitBakeLayersShowOverlayed => CompatibilityUiActionDefinition::gated(
             WorkspaceEffectRequirement::one(Id::BitBakeLayersShowOverlayed),
         ),
+        CommandId::OpenBitBakeLayersShowAppends => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersShowAppends),
+        ),
+        CommandId::OpenBitBakeLayersShowCrossDepends => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersShowCrossDepends),
+        ),
+        CommandId::OpenBitBakeLayersAddLayer => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersAddLayer),
+        ),
+        CommandId::OpenBitBakeLayersRemoveLayer => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersRemoveLayer),
+        ),
+        CommandId::OpenBitBakeLayersFlatten => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersFlatten),
+        ),
+        CommandId::OpenBitBakeLayersLayerIndexFetch => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersLayerIndexFetch),
+        ),
+        CommandId::OpenBitBakeLayersLayerIndexShowDepends => {
+            CompatibilityUiActionDefinition::gated(WorkspaceEffectRequirement::one(
+                Id::BitBakeLayersLayerIndexShowDepends,
+            ))
+        }
         CommandId::OpenBitBakeLayersCreateLayer => CompatibilityUiActionDefinition::gated(
             WorkspaceEffectRequirement::one(Id::BitBakeLayersCreateLayer),
+        ),
+        CommandId::OpenBitBakeLayersShowMachines => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersShowMachines),
+        ),
+        CommandId::OpenBitBakeLayersSaveBuildConf => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersSaveBuildConf),
+        ),
+        CommandId::OpenBitBakeLayersCreateLayersSetup => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersCreateLayersSetup),
         ),
         CommandId::OpenTerminalSessions => {
             compatibility_ui_destination_action_definition(Screen::TerminalSessions)

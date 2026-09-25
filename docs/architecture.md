@@ -4496,3 +4496,19 @@ daemon-owned utility PTY. The shared terminal preview is the confirmation
 boundary for configuration or filesystem mutations. The daemon receives the
 program and argv as separate values; no shell string, output parser, or second
 terminal implementation is introduced.
+
+## M75 complete bitbake-layers command surface
+
+The model represents every advertised bitbake-layers subcommand as a closed
+typed operation with operation-specific fields, validation, capability identity,
+and exact argv construction. Shared form navigation works over declarative text
+and choice fields; it does not expose a general shell argument box. The
+bitbake adapter's command planner consumes the same closed operations so tests
+can prove that compatibility-gated plans and UI previews agree.
+
+Compatibility discovery retains one independently probed capability and
+selected implementation per subcommand. Application-menu entries map directly
+to typed drafts, the app layer maps terminal input to field actions, and the UI
+only renders field projections. Execution continues through the existing
+daemon-owned utility terminal request with the initialized executable and build
+directory supplied by the current compatibility snapshot.
