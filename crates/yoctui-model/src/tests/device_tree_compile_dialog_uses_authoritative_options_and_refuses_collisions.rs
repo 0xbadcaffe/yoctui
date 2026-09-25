@@ -138,6 +138,27 @@ fn device_tree_compile_rejects_a_source_outside_its_authoritative_root() {
     );
 }
 
+#[test]
+fn device_tree_compile_reports_missing_dtc_plainly() {
+    let mut app = App::new(8, 512);
+    let mut state = inventory(
+        PlatformComponent::Kernel,
+        PathBuf::from("/workspace/kernel/board.dts"),
+    );
+    let PlatformInventoryState::Available(inventory) = &mut state else {
+        unreachable!();
+    };
+    inventory.dtc = None;
+    app.kernel.view = PlatformView::DeviceTrees;
+    app.kernel.inventory = state;
+
+    assert_eq!(update(&mut app, Action::CompileSelectedKernelDts), None);
+    assert_eq!(
+        app.notification.as_deref(),
+        Some("No dtc executable was found in PATH.")
+    );
+}
+
 #[cfg(unix)]
 #[test]
 fn device_tree_compile_refuses_a_dangling_output_symlink() {

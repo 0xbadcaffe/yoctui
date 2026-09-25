@@ -1,5 +1,10 @@
 # Yoctui Implementation Status
 
+M75 UI-COPY-CLEANUP-001 is DONE in v0.1.222. Informational footer messages no
+longer carry a redundant `i`; guidance popups are titled `Notice`; dialog
+headings use plain operation and semantic tone wording; missing DTC guidance
+now says `No dtc executable was found in PATH.`
+
 M75 FOOTER-STATUS-ROW-001 is DONE in v0.1.221. Transient daemon and operation
 status uses a dedicated row above shortcuts, accepted waiting requests show
 typed Braille activity, and the lower-right wall clock is labeled UTC. Daemon

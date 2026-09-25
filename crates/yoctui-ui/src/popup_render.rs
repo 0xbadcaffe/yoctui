@@ -25,7 +25,7 @@ pub(crate) fn notification_popup(frame: &mut Frame, app: &App, area: Rect) {
     };
     frame.render_widget(
         Paragraph::new(format!("{message}\n\n{hint}"))
-            .block(dialog_block(app, "Message", DialogTone::Standard))
+            .block(dialog_block(app, "Notice", DialogTone::Standard))
             .wrap(Wrap { trim: false }),
         popup,
     );

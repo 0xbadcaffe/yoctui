@@ -125,7 +125,7 @@ fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
         "standard",
         &dialog(Dialog::BuildOptions),
         &[
-            "modal · Image build options",
+            "Image build options",
             "Machine: qemux86-64",
             "Esc closes",
         ],
@@ -138,7 +138,7 @@ fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
             force: false,
         })),
         &[
-            "confirm modal · Confirm recipe task",
+            "Confirmation · Confirm recipe task",
             "bitbake busybox -c compile",
             "Enter to continue or Esc to cancel",
         ],
@@ -155,7 +155,7 @@ fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
             },
         )),
         &[
-            "destructive modal · Confirm Devtool reset",
+            "Warning · Confirm Devtool reset",
             "devtool reset busybox",
             "This removes the Devtool workspace",
             "Esc cancels",
@@ -167,7 +167,7 @@ fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
         "result",
         &result,
         &[
-            "result modal · Build finished",
+            "Result · Build finished",
             "completed successfully",
             "Tasks completed: 4",
             "Press any key",
@@ -180,7 +180,7 @@ fn semantic_snapshots_cover_required_workspaces_and_dialog_families() {
             task: Some("build".into()),
         }),
         &[
-            "modal · Build target.toml",
+            "Build target.toml",
             "requested task: build",
             "core-image-minimal",
             "[Enter] Save/preview",

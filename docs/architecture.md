@@ -1488,6 +1488,12 @@ events never interrupt or discard in-progress input.
 `yoctui-ui` renders only the active variant. Neither layer establishes its own
 dialog precedence or mutates dialog state directly.
 
+The shared UI shell presents the operation title directly. Semantic tone adds
+plain `Confirmation`, `Warning`, `Result`, or `Error` wording when required;
+implementation terms such as `modal` are not user-facing labels. Notification
+popups use the `Notice` title, and informational footer text has no redundant
+type marker.
+
 Each dialog defines:
 
 - purpose
@@ -1498,7 +1504,7 @@ Each dialog defines:
 - cancelled action
 - focus order
 
-Modal dialogs trap focus. Destructive actions show the exact command or configuration change before confirmation.
+Dialogs trap focus. Destructive actions show the exact command or configuration change before confirmation.
 
 ## Command catalog architecture
 

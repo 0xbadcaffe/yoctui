@@ -201,10 +201,11 @@ fn renders_notification() {
         .iter()
         .map(|cell| cell.symbol())
         .collect::<String>();
-    assert!(screen.contains("Message"));
+    assert!(screen.contains("Notice"));
+    assert!(!screen.contains("modal"));
     assert!(screen.contains("Select an image first with i."));
     assert!(screen.contains("Esc dismiss"));
-    assert!(screen.contains("? Help"));
+    assert!(screen.contains("F1 Help"));
 }
 #[test]
 fn dashboard_renders_backend_and_build_metrics() {

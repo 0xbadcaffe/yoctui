@@ -198,7 +198,7 @@ fn dialog_families_render_on_narrow_supported_terminals() {
         app.dialogs.push_back(dialog);
         let output = rendered_text(&app, 80, 24);
         assert!(output.contains(title), "missing {title} in narrow dialog");
-        assert!(output.contains("modal ·"), "missing modal shell: {output}");
+        assert!(!output.contains("modal"), "{output}");
     }
 }
 
@@ -212,24 +212,24 @@ fn next_generation_dialogs_name_standard_confirmation_destructive_and_result_she
         source_path: "/build/workspace/sources/busybox".into(),
     };
     for (dialog, expected, control) in [
-        (Dialog::BuildOptions, "modal · Image build options", "Esc"),
+        (Dialog::BuildOptions, "Image build options", "Esc"),
         (
             Dialog::RecipeTaskConfirmation(BuildRequest {
                 targets: vec!["busybox".into()],
                 task: Some("compile".into()),
                 force: false,
             }),
-            "confirm modal · Confirm recipe task",
+            "Confirmation · Confirm recipe task",
             "Esc",
         ),
         (
             Dialog::DevtoolResetConfirmation(reset),
-            "destructive modal · Confirm Devtool reset",
+            "Warning · Confirm Devtool reset",
             "Esc",
         ),
         (
             Dialog::BuildCompletion,
-            "result modal · Build finished",
+            "Result · Build finished",
             "any key",
         ),
     ] {
@@ -262,7 +262,7 @@ fn next_generation_dialogs_reserve_validation_fields_and_controls() {
     for (width, height) in [(160, 40), (100, 30), (80, 24)] {
         let output = rendered_text(&app, width, height);
         for expected in [
-            "modal · Launch runqemu",
+            "Launch runqemu",
             "▶ Kernel [editing]",
             "✕ Validation: kernel path must be absolute",
             "[p] Preview",
@@ -280,7 +280,7 @@ fn next_generation_dialogs_reserve_validation_fields_and_controls() {
     app.dialogs.push_front(Dialog::SdkPublishTomlEditor(editor));
     let output = rendered_text(&app, 80, 24);
     assert!(
-        output.contains("modal · SDK publish.toml — NORMAL"),
+        output.contains("SDK publish.toml — NORMAL"),
         "{output}"
     );
     assert!(output.contains("[Enter] Save/preview"), "{output}");
@@ -303,7 +303,7 @@ fn next_generation_dialogs_keep_accessible_focus_and_bounded_geometry() {
         app.dialogs.push_front(Dialog::QuitConfirmation);
         let output = rendered_text(&app, 80, 24);
         assert!(
-            output.contains("destructive modal · Confirm exit"),
+            output.contains("Warning · Confirm exit"),
             "{output}"
         );
         assert!(

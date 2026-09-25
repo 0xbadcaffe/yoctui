@@ -11,10 +11,10 @@ impl DialogTone {
     const fn label(self) -> Option<&'static str> {
         match self {
             Self::Standard => None,
-            Self::Confirmation => Some("confirm"),
-            Self::Destructive => Some("destructive"),
-            Self::Result => Some("result"),
-            Self::Error => Some("error"),
+            Self::Confirmation => Some("Confirmation"),
+            Self::Destructive => Some("Warning"),
+            Self::Result => Some("Result"),
+            Self::Error => Some("Error"),
         }
     }
 }
@@ -49,8 +49,8 @@ impl DialogShell {
 
     pub fn block(self) -> Block<'static> {
         let title = match self.tone.label() {
-            Some(tone) => format!("{tone} modal · {}", self.title),
-            None => format!("modal · {}", self.title),
+            Some(tone) => format!("{tone} · {}", self.title),
+            None => self.title,
         };
         let title_style = match self.tone {
             DialogTone::Destructive | DialogTone::Error => self.styles.destructive,

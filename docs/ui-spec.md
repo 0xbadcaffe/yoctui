@@ -405,9 +405,9 @@ Status instead of creating permanent transient noise.
 Transient status owns the full row immediately above the shortcut rail. Text
 whitespace is normalized onto one line and uses the full available width before
 bounded ellipsis is required. Semantic marker-plus-text forms are `✕` error,
-`!` confirmation/warning, `✓` success, `i` information, `…` synchronizing, and
-Braille activity for an accepted daemon request that is still waiting or other
-typed activity. Reduced motion keeps a stable Braille marker. The shortcut row
+`!` confirmation/warning, `✓` success, unprefixed informational text, `…`
+synchronizing, and Braille activity for an accepted daemon request that is
+still waiting or other typed activity. Reduced motion keeps a stable Braille marker. The shortcut row
 ends with the fixed-width `UTC HH:MM:SS` clock label at 100+ columns and hides
 the clock below 100 columns.
 
@@ -3525,10 +3525,12 @@ Common rules:
 
 The common visual contract is render-only and consumes the existing typed
 dialog state. Every dialog outer shell uses the semantic background, focused
-border, and heading roles and prefixes `modal ·` to its title so focus trapping
-remains visible even when a long title is clipped. Confirmation/destructive
-shells prefix `confirm modal ·`/`destructive modal ·`; danger is therefore never
-communicated by color alone. Workspace renderers do not choose literal colors.
+border, and heading roles. Standard dialogs use their concise operation title
+without implementation terminology. Confirmation, destructive, result, and
+error shells use the plain-language prefixes `Confirmation ·`, `Warning ·`,
+`Result ·`, and `Error ·`; danger is therefore never communicated by color
+alone. A guidance or failure message popup is titled `Notice`. Workspace
+renderers do not choose literal colors.
 
 Dialog content follows this stable order where the type supplies each region:
 
@@ -3569,8 +3571,8 @@ dialog. Rendering helpers never mutate dialog state.
 
 Routine non-dialog notifications render in the bounded transient footer slot.
 Guidance (`Select …`, `No …`, unavailable/cannot/could-not states) and failure
-notifications render their complete text in a cleared, bounded `Message`
-popup so prerequisite instructions cannot be missed. These popups consume only
+notifications render their complete text in a cleared, bounded `Notice` popup
+so prerequisite instructions cannot be missed. These popups consume only
 their advertised `Esc dismiss` route and, for an actionable build failure,
 `Enter view errors`; unrelated shortcuts remain available. Typed dialogs,
 including build completion review, remain modal overlays and take precedence.
@@ -5423,7 +5425,7 @@ Collapsing a Navigator root anchors selection to that root. `Right`, `l`,
 selection on a hidden destination. A collapsed root remains one selectable
 row in Up/Down, PageUp/PageDown, Home/End traversal after selection moves to a
 different root. Explicit notifications render in a cleared
-`Message` popup with their complete text and `Esc dismiss`. A failed build with
+`Notice` popup with their complete text and `Esc dismiss`. A failed build with
 diagnostics also offers `Enter view errors`; ordinary notification popups do
 not trap focus or consume unrelated shortcuts.
 

@@ -244,7 +244,7 @@ fn ux_responsive_breakpoint_matrix_preserves_pane_priority_content_and_dialog_co
     for (width, height) in SUPPORTED {
         let output = rendered_text_at(&app, width, height, literal_now());
         for expected in [
-            "modal · Image build options",
+            "Image build options",
             "Machine:",
             "b  Build image",
             "Esc closes",

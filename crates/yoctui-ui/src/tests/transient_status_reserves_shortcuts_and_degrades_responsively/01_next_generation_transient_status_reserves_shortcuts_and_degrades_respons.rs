@@ -22,7 +22,8 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
 
     for width in [200_u16, 160, 130, 100] {
         let footer = render_footer(&app, width);
-        assert!(footer.contains(&format!("i {notice}")), "{width}: {footer}");
+        assert!(footer.contains(notice), "{width}: {footer}");
+        assert!(!footer.contains(&format!("i {notice}")), "{width}: {footer}");
         if width >= 130 {
             assert!(footer.contains("F1 Help"), "{width}: {footer}");
             assert!(footer.contains("F12 Menu"), "{width}: {footer}");
@@ -34,7 +35,8 @@ fn next_generation_transient_status_reserves_shortcuts_and_degrades_responsively
         assert!(footer.contains("UTC 00:00:00"), "{width}: {footer}");
     }
     let narrow = render_footer(&app, 80);
-    assert!(narrow.contains("i Profile saved"), "{narrow}");
+    assert!(narrow.contains("Profile saved"), "{narrow}");
+    assert!(!narrow.contains("i Profile saved"), "{narrow}");
     assert!(narrow.contains("? Help"), "{narrow}");
     assert!(narrow.contains("Ctrl+P Menu"), "{narrow}");
     assert!(narrow.contains("q Quit"), "{narrow}");

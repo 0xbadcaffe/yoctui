@@ -423,13 +423,15 @@ pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: Sy
                 status.text.split_whitespace().collect::<Vec<_>>().join(" ")
             };
         let text = bounded_status_line(responsive_text, status_row.width.saturating_sub(2));
-        let spans = if status.kind == TransientStatusKind::Activity {
-            vec![Span::styled(
+        let spans = match status.kind {
+            TransientStatusKind::Activity => vec![Span::styled(
                 format!("{} {text}", task_activity(app, None)),
                 status_tone_style(&palette, tone),
-            )]
-        } else {
-            vec![status_label(tone, text, status_tone_style(&palette, tone))]
+            )],
+            TransientStatusKind::Notification => {
+                vec![Span::styled(text, status_tone_style(&palette, tone))]
+            }
+            _ => vec![status_label(tone, text, status_tone_style(&palette, tone))],
         };
         frame.render_widget(
             Paragraph::new(Line::from(spans)).alignment(Alignment::Left),

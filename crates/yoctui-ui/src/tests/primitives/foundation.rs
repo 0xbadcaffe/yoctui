@@ -233,6 +233,6 @@
             .iter()
             .map(|cell| cell.symbol())
             .collect::<String>();
-        assert!(output.contains("destructive modal · Remove workspace"));
+        assert!(output.contains("Warning · Remove workspace"));
         assert_eq!(terminal.backend().buffer()[(0, 0)].fg, Color::Cyan);
     }

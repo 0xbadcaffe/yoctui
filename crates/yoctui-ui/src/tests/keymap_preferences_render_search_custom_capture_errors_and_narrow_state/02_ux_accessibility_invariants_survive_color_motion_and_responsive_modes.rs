@@ -55,7 +55,7 @@ fn ux_accessibility_invariants_survive_color_motion_and_responsive_modes() {
     app.dialogs.push_back(Dialog::BuildOptions);
     let dialog = rendered_text_at(&app, 80, 24, literal_now());
     for expected in [
-        "modal · Image build options",
+        "Image build options",
         "Machine:",
         "b  Build image",
         "Esc closes",

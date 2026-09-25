@@ -23,7 +23,7 @@ fn selected_platform_dtc(
     let program = inventory
         .dtc
         .clone()
-        .ok_or_else(|| "No authoritative dtc executable was found in PATH.".to_owned())?;
+        .ok_or_else(|| "No dtc executable was found in PATH.".to_owned())?;
     if !yoctui_utils::is_absolute_normal_path(&program) {
         return Err("The reported dtc executable path is unsafe.".into());
     }
