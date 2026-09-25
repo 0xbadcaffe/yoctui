@@ -5958,3 +5958,23 @@ available through the normal field editor. Tab and Shift+Tab wrap across every
 parameter plus Additional arguments in both normal and insert modes. A confirmed
 execution waits for its newly generated request identity; it never shows an
 older execution of the same command while the daemon accepts the new request.
+
+### M75 Yocto utility menus
+
+The F12 Tools menu exposes typed workflows for `bitbake-config-build` and the
+common `bitbake-layers` inspection and creation commands. Configuration
+fragments provide list, show, enable, disable, and disable-all operations.
+The form asks for fragment names only when the selected operation requires
+them. Layer tools provide Show layers, Show recipes, Show overlayed recipes,
+and Create layer entries. Show recipes accepts an optional wildcard recipe
+pattern and defaults to `linux-*`; Create layer requires an absolute layer
+directory and offers the supported add-to-configuration choice.
+
+Every workflow constructs an exact argument vector without a shell. Forms trap
+focus, Up/Down or Tab/Shift+Tab moves between fields, Left/Right changes choices,
+and text remains manually editable. Enter advances to the shared terminal
+preview, where the operator chooses embedded or detached execution and confirms
+the exact program, working directory, and arguments. Esc cancels without
+spawning. Mutating fragment and layer operations always cross this explicit
+preview boundary. Missing tools or unsupported subcommands remain visible as
+disabled menu reasons derived from current compatibility authority.

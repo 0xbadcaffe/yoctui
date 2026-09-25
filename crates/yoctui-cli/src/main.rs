@@ -93,6 +93,7 @@ use yoctui_app::{
     testing_workspace_action, wic_actions_for_runner_event, wic_cancellation_confirmation_action,
     wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
     wic_write_confirmation_action, wic_write_phrase_action, workspace_collection_action,
+    yocto_utility_dialog_action,
 };
 
 use yoctui_bitbake::{

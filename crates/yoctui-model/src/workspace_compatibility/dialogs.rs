@@ -31,6 +31,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         | Dialog::BbmaskConfirmation(_)
         | Dialog::ImageConsole(_)
         | Dialog::DtcCompile(_)
+        | Dialog::YoctoUtility(_)
         | Dialog::TerminalLaunch(_)
         | Dialog::RecipeEditor(_)
         | Dialog::BuildCancellationConfirmation

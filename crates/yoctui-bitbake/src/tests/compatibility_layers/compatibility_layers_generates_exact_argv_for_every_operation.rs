@@ -9,6 +9,16 @@ fn compatibility_layers_generates_exact_argv_for_every_operation() {
     let cases = [
         (BitBakeLayersOperation::ShowLayers, vec!["show-layers"]),
         (
+            BitBakeLayersOperation::ShowRecipes {
+                pattern: Some("linux-*".into()),
+            },
+            vec!["show-recipes", "linux-*"],
+        ),
+        (
+            BitBakeLayersOperation::ShowOverlayed,
+            vec!["show-overlayed"],
+        ),
+        (
             BitBakeLayersOperation::CreateLayer {
                 directory: "/layers/meta-demo".into(),
                 add: false,

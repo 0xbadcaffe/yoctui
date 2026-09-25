@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+M75 YOCTO-UTILITY-MENUS-001 is DONE in v0.1.226. F12 Tools now exposes typed
+forms for every `bitbake-config-build` fragment operation and the requested
+`bitbake-layers` inspection and creation commands. Forms validate only their
+operation-specific arguments, preserve manual entry, build shell-free argv,
+use current compatibility authority, and launch through the shared exact-command
+preview and daemon-owned utility PTY. Focused model, app, UI, planner, catalog,
+formatting, and strict Clippy checks pass; the full baseline remains deferred
+for the agreed rapid manual bug pass.
+
 M75 RAW-RECIPE-REPEAT-001 is DONE in v0.1.225. Raw recipe arguments expose a
 searchable `r` picker while retaining manual entry; Enter returns the selected
 recipe to the form, Tab and Shift+Tab wrap all fields even during insertion, and

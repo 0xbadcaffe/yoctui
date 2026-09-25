@@ -8,6 +8,18 @@ fn bitbake_layers_operations_validate_closed_path_sets() {
     }
     .validate()
     .unwrap();
+    BitBakeLayersOperation::ShowRecipes {
+        pattern: Some("linux-*".into()),
+    }
+    .validate()
+    .unwrap();
+    assert!(
+        BitBakeLayersOperation::ShowRecipes {
+            pattern: Some("\n".into())
+        }
+        .validate()
+        .is_err()
+    );
     BitBakeLayersOperation::AddLayers {
         directories: vec!["/layers/meta-one".into(), "/layers/meta-two".into()],
     }

@@ -260,6 +260,21 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenConfiguration => Action::Open(Screen::Configuration),
         CommandId::OpenRawMode => Action::Open(Screen::RawMode),
         CommandId::OpenGitUi => Action::OpenGitUi,
+        CommandId::OpenBitBakeConfigBuild => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::ConfigBuild)
+        }
+        CommandId::OpenBitBakeLayersShowLayers => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersShowLayers)
+        }
+        CommandId::OpenBitBakeLayersShowRecipes => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersShowRecipes)
+        }
+        CommandId::OpenBitBakeLayersShowOverlayed => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersShowOverlayed)
+        }
+        CommandId::OpenBitBakeLayersCreateLayer => {
+            Action::OpenYoctoUtility(YoctoUtilityCommand::LayersCreateLayer)
+        }
         CommandId::OpenTerminalSessions => Action::Open(Screen::TerminalSessions),
         CommandId::OpenMaintenance => Action::Open(Screen::Maintenance),
         CommandId::OpenBuildEnvironment => Action::Open(Screen::BuildEnvironment),

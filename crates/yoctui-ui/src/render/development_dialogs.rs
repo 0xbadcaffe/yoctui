@@ -1,4 +1,7 @@
 fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
+    if render_yocto_utility_dialog(frame, app, area) {
+        return true;
+    }
     if render_extended_devtool_dialogs(frame, app, area) {
         return true;
     }

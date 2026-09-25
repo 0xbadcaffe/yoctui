@@ -4480,3 +4480,19 @@ actions and the UI only renders the typed picker. Form navigation wraps by the
 model-owned field order. A newly confirmed request writes its exact request ID
 into the output selection before daemon submission; an explicit request that has
 not appeared in the replica cannot fall back to a previous command-matching job.
+
+## M75 typed Yocto utility menus
+
+The model owns typed configuration-fragment and layer-command drafts, field
+navigation, validation, and shell-free argv construction. Compatibility
+catalog records independently probe `bitbake-config-build` subcommands plus
+the requested `bitbake-layers` inspection commands; executable identity and
+build-directory authority come from the current daemon snapshot. Application
+menu commands open model dialogs, app input emits only typed field actions,
+and Ratatui renders those fields without parsing tool output.
+
+Validated drafts become the existing `TerminalLaunchRequest` and reuse the
+daemon-owned utility PTY. The shared terminal preview is the confirmation
+boundary for configuration or filesystem mutations. The daemon receives the
+program and argv as separate values; no shell string, output parser, or second
+terminal implementation is introduced.

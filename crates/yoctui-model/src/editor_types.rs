@@ -197,6 +197,7 @@ pub enum Dialog {
     BbmaskEdit(PopupEditor),
     BbmaskConfirmation(String),
     DtcCompile(DtcCompileDialog),
+    YoctoUtility(YoctoUtilityDialog),
     TerminalLaunch(TerminalLaunchDialog),
     RecipeEditor(RecipeEditor),
     BuildCancellationConfirmation,
@@ -284,6 +285,7 @@ impl Dialog {
             | Self::DevtoolUndeploy(_)
             | Self::BbmaskEdit(_)
             | Self::DtcCompile(_)
+            | Self::YoctoUtility(_)
             | Self::TerminalLaunch(_)
             | Self::RecipeEditor(_) => false,
         }

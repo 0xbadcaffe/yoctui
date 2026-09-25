@@ -79,11 +79,21 @@ fn authority(
     .unwrap()
 }
 
-fn all_records() -> [(CapabilityId, &'static str, bool); 5] {
+fn all_records() -> [(CapabilityId, &'static str, bool); 7] {
     [
         (
             CapabilityId::BitBakeLayersShowLayers,
             BITBAKE_LAYERS_SHOW_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersShowRecipes,
+            BITBAKE_LAYERS_SHOW_RECIPES_IMPLEMENTATION,
+            true,
+        ),
+        (
+            CapabilityId::BitBakeLayersShowOverlayed,
+            BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION,
             true,
         ),
         (

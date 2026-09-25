@@ -134,6 +134,10 @@ pub enum CapabilityId {
     RecipetoolAppendFile,
     #[serde(rename = "bitbake_layers.show_layers")]
     BitBakeLayersShowLayers,
+    #[serde(rename = "bitbake_layers.show_recipes")]
+    BitBakeLayersShowRecipes,
+    #[serde(rename = "bitbake_layers.show_overlayed")]
+    BitBakeLayersShowOverlayed,
     #[serde(rename = "bitbake_layers.create_layer")]
     BitBakeLayersCreateLayer,
     #[serde(rename = "bitbake_layers.create_and_add_layer")]
@@ -142,6 +146,16 @@ pub enum CapabilityId {
     BitBakeLayersAddLayer,
     #[serde(rename = "bitbake_layers.remove_layer")]
     BitBakeLayersRemoveLayer,
+    #[serde(rename = "bitbake_config_build.list_fragments")]
+    BitBakeConfigBuildListFragments,
+    #[serde(rename = "bitbake_config_build.show_fragment")]
+    BitBakeConfigBuildShowFragment,
+    #[serde(rename = "bitbake_config_build.enable_fragment")]
+    BitBakeConfigBuildEnableFragment,
+    #[serde(rename = "bitbake_config_build.disable_fragment")]
+    BitBakeConfigBuildDisableFragment,
+    #[serde(rename = "bitbake_config_build.disable_all_fragments")]
+    BitBakeConfigBuildDisableAllFragments,
     #[serde(rename = "pkgdata.lookup_pkg")]
     PkgDataLookupPackage,
     #[serde(rename = "pkgdata.find_path")]
@@ -217,7 +231,7 @@ pub enum CapabilityId {
 }
 
 impl CapabilityId {
-    pub const ALL: [Self; 107] = [
+    pub const ALL: [Self; 114] = [
         Self::BitBakeWorkspaceInspection,
         Self::BitBakeRecipeInventory,
         Self::BitBakeRecipeDependencies,
@@ -285,10 +299,17 @@ impl CapabilityId {
         Self::RecipetoolCreateOutfile,
         Self::RecipetoolAppendFile,
         Self::BitBakeLayersShowLayers,
+        Self::BitBakeLayersShowRecipes,
+        Self::BitBakeLayersShowOverlayed,
         Self::BitBakeLayersCreateLayer,
         Self::BitBakeLayersCreateAndAddLayer,
         Self::BitBakeLayersAddLayer,
         Self::BitBakeLayersRemoveLayer,
+        Self::BitBakeConfigBuildListFragments,
+        Self::BitBakeConfigBuildShowFragment,
+        Self::BitBakeConfigBuildEnableFragment,
+        Self::BitBakeConfigBuildDisableFragment,
+        Self::BitBakeConfigBuildDisableAllFragments,
         Self::PkgDataLookupPackage,
         Self::PkgDataFindPath,
         Self::PkgDataGenerated,
@@ -430,10 +451,19 @@ impl CapabilityId {
             Self::RecipetoolCreateOutfile => "recipetool.create_outfile",
             Self::RecipetoolAppendFile => "recipetool.appendfile",
             Self::BitBakeLayersShowLayers => "bitbake_layers.show_layers",
+            Self::BitBakeLayersShowRecipes => "bitbake_layers.show_recipes",
+            Self::BitBakeLayersShowOverlayed => "bitbake_layers.show_overlayed",
             Self::BitBakeLayersCreateLayer => "bitbake_layers.create_layer",
             Self::BitBakeLayersCreateAndAddLayer => "bitbake_layers.create_and_add_layer",
             Self::BitBakeLayersAddLayer => "bitbake_layers.add_layer",
             Self::BitBakeLayersRemoveLayer => "bitbake_layers.remove_layer",
+            Self::BitBakeConfigBuildListFragments => "bitbake_config_build.list_fragments",
+            Self::BitBakeConfigBuildShowFragment => "bitbake_config_build.show_fragment",
+            Self::BitBakeConfigBuildEnableFragment => "bitbake_config_build.enable_fragment",
+            Self::BitBakeConfigBuildDisableFragment => "bitbake_config_build.disable_fragment",
+            Self::BitBakeConfigBuildDisableAllFragments => {
+                "bitbake_config_build.disable_all_fragments"
+            }
             Self::PkgDataLookupPackage => "pkgdata.lookup_pkg",
             Self::PkgDataFindPath => "pkgdata.find_path",
             Self::PkgDataGenerated => "pkgdata.generated",
@@ -483,4 +513,3 @@ impl std::fmt::Display for CapabilityId {
         formatter.write_str(self.as_str())
     }
 }
-

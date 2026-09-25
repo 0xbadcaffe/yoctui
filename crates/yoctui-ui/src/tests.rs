@@ -22,6 +22,7 @@ mod telemetry_strip_composes_wide_medium_and_hidden_tiers;
 mod test_workflow_dialogs_render_exact_previews_at_responsive_boundaries;
 mod transient_status_reserves_shortcuts_and_degrades_responsively;
 mod wic_device_write_renders_protected_dialogs_inventory_history_and_footer;
+mod yocto_utility;
 
 use super::dependency_render::dependency_tree_label;
 use super::footer::{footer_item_width, footer_shortcuts, responsive_footer_shortcuts};

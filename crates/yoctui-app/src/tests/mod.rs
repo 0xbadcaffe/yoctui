@@ -218,6 +218,7 @@ mod qemu_model_normalizes_typed_runner_events_without_parsing_output;
 mod raw_mode_app_routes_only_the_selected_additional_field_to_shared_editor;
 mod snapshot_timing_matches_live_batch_replacement_and_terminal_replay;
 mod test_results_junit_events_keep_terminal_outcomes_distinct;
+mod yocto_utility;
 
 use super::daemon_client::apply_daemon_build_event;
 use super::keyboard::DEFAULT_COLLECTION_PAGE_ROWS;

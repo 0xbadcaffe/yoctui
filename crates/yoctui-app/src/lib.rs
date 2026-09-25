@@ -163,7 +163,7 @@ pub use dialog_input::{
     test_launch_confirmation_action, test_launch_dialog_action, test_result_import_dialog_action,
     test_results_workspace_action, wic_cancellation_confirmation_action,
     wic_create_confirmation_action, wic_create_dialog_action, wic_device_picker_action,
-    wic_write_confirmation_action, wic_write_phrase_action,
+    wic_write_confirmation_action, wic_write_phrase_action, yocto_utility_dialog_action,
 };
 
 pub use keyboard::{terminal_owns_input, workspace_text_input_active};

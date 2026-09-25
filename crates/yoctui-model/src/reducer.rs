@@ -14,6 +14,7 @@ mod reset_pane_subfocus;
 mod select_test_comparison_transition;
 mod set_layer_inspector_mode;
 mod terminal_append_search;
+mod yocto_utility_dialog;
 #[rustfmt::skip]
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
     if modal_focus(app).is_some()
@@ -120,6 +121,10 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::SelectTerminalLaunchDestination { .. } | Action::ConfirmTerminalLaunch | Action::CancelTerminalLaunch
         | Action::TerminalEnterCopyMode | Action::TerminalMoveCopyRow { .. } | Action::TerminalCopyViewport
         | Action::TerminalBeginSearch => open_onboarding::reduce_actions(app, action),
+        Action::OpenYoctoUtility(..) | Action::SelectYoctoUtilityField { .. }
+        | Action::CycleYoctoUtilityChoice { .. } | Action::AppendYoctoUtilityField(..)
+        | Action::BackspaceYoctoUtilityField | Action::ClearYoctoUtilityField
+        | Action::ReviewYoctoUtility | Action::CancelYoctoUtility => yocto_utility_dialog::reduce_actions(app, action),
         Action::TerminalAppendSearch(..) | Action::TerminalBackspaceSearch | Action::TerminalFinishSearch
         | Action::TerminalClearSearch | Action::TerminalStagePaste(..) | Action::TerminalConfirmPaste
         | Action::TerminalBeginRename | Action::TerminalAppendRename(..) | Action::TerminalBackspaceRename

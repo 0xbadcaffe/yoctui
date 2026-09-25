@@ -12,6 +12,7 @@ pub enum CapabilityToolId {
     BitBakeDiffSigs,
     BitBakeDumpSig,
     BitBakeGetVar,
+    BitBakeConfigBuild,
     BitBakeLayers,
     Devtool,
     BuildCompare,
@@ -39,6 +40,7 @@ impl CapabilityToolId {
             Self::BitBakeDiffSigs => "bitbake-diffsigs",
             Self::BitBakeDumpSig => "bitbake-dumpsig",
             Self::BitBakeGetVar => "bitbake-getvar",
+            Self::BitBakeConfigBuild => "bitbake-config-build",
             Self::BitBakeLayers => "bitbake-layers",
             Self::Devtool => "devtool",
             Self::BuildCompare => "build-compare",
@@ -275,4 +277,3 @@ fn validate_entry(entry: &CapabilityCatalogEntry) -> Result<(), CapabilityCatalo
     }
     Ok(())
 }
-

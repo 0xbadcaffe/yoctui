@@ -92,8 +92,9 @@ pub use compatibility_fixtures::{
 pub use compatibility_layers::{
     BITBAKE_LAYERS_ADD_IMPLEMENTATION, BITBAKE_LAYERS_CREATE_ADD_IMPLEMENTATION,
     BITBAKE_LAYERS_CREATE_IMPLEMENTATION, BITBAKE_LAYERS_REMOVE_IMPLEMENTATION,
-    BITBAKE_LAYERS_SHOW_IMPLEMENTATION, BitBakeLayersCommandPlanner, BitBakeLayersCommandSpec,
-    BitBakeLayersCompatibilityError,
+    BITBAKE_LAYERS_SHOW_IMPLEMENTATION, BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION,
+    BITBAKE_LAYERS_SHOW_RECIPES_IMPLEMENTATION, BitBakeLayersCommandPlanner,
+    BitBakeLayersCommandSpec, BitBakeLayersCompatibilityError,
 };
 pub use compatibility_probe::{
     CapabilityProbeContext, CapabilityProbeContextError, CapabilityProbeObservation,

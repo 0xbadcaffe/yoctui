@@ -67,6 +67,11 @@ impl ApplicationMenuGroup {
             | CommandId::NextSubfocus
             | CommandId::TogglePaneZoom => Self::View,
             CommandId::OpenGitUi
+            | CommandId::OpenBitBakeConfigBuild
+            | CommandId::OpenBitBakeLayersShowLayers
+            | CommandId::OpenBitBakeLayersShowRecipes
+            | CommandId::OpenBitBakeLayersShowOverlayed
+            | CommandId::OpenBitBakeLayersCreateLayer
             | CommandId::OpenRawMode
             | CommandId::OpenTerminalSessions
             | CommandId::OpenMaintenance

@@ -7,6 +7,8 @@ use thiserror::Error;
 use yoctui_model::{BitBakeLayersOperation, CapabilityId, DaemonCompatibilitySnapshot};
 
 pub const BITBAKE_LAYERS_SHOW_IMPLEMENTATION: &str = "bitbake_layers.show_layers.argv";
+pub const BITBAKE_LAYERS_SHOW_RECIPES_IMPLEMENTATION: &str = "bitbake_layers.show_recipes.argv";
+pub const BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION: &str = "bitbake_layers.show_overlayed.argv";
 pub const BITBAKE_LAYERS_CREATE_IMPLEMENTATION: &str = "bitbake_layers.create_layer.argv";
 pub const BITBAKE_LAYERS_CREATE_ADD_IMPLEMENTATION: &str =
     "bitbake_layers.create_and_add_layer.argv";
@@ -114,6 +116,18 @@ impl<'a> BitBakeLayersCommandPlanner<'a> {
                 CapabilityId::BitBakeLayersShowLayers,
                 BITBAKE_LAYERS_SHOW_IMPLEMENTATION,
                 vec!["show-layers".into()],
+            ),
+            BitBakeLayersOperation::ShowRecipes { pattern } => self.command(
+                CapabilityId::BitBakeLayersShowRecipes,
+                BITBAKE_LAYERS_SHOW_RECIPES_IMPLEMENTATION,
+                std::iter::once(OsString::from("show-recipes"))
+                    .chain(pattern.iter().map(OsString::from))
+                    .collect(),
+            ),
+            BitBakeLayersOperation::ShowOverlayed => self.command(
+                CapabilityId::BitBakeLayersShowOverlayed,
+                BITBAKE_LAYERS_SHOW_OVERLAYED_IMPLEMENTATION,
+                vec!["show-overlayed".into()],
             ),
             BitBakeLayersOperation::CreateLayer {
                 directory,

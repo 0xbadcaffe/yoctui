@@ -93,6 +93,33 @@ pub fn terminal_launch_dialog_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn yocto_utility_dialog_action(
+    dialog: &yoctui_model::YoctoUtilityDialog,
+    key: Input,
+) -> Option<Action> {
+    let selected_kind = dialog
+        .fields()
+        .get(dialog.selected_field)
+        .map(|(_, _, kind)| *kind);
+    match key {
+        Input::Up | Input::BackTab => Some(Action::SelectYoctoUtilityField { delta: -1 }),
+        Input::Down | Input::Tab => Some(Action::SelectYoctoUtilityField { delta: 1 }),
+        Input::Left => Some(Action::CycleYoctoUtilityChoice { delta: -1 }),
+        Input::Right => Some(Action::CycleYoctoUtilityChoice { delta: 1 }),
+        Input::Char(' ')
+            if selected_kind == Some(yoctui_model::YoctoUtilityFieldKind::Choice) =>
+        {
+            Some(Action::CycleYoctoUtilityChoice { delta: 1 })
+        }
+        Input::Backspace => Some(Action::BackspaceYoctoUtilityField),
+        Input::CtrlU => Some(Action::ClearYoctoUtilityField),
+        Input::Enter => Some(Action::ReviewYoctoUtility),
+        Input::Esc => Some(Action::CancelYoctoUtility),
+        Input::Char(character) => Some(Action::AppendYoctoUtilityField(character)),
+        _ => None,
+    }
+}
+
 pub fn dtc_compile_dialog_action(key: Input) -> Option<Action> {
     match key {
         Input::Up | Input::Char('k') | Input::BackTab => {

@@ -365,6 +365,7 @@ mod raw_catalog_builtin_raw_catalog;
 mod snapshot_timing_observed_reducer_does_not_fall_back_to_local_clock;
 mod terminal_navigation_palette_and_writer_lease_are_typed;
 mod test_workflow_model_attaches_managed_builds_and_rejects_stale_results;
+mod yocto_utility;
 
 use super::background_jobs::MAX_BACKGROUND_JOB_OUTPUT_ENTRIES;
 use super::editor_types::source_structural_validation;

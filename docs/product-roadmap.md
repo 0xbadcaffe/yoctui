@@ -1868,3 +1868,10 @@ their reason after closing the menu. Raw recipe arguments have an in-place
 searchable picker, wrapped field traversal and exact repeat-request correlation.
 Focused model, app, CLI, daemon and TestBackend checks pass; the user continues
 manual bug testing before requesting the full suite.
+
+YOCTO-UTILITY-MENUS-001 is DONE in v0.1.226. Typed F12 Tools forms cover every
+configuration-fragment operation plus the requested bitbake-layers inventory,
+recipe-provider, overlay, and layer-creation commands. Current capability
+authority gates exact shell-free argv previews and daemon-owned terminal
+execution. Focused checks and strict Clippy pass; the full suite remains
+deferred for the user's rapid manual bug pass.

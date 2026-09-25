@@ -48,6 +48,11 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenConfiguration => "v",
         CommandId::OpenRawMode => "Ctrl+P raw",
         CommandId::OpenGitUi => "F12 Tools",
+        CommandId::OpenBitBakeConfigBuild
+        | CommandId::OpenBitBakeLayersShowLayers
+        | CommandId::OpenBitBakeLayersShowRecipes
+        | CommandId::OpenBitBakeLayersShowOverlayed
+        | CommandId::OpenBitBakeLayersCreateLayer => "F12 Tools",
         CommandId::OpenTerminalSessions => "Ctrl+B t",
         CommandId::OpenMaintenance | CommandId::OpenBuildEnvironment => "none",
         CommandId::OpenCompatibility => "none",
@@ -85,6 +90,11 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenConfiguration => Some(WorkspaceDestination::Configuration),
         CommandId::OpenRawMode => Some(WorkspaceDestination::RawMode),
         CommandId::OpenGitUi => None,
+        CommandId::OpenBitBakeConfigBuild
+        | CommandId::OpenBitBakeLayersShowLayers
+        | CommandId::OpenBitBakeLayersShowRecipes
+        | CommandId::OpenBitBakeLayersShowOverlayed
+        | CommandId::OpenBitBakeLayersCreateLayer => None,
         CommandId::OpenTerminalSessions => Some(WorkspaceDestination::TerminalSessions),
         CommandId::OpenMaintenance => Some(WorkspaceDestination::Maintenance),
         CommandId::OpenBuildEnvironment => Some(WorkspaceDestination::BuildEnvironment),

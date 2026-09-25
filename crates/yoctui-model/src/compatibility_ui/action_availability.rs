@@ -158,6 +158,21 @@ pub fn compatibility_ui_command_action_definition(
         }
         CommandId::OpenRawMode => compatibility_ui_destination_action_definition(Screen::RawMode),
         CommandId::OpenGitUi => CompatibilityUiActionDefinition::local(),
+        CommandId::OpenBitBakeConfigBuild => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeConfigBuildListFragments),
+        ),
+        CommandId::OpenBitBakeLayersShowLayers => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersShowLayers),
+        ),
+        CommandId::OpenBitBakeLayersShowRecipes => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersShowRecipes),
+        ),
+        CommandId::OpenBitBakeLayersShowOverlayed => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersShowOverlayed),
+        ),
+        CommandId::OpenBitBakeLayersCreateLayer => CompatibilityUiActionDefinition::gated(
+            WorkspaceEffectRequirement::one(Id::BitBakeLayersCreateLayer),
+        ),
         CommandId::OpenTerminalSessions => {
             compatibility_ui_destination_action_definition(Screen::TerminalSessions)
         }

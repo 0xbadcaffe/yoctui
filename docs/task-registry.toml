@@ -9470,3 +9470,14 @@ required = true
 depends_on = ["DEVTOOL-MENU-DAEMON-001"]
 verify = ["cargo test -p yoctui-app raw_mode_app_routes_only_the_selected_additional_field_to_shared_editor", "cargo test -p yoctui-ui raw_recipe_picker_renders_searchable_inventory_above_the_form", "cargo fmt --all --check"]
 notes = "DONE in v0.1.225. Recipe parameters open a searchable authoritative picker with r while retaining manual editing, Tab/Shift+Tab wrap across fields in both modes, and new Raw execution output is correlated only to the exact new request. Focused app and TestBackend checks pass; the full baseline remains intentionally deferred for the user's rapid manual bug pass."
+
+[[task]]
+id = "YOCTO-UTILITY-MENUS-001"
+milestone = "M75"
+title = "Add typed configuration-fragment and layer utility menus"
+status = "DONE"
+priority = 2429
+required = true
+depends_on = ["RAW-RECIPE-REPEAT-001"]
+verify = ["cargo test -p yoctui-model yocto_utility", "cargo test -p yoctui-app yocto_utility", "cargo test -p yoctui-ui yocto_utility", "cargo test -p yoctui-bitbake compatibility_layers", "cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.226. F12 Tools exposes typed forms for every bitbake-config-build fragment operation plus show-layers, show-recipes, show-overlayed, and create-layer. Operation-specific validation produces shell-free argv, the current compatibility snapshot gates each route, and the shared terminal preview launches through the daemon-owned utility PTY. Focused model, app, UI, planner, catalog, formatting, and strict Clippy checks pass; the full baseline remains intentionally deferred for the user's rapid manual bug pass."

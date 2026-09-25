@@ -52,6 +52,7 @@ mod utility_menu;
 mod wic;
 mod widget_projection;
 mod workspace_compatibility;
+mod yocto_utility;
 
 pub use action_catalog::*;
 pub use bitbake_layers::*;
@@ -114,6 +115,7 @@ pub use utility_menu::*;
 pub use wic::*;
 pub use widget_projection::*;
 pub use workspace_compatibility::*;
+pub use yocto_utility::*;
 
 use yoctui_utils::push_bounded;
 

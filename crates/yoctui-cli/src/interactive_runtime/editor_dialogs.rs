@@ -68,6 +68,9 @@ impl InteractiveRuntime {
         } else if matches!(runtime.app.active_dialog(), Some(Dialog::DtcCompile(_))) {
             let _ = dtc_compile_dialog_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
+        } else if let Some(Dialog::YoctoUtility(dialog)) = runtime.app.active_dialog().cloned() {
+            let _ = yocto_utility_dialog_action(&dialog, input)
+                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
         } else if matches!(runtime.app.active_dialog(), Some(Dialog::TerminalLaunch(_))) {
             let effect = terminal_launch_dialog_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
