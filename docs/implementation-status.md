@@ -3965,4 +3965,9 @@ Navigator's Devtool row opens a distinct screen with an identity-preserving
 recipe list, compact workspace/Git/build states, an ordered workflow panel,
 search, responsive rendering, and its own key routing. Existing recipe and
 backend state remain the only authority. DEVTOOL-WORKSPACE-LOOP-001 is now
-IN_PROGRESS.
+DONE in the v0.1.229 feature series. Start/edit, exact recipe build, workspace
+shell, GitUI, reset, update, finish and target deployment all remain on the
+dedicated screen and use their existing typed owners. Target deployment now
+states that Devtool deploys the built install tree through SSH/SCP and previews
+the exact command, recipe, provider and target. DEVTOOL-WORKSPACE-PATCH-001 is
+now IN_PROGRESS.

@@ -251,7 +251,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Run `devtool deploy-target {} {}`?\n\nProvider: {}\nTarget: {}\n\nEnter continues; Esc cancels.",
+                "Deploy the built install tree with Devtool's SSH/SCP transport?\n\nCommand: `devtool deploy-target {} {}`\nProvider: {}\nTarget: {}\n\nEnter continues; Esc cancels.",
                 plan.identity.name,
                 plan.target,
                 plan.identity.file.display(),
@@ -259,7 +259,7 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
             ))
             .block(dialog_block(
                 app,
-                "Confirm Devtool deploy-target",
+                "Confirm SSH/SCP deployment",
                 DialogTone::Confirmation,
             ))
             .wrap(Wrap { trim: true }),
@@ -277,14 +277,14 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
         clear_popup(frame, app, popup);
         frame.render_widget(
             Paragraph::new(format!(
-                "Recipe: {}\nProvider: {}\nDeployment target: {}_\n\nEnter previews the command; Esc cancels.",
+                "Recipe: {}\nProvider: {}\nSSH target: {}_\n\nDevtool deploys the built install tree with SSH/SCP.\nEnter previews the command; Esc cancels.",
                 draft.identity.name,
                 draft.identity.file.display(),
                 draft.target
             ))
             .block(dialog_block(
                 app,
-                "Devtool deploy target",
+                "Deploy build with SSH/SCP",
                 DialogTone::Standard,
             ))
             .wrap(Wrap { trim: false }),

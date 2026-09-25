@@ -37,3 +37,24 @@ fn devtool_workspace_renders_safely_at_the_supported_minimum() {
     app.screen = Screen::Devtool;
     let _ = rendered_text(&app, 79, 23);
 }
+
+#[test]
+fn devtool_workspace_deploy_dialog_names_the_ssh_scp_transport() {
+    let mut app = App::new(10, 1_000);
+    app.screen = Screen::Devtool;
+    app.dialogs.push_back(Dialog::DevtoolDeployConfirmation(
+        yoctui_model::DevtoolDeployPlan {
+            identity: yoctui_model::RecipeIdentity {
+                name: "phosphor-state-manager".into(),
+                file: "/work/meta/recipes/phosphor-state-manager.bb".into(),
+            },
+            target: "root@bmc".into(),
+        },
+    ));
+    app.focus = FocusTarget::Dialog;
+
+    let output = rendered_text(&app, 120, 35);
+    assert!(output.contains("Confirm SSH/SCP deployment"));
+    assert!(output.contains("built install tree"));
+    assert!(output.contains("devtool deploy-target phosphor-state-manager root@bmc"));
+}

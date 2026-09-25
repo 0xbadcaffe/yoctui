@@ -9519,18 +9519,18 @@ notes = "DONE in the v0.1.229 feature series. Navigator Devtool owns a distinct 
 id = "DEVTOOL-WORKSPACE-LOOP-001"
 milestone = "M76"
 title = "Connect start edit build and SSH/SCP deployment in the Devtool Workspace"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2501
 required = true
 depends_on = ["DEVTOOL-WORKSPACE-SURFACE-001"]
 verify = ["cargo test -p yoctui-model devtool_workspace", "cargo test -p yoctui-app devtool_workspace", "cargo test -p yoctui-ui devtool_workspace", "cargo fmt --all --check"]
-notes = "Reuse modify, source editor, exact recipe build, GitUI/workspace shell, and deploy-target. Deployment is named and previewed as Devtool's SSH/SCP transport and never guesses a binary path from output."
+notes = "DONE in the v0.1.229 feature series. The dedicated screen routes status, modify/edit, exact recipe build, workspace shell, GitUI, reset, update, finish, and deploy through their existing typed owners. Deployment is explicitly named and previewed as Devtool's SSH/SCP install-tree transport."
 
 [[task]]
 id = "DEVTOOL-WORKSPACE-PATCH-001"
 milestone = "M76"
 title = "Create and install recipe patches into a configured layer"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2502
 required = true
 depends_on = ["DEVTOOL-WORKSPACE-LOOP-001"]
