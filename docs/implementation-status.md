@@ -5,8 +5,10 @@ a build-independent, persistent library grouped by Board, SoC, Memory,
 Peripherals, Sensors, and Other. The authoritative UI and architecture now
 define validated local browsing, PDF/KiCad/SVG/raster support, atomic restart
 persistence, asynchronous typed conversion, a full-body embedded viewer, and
-page/zoom/pan/search controls. HARDWARE-MODEL-001 is current; the unrelated
-M67 live-performance evidence task remains blocked.
+page/zoom/pan/search controls. HARDWARE-MODEL-001 is DONE with six closed
+categories, supported kinds, bounded catalog/browser/viewer state, typed
+generation-bound effects, and pure reducer tests. HARDWARE-PERSISTENCE-001 is
+current; the unrelated M67 live-performance evidence task remains blocked.
 
 M80 is DONE in v0.1.233. A restarted plain client
 previously launched lazy Kernel/U-Boot inspection without reconstructing the

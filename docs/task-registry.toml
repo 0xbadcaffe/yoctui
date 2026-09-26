@@ -9695,18 +9695,18 @@ notes = "DONE in v0.1.233. Focused inspection, relay, recovered-PTY, platform bi
 id = "HARDWARE-MODEL-001"
 milestone = "M81"
 title = "Add typed Hardware library and viewer state"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2900
 required = true
 depends_on = ["PLATFORM-PTY-RELEASE-001"]
 verify = ["cargo test -p yoctui-model hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Define closed categories and document kinds, bounded catalog/browser/viewer/search state, typed actions/effects, and pure reducer coverage without filesystem or converter work."
+notes = "DONE. The model owns six closed categories, supported document kinds, validated bounded catalog/browser/raster/text/viewer state, generation-bound load and persistence effects, page/zoom/pan/search transitions, duplicate rejection, and confirmed removal. Three focused normal, stale-result, invalid-raster, navigation, and persistence tests pass."
 
 [[task]]
 id = "HARDWARE-PERSISTENCE-001"
 milestone = "M81"
 title = "Persist and load validated Hardware documents"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2901
 required = true
 depends_on = ["HARDWARE-MODEL-001"]

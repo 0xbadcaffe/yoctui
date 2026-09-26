@@ -90,6 +90,7 @@ impl App {
             image_artifact_searching: false,
             image_artifact_request_generation: 0,
             images_view: ImagesView::Artifacts,
+            hardware: HardwareState::default(),
             kernel: PlatformWorkbench::default(),
             firmware: PlatformWorkbench::default(),
             rootfs_composition: RootfsCompositionState::NotLoaded,

@@ -85,6 +85,7 @@ pub struct App {
     pub image_artifact_searching: bool,
     pub image_artifact_request_generation: u64,
     pub images_view: ImagesView,
+    pub hardware: HardwareState,
     pub kernel: PlatformWorkbench,
     pub firmware: PlatformWorkbench,
     pub rootfs_composition: RootfsCompositionState,

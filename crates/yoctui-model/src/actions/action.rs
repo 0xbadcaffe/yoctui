@@ -2,6 +2,8 @@
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Action {
 
+    Hardware(HardwareAction),
+
     // Lifecycle and project state.
     SavedBuild(SavedBuildAction), OpenGitUi, GitUiDetected(Option<PathBuf>),
     SourceGitStatusUpdated(SourceGitStatus),

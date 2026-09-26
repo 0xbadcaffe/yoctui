@@ -17,6 +17,10 @@ mod terminal_append_search;
 mod yocto_utility_dialog;
 #[rustfmt::skip]
 pub fn update(app: &mut App, action: Action) -> Option<Effect> {
+    let action = match action {
+        Action::Hardware(action) => return reduce_hardware(app, action),
+        action => action,
+    };
     if modal_focus(app).is_some()
         && matches!(
             &action,
@@ -380,5 +384,6 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::WorkspaceLoaded(..) | Action::RecipesLoaded(..) | Action::LayersLoaded(..)
         | Action::VariableLoaded(..) | Action::RecipeSourcesLoaded { .. } | Action::HostTelemetryUpdated(..)
         | Action::Failure(..) | Action::Tick => set_layer_inspector_mode::reduce_actions(app, action),
+        Action::Hardware(_) => unreachable!("Hardware actions are routed before the shared reducer"),
     }
 }

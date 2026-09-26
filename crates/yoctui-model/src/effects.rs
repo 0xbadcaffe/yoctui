@@ -13,6 +13,7 @@ pub(crate) fn next_filter<T: Clone + PartialEq>(values: &[T], current: Option<T>
 }
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Effect {
+    Hardware(HardwareEffect),
     ReadEnvironmentDirectory {
         request: u64,
         path: PathBuf,

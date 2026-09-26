@@ -3,7 +3,8 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
     use WorkspaceEffectRequirement as Requirement;
 
     match effect {
-        Effect::PersistSettings
+        Effect::Hardware(_)
+        | Effect::PersistSettings
         | Effect::ReadEnvironmentDirectory { .. }
         | Effect::PersistOnboarding
         | Effect::GenerateProjectProfile { .. }
