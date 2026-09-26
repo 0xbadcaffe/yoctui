@@ -2014,5 +2014,8 @@ instead of leaking DEC Special Graphics source letters into embedded PTYs.
 
 TERMINAL-DEC-GRAPHICS-001 adds bounded, chunk-stable G0/G1 designation and
 SI/SO translation ahead of the typed terminal snapshot.
-TERMINAL-DEC-GRAPHICS-RELEASE-001 packages the correction in v0.1.236, restarts
-the initialized Romulus daemon, and live-verifies Kernel menuconfig borders.
+TERMINAL-DEC-GRAPHICS-RELEASE-001 is complete in v0.1.236. Live Romulus session
+8 rendered Kernel menuconfig with Unicode corners, lines, and tees and no DEC
+source-letter leakage; navigation and normal exit completed `do_menuconfig`.
+The optimized binary is installed and the initialized daemon was restarted.
+The full workspace suite remains deferred until requested.

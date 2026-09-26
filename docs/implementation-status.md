@@ -1,11 +1,16 @@
-M83 is IN_PROGRESS from the v0.1.235 manual bug pass. Embedded Kernel
-menuconfig owns its PTY correctly, but the admitted `vt100` parser ignores DEC
-G0/G1 Special Graphics state and exposed ncurses border source letters such as
-`q`, `x`, `l`, and `m`. TERMINAL-DEC-GRAPHICS-001 is DONE: the bounded model
-normalizer tracks G0/G1 designation, SI/SO, control strings, resets, and feed
-chunk splits, and emits the complete Unicode DEC graphics table before typed
-snapshot generation. Six focused emulator tests and eight daemon PTY tests
-pass. TERMINAL-DEC-GRAPHICS-RELEASE-001 is current.
+M83 is DONE in v0.1.236. The admitted `vt100` parser ignores DEC G0/G1
+Special Graphics state and previously exposed ncurses border source letters
+such as `q`, `x`, `l`, and `m`. The bounded model normalizer now tracks G0/G1
+designation, SI/SO, control strings, resets, and feed chunk splits, and emits
+the complete Unicode DEC graphics table before typed snapshot generation. Six
+focused emulator tests, eight daemon PTY tests, formatting, strict model/CLI
+Clippy, version policy, roadmap validation, and the optimized release build
+pass. Live Romulus session 8 rendered the complete Kernel menuconfig frame with
+Unicode corners, lines, and tees, accepted navigation, exited normally, and
+completed `do_menuconfig`. The identical installed and release binary SHA-256
+is `fec11f06deaef01c7d87bceba04dd6b3193f46fe562da1c6e35fed286818af5a`,
+with embedded source SHA `1d2948a9a9c8`; the initialized daemon runs as PID
+3628473. The full workspace suite remains deferred until requested.
 
 # Yoctui Implementation Status
 
