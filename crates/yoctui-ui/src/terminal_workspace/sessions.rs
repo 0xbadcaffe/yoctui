@@ -84,7 +84,11 @@ pub(crate) fn terminal_sessions_workspace(frame: &mut Frame, app: &App, area: Re
         Paragraph::new(Line::from(tabs)).block(
             Block::default()
                 .borders(Borders::TOP | Borders::BOTTOM | terminal_edge_border)
-                .title(embedded.unwrap_or("Terminal Sessions")),
+                .title(if let Some(label) = embedded {
+                    format!("{label} · INPUT: MENUCONFIG · Ctrl+G Yoctui")
+                } else {
+                    "Terminal Sessions".into()
+                }),
         ),
         regions[0],
     );

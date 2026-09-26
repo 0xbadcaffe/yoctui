@@ -132,6 +132,7 @@ fn platform_menuconfig_terminal_renders_in_place_and_keeps_waiting_activity_visi
     waiting.screen = Screen::Kernel;
     waiting.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
         name: Some("kernel menuconfig".into()),
+        foreground: true,
         ..yoctui_model::PlatformTerminalState::default()
     };
     let waiting_output = rendered_text(&waiting, 120, 35);
@@ -149,12 +150,13 @@ fn platform_menuconfig_terminal_renders_in_place_and_keeps_waiting_activity_visi
     app.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
         name: Some("kernel menuconfig".into()),
         session_id: Some(app.daemon.pty_sessions[0].id),
+        foreground: true,
         ..yoctui_model::PlatformTerminalState::default()
     };
     let output = rendered_text(&app, 160, 50);
     assert!(output.contains("Kernel menuconfig"), "{output}");
     assert!(output.contains("shell: bounded output"), "{output}");
-    assert!(output.contains("Ctrl+B prefix"), "{output}");
+    assert!(output.contains("Ctrl+G Yoctui"), "{output}");
     assert!(!output.contains("Inspector:"), "{output}");
 }
 

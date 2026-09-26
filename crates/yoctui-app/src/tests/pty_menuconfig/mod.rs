@@ -69,3 +69,5 @@ fn fixture() -> (PathBuf, PtyMenuconfigRouter, RecipeIdentity, RecipeIdentity) {
 mod pty_menuconfig_previews_exact_recipe_kernel_uboot_and_devshell_argv;
 
 mod pty_menuconfig_rejects_stale_recipe_and_unavailable_task;
+
+mod platform_menuconfig_input_ownership_is_explicit;

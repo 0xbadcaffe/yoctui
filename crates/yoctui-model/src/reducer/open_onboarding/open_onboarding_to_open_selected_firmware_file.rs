@@ -228,6 +228,14 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 app.notification = Some("No authoritative build directory is available.".into());
             }
         }
+        Action::TogglePlatformMenuconfigForeground => {
+            app.toggle_platform_menuconfig_foreground();
+            app.notification = Some(if app.platform_menuconfig_visible() {
+                "Menuconfig input active; Ctrl+G returns to Yoctui.".into()
+            } else {
+                "Menuconfig remains running; Ctrl+G resumes it.".into()
+            });
+        }
         Action::OpenSelectedKernelFile => {
             let Some(file) = app.kernel.selected_file().cloned() else {
                 app.notification = Some("Select a kernel file first.".into());

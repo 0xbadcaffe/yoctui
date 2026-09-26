@@ -54,8 +54,19 @@ impl DaemonPtySupervisor {
             let mut last_screen_publish = Instant::now()
                 .checked_sub(PTY_SCREEN_MIN_INTERVAL)
                 .unwrap_or_else(Instant::now);
+            let mut screen_flush_pending = false;
             loop {
                 tokio::select! {
+                    _ = tokio::time::sleep_until(
+                        tokio::time::Instant::from_std(last_screen_publish + PTY_SCREEN_MIN_INTERVAL)
+                    ), if screen_flush_pending => {
+                        if let Ok(snapshot) = session.snapshot(0) {
+                            let screen = terminal_to_wire(session_id, &snapshot.terminal);
+                            let _ = event_tx.send(DaemonPtyEvent::Screen(screen));
+                            last_screen_publish = Instant::now();
+                        }
+                        screen_flush_pending = false;
+                    }
                     control = control_rx.recv() => {
                         let Some((control, response)) = control else { return; };
                         if matches!(&control, Control::Terminate) {
@@ -109,6 +120,9 @@ impl DaemonPtySupervisor {
                                     .map(|snapshot| terminal_to_wire(session_id, &snapshot.terminal));
                                 if screen.is_some() {
                                     last_screen_publish = Instant::now();
+                                    screen_flush_pending = false;
+                                } else {
+                                    screen_flush_pending = true;
                                 }
                                 let _ = event_tx.send(DaemonPtyEvent::Output { session_id, bytes, screen });
                             }

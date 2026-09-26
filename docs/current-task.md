@@ -1,22 +1,18 @@
 # Current Task
 
-**ID:** MENUCONFIG-INTERACTION-001
-**Title:** Flush initial menuconfig screens and toggle keyboard ownership
+**ID:** DETACHED-TERMINAL-STARTUP-001
+**Title:** Verify detached menuconfig terminal startup
 **Status:** IN_PROGRESS
 
-Publish the final typed PTY screen after a bounded quiet period even when no
-further output arrives. Add a model-owned `Ctrl+G` foreground toggle for the
-exact Kernel/U-Boot menuconfig session: foreground sends every other key to the
-PTY, while hidden mode leaves the process and writer lease alive and restores
-the platform workspace with a resume hint.
+Prefer explicitly supported terminal emulators, encode their foreground/wait
+arguments without a shell, and reject launchers that exit during a bounded
+startup probe. A successful notification must mean the terminal launcher is
+still alive rather than merely that `spawn` returned.
 
 Verification:
 
 ```bash
-cargo test -p yoctui-model platform_menuconfig
-cargo test -p yoctui-app platform_menuconfig
-cargo test -p yoctui --bin yoctui menuconfig
-cargo test -p yoctui-ui menuconfig
+cargo test -p yoctui --bin yoctui detached_terminal
 cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```

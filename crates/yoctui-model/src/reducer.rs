@@ -117,7 +117,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::ActivateProjectProfileItem | Action::OpenRawFavorites | Action::InspectKernel
         | Action::KernelLoaded(..) | Action::KernelFailed(..) | Action::CycleKernelView
         | Action::SetKernelView(..)
-        | Action::SelectKernelFile { .. } | Action::LaunchKernelMenuconfig | Action::OpenSelectedKernelFile
+        | Action::SelectKernelFile { .. } | Action::LaunchKernelMenuconfig | Action::TogglePlatformMenuconfigForeground | Action::OpenSelectedKernelFile
         | Action::ExploreSelectedKernelRoot | Action::CompileSelectedKernelDts | Action::DecompileSelectedKernelDtb
         | Action::SelectDtcCompileOption { .. } | Action::AdjustDtcCompileOption { .. } | Action::ConfirmDtcCompileOptions
         | Action::CancelDtcCompileOptions | Action::InspectFirmware | Action::FirmwareLoaded(..)

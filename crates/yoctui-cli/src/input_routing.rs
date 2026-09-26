@@ -9,6 +9,9 @@ pub(crate) fn direct_menu_shortcut_action(
     if replayed || app.command_palette_open {
         return None;
     }
+    if app.platform_menuconfig_visible() {
+        return None;
+    }
     if yoctui_app::terminal_owns_input(app) {
         if matches!(
             input,
@@ -143,6 +146,7 @@ pub(crate) fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
         KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlP),
         KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlU),
+        KeyCode::Char('g') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlG),
         KeyCode::Char('f' | 'F')
             if key.modifiers.contains(KeyModifiers::CONTROL)
                 && key.modifiers.contains(KeyModifiers::SHIFT) =>
@@ -193,6 +197,7 @@ pub(crate) fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
         Input::CtrlP => b"\x10".as_slice(),
         Input::CtrlU => b"\x15".as_slice(),
         Input::CtrlF | Input::CtrlShiftF => b"\x06".as_slice(),
+        Input::CtrlG => b"\x07".as_slice(),
         Input::CtrlS => b"\x13".as_slice(),
         Input::Tab => b"\t".as_slice(),
         Input::BackTab => b"\x1b[Z".as_slice(),

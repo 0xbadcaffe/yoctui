@@ -9783,18 +9783,18 @@ notes = "DONE in v0.1.236. Formatting, focused model and daemon PTY tests, stric
 id = "MENUCONFIG-INTERACTION-001"
 milestone = "M84"
 title = "Flush initial menuconfig screens and toggle keyboard ownership"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3020
 required = true
 depends_on = ["TERMINAL-DEC-GRAPHICS-RELEASE-001"]
 verify = ["cargo test -p yoctui-model platform_menuconfig", "cargo test -p yoctui-app platform_menuconfig", "cargo test -p yoctui --bin yoctui menuconfig", "cargo test -p yoctui-ui menuconfig", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Flush the final coalesced PTY screen after a bounded quiet period. Model Kernel/U-Boot menuconfig foreground state independently from the writer lease; Ctrl+G hides/resumes the exact session and foreground mode forwards every other key to the PTY."
+notes = "DONE. The daemon publishes a typed quiet-period screen event after a throttled PTY output burst, so the final ncurses frame does not require input. Kernel/U-Boot menuconfig foreground state is independent from the writer lease; Ctrl+G hides/resumes the exact session, visible titles and footers identify ownership, and foreground mode forwards every other key including function keys and Ctrl+B. Focused model, app, CLI, UI, formatting, strict Clippy, and roadmap checks pass."
 
 [[task]]
 id = "DETACHED-TERMINAL-STARTUP-001"
 milestone = "M84"
 title = "Verify detached menuconfig terminal startup"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3021
 required = true
 depends_on = ["MENUCONFIG-INTERACTION-001"]

@@ -35,6 +35,11 @@ pub(crate) fn publish_daemon_pty_event(
                 tracing::warn!(%error, "discarding invalid or oversized PTY screen snapshot");
             }
         }
+        DaemonPtyEvent::Screen(screen) => {
+            if let Err(error) = journal.publish(DaemonEvent::PtyScreen(screen)) {
+                tracing::warn!(%error, "discarding invalid or oversized PTY screen snapshot");
+            }
+        }
         DaemonPtyEvent::Exited {
             session_id,
             exit_code,

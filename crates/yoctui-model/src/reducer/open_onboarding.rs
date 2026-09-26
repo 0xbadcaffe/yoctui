@@ -150,6 +150,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::SetKernelView(..)
         | Action::SelectKernelFile { .. }
         | Action::LaunchKernelMenuconfig
+        | Action::TogglePlatformMenuconfigForeground
         | Action::OpenSelectedKernelFile
         | Action::ExploreSelectedKernelRoot
         | Action::CompileSelectedKernelDts

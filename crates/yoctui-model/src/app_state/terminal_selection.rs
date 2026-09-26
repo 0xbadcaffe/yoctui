@@ -62,6 +62,7 @@ impl App {
                 .collect(),
             session_id: None,
             writer_control_requested: false,
+            foreground: true,
         };
     }
 
@@ -83,12 +84,39 @@ impl App {
 
     pub fn platform_menuconfig_visible(&self) -> bool {
         self.embedded_platform_terminal()
+            .filter(|terminal| terminal.foreground)
             .and_then(|terminal| terminal.session_id)
             .is_some_and(|id| {
                 self.daemon.pty_sessions.iter().any(|session| {
                     session.id == id && !session.lifecycle.is_terminal()
                 })
             })
+    }
+
+    pub fn platform_menuconfig_running(&self) -> bool {
+        self.embedded_platform_terminal()
+            .and_then(|terminal| terminal.session_id)
+            .is_some_and(|id| {
+                self.daemon.pty_sessions.iter().any(|session| {
+                    session.id == id && !session.lifecycle.is_terminal()
+                })
+            })
+    }
+
+    pub fn platform_menuconfig_hidden(&self) -> bool {
+        self.platform_menuconfig_running() && !self.platform_menuconfig_visible()
+    }
+
+    pub fn toggle_platform_menuconfig_foreground(&mut self) {
+        let running = self.platform_menuconfig_running();
+        let terminal = match self.screen {
+            Screen::Kernel => &mut self.kernel.menuconfig_terminal,
+            Screen::Firmware => &mut self.firmware.menuconfig_terminal,
+            _ => return,
+        };
+        if running {
+            terminal.foreground = !terminal.foreground;
+        }
     }
 
     pub fn platform_menuconfig_waiting(&self) -> bool {

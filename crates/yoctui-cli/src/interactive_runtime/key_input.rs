@@ -17,6 +17,19 @@ impl InteractiveRuntime {
         let Some(mut input) = input_from_key(k) else {
             return Ok(true);
         };
+        if input == Input::CtrlG
+            && runtime.app.active_dialog().is_none()
+            && !runtime.app.menu.is_open()
+            && !runtime.app.onboarding.open
+            && runtime.app.platform_menuconfig_running()
+        {
+            let _ = compatibility_workspace_action(
+                &mut runtime.app,
+                Action::TogglePlatformMenuconfigForeground,
+            );
+            runtime.render_scheduler.invalidate(RenderCause::State);
+            return Ok(true);
+        }
         if input == Input::Esc
             && runtime.app.screen == Screen::BuildEnvironment
             && runtime.app.active_dialog().is_none()
@@ -38,6 +51,7 @@ impl InteractiveRuntime {
         if runtime.app.active_dialog().is_none()
             && !runtime.app.menu.is_open()
             && !runtime.app.onboarding.open
+            && !runtime.app.platform_menuconfig_visible()
         {
             match runtime.prefix_state.feed(input, Instant::now()) {
                 PrefixEvent::Awaiting => {

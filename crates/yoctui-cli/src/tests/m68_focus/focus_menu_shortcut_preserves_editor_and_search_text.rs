@@ -15,7 +15,7 @@ fn focus_menu_shortcut_preserves_editor_and_search_text() {
 }
 
 #[test]
-fn function_navigation_remains_global_while_an_embedded_menuconfig_owns_input() {
+fn function_keys_are_forwarded_while_an_embedded_menuconfig_owns_input() {
     let mut app = App::new(8, 1_000);
     app.screen = Screen::Kernel;
     app.focus = yoctui_model::FocusTarget::Workspace;
@@ -45,18 +45,13 @@ fn function_navigation_remains_global_while_an_embedded_menuconfig_owns_input() 
     app.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
         name: Some("kernel menuconfig".into()),
         session_id: Some(9),
+        foreground: true,
         ..yoctui_model::PlatformTerminalState::default()
     };
 
     assert!(yoctui_app::terminal_owns_input(&app));
-    assert_eq!(
-        direct_menu_shortcut_action(&app, Input::F2, false),
-        Some(Action::Open(Screen::Tasks))
-    );
-    assert_eq!(
-        direct_menu_shortcut_action(&app, Input::F12, false),
-        Some(Action::OpenApplicationMenu)
-    );
+    assert_eq!(direct_menu_shortcut_action(&app, Input::F2, false), None);
+    assert_eq!(direct_menu_shortcut_action(&app, Input::F12, false), None);
     assert_eq!(
         direct_menu_shortcut_action(&app, Input::Char('m'), false),
         None

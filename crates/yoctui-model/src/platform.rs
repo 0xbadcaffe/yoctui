@@ -266,6 +266,7 @@ pub struct PlatformTerminalState {
     pub prior_session_ids: Vec<u64>,
     pub session_id: Option<u64>,
     pub writer_control_requested: bool,
+    pub foreground: bool,
 }
 
 impl PlatformWorkbench {

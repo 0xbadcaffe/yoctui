@@ -42,7 +42,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             yoctui_model::workspace_screen_destination(app.screen),
             with_focus_shortcuts(
                 app,
-                "Ctrl+B prefix | [ copy | / search | O release | K confirmed kill | o take (viewer)",
+                "Ctrl+G Yoctui | all other keys go to menuconfig",
             ),
         );
     }
@@ -103,10 +103,18 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         }
         Screen::Kernel => {
-            "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
+            if app.platform_menuconfig_hidden() {
+                "Ctrl+G Resume menuconfig | Tab view | ↑/↓ select | Enter view | e edit | o explore | r refresh"
+            } else {
+                "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
+            }
         }
         Screen::Firmware => {
-            "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
+            if app.platform_menuconfig_hidden() {
+                "Ctrl+G Resume menuconfig | Tab view | ↑/↓ select | Enter view | e edit | o explore | r refresh"
+            } else {
+                "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
+            }
         }
         Screen::Sdk => {
             "↑/↓ select | i image | s standard | E extensible | t testsdk | T testsdkext | R refresh | P publish | n native | o open | c cancel"

@@ -23,7 +23,7 @@ pub enum Action {
     InspectKernel, KernelLoaded(PlatformInventory), KernelFailed(String),
     CycleKernelView, SetKernelView(PlatformView),
     SelectKernelFile { delta: isize, },
-    LaunchKernelMenuconfig, OpenSelectedKernelFile, ExploreSelectedKernelRoot,
+    LaunchKernelMenuconfig, TogglePlatformMenuconfigForeground, OpenSelectedKernelFile, ExploreSelectedKernelRoot,
     CompileSelectedKernelDts, DecompileSelectedKernelDtb,
     SelectDtcCompileOption { delta: isize, },
     AdjustDtcCompileOption { delta: isize, },

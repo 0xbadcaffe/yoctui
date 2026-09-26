@@ -47,6 +47,7 @@ pub enum DaemonPtyEvent {
         bytes: Vec<u8>,
         screen: Option<yoctui_protocol::daemon::PtyScreenSnapshot>,
     },
+    Screen(yoctui_protocol::daemon::PtyScreenSnapshot),
     Exited {
         session_id: PtySessionId,
         exit_code: Option<i32>,

@@ -44,6 +44,7 @@ fn selected_menuconfig_uses_inspector_width_and_reports_exact_terminal_cells() {
     app.kernel.menuconfig_terminal = yoctui_model::PlatformTerminalState {
         name: Some("kernel menuconfig".into()),
         session_id: Some(9),
+        foreground: true,
         ..yoctui_model::PlatformTerminalState::default()
     };
     assert_eq!(workbench_pane_widths(&app, 160, 50), [22, 138, 0]);

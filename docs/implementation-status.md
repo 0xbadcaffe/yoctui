@@ -1,12 +1,13 @@
-M84 is IN_PROGRESS for v0.1.237. The daemon can suppress the last ncurses
-snapshot in a short output burst, so a menu may remain visually stale until a
-keypress creates more output. Embedded platform terminals also conflate writer
-lease ownership with client keyboard focus, and detached launch currently
-reports success immediately after spawning an emulator. The active tasks add a
-quiet-period snapshot flush, a `Ctrl+G` PTY/Yoctui foreground toggle that keeps
-the same session alive, and verified emulator startup. Focused checks and live
-Kernel/U-Boot validation will precede the release build; the full workspace
-suite remains deferred for the agreed manual bug pass.
+M84 is IN_PROGRESS for v0.1.237. MENUCONFIG-INTERACTION-001 is DONE: the daemon
+flushes the final typed screen after a throttled output burst, and embedded
+Kernel/U-Boot sessions keep their writer lease while `Ctrl+G` hides or resumes
+the exact session. While visible, every other key including function keys and
+`Ctrl+B` reaches ncurses; the title and footer state who owns input. Focused
+model, app, CLI, UI, formatting, strict Clippy, and roadmap checks pass.
+DETACHED-TERMINAL-STARTUP-001 is active because detached launch still reports
+success immediately after spawning an emulator. Live validation and the
+versioned release remain; the full workspace suite stays deferred for the
+agreed manual bug pass.
 
 M83 is DONE in v0.1.236. The admitted `vt100` parser ignores DEC G0/G1
 Special Graphics state and previously exposed ncurses border source letters

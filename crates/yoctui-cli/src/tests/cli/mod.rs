@@ -108,6 +108,8 @@ mod ctrl_c_is_not_the_regular_cancel_key;
 
 mod search_clear_control_key_decodes_without_becoming_text;
 
+mod platform_menuconfig_ctrl_g_is_the_only_yoctui_escape;
+
 mod terminal_resize_requires_full_redraw;
 
 mod interactive_daemon_logging_keeps_stderr_out_of_terminal_sessions;
