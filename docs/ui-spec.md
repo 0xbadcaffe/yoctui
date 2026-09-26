@@ -75,6 +75,54 @@ Yoctui is not a collection of unrelated screens. It is a persistent workbench wi
 
 BitBake remains authoritative. Yoctui presents, controls, and organizes BitBake state.
 
+### M81 Hardware library and embedded document viewer
+
+`Hardware` is a first-class CONTENT destination. It is reachable from the
+Navigator and from `F12 → Navigate → Hardware`; neither route requires a
+loaded Yocto build environment. The workspace owns six fixed categories in
+this order: Board, SoC, Memory, Peripherals, Sensors, and Other. The category
+rail and file list retain independent bounded selection, and an empty category
+explains how to add a document.
+
+`a` or the Hardware contextual action opens a trapped local file browser. The
+browser starts at the last browsed directory (or the user's home directory),
+shows directories plus supported documents, permits parent traversal, and
+requires the operator to choose one of Board, SoC, Memory, Peripherals,
+Sensors, or Other before adding the selected regular file. Supported documents
+are PDF, KiCad schematic (`.kicad_sch` and legacy `.sch`), SVG, and common
+raster formats (`.png`, `.jpg`, `.jpeg`, `.gif`, `.bmp`, `.tif`, `.tiff`, and
+`.webp`). Unsupported files, symlinks, missing files, oversized source text,
+and failed converters produce a visible bounded error without changing the
+library.
+
+The library stores canonical absolute paths and categories in the private
+client session file. An add or remove is persisted atomically when it succeeds,
+and the complete valid library is restored after application restart and host
+reboot. Missing documents remain listed with a visible Missing state so the
+operator may repair the mount/path or remove the entry; Yoctui never copies or
+modifies the source document.
+
+Enter opens the selected document inside Yoctui. While a document is open, its
+viewer uses the full body between Header and Footer, temporarily replacing the
+Navigator, normal Workspace, and Inspector. Esc returns to the same category
+and file selection. PDFs expose page number/count, next/previous page, first
+and last page, searchable extracted text, next/previous result, vertical and
+horizontal pan, fit width, and zoom in/out/reset. Raster images expose the same
+pan and zoom controls. KiCad/SVG documents render graphically when the
+corresponding local converter is available and otherwise show a bounded,
+searchable source preview with an exact tool-install hint. PDF text remains a
+searchable embedded fallback if graphical conversion is unavailable. Rendering
+work runs outside the input/render loop and shows Braille activity until the
+typed result arrives. No viewer command launches an external window.
+
+Hardware list controls are `↑/↓` files, `←/→` categories, Enter view, `a` add,
+`d` remove with exact confirmation, and `r` reload. Viewer controls are
+`PgUp/PgDn` or `[`/`]` previous/next page, `Home/End` first/last page,
+`+`/`-` zoom, `0` reset/fit, arrows or `h/j/k/l` pan, `/` search, `n`/`N`
+next/previous match, `r` reload, and Esc close. The Footer and Help/Operator
+Guide publish these controls. Narrow terminals preserve the selected file and
+viewer position, use a single-column library layout, and never panic.
+
 ---
 
 ## 2. Persistent application shell

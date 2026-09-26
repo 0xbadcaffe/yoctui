@@ -1971,3 +1971,15 @@ an unsourced client resolved the Kernel provider, allocated a new terminal ID
 above recovered history, attached the embedded viewer, rendered Linux 6.18.49
 menuconfig inside Yoctui, and returned cleanly after termination. The full
 workspace suite remains deferred for the user's manual bug pass.
+
+## M81 — Persistent Hardware library and embedded viewer
+
+Goal: add a build-independent Hardware workspace for board, SoC, memory,
+peripheral, sensor, and other documents; import supported PDFs, schematics, SVG,
+and raster files through a local browser; and inspect them inside Yoctui with
+page navigation, zoom, pan, and search across restarts and host reboots.
+
+The work is split into HARDWARE-MODEL-001 for the typed library/viewer state,
+HARDWARE-PERSISTENCE-001 for validated browsing, conversion, and atomic session
+storage, HARDWARE-UI-001 for Navigator/application-menu access and the maximum
+body viewer, and HARDWARE-RELEASE-001 for the versioned optimized release.

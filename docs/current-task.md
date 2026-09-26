@@ -1,21 +1,18 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** HARDWARE-MODEL-001
+**Title:** Add typed Hardware library and viewer state
+**Status:** IN_PROGRESS
 
-PLATFORM-PTY-RELEASE-001 is complete in v0.1.233. The only remaining registry
-task requires a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto`
-compile capture. Existing retained evidence is bound to source base
-`d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
+Add the closed Hardware categories and supported document kinds, bounded
+library/browser/viewer/search state, typed reducer actions/effects, and normal
+and failure-path unit tests. Do not perform filesystem or converter work in the
+model.
 
-After new live evidence is supplied, run:
+Verify with:
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model hardware
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.

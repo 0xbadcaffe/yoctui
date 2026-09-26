@@ -1,5 +1,13 @@
 # Yoctui Implementation Status
 
+M81 is IN_PROGRESS from the v0.1.233 manual feature pass. Hardware will become
+a build-independent, persistent library grouped by Board, SoC, Memory,
+Peripherals, Sensors, and Other. The authoritative UI and architecture now
+define validated local browsing, PDF/KiCad/SVG/raster support, atomic restart
+persistence, asynchronous typed conversion, a full-body embedded viewer, and
+page/zoom/pan/search controls. HARDWARE-MODEL-001 is current; the unrelated
+M67 live-performance evidence task remains blocked.
+
 M80 is DONE in v0.1.233. A restarted plain client
 previously launched lazy Kernel/U-Boot inspection without reconstructing the
 selected Yocto environment. PLATFORM-INSPECTION-ENV-001 is DONE: both

@@ -9690,3 +9690,47 @@ required = true
 depends_on = ["PTY-SESSION-ID-RECOVERY-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.233. Focused inspection, relay, recovered-PTY, platform binding, formatting, strict CLI Clippy, version, and roadmap checks pass. Live Romulus validation from an unsourced client resolved virtual/kernel, allocated session 3 above recovered sessions 1 and 2 with one attached viewer, rendered Linux 6.18.49 menuconfig inside Yoctui, and returned cleanly after forced session termination. The optimized binary is installed and the initialized daemon is running; the full workspace suite remains deferred until requested."
+
+[[task]]
+id = "HARDWARE-MODEL-001"
+milestone = "M81"
+title = "Add typed Hardware library and viewer state"
+status = "IN_PROGRESS"
+priority = 2900
+required = true
+depends_on = ["PLATFORM-PTY-RELEASE-001"]
+verify = ["cargo test -p yoctui-model hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Define closed categories and document kinds, bounded catalog/browser/viewer/search state, typed actions/effects, and pure reducer coverage without filesystem or converter work."
+
+[[task]]
+id = "HARDWARE-PERSISTENCE-001"
+milestone = "M81"
+title = "Persist and load validated Hardware documents"
+status = "NOT_STARTED"
+priority = 2901
+required = true
+depends_on = ["HARDWARE-MODEL-001"]
+verify = ["cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Add bounded local browsing, regular-file validation, asynchronous PDF/image/schematic conversion with text fallback, stale-result rejection, and atomic private-session persistence across restart."
+
+[[task]]
+id = "HARDWARE-UI-001"
+milestone = "M81"
+title = "Render and operate the Hardware workspace and full-body viewer"
+status = "NOT_STARTED"
+priority = 2902
+required = true
+depends_on = ["HARDWARE-PERSISTENCE-001"]
+verify = ["cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Add Navigator and application-menu routes, categorized library and browser UI, maximum-body embedded viewer, page/zoom/pan/search controls, Help text, and responsive TestBackend coverage."
+
+[[task]]
+id = "HARDWARE-RELEASE-001"
+milestone = "M81"
+title = "Package and install the Hardware feature series"
+status = "NOT_STARTED"
+priority = 2903
+required = true
+depends_on = ["HARDWARE-UI-001"]
+verify = ["cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Bump v0.1.234, build and install the optimized binary, restart the initialized Romulus daemon, and perform a focused local Hardware smoke test. The full workspace suite remains deferred until requested."

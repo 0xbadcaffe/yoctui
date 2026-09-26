@@ -4584,3 +4584,32 @@ its form. After validation the existing utility-terminal preview receives the
 initialized Devtool executable, build directory, and argv as separate values;
 the daemon remains the sole process owner and UI widgets never parse Devtool
 output.
+
+## M81 Hardware library and document rendering
+
+`yoctui-model` owns the closed Hardware category and document-kind enums, the
+bounded persistent document records, browser/viewer state, search matches,
+viewport and zoom transitions, and typed load/persist effects. Paths are data;
+the model and UI never invoke a shell or parse converter output.
+
+`yoctui-app` maps Hardware list, browser, search, page, pan, and zoom input to
+typed actions. `yoctui-ui` renders only typed library rows, browser entries,
+text/raster cells, activity, failures, and viewer metadata. The open document
+projection may request the full body rectangle from the existing shell layout;
+it does not create a second terminal or external GUI.
+
+`yoctui` CLI owns local filesystem access and optional document tools. It
+validates regular non-symlink files, lists bounded browser entries, extracts
+bounded PDF/source search text, and converts one requested page or image into a
+bounded RGB cell grid off the input/render loop. Commands are executed as a
+program plus argv without a shell. PDF rendering uses Poppler when available;
+KiCad and SVG rendering use a discovered local converter and retain a typed
+source/text fallback when unavailable. The CLI returns typed success/failure
+actions and drops stale generation results.
+
+The private client `session.toml` stores only schema-bounded canonical paths and
+categories. The session store validates and atomically replaces the file on
+library mutation and restores the catalog before the initial screen is shown.
+Source documents remain external and are never copied, rewritten, or placed in
+daemon persistence. This feature is client-local and does not change the daemon
+protocol or BitBake authority.
