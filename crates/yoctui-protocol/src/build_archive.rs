@@ -44,6 +44,13 @@ impl BuildArchive {
                 .chain(build.build_dir.iter())
                 .chain(build.limitations.iter())
                 .chain(build.logs.iter().map(|l| &l.message))
+                .chain(build.logs.iter().flat_map(|log| {
+                    log.recipe
+                        .iter()
+                        .chain(log.task.iter())
+                        .chain(log.path.iter())
+                        .chain(log.build.iter())
+                }))
                 .chain(
                     build
                         .tasks

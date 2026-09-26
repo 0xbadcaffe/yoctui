@@ -63,5 +63,6 @@ mod raw_fixtures;
 use raw_fixtures::*;
 
 mod concept_layout_geometry;
+mod errors_history;
 
 use super::telemetry_strip::{TelemetryStripMode, telemetry_strip_mode};

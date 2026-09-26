@@ -145,7 +145,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
             key,
         ),
         Screen::Logs => log_workspace_action(app, key),
-        Screen::Errors => errors_action(key),
+        Screen::Errors => errors_action(app, key),
         Screen::BuildEnvironment => build_environment_action(key),
         Screen::Compatibility => {
             compatibility_ui_inspector_action(app.compatibility_ui.searching, key)

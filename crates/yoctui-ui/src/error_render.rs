@@ -2,6 +2,33 @@
 use super::*;
 
 pub(crate) fn errors(frame: &mut Frame, app: &App, area: Rect) {
+    if let Some(viewer) = &app.error_workspace.viewer {
+        render_error_log_viewer(frame, app, area, viewer);
+        return;
+    }
+    let [tabs, body] = Layout::vertical([Constraint::Length(3), Constraint::Min(1)]).areas(area);
+    let current = app.error_workspace.view == yoctui_model::ErrorWorkspaceView::Current;
+    let history = yoctui_model::historical_errors(&app.saved_builds.records);
+    frame.render_widget(
+        Paragraph::new(format!(
+            "{} 1 Current build ({})    {} 2 Past builds ({})    Tab switches",
+            if current { "▶" } else { " " },
+            app.logs.diagnostics().count(),
+            if current { " " } else { "▶" },
+            history.len(),
+        ))
+        .style(Style::default().add_modifier(Modifier::BOLD))
+        .block(Block::default().title("Build errors").borders(Borders::ALL)),
+        tabs,
+    );
+    if current {
+        current_errors(frame, app, body);
+    } else {
+        historical_error_view(frame, app, body, &history);
+    }
+}
+
+fn current_errors(frame: &mut Frame, app: &App, area: Rect) {
     let errors = app.logs.diagnostics().collect::<Vec<_>>();
     let selected = errors.get(app.error_selection).copied();
 
@@ -95,7 +122,7 @@ pub(crate) fn errors(frame: &mut Frame, app: &App, area: Rect) {
     );
     frame.render_widget(
         Paragraph::new(format!(
-            "{detail}\n\nEnter jumps to matching logs.  o opens the selected source log."
+            "{detail}\n\nEnter views the source log.  l jumps to matching live logs.  o opens the source externally."
         ))
         .block(
             Block::default()
@@ -104,6 +131,152 @@ pub(crate) fn errors(frame: &mut Frame, app: &App, area: Rect) {
         )
         .wrap(Wrap { trim: false }),
         chunks[1],
+    );
+}
+
+fn historical_error_view(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    errors: &[yoctui_model::HistoricalError<'_>],
+) {
+    let [table_area, detail_area] =
+        Layout::vertical([Constraint::Percentage(55), Constraint::Percentage(45)]).areas(area);
+    let selection = app
+        .error_workspace
+        .history_selection
+        .min(errors.len().saturating_sub(1));
+    let viewport = yoctui_model::centered_viewport_range(
+        (!errors.is_empty()).then_some(selection),
+        errors.len(),
+        usize::from(table_area.height.saturating_sub(3)).max(1),
+    );
+    let rows = errors[viewport.clone()]
+        .iter()
+        .enumerate()
+        .map(|(offset, entry)| {
+            let index = viewport.start + offset;
+            let status = match entry.build.outcome {
+                yoctui_model::SavedBuildOutcome::Failed if entry.resolved => "Resolved",
+                yoctui_model::SavedBuildOutcome::Failed => "Unresolved",
+                yoctui_model::SavedBuildOutcome::Succeeded => "Succeeded",
+                yoctui_model::SavedBuildOutcome::Cancelled => "Cancelled",
+                yoctui_model::SavedBuildOutcome::Lost => "Lost",
+                yoctui_model::SavedBuildOutcome::Incomplete => "Incomplete",
+            };
+            Row::new([
+                clock_text(UNIX_EPOCH + Duration::from_millis(entry.log.unix_ms)),
+                status.into(),
+                entry.build.target.clone(),
+                entry.log.recipe.clone().unwrap_or_default(),
+                entry.log.task.clone().unwrap_or_default(),
+                entry
+                    .log
+                    .message
+                    .lines()
+                    .next()
+                    .unwrap_or_default()
+                    .to_owned(),
+            ])
+            .style(if index == selection {
+                selected_log_style(app, entry.log.severity)
+            } else {
+                severity_style(app, entry.log.severity)
+            })
+        });
+    frame.render_widget(
+        Table::new(
+            rows,
+            [
+                Constraint::Length(8),
+                Constraint::Length(11),
+                Constraint::Length(24),
+                Constraint::Length(16),
+                Constraint::Length(16),
+                Constraint::Min(18),
+            ],
+        )
+        .header(
+            Row::new(["Time", "State", "Target", "Recipe", "Task", "Summary"])
+                .style(Style::default().bold()),
+        )
+        .block(
+            Block::default()
+                .title("Saved errors and warnings · newest build first")
+                .borders(Borders::ALL),
+        ),
+        table_area,
+    );
+    let detail = errors.get(selection).map_or_else(
+        || "No saved warning or error records are available.".into(),
+        |entry| {
+            format!(
+                "Target: {}\nMachine: {}\nOutcome: {:?}{}\nRecipe: {}  Task: {}\nSource log: {}\nSaved build: {}\n\n{}\n\nEnter view log · o external editor{}",
+                entry.build.target,
+                entry.build.machine.as_deref().unwrap_or("not recorded"),
+                entry.build.outcome,
+                if entry.resolved { " · Resolved by a newer successful build" } else { "" },
+                entry.log.recipe.as_deref().unwrap_or("not recorded"),
+                entry.log.task.as_deref().unwrap_or("not recorded"),
+                entry.log.path.as_deref().unwrap_or("not retained"),
+                entry.build.id,
+                entry.log.message,
+                if entry.resolved { " · d/Delete remove resolved history" } else { "" },
+            )
+        },
+    );
+    frame.render_widget(
+        Paragraph::new(detail).wrap(Wrap { trim: false }).block(
+            Block::default()
+                .title("Saved diagnostic")
+                .borders(Borders::ALL),
+        ),
+        detail_area,
+    );
+}
+
+fn render_error_log_viewer(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    viewer: &yoctui_model::ErrorLogViewer,
+) {
+    let status = if viewer.loading {
+        "Loading source log…"
+    } else if viewer.error.is_some() {
+        "Source file unavailable; showing retained diagnostic"
+    } else if viewer.path.is_some() {
+        "Read-only source log"
+    } else {
+        "Retained diagnostic"
+    };
+    let mut lines = vec![Line::from(status).style(Style::default().bold())];
+    if let Some(error) = &viewer.error {
+        lines.push(Line::from(format!("Read error: {error}")));
+        lines.push(Line::from(""));
+    }
+    lines.extend(
+        viewer
+            .content
+            .lines()
+            .skip(viewer.scroll)
+            .map(|line| Line::from(line.to_owned())),
+    );
+    let total = viewer.content.lines().count().max(1);
+    let visible = usize::from(area.height.saturating_sub(4)).max(1);
+    let scroll = BoundedScrollIndicator::new(viewer.scroll, visible, total).label();
+    frame.render_widget(
+        Paragraph::new(lines).wrap(Wrap { trim: false }).block(
+            Block::default()
+                .title(format!("{} · {} · Esc back", viewer.title, scroll))
+                .title_style(
+                    Style::default()
+                        .fg(ThemePalette::for_app(app).accent)
+                        .add_modifier(Modifier::BOLD),
+                )
+                .borders(Borders::ALL),
+        ),
+        area,
     );
 }
 
@@ -247,7 +420,9 @@ pub(crate) fn render_correlated_error_log(
     );
     frame.render_widget(
         Paragraph::new(vec![
-            Line::from("Enter matching log · o source · B rebuild options"),
+            Line::from(
+                "Enter view source log · l matching live log · o external · B rebuild options",
+            ),
             Line::from("Rebuild: review + confirmation required."),
         ])
         .block(

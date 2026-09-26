@@ -338,6 +338,21 @@ impl InteractiveRuntime {
         ) {
             let _ = build_cancellation_confirmation_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
+        } else if matches!(
+            runtime.app.active_dialog(),
+            Some(Dialog::ResolvedBuildRemovalConfirmation { .. })
+        ) {
+            let effect = resolved_build_removal_confirmation_action(input)
+                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));
+            if let Some(Effect::RemoveSavedBuild(id)) = effect {
+                let action = match build_archive::remove(&runtime.history_root, id.clone()).await {
+                    Ok(_) => Action::ResolvedBuildRemoved { id },
+                    Err(error) => Action::ResolvedBuildRemovalFailed {
+                        message: error.to_string(),
+                    },
+                };
+                let _ = update(&mut runtime.app, action);
+            }
         } else if matches!(runtime.app.active_dialog(), Some(Dialog::QuitConfirmation)) {
             let _ = quit_confirmation_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));

@@ -177,6 +177,7 @@ pub struct App {
     pub global_search_content: GlobalSearchContentState,
     pub global_search_root: Option<PathBuf>,
     pub error_selection: usize,
+    pub error_workspace: ErrorWorkspaceState,
     pub recipe_selection: usize,
     pub recipe_preview_scroll: usize,
     pub layer_selection: usize,

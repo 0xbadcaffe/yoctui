@@ -1,12 +1,47 @@
-pub fn errors_action(key: Input) -> Option<Action> {
+pub fn errors_action(app: &App, key: Input) -> Option<Action> {
+    if app.error_workspace.viewer.is_some() {
+        return match key {
+            Input::Esc => Some(Action::CloseErrorLog),
+            Input::Up | Input::Char('k') => Some(Action::ScrollErrorLog { delta: -1 }),
+            Input::Down | Input::Char('j') => Some(Action::ScrollErrorLog { delta: 1 }),
+            Input::PageUp => Some(Action::ScrollErrorLog { delta: -20 }),
+            Input::PageDown => Some(Action::ScrollErrorLog { delta: 20 }),
+            Input::Home => Some(Action::ScrollErrorLog { delta: isize::MIN }),
+            Input::End => Some(Action::ScrollErrorLog { delta: isize::MAX }),
+            _ => None,
+        };
+    }
     if let Some(delta) = collection_scroll_delta(key) {
-        return Some(Action::SelectError { delta });
+        return Some(match app.error_workspace.view {
+            yoctui_model::ErrorWorkspaceView::Current => Action::SelectError { delta },
+            yoctui_model::ErrorWorkspaceView::History => Action::SelectHistoricalError { delta },
+        });
     }
     match key {
-        Input::Up | Input::Char('k') => Some(Action::SelectError { delta: -1 }),
-        Input::Down | Input::Char('j') => Some(Action::SelectError { delta: 1 }),
-        Input::Enter => Some(Action::JumpToSelectedError),
+        Input::Tab => Some(Action::SetErrorWorkspaceView(
+            yoctui_model::ErrorWorkspaceView::History,
+        )),
+        Input::BackTab => Some(Action::SetErrorWorkspaceView(
+            yoctui_model::ErrorWorkspaceView::Current,
+        )),
+        Input::Char('1') => Some(Action::SetErrorWorkspaceView(
+            yoctui_model::ErrorWorkspaceView::Current,
+        )),
+        Input::Char('2') => Some(Action::SetErrorWorkspaceView(
+            yoctui_model::ErrorWorkspaceView::History,
+        )),
+        Input::Up | Input::Char('k') => Some(match app.error_workspace.view {
+            yoctui_model::ErrorWorkspaceView::Current => Action::SelectError { delta: -1 },
+            yoctui_model::ErrorWorkspaceView::History => Action::SelectHistoricalError { delta: -1 },
+        }),
+        Input::Down | Input::Char('j') => Some(match app.error_workspace.view {
+            yoctui_model::ErrorWorkspaceView::Current => Action::SelectError { delta: 1 },
+            yoctui_model::ErrorWorkspaceView::History => Action::SelectHistoricalError { delta: 1 },
+        }),
+        Input::Enter => Some(Action::OpenSelectedErrorLog),
+        Input::Char('l') => Some(Action::JumpToSelectedError),
         Input::Char('o') => Some(Action::OpenSelectedErrorSource),
+        Input::Char('d') | Input::Delete => Some(Action::RequestResolvedBuildRemoval),
         _ => None,
     }
 }

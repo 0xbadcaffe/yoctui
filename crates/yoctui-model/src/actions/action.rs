@@ -332,6 +332,12 @@ pub enum Action {
     CopySelectedLog, ExportFilteredLogs,
     SelectError { delta: isize, },
     JumpToSelectedError, OpenSelectedErrorSource,
+    SetErrorWorkspaceView(ErrorWorkspaceView), SelectHistoricalError { delta: isize, },
+    OpenSelectedErrorLog, ErrorLogLoaded { path: PathBuf, content: String, },
+    ErrorLogLoadFailed { path: PathBuf, message: String, }, ScrollErrorLog { delta: isize, },
+    CloseErrorLog, RequestResolvedBuildRemoval, ConfirmResolvedBuildRemoval,
+    CancelResolvedBuildRemoval, ResolvedBuildRemoved { id: String, },
+    ResolvedBuildRemovalFailed { message: String, },
 
     // Recipe, task, dependency, and signature workflows.
     SelectRecipe { delta: isize, },

@@ -33,6 +33,10 @@ fn record(id: usize) -> SavedBuild {
             unix_ms: 15,
             severity: yoctui_model::Severity::Info,
             message: format!("build {id}"),
+            recipe: None,
+            task: None,
+            path: None,
+            build: None,
         }],
         tasks: Vec::new(),
         limitations: Vec::new(),
@@ -41,3 +45,4 @@ fn record(id: usize) -> SavedBuild {
 mod archive_corrupt_oversized_and_symlink_data_is_rejected_without_overwrite;
 mod archive_restart_load_requires_no_daemon_or_environment;
 mod archive_round_trip_retains_distinct_builds_and_private_bounds;
+mod errors_resolved_cleanup_removes_only_selected_archive_identity;

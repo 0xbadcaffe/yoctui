@@ -58,6 +58,8 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
             app.screen = Screen::Errors;
+            app.error_workspace.view = ErrorWorkspaceView::Current;
+            app.error_workspace.viewer = None;
             app.error_selection = app.logs.diagnostics().count().saturating_sub(1);
             app.notification = None;
         }
@@ -309,6 +311,11 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.error_selection = shifted_index(app.error_selection, delta, count);
         }
         Action::JumpToSelectedError => {
+            if app.error_workspace.view == ErrorWorkspaceView::History {
+                app.notification =
+                    Some("Saved build errors are not part of the current live log stream.".into());
+                return None;
+            }
             let id = {
                 app.logs
                     .diagnostics()
@@ -322,8 +329,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
         }
         Action::OpenSelectedErrorSource => {
-            let selected = app.logs.diagnostics().nth(app.error_selection);
-            if let Some(path) = selected.and_then(|entry| entry.path.clone()) {
+            if let Some(path) = selected_error_path(app) {
                 return Some(Effect::OpenInEditor(path));
             }
             app.notification = Some("The selected diagnostic has no source log path.".into());

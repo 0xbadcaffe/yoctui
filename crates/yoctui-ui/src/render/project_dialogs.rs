@@ -31,6 +31,24 @@ fn render_project_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool {
             popup,
         );
         return true;
+    } else if let Some(Dialog::ResolvedBuildRemovalConfirmation { id, target }) =
+        app.active_dialog()
+    {
+        let popup = bounded_dialog_rect(area, 72, 9);
+        clear_popup(frame, app, popup);
+        frame.render_widget(
+            Paragraph::new(format!(
+                "Target: {target}\nSaved build: {id}\n\nRemove this resolved failure from Yoctui history?\nBitBake logs and build output will remain untouched.\n\n[y/Enter] Remove history  [n/Esc] Keep history"
+            ))
+            .block(dialog_block(
+                app,
+                "Remove resolved build history",
+                DialogTone::Destructive,
+            ))
+            .wrap(Wrap { trim: false }),
+            popup,
+        );
+        return true;
     } else if let Some(Dialog::SignatureTaskPicker(picker)) = app.active_dialog() {
         let popup = Rect::new(
             area.width / 4,

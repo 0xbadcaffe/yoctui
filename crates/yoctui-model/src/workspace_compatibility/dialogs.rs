@@ -35,6 +35,7 @@ pub fn workspace_dialog_requirement(dialog: &Dialog) -> WorkspaceEffectRequireme
         | Dialog::TerminalLaunch(_)
         | Dialog::RecipeEditor(_)
         | Dialog::BuildCancellationConfirmation
+        | Dialog::ResolvedBuildRemovalConfirmation { .. }
         | Dialog::QuitConfirmation => WorkspaceEffectRequirement::ClientLocal,
         Dialog::BuildOptions | Dialog::BuildTarget { .. } => {
             WorkspaceEffectRequirement::one(Id::BitBakeBuild)

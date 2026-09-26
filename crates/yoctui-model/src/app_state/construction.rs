@@ -182,6 +182,7 @@ impl App {
             global_search_content: GlobalSearchContentState::Idle,
             global_search_root: None,
             error_selection: 0,
+            error_workspace: ErrorWorkspaceState::default(),
             recipe_selection: 0,
             recipe_preview_scroll: 0,
             layer_selection: 0,

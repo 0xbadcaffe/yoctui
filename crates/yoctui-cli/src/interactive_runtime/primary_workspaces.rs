@@ -471,18 +471,24 @@ impl InteractiveRuntime {
                 }
                 _ => {}
             }
-        } else if runtime.app.screen == Screen::Errors && errors_action(input).is_some() {
-            let action = errors_action(input).expect("Errors action was checked");
-            if let Some(Effect::OpenInEditor(path)) =
-                compatibility_workspace_action(&mut runtime.app, action)
-            {
-                open_in_editor(
-                    &runtime.guard,
-                    &mut runtime.app,
-                    path,
-                    runtime.editor_command.as_deref(),
-                )
-                .await;
+        } else if runtime.app.screen == Screen::Errors
+            && errors_action(&runtime.app, input).is_some()
+        {
+            let action = errors_action(&runtime.app, input).expect("Errors action was checked");
+            match compatibility_workspace_action(&mut runtime.app, action) {
+                Some(Effect::OpenInEditor(path)) => {
+                    open_in_editor(
+                        &runtime.guard,
+                        &mut runtime.app,
+                        path,
+                        runtime.editor_command.as_deref(),
+                    )
+                    .await;
+                }
+                Some(Effect::LoadErrorLog(path)) => {
+                    load_error_log(&mut runtime.app, path).await;
+                }
+                _ => {}
             }
         } else if route_dependency_workspace(runtime, input).await {
         } else {

@@ -9618,23 +9618,23 @@ notes = "DONE in v0.1.231. Confirmed execution discards the form/preview return 
 id = "ERRORS-HISTORY-VIEWER-001"
 milestone = "M79"
 title = "Unify current and historical build errors with an in-workspace log viewer"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2700
 required = true
 depends_on = ["RAW-CATALOG-RETURN-001"]
 verify = ["cargo test -p yoctui-model errors_history", "cargo test -p yoctui-app errors_history", "cargo test -p yoctui-ui errors_history", "cargo test -p yoctui --all-features error_log", "cargo fmt --all --check"]
-notes = "User-directed M79 work supersedes the blocked live-performance evidence task."
+notes = "DONE in the v0.1.232 series. Errors now separates current and saved diagnostics, retains archived recipe/task/build/path context, derives resolved state only from a newer same-target same-machine success, and opens bounded source logs inside the workspace with scroll and retained-text fallback."
 
 [[task]]
 id = "ERRORS-RESOLVED-CLEANUP-001"
 milestone = "M79"
 title = "Remove confirmed resolved build failures from private history"
-status = "PENDING"
+status = "DONE"
 priority = 2701
 required = true
 depends_on = ["ERRORS-HISTORY-VIEWER-001"]
 verify = ["cargo test -p yoctui-model errors_resolved_cleanup", "cargo test -p yoctui-app errors_resolved_cleanup", "cargo test -p yoctui-protocol build_archive", "cargo test -p yoctui --all-features build_archive", "cargo fmt --all --check"]
-notes = "Cleanup is limited to resolved historical records and never removes Yocto artifacts."
+notes = "DONE in the v0.1.232 series. Delete/d is gated to proven-resolved failures, names the exact saved identity in a trapped confirmation, and atomically removes only that private archive record while preserving all Yocto logs and artifacts."
 
 [[task]]
 id = "ERRORS-WORKSPACE-RELEASE-001"

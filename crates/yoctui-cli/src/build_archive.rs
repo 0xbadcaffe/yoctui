@@ -66,11 +66,15 @@ fn read(root: &Path) -> Result<BuildArchive> {
     Ok(archive)
 }
 fn save(root: &Path, record: yoctui_model::SavedBuild) -> Result<()> {
-    let dir = directory(root)?;
     let mut archive = read(root)?;
     archive.remember(record);
+    write(root, &archive)
+}
+
+fn write(root: &Path, archive: &BuildArchive) -> Result<()> {
+    let dir = directory(root)?;
     archive.validate().map_err(anyhow::Error::msg)?;
-    let bytes = serde_json::to_vec(&archive)?;
+    let bytes = serde_json::to_vec(archive)?;
     ensure!(
         bytes.len() <= MAX_ARCHIVE_BYTES,
         "build history exceeds 8 MiB"
@@ -97,6 +101,22 @@ fn save(root: &Path, record: yoctui_model::SavedBuild) -> Result<()> {
         let _ = fs::remove_file(&temporary);
     }
     result
+}
+
+pub async fn remove(root: &Path, id: String) -> Result<BuildArchive> {
+    let root = root.to_owned();
+    tokio::task::spawn_blocking(move || {
+        let mut archive = read(&root)?;
+        let before = archive.builds.len();
+        archive.builds.retain(|build| build.id != id);
+        ensure!(
+            archive.builds.len() != before,
+            "saved build no longer exists"
+        );
+        write(&root, &archive)?;
+        Ok(archive)
+    })
+    .await?
 }
 
 pub struct Recorder {

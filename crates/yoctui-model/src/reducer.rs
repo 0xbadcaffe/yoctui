@@ -51,6 +51,14 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
             crate::saved_builds::reduce_saved_build(app, action);
             None
         }
+        Action::SetErrorWorkspaceView(..) | Action::SelectHistoricalError { .. }
+        | Action::OpenSelectedErrorLog | Action::ErrorLogLoaded { .. }
+        | Action::ErrorLogLoadFailed { .. } | Action::ScrollErrorLog { .. }
+        | Action::CloseErrorLog | Action::RequestResolvedBuildRemoval
+        | Action::ConfirmResolvedBuildRemoval | Action::CancelResolvedBuildRemoval
+        | Action::ResolvedBuildRemoved { .. } | Action::ResolvedBuildRemovalFailed { .. } => {
+            crate::error_workspace::reduce_error_workspace(app, action)
+        }
         Action::GitUiDetected(program) => {
             app.gitui_program = program;
             None

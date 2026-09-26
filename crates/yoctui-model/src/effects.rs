@@ -42,6 +42,8 @@ pub enum Effect {
     Terminal(TerminalEffect),
     LaunchDetachedTerminal(TerminalLaunchRequest),
     OpenInEditor(PathBuf),
+    LoadErrorLog(PathBuf),
+    RemoveSavedBuild(String),
     CopyToClipboard(String),
     OpenWorkspaceEditor {
         label: String,

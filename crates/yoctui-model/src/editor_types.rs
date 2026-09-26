@@ -205,6 +205,10 @@ pub enum Dialog {
     TerminalLaunch(TerminalLaunchDialog),
     RecipeEditor(RecipeEditor),
     BuildCancellationConfirmation,
+    ResolvedBuildRemovalConfirmation {
+        id: String,
+        target: String,
+    },
     QuitConfirmation,
 }
 
@@ -239,6 +243,7 @@ impl Dialog {
             | Self::DevtoolUpgradeConfirmation(_)
             | Self::BbmaskConfirmation(_)
             | Self::BuildCancellationConfirmation
+            | Self::ResolvedBuildRemovalConfirmation { .. }
             | Self::QuitConfirmation => true,
             Self::Security(dialog) => matches!(
                 dialog,

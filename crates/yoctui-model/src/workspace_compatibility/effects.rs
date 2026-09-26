@@ -10,6 +10,8 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::VerifyBuildEnvironment { .. }
         | Effect::CloneBuildEnvironment(_)
         | Effect::OpenInEditor(_)
+        | Effect::LoadErrorLog(_)
+        | Effect::RemoveSavedBuild(_)
         | Effect::CopyToClipboard(_)
         | Effect::Terminal(_)
         | Effect::LaunchDetachedTerminal(_)

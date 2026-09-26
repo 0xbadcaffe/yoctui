@@ -15,6 +15,14 @@ pub struct SavedBuildLog {
     pub unix_ms: u64,
     pub severity: Severity,
     pub message: String,
+    #[serde(default)]
+    pub recipe: Option<String>,
+    #[serde(default)]
+    pub task: Option<String>,
+    #[serde(default)]
+    pub path: Option<String>,
+    #[serde(default)]
+    pub build: Option<String>,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SavedBuildTask {

@@ -162,7 +162,13 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
             }
         },
         Screen::Errors => {
-            "↑/↓ select | Enter matching log | o source | s severity filter | f pause/follow | B rebuild options"
+            if app.error_workspace.viewer.is_some() {
+                "↑/↓ PgUp/PgDn scroll | Home/End | Esc error list"
+            } else if app.error_workspace.view == yoctui_model::ErrorWorkspaceView::History {
+                "1 current | 2 past | Tab switch | ↑/↓ select | Enter view log | o external | d/Delete remove resolved"
+            } else {
+                "1 current | 2 past | Tab switch | ↑/↓ select | Enter view log | l matching live log | o external"
+            }
         }
         Screen::Help => "Esc dashboard | q quit",
         Screen::Settings => {

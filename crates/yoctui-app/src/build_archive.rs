@@ -118,6 +118,10 @@ pub fn capture_saved_build(snapshot: &DaemonSnapshot, saved_unix_ms: u64) -> Opt
             .map(|l| SavedBuildLog {
                 unix_ms: l.unix_ms,
                 message: text(&l.message),
+                recipe: l.recipe.as_deref().map(text),
+                task: l.task.as_deref().map(text),
+                path: l.path.as_deref().map(text),
+                build: l.build.as_deref().map(text),
                 severity: match l.severity {
                     LogSeverity::Trace => Severity::Trace,
                     LogSeverity::Warning => Severity::Warning,

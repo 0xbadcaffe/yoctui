@@ -2,6 +2,8 @@ use maintenance_cli::MaintenanceCliCoordinator;
 #[cfg(unix)]
 use yoctui_utils::unix_ms;
 mod build_archive;
+mod error_log;
+use error_log::*;
 
 use anyhow::{Context, Result};
 
@@ -81,11 +83,12 @@ use yoctui_app::{
     qemu_actions_for_runner_event, qemu_cancellation_confirmation_action,
     qemu_launch_confirmation_action, qemu_launch_dialog_action, quit_confirmation_action,
     raw_mode_input, recipe_editor_action, recover_daemon_model_metadata,
-    sdk_actions_for_runner_event, sdk_build_confirmation_action,
-    sdk_cancellation_confirmation_action, sdk_native_confirmation_action, sdk_native_dialog_action,
-    sdk_publish_confirmation_action, sdk_publish_dialog_action, sdk_workspace_action,
-    security_actions_for_mapper_event, security_dialog_action, security_workspace_action,
-    settings_action, signature_task_picker_action, signature_workspace_action, tasks_action,
+    resolved_build_removal_confirmation_action, sdk_actions_for_runner_event,
+    sdk_build_confirmation_action, sdk_cancellation_confirmation_action,
+    sdk_native_confirmation_action, sdk_native_dialog_action, sdk_publish_confirmation_action,
+    sdk_publish_dialog_action, sdk_workspace_action, security_actions_for_mapper_event,
+    security_dialog_action, security_workspace_action, settings_action,
+    signature_task_picker_action, signature_workspace_action, tasks_action,
     terminal_launch_dialog_action, test_actions_for_runner_event,
     test_cancellation_confirmation_action, test_comparison_confirmation_action,
     test_comparison_dialog_action, test_comparison_workspace_action,

@@ -362,6 +362,7 @@ mod devtool_editor_viewport;
 mod devtool_patch;
 mod devtool_workspace;
 mod devwork_editor_detects_languages_and_supports_search_undo_and_redo;
+mod errors_history;
 mod image_artifact_model_correlates_states_search_and_stable_selection;
 mod live_tasks_reducer_keeps_honest_counts_filters_and_bounded_selection;
 mod navigator_workbench_order_keeps_build_and_validation_groups_contiguous;

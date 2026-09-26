@@ -4000,6 +4000,15 @@ resolved by a newer matching successful build can be removed from Yoctui's
 private archive after confirmation. The blocked real-Poky performance evidence
 task remains unchanged and will resume after this user-directed series.
 
+ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are DONE in the
+v0.1.232 series. Errors provides separate current and saved-build views,
+retains archived task-log context, marks a failure resolved only from a newer
+matching target/machine success, and opens source logs in a bounded scrollable
+read-only viewer with a retained diagnostic fallback. Resolved cleanup is
+confirmation-gated and atomically removes only the selected Yoctui archive
+identity; focused model, app, UI, file-bound, archive, and formatting checks
+pass.
+
 M77 is planned from the user's Devtool workspace correction pass. The first
 task repairs bounded file/document viewport navigation, Vim-style integrated
 editing visibility, complete known-language syntax projection, and semantic

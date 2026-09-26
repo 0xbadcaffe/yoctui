@@ -95,6 +95,10 @@ fn archive_history_renders_saved_summary_logs_tasks_and_missing_evidence() {
             unix_ms: 2000,
             severity: Severity::Error,
             message: "retained compiler diagnostic".into(),
+            recipe: Some("busybox".into()),
+            task: Some("do_compile".into()),
+            path: None,
+            build: Some("core-image-minimal".into()),
         }],
         tasks: vec![SavedBuildTask {
             recipe: "busybox".into(),

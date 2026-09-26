@@ -61,6 +61,14 @@ pub fn build_cancellation_confirmation_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn resolved_build_removal_confirmation_action(key: Input) -> Option<Action> {
+    match key {
+        Input::Enter | Input::Char('y') => Some(Action::ConfirmResolvedBuildRemoval),
+        Input::Esc | Input::Char('n') => Some(Action::CancelResolvedBuildRemoval),
+        _ => None,
+    }
+}
+
 pub fn quit_confirmation_action(key: Input) -> Option<Action> {
     match key {
         Input::Char('y') | Input::Char('Y') | Input::Enter => Some(Action::ConfirmQuit),
