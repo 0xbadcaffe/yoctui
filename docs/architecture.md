@@ -3863,7 +3863,9 @@ Platform menuconfig argv uses the exact BitBake executable from the current
 compatibility environment. The CLI wraps that typed request in a hidden relay
 process for embedded and detached destinations. The daemon adds the stable
 custom terminal variables to its captured BitBake environment before any
-metadata server starts. The relay accepts the generated wrapper path over one
+metadata server starts. Each relay allocates a unique process-scoped socket
+beneath Yoctui's private runtime directory and publishes only that endpoint to
+its BitBake child. The relay accepts the generated wrapper path over that
 private runtime socket, bounds and validates that path beneath the active build
 directory, then executes the wrapper while inheriting the selected PTY. The
 worker-side helper waits for the wrapper result before BitBake completes the
@@ -4498,8 +4500,11 @@ The client loads them asynchronously even when initial daemon attachment fails.
 Interactive attach startup remains snapshot-only and does not probe BitBake.
 When the user opens Kernel or U-Boot / BIOS, the CLI lazily creates one bridge
 backend using the daemon-authorized compatibility snapshot and the exact attached
-build directory. The runtime caches that backend for later platform inspection
-and shuts it down with the client. Process mode reports that bridge metadata is
+build directory. Before bridge creation, the background operation validates and
+initializes the selected build profile and supplies that child-only environment
+to the bridge; this does not mutate the client process environment or block the
+terminal event loop. The runtime shuts the backend down after the platform
+inspection. Process mode reports that bridge metadata is
 required instead of attempting an incomplete recipe inspection. The bridge
 starts Tinfoil's metadata server on demand and asks BitBake for the best
 provider before inspecting virtual targets such as `virtual/kernel`; this path

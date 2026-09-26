@@ -9646,3 +9646,36 @@ required = true
 depends_on = ["ERRORS-RESOLVED-CLEANUP-001"]
 verify = ["cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.232. Focused model/app/UI, source-log bound, archive compatibility/removal, reviewed Errors golden, version, formatting, strict workspace Clippy, and roadmap checks pass. The optimized binary is installed and the initialized Romulus daemon is restarted; the full suite remains deferred for the user's manual bug pass."
+
+[[task]]
+id = "PLATFORM-INSPECTION-ENV-001"
+milestone = "M80"
+title = "Initialize the selected build environment for platform inspection"
+status = "IN_PROGRESS"
+priority = 2800
+required = true
+depends_on = ["ERRORS-WORKSPACE-RELEASE-001"]
+verify = ["cargo test -p yoctui --bin yoctui platform_inspection", "cargo test -p yoctui --bin yoctui startup_environment", "cargo fmt --all --check"]
+notes = "A restarted attached client currently starts its lazy Kernel/U-Boot bridge from the invoking terminal environment, which can omit BitBake's Python modules even though the daemon owns valid compatibility authority. Initialize the exact selected profile off the UI loop and pass that environment to the bridge."
+
+[[task]]
+id = "MENUCONFIG-RELAY-ISOLATION-001"
+milestone = "M80"
+title = "Isolate concurrent Kernel and U-Boot menuconfig relays"
+status = "NOT_STARTED"
+priority = 2801
+required = true
+depends_on = ["PLATFORM-INSPECTION-ENV-001"]
+verify = ["cargo test -p yoctui --bin yoctui menuconfig_relay", "cargo fmt --all --check"]
+notes = "Replace the process-wide fixed menuconfig socket with a private per-relay endpoint so retries or concurrent platform sessions cannot consume another relay's one-shot handoff and cause a broken pipe."
+
+[[task]]
+id = "PLATFORM-PTY-RELEASE-001"
+milestone = "M80"
+title = "Package and install the platform inspection and menuconfig correction series"
+status = "NOT_STARTED"
+priority = 2802
+required = true
+depends_on = ["MENUCONFIG-RELAY-ISOLATION-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Prepare v0.1.233, build and install the optimized binary, restart the initialized Romulus daemon, and verify plain-client platform inspection plus isolated embedded menuconfig startup. The full workspace suite remains deferred until requested."

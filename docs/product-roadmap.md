@@ -1952,3 +1952,16 @@ ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are complete in the
 v0.1.232 series. ERRORS-WORKSPACE-RELEASE-001 packages the focused validation
 and optimized binary. M79 is complete; the full workspace suite remains
 deferred for the user's manual bug pass.
+
+## M80 — Platform inspection and embedded menuconfig reliability
+
+Goal: make lazy Kernel and U-Boot provider inspection work after a client
+restart from a plain terminal, and prevent embedded menuconfig retries or
+parallel platform sessions from breaking one another's custom-terminal
+handoff.
+
+PLATFORM-INSPECTION-ENV-001 reconstructs the exact selected Yocto environment
+before starting the client-owned metadata bridge.
+MENUCONFIG-RELAY-ISOLATION-001 gives every relay its own private runtime socket.
+PLATFORM-PTY-RELEASE-001 packages, installs, and smoke-tests v0.1.233 while the
+full workspace suite remains deferred for the user's manual bug pass.

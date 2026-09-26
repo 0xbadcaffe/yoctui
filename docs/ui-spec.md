@@ -5481,6 +5481,9 @@ native argv is used by the detached destination, where the desktop emulator is
 the owning terminal. After embedded confirmation, the footer retains a typed
 Braille activity status until the daemon reports a running PTY with a screen
 snapshot; accepting the request does not clear that waiting state.
+Each relay owns a unique socket for its lifetime. A retry or concurrent Kernel
+or U-Boot session cannot connect to, consume, remove, or otherwise interrupt an
+existing relay's one-shot handoff.
 
 ## 38. Embedded Image Console
 
@@ -5565,6 +5568,11 @@ previous successful kernel build. Missing generated artifacts remain an
 explicit empty inventory while provider metadata and source actions remain
 available. Kernel and U-Boot / BIOS inspection uses one owned background bridge,
 so navigation, Logs, and quit remain responsive while metadata is pending.
+The client reconstructs the exact selected build profile before starting that
+bridge, including after application restart from an unsourced terminal while
+attached to the initialized daemon. Loading must finish as an available or
+explicit failed state; it never remains pending because the client omitted the
+selected build environment.
 Inspection fails explicitly after 120 seconds and confirmed quit terminates the
 owned bridge. Restoring either destination renders its loading state before
 beginning the cold metadata query, so first-frame startup does not wait for

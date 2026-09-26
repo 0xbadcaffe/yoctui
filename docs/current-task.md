@@ -1,21 +1,19 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** PLATFORM-INSPECTION-ENV-001
+**Title:** Initialize the selected build environment for platform inspection
+**Status:** IN_PROGRESS
 
-ERRORS-WORKSPACE-RELEASE-001 is complete in v0.1.232. The only remaining
-registry task requires a new genuine source/binary-bound Yocto 6.0.2
-`linux-yocto` compile capture. Existing retained evidence is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
+Reproduce from a plain terminal while the initialized Romulus daemon is
+running: restoring Kernel or U-Boot begins inspection, then the client-created
+bridge fails because `bb` is absent from its inherited Python path. Initialize
+the selected build profile off the terminal loop and provide its exact
+environment to the capability-authorized bridge for both platform workspaces.
 
-After new live evidence is supplied, run:
+Verify with:
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui --bin yoctui platform_inspection
+cargo test -p yoctui --bin yoctui startup_environment
+cargo fmt --all --check
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.
