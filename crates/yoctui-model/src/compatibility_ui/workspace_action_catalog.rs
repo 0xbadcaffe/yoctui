@@ -26,6 +26,12 @@ pub(crate) fn compatibility_ui_workspace_action_seeds(
             Action::local("dashboard.favorites", "Browse favorite commands", "f"),
             Action::local("dashboard.terminals", "Open terminal sessions", "t"),
         ],
+        Destination::Hardware => vec![
+            Action::local("hardware.add", "Add document", "a"),
+            Action::local("hardware.view", "View selected document", "Enter"),
+            Action::local("hardware.remove", "Remove selected document", "d"),
+            Action::local("hardware.reload", "Reload selected document", "r"),
+        ],
         Destination::Recipes => vec![
             Action::capability(
                 "recipes.metadata",

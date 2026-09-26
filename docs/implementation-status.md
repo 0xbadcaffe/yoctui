@@ -11,8 +11,12 @@ generation-bound effects, and pure reducer tests. HARDWARE-PERSISTENCE-001 is
 DONE: the client validates supported regular files, runs bounded asynchronous
 PDF/raster/schematic loads with text fallback, and atomically restores and
 persists the catalog. Focused browser, symlink, image, and restart tests pass.
-HARDWARE-UI-001 is current; the unrelated M67 live-performance evidence task
-remains blocked.
+HARDWARE-UI-001 is DONE: Navigator and F12 routes open the responsive six-category
+library and local browser, missing paths remain visible, and the embedded full-body
+viewer provides bounded PDF/KiCad/SVG/raster rendering with page, zoom, pan, search,
+reload, and removal controls. Focused model, app, CLI, responsive TestBackend,
+formatting, and strict targeted Clippy checks pass. HARDWARE-RELEASE-001 is current;
+the unrelated M67 live-performance evidence task remains blocked.
 
 M80 is DONE in v0.1.233. A restarted plain client
 previously launched lazy Kernel/U-Boot inspection without reconstructing the

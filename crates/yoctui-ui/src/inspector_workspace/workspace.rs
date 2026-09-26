@@ -133,6 +133,15 @@ pub(crate) fn inspector(
             ),
         Screen::Packages => package_inspector_text(app),
         Screen::Images => image_artifact_inspector_text(app),
+        Screen::Hardware => app.hardware.selected_document().map_or_else(
+            || "No Hardware document selected.".into(),
+            |document| format!(
+                "Category: {}\nKind: {}\nPath: {}\n\nEnter opens the embedded viewer.",
+                document.category.label(),
+                document.kind.label(),
+                document.path.display()
+            ),
+        ),
         Screen::Kernel => platform_inspector_text(&app.kernel, "Kernel"),
         Screen::Firmware => platform_inspector_text(&app.firmware, "U-Boot / BIOS"),
         Screen::Sdk => sdk_inspector_text(app),

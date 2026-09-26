@@ -229,6 +229,7 @@ pub struct HardwareLoadRequest {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HardwareState {
     pub documents: Vec<HardwareDocument>,
+    pub missing_paths: BTreeSet<PathBuf>,
     pub category: HardwareCategory,
     pub selection: usize,
     pub browser: Option<HardwareBrowserState>,
@@ -247,6 +248,10 @@ impl HardwareState {
 
     pub fn selected_document(&self) -> Option<&HardwareDocument> {
         self.visible_documents().get(self.selection).copied()
+    }
+
+    pub fn document_is_missing(&self, document: &HardwareDocument) -> bool {
+        self.missing_paths.contains(&document.path)
     }
 }
 

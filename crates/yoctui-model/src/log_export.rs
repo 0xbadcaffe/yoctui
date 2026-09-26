@@ -249,6 +249,7 @@ pub fn command_action(app: &App, id: CommandId) -> Action {
         CommandId::OpenRecipes => Action::Open(Screen::Recipes),
         CommandId::OpenPackages => Action::Open(Screen::Packages),
         CommandId::OpenImages => Action::Open(Screen::Images),
+        CommandId::OpenHardware => Action::Open(Screen::Hardware),
         CommandId::OpenSdk => Action::Open(Screen::Sdk),
         CommandId::OpenDependencies => Action::Open(Screen::Dependencies),
         CommandId::OpenTesting => Action::Open(Screen::Testing),

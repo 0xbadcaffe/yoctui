@@ -10,6 +10,7 @@ pub fn workspace_destination_requirement(
         | WorkspaceDestination::BuildHistory
         | WorkspaceDestination::Logs
         | WorkspaceDestination::Errors
+        | WorkspaceDestination::Hardware
         | WorkspaceDestination::ProjectProfiles
         | WorkspaceDestination::BuildEnvironment
         | WorkspaceDestination::Compatibility
@@ -105,4 +106,3 @@ pub fn workspace_destination_requirement(
         ),
     }
 }
-

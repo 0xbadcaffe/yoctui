@@ -52,6 +52,26 @@ impl InteractiveRuntime {
                     "Terminal is read-only; press o or Ctrl+B o to take writer control.".into(),
                 );
             }
+        } else if runtime.app.screen == Screen::Hardware
+            && let Some(action) = yoctui_app::hardware_workspace_action(&runtime.app, input)
+        {
+            match compatibility_workspace_action(&mut runtime.app, action) {
+                Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Browse { .. }))
+                | Some(effect @ Effect::Hardware(yoctui_model::HardwareEffect::Load(_))) => {
+                    runtime.hardware_io.submit(effect);
+                }
+                Some(Effect::Hardware(yoctui_model::HardwareEffect::Persist(_))) => {
+                    if let Err(error) = persist_hardware(
+                        runtime.session_path.as_deref(),
+                        &mut runtime.session,
+                        &runtime.app,
+                    ) {
+                        runtime.app.notification =
+                            Some(format!("Could not save the Hardware library: {error}"));
+                    }
+                }
+                _ => {}
+            }
         } else if let Some(action) = notification_input_action(
             runtime.app.notification.is_some(),
             runtime.app.build.status == BuildStatus::Failed

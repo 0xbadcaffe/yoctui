@@ -11,7 +11,7 @@ impl App {
             Screen::Signatures => InspectorMode::Signature,
             Screen::Recipes | Screen::Devtool => InspectorMode::Recipe,
             Screen::Packages => InspectorMode::Package,
-            Screen::Images | Screen::Kernel | Screen::Firmware | Screen::Sdk => {
+            Screen::Images | Screen::Hardware | Screen::Kernel | Screen::Firmware | Screen::Sdk => {
                 InspectorMode::Artifact
             }
             Screen::Testing => InspectorMode::Test,

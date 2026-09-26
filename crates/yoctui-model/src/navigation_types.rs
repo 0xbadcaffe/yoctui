@@ -37,6 +37,7 @@ pub enum Screen {
     Devtool,
     Packages,
     Images,
+    Hardware,
     Kernel,
     Firmware,
     Sdk,
@@ -311,6 +312,7 @@ pub enum CommandId {
     OpenRecipes,
     OpenPackages,
     OpenImages,
+    OpenHardware,
     OpenSdk,
     OpenDependencies,
     OpenTesting,
@@ -387,13 +389,14 @@ impl PaletteCommand {
         self.disabled_reason.is_none()
     }
 }
-pub(crate) const NAVIGATOR_SCREENS: [Screen; 25] = [
+pub(crate) const NAVIGATOR_SCREENS: [Screen; 26] = [
     Screen::Dashboard,
     Screen::Insights,
     Screen::Layers,
     Screen::Recipes,
     Screen::Packages,
     Screen::Images,
+    Screen::Hardware,
     Screen::Kernel,
     Screen::Firmware,
     Screen::Sdk,
@@ -414,13 +417,14 @@ pub(crate) const NAVIGATOR_SCREENS: [Screen; 25] = [
     Screen::Compatibility,
     Screen::Settings,
 ];
-pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 25] = [
+pub(crate) const NAVIGATOR_COMPATIBILITY_DESTINATIONS: [WorkspaceDestination; 26] = [
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Dashboard,
     WorkspaceDestination::Layers,
     WorkspaceDestination::Recipes,
     WorkspaceDestination::Packages,
     WorkspaceDestination::Images,
+    WorkspaceDestination::Hardware,
     WorkspaceDestination::Kernel,
     WorkspaceDestination::Firmware,
     WorkspaceDestination::Sdk,
@@ -458,22 +462,22 @@ pub const NAVIGATOR_GROUPS: [NavigatorGroupRange; 5] = [
     NavigatorGroupRange {
         label: "CONTENT",
         start: 2,
-        end: 9,
+        end: 10,
     },
     NavigatorGroupRange {
         label: "BUILD",
-        start: 9,
-        end: 14,
+        start: 10,
+        end: 15,
     },
     NavigatorGroupRange {
         label: "VALIDATE",
-        start: 14,
-        end: 17,
+        start: 15,
+        end: 18,
     },
     NavigatorGroupRange {
         label: "TOOLS",
-        start: 17,
-        end: 25,
+        start: 18,
+        end: 26,
     },
 ];
 

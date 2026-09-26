@@ -2,6 +2,7 @@
 use yoctui_utils::format_duration;
 mod dialogs;
 mod environment_setup;
+mod hardware_render;
 mod layout;
 mod overview;
 pub mod primitives;
@@ -48,9 +49,9 @@ use yoctui_model::{
     DependencyGraphState, DependencyNodeId, DependencyPathResult, DevtoolAction, DevtoolCapability,
     DevtoolGitState, DevtoolStatus, DevtoolStatusError, DevtoolWorkspace, Dialog,
     FUNCTION_SHORTCUTS, FocusTarget, FunctionKey, FunctionShortcutRoute, GitFileState,
-    ImageArtifactField, ImageArtifactInventoryState, ImageConsoleDialog, ImageConsoleField,
-    ImageConsoleMode, ImagesView, InternalLogLevel, JobHistoryRowRef, LayerBrowser,
-    LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView, MaintenanceCapability,
+    HardwareCategory, ImageArtifactField, ImageArtifactInventoryState, ImageConsoleDialog,
+    ImageConsoleField, ImageConsoleMode, ImagesView, InternalLogLevel, JobHistoryRowRef,
+    LayerBrowser, LayerBrowserEntry, LayerInspectorMode, LogWorkspaceView, MaintenanceCapability,
     MaintenanceCapabilitySnapshot, MaintenanceDialog, MaintenanceIntegrationDiagnostics,
     MaintenanceIntegrationsSnapshot, MaintenanceOperation, MaintenanceOperationPreview,
     MaintenanceServiceDiagnostics, MaintenanceSessionStatus, MaintenanceTool,

@@ -141,6 +141,7 @@ pub fn compatibility_ui_command_action_definition(
         | CommandId::OpenSettings
         | CommandId::OpenHelp
         | CommandId::OpenAbout => CompatibilityUiActionDefinition::local(),
+        CommandId::OpenHardware => CompatibilityUiActionDefinition::local(),
         CommandId::OpenLayers => compatibility_ui_destination_action_definition(Screen::Layers),
         CommandId::OpenRecipes => compatibility_ui_destination_action_definition(Screen::Recipes),
         CommandId::OpenPackages => compatibility_ui_destination_action_definition(Screen::Packages),

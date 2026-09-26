@@ -37,6 +37,7 @@ const fn global_shortcut_label(command: CommandId) -> &'static str {
         CommandId::OpenRecipes => "r / F7",
         CommandId::OpenPackages => "none",
         CommandId::OpenImages => "i / F8",
+        CommandId::OpenHardware => "F12 Navigate",
         CommandId::OpenSdk
         | CommandId::OpenDependencies
         | CommandId::OpenTesting
@@ -90,6 +91,7 @@ pub const fn command_destination(command: CommandId) -> Option<WorkspaceDestinat
         CommandId::OpenRecipes => Some(WorkspaceDestination::Recipes),
         CommandId::OpenPackages => Some(WorkspaceDestination::Packages),
         CommandId::OpenImages => Some(WorkspaceDestination::Images),
+        CommandId::OpenHardware => Some(WorkspaceDestination::Hardware),
         CommandId::OpenSdk => Some(WorkspaceDestination::Sdk),
         CommandId::OpenDependencies => Some(WorkspaceDestination::Dependencies),
         CommandId::OpenTesting => Some(WorkspaceDestination::Testing),

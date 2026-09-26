@@ -93,6 +93,15 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
                 "↑/↓ rule | PgUp/PgDn | [/] preview | Enter explore rootfs | r refresh | Tab view"
             }
         },
+        Screen::Hardware => {
+            if app.hardware.viewer.is_some() {
+                "Esc library | PgUp/PgDn page | +/- zoom | 0 fit | arrows pan | / search | n/N match | r reload"
+            } else if app.hardware.browser.is_some() {
+                "↑/↓ select | Enter directory | Backspace parent | ←/→ category | a add | Esc cancel"
+            } else {
+                "←/→ category | ↑/↓ select | Enter view | a add | d remove | r reload | F12 menu"
+            }
+        }
         Screen::Kernel => {
             "Tab view | ↑/↓ select | m menuconfig | Enter view | e edit | o explore | c compile DTS | d decompile DTB | r refresh"
         }

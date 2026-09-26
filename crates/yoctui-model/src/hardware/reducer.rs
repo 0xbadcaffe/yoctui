@@ -6,6 +6,12 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
         HardwareAction::Install(documents) => match validate_hardware_documents(&documents) {
             Ok(()) => {
                 state.documents = documents;
+                state.missing_paths.retain(|path| {
+                    state
+                        .documents
+                        .iter()
+                        .any(|document| &document.path == path)
+                });
                 state.selection = 0;
             }
             Err(message) => app.notification = Some(message),
@@ -111,7 +117,7 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
         HardwareAction::ConfirmAdd => {
             let browser = state.browser.as_ref()?;
             let entry = browser.entries.get(browser.selection)?;
-            let Some(kind) = entry.kind else { return None };
+            let kind = entry.kind?;
             if entry.is_directory
                 || state
                     .documents
@@ -217,6 +223,7 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             viewer.loading = false;
             viewer.error = None;
             viewer.rebuild_matches();
+            state.missing_paths.remove(&viewer.document.path);
         }
         HardwareAction::PreviewFailed {
             generation,
@@ -313,6 +320,7 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             state
                 .documents
                 .retain(|candidate| candidate.path != document.path);
+            state.missing_paths.remove(&document.path);
             state.selection = state
                 .selection
                 .min(state.visible_documents().len().saturating_sub(1));

@@ -171,6 +171,10 @@ pub fn context_menu_activation_input(action_id: &str) -> Option<Input> {
         "images.artifacts" | "sdk.artifacts" => Input::Char('R'),
         "images.rootfs" => Input::Char('p'),
         "images.cancel" | "qemu_wic.cancel" => Input::Char('x'),
+        "hardware.add" => Input::Char('a'),
+        "hardware.view" => Input::Enter,
+        "hardware.remove" => Input::Char('d'),
+        "hardware.reload" => Input::Char('r'),
         "kernel.refresh" => Input::Char('r'),
         "kernel.menuconfig" => Input::Char('m'),
         "kernel.view" => Input::Enter,
@@ -241,6 +245,7 @@ pub(crate) fn catalog_routed_action(action: &Action) -> bool {
                 | Screen::Layers
                 | Screen::Recipes
                 | Screen::Images
+                | Screen::Hardware
                 | Screen::Tasks
                 | Screen::Logs
                 | Screen::Errors

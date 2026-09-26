@@ -320,12 +320,38 @@ async fn load_kicad(path: &Path) -> Result<(usize, HardwarePreview, Vec<String>)
 
 async fn load_svg(path: &Path) -> Result<(usize, HardwarePreview, Vec<String>)> {
     let text = bounded_source_text(path)?;
+    if program_exists("rsvg-convert") {
+        let output = temporary_path("svg").with_extension("png");
+        let converted = run_command(
+            "rsvg-convert",
+            [
+                OsString::from("-w"),
+                OsString::from("320"),
+                OsString::from("-h"),
+                OsString::from("240"),
+                OsString::from("--keep-aspect-ratio"),
+                OsString::from("-o"),
+                output.as_os_str().to_owned(),
+                path.as_os_str().to_owned(),
+            ],
+        )
+        .await;
+        if converted.is_ok() {
+            let decoded = decode_raster(output.clone()).await;
+            let _ = fs::remove_file(output);
+            if let Ok(raster) = decoded {
+                return Ok((1, HardwarePreview::Raster(raster), text));
+            }
+        } else {
+            let _ = fs::remove_file(output);
+        }
+    }
     Ok((
         1,
         HardwarePreview::Text {
             lines: text.clone(),
             limitation: Some(
-                "SVG source preview; install a supported SVG raster converter for graphics.".into(),
+                "SVG source preview; install rsvg-convert for graphical rendering.".into(),
             ),
         },
         text,

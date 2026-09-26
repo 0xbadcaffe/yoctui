@@ -36,6 +36,7 @@ pub(super) fn workspace(
         Screen::Devtool => devtool_workspace(frame, app, area),
         Screen::Packages => packages_workspace(frame, app, area),
         Screen::Images => images_workspace(frame, app, area),
+        Screen::Hardware => hardware_render::hardware_workspace(frame, app, area),
         Screen::Kernel if app.platform_menuconfig_visible() => {
             terminal_sessions_workspace(frame, app, area)
         }

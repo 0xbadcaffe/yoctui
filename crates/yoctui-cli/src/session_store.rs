@@ -196,7 +196,22 @@ pub(crate) fn install_session_hardware(session: &Session, app: &mut App) -> Resu
     app.hardware
         .documents
         .clone_from(&session.hardware_documents);
-    app.hardware.last_directory = session.hardware_last_directory.clone();
+    app.hardware.missing_paths = app
+        .hardware
+        .documents
+        .iter()
+        .filter(|document| {
+            std::fs::symlink_metadata(&document.path)
+                .map(|metadata| metadata.file_type().is_symlink() || !metadata.is_file())
+                .unwrap_or(true)
+        })
+        .map(|document| document.path.clone())
+        .collect();
+    app.hardware.last_directory = session.hardware_last_directory.clone().or_else(|| {
+        std::env::var_os("HOME")
+            .filter(|home| !home.is_empty())
+            .map(PathBuf::from)
+    });
     Ok(())
 }
 

@@ -111,6 +111,15 @@ fn global_metadata(command: CommandId) -> GlobalMetadata {
             &["i", "F8"],
             70,
         ),
+        CommandId::OpenHardware => navigation(
+            "navigate.hardware",
+            "Open Hardware",
+            "Browse persistent board, SoC, memory, peripheral, and sensor documents",
+            &["schematics", "datasheets", "pdf", "kicad"],
+            &["hardware", "board", "soc", "memory", "sensors", "schematics"],
+            &[],
+            65,
+        ),
         CommandId::OpenSdk => navigation(
             "navigate.sdk",
             "Open SDK",

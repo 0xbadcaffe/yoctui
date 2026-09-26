@@ -249,6 +249,7 @@ pub const fn workspace_screen_destination(screen: Screen) -> WorkspaceDestinatio
         Screen::Devtool => WorkspaceDestination::Devtool,
         Screen::Packages => WorkspaceDestination::Packages,
         Screen::Images => WorkspaceDestination::Images,
+        Screen::Hardware => WorkspaceDestination::Hardware,
         Screen::Kernel => WorkspaceDestination::Kernel,
         Screen::Firmware => WorkspaceDestination::Firmware,
         Screen::Sdk => WorkspaceDestination::Sdk,

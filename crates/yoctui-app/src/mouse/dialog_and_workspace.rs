@@ -106,6 +106,7 @@ pub fn workspace_collection_action(app: &yoctui_model::App, key: Input) -> Optio
         Screen::Images => {
             images_workspace_action_for_view(app.image_artifact_searching, app.images_view, key)
         }
+        Screen::Hardware => hardware_workspace_action(app, key),
         Screen::Kernel => platform_workspace_action(key),
         Screen::Firmware => firmware_workspace_action(key),
         Screen::Sdk => sdk_workspace_action(app.sdk_artifact_searching, key),

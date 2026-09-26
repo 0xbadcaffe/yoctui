@@ -11,7 +11,7 @@ pub(crate) fn navigator(
         literal_project_navigator(frame, app, area, task_rows.unwrap_or_default());
         return;
     }
-    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 25] = [
+    const DESTINATIONS: [(&str, Screen, WorkspaceDestination); 26] = [
         (
             "Dashboard",
             Screen::Dashboard,
@@ -26,6 +26,7 @@ pub(crate) fn navigator(
         ("Recipes", Screen::Recipes, WorkspaceDestination::Recipes),
         ("Packages", Screen::Packages, WorkspaceDestination::Packages),
         ("Images", Screen::Images, WorkspaceDestination::Images),
+        ("Hardware", Screen::Hardware, WorkspaceDestination::Hardware),
         ("Kernel", Screen::Kernel, WorkspaceDestination::Kernel),
         (
             "U-Boot / BIOS",

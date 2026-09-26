@@ -15,6 +15,7 @@ pub enum WorkspaceDestination {
     Signatures,
     Packages,
     Images,
+    Hardware,
     Kernel,
     Firmware,
     Sdk,
@@ -34,7 +35,7 @@ pub enum WorkspaceDestination {
 }
 
 impl WorkspaceDestination {
-    pub const ALL: [Self; 28] = [
+    pub const ALL: [Self; 29] = [
         Self::Dashboard,
         Self::Recipes,
         Self::Layers,
@@ -47,6 +48,7 @@ impl WorkspaceDestination {
         Self::Signatures,
         Self::Packages,
         Self::Images,
+        Self::Hardware,
         Self::Kernel,
         Self::Firmware,
         Self::Sdk,
@@ -214,4 +216,3 @@ impl WorkspaceEffectRequirement {
         }
     }
 }
-

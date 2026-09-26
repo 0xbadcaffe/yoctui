@@ -1,7 +1,9 @@
 //! Application-owned input mapping, keeping terminal concerns outside the reducer.
 mod environment_setup;
+mod hardware_input;
 mod keyboard_prefix;
 pub use environment_setup::*;
+pub use hardware_input::hardware_workspace_action;
 mod pty_context;
 mod pty_devtool;
 mod pty_menuconfig;

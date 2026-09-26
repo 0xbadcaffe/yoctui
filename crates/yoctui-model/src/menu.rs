@@ -51,6 +51,7 @@ impl ApplicationMenuGroup {
             | CommandId::OpenRecipes
             | CommandId::OpenPackages
             | CommandId::OpenImages
+            | CommandId::OpenHardware
             | CommandId::OpenSdk
             | CommandId::OpenDependencies
             | CommandId::OpenTesting

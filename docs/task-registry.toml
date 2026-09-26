@@ -9717,18 +9717,18 @@ notes = "DONE. The client restores and atomically persists only canonical Hardwa
 id = "HARDWARE-UI-001"
 milestone = "M81"
 title = "Render and operate the Hardware workspace and full-body viewer"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2902
 required = true
 depends_on = ["HARDWARE-PERSISTENCE-001"]
 verify = ["cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Add Navigator and application-menu routes, categorized library and browser UI, maximum-body embedded viewer, page/zoom/pan/search controls, Help text, and responsive TestBackend coverage."
+notes = "DONE. Hardware is reachable from Navigator and F12 Navigate, renders the six-category persistent library and bounded local browser, marks missing files, and opens PDF/KiCad/SVG/raster results in a full-body embedded text/RGB viewer with page, zoom, pan, search, reload, and trapped removal controls. Poppler, kicad-cli, and rsvg-convert are discovered without a shell and retain source/text fallbacks. Focused model, app, CLI, responsive TestBackend, formatting, and strict targeted Clippy checks pass."
 
 [[task]]
 id = "HARDWARE-RELEASE-001"
 milestone = "M81"
 title = "Package and install the Hardware feature series"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2903
 required = true
 depends_on = ["HARDWARE-UI-001"]

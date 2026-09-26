@@ -215,6 +215,7 @@ mod devtool_editor_search;
 mod devtool_editor_viewport;
 mod devtool_workspace;
 mod errors_history;
+mod hardware;
 mod image_artifact_adapter_response_crosses_the_app_boundary_as_typed_action;
 mod mouse_runtime_routes_dialog_and_terminal_session_clicks;
 mod navigator_mouse_and_keyboard_share_typed_routing;

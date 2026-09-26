@@ -297,6 +297,7 @@ pub(crate) fn current_collection_edge_action(app: &App, to_end: bool) -> Option<
         Screen::Recipes | Screen::Devtool => Action::SelectRecipe { delta },
         Screen::Packages => Action::SelectPackage { delta },
         Screen::Images => Action::SelectImageArtifact { delta },
+        Screen::Hardware => Action::Hardware(HardwareAction::SelectDocument { delta }),
         Screen::Kernel => Action::SelectKernelFile { delta },
         Screen::Firmware => Action::SelectFirmwareFile { delta },
         Screen::Sdk => Action::SelectSdkArtifact { delta },

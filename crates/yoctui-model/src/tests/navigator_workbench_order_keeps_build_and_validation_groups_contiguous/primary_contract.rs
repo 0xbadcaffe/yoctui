@@ -11,6 +11,7 @@ fn navigator_workbench_order_keeps_build_and_validation_groups_contiguous() {
             Screen::Recipes,
             Screen::Packages,
             Screen::Images,
+            Screen::Hardware,
             Screen::Kernel,
             Screen::Firmware,
             Screen::Sdk,

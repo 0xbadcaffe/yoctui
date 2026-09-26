@@ -81,6 +81,7 @@ impl WorkspaceDestination {
             Self::Signatures => "Signatures",
             Self::Packages => "Packages",
             Self::Images => "Images",
+            Self::Hardware => "Hardware",
             Self::Kernel => "Kernel",
             Self::Firmware => "U-Boot / BIOS",
             Self::Sdk => "SDK",

@@ -12,6 +12,10 @@ pub(super) fn responsive_shell(
     let task_rows = matches!(app.screen, Screen::Dashboard | Screen::Tasks)
         .then(|| app.visible_task_row_refs_at(now));
     let task_rows = task_rows.as_deref();
+    if app.screen == Screen::Hardware && app.hardware.viewer.is_some() {
+        workspace(frame, app, area, terminal_width, now, task_rows);
+        return;
+    }
     if let Some(zoomed) = app.zoomed_pane {
         let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
         frame.render_widget(
