@@ -3869,7 +3869,10 @@ its BitBake child. The relay accepts the generated wrapper path over that
 private runtime socket, bounds and validates that path beneath the active build
 directory, then executes the wrapper while inheriting the selected PTY. The
 worker-side helper waits for the wrapper result before BitBake completes the
-task. The socket is removed on every exit.
+task. The socket is removed on every exit. Daemon recovery seeds the PTY
+supervisor's next session identity above the maximum identity retained in the
+recovered snapshot. New sessions therefore cannot replace a recovered lost
+record or be rejected by the platform client's pre-launch identity set.
 No widget parses BitBake output or owns process state.
 
 ## M43 Dashboard focus and sparse-browser layout

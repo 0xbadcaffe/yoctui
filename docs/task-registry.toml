@@ -9670,12 +9670,23 @@ verify = ["cargo test -p yoctui --bin yoctui menuconfig_relay", "cargo fmt --all
 notes = "DONE. Every hidden menuconfig relay now derives a private process-scoped runtime socket and publishes that endpoint only to its BitBake child, so retries and concurrent Kernel/U-Boot relays cannot consume one another's handoff. The focused command, validation, environment, isolation, and formatting checks pass."
 
 [[task]]
-id = "PLATFORM-PTY-RELEASE-001"
+id = "PTY-SESSION-ID-RECOVERY-001"
 milestone = "M80"
-title = "Package and install the platform inspection and menuconfig correction series"
+title = "Allocate new PTY identities above recovered terminal history"
 status = "IN_PROGRESS"
 priority = 2802
 required = true
 depends_on = ["MENUCONFIG-RELAY-ISOLATION-001"]
+verify = ["cargo test -p yoctui --bin yoctui recovered_pty", "cargo test -p yoctui-model platform_menuconfig", "cargo fmt --all --check"]
+notes = "A live Romulus smoke test showed the daemon reusing session ID 1 after recovering prior lost sessions. The platform client correctly excludes pre-launch IDs, so the reused identity leaves embedded menuconfig at Starting while ncurses runs in the daemon PTY. Seed allocation above every recovered identity."
+
+[[task]]
+id = "PLATFORM-PTY-RELEASE-001"
+milestone = "M80"
+title = "Package and install the platform inspection and menuconfig correction series"
+status = "NOT_STARTED"
+priority = 2803
+required = true
+depends_on = ["PTY-SESSION-ID-RECOVERY-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Prepare v0.1.233, build and install the optimized binary, restart the initialized Romulus daemon, and verify plain-client platform inspection plus isolated embedded menuconfig startup. The full workspace suite remains deferred until requested."

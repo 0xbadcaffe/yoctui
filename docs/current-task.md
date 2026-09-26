@@ -1,20 +1,19 @@
 # Current Task
 
-**ID:** PLATFORM-PTY-RELEASE-001
-**Title:** Package and install the platform inspection and menuconfig correction series
+**ID:** PTY-SESSION-ID-RECOVERY-001
+**Title:** Allocate new PTY identities above recovered terminal history
 **Status:** IN_PROGRESS
 
-Prepare v0.1.233, run the focused correction checks, build and install the
-optimized binary, restart the daemon in the initialized Romulus environment,
-and smoke-test provider inspection from a plain client plus embedded
-menuconfig startup. Do not run the full workspace suite during the user's
-manual bug pass.
+A live Romulus launch opened ncurses successfully in the daemon PTY but left
+the platform workspace at `Starting Kernel menuconfig`. The restarted daemon
+allocated session ID 1 even though recovered lost sessions already contained
+that ID. Seed new PTY allocation above all recovered terminal identities so
+the client can distinguish and bind the newly requested session.
 
 Verify with:
 
 ```bash
+cargo test -p yoctui --bin yoctui recovered_pty
+cargo test -p yoctui-model platform_menuconfig
 cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-python3 scripts/check-version-bump.py
-./scripts/verify-roadmap.sh
 ```

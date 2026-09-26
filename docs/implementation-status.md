@@ -10,7 +10,11 @@ MENUCONFIG-RELAY-ISOLATION-001 is also DONE: every relay publishes its own
 process-scoped runtime socket to its BitBake child, preventing retry or
 concurrent Kernel/U-Boot sessions from consuming another handoff. Focused
 relay command, validation, environment, isolation, and formatting checks pass.
-PLATFORM-PTY-RELEASE-001 is now IN_PROGRESS.
+A live Romulus smoke test then exposed recovered PTY identity reuse: ncurses
+ran successfully on the new isolated endpoint, but the daemon reused an ID
+already present in lost terminal history, so the client excluded it as
+pre-existing and retained `Starting Kernel menuconfig`. PTY-SESSION-ID-RECOVERY-001
+is IN_PROGRESS before the release task.
 
 M79 ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are DONE in the
 v0.1.232 series. Current and saved diagnostics share one Errors workspace,

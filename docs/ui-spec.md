@@ -5484,6 +5484,10 @@ snapshot; accepting the request does not clear that waiting state.
 Each relay owns a unique socket for its lifetime. A retry or concurrent Kernel
 or U-Boot session cannot connect to, consume, remove, or otherwise interrupt an
 existing relay's one-shot handoff.
+After daemon restart, recovered terminal records retain their identities and
+new sessions receive a strictly newer identity. The platform workspace can
+therefore distinguish its requested session from pre-existing terminal history
+and replace the waiting view as soon as the daemon reports it running.
 
 ## 38. Embedded Image Console
 

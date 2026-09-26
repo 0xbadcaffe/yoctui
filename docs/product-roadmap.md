@@ -1963,5 +1963,8 @@ handoff.
 PLATFORM-INSPECTION-ENV-001 reconstructs the exact selected Yocto environment
 before starting the client-owned metadata bridge.
 MENUCONFIG-RELAY-ISOLATION-001 gives every relay its own private runtime socket.
+PTY-SESSION-ID-RECOVERY-001 ensures a restarted daemon allocates new PTY
+identities above recovered terminal history so the requesting platform
+workspace can bind the exact new session.
 PLATFORM-PTY-RELEASE-001 packages, installs, and smoke-tests v0.1.233 while the
 full workspace suite remains deferred for the user's manual bug pass.
