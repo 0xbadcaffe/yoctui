@@ -1983,3 +1983,11 @@ The work is split into HARDWARE-MODEL-001 for the typed library/viewer state,
 HARDWARE-PERSISTENCE-001 for validated browsing, conversion, and atomic session
 storage, HARDWARE-UI-001 for Navigator/application-menu access and the maximum
 body viewer, and HARDWARE-RELEASE-001 for the versioned optimized release.
+
+M81 is complete in v0.1.234. Hardware is available from Navigator and F12,
+persists its categorized document library, and opens PDF, KiCad, SVG, and raster
+documents in the full-body embedded viewer with page, zoom, pan, and search
+controls. Focused tests, strict workspace Clippy, version policy, formatting, and
+roadmap validation pass; the optimized binary is installed and the initialized
+Romulus daemon was restarted. The full workspace suite remains deferred for the
+user's manual feature pass.

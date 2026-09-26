@@ -1,6 +1,6 @@
 # Yoctui Implementation Status
 
-M81 is IN_PROGRESS from the v0.1.233 manual feature pass. Hardware will become
+M81 is DONE in the v0.1.234 manual feature pass. Hardware is
 a build-independent, persistent library grouped by Board, SoC, Memory,
 Peripherals, Sensors, and Other. The authoritative UI and architecture now
 define validated local browsing, PDF/KiCad/SVG/raster support, atomic restart
@@ -14,9 +14,12 @@ persists the catalog. Focused browser, symlink, image, and restart tests pass.
 HARDWARE-UI-001 is DONE: Navigator and F12 routes open the responsive six-category
 library and local browser, missing paths remain visible, and the embedded full-body
 viewer provides bounded PDF/KiCad/SVG/raster rendering with page, zoom, pan, search,
-reload, and removal controls. Focused model, app, CLI, responsive TestBackend,
-formatting, and strict targeted Clippy checks pass. HARDWARE-RELEASE-001 is current;
-the unrelated M67 live-performance evidence task remains blocked.
+reload, and removal controls. HARDWARE-RELEASE-001 is DONE in v0.1.234. Focused
+model, app, CLI, responsive TestBackend, browser/raster/persistence checks,
+formatting, strict workspace Clippy, version policy, and roadmap validation pass.
+The optimized binary is installed and a fresh initialized Romulus daemon runs as
+PID 3603735. The full workspace suite remains deferred until requested; the
+unrelated M67 live-performance evidence task remains blocked.
 
 M80 is DONE in v0.1.233. A restarted plain client
 previously launched lazy Kernel/U-Boot inspection without reconstructing the

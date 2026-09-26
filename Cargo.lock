@@ -2742,7 +2742,7 @@ checksum = "1ebf944e87a7c253233ad6766e082e3cd714b5d03812acc24c318f549614536e"
 
 [[package]]
 name = "yoctui"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -2770,7 +2770,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-app"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "thiserror 2.0.19",
  "yoctui-bitbake",
@@ -2781,7 +2781,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-bitbake"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "async-trait",
  "libc",
@@ -2798,7 +2798,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-e2e"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "crossterm",
  "libc",
@@ -2811,7 +2811,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-model"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "proptest",
  "regex",
@@ -2825,7 +2825,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-protocol"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "libc",
  "proptest",
@@ -2838,7 +2838,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-shell"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "libc",
  "yoctui-utils",
@@ -2846,7 +2846,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-ui"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "libc",
  "log",
@@ -2865,7 +2865,7 @@ dependencies = [
 
 [[package]]
 name = "yoctui-utils"
-version = "0.1.233"
+version = "0.1.234"
 dependencies = [
  "dirs",
  "libc",
