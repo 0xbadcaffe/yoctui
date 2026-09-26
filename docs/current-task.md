@@ -1,19 +1,21 @@
 # Current Task
 
-**ID:** DEVTOOL-EDITOR-RELEASE-001
-**Title:** Package and install the Devtool editor correction series
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Bump the coherent correction series to v0.1.230, run focused series checks plus
-strict workspace Clippy and the roadmap gate, build and install the release
-binary, and restart Yoctui's daemon from the initialized Romulus environment.
-Commit and push the final release while preserving user capture artifacts. The
-full workspace test suite remains deferred until the user requests it.
+All M74, M75, M76, and M77 work is complete through v0.1.230. The only
+remaining registry task requires a new genuine source/binary-bound Yocto 6.0.2
+`linux-yocto` compile capture. Existing retained evidence is bound to source
+base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
+mismatches, including changes predating M67.
 
-Verify with:
+After new live evidence is supplied, run:
 
 ```bash
-cargo fmt --all --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-./scripts/verify-roadmap.sh
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
+
+Do not rewrite evidence digests or use fake-process startup timings as live
+certification.

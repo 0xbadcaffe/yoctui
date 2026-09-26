@@ -1920,3 +1920,13 @@ The work is split into DEVTOOL-EDITOR-VIEWPORT-001,
 DEVTOOL-EDITOR-SEARCH-001, DEVTOOL-EDITOR-GIT-001, HEADER-STATUS-001, and
 DEVTOOL-EDITOR-RELEASE-001. Each task retains the existing model/app/UI/CLI
 ownership boundaries and the user's focused-test release workflow.
+
+M77 is complete in v0.1.230. The integrated editor traverses the complete
+bounded workspace inventory and long documents, retains Vim-style editing,
+supports selected-file and workspace search, shows complete repository
+tracking with direct GitUI access, and uses distinct pane chrome. Persistent
+Header chrome now shows local `HH:MM` time and a visible current daemon message
+or health fallback. Focused checks, formatting, strict Clippy, and roadmap
+validation pass; the optimized release is installed and the initialized
+Romulus daemon was restarted. The full workspace suite remains deferred for
+the user's manual bug pass.

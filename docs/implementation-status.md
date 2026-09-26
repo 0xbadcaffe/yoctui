@@ -4025,4 +4025,13 @@ client host's `Local HH:MM` without seconds, then a bold semantic current
 message with Braille waiting activity or a daemon/BitBake health fallback, then
 workspace/build context. The Footer contains only its bordered shortcut row.
 Focused TestBackend, shared mouse-geometry, compile, and formatting checks pass.
-DEVTOOL-EDITOR-RELEASE-001 is now IN_PROGRESS.
+DEVTOOL-EDITOR-RELEASE-001 is DONE in v0.1.230. Focused Devtool viewport,
+search, Git, daemon-worker, Header, visual-contract, and version checks pass,
+along with formatting, strict all-target/all-feature Clippy, and roadmap
+validation. The optimized release embeds source SHA `2f77d485a191`, is
+installed at `~/.cargo/bin/yoctui`, and a fresh daemon runs from the initialized
+Romulus environment as PID 3403746. Cargo debug artifacts were cleaned,
+recovering 26.6 GiB while preserving OpenBMC outputs and user captures. The
+full workspace suite remains deferred until requested. All 865 implementation
+tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED on a new genuine
+current-source real-Poky performance capture.
