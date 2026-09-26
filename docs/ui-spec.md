@@ -5562,6 +5562,11 @@ the selected PTY. Only the validated menuconfig wrapper inherits that terminal,
 so BitBake's 99% task footer cannot overwrite ncurses or consume operator input.
 `do_menuconfig` remains running while the interactive screen is open and
 completes after the operator exits menuconfig normally.
+If OpenEmbedded's generated menuconfig wrapper reports its exact failure
+acknowledgement prompt, the daemon acknowledges that prompt once without
+requiring a viewer or writer lease. The wrapper then returns its failure, the
+terminal becomes exited with its diagnostic screen retained, and a failed
+Kernel or U-Boot launch cannot leave later platform operations at `Loading…`.
 After daemon restart, recovered terminal records retain their identities and
 new sessions receive a strictly newer identity. The platform workspace can
 therefore distinguish its requested session from pre-existing terminal history

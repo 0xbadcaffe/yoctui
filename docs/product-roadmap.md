@@ -2039,3 +2039,14 @@ menuconfig task for a second live launch even though BitBake lists
 `do_menuconfig` for `u-boot-aspeed-sdk`. The optimized binary is installed and
 the initialized daemon was restarted. The full workspace suite remains deferred
 until requested.
+
+## M85 — Menuconfig failure recovery
+
+Goal: prevent OpenEmbedded's interactive failure acknowledgement from leaving a
+failed Kernel or U-Boot menuconfig session running forever and blocking later
+platform operations.
+
+MENUCONFIG-FAILURE-ACK-001 adds a bounded menuconfig-only prompt detector and a
+single daemon acknowledgement, with split-output and live failure coverage.
+MENUCONFIG-FAILURE-ACK-RELEASE-001 packages the correction as v0.1.238 and
+validates that the failed U-Boot session exits before Kernel menuconfig starts.

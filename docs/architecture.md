@@ -4642,3 +4642,14 @@ Detached launch profiles encode emulator-specific foreground/wait arguments as
 argv. The CLI performs a bounded early-exit probe before returning success, so
 the model never receives a successful launch notification for a launcher that
 immediately failed. No shell command string is introduced.
+
+## M85 menuconfig failure acknowledgement
+
+OpenEmbedded's `cml1.bbclass` keeps a failed interactive wrapper alive at its
+exact `Press any key to continue...` prompt. The daemon PTY child runtime owns a
+bounded, split-chunk matcher for that prompt only on typed `Menuconfig`
+sessions. It writes one acknowledgement through a supervisor-only PTY input
+path, allowing the wrapper and outer BitBake client to return their real
+failure status. The diagnostic screen remains in terminal history; the daemon
+does not reinterpret the underlying build error. Other PTY kinds and ordinary
+menuconfig output never receive synthetic input.
