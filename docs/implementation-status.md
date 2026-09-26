@@ -1,13 +1,14 @@
 # Yoctui Implementation Status
 
 M80 is IN_PROGRESS from the v0.1.232 manual bug pass. A restarted plain client
-currently launches lazy Kernel/U-Boot inspection without reconstructing the
-selected Yocto environment, so an otherwise healthy daemon can leave provider
-inspection loading before the bridge reports a missing `bb` module. Embedded
-menuconfig also uses one fixed local socket, allowing a retry or concurrent
-session to consume another relay's one-shot handoff and produce a broken pipe.
-PLATFORM-INSPECTION-ENV-001, MENUCONFIG-RELAY-ISOLATION-001, and
-PLATFORM-PTY-RELEASE-001 define the focused v0.1.233 correction series.
+previously launched lazy Kernel/U-Boot inspection without reconstructing the
+selected Yocto environment. PLATFORM-INSPECTION-ENV-001 is DONE: both
+workspaces now initialize the exact selected profile off the UI loop and pass
+the child-only environment into the capability-authorized bridge; focused
+success, failure, cancellation, and inference tests pass. Embedded menuconfig
+still uses one fixed local socket, allowing a retry or concurrent session to
+consume another relay's one-shot handoff and produce a broken pipe.
+MENUCONFIG-RELAY-ISOLATION-001 is now IN_PROGRESS.
 
 M79 ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are DONE in the
 v0.1.232 series. Current and saved diagnostics share one Errors workspace,

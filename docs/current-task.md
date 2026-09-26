@@ -1,19 +1,17 @@
 # Current Task
 
-**ID:** PLATFORM-INSPECTION-ENV-001
-**Title:** Initialize the selected build environment for platform inspection
+**ID:** MENUCONFIG-RELAY-ISOLATION-001
+**Title:** Isolate concurrent Kernel and U-Boot menuconfig relays
 **Status:** IN_PROGRESS
 
-Reproduce from a plain terminal while the initialized Romulus daemon is
-running: restoring Kernel or U-Boot begins inspection, then the client-created
-bridge fails because `bb` is absent from its inherited Python path. Initialize
-the selected build profile off the terminal loop and provide its exact
-environment to the capability-authorized bridge for both platform workspaces.
+The fixed `menuconfig.sock` permits a later relay's liveness connection to be
+accepted as an earlier relay's one-shot command, producing EOF/broken-pipe task
+failures. Allocate a unique private socket for each relay process and ensure
+retries and concurrent Kernel/U-Boot sessions cannot touch one another.
 
 Verify with:
 
 ```bash
-cargo test -p yoctui --bin yoctui platform_inspection
-cargo test -p yoctui --bin yoctui startup_environment
+cargo test -p yoctui --bin yoctui menuconfig_relay
 cargo fmt --all --check
 ```

@@ -9651,18 +9651,18 @@ notes = "DONE in v0.1.232. Focused model/app/UI, source-log bound, archive compa
 id = "PLATFORM-INSPECTION-ENV-001"
 milestone = "M80"
 title = "Initialize the selected build environment for platform inspection"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2800
 required = true
 depends_on = ["ERRORS-WORKSPACE-RELEASE-001"]
 verify = ["cargo test -p yoctui --bin yoctui platform_inspection", "cargo test -p yoctui --bin yoctui startup_environment", "cargo fmt --all --check"]
-notes = "A restarted attached client currently starts its lazy Kernel/U-Boot bridge from the invoking terminal environment, which can omit BitBake's Python modules even though the daemon owns valid compatibility authority. Initialize the exact selected profile off the UI loop and pass that environment to the bridge."
+notes = "DONE. Kernel and U-Boot inspection now reconstruct the exact selected profile off the UI loop and pass its child-only initialized environment into the capability-authorized bridge. Focused tests cover successful environment reconstruction, missing-profile failure, cancellation, startup profile inference, and formatting."
 
 [[task]]
 id = "MENUCONFIG-RELAY-ISOLATION-001"
 milestone = "M80"
 title = "Isolate concurrent Kernel and U-Boot menuconfig relays"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2801
 required = true
 depends_on = ["PLATFORM-INSPECTION-ENV-001"]
