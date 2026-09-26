@@ -1,7 +1,8 @@
 use std::time::Instant;
-use yoctui_model::PtySessionSpec;
+use yoctui_model::{PtySessionKind, PtySessionSpec};
 use yoctui_protocol::daemon::{MAX_DAEMON_PTY_SESSIONS, MAX_PTY_OUTPUT_EVENT_BYTES};
 
+use super::menuconfig_failure_prompt::MenuconfigFailurePrompt;
 use super::{
     Control, ControlMessage, DaemonPtyEvent, DaemonPtySupervisor, PTY_SCREEN_MIN_INTERVAL,
     PTY_TERMINATION_TIMEOUT, Response, SessionHandle,
@@ -27,6 +28,7 @@ impl DaemonPtySupervisor {
         ) = tokio::sync::mpsc::unbounded_channel();
         let event_tx = self.tx.clone();
         let session_id = spec.id;
+        let acknowledge_failure = spec.kind == PtySessionKind::Menuconfig;
         tokio::spawn(async move {
             let mut session = match DaemonPtySession::start(
                 spec,
@@ -55,6 +57,7 @@ impl DaemonPtySupervisor {
                 .checked_sub(PTY_SCREEN_MIN_INTERVAL)
                 .unwrap_or_else(Instant::now);
             let mut screen_flush_pending = false;
+            let mut failure_prompt = acknowledge_failure.then(MenuconfigFailurePrompt::default);
             loop {
                 tokio::select! {
                     _ = tokio::time::sleep_until(
@@ -113,6 +116,18 @@ impl DaemonPtySupervisor {
                         match event {
                             Ok(PtyAttachEvent::Started) => {}
                             Ok(PtyAttachEvent::Output { mut bytes, .. }) => {
+                                let needs_acknowledgement = failure_prompt
+                                    .as_mut()
+                                    .is_some_and(|prompt| prompt.observe(&bytes));
+                                if needs_acknowledgement
+                                    && let Err(error) = session.supervisor_input(b"\n").await
+                                {
+                                    let _ = event_tx.send(DaemonPtyEvent::Lost {
+                                        session_id,
+                                        message: format!("could not acknowledge failed menuconfig: {error}"),
+                                    });
+                                    return;
+                                }
                                 bytes.truncate(MAX_PTY_OUTPUT_EVENT_BYTES);
                                 let screen = (last_screen_publish.elapsed() >= PTY_SCREEN_MIN_INTERVAL)
                                     .then(|| session.snapshot(0).ok())

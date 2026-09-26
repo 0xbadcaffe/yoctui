@@ -9816,18 +9816,18 @@ notes = "DONE in v0.1.237. Formatting, focused model/app/CLI/UI tests, strict mo
 id = "MENUCONFIG-FAILURE-ACK-001"
 milestone = "M85"
 title = "Complete failed menuconfig wrappers without operator input"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3030
 required = true
 depends_on = ["MENUCONFIG-INTERACTION-RELEASE-001"]
 verify = ["cargo test -p yoctui --bin yoctui menuconfig_failure", "cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
-notes = "Recognize OpenEmbedded's exact menuconfig failure acknowledgement prompt across bounded output chunks, acknowledge it once through the daemon supervisor, retain the diagnostic screen, and publish the real terminal outcome without requiring a viewer."
+notes = "DONE. The typed Menuconfig child runtime recognizes OpenEmbedded's exact failure acknowledgement across split PTY output without buffering an unbounded stream, writes one daemon-owned acknowledgement without disturbing the operator writer lease, preserves the diagnostic terminal screen, and publishes the child's real exit. Focused no-viewer coverage reproduces the blocking wrapper and confirms exit code 23; formatting, strict BitBake/CLI Clippy, and roadmap validation pass."
 
 [[task]]
 id = "MENUCONFIG-FAILURE-ACK-RELEASE-001"
 milestone = "M85"
 title = "Release menuconfig failure recovery"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3031
 required = true
 depends_on = ["MENUCONFIG-FAILURE-ACK-001"]

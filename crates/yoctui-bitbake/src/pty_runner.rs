@@ -194,6 +194,25 @@ impl PtyRunner {
             .map_err(|error| PtyRunnerError::Io(error.to_string()))
     }
 
+    /// Writes daemon-owned lifecycle input without changing the operator's
+    /// writer lease. This is reserved for bounded acknowledgements emitted by
+    /// the PTY supervisor, never for interactive operator input.
+    pub async fn supervisor_input(&mut self, bytes: &[u8]) -> Result<(), PtyRunnerError> {
+        if bytes.len() > MAX_PTY_INPUT_BYTES {
+            return Err(PtyRunnerError::InputTooLarge);
+        }
+        let session = self.session.as_ref().ok_or(PtyRunnerError::NotRunning)?;
+        if session.lifecycle != PtySessionLifecycle::Running {
+            return Err(PtyRunnerError::NotRunning);
+        }
+        self.writer
+            .as_mut()
+            .ok_or(PtyRunnerError::NotRunning)?
+            .write_all(bytes)
+            .await
+            .map_err(|error| PtyRunnerError::Io(error.to_string()))
+    }
+
     pub fn resize(
         &mut self,
         client: PtyClientId,

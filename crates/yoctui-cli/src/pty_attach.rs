@@ -150,6 +150,11 @@ impl DaemonPtySession {
         Ok(())
     }
 
+    pub async fn supervisor_input(&mut self, bytes: &[u8]) -> Result<(), PtyAttachError> {
+        self.runner.supervisor_input(bytes).await?;
+        Ok(())
+    }
+
     pub fn resize(
         &mut self,
         client: PtyClientId,

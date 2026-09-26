@@ -1,20 +1,19 @@
 # Current Task
 
-**ID:** MENUCONFIG-FAILURE-ACK-001
-**Title:** Complete failed menuconfig wrappers without operator input
+**ID:** MENUCONFIG-FAILURE-ACK-RELEASE-001
+**Title:** Release menuconfig failure recovery
 **Status:** IN_PROGRESS
 
-Detect OpenEmbedded's exact menuconfig failure acknowledgement prompt across
-bounded PTY output chunks, acknowledge it once through the daemon supervisor,
-retain the diagnostic screen, and allow the session to publish its actual exit
-instead of blocking later Kernel or U-Boot operations.
+Bump to v0.1.238, build and install the optimized binary, restart the initialized
+Romulus daemon, and live validate that failed U-Boot menuconfig cleanup does not
+block a following Kernel menuconfig launch.
 
 Verification:
 
 ```bash
-cargo test -p yoctui --bin yoctui menuconfig_failure
 cargo fmt --all --check
 cargo clippy -p yoctui-bitbake --all-features -- -D warnings
 cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 ```

@@ -1,10 +1,13 @@
-M85 is IN_PROGRESS for v0.1.238. A live Romulus U-Boot menuconfig failed its
+M85 implementation is DONE and its v0.1.238 release is IN_PROGRESS. A live
+Romulus U-Boot menuconfig failed its
 legacy ncurses probe, then OpenEmbedded's generated terminal wrapper waited at
 `Press any key to continue...` with no viewer. Session 14 therefore remained
 Running for more than ten minutes and blocked the next Kernel menuconfig behind
-`Loading…`. The stale session was terminated through the daemon API. The fix
-will acknowledge this exact menuconfig failure prompt automatically, retain the
-diagnostic terminal screen, and let the wrapper publish its failure lifecycle.
+`Loading…`. The stale session was terminated through the daemon API. The typed
+Menuconfig runtime now acknowledges this exact prompt once, without requiring a
+viewer or disturbing the writer lease, retains the diagnostic screen, and
+publishes the real exit. Focused split-output/no-writer coverage, formatting,
+strict BitBake/CLI Clippy, and roadmap validation pass.
 
 M84 is DONE in v0.1.237. MENUCONFIG-INTERACTION-001 is DONE: the daemon
 flushes the final typed screen after a throttled output burst, and embedded

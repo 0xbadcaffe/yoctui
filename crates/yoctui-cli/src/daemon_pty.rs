@@ -3,6 +3,7 @@ use std::{collections::HashMap, sync::mpsc::SyncSender, time::Duration};
 use yoctui_model::{PtyClientId, PtyDimensions, PtySessionId};
 
 mod child_runtime;
+mod menuconfig_failure_prompt;
 mod request_validation;
 mod supervisor;
 mod terminal_mapping;
