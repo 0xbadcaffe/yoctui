@@ -318,6 +318,7 @@ pub(crate) async fn tui(
     let recipe_inspection_operation = None;
     let devtool_status_operation = None;
     let platform_inspection_operation = None;
+    let detached_terminal_operation = None;
     let render_measurement_started = Instant::now();
     let prefix_state = PrefixState::default();
     #[cfg(unix)]
@@ -398,6 +399,7 @@ pub(crate) async fn tui(
         recipe_inspection_operation,
         devtool_status_operation,
         platform_inspection_operation,
+        detached_terminal_operation,
         render_measurement_started,
         prefix_state,
         startup_platform_inspection,

@@ -178,6 +178,7 @@ impl InteractiveRuntime {
             || runtime.qa_coordinator.layer_capability.is_some()
             || runtime.qa_coordinator.report.is_some()
             || runtime.qa_coordinator.layer.is_some()
+            || runtime.detached_terminal_operation.is_some()
             || runtime.maintenance_coordinator.operation_active();
         environment_operation::poll(
             &mut runtime.app,
@@ -254,6 +255,8 @@ impl InteractiveRuntime {
         runtime.security_coordinator.poll(&mut runtime.app).await;
         runtime.qa_coordinator.poll(&mut runtime.app).await;
         runtime.maintenance_coordinator.poll(&mut runtime.app).await;
+        poll_detached_terminal_launch(&mut runtime.app, &mut runtime.detached_terminal_operation)
+            .await;
         runtime
             .render_scheduler
             .invalidate_if(local_operation_active, RenderCause::Presentation);

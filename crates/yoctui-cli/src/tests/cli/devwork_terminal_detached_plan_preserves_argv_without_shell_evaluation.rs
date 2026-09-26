@@ -5,7 +5,7 @@ fn devwork_terminal_detached_plan_preserves_argv_without_shell_evaluation() {
     let directory = DevworkTempDir::new();
     let launcher = DetachedTerminalLauncher {
         program: "/usr/bin/xterm".into(),
-        command_separator: "-e",
+        prefix_arguments: vec!["-e".into()],
     };
     let request = yoctui_model::TerminalLaunchRequest {
         name: "devtool edit-recipe busybox".into(),

@@ -4184,10 +4184,12 @@ the exact recipe, task, executable identity, and build directory; acceptance
 creates/focuses a daemon terminal session without suspending the Yoctui client.
 For Kernel and U-Boot, an embedded destination keeps the current Content
 screen selected and replaces that screen's Workspace with the new menuconfig
-PTY replica. Global navigation and the application menu remain available, so
-the operator can visit Dashboard, Recipes, Logs, or another screen while the
-session continues and return to the same menuconfig session. Yoctui selects the
-new session by its daemon identity and automatically requests its writer lease.
+PTY replica. `Ctrl+G` returns keyboard ownership to Yoctui, where global
+navigation and the application menu let the operator visit Dashboard, Recipes,
+Logs, or another screen while the session continues; returning to its platform
+screen and pressing `Ctrl+G` restores the same menuconfig session. Yoctui
+selects the new session by its daemon identity and automatically requests its
+writer lease.
 Unavailable or stale providers/tasks show a refresh reason instead of falling
 back to a guessed recipe or free-form command.
 

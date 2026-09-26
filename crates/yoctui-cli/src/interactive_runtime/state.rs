@@ -85,6 +85,7 @@ pub(super) struct InteractiveRuntime {
         Option<super::devtool_status_operation::DevtoolStatusOperation>,
     pub(super) platform_inspection_operation:
         Option<super::platform_inspection_operation::PlatformInspectionOperation>,
+    pub(super) detached_terminal_operation: Option<DetachedTerminalOperation>,
     pub(super) render_measurement_started: Instant,
     pub(super) prefix_state: PrefixState,
     pub(super) startup_platform_inspection: Option<Screen>,

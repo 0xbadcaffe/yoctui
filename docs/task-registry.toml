@@ -9794,18 +9794,18 @@ notes = "DONE. The daemon publishes a typed quiet-period screen event after a th
 id = "DETACHED-TERMINAL-STARTUP-001"
 milestone = "M84"
 title = "Verify detached menuconfig terminal startup"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3021
 required = true
 depends_on = ["MENUCONFIG-INTERACTION-001"]
 verify = ["cargo test -p yoctui --bin yoctui detached_terminal", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Prefer explicit emulator profiles, preserve shell-free argv, keep the launcher in the foreground where supported, and reject an emulator that exits during the bounded startup probe."
+notes = "DONE. Explicit GNOME Terminal, KGX, Konsole, Terminator, xterm, and generic fallback profiles preserve shell-free argv and use foreground/wait options where supported. GNOME Terminal is preferred over this host's generic Terminator alias. Launch runs off the UI loop and success is withheld until a bounded child-liveness probe; immediate exits report failure. Three focused argv, early-exit, and surviving-child tests plus formatting, strict CLI Clippy, and roadmap validation pass."
 
 [[task]]
 id = "MENUCONFIG-INTERACTION-RELEASE-001"
 milestone = "M84"
 title = "Release menuconfig presentation and input corrections"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3022
 required = true
 depends_on = ["DETACHED-TERMINAL-STARTUP-001"]

@@ -10,7 +10,14 @@ pub(crate) fn initialized_path_directories() -> Vec<PathBuf> {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct DetachedTerminalLauncher {
     pub(crate) program: PathBuf,
-    pub(crate) command_separator: &'static str,
+    pub(crate) prefix_arguments: Vec<String>,
+}
+
+const DETACHED_TERMINAL_STARTUP_PROBE: Duration = Duration::from_millis(400);
+
+pub(crate) struct DetachedTerminalOperation {
+    pub(crate) name: String,
+    pub(crate) handle: tokio::task::JoinHandle<Result<()>>,
 }
 
 pub(crate) fn executable_on_initialized_path(name: &str) -> Option<PathBuf> {
@@ -38,17 +45,21 @@ pub(crate) fn detect_detached_terminal_launcher() -> Result<DetachedTerminalLaun
     if env::var_os("DISPLAY").is_none() && env::var_os("WAYLAND_DISPLAY").is_none() {
         return Err("no DISPLAY or WAYLAND_DISPLAY is available".into());
     }
-    for (name, separator) in [
-        ("x-terminal-emulator", "-e"),
-        ("gnome-terminal", "--"),
-        ("konsole", "-e"),
-        ("kgx", "--"),
-        ("xterm", "-e"),
+    for (name, prefix_arguments) in [
+        ("gnome-terminal", &["--wait", "--"][..]),
+        ("kgx", &["--wait", "--"][..]),
+        ("konsole", &["--nofork", "-e"][..]),
+        ("terminator", &["--no-dbus", "--execute"][..]),
+        ("xterm", &["-e"][..]),
+        ("x-terminal-emulator", &["-e"][..]),
     ] {
         if let Some(program) = executable_on_initialized_path(name) {
             return Ok(DetachedTerminalLauncher {
                 program,
-                command_separator: separator,
+                prefix_arguments: prefix_arguments
+                    .iter()
+                    .map(|argument| (*argument).into())
+                    .collect(),
             });
         }
     }
@@ -114,7 +125,7 @@ pub(crate) fn detached_terminal_command(
     }
     let mut command = ProcessCommand::new(&launcher.program);
     command
-        .arg(launcher.command_separator)
+        .args(&launcher.prefix_arguments)
         .arg(program)
         .args(arguments)
         .current_dir(&request.cwd)
@@ -128,13 +139,62 @@ pub(crate) fn launch_detached_terminal(
     request: &yoctui_model::TerminalLaunchRequest,
 ) -> Result<()> {
     let launcher = detect_detached_terminal_launcher().map_err(anyhow::Error::msg)?;
-    detached_terminal_command(&launcher, request)?
+    let command = detached_terminal_command(&launcher, request)?;
+    launch_and_probe_detached_terminal(command, &launcher.program, DETACHED_TERMINAL_STARTUP_PROBE)
+}
+
+pub(crate) fn launch_and_probe_detached_terminal(
+    mut command: ProcessCommand,
+    launcher: &Path,
+    startup_probe: Duration,
+) -> Result<()> {
+    let mut child = command
         .spawn()
-        .with_context(|| {
-            format!(
-                "could not spawn detached terminal {}",
-                launcher.program.display()
-            )
-        })?;
+        .with_context(|| format!("could not spawn detached terminal {}", launcher.display()))?;
+    std::thread::sleep(startup_probe);
+    if let Some(status) = child
+        .try_wait()
+        .with_context(|| format!("could not inspect detached terminal {}", launcher.display()))?
+    {
+        anyhow::bail!(
+            "detached terminal {} exited during startup ({status})",
+            launcher.display()
+        );
+    }
     Ok(())
+}
+
+pub(crate) fn begin_detached_terminal_launch(
+    app: &mut yoctui_model::App,
+    operation: &mut Option<DetachedTerminalOperation>,
+    request: yoctui_model::TerminalLaunchRequest,
+) {
+    if operation.is_some() {
+        app.notification = Some("A detached terminal is already starting.".into());
+        return;
+    }
+    let name = request.name.clone();
+    app.notification = Some(format!("Opening detached terminal for {name}…"));
+    let handle = tokio::task::spawn_blocking(move || launch_detached_terminal(&request));
+    *operation = Some(DetachedTerminalOperation { name, handle });
+}
+
+pub(crate) async fn poll_detached_terminal_launch(
+    app: &mut yoctui_model::App,
+    operation: &mut Option<DetachedTerminalOperation>,
+) {
+    if !operation
+        .as_ref()
+        .is_some_and(|operation| operation.handle.is_finished())
+    {
+        return;
+    }
+    let Some(operation) = operation.take() else {
+        return;
+    };
+    app.notification = Some(match operation.handle.await {
+        Ok(Ok(())) => format!("Detached terminal opened for {}.", operation.name),
+        Ok(Err(error)) => format!("Could not open detached terminal: {error}"),
+        Err(error) => format!("Could not open detached terminal: {error}"),
+    });
 }

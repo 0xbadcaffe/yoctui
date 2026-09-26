@@ -4,10 +4,13 @@ Kernel/U-Boot sessions keep their writer lease while `Ctrl+G` hides or resumes
 the exact session. While visible, every other key including function keys and
 `Ctrl+B` reaches ncurses; the title and footer state who owns input. Focused
 model, app, CLI, UI, formatting, strict Clippy, and roadmap checks pass.
-DETACHED-TERMINAL-STARTUP-001 is active because detached launch still reports
-success immediately after spawning an emulator. Live validation and the
-versioned release remain; the full workspace suite stays deferred for the
-agreed manual bug pass.
+DETACHED-TERMINAL-STARTUP-001 is DONE: explicit emulator profiles preserve
+shell-free argv and foreground/wait behavior, GNOME Terminal is preferred over
+this host's generic Terminator alias, and a background startup probe reports an
+early launcher exit instead of false success. Focused argv, failure, liveness,
+formatting, strict CLI Clippy, and roadmap checks pass. The versioned optimized
+release and live Kernel/U-Boot validation remain; the full workspace suite stays
+deferred for the agreed manual bug pass.
 
 M83 is DONE in v0.1.236. The admitted `vt100` parser ignores DEC G0/G1
 Special Graphics state and previously exposed ncurses border source letters

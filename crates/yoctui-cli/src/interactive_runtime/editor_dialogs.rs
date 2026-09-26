@@ -123,22 +123,11 @@ impl InteractiveRuntime {
                     }
                 }
                 Some(Effect::LaunchDetachedTerminal(request)) => {
-                    match launch_detached_terminal(&request) {
-                        Ok(()) => {
-                            runtime.app.notification =
-                                Some(format!("Detached terminal started for {}.", request.name));
-                        }
-                        Err(error) => {
-                            runtime.app.notification =
-                                Some(format!("Could not start detached terminal: {error}"));
-                            let _ = update(
-                                &mut runtime.app,
-                                Action::DetachedTerminalAvailabilityDetected(
-                                    detached_terminal_availability(),
-                                ),
-                            );
-                        }
-                    }
+                    begin_detached_terminal_launch(
+                        &mut runtime.app,
+                        &mut runtime.detached_terminal_operation,
+                        request,
+                    );
                 }
                 _ => {}
             }
