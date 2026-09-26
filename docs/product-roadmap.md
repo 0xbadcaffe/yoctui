@@ -2048,5 +2048,7 @@ platform operations.
 
 MENUCONFIG-FAILURE-ACK-001 adds a bounded menuconfig-only prompt detector and a
 single daemon acknowledgement, with split-output and live failure coverage.
-MENUCONFIG-FAILURE-ACK-RELEASE-001 packages the correction as v0.1.238 and
-validates that the failed U-Boot session exits before Kernel menuconfig starts.
+MENUCONFIG-FAILURE-ACK-RELEASE-001 is complete in v0.1.238. Live Romulus
+validation reproduced the U-Boot ncurses failure, retained its diagnostic
+screen, automatically completed the acknowledgement wrapper, and then launched
+the full Kernel menuconfig screen without a daemon restart.

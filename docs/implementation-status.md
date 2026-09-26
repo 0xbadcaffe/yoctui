@@ -1,5 +1,4 @@
-M85 implementation is DONE and its v0.1.238 release is IN_PROGRESS. A live
-Romulus U-Boot menuconfig failed its
+M85 is DONE in v0.1.238. A live Romulus U-Boot menuconfig failed its
 legacy ncurses probe, then OpenEmbedded's generated terminal wrapper waited at
 `Press any key to continue...` with no viewer. Session 14 therefore remained
 Running for more than ten minutes and blocked the next Kernel menuconfig behind
@@ -7,7 +6,15 @@ Running for more than ten minutes and blocked the next Kernel menuconfig behind
 Menuconfig runtime now acknowledges this exact prompt once, without requiring a
 viewer or disturbing the writer lease, retains the diagnostic screen, and
 publishes the real exit. Focused split-output/no-writer coverage, formatting,
-strict BitBake/CLI Clippy, and roadmap validation pass.
+strict BitBake/CLI Clippy, version policy, roadmap validation, and the optimized
+release build pass. Live session 15 reproduced the failure, retained the ncurses
+diagnostic and prompt, and automatically exited at about 80 seconds. Kernel
+session 16 then launched immediately and rendered its full configuration screen,
+proving the failure no longer blocks later platform operations. The installed
+v0.1.238 binary SHA-256 is
+27f7230e0409771a0dd1729bc9f48537b7439a8560eedfa212024c6043c2e175 and the
+initialized daemon runs as PID 3684241. The full workspace suite remains
+deferred until requested.
 
 M84 is DONE in v0.1.237. MENUCONFIG-INTERACTION-001 is DONE: the daemon
 flushes the final typed screen after a throttled output burst, and embedded
