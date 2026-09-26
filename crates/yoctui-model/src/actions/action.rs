@@ -62,7 +62,7 @@ pub enum Action {
     Focus(FocusTarget),
 
     // Menus, settings, and compatibility.
-    OpenCommandPalette, OpenGlobalSearch, BeginGlobalContentSearch,
+    OpenCommandPalette, OpenGlobalSearch, OpenRecipeEditorWorkspaceSearch, BeginGlobalContentSearch,
     GlobalContentSearchLoaded { generation: u64, query: String, hits: Vec<GlobalSearchHit>, truncated: bool, searched_scopes: Vec<String>, },
     GlobalContentSearchFailed { generation: u64, query: String, message: String, },
     SelectCommandPalette { delta: isize, },

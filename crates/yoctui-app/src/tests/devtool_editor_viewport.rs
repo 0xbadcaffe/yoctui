@@ -14,6 +14,7 @@ fn devtool_editor_viewport_routes_complete_tree_navigation_and_vim_insert_mode()
         language: yoctui_model::SourceLanguage::Rust,
         document: yoctui_model::TextAreaState::new("fn main() {}".into()),
         searching: false,
+        pending_search_position: None,
     };
     assert_eq!(
         recipe_editor_action(&editor, Input::PageDown),

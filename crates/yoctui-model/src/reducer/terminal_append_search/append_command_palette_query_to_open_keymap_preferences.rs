@@ -162,6 +162,54 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     .hits()
                     .get(app.command_palette_selection - commands.len())
                     .cloned()?;
+                if let Some(root) = app.global_search_root.clone() {
+                    let Ok(relative) = hit.path.strip_prefix(&root).map(Path::to_path_buf) else {
+                        app.notification = Some(
+                            "The workspace search result escaped the selected workspace root."
+                                .into(),
+                        );
+                        return None;
+                    };
+                    let Some(Dialog::RecipeEditor(editor)) = app.active_dialog() else {
+                        app.notification =
+                            Some("The Devtool workspace editor is no longer open.".into());
+                        return None;
+                    };
+                    let Some(index) = editor.files.iter().position(|path| path == &relative) else {
+                        app.notification = Some(
+                            "The matching file is outside the retained editable workspace inventory."
+                                .into(),
+                        );
+                        return None;
+                    };
+                    if editor.is_dirty() && index != editor.selection {
+                        app.notification = Some(
+                            "Save the selected file with Ctrl+S before opening another workspace search result."
+                                .into(),
+                        );
+                        return None;
+                    }
+                    let line = usize::try_from(hit.line.saturating_sub(1)).unwrap_or(usize::MAX);
+                    let column =
+                        usize::try_from(hit.column.saturating_sub(1)).unwrap_or(usize::MAX);
+                    app.command_palette_open = false;
+                    let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() else {
+                        return None;
+                    };
+                    editor.focus = RecipeEditorFocus::Document;
+                    editor.searching = false;
+                    if index == editor.selection {
+                        editor.document.select_position(line, column, false);
+                        synchronize_focus(app);
+                        return None;
+                    }
+                    editor.selection = index;
+                    editor.pending_search_position = Some((line, column));
+                    editor.refresh_language_and_validation();
+                    let path = editor.selected_path();
+                    synchronize_focus(app);
+                    return path.map(Effect::LoadRecipeEditorFile);
+                }
                 app.command_palette_open = false;
                 synchronize_focus(app);
                 return Some(Effect::OpenInEditor(hit.path));

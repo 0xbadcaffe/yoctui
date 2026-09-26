@@ -198,6 +198,7 @@ pub(crate) fn concept_editor_menu_app() -> App {
             document
         },
         searching: false,
+        pending_search_position: None,
     }));
     if let Some(Dialog::RecipeEditor(editor)) = app.dialogs.back_mut() {
         editor.refresh_language_and_validation();
@@ -416,6 +417,7 @@ pub(crate) fn readme_device_tree_editor_app() -> App {
             include_str!("../../../tests/fixtures/device-tree/imx8mp-evk.dts").replace('\t', "    "),
         ),
         searching: false,
+        pending_search_position: None,
     }));
     if let Some(Dialog::RecipeEditor(editor)) = app.dialogs.back_mut() {
         editor.refresh_language_and_validation();

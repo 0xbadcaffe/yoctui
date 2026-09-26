@@ -324,6 +324,26 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.command_palette_selection = 0;
             app.command_palette_query.clear();
             app.global_search_content = GlobalSearchContentState::Idle;
+            app.global_search_root = None;
+        }
+        Action::OpenRecipeEditorWorkspaceSearch => {
+            let Some(root) = app.active_dialog().and_then(|dialog| match dialog {
+                Dialog::RecipeEditor(editor) => Some(editor.root.clone()),
+                _ => None,
+            }) else {
+                return None;
+            };
+            if !root.is_absolute() {
+                app.notification =
+                    Some("The Devtool workspace search root is not absolute.".into());
+                return None;
+            }
+            app.command_palette_open = true;
+            app.command_palette_mode = CommandPaletteMode::GlobalRegexSearch;
+            app.command_palette_selection = 0;
+            app.command_palette_query.clear();
+            app.global_search_content = GlobalSearchContentState::Idle;
+            app.global_search_root = Some(root);
         }
         Action::SelectCommandPalette { delta } => {
             let count = app.filtered_command_palette_commands().len()

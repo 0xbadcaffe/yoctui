@@ -183,6 +183,7 @@ fn dialog_families_render_on_narrow_supported_terminals() {
                 language: yoctui_model::SourceLanguage::C,
                 document: yoctui_model::TextAreaState::new("int main() {}".into()),
                 searching: false,
+                pending_search_position: None,
             }),
             "Files 1/1",
         ),

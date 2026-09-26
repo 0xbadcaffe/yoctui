@@ -350,11 +350,11 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     );
     frame.render_widget(
         Paragraph::new(if file_focus {
-            "FILES · ↑/↓ PgUp/PgDn Home/End select · Enter/Tab document · e external · Esc close"
+            "Ctrl+F file · Ctrl+Shift+F workspace · / global · Enter edit · Esc close"
         } else if integrated {
-            "i insert · / search · Ctrl+S save · Ctrl+B build · Tab files"
+            "i insert · Ctrl+F file · Ctrl+Shift+F workspace · / global · Ctrl+S save · Ctrl+B build"
         } else {
-            "EDITOR · i insert · v visual · / search · Ctrl+S save · Ctrl+B build · Tab files"
+            "EDITOR · i insert · v visual · Ctrl+F file · Ctrl+Shift+F workspace · / global · Ctrl+S save"
         })
         .style(dialog_styles(app).hint),
         status_area,

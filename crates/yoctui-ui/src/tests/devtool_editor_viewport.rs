@@ -69,6 +69,7 @@ fn devtool_editor_viewport_marks_a_limited_inventory_and_known_extensions() {
         language: yoctui_model::SourceLanguage::Rust,
         document: yoctui_model::TextAreaState::new("fn main() {}".into()),
         searching: false,
+        pending_search_position: None,
     }));
     let mut terminal = Terminal::new(TestBackend::new(160, 50)).unwrap();
     terminal.draw(|frame| render(frame, &app)).unwrap();

@@ -108,6 +108,8 @@ impl InteractiveRuntime {
                     runtime.editor_command.as_deref(),
                 )
                 .await;
+            } else if let Some(Effect::LoadRecipeEditorFile(path)) = effect {
+                load_recipe_editor_file(&mut runtime.app, path).await;
             } else if let Some(Effect::OpenInEditor(path)) = effect {
                 open_in_editor(
                     &runtime.guard,

@@ -24,6 +24,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     language,
                     document: TextAreaState::new(String::new()),
                     searching: false,
+                    pending_search_position: None,
                 }),
             );
             if let Some(path) = app.active_dialog().and_then(|dialog| match dialog {
@@ -62,6 +63,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::LoadRecipeEditorContent(content) => {
             if let Some(Dialog::RecipeEditor(editor)) = app.active_dialog_mut() {
                 editor.document.accept_external_text(content);
+                if let Some((line, column)) = editor.pending_search_position.take() {
+                    editor.document.select_position(line, column, false);
+                }
                 editor.document.set_mode(TextAreaMode::Normal);
                 editor.searching = false;
                 editor.refresh_language_and_validation();

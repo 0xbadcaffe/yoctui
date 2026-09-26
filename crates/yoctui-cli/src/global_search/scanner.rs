@@ -231,7 +231,7 @@ pub fn scan_global_content(
     Ok(GlobalSearchScanResult {
         hits: matches.hits,
         truncated: matches.truncated || walker_truncated,
-        searched_scopes: vec![format!("build={}", build_dir.display())],
+        searched_scopes: vec![format!("{}={}", plan.scope_label, build_dir.display())],
     })
 }
 

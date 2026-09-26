@@ -182,12 +182,15 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
     }
     let palette = ThemePalette::for_app(app);
     let global_search = app.command_palette_mode == CommandPaletteMode::GlobalRegexSearch;
+    let workspace_search = global_search && app.global_search_root.is_some();
     clear_popup(frame, app, popup);
     let outer = Block::default()
-        .title(if global_search {
-            "Global Regex Search · focus trapped"
+        .title(if workspace_search {
+            "Workspace Regex Search"
+        } else if global_search {
+            "Global Regex Search"
         } else {
-            "Command Palette · focus trapped"
+            "Command Palette"
         })
         .borders(Borders::ALL)
         .style(palette.base())
@@ -284,7 +287,14 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
         frame.render_widget(
             StateView {
                 kind: StateKind::Loading,
-                summary: format!("{activity} Searching build text files and generated rootfs…"),
+                summary: format!(
+                    "{activity} Searching {} text files…",
+                    if workspace_search {
+                        "workspace"
+                    } else {
+                        "build and generated rootfs"
+                    }
+                ),
                 detail: Some("Results are bounded and generated caches are excluded.".into()),
                 action: Some("Keep typing to replace this search; Esc cancels it.".into()),
             }
@@ -318,9 +328,23 @@ pub(crate) fn command_palette(frame: &mut Frame, app: &App, area: Rect) {
             StateView {
                 kind: StateKind::Empty,
                 summary: if global_search && app.command_palette_query.trim().is_empty() {
-                    "Type a regular expression to search build file contents.".into()
+                    format!(
+                        "Type a regular expression to search {} file contents.",
+                        if workspace_search {
+                            "workspace"
+                        } else {
+                            "build"
+                        }
+                    )
                 } else if global_search {
-                    "No build file contents match this regular expression.".into()
+                    format!(
+                        "No {} file contents match this regular expression.",
+                        if workspace_search {
+                            "workspace"
+                        } else {
+                            "build"
+                        }
+                    )
                 } else {
                     "No commands match this search.".into()
                 },

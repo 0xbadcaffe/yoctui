@@ -132,7 +132,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::TerminalConfirmKill | Action::TerminalCancelMode | Action::TerminalToggleHelp
         | Action::ResizeFocusedPane { .. } | Action::ActivateNavigator | Action::Security(..)
         | Action::Qa(..) | Action::Maintenance(..) | Action::Focus(..)
-        | Action::OpenCommandPalette | Action::OpenGlobalSearch | Action::SelectCommandPalette { .. }
+        | Action::OpenCommandPalette | Action::OpenGlobalSearch | Action::OpenRecipeEditorWorkspaceSearch | Action::SelectCommandPalette { .. }
         | Action::AppendCommandPaletteQuery(..) | Action::BackspaceCommandPaletteQuery | Action::ClearCommandPaletteQuery
         | Action::BeginGlobalContentSearch | Action::GlobalContentSearchLoaded { .. } | Action::GlobalContentSearchFailed { .. }
         | Action::ActivateCommandPalette | Action::RestoreGlobalSearchResults | Action::CloseCommandPalette | Action::OpenApplicationMenu

@@ -164,6 +164,7 @@ pub struct RecipeEditor {
     pub language: SourceLanguage,
     pub document: TextAreaState,
     pub searching: bool,
+    pub pending_search_position: Option<(usize, usize)>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

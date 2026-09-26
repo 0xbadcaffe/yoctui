@@ -328,6 +328,7 @@ fn scenario_workload(scenario: &str) -> App {
                     document
                 },
                 searching: false,
+                pending_search_position: None,
             }));
             app
         }

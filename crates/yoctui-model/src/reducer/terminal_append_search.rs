@@ -30,6 +30,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::Focus(..)
         | Action::OpenCommandPalette
         | Action::OpenGlobalSearch
+        | Action::OpenRecipeEditorWorkspaceSearch
         | Action::SelectCommandPalette { .. } => {
             terminal_append_search_to_select_command_palette::reduce_actions(app, action)
         }

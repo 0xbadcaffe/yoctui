@@ -175,6 +175,7 @@ pub struct App {
     pub command_palette_query: String,
     pub global_search_generation: u64,
     pub global_search_content: GlobalSearchContentState,
+    pub global_search_root: Option<PathBuf>,
     pub error_selection: usize,
     pub recipe_selection: usize,
     pub recipe_preview_scroll: usize,

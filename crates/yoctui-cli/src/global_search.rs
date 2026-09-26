@@ -34,6 +34,7 @@ impl GlobalSearchCancellation {
 pub struct GlobalSearchPlan {
     pub query: String,
     pub build_dir: Option<PathBuf>,
+    pub scope_label: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -45,10 +46,19 @@ pub struct GlobalSearchScanResult {
 
 impl GlobalSearchPlan {
     pub fn for_app(app: &App, build_dir: &Path, query: String) -> Self {
-        let build_dir = app.workspace.build_dir.as_deref().unwrap_or(build_dir);
+        let (build_dir, scope) = app.global_search_root.as_deref().map_or_else(
+            || {
+                (
+                    app.workspace.build_dir.as_deref().unwrap_or(build_dir),
+                    "build",
+                )
+            },
+            |root| (root, "workspace"),
+        );
         Self {
             query,
             build_dir: safe_search_root(build_dir).then(|| build_dir.to_path_buf()),
+            scope_label: scope.into(),
         }
     }
 }

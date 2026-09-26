@@ -12,6 +12,7 @@ fn devwork_editor_routes_confirmation_and_workspace_editor_build_keys() {
         language: yoctui_model::SourceLanguage::C,
         document: yoctui_model::TextAreaState::new("int main() {}".into()),
         searching: false,
+        pending_search_position: None,
     };
     assert_eq!(
         devtool_modify_confirmation_action(Input::Enter),

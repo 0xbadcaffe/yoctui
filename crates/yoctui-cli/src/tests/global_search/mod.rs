@@ -17,3 +17,4 @@ fn fixture_root() -> PathBuf {
 mod global_search_discloses_limits_and_honors_cancellation;
 
 mod global_search_only_matches_build_text_contents_including_rootfs_and_artifacts;
+mod workspace_search_stays_inside_the_exact_devtool_root;

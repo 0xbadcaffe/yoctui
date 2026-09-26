@@ -1,21 +1,20 @@
 # Current Task
 
-**ID:** DEVTOOL-EDITOR-SEARCH-001
-**Title:** Add selected-file and workspace-scoped Devtool search
+**ID:** DEVTOOL-EDITOR-GIT-001
+**Title:** Show complete workspace Git state and direct GitUI access
 **Status:** IN_PROGRESS
 
-Route Ctrl+F to selected-buffer search, Ctrl+Shift+F to the shared bounded regex
-surface scoped to the exact absolute workspace root, and `/` to its unchanged
-global build-content scope. Selecting a workspace hit must load it into the
-integrated editor without losing recipe context. Preserve all containment,
-symlink, byte, result, cancellation, and responsive-dialog bounds.
+Report repository root, branch, upstream synchronization, and dirty state for
+the exact recipe workspace in both the Devtool screen and integrated editor.
+Expose GitUI directly from the integrated editor while preserving the existing
+typed terminal-launch preview and exact workspace working directory.
 
 Verify with:
 
 ```bash
-cargo test -p yoctui-model devtool_editor_search
-cargo test -p yoctui-app devtool_editor_search
-cargo test -p yoctui --all-features workspace_search
-cargo test -p yoctui-ui devtool_editor_search
+cargo test -p yoctui-bitbake devtool_workspace_git
+cargo test -p yoctui-model devtool_editor_git
+cargo test -p yoctui-app devtool_editor_git
+cargo test -p yoctui-ui devtool_editor_git
 cargo fmt --all --check
 ```

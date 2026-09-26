@@ -143,6 +143,13 @@ pub(crate) fn input_from_key(key: KeyEvent) -> Option<Input> {
         KeyCode::Char('b') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlB),
         KeyCode::Char('p') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlP),
         KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlU),
+        KeyCode::Char('f' | 'F')
+            if key.modifiers.contains(KeyModifiers::CONTROL)
+                && key.modifiers.contains(KeyModifiers::SHIFT) =>
+        {
+            Some(Input::CtrlShiftF)
+        }
+        KeyCode::Char('f') if key.modifiers.contains(KeyModifiers::CONTROL) => Some(Input::CtrlF),
         KeyCode::F(1) => Some(Input::F1),
         KeyCode::F(2) => Some(Input::F2),
         KeyCode::F(3) => Some(Input::F3),
@@ -184,6 +191,7 @@ pub(crate) fn terminal_input_bytes(input: Input) -> Option<Vec<u8>> {
         Input::CtrlB => b"\x02".as_slice(),
         Input::CtrlP => b"\x10".as_slice(),
         Input::CtrlU => b"\x15".as_slice(),
+        Input::CtrlF | Input::CtrlShiftF => b"\x06".as_slice(),
         Input::CtrlS => b"\x13".as_slice(),
         Input::Tab => b"\t".as_slice(),
         Input::BackTab => b"\x1b[Z".as_slice(),

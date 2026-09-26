@@ -180,6 +180,7 @@ impl App {
             command_palette_query: String::new(),
             global_search_generation: 0,
             global_search_content: GlobalSearchContentState::Idle,
+            global_search_root: None,
             error_selection: 0,
             recipe_selection: 0,
             recipe_preview_scroll: 0,

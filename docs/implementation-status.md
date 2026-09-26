@@ -4000,4 +4000,14 @@ tree navigation and reducer-owned Normal/Insert/Visual editing remain active,
 every closed language identity has extension and keyword presentation, and
 Files, Document, Validation/Diff, and Inspector panes use distinct semantic
 chrome. Focused model, app, TestBackend, filesystem scan, and formatting checks
-pass. DEVTOOL-EDITOR-SEARCH-001 is now IN_PROGRESS.
+pass.
+
+DEVTOOL-EDITOR-SEARCH-001 is DONE in the v0.1.230 correction series. Ctrl+F
+searches the selected buffer, Ctrl+Shift+F opens the shared bounded regex
+surface at the exact absolute workspace root, and slash retains the existing
+global build-content scope. Workspace hits load the retained file into the
+integrated editor at the matching cursor position without losing its recipe;
+unsaved cross-file switches fail closed and the existing containment, .git,
+symlink, byte, result, and cancellation bounds remain enforced. Focused model,
+app, CLI scanner, TestBackend, and formatting checks pass.
+DEVTOOL-EDITOR-GIT-001 is now IN_PROGRESS.

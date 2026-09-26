@@ -9563,18 +9563,18 @@ notes = "DONE in the v0.1.230 correction series. The bounded inventory grows fro
 id = "DEVTOOL-EDITOR-SEARCH-001"
 milestone = "M77"
 title = "Add selected-file and workspace-scoped Devtool search"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2511
 required = true
 depends_on = ["DEVTOOL-EDITOR-VIEWPORT-001"]
 verify = ["cargo test -p yoctui-model devtool_editor_search", "cargo test -p yoctui-app devtool_editor_search", "cargo test -p yoctui --all-features workspace_search", "cargo test -p yoctui-ui devtool_editor_search", "cargo fmt --all --check"]
-notes = "Ctrl+F searches the selected buffer, Ctrl+Shift+F searches only the exact workspace root, and slash retains global build-content search."
+notes = "DONE in the v0.1.230 correction series. Ctrl+F searches the selected buffer, Ctrl+Shift+F uses the shared bounded regex surface at the exact absolute workspace root, and slash retains global build-content search. Workspace hits load into the integrated editor at the matching cursor position, dirty file switches fail closed, and .git, symlink, byte, result, and cancellation bounds remain enforced. Focused model, app, CLI scanner, UI, and formatting checks pass."
 
 [[task]]
 id = "DEVTOOL-EDITOR-GIT-001"
 milestone = "M77"
 title = "Show complete workspace Git state and direct GitUI access"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2512
 required = true
 depends_on = ["DEVTOOL-EDITOR-SEARCH-001"]

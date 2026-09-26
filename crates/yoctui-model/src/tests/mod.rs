@@ -356,6 +356,7 @@ mod completed_builds_are_retained_in_session_history;
 mod config_compare_explains_scope_loading_and_missing_detail;
 mod dependency_graph_normalization_reports_hard_bounds;
 mod device_tree_compile_dialog_uses_authoritative_options_and_refuses_collisions;
+mod devtool_editor_search;
 mod devtool_editor_viewport;
 mod devtool_patch;
 mod devtool_workspace;

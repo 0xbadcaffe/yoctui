@@ -23,6 +23,9 @@ pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> 
             Input::Char('e') => Some(Action::OpenRecipeEditorExternal),
             Input::CtrlS => Some(Action::SaveRecipeEditor),
             Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
+            Input::CtrlF => Some(Action::BeginRecipeEditorSearch),
+            Input::CtrlShiftF => Some(Action::OpenRecipeEditorWorkspaceSearch),
+            Input::Char('/') => Some(Action::OpenGlobalSearch),
             _ => None,
         };
     }
@@ -30,12 +33,14 @@ pub fn recipe_editor_action(editor: &yoctui_model::RecipeEditor, key: Input) -> 
     match key {
         Input::CtrlS => Some(Action::SaveRecipeEditor),
         Input::CtrlB => Some(Action::BeginRecipeEditorBuild),
+        Input::CtrlF => Some(Action::BeginRecipeEditorSearch),
+        Input::CtrlShiftF => Some(Action::OpenRecipeEditorWorkspaceSearch),
         Input::Char('e') if editor.document.mode() != TextAreaMode::Insert => {
             Some(Action::OpenRecipeEditorExternal)
         }
         Input::Tab | Input::BackTab => Some(Action::FocusRecipeEditor(Focus::Files)),
         Input::Char('/') if editor.document.mode() != TextAreaMode::Insert => {
-            Some(Action::BeginRecipeEditorSearch)
+            Some(Action::OpenGlobalSearch)
         }
         Input::Char('n') if editor.document.mode() != TextAreaMode::Insert => {
             Some(Action::NextRecipeEditorMatch { backwards: false })
