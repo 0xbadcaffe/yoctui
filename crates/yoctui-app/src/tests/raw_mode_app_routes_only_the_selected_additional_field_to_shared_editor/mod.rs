@@ -37,4 +37,6 @@ mod devwork_terminal_dialog_keys_are_focus_trapped_and_recipe_routes_are_explici
 
 mod dtc_compile_dialog_maps_only_typed_option_and_review_keys;
 
+mod dtc_decompile_dialog_maps_form_editor_and_browser_keys;
+
 mod ux_onboarding_traps_input_and_routes_only_typed_guide_actions;

@@ -130,6 +130,7 @@ fn devwork_terminal_renders_destination_authority_and_zero_spawn_cancel_hint() {
                     "-c".into(),
                     "devshell".into(),
                 ],
+                completion: None,
             },
             destination: yoctui_model::TerminalLaunchDestination::Embedded,
             output_must_not_exist: None,

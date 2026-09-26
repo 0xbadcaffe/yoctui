@@ -81,42 +81,13 @@ fn begin_platform_dtc_decompile(app: &mut App, kernel: bool) {
         app.notification = Some("Select a DTB or DTBO before decompiling.".into());
         return;
     }
-    let stem = file
-        .path
-        .file_stem()
-        .and_then(|value| value.to_str())
-        .unwrap_or("device-tree");
-    let output = file.path.with_file_name(format!("{stem}.yoctui.dts"));
-    if !ensure_output_absent(app, &output) {
-        return;
-    }
     open_dialog(
         app,
-        Dialog::TerminalLaunch(TerminalLaunchDialog {
-            request: TerminalLaunchRequest {
-                name: format!(
-                    "decompile {} device tree",
-                    component.label().to_ascii_lowercase()
-                ),
-                kind: TerminalCreationKind::Utility,
-                cwd: file.root,
-                program,
-                arguments: vec![
-                    "-I".into(),
-                    "dtb".into(),
-                    "-O".into(),
-                    "dts".into(),
-                    "-o".into(),
-                    output.display().to_string(),
-                    file.path.display().to_string(),
-                ],
-            },
-            destination: TerminalLaunchDestination::Embedded,
-            output_must_not_exist: Some(output),
-        }),
+        Dialog::DtcDecompile(DtcDecompileDialog::new(component, &file, program)),
     );
 }
 
+mod dtc_decompile;
 mod explore_selected_firmware_root_to_terminal_move_copy_row;
 mod open_onboarding_to_open_selected_firmware_file;
 mod terminal_copy_viewport_to_terminal_begin_search;
@@ -172,6 +143,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::AdjustDtcCompileOption { .. }
         | Action::ConfirmDtcCompileOptions
         | Action::CancelDtcCompileOptions
+        | Action::DtcDecompile(..)
         | Action::ShiftOverviewView { .. }
         | Action::SelectOverviewView(..)
         | Action::Open(..)

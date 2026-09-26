@@ -36,6 +36,15 @@ pub struct TerminalLaunchRequest {
     pub cwd: PathBuf,
     pub program: PathBuf,
     pub arguments: Vec<String>,
+    pub completion: Option<TerminalCompletion>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TerminalCompletion {
+    OpenDeviceTree {
+        component: crate::PlatformComponent,
+        path: PathBuf,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -74,6 +83,7 @@ pub enum TerminalEffect {
         cwd: PathBuf,
         program: PathBuf,
         arguments: Vec<String>,
+        completion: Option<TerminalCompletion>,
     },
     TakeControl {
         session_id: u64,

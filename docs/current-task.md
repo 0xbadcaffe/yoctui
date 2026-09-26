@@ -1,20 +1,20 @@
 # Current Task
 
-**ID:** DTB-DECOMPILE-DIALOG-001
-**Title:** Choose and view device-tree decompile outputs
+**ID:** DTB-DECOMPILE-DIALOG-RELEASE-001
+**Title:** Release device-tree decompile destination workflow
 **Status:** IN_PROGRESS
 
-Implement the model-owned DTB/DTBO decompile form, bounded save-directory
-browser, checked-by-default automatic viewer, and exact successful-PTY
-completion correlation for Kernel and U-Boot.
+Publish the completed DTB/DTBO destination and successful-view workflow as
+v0.1.239, build and install the optimized binary, and restart the initialized
+Romulus daemon.
 
 Verify with:
 
 ```bash
-cargo test -p yoctui-model device_tree_decompile
-cargo test -p yoctui-app dtc_decompile
-cargo test -p yoctui-ui dtc_decompile
-cargo test -p yoctui --bin yoctui dtc_decompile
 cargo fmt --all --check
+cargo clippy -p yoctui-model --all-features -- -D warnings
+cargo clippy -p yoctui-app --all-features -- -D warnings
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 ```

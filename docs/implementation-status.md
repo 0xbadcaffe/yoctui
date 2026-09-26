@@ -4182,9 +4182,10 @@ recovering 26.6 GiB while preserving OpenBMC outputs and user captures. The
 full workspace suite remains deferred until requested. All 865 implementation
 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED on a new genuine
 current-source real-Poky performance capture.
-M86 is IN PROGRESS from the user's device-tree workflow request. DTB and DTBO
-opening will gain an explicit `.dts` destination, bounded folder browser, and a
-checked-by-default option that opens the exact output in the integrated Device
-Tree viewer only after its daemon PTY exits successfully. Kernel and U-Boot
-share the same typed flow. The release task will publish v0.1.239 after focused
-model, app, UI, CLI, formatting, Clippy, version, and roadmap checks.
+DTB-DECOMPILE-DIALOG-001 is DONE in the v0.1.239 series. DTB and DTBO opening
+now provides an explicit `.dts` destination, bounded folder browser, direct
+path editor, and a checked-by-default option that opens the exact output in the
+integrated Device Tree viewer only after its newly correlated daemon PTY exits
+successfully. Failed or stale sessions cannot open a file, and automatic view
+keeps the launch embedded. Kernel and U-Boot share the same typed flow. The
+release task is now active.

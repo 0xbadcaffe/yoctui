@@ -9838,18 +9838,18 @@ notes = "DONE in v0.1.238. Focused split-output/no-writer coverage, formatting, 
 id = "DTB-DECOMPILE-DIALOG-001"
 milestone = "M86"
 title = "Choose and view device-tree decompile outputs"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3040
 required = true
 depends_on = ["MENUCONFIG-FAILURE-ACK-RELEASE-001"]
 verify = ["cargo test -p yoctui-model device_tree_decompile", "cargo test -p yoctui-app dtc_decompile", "cargo test -p yoctui-ui dtc_decompile", "cargo test -p yoctui --bin yoctui dtc_decompile", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Model-owned destination and view-after-success flow for Kernel and U-Boot DTB/DTBO decompilation."
+notes = "DONE. The model-owned form retains an editable absolute DTS destination, checked-by-default automatic viewer, and bounded directory browser. The exact terminal creation carries a typed completion intent correlated only to a newly created PTY; zero exit opens the generated DTS in the integrated Device Tree editor while failed, lost, stale, and detached launches cannot. Kernel and U-Boot share the flow. Focused model, app, UI, CLI, formatting, and roadmap checks pass."
 
 [[task]]
 id = "DTB-DECOMPILE-DIALOG-RELEASE-001"
 milestone = "M86"
 title = "Release device-tree decompile destination workflow"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3041
 required = true
 depends_on = ["DTB-DECOMPILE-DIALOG-001"]

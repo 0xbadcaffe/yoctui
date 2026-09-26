@@ -120,5 +120,6 @@ fn terminal_request(
         cwd,
         program,
         arguments,
+        completion: None,
     })
 }

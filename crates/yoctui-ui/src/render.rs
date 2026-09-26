@@ -13,6 +13,8 @@ include!("render/extended_devtool_dialogs.rs");
 
 include!("render/yocto_utility_dialog.rs");
 
+include!("render/dtc_decompile_dialog.rs");
+
 include!("render/development_dialogs.rs");
 
 include!("render/setup_dialogs.rs");

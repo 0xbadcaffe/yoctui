@@ -65,6 +65,12 @@ impl InteractiveRuntime {
                 };
                 begin_qemu_cancellation(&mut runtime.app, &mut runtime.qemu_operation, id);
             }
+        } else if let Some(Dialog::DtcDecompile(dialog)) = runtime.app.active_dialog().cloned() {
+            if let Some(effect) = dtc_decompile_dialog_action(&dialog, input)
+                .and_then(|action| compatibility_workspace_action(&mut runtime.app, action))
+            {
+                runtime.environment_browser_io.submit(effect);
+            }
         } else if matches!(runtime.app.active_dialog(), Some(Dialog::DtcCompile(_))) {
             let _ = dtc_compile_dialog_action(input)
                 .and_then(|action| compatibility_workspace_action(&mut runtime.app, action));

@@ -89,6 +89,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
                     cwd,
                     program,
                     arguments: Vec::new(),
+                    completion: None,
                 },
             );
             synchronize_focus(app);
@@ -120,7 +121,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::SelectKernelFile { .. } | Action::LaunchKernelMenuconfig | Action::TogglePlatformMenuconfigForeground | Action::OpenSelectedKernelFile
         | Action::ExploreSelectedKernelRoot | Action::CompileSelectedKernelDts | Action::DecompileSelectedKernelDtb
         | Action::SelectDtcCompileOption { .. } | Action::AdjustDtcCompileOption { .. } | Action::ConfirmDtcCompileOptions
-        | Action::CancelDtcCompileOptions | Action::InspectFirmware | Action::FirmwareLoaded(..)
+        | Action::CancelDtcCompileOptions | Action::DtcDecompile(..) | Action::InspectFirmware | Action::FirmwareLoaded(..)
         | Action::FirmwareFailed(..) | Action::CycleFirmwareView | Action::SetFirmwareView(..)
         | Action::SelectFirmwareFile { .. }
         | Action::LaunchFirmwareMenuconfig | Action::OpenSelectedFirmwareFile | Action::ExploreSelectedFirmwareRoot

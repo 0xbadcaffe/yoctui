@@ -13,6 +13,7 @@ fn detached_terminal_profiles_preserve_exact_argv_and_wait_semantics() {
         cwd: directory.0.clone(),
         program: "/usr/bin/env".into(),
         arguments: vec!["bitbake".into(), "virtual/kernel".into()],
+        completion: None,
     };
 
     let command = detached_terminal_command(&launcher, &request).unwrap();

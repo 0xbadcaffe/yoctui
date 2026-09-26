@@ -56,6 +56,27 @@ pub(crate) async fn open_workspace_editor(app: &mut App, recipe: String, root: P
     }
 }
 
+pub(crate) async fn open_single_workspace_file(app: &mut App, label: String, path: PathBuf) {
+    let Some(root) = path.parent().map(Path::to_path_buf) else {
+        app.notification = Some("The generated DTS has no parent directory.".into());
+        return;
+    };
+    let Some(file) = path.file_name().map(PathBuf::from) else {
+        app.notification = Some("The generated DTS has no filename.".into());
+        return;
+    };
+    if let Some(Effect::LoadRecipeEditorFile(path)) = compatibility_workspace_action(
+        app,
+        Action::OpenRecipeEditor {
+            recipe: label,
+            root,
+            files: vec![file],
+        },
+    ) {
+        load_recipe_editor_file(app, path).await;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

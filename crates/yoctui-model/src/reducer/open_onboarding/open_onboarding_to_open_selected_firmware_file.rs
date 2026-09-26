@@ -222,6 +222,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         cwd,
                         program,
                         arguments,
+                        completion: None,
                     },
                 );
             } else {
@@ -324,6 +325,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         cwd,
                         program,
                         arguments,
+                        completion: None,
                     },
                 );
             } else {

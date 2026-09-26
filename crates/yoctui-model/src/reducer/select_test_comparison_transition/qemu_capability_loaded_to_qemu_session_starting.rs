@@ -113,6 +113,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         cwd,
                         program: preview.program,
                         arguments: preview.arguments,
+                        completion: None,
                     }));
                 }
                 Err(message) => {
@@ -305,6 +306,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 cwd,
                 program,
                 arguments,
+                completion: None,
             }));
         }
         Action::ConfirmQemuLaunch => {

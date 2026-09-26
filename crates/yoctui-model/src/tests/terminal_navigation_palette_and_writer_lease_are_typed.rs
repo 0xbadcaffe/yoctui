@@ -79,6 +79,7 @@ fn ux_terminal_navigation_palette_and_writer_lease_are_typed() {
                 "-c".into(),
                 "devshell".into(),
             ],
+            completion: None,
         }))
     );
 }
@@ -189,6 +190,7 @@ fn platform_menuconfig_stays_in_its_workspace_until_the_pty_screen_is_ready() {
                 cwd: "/work/build".into(),
                 program: "/usr/bin/env".into(),
                 arguments: vec!["/opt/bitbake/bin/bitbake".into()],
+                completion: None,
             },
             destination: TerminalLaunchDestination::Embedded,
             output_must_not_exist: None,
@@ -285,6 +287,7 @@ fn firmware_menuconfig_stays_in_the_u_boot_workspace() {
                 cwd: "/work/build".into(),
                 program: "/usr/bin/env".into(),
                 arguments: vec!["/opt/bitbake/bin/bitbake".into()],
+                completion: None,
             },
             destination: TerminalLaunchDestination::Embedded,
             output_must_not_exist: None,

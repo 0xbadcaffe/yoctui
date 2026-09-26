@@ -32,6 +32,20 @@ pub struct InteractiveDaemonRuntime {
     local_build_dir: Option<PathBuf>,
     next_request: u64,
     last_pty_resize: Option<(u64, u64, TerminalDimensions)>,
+    pending_terminal_completions: Vec<PendingTerminalCompletion>,
+    terminal_completions: Vec<TerminalCompletionOutcome>,
+}
+
+struct PendingTerminalCompletion {
+    name: String,
+    known_sessions: Vec<u64>,
+    session_id: Option<u64>,
+    completion: yoctui_model::TerminalCompletion,
+}
+
+pub(crate) enum TerminalCompletionOutcome {
+    Succeeded(yoctui_model::TerminalCompletion),
+    Failed(String),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

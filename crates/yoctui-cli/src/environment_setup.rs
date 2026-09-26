@@ -1,6 +1,8 @@
 //! One in-flight blocking scan plus one latest request; no unbounded worker fanout.
 use std::path::PathBuf;
-use yoctui_model::{Action, App, Dialog, Effect, EnvironmentDirectory, EnvironmentSetupAction};
+use yoctui_model::{
+    Action, App, Dialog, DtcDecompileAction, Effect, EnvironmentDirectory, EnvironmentSetupAction,
+};
 
 type Scan = (u64, PathBuf, bool);
 type ScanResult = (u64, Result<EnvironmentDirectory, String>);
@@ -56,11 +58,15 @@ impl EnvironmentBrowserIo {
                 Err(format!("Directory scan failed: {error}")),
             )
         });
-        let visible = matches!(app.active_dialog(), Some(Dialog::EnvironmentSetup(setup)) if setup.browser.as_ref().is_some_and(|b| b.request == request));
-        yoctui_model::update(
-            app,
-            Action::EnvironmentSetup(EnvironmentSetupAction::DirectoryLoaded { request, result }),
-        );
+        let environment = matches!(app.active_dialog(), Some(Dialog::EnvironmentSetup(setup)) if setup.browser.as_ref().is_some_and(|b| b.request == request));
+        let decompile = matches!(app.active_dialog(), Some(Dialog::DtcDecompile(dialog)) if dialog.browser.as_ref().is_some_and(|b| b.request == request));
+        let visible = environment || decompile;
+        let action = if decompile {
+            Action::DtcDecompile(DtcDecompileAction::DirectoryLoaded { request, result })
+        } else {
+            Action::EnvironmentSetup(EnvironmentSetupAction::DirectoryLoaded { request, result })
+        };
+        yoctui_model::update(app, action);
         self.start();
         visible
     }

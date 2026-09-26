@@ -176,6 +176,53 @@ pub fn dtc_compile_dialog_action(key: Input) -> Option<Action> {
     }
 }
 
+pub fn dtc_decompile_dialog_action(
+    dialog: &yoctui_model::DtcDecompileDialog,
+    key: Input,
+) -> Option<Action> {
+    use yoctui_model::DtcDecompileAction as A;
+    let action = if dialog.editor.is_some() {
+        match key {
+            Input::Char(character) => A::Insert(character.to_string()),
+            Input::Backspace => A::Backspace,
+            Input::CtrlU => A::Clear,
+            Input::Left => A::Move(yoctui_model::TextAreaMotion::Left),
+            Input::Right => A::Move(yoctui_model::TextAreaMotion::Right),
+            Input::Home => A::Move(yoctui_model::TextAreaMotion::LineStart),
+            Input::End => A::Move(yoctui_model::TextAreaMotion::LineEnd),
+            Input::Enter => A::AcceptEdit,
+            Input::Esc => A::Cancel,
+            _ => return None,
+        }
+    } else if dialog.browser.is_some() {
+        match key {
+            Input::Up | Input::Char('k') => A::SelectDirectory(-1),
+            Input::Down | Input::Char('j') => A::SelectDirectory(1),
+            Input::PageUp => A::SelectDirectory(-10),
+            Input::PageDown => A::SelectDirectory(10),
+            Input::Home => A::SelectDirectory(isize::MIN),
+            Input::End => A::SelectDirectory(isize::MAX),
+            Input::Enter | Input::Right => A::EnterDirectory,
+            Input::Left | Input::Backspace => A::ParentDirectory,
+            Input::Char('s') => A::ChooseDirectory,
+            Input::Esc => A::Cancel,
+            _ => return None,
+        }
+    } else {
+        match key {
+            Input::Up | Input::BackTab => A::Field(-1),
+            Input::Down | Input::Tab => A::Field(1),
+            Input::Char('b') => A::Browse,
+            Input::Char('e') => A::Edit,
+            Input::Char(' ') => A::ToggleViewAfter,
+            Input::Enter => A::Review,
+            Input::Esc => A::Cancel,
+            _ => return None,
+        }
+    };
+    Some(Action::DtcDecompile(action))
+}
+
 pub fn devtool_modify_confirmation_action(key: Input) -> Option<Action> {
     match key {
         Input::Enter => Some(Action::ConfirmDevtoolModify),

@@ -38,6 +38,8 @@ impl InteractiveDaemonRuntime {
             local_build_dir,
             next_request: 1,
             last_pty_resize: None,
+            pending_terminal_completions: Vec::new(),
+            terminal_completions: Vec::new(),
         })
     }
     pub fn detach(mut self, app: &mut App) -> Result<(), ClientRuntimeError> {

@@ -150,6 +150,7 @@ pub(crate) fn terminal_creation_request(
             cwd,
             program: PathBuf::from("/bin/sh"),
             arguments: Vec::new(),
+            completion: None,
         });
     }
 
@@ -203,6 +204,7 @@ pub(crate) fn terminal_creation_request(
             "-c".into(),
             task.into(),
         ],
+        completion: None,
     })
 }
 
@@ -258,6 +260,7 @@ pub(crate) fn devtool_terminal_request(
             cwd,
             program: PathBuf::from("/usr/bin/env"),
             arguments: vec!["devtool".into(), "edit-recipe".into(), identity.name],
+            completion: None,
         });
     }
     let source_path = match &status.workspace {
@@ -275,6 +278,7 @@ pub(crate) fn devtool_terminal_request(
         cwd: source_path,
         program: PathBuf::from("/bin/sh"),
         arguments: Vec::new(),
+        completion: None,
     })
 }
 
@@ -323,5 +327,6 @@ pub(crate) fn devtool_gitui_request(app: &mut App) -> Option<TerminalLaunchReque
         cwd: source_path,
         program,
         arguments: Vec::new(),
+        completion: None,
     })
 }

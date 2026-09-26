@@ -200,6 +200,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                         cwd: repository_root,
                         program,
                         arguments: Vec::new(),
+                        completion: None,
                     },
                     destination: TerminalLaunchDestination::Embedded,
                     output_must_not_exist: None,

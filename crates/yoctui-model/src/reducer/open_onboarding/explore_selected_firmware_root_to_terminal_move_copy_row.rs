@@ -44,6 +44,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 close_dialog(app);
             }
         }
+        Action::DtcDecompile(action) => {
+            return super::dtc_decompile::reduce(app, action);
+        }
         Action::ShiftOverviewView { delta } => {
             app.overview_view = app.overview_view.shifted(delta);
         }
@@ -285,6 +288,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                 DetachedTerminalAvailability::Available { .. }
             );
             if let Some(Dialog::TerminalLaunch(dialog)) = app.active_dialog_mut() {
+                if dialog.request.completion.is_some() {
+                    dialog.destination = TerminalLaunchDestination::Embedded;
+                    return None;
+                }
                 dialog.destination = match (dialog.destination, delta.is_positive()) {
                     (TerminalLaunchDestination::Embedded, true) if detached_available => {
                         TerminalLaunchDestination::Detached
@@ -328,6 +335,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                             cwd: dialog.request.cwd,
                             program: dialog.request.program,
                             arguments: dialog.request.arguments,
+                            completion: dialog.request.completion,
                         })
                     }
                     TerminalLaunchDestination::Detached => {

@@ -28,6 +28,7 @@ pub enum Action {
     SelectDtcCompileOption { delta: isize, },
     AdjustDtcCompileOption { delta: isize, },
     ConfirmDtcCompileOptions, CancelDtcCompileOptions, InspectFirmware,
+    DtcDecompile(DtcDecompileAction),
     FirmwareLoaded(PlatformInventory), FirmwareFailed(String), CycleFirmwareView,
     SetFirmwareView(PlatformView),
     SelectFirmwareFile { delta: isize, },

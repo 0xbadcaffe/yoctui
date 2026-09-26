@@ -13,6 +13,7 @@ mod devtool_editor_git;
 mod devtool_editor_search;
 mod devtool_editor_viewport;
 mod devtool_workspace;
+mod dtc_decompile;
 mod global_search_selection_moves_within_pages;
 mod hardware;
 mod header_status;

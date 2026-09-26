@@ -74,6 +74,27 @@ impl InteractiveRuntime {
                 Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;
         }
         #[cfg(unix)]
+        if let Some(daemon_client) = runtime.daemon_runtime.as_mut() {
+            for completion in daemon_client.take_terminal_completions() {
+                match completion {
+                    client_runtime::TerminalCompletionOutcome::Succeeded(
+                        yoctui_model::TerminalCompletion::OpenDeviceTree { component, path },
+                    ) => {
+                        open_single_workspace_file(
+                            &mut runtime.app,
+                            format!("{} decompiled DTS", component.label()),
+                            path,
+                        )
+                        .await;
+                    }
+                    client_runtime::TerminalCompletionOutcome::Failed(message) => {
+                        runtime.app.notification = Some(message);
+                    }
+                }
+                runtime.render_scheduler.invalidate(RenderCause::State);
+            }
+        }
+        #[cfg(unix)]
         if runtime.daemon_runtime.is_none() && Instant::now() >= runtime.next_daemon_reconnect {
             runtime.next_daemon_reconnect =
                 Instant::now() + client_runtime::DAEMON_RECONNECT_INTERVAL;

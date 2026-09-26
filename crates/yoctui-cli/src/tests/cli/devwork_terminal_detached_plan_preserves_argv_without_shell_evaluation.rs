@@ -17,6 +17,7 @@ fn devwork_terminal_detached_plan_preserves_argv_without_shell_evaluation() {
             "edit-recipe".into(),
             "busybox;touch /tmp/not-executed".into(),
         ],
+        completion: None,
     };
     let command = detached_terminal_command(&launcher, &request).unwrap();
     assert_eq!(

@@ -57,6 +57,14 @@ impl InteractiveDaemonRuntime {
             .next_request
             .checked_add(1)
             .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
+        let completion = match effect {
+            TerminalEffect::Create {
+                name,
+                completion: Some(completion),
+                ..
+            } => Some((name.clone(), completion.clone())),
+            _ => None,
+        };
         match effect {
             TerminalEffect::Create {
                 name,
@@ -64,6 +72,7 @@ impl InteractiveDaemonRuntime {
                 cwd,
                 program,
                 arguments,
+                ..
             } => {
                 let (program, arguments) =
                     if matches!(kind, yoctui_model::TerminalCreationKind::Menuconfig) {
@@ -168,6 +177,23 @@ impl InteractiveDaemonRuntime {
                     },
                 })?;
             }
+        }
+        if let Some((name, completion)) = completion {
+            if self.pending_terminal_completions.len() >= 16 {
+                self.pending_terminal_completions.remove(0);
+            }
+            self.pending_terminal_completions
+                .push(super::PendingTerminalCompletion {
+                    name,
+                    known_sessions: app
+                        .daemon
+                        .pty_sessions
+                        .iter()
+                        .map(|session| session.id)
+                        .collect(),
+                    session_id: None,
+                    completion,
+                });
         }
         Ok(RuntimeEffectRoute::Daemon(request_id))
     }

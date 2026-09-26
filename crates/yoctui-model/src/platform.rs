@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::{TerminalCreationKind, TerminalLaunchRequest};
+use crate::{TerminalCompletion, TerminalCreationKind, TerminalLaunchRequest};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlatformComponent {
@@ -118,6 +118,108 @@ pub struct DtcCompileDialog {
     pub reserve_entries: u32,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum DtcDecompileField {
+    #[default]
+    Destination,
+    ViewAfter,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DtcDecompileDialog {
+    pub component: PlatformComponent,
+    pub source: PathBuf,
+    pub output: String,
+    pub root: PathBuf,
+    pub program: PathBuf,
+    pub field: DtcDecompileField,
+    pub view_after: bool,
+    pub editor: Option<crate::TextAreaState>,
+    pub browser: Option<crate::EnvironmentBrowser>,
+    pub error: Option<String>,
+}
+
+impl DtcDecompileDialog {
+    pub fn new(component: PlatformComponent, file: &PlatformFile, program: PathBuf) -> Self {
+        let stem = file
+            .path
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .unwrap_or("device-tree");
+        Self {
+            component,
+            source: file.path.clone(),
+            output: file
+                .path
+                .with_file_name(format!("{stem}.yoctui.dts"))
+                .display()
+                .to_string(),
+            root: file.root.clone(),
+            program,
+            field: DtcDecompileField::Destination,
+            view_after: true,
+            editor: None,
+            browser: None,
+            error: None,
+        }
+    }
+
+    pub fn output_path(&self) -> PathBuf {
+        PathBuf::from(&self.output)
+    }
+
+    pub fn terminal_request(&self) -> TerminalLaunchRequest {
+        let output = self.output_path();
+        TerminalLaunchRequest {
+            name: format!(
+                "decompile {} device tree",
+                self.component.label().to_ascii_lowercase()
+            ),
+            kind: TerminalCreationKind::Utility,
+            cwd: self.root.clone(),
+            program: self.program.clone(),
+            arguments: vec![
+                "-I".into(),
+                "dtb".into(),
+                "-O".into(),
+                "dts".into(),
+                "-o".into(),
+                output.display().to_string(),
+                self.source.display().to_string(),
+            ],
+            completion: self
+                .view_after
+                .then_some(TerminalCompletion::OpenDeviceTree {
+                    component: self.component,
+                    path: output,
+                }),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum DtcDecompileAction {
+    Field(isize),
+    Edit,
+    Insert(String),
+    Move(crate::TextAreaMotion),
+    Backspace,
+    Clear,
+    AcceptEdit,
+    ToggleViewAfter,
+    Browse,
+    SelectDirectory(isize),
+    EnterDirectory,
+    ParentDirectory,
+    ChooseDirectory,
+    DirectoryLoaded {
+        request: u64,
+        result: Result<crate::EnvironmentDirectory, String>,
+    },
+    Review,
+    Cancel,
+}
+
 impl DtcCompileDialog {
     pub fn new(component: PlatformComponent, file: &PlatformFile, program: PathBuf) -> Self {
         let stem = file
@@ -209,6 +311,7 @@ impl DtcCompileDialog {
             cwd: self.root.clone(),
             program: self.program.clone(),
             arguments: self.arguments(),
+            completion: None,
         }
     }
 }

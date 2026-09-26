@@ -205,15 +205,88 @@ fn opening_a_dtb_starts_the_decompile_flow_when_dtc_is_available() {
     assert_eq!(update(&mut app, Action::OpenSelectedKernelFile), None);
     assert!(matches!(
         app.active_dialog(),
+        Some(Dialog::DtcDecompile(DtcDecompileDialog {
+            source: selected,
+            view_after: true,
+            output,
+            ..
+        })) if selected == &source && output.ends_with("board.yoctui.dts")
+    ));
+}
+
+#[test]
+fn device_tree_decompile_dialog_browses_destination_and_carries_view_completion() {
+    let root = unique_temp_root("decompile-dialog");
+    let destination = root.join("saved");
+    std::fs::create_dir_all(&destination).unwrap();
+    let source = root.join("board.dtb");
+    std::fs::write(&source, b"dtb").unwrap();
+    let mut state = inventory(PlatformComponent::Kernel, source.clone());
+    let PlatformInventoryState::Available(inventory) = &mut state else {
+        unreachable!();
+    };
+    inventory.files[0].kind = PlatformFileKind::Dtb;
+    let mut app = App::new(8, 512);
+    app.kernel.view = PlatformView::DeviceTrees;
+    app.kernel.inventory = state;
+
+    assert_eq!(update(&mut app, Action::DecompileSelectedKernelDtb), None);
+    let effect = update(&mut app, Action::DtcDecompile(DtcDecompileAction::Browse));
+    let request = match effect {
+        Some(Effect::ReadEnvironmentDirectory { request, .. }) => request,
+        other => panic!("expected directory read, got {other:?}"),
+    };
+    assert_eq!(
+        update(
+            &mut app,
+            Action::DtcDecompile(DtcDecompileAction::DirectoryLoaded {
+                request,
+                result: Ok(EnvironmentDirectory {
+                    path: destination.clone(),
+                    children: Vec::new(),
+                    init_script: None,
+                    notice: None,
+                }),
+            }),
+        ),
+        None
+    );
+    assert_eq!(
+        update(
+            &mut app,
+            Action::DtcDecompile(DtcDecompileAction::ChooseDirectory),
+        ),
+        None
+    );
+    assert_eq!(
+        update(&mut app, Action::DtcDecompile(DtcDecompileAction::Review),),
+        None
+    );
+    let output = destination.join("board.yoctui.dts");
+    assert!(matches!(
+        app.active_dialog(),
         Some(Dialog::TerminalLaunch(TerminalLaunchDialog {
             request: TerminalLaunchRequest {
-                kind: TerminalCreationKind::Utility,
+                completion: Some(TerminalCompletion::OpenDeviceTree {
+                    component: PlatformComponent::Kernel,
+                    path,
+                }),
                 arguments,
                 ..
             },
+            output_must_not_exist: Some(guard),
             ..
-        })) if arguments.last() == Some(&source.display().to_string())
+        })) if path == &output && guard == &output && arguments.contains(&output.display().to_string())
     ));
+    let effect = update(&mut app, Action::ConfirmTerminalLaunch);
+    assert!(matches!(
+        effect,
+        Some(Effect::Terminal(TerminalEffect::Create {
+            completion: Some(TerminalCompletion::OpenDeviceTree { path, .. }),
+            ..
+        })) if path == output
+    ));
+    std::fs::remove_dir_all(root).unwrap();
 }
 
 #[cfg(unix)]

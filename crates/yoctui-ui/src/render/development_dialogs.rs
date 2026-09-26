@@ -5,6 +5,9 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
     if render_extended_devtool_dialogs(frame, app, area) {
         return true;
     }
+    if render_dtc_decompile_dialog(frame, app, area) {
+        return true;
+    }
     if let Some(Dialog::DtcCompile(dialog)) = app.active_dialog() {
         let popup = dialog_popup_rect(area, 84, 16);
         clear_popup(frame, app, popup);
@@ -53,12 +56,16 @@ fn render_development_dialogs(frame: &mut Frame, app: &App, area: Rect) -> bool 
             12,
         );
         clear_popup(frame, app, popup);
-        let detached = match &app.detached_terminal {
+        let detached = if dialog.request.completion.is_some() {
+            "Detached terminal — unavailable while automatic view is enabled".into()
+        } else {
+            match &app.detached_terminal {
             yoctui_model::DetachedTerminalAvailability::Available { launcher } => {
                 format!("Detached terminal — {launcher}")
             }
             yoctui_model::DetachedTerminalAvailability::Unavailable { reason } => {
                 format!("Detached terminal — unavailable: {reason}")
+            }
             }
         };
         let command = std::iter::once(dialog.request.program.display().to_string())

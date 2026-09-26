@@ -7,7 +7,7 @@ use crate::client_transport::ClientServerEvent;
 
 use super::{
     ClientRuntimeError, InteractiveDaemonRuntime, MAX_EVENTS_PER_POLL, MAX_POLL_DURATION,
-    attach::restore_local_build_dir,
+    TerminalCompletionOutcome, attach::restore_local_build_dir,
 };
 
 impl InteractiveDaemonRuntime {
@@ -88,7 +88,41 @@ impl InteractiveDaemonRuntime {
         }
         self.flush_log_events(app, &mut pending_logs)?;
         self.flush_task_events(app, &mut pending_tasks)?;
+        self.reconcile_terminal_completions(app);
         Ok(received)
+    }
+
+    fn reconcile_terminal_completions(&mut self, app: &App) {
+        let mut index = 0;
+        while index < self.pending_terminal_completions.len() {
+            let pending = &mut self.pending_terminal_completions[index];
+            if pending.session_id.is_none() {
+                pending.session_id = app
+                    .daemon
+                    .pty_sessions
+                    .iter()
+                    .find(|session| {
+                        session.name == pending.name
+                            && !pending.known_sessions.contains(&session.id)
+                    })
+                    .map(|session| session.id);
+            }
+            let Some(session_id) = pending.session_id else {
+                index += 1;
+                continue;
+            };
+            let outcome = terminal_completion_outcome(app, pending, session_id);
+            if let Some(outcome) = outcome {
+                self.terminal_completions.push(outcome);
+                self.pending_terminal_completions.remove(index);
+            } else {
+                index += 1;
+            }
+        }
+    }
+
+    pub(crate) fn take_terminal_completions(&mut self) -> Vec<TerminalCompletionOutcome> {
+        std::mem::take(&mut self.terminal_completions)
     }
 
     fn flush_log_events(
@@ -117,6 +151,42 @@ impl InteractiveDaemonRuntime {
         pending.clear();
         restore_local_build_dir(app, self.local_build_dir.as_ref());
         Ok(())
+    }
+}
+
+pub(super) fn terminal_completion_outcome(
+    app: &App,
+    pending: &super::PendingTerminalCompletion,
+    session_id: u64,
+) -> Option<TerminalCompletionOutcome> {
+    let summary = app
+        .daemon
+        .pty_sessions
+        .iter()
+        .find(|session| session.id == session_id)?;
+    let details = app
+        .daemon
+        .pty_details
+        .iter()
+        .find(|details| details.id == session_id);
+    match summary.lifecycle {
+        yoctui_model::ClientDaemonLifecycle::Exited => match details.and_then(|d| d.exit_code) {
+            Some(0) => Some(TerminalCompletionOutcome::Succeeded(
+                pending.completion.clone(),
+            )),
+            Some(code) => Some(TerminalCompletionOutcome::Failed(format!(
+                "{} exited with status {code}; the generated file was not opened.",
+                pending.name
+            ))),
+            None => None,
+        },
+        yoctui_model::ClientDaemonLifecycle::Failed | yoctui_model::ClientDaemonLifecycle::Lost => {
+            Some(TerminalCompletionOutcome::Failed(format!(
+                "{} failed; the generated file was not opened.",
+                pending.name
+            )))
+        }
+        _ => None,
     }
 }
 
