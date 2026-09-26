@@ -78,6 +78,7 @@ pub(super) struct InteractiveRuntime {
     pub(super) frame_interval: Duration,
     pub(super) render_scheduler: RenderScheduler,
     pub(super) environment_browser_io: environment_setup::EnvironmentBrowserIo,
+    pub(super) hardware_io: hardware_io::HardwareIo,
     pub(super) recipe_inspection_operation:
         Option<super::recipe_inspection_operation::RecipeInspectionOperation>,
     pub(super) devtool_status_operation:

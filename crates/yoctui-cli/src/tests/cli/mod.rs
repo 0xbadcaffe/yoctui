@@ -264,5 +264,7 @@ mod rootfs_pending_refresh_cancels_without_stranding_new_loading_state;
 
 mod rootfs_completed_metadata_cannot_install_after_authority_loss;
 
+mod hardware_library_persists_atomically_across_restart;
+
 mod support;
 use support::*;

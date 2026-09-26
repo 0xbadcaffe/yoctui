@@ -109,6 +109,7 @@ pub(crate) async fn tui(
     debug_assert_eq!(app.animation_speed, animation_speed);
     debug_assert_eq!(app.reduced_motion, reduced_motion);
     install_session_raw_favorites(&session, &mut app)?;
+    install_session_hardware(&session, &mut app)?;
     if let Some(layout) = session.pane_layout.clone()
         && app.preferences.remember_pane_sizes
         && layout.validate().is_ok()
@@ -313,6 +314,7 @@ pub(crate) async fn tui(
     let frame_interval = interactive_frame_interval(refresh);
     let render_scheduler = RenderScheduler::default();
     let environment_browser_io = environment_setup::EnvironmentBrowserIo::default();
+    let hardware_io = hardware_io::HardwareIo::default();
     let recipe_inspection_operation = None;
     let devtool_status_operation = None;
     let platform_inspection_operation = None;
@@ -392,6 +394,7 @@ pub(crate) async fn tui(
         frame_interval,
         render_scheduler,
         environment_browser_io,
+        hardware_io,
         recipe_inspection_operation,
         devtool_status_operation,
         platform_inspection_operation,

@@ -132,6 +132,11 @@ impl InteractiveRuntime {
         runtime.session.color_enabled = None;
         runtime.session.keymap = yoctui_model::KeymapPreferences::default();
         runtime.session.onboarding = Some(runtime.app.onboarding.progress.clone());
+        runtime
+            .session
+            .hardware_documents
+            .clone_from(&runtime.app.hardware.documents);
+        runtime.session.hardware_last_directory = runtime.app.hardware.last_directory.clone();
         runtime.session.recent_build_dirs = std::iter::once(runtime.session_build_dir)
             .chain(runtime.session.recent_build_dirs)
             .fold(Vec::new(), |mut directories, directory| {

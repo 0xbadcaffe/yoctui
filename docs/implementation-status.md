@@ -8,7 +8,11 @@ persistence, asynchronous typed conversion, a full-body embedded viewer, and
 page/zoom/pan/search controls. HARDWARE-MODEL-001 is DONE with six closed
 categories, supported kinds, bounded catalog/browser/viewer state, typed
 generation-bound effects, and pure reducer tests. HARDWARE-PERSISTENCE-001 is
-current; the unrelated M67 live-performance evidence task remains blocked.
+DONE: the client validates supported regular files, runs bounded asynchronous
+PDF/raster/schematic loads with text fallback, and atomically restores and
+persists the catalog. Focused browser, symlink, image, and restart tests pass.
+HARDWARE-UI-001 is current; the unrelated M67 live-performance evidence task
+remains blocked.
 
 M80 is DONE in v0.1.233. A restarted plain client
 previously launched lazy Kernel/U-Boot inspection without reconstructing the

@@ -8,6 +8,10 @@ impl InteractiveRuntime {
             runtime.environment_browser_io.poll(&mut runtime.app).await,
             RenderCause::State,
         );
+        runtime.render_scheduler.invalidate_if(
+            runtime.hardware_io.poll(&mut runtime.app).await,
+            RenderCause::State,
+        );
         let recipe_metadata_changed = runtime.poll_recipe_inspection().await;
         runtime
             .render_scheduler

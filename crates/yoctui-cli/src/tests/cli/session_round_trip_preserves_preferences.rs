@@ -24,6 +24,8 @@ fn session_round_trip_preserves_preferences() {
             recent_build_dirs: vec![PathBuf::from("/build")],
             pane_layout: None,
             raw_favorites: Vec::new(),
+            hardware_documents: Vec::new(),
+            hardware_last_directory: None,
             keymap: yoctui_model::KeymapPreferences::default(),
             onboarding: None,
         },
@@ -49,6 +51,8 @@ fn session_round_trip_preserves_preferences() {
             recent_build_dirs: vec![PathBuf::from("/build")],
             pane_layout: None,
             raw_favorites: Vec::new(),
+            hardware_documents: Vec::new(),
+            hardware_last_directory: None,
             keymap: yoctui_model::KeymapPreferences::default(),
             onboarding: None,
         }

@@ -38,6 +38,10 @@ pub(crate) struct Session {
     #[serde(default)]
     pub(crate) raw_favorites: Vec<yoctui_model::RawFavorite>,
     #[serde(default)]
+    pub(crate) hardware_documents: Vec<yoctui_model::HardwareDocument>,
+    #[serde(default)]
+    pub(crate) hardware_last_directory: Option<PathBuf>,
+    #[serde(default)]
     pub(crate) keymap: yoctui_model::KeymapPreferences,
     #[serde(default)]
     pub(crate) onboarding: Option<OnboardingProgress>,
@@ -84,6 +88,14 @@ pub(crate) fn read_session(path: Option<&Path>) -> Result<Session> {
     validate_raw_favorites(&session.raw_favorites)
         .map_err(anyhow::Error::msg)
         .with_context(|| format!("invalid Raw favorites in session file {}", path.display()))?;
+    yoctui_model::validate_hardware_documents(&session.hardware_documents)
+        .map_err(anyhow::Error::msg)
+        .with_context(|| {
+            format!(
+                "invalid Hardware library in session file {}",
+                path.display()
+            )
+        })?;
     if let Some(onboarding) = session.onboarding.as_ref() {
         onboarding
             .validate()
@@ -105,6 +117,9 @@ pub(crate) fn write_session(path: Option<&Path>, session: &Session) -> Result<()
     validate_raw_favorites(&session.raw_favorites)
         .map_err(anyhow::Error::msg)
         .context("invalid Raw favorites cannot be persisted")?;
+    yoctui_model::validate_hardware_documents(&session.hardware_documents)
+        .map_err(anyhow::Error::msg)
+        .context("invalid Hardware library cannot be persisted")?;
     yoctui_model::EffectiveKeymap::from_preferences(&session.keymap)
         .map_err(anyhow::Error::msg)
         .context("invalid keymap cannot be persisted")?;
@@ -172,6 +187,33 @@ pub(crate) fn persist_raw_favorites(
 pub(crate) fn install_session_raw_favorites(session: &Session, app: &mut App) -> Result<()> {
     validate_raw_favorites(&session.raw_favorites).map_err(anyhow::Error::msg)?;
     app.raw_mode.favorites.clone_from(&session.raw_favorites);
+    Ok(())
+}
+
+pub(crate) fn install_session_hardware(session: &Session, app: &mut App) -> Result<()> {
+    yoctui_model::validate_hardware_documents(&session.hardware_documents)
+        .map_err(anyhow::Error::msg)?;
+    app.hardware
+        .documents
+        .clone_from(&session.hardware_documents);
+    app.hardware.last_directory = session.hardware_last_directory.clone();
+    Ok(())
+}
+
+pub(crate) fn persist_hardware(
+    path: Option<&Path>,
+    session: &mut Session,
+    app: &App,
+) -> Result<()> {
+    yoctui_model::validate_hardware_documents(&app.hardware.documents)
+        .map_err(anyhow::Error::msg)?;
+    let mut updated = session.clone();
+    updated
+        .hardware_documents
+        .clone_from(&app.hardware.documents);
+    updated.hardware_last_directory = app.hardware.last_directory.clone();
+    write_session(path, &updated)?;
+    *session = updated;
     Ok(())
 }
 

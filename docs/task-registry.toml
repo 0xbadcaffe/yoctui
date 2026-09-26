@@ -9706,18 +9706,18 @@ notes = "DONE. The model owns six closed categories, supported document kinds, v
 id = "HARDWARE-PERSISTENCE-001"
 milestone = "M81"
 title = "Persist and load validated Hardware documents"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2901
 required = true
 depends_on = ["HARDWARE-MODEL-001"]
 verify = ["cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Add bounded local browsing, regular-file validation, asynchronous PDF/image/schematic conversion with text fallback, stale-result rejection, and atomic private-session persistence across restart."
+notes = "DONE. The client restores and atomically persists only canonical Hardware paths/categories, lists at most 4096 supported non-symlink entries, validates regular source files, and runs one replaceable asynchronous load. Poppler renders bounded PDF pages with searchable text fallback, the image decoder handles bounded common raster formats, and KiCad/SVG retain searchable source fallbacks with exact converter hints. Three focused browser, symlink, raster, and restart-persistence tests pass. The model implementation was split into sub-500-line modules."
 
 [[task]]
 id = "HARDWARE-UI-001"
 milestone = "M81"
 title = "Render and operate the Hardware workspace and full-body viewer"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2902
 required = true
 depends_on = ["HARDWARE-PERSISTENCE-001"]

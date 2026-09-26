@@ -449,6 +449,7 @@ use rootfs_operations::*;
 mod content_search;
 use content_search::*;
 mod external_editor;
+mod hardware_io;
 use external_editor::*;
 mod devtool_completion;
 use devtool_completion::*;
