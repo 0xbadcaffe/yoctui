@@ -3736,6 +3736,23 @@ at the CLI filesystem boundary with canonical-root containment, symlink and
 size checks. Compiler and BitBake diagnostics never enter through syntax
 highlighting; they retain the normal backend/app/reducer path.
 
+The model also owns editor file/document viewport anchors, the selected search
+scope, and typed workspace Git tracking facts. `Ctrl+F` mutates only the active
+`TextAreaState` search. `Ctrl+Shift+F` sets an exact absolute workspace root on
+the shared bounded regex-search plan; the CLI scanner applies its existing
+symlink, directory, byte, hit and cancellation bounds to that root. Activating a
+workspace result becomes `LoadRecipeEditorFile` after root containment and
+retained-file identity checks. `/` explicitly clears that root and retains the
+global build-content plan. The UI only projects viewport slices, syntax roles,
+Git facts and semantic pane styles. Git inspection remains in `yoctui-bitbake`,
+and GitUI remains a typed native terminal launch with no joined shell command.
+
+Persistent chrome allocates local-clock conversion and semantic rendering to
+`yoctui-ui`, while daemon/application status remains typed model state. The
+Header projects the current transient status or a daemon-health fallback; the
+Footer owns shortcuts only. Neither region performs daemon I/O or infers
+lifecycle state from message text.
+
 The concrete raster projection is `yoctui-cairo-cell-raster-v1`: it parses the
 complete symbol and style runs, projects only recorded foreground/background
 and bold state, and renders fixed `10x20` cells through pinned PyCairo 1.27.0,

@@ -102,7 +102,7 @@ The normal application layout is a dense, IDE-like operations workbench:
 │   Testing        │                                     │                                  │
 │   Security / QA  │                                     │                                  │
 ├──────────────────┴─────────────────────────────────────┴──────────────────────────────────┤
-│ ↑/↓ Select  f State  / Filter  c Cancel  F1 Help  F12 Menu  q Quit          19:28:27   │
+│ ↑/↓ Select  f State  / Filter  c Cancel  F1 Help  F12 Menu  q Quit                    │
 └──────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -143,22 +143,15 @@ Tasks workspace uses this exact application-controlled cell geometry:
 
 | Region | Rectangle |
 | --- | --- |
-| Header | `x=0, y=0, width=160, height=2` |
-| Navigator | `x=0, y=2, width=26, height=44` |
-| Tasks table | `x=26, y=2, width=89, height=17` |
-| Log Viewer | `x=26, y=19, width=89, height=14` |
-| Job History | `x=26, y=33, width=89, height=9` |
-| Compact resources | `x=26, y=42, width=89, height=4` |
-| Task Inspector | `x=115, y=2, width=45, height=11` |
-| Secondary facts | `x=115, y=13, width=45, height=12` |
-| Recent Log | `x=115, y=25, width=45, height=6` |
-| Actions | `x=115, y=31, width=45, height=9` |
-| System Status | `x=115, y=40, width=45, height=6` |
-| Command rail | `x=0, y=46, width=160, height=2` |
+| Header | `x=0, y=0, width=160, height=5` |
+| Navigator | `x=0, y=5, width=26, height=42` |
+| Tasks Workspace | `x=26, y=5, width=89, height=42` |
+| Task Inspector | `x=115, y=5, width=45, height=42` |
+| Command rail | `x=0, y=47, width=160, height=3` |
 
 The machine acceptance artifact serializes every Ratatui cell's symbol,
 foreground, background, underline color, and modifiers. The reference fixture
-uses a fixed clock and typed model values; dynamic fields are not masked. A
+uses a fixed host-local clock and typed model values; dynamic fields are not masked. A
 golden update is an intentional UI change and requires a reviewed cell diff
 plus a matching update to this specification. Normal verification never
 automatically accepts new goldens.
@@ -184,7 +177,7 @@ editor dialogs. Each catalog entry names its reviewed anchors in code; adding
 or removing an anchor is therefore an intentional test review, while spacing
 inside an unrelated pane is not a snapshot update.
 
-Four target-design goldens use `160x50` and the fixed `19:28:27` clock: an
+Four target-design goldens use `160x50` and the fixed `19:28` local clock: an
 idle Dashboard with current daemon authority, the active Tasks build at 72%,
 the same Tasks cockpit with `bash:do_compile` selected and failed, and a Tasks
 cockpit while the daemon replica is synchronizing. These serialize every cell
@@ -223,6 +216,9 @@ The persistent region hierarchy is:
 ```text
 Shell
 ├── Header
+│   ├── Identity, local system clock, daemon and BitBake health
+│   ├── Current daemon/application message or daemon health fallback
+│   └── Workspace/build context
 ├── Body
 │   ├── Navigator
 │   ├── Workspace
@@ -238,8 +234,7 @@ Shell
 │       ├── Contextual actions
 │       └── System or compatibility status
 └── Footer
-    ├── Transient status row
-    └── Contextual shortcut rail and labeled UTC clock
+    └── Contextual shortcut rail
 ```
 
 The wide shell uses its reviewed bordered chrome, while compact terminals keep
@@ -393,7 +388,8 @@ compound key tokens such as `s/E SDK` to retain more real controls. Help lists
 the complete shared function-key catalog and every valid binding omitted for
 width.
 
-Transient status shares the footer rather than covering the Workspace. Its
+Transient status occupies the second persistent Header row directly beneath
+the `yoctui` version rather than covering the Workspace. Its
 priority is exact error, pending confirmation, notification or operation
 result, daemon/BitBake synchronization, then local background/build activity.
 An arbitrary notification is informational; it becomes error or warning only
@@ -402,14 +398,20 @@ provides that severity. Stale daemon state says `Daemon state stale`; it is not
 misrepresented as reconnecting. Disconnected state stays in Header/System
 Status instead of creating permanent transient noise.
 
-Transient status owns the full row immediately above the shortcut rail. Text
+Transient status owns the full Header message row. When no current transient
+message exists, that row shows the current daemon connection and BitBake
+lifecycle health instead of becoming blank. Text
 whitespace is normalized onto one line and uses the full available width before
 bounded ellipsis is required. Semantic marker-plus-text forms are `✕` error,
 `!` confirmation/warning, `✓` success, unprefixed informational text, `…`
 synchronizing, and Braille activity for an accepted daemon request that is
-still waiting or other typed activity. Reduced motion keeps a stable Braille marker. The shortcut row
-ends with the fixed-width `UTC HH:MM:SS` clock label at 100+ columns and hides
-the clock below 100 columns.
+still waiting or other typed activity. Reduced motion keeps a stable Braille
+marker. The row uses bold semantic color because it is operational status.
+
+The current host-local system clock is right aligned in the first Header row as
+`Local HH:MM`, without seconds. It is derived from the client host's local time
+zone and is never labelled UTC or interpreted as daemon uptime. Narrow layouts
+may omit the label before clipping the version or current health.
 
 #### Search behavior
 
@@ -695,7 +697,7 @@ not terminal pixels. A production-renderer acceptance catalog covers the same
 six scenario identities at the canonical `160x50` size: idle Dashboard, active
 Tasks, failed Errors, Images/rootfs composition, editor/application menu, and
 terminal sessions. Each catalog fixture is assembled only from typed
-`yoctui-model` state, uses the fixed `19:28:27` clock, calls the public
+`yoctui-model` state, uses the fixed `19:28` host-local clock, calls the public
 `yoctui_ui::render_at` path, checks scenario-specific semantic anchors, and
 serializes every resulting Ratatui cell symbol and style into a reviewed
 golden.
@@ -3675,20 +3677,19 @@ function-key terminal route: `F4` truthfully opens
 Dashboard, while terminal/session access remains in Navigator, Dashboard, and
 the command palette through its actual bindings.
 
-At the canonical `160x48` Tasks size the footer has a bordered status row above
-the bordered command row. With Navigator focused it prioritizes Navigator
+At the canonical `160x48` Tasks size the Header has the status row beneath its
+identity row, while the Footer contains one bordered command row. With
+Navigator focused the command row prioritizes Navigator
 selection/open/prefix controls, then non-current global destinations that fit,
 then `F1 Help`, `F12 Menu`, and `q Quit`. With Workspace focused it instead
 prioritizes task selection/filter/cancellation and `Tab Focus`. A route
 that already names the active screen is omitted as redundant. Every displayed
 key invokes the named action; no unavailable or duplicate route is used merely
 to resemble concept art. Transient status cannot consume shortcut width because
-it occupies the separate row above the rail.
+it occupies the separate Header row.
 
-The clock is labeled `UTC HH:MM:SS` and right aligned at `100+` columns. It is
-UTC wall-clock time, not daemon uptime; daemon uptime remains a separate typed
-System Status metric. The clock is hidden at `80..99` columns so current
-workspace actions and Help/Menu/Quit do not clip. Items are measured using
+The host-local clock is labelled `Local HH:MM` in the Header and is distinct
+from daemon uptime, which remains a separate typed System Status metric. Items are measured using
 terminal cell width and are appended only as complete hints. At constrained
 widths the rail uses compact highlighted key tokens; complex SDK, Testing,
 Security, and QA workspaces retain their existing compound narrow tokens.
@@ -5380,6 +5381,16 @@ preview, explicit clean/modified/saving/saved/failed/conflict state, and atomic
 save requests. Dirty content must be saved or discarded explicitly before
 changing files, closing, building, updating, or finishing.
 
+The file-tree viewport follows the selected row through the complete bounded
+workspace inventory and shows the selection/total plus `↑`/`↓` availability in
+its title. `Up`/`Down`, `j`/`k`, Page Up/Page Down, Home, and End can reach every
+retained file. The document viewport follows the reducer-owned cursor and search
+match; those same movement keys scroll by moving the Vim-style cursor. `Enter`
+or Tab focuses the document, `i` enters Insert mode, Esc returns to Normal mode,
+and `v` retains Visual mode. The selected known file extension receives a
+language-specific semantic color in the tree. Files beyond the scan bound are
+reported as truncated rather than silently presented as a complete tree.
+
 The selected path determines a closed language identity. The first supported
 set is BitBake, C, C++, Rust, Python, shell, JavaScript/TypeScript, JSON, TOML,
 YAML, Make, Markdown, and plain text. The title/status line names that identity.
@@ -5389,8 +5400,24 @@ LSP results. Local diagnostics are explicitly labelled structural and include
 only deterministic checks owned by Yoctui. External compiler/BitBake failures
 continue to arrive through typed build jobs and Logs/Errors.
 
+`Ctrl+F` starts search in the selected file. `Ctrl+Shift+F` opens the shared
+regex result surface scoped to the exact absolute Devtool workspace root; Enter
+loads the chosen result into this integrated editor and preserves the recipe.
+The global `/` content search remains available from the editor in Normal/file
+mode and keeps its existing build-content scope. Search never follows symlinks,
+enters `.git`, or escapes the selected workspace root.
+
+The editor inspector shows the selected recipe workspace repository root,
+branch, upstream, clean/dirty counts, and `synced`, `ahead N`, `behind N`,
+`diverged`, or `no upstream` state from typed Git status. `G` opens GitUI in
+that exact root through the existing embedded/detached terminal chooser. GitUI
+remains disabled with the exact tool/status reason when unavailable. The file
+tree, document, validation/diff, and inspector panes use distinct semantic
+border colors and bold inner titles; focus remains independently visible.
+
 The editor footer prioritizes `i` insert, `Esc` normal/outward, movement,
-`Ctrl+S` save, `/` search, `n/N` matches, `u` undo, `Ctrl+R` redo, `v` visual,
+`Ctrl+S` save, `Ctrl+F` file search, `Ctrl+Shift+F` workspace search, `/` global
+search, `n/N` matches, `u` undo, `Ctrl+R` redo, `v` visual, `G` GitUI,
 `Ctrl+B` build recipe, and the Devtool update/finish routes. Responsive layouts
 may shorten labels but must preserve mode, dirty/save state, language, cursor
 line/column, and a reachable build/publish route.
@@ -5644,12 +5671,12 @@ checksummed live-capture links remain separate and retain their own authority.
 The v0.1.102 tag is the pre-change checkpoint. The six original M21 PNGs remain
 unchanged visual references. Production screens must reproduce their region
 hierarchy and approximate proportions on the terminal grid, using real typed
-state and the existing keymap. At wide/tall sizes the six concept workspaces have two header content
-rows separated by a rule (five rows including borders), and the footer has a
-bordered status and command pair (four rows including borders). Compact
-terminals retain a two-row header and a three-row footer whose bottom border
-follows the status and command rows. This supersedes the earlier unconditional
-two-row chrome rule.
+state and the existing keymap. At every supported size the Header has
+identity/clock, status, and workspace-context rows (five rows including
+borders), and the Footer has one command row (three rows including borders).
+Responsive content within those rows contracts before the persistent geometry
+changes. This supersedes the earlier status-bearing Footer and compact two-row
+Header rules.
 
 Dashboard restores its overview/history/telemetry/action composition and
 Project Inspector. Tasks and Errors use one outer inspector with internal

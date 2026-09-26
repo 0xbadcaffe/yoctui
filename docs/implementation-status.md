@@ -3985,3 +3985,10 @@ is installed and a fresh daemon runs from the initialized Romulus environment.
 The full workspace suite remains deferred until the user requests it. All 860
 implementation tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED on a new
 genuine current-source real-Poky performance capture.
+
+M77 is planned from the user's Devtool workspace correction pass. The first
+task repairs bounded file/document viewport navigation, Vim-style integrated
+editing visibility, complete known-language syntax projection, and semantic
+editor pane chrome. Follow-up tasks add selected-file/workspace search, complete
+workspace Git tracking with GitUI access, persistent local-time/daemon Header
+status, and the focused v0.1.230 release.

@@ -1907,3 +1907,16 @@ modify/edit, exact recipe builds, workspace shell and GitUI, Devtool SSH/SCP
 deployment to a running target, and previewed patch installation into a
 configured layer. Focused tests, version policy, formatting, and strict Clippy
 pass; the full workspace suite remains deferred for the user's manual bug pass.
+
+## M77 — Devtool editor navigation and operational header
+
+Goal: make the integrated Devtool source editor usable for complete source
+trees and long files, add file/workspace/global search scopes, present complete
+typed workspace Git state with direct GitUI access, distinguish editor panes,
+and move the local clock plus visible daemon status into persistent Header
+chrome.
+
+The work is split into DEVTOOL-EDITOR-VIEWPORT-001,
+DEVTOOL-EDITOR-SEARCH-001, DEVTOOL-EDITOR-GIT-001, HEADER-STATUS-001, and
+DEVTOOL-EDITOR-RELEASE-001. Each task retains the existing model/app/UI/CLI
+ownership boundaries and the user's focused-test release workflow.

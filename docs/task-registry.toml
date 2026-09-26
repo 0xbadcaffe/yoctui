@@ -9547,3 +9547,58 @@ required = true
 depends_on = ["DEVTOOL-WORKSPACE-PATCH-001"]
 verify = ["cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.229. The version policy, focused Devtool workspace/patch/UI/wire tests, formatting, and strict workspace Clippy pass. The release binary is built and installed and the initialized Romulus daemon is restarted; the full workspace suite remains deferred until requested by the user."
+
+[[task]]
+id = "DEVTOOL-EDITOR-VIEWPORT-001"
+milestone = "M77"
+title = "Repair complete Devtool file and document navigation"
+status = "IN_PROGRESS"
+priority = 2510
+required = true
+depends_on = ["DEVTOOL-WORKSPACE-RELEASE-001"]
+verify = ["cargo test -p yoctui-model devtool_editor_viewport", "cargo test -p yoctui-app devtool_editor_viewport", "cargo test -p yoctui-ui devtool_editor_viewport", "cargo test -p yoctui --all-features workspace_editor", "cargo fmt --all --check"]
+notes = "Follow selection through the bounded file tree and long document, retain Vim-style in-TUI editing, cover every known language projection, and distinguish pane chrome."
+
+[[task]]
+id = "DEVTOOL-EDITOR-SEARCH-001"
+milestone = "M77"
+title = "Add selected-file and workspace-scoped Devtool search"
+status = "NOT_STARTED"
+priority = 2511
+required = true
+depends_on = ["DEVTOOL-EDITOR-VIEWPORT-001"]
+verify = ["cargo test -p yoctui-model devtool_editor_search", "cargo test -p yoctui-app devtool_editor_search", "cargo test -p yoctui --all-features workspace_search", "cargo test -p yoctui-ui devtool_editor_search", "cargo fmt --all --check"]
+notes = "Ctrl+F searches the selected buffer, Ctrl+Shift+F searches only the exact workspace root, and slash retains global build-content search."
+
+[[task]]
+id = "DEVTOOL-EDITOR-GIT-001"
+milestone = "M77"
+title = "Show complete workspace Git state and direct GitUI access"
+status = "NOT_STARTED"
+priority = 2512
+required = true
+depends_on = ["DEVTOOL-EDITOR-SEARCH-001"]
+verify = ["cargo test -p yoctui-bitbake devtool_workspace_git", "cargo test -p yoctui-model devtool_editor_git", "cargo test -p yoctui-app devtool_editor_git", "cargo test -p yoctui-ui devtool_editor_git", "cargo fmt --all --check"]
+notes = "Report repo, branch, upstream synchronization and dirty state for the exact recipe workspace and expose GitUI from the integrated editor."
+
+[[task]]
+id = "HEADER-STATUS-001"
+milestone = "M77"
+title = "Move local time and daemon status into persistent Header chrome"
+status = "NOT_STARTED"
+priority = 2513
+required = true
+depends_on = ["DEVTOOL-EDITOR-GIT-001"]
+verify = ["cargo test -p yoctui-ui header_status", "cargo test -p yoctui-app concept_chrome", "cargo fmt --all --check"]
+notes = "Show host-local HH:MM in the Header and a bold current message or daemon-health fallback beneath the version; leave the Footer to shortcuts."
+
+[[task]]
+id = "DEVTOOL-EDITOR-RELEASE-001"
+milestone = "M77"
+title = "Package and install the Devtool editor correction series"
+status = "NOT_STARTED"
+priority = 2514
+required = true
+depends_on = ["HEADER-STATUS-001"]
+verify = ["cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
+notes = "Bump to v0.1.230, build/install the release, restart the initialized Romulus daemon, commit and push; defer the full workspace suite until requested."

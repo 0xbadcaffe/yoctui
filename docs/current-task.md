@@ -1,21 +1,21 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** DEVTOOL-EDITOR-VIEWPORT-001
+**Title:** Repair complete Devtool file and document navigation
+**Status:** IN_PROGRESS
 
-All M74, M75, and M76 work is complete through v0.1.229. The only remaining
-registry task requires a new genuine source/binary-bound Yocto 6.0.2
-`linux-yocto` compile capture. Existing retained evidence is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has at least 143 source
-digest mismatches, including changes predating M67.
+Make the integrated Devtool workspace file tree follow selection through the
+complete bounded inventory, make long-document navigation visibly follow the
+Vim-style cursor, retain in-TUI editing, highlight every known language in the
+tree and source view, and give editor panes distinct semantic borders/titles.
+Add model/app/TestBackend coverage for the visible failure paths.
 
-After new live evidence is supplied, run:
+Verify with:
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model devtool_editor_viewport
+cargo test -p yoctui-app devtool_editor_viewport
+cargo test -p yoctui-ui devtool_editor_viewport
+cargo test -p yoctui --all-features workspace_editor
+cargo fmt --all --check
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.
