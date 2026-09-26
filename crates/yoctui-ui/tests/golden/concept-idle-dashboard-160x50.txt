@@ -1,6 +1,6 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.229  •  Project: yocto  •  Target: core-image-minimal  •  Machine: qemux86-64  •  Distro: poky     Daemon: ✓ Connected/Local  •  BitBake: – Exited│
-│──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────│
+│yoctui v0.1.230 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64  •  Distro: poky               D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigator────────────────┐┌Build Overview───────────────────────────────────────────────────────────────────────┐┌Project Inspector───────────────────────────┐
@@ -30,13 +30,13 @@
 │    Terminal Sessions    ││                                                                                     ││Next Action                                 │
 │    Devtool              ││                                                                                     ││Build image [B]                             │
 │    QEMU / Wic           │└─────────────────────────────────────────────────────────────────────────────────────┘│Attention                                   │
-│    Maintenance          │┌Resource Telemetry───────────────────────────────────────────────────────────────────┐│No retained warnings or errors              │
-│  ▱ Build environment    ││         CPU Usage         │          RAM Usage         │       Build FS Usage       ││Workbench Center                            │
-│  ▱ Compatibility        ││  ████▏     18%            │  ██████████42%             │  ██████████63% █▏          ││Context: Work · core-image-minimal          │
-│  ▱ Settings             ││     0.72 / 4.00 cores     │      6.72 / 16.00 GiB      │     94.50 / 150.00 GiB     ││Active: tasks 0 · jobs 0                    │
-│                         ││Sstate: summary not reported                                                         ││Favorite: none                              │
-│                         ││Downloads: 0 completed, 0 failed, 0 active                                           ││Terminal: none                              │
-│                         ││Network: unknown; offline readiness: unverified                                      ││[t] Terminal sessions                       │
+│    Maintenance          │┌Resource Telemetry · bounded 60-sample histories─────────────────────────────────────┐│No retained warnings or errors              │
+│  ▱ Build environment    ││CPU Usage               18%│RAM Usage                42%│Build FS Usage           63%││Workbench Center                            │
+│  ▱ Compatibility        ││                           │                            │                            ││Context: Work · core-image-minimal          │
+│  ▱ Settings             ││                           │                          ▂ │                          ▇ ││Active: tasks 0 · jobs 0                    │
+│                         ││                         ▄ │                          █ │                          █ ││Favorite: none                              │
+│                         ││ ▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫▫▫▫▫▫▫ │ ▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▪▫▫▫▫▫▫▫▫▫ ││Terminal: none                              │
+│                         ││          4 cores          │        6.7/16.0 GiB        │        55.5 GiB free       ││[t] Terminal sessions                       │
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│Artifact: none retained                     │
 │                         │┌Quick Actions────────────────────────────────────────────────────────────────────────┐│Recent: ✓ Succeeded core-image-minimal ·    │
 │                         ││[B] Build image            │[t] Open terminal           │[E] Verify environment      ││00:04:55                                    │
@@ -46,5 +46,5 @@
 │                         ││                           │                            │                            ││                                            │
 └─────────────────────────┘└─────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│↑/↓ select   h/l groups   Enter open   Ctrl+B prefix   F2 Tasks   F3 History   F5 Logs   F6 Layers   F7 Recipes   F1 Help   F12 Menu   q Quit         19:28:27│
+│↑/↓ select   h/l groups   Enter open   Ctrl+B prefix   F2 Tasks   F3 History   F5 Logs   F6 Layers   F7 Recipes   F8 Images   F1 Help   F12 Menu   q Quit     │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

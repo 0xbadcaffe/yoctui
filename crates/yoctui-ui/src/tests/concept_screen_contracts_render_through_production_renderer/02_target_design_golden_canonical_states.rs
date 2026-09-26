@@ -69,7 +69,7 @@ fn target_design_golden_canonical_states() {
             [
                 "Build Status  : Idle",
                 "build not started · 0%",
-                "Daemon: ✓ Connected",
+                "Daemon health: ✓ Connected",
             ]
             .as_slice(),
         ),
@@ -110,7 +110,7 @@ fn target_design_golden_canonical_states() {
                 env!("CARGO_MANIFEST_DIR"),
                 "/tests/golden/target-daemon-reconnecting-160x50.cells"
             )),
-            ["Daemon: … Syncing", "Daemon synchronizing", "unavailable"].as_slice(),
+            ["D:… Syncing", "Daemon synchronizing", "unavailable"].as_slice(),
         ),
     ];
 

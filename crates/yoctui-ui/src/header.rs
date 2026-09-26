@@ -132,7 +132,7 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
     }
 
     let mode = header_mode(area.width);
-    let compact = area.width < 150 || matches!(mode, HeaderMode::Medium | HeaderMode::Narrow);
+    let compact = mode != HeaderMode::Full;
     let project = bounded_status_line(header_project_identity(app), 20);
     let target = bounded_status_line(
         app.build
@@ -339,6 +339,16 @@ pub(crate) fn clock_label(now: SystemTime) -> String {
     format!("Local {}", local_clock_text(now))
 }
 
+#[cfg(test)]
+pub(crate) fn local_clock_text(now: SystemTime) -> String {
+    let seconds = now
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_secs())
+        % 86_400;
+    format!("{:02}:{:02}", seconds / 3_600, seconds / 60 % 60)
+}
+
+#[cfg(not(test))]
 pub(crate) fn local_clock_text(now: SystemTime) -> String {
     let seconds = now
         .duration_since(UNIX_EPOCH)

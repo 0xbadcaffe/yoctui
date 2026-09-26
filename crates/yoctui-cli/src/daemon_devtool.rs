@@ -14,7 +14,7 @@ use yoctui_protocol::daemon::{DaemonDevtoolOperation, JobId};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DaemonDevtoolEvent {
-    Status(DevtoolStatus),
+    Status(Box<DevtoolStatus>),
     Started {
         job_id: JobId,
         label: String,
@@ -185,7 +185,7 @@ impl DaemonDevtoolSupervisor {
                     error: None,
                 },
             };
-            let _ = events.send(DaemonDevtoolEvent::Status(status));
+            let _ = events.send(DaemonDevtoolEvent::Status(Box::new(status)));
         });
         Ok(())
     }

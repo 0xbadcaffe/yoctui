@@ -327,12 +327,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.global_search_root = None;
         }
         Action::OpenRecipeEditorWorkspaceSearch => {
-            let Some(root) = app.active_dialog().and_then(|dialog| match dialog {
+            let root = app.active_dialog().and_then(|dialog| match dialog {
                 Dialog::RecipeEditor(editor) => Some(editor.root.clone()),
                 _ => None,
-            }) else {
-                return None;
-            };
+            })?;
             if !root.is_absolute() {
                 app.notification =
                     Some("The Devtool workspace search root is not absolute.".into());

@@ -318,6 +318,7 @@ fn scenario_workload(scenario: &str) -> App {
                 files: (0..1_024)
                     .map(|index| format!("files/profile-{index:04}.patch").into())
                     .collect(),
+                file_inventory_truncated: false,
                 selection: 1_023,
                 focus: yoctui_model::RecipeEditorFocus::Document,
                 language: yoctui_model::SourceLanguage::BitBake,

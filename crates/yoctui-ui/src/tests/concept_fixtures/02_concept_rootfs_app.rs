@@ -413,9 +413,14 @@ pub(crate) fn readme_device_tree_editor_app() -> App {
         selection: 0,
         focus: yoctui_model::RecipeEditorFocus::Document,
         language: yoctui_model::SourceLanguage::DeviceTree,
-        document: yoctui_model::TextAreaState::new(
-            include_str!("../../../tests/fixtures/device-tree/imx8mp-evk.dts").replace('\t', "    "),
-        ),
+        document: {
+            let mut document = yoctui_model::TextAreaState::new(
+                include_str!("../../../tests/fixtures/device-tree/imx8mp-evk.dts")
+                    .replace('\t', "    "),
+            );
+            document.select_position(0, 0, false);
+            document
+        },
         searching: false,
         pending_search_position: None,
     }));
