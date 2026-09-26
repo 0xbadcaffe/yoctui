@@ -10,7 +10,7 @@ use std::{
         net::{UnixListener, UnixStream},
     },
     path::{Path, PathBuf},
-    process::Command,
+    process::{Command, Stdio},
     thread,
     time::Duration,
 };
@@ -53,6 +53,7 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
         .current_dir(&cwd)
         .env_clear()
         .envs(environment);
+    isolate_outer_bitbake_console(&mut bitbake_child);
     let mut bitbake_child = bitbake_child
         .spawn()
         .with_context(|| format!("cannot start {}", bitbake.display()))?;
@@ -92,6 +93,17 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
         bail!("BitBake menuconfig failed with {bitbake_status}");
     }
     Ok(())
+}
+
+fn isolate_outer_bitbake_console(command: &mut Command) {
+    // BitBake's Knotty UI otherwise treats the relay PTY as its own terminal.
+    // Its footer then overwrites ncurses and its terminal mode competes with
+    // the validated wrapper started below. BitBake retains its normal logs;
+    // only its transient client console is detached from this PTY.
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
 }
 
 pub(crate) fn handoff(socket: &Path, command: &[PathBuf]) -> Result<()> {
@@ -343,5 +355,22 @@ mod tests {
             Path::new("/run/user/1000/yoctui/menuconfig-1202.sock")
         );
         assert_ne!(first, second);
+    }
+
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn outer_bitbake_client_cannot_share_the_menuconfig_pty_streams() {
+        let mut command = Command::new("/bin/sh");
+        command.args(["-c", "sleep 30"]);
+        isolate_outer_bitbake_console(&mut command);
+        let mut child = command.spawn().unwrap();
+
+        for descriptor in 0..=2 {
+            let target = fs::read_link(format!("/proc/{}/fd/{descriptor}", child.id())).unwrap();
+            assert_eq!(target, Path::new("/dev/null"));
+        }
+
+        child.kill().unwrap();
+        child.wait().unwrap();
     }
 }

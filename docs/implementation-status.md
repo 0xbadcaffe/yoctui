@@ -3,9 +3,7 @@
 M82 is IN_PROGRESS from the v0.1.234 manual bug pass. Live Romulus evidence
 shows the outer BitBake Knotty client and `mconf` sharing one embedded PTY:
 Knotty repeatedly overwrites ncurses with its 99% `do_menuconfig` footer and
-retains the same terminal input. MENUCONFIG-PTY-ISOLATION-001 is current and
-will give the PTY exclusively to the validated menuconfig wrapper; the task is
-expected to remain running only until the operator exits menuconfig.
+retains the same terminal input. MENUCONFIG-PTY-ISOLATION-001 is DONE: the outer BitBake client now receives null standard streams, leaving the validated wrapper as the only PTY owner. Five focused relay tests, formatting, strict CLI Clippy, and roadmap validation pass. MENUCONFIG-PTY-RELEASE-001 is current; the task remains running only until the operator exits menuconfig.
 
 M81 is DONE in the v0.1.234 manual feature pass. Hardware is
 a build-independent, persistent library grouped by Board, SoC, Memory,

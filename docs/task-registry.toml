@@ -9739,18 +9739,18 @@ notes = "DONE in v0.1.234. Focused Hardware model/app/UI/CLI tests, browser/rast
 id = "MENUCONFIG-PTY-ISOLATION-001"
 milestone = "M82"
 title = "Give embedded menuconfig exclusive PTY streams"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3000
 required = true
 depends_on = ["HARDWARE-RELEASE-001"]
 verify = ["cargo test -p yoctui --bin yoctui menuconfig_relay", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Redirect only the outer BitBake client's stdin/stdout/stderr away from the relay PTY so the validated menuconfig wrapper exclusively owns ncurses rendering and input. Preserve exact BitBake argv, wrapper validation, exit propagation, and private socket isolation."
+notes = "DONE. The relay starts the outer BitBake client with null stdin/stdout/stderr, leaving the validated wrapper as the only process owning the embedded PTY. Exact BitBake argv, wrapper validation, exit propagation, and process-scoped socket isolation remain intact. Five focused relay tests include Linux descriptor evidence that all outer-client streams resolve to /dev/null; formatting, strict CLI Clippy, and roadmap validation pass."
 
 [[task]]
 id = "MENUCONFIG-PTY-RELEASE-001"
 milestone = "M82"
 title = "Release the embedded menuconfig PTY correction"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3001
 required = true
 depends_on = ["MENUCONFIG-PTY-ISOLATION-001"]
