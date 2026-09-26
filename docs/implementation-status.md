@@ -4182,10 +4182,15 @@ recovering 26.6 GiB while preserving OpenBMC outputs and user captures. The
 full workspace suite remains deferred until requested. All 865 implementation
 tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED on a new genuine
 current-source real-Poky performance capture.
-DTB-DECOMPILE-DIALOG-001 is DONE in the v0.1.239 series. DTB and DTBO opening
+DTB-DECOMPILE-DIALOG-001 and DTB-DECOMPILE-DIALOG-RELEASE-001 are DONE in
+v0.1.239. DTB and DTBO opening
 now provides an explicit `.dts` destination, bounded folder browser, direct
 path editor, and a checked-by-default option that opens the exact output in the
 integrated Device Tree viewer only after its newly correlated daemon PTY exits
 successfully. Failed or stale sessions cannot open a file, and automatic view
-keeps the launch embedded. Kernel and U-Boot share the same typed flow. The
-release task is now active.
+keeps the launch embedded. Kernel and U-Boot share the same typed flow. Focused
+model, app, UI, CLI, formatting, strict Clippy, version, and roadmap checks
+pass. The optimized binary is installed with SHA-256
+`bf62d958201a4852de925da1cd72176d4f6fbbcb6bf005f9f79218168b933aa7`; the
+initialized Romulus daemon runs as PID 3704618. The full workspace suite
+remains deferred until requested.

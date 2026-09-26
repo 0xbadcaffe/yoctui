@@ -2060,5 +2060,6 @@ the resulting DTS without racing the compiler.
 
 DTB-DECOMPILE-DIALOG-001 adds a typed destination form, bounded directory
 browser, checked-by-default view option, and successful-PTY completion
-correlation for Kernel and U-Boot. DTB-DECOMPILE-DIALOG-RELEASE-001 publishes
-the focused correction as v0.1.239.
+correlation for Kernel and U-Boot. DTB-DECOMPILE-DIALOG-RELEASE-001 is complete
+in v0.1.239; the optimized binary is installed and the initialized Romulus
+daemon has been restarted.
