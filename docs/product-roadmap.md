@@ -2019,3 +2019,17 @@ TERMINAL-DEC-GRAPHICS-RELEASE-001 is complete in v0.1.236. Live Romulus session
 source-letter leakage; navigation and normal exit completed `do_menuconfig`.
 The optimized binary is installed and the initialized daemon was restarted.
 The full workspace suite remains deferred until requested.
+
+## M84 — Menuconfig presentation and keyboard ownership
+
+Goal: show the initial Kernel and U-Boot menuconfig screen without requiring a
+keypress, make PTY versus Yoctui keyboard ownership explicit and reversible,
+and prevent false detached-terminal success messages.
+
+MENUCONFIG-INTERACTION-001 adds the quiet-period screen flush and a model-owned
+`Ctrl+G` foreground toggle that leaves the exact daemon session running while
+the operator visits Yoctui and later resumes it. DETACHED-TERMINAL-STARTUP-001
+adds explicit emulator profiles and bounded early-exit verification.
+MENUCONFIG-INTERACTION-RELEASE-001 packages the correction as v0.1.237 after
+focused automated and live Kernel/U-Boot validation. The full workspace suite
+remains deferred until requested.

@@ -1,3 +1,13 @@
+M84 is IN_PROGRESS for v0.1.237. The daemon can suppress the last ncurses
+snapshot in a short output burst, so a menu may remain visually stale until a
+keypress creates more output. Embedded platform terminals also conflate writer
+lease ownership with client keyboard focus, and detached launch currently
+reports success immediately after spawning an emulator. The active tasks add a
+quiet-period snapshot flush, a `Ctrl+G` PTY/Yoctui foreground toggle that keeps
+the same session alive, and verified emulator startup. Focused checks and live
+Kernel/U-Boot validation will precede the release build; the full workspace
+suite remains deferred for the agreed manual bug pass.
+
 M83 is DONE in v0.1.236. The admitted `vt100` parser ignores DEC G0/G1
 Special Graphics state and previously exposed ncurses border source letters
 such as `q`, `x`, `l`, and `m`. The bounded model normalizer now tracks G0/G1

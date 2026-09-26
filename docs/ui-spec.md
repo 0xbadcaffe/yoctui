@@ -5264,6 +5264,24 @@ borders therefore render as Unicode line-drawing and symbol cells; designation
 source letters such as `q`, `x`, `l`, and `m` must never appear in their place.
 Charset state persists across bounded PTY chunks and resets with the terminal.
 
+The daemon publishes the final coalesced terminal snapshot after each bounded
+output burst even when the child becomes quiet. A newly opened ncurses screen
+must therefore become visible without an operator keystroke.
+
+An in-place Kernel or U-Boot menuconfig starts with keyboard input assigned to
+the PTY. While the PTY owns input, every key except `Ctrl+G`, including function
+keys, is sent to menuconfig. `Ctrl+G` hides the in-place terminal and returns
+keyboard input to Yoctui without releasing the writer lease or stopping the
+session. The platform workspace shows that menuconfig is still running and
+advertises `Ctrl+G Resume menuconfig`; pressing it restores the same session and
+returns input to the PTY. The visible terminal advertises `Ctrl+G Yoctui`.
+
+A detached terminal launch is reported as started only after a supported
+terminal emulator has remained alive through a bounded startup probe. Yoctui
+prefers an explicitly supported emulator over a generic system alternative,
+uses the emulator's wait/foreground option where available, and reports an
+early launcher exit as a failure instead of claiming that a window opened.
+
 ### Dependency and accessibility gate
 
 Every third-party widget requires a refreshed license/MSRV/source/checksum,

@@ -9778,3 +9778,36 @@ required = true
 depends_on = ["TERMINAL-DEC-GRAPHICS-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.236. Formatting, focused model and daemon PTY tests, strict model/CLI Clippy, version policy, roadmap validation, and the optimized release build pass. Live Romulus session 8 rendered Kernel menuconfig with Unicode corners, horizontal and vertical lines, and tees without DEC q/x/l/m leakage; navigation worked, normal Exit completed do_menuconfig, and the session exited cleanly. The identical installed and release binary SHA-256 is fec11f06deaef01c7d87bceba04dd6b3193f46fe562da1c6e35fed286818af5a with embedded source SHA 1d2948a9a9c8; the initialized daemon runs as PID 3628473. The full workspace suite remains deferred until requested."
+
+[[task]]
+id = "MENUCONFIG-INTERACTION-001"
+milestone = "M84"
+title = "Flush initial menuconfig screens and toggle keyboard ownership"
+status = "IN_PROGRESS"
+priority = 3020
+required = true
+depends_on = ["TERMINAL-DEC-GRAPHICS-RELEASE-001"]
+verify = ["cargo test -p yoctui-model platform_menuconfig", "cargo test -p yoctui-app platform_menuconfig", "cargo test -p yoctui --bin yoctui menuconfig", "cargo test -p yoctui-ui menuconfig", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Flush the final coalesced PTY screen after a bounded quiet period. Model Kernel/U-Boot menuconfig foreground state independently from the writer lease; Ctrl+G hides/resumes the exact session and foreground mode forwards every other key to the PTY."
+
+[[task]]
+id = "DETACHED-TERMINAL-STARTUP-001"
+milestone = "M84"
+title = "Verify detached menuconfig terminal startup"
+status = "NOT_STARTED"
+priority = 3021
+required = true
+depends_on = ["MENUCONFIG-INTERACTION-001"]
+verify = ["cargo test -p yoctui --bin yoctui detached_terminal", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Prefer explicit emulator profiles, preserve shell-free argv, keep the launcher in the foreground where supported, and reject an emulator that exits during the bounded startup probe."
+
+[[task]]
+id = "MENUCONFIG-INTERACTION-RELEASE-001"
+milestone = "M84"
+title = "Release menuconfig presentation and input corrections"
+status = "NOT_STARTED"
+priority = 3022
+required = true
+depends_on = ["DETACHED-TERMINAL-STARTUP-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui-app --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Bump to v0.1.237, build/install the optimized binary, restart the initialized Romulus daemon, and validate immediate rendering, Ctrl+G leave/resume, input, normal exit, and detached startup for Kernel and U-Boot. The full workspace suite remains deferred until requested."

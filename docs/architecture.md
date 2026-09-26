@@ -4622,3 +4622,23 @@ library mutation and restores the catalog before the initial screen is shown.
 Source documents remain external and are never copied, rewritten, or placed in
 daemon persistence. This feature is client-local and does not change the daemon
 protocol or BitBake authority.
+
+## M84 menuconfig presentation and input ownership
+
+The daemon PTY child runtime coalesces high-rate output snapshots, but owns a
+quiet-period flush deadline so the final screen from a burst always reaches the
+journal. Raw output and typed screen snapshots remain separate daemon events;
+the UI continues to consume only bounded typed cells.
+
+The model owns whether each Kernel or U-Boot menuconfig session is foregrounded.
+Foreground state is independent of the daemon writer lease: hiding a terminal
+changes client routing and presentation only, while the daemon process and lease
+continue. The CLI reserves `Ctrl+G` as the sole escape while an in-place
+menuconfig is foregrounded and forwards all other decoded keys to the PTY. The
+model reducer hides or restores the exact bound session, the app maps the typed
+toggle, and the UI renders the resulting state without inspecting process text.
+
+Detached launch profiles encode emulator-specific foreground/wait arguments as
+argv. The CLI performs a bounded early-exit probe before returning success, so
+the model never receives a successful launch notification for a launcher that
+immediately failed. No shell command string is introduced.

@@ -1,21 +1,22 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** MENUCONFIG-INTERACTION-001
+**Title:** Flush initial menuconfig screens and toggle keyboard ownership
+**Status:** IN_PROGRESS
 
-TERMINAL-DEC-GRAPHICS-RELEASE-001 is complete in v0.1.236. The only remaining
-registry task requires a new genuine source/binary-bound Yocto 6.0.2
-`linux-yocto` compile capture. Existing retained evidence is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
+Publish the final typed PTY screen after a bounded quiet period even when no
+further output arrives. Add a model-owned `Ctrl+G` foreground toggle for the
+exact Kernel/U-Boot menuconfig session: foreground sends every other key to the
+PTY, while hidden mode leaves the process and writer lease alive and restores
+the platform workspace with a resume hint.
 
-After new live evidence is supplied, run:
+Verification:
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model platform_menuconfig
+cargo test -p yoctui-app platform_menuconfig
+cargo test -p yoctui --bin yoctui menuconfig
+cargo test -p yoctui-ui menuconfig
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.
