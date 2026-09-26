@@ -1,19 +1,21 @@
 # Current Task
 
-**ID:** PLATFORM-PTY-RELEASE-001
-**Title:** Package and install the platform inspection and menuconfig correction series
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Prepare v0.1.233, rerun the focused correction checks, build and install the
-optimized binary, restart the daemon in the initialized Romulus environment,
-and repeat provider inspection from a plain client plus embedded menuconfig
-startup. Do not run the full workspace suite during the user's manual bug pass.
+PLATFORM-PTY-RELEASE-001 is complete in v0.1.233. The only remaining registry
+task requires a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto`
+compile capture. Existing retained evidence is bound to source base
+`d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
+mismatches, including changes predating M67.
 
-Verify with:
+After new live evidence is supplied, run:
 
 ```bash
-cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-python3 scripts/check-version-bump.py
-./scripts/verify-roadmap.sh
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
+
+Do not rewrite evidence digests or use fake-process startup timings as live
+certification.

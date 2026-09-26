@@ -1966,5 +1966,8 @@ MENUCONFIG-RELAY-ISOLATION-001 gives every relay its own private runtime socket.
 PTY-SESSION-ID-RECOVERY-001 ensures a restarted daemon allocates new PTY
 identities above recovered terminal history so the requesting platform
 workspace can bind the exact new session.
-PLATFORM-PTY-RELEASE-001 packages, installs, and smoke-tests v0.1.233 while the
-full workspace suite remains deferred for the user's manual bug pass.
+PLATFORM-PTY-RELEASE-001 is complete in v0.1.233. Live Romulus validation from
+an unsourced client resolved the Kernel provider, allocated a new terminal ID
+above recovered history, attached the embedded viewer, rendered Linux 6.18.49
+menuconfig inside Yoctui, and returned cleanly after termination. The full
+workspace suite remains deferred for the user's manual bug pass.

@@ -1,6 +1,6 @@
 # Yoctui Implementation Status
 
-M80 is IN_PROGRESS from the v0.1.232 manual bug pass. A restarted plain client
+M80 is DONE in v0.1.233. A restarted plain client
 previously launched lazy Kernel/U-Boot inspection without reconstructing the
 selected Yocto environment. PLATFORM-INSPECTION-ENV-001 is DONE: both
 workspaces now initialize the exact selected profile off the UI loop and pass
@@ -16,7 +16,13 @@ already present in lost terminal history, so the client excluded it as
 pre-existing and retained `Starting Kernel menuconfig`. PTY-SESSION-ID-RECOVERY-001
 is DONE: daemon startup seeds generic PTY allocation above recovered generic
 identities while leaving the Raw namespace independent, and focused allocator
-plus platform binding tests pass. PLATFORM-PTY-RELEASE-001 is IN_PROGRESS.
+plus platform binding tests pass. Live Romulus validation from an unsourced
+client resolved `virtual/kernel`, allocated session 3 above recovered sessions
+1 and 2 with one attached viewer, rendered Linux 6.18.49 menuconfig inside the
+Kernel screen, and returned cleanly after termination. The optimized binary is
+installed and the initialized daemon is running. Focused checks pass; the full
+workspace suite remains deferred for the manual bug pass. 873 tasks are DONE;
+only M67-LIVE-EVIDENCE-001 remains BLOCKED on current-source live evidence.
 
 M79 ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are DONE in the
 v0.1.232 series. Current and saved diagnostics share one Errors workspace,
