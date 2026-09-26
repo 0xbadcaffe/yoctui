@@ -343,7 +343,7 @@ pub fn update(app: &mut App, action: Action) -> Option<Effect> {
         | Action::LoadRecipeEditorExternalContent(..) | Action::FocusRecipeEditor(..) | Action::EditRecipeEditor(..)
         | Action::BeginRecipeEditorSearch | Action::AppendRecipeEditorSearch(..) | Action::BackspaceRecipeEditorSearch
         | Action::FinishRecipeEditorSearch | Action::NextRecipeEditorMatch { .. } | Action::ToggleRecipeEditorEditing
-        | Action::OpenRecipeEditorExternal | Action::AppendRecipeEditor(..) | Action::BackspaceRecipeEditor
+        | Action::OpenRecipeEditorExternal | Action::OpenRecipeEditorGitUi | Action::AppendRecipeEditor(..) | Action::BackspaceRecipeEditor
         | Action::SaveRecipeEditor | Action::RecipeEditorSaved | Action::BeginRecipeEditorBuild
         | Action::CloseRecipeEditor | Action::SelectLayer { .. } | Action::OpenSelectedLayer
         | Action::BeginSelectedLayerWorkspaceEditor | Action::BeginSelectedLayerBrowser | Action::LoadLayerBrowserDirectory { .. }

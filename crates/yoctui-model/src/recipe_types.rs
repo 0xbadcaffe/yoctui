@@ -52,7 +52,11 @@ pub enum DevtoolGitState {
     MissingExecutable,
     NotRepository,
     Available {
+        repository_root: Option<PathBuf>,
         branch: Option<String>,
+        upstream: Option<String>,
+        ahead: usize,
+        behind: usize,
         head: Option<String>,
         modified: usize,
         untracked: usize,

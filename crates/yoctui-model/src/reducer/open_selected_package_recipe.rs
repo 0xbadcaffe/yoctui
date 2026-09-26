@@ -68,6 +68,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         | Action::NextRecipeEditorMatch { .. }
         | Action::ToggleRecipeEditorEditing
         | Action::OpenRecipeEditorExternal
+        | Action::OpenRecipeEditorGitUi
         | Action::AppendRecipeEditor(..)
         | Action::BackspaceRecipeEditor
         | Action::SaveRecipeEditor

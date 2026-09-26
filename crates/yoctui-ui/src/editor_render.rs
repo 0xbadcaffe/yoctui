@@ -276,7 +276,15 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
             .find(|recipe| recipe.name == editor.recipe)
             .and_then(|recipe| recipe.layer.as_deref())
             .unwrap_or("unknown");
-        let inspector = vec![
+        let git_status = app.devtool_statuses.values().find(|status| {
+            status.identity.name == editor.recipe
+                && matches!(
+                    &status.workspace,
+                    DevtoolWorkspace::Present { source_path, .. }
+                        if source_path == &editor.root
+                )
+        });
+        let mut inspector = vec![
             Line::styled(
                 "Recipe",
                 ThemePalette::for_app(app)
@@ -289,6 +297,55 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
             Line::from(format!("State: {modified}")),
             Line::default(),
             Line::styled(
+                "Git",
+                ThemePalette::for_app(app).role(ThemePalette::for_app(app).success, Modifier::BOLD),
+            ),
+        ];
+        match git_status.map(|status| &status.git) {
+            Some(DevtoolGitState::Available {
+                repository_root,
+                branch,
+                upstream,
+                ahead,
+                behind,
+                modified,
+                untracked,
+                conflicted,
+                ..
+            }) => {
+                inspector.extend([
+                    Line::from(format!(
+                        "Repository: {}",
+                        repository_root.as_ref().map_or_else(
+                            || "unavailable".into(),
+                            |path| path.display().to_string()
+                        )
+                    )),
+                    Line::from(format!(
+                        "Branch: {}",
+                        branch.as_deref().unwrap_or("detached")
+                    )),
+                    Line::from(format!(
+                        "Tracking: {} · {}",
+                        upstream.as_deref().unwrap_or("not configured"),
+                        crate::recipe_render::devtool_git_sync_text(
+                            upstream.as_deref(),
+                            *ahead,
+                            *behind,
+                        )
+                    )),
+                    Line::from(format!(
+                        "Changes: {modified} modified · {untracked} untracked · {conflicted} conflicted"
+                    )),
+                ]);
+            }
+            _ => inspector.push(Line::from(
+                "Git status: unavailable; refresh Devtool status",
+            )),
+        }
+        inspector.extend([
+            Line::default(),
+            Line::styled(
                 "Actions",
                 ThemePalette::for_app(app)
                     .role(ThemePalette::for_app(app).informational, Modifier::BOLD),
@@ -298,7 +355,8 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
             Line::from("[Ctrl+S] Save"),
             Line::from("[Ctrl+B] Build recipe"),
             Line::from("[e] External editor"),
-        ];
+            Line::from("[G] Open repository in GitUI"),
+        ]);
         frame.render_widget(
             Paragraph::new(inspector)
                 .block(editor_pane_block(
@@ -350,9 +408,9 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     );
     frame.render_widget(
         Paragraph::new(if file_focus {
-            "Ctrl+F file · Ctrl+Shift+F workspace · / global · Enter edit · Esc close"
+            "Ctrl+F file · Ctrl+Shift+F workspace · / global · G GitUI · Enter edit"
         } else if integrated {
-            "i insert · Ctrl+F file · Ctrl+Shift+F workspace · / global · Ctrl+S save · Ctrl+B build"
+            "i insert · Ctrl+F file · Ctrl+Shift+F workspace · / global · G GitUI · Ctrl+S save"
         } else {
             "EDITOR · i insert · v visual · Ctrl+F file · Ctrl+Shift+F workspace · / global · Ctrl+S save"
         })

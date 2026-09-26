@@ -7,7 +7,7 @@ fn devtool_metadata_rejects_malformed_external_records() {
         Err("busybox relative/path".into())
     );
     assert_eq!(
-        parse_git_status("unexpected"),
+        parse_git_status("unexpected", Some("/workspace/busybox".into())),
         Err("unrecognized Git status record: unexpected".into())
     );
 }

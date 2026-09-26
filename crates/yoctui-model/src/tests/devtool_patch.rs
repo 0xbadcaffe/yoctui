@@ -28,7 +28,11 @@ fn patch_app() -> (App, RecipeIdentity, Layer) {
                 recipe_file: Some(identity.file.clone()),
             },
             git: DevtoolGitState::Available {
+                repository_root: Some("/build/workspace/sources/busybox".into()),
                 branch: Some("devtool".into()),
+                upstream: None,
+                ahead: 0,
+                behind: 0,
                 head: Some("abc123".into()),
                 modified: 1,
                 untracked: 0,

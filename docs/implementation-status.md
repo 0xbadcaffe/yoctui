@@ -4010,4 +4010,11 @@ integrated editor at the matching cursor position without losing its recipe;
 unsaved cross-file switches fail closed and the existing containment, .git,
 symlink, byte, result, and cancellation bounds remain enforced. Focused model,
 app, CLI scanner, TestBackend, and formatting checks pass.
-DEVTOOL-EDITOR-GIT-001 is now IN_PROGRESS.
+
+DEVTOOL-EDITOR-GIT-001 is DONE in the v0.1.230 correction series. Git
+porcelain-v2 inspection now retains repository root, branch, upstream,
+ahead/behind synchronization, and dirty counts through the daemon protocol.
+The Devtool workspace and integrated editor render that complete state; `G`
+opens GitUI at the exact repository root and preserves the editor beneath the
+terminal chooser. Focused adapter, model, app, TestBackend, protocol round-trip,
+and formatting checks pass. HEADER-STATUS-001 is now IN_PROGRESS.

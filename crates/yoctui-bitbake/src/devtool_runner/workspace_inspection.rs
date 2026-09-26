@@ -256,11 +256,52 @@ pub(crate) async fn inspect_git(program: &Path, source_path: &Path) -> DevtoolGi
             };
         }
     };
-    parse_git_status(&output).unwrap_or_else(|message| DevtoolGitState::Malformed { message })
+    let mut root_process = TokioCommand::new(program);
+    root_process
+        .arg("-C")
+        .arg(source_path)
+        .args(["rev-parse", "--show-toplevel"])
+        .kill_on_drop(true);
+    let root_output = match root_process.output().await {
+        Ok(output) if output.status.success() => output,
+        Ok(output) => {
+            return DevtoolGitState::Failed {
+                exit_code: output.status.code(),
+                message: output_text(&output.stderr),
+            };
+        }
+        Err(error) => {
+            return DevtoolGitState::Failed {
+                exit_code: None,
+                message: error.to_string(),
+            };
+        }
+    };
+    let repository_root = match String::from_utf8(root_output.stdout) {
+        Ok(value) => PathBuf::from(value.trim()),
+        Err(error) => {
+            return DevtoolGitState::Malformed {
+                message: error.to_string(),
+            };
+        }
+    };
+    if !repository_root.is_absolute() {
+        return DevtoolGitState::Malformed {
+            message: "Git reported a non-absolute repository root".into(),
+        };
+    }
+    parse_git_status(&output, Some(repository_root))
+        .unwrap_or_else(|message| DevtoolGitState::Malformed { message })
 }
 
-pub(crate) fn parse_git_status(output: &str) -> Result<DevtoolGitState, String> {
+pub(crate) fn parse_git_status(
+    output: &str,
+    repository_root: Option<PathBuf>,
+) -> Result<DevtoolGitState, String> {
     let mut branch = None;
+    let mut upstream = None;
+    let mut ahead = 0;
+    let mut behind = 0;
     let mut head = None;
     let mut modified = 0;
     let mut untracked = 0;
@@ -270,6 +311,25 @@ pub(crate) fn parse_git_status(output: &str) -> Result<DevtoolGitState, String> 
             branch = (value != "(detached)").then(|| value.to_owned());
         } else if let Some(value) = line.strip_prefix("# branch.oid ") {
             head = (value != "(initial)").then(|| value.to_owned());
+        } else if let Some(value) = line.strip_prefix("# branch.upstream ") {
+            if value.is_empty() {
+                return Err("empty Git upstream branch".into());
+            }
+            upstream = Some(value.to_owned());
+        } else if let Some(value) = line.strip_prefix("# branch.ab ") {
+            let (ahead_value, behind_value) = value
+                .split_once(' ')
+                .ok_or_else(|| format!("malformed Git branch divergence: {value}"))?;
+            ahead = ahead_value
+                .strip_prefix('+')
+                .ok_or_else(|| format!("malformed Git ahead count: {ahead_value}"))?
+                .parse::<usize>()
+                .map_err(|_| format!("malformed Git ahead count: {ahead_value}"))?;
+            behind = behind_value
+                .strip_prefix('-')
+                .ok_or_else(|| format!("malformed Git behind count: {behind_value}"))?
+                .parse::<usize>()
+                .map_err(|_| format!("malformed Git behind count: {behind_value}"))?;
         } else if line.starts_with("# branch.") {
             continue;
         } else if line.starts_with("1 ") || line.starts_with("2 ") {
@@ -284,8 +344,15 @@ pub(crate) fn parse_git_status(output: &str) -> Result<DevtoolGitState, String> 
             return Err(format!("unrecognized Git status record: {line}"));
         }
     }
+    if upstream.is_none() && (ahead != 0 || behind != 0) {
+        return Err("Git reported branch divergence without an upstream branch".into());
+    }
     Ok(DevtoolGitState::Available {
+        repository_root,
         branch,
+        upstream,
+        ahead,
+        behind,
         head,
         modified,
         untracked,

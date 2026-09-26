@@ -94,14 +94,23 @@ pub(crate) fn recipe_workspace_state(app: &App, recipe: &Recipe) -> String {
         } => {
             let git = match &status.git {
                 DevtoolGitState::Available {
+                    repository_root,
                     branch,
+                    upstream,
+                    ahead,
+                    behind,
                     head,
                     modified,
                     untracked,
                     conflicted,
                 } => format!(
-                    "Git branch {}, head {}, {}, modified {modified}, untracked {untracked}, conflicted {conflicted}",
+                    "Git repository {}\nBranch: {}\nUpstream: {}\nSync: {}\nHead: {}\nChanges: {}, modified {modified}, untracked {untracked}, conflicted {conflicted}",
+                    repository_root
+                        .as_ref()
+                        .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
                     branch.as_deref().unwrap_or("detached"),
+                    upstream.as_deref().unwrap_or("not configured"),
+                    devtool_git_sync_text(upstream.as_deref(), *ahead, *behind),
                     head.as_deref().unwrap_or("initial"),
                     if modified + untracked + conflicted == 0 {
                         "clean"
@@ -130,6 +139,18 @@ pub(crate) fn recipe_workspace_state(app: &App, recipe: &Recipe) -> String {
         }
     };
     format!("{state}\n{}", devtool_action_status(status))
+}
+
+pub(crate) fn devtool_git_sync_text(upstream: Option<&str>, ahead: usize, behind: usize) -> String {
+    if upstream.is_none() {
+        return "no upstream".into();
+    }
+    match (ahead, behind) {
+        (0, 0) => "synced".into(),
+        (ahead, 0) => format!("unsynced · ahead {ahead}"),
+        (0, behind) => format!("unsynced · behind {behind}"),
+        (ahead, behind) => format!("unsynced · diverged, ahead {ahead}, behind {behind}"),
+    }
 }
 
 pub(crate) fn devtool_action_status(status: &DevtoolStatus) -> String {

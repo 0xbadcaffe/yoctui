@@ -9574,18 +9574,18 @@ notes = "DONE in the v0.1.230 correction series. Ctrl+F searches the selected bu
 id = "DEVTOOL-EDITOR-GIT-001"
 milestone = "M77"
 title = "Show complete workspace Git state and direct GitUI access"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2512
 required = true
 depends_on = ["DEVTOOL-EDITOR-SEARCH-001"]
 verify = ["cargo test -p yoctui-bitbake devtool_workspace_git", "cargo test -p yoctui-model devtool_editor_git", "cargo test -p yoctui-app devtool_editor_git", "cargo test -p yoctui-ui devtool_editor_git", "cargo fmt --all --check"]
-notes = "Report repo, branch, upstream synchronization and dirty state for the exact recipe workspace and expose GitUI from the integrated editor."
+notes = "DONE in the v0.1.230 correction series. Git porcelain-v2 status now retains the exact repository root, branch, upstream, ahead/behind synchronization and dirty counts through the daemon protocol. Both Devtool surfaces render the complete state, and G opens GitUI at that repository root from the integrated editor while preserving the editor beneath the chooser. Focused adapter, model, app, UI, protocol round-trip, and formatting checks pass."
 
 [[task]]
 id = "HEADER-STATUS-001"
 milestone = "M77"
 title = "Move local time and daemon status into persistent Header chrome"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2513
 required = true
 depends_on = ["DEVTOOL-EDITOR-GIT-001"]

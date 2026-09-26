@@ -56,7 +56,11 @@ async fn devtool_target_deploy_refreshes_original_identity_and_retains_failures(
 
     let refreshed = yoctui_model::DevtoolStatus {
         git: yoctui_model::DevtoolGitState::Available {
+            repository_root: Some("/build/workspace/sources/busybox".into()),
             branch: Some("devtool".into()),
+            upstream: None,
+            ahead: 0,
+            behind: 0,
             head: Some("abc123".into()),
             modified: 0,
             untracked: 0,

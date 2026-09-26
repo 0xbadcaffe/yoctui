@@ -318,7 +318,11 @@ fn devwork_terminal_devtool_routes_use_authoritative_recipe_and_workspace() {
                 recipe_file: Some(identity.file.clone()),
             },
             git: DevtoolGitState::Available {
+                repository_root: Some("/work/build/workspace/sources/busybox".into()),
                 branch: Some("devtool".into()),
+                upstream: None,
+                ahead: 0,
+                behind: 0,
                 head: Some("abc123".into()),
                 modified: 0,
                 untracked: 0,

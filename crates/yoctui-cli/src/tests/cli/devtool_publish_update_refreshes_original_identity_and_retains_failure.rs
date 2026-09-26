@@ -61,7 +61,11 @@ async fn devtool_publish_update_refreshes_original_identity_and_retains_failure(
             recipe_file: Some(identity.file.clone()),
         },
         git: yoctui_model::DevtoolGitState::Available {
+            repository_root: Some("/build/workspace/sources/busybox".into()),
             branch: Some("devtool".into()),
+            upstream: None,
+            ahead: 0,
+            behind: 0,
             head: Some("abc123".into()),
             modified: 0,
             untracked: 0,

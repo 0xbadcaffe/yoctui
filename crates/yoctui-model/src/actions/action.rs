@@ -403,7 +403,7 @@ pub enum Action {
     EditRecipeEditor(PopupEditorCommand), BeginRecipeEditorSearch, AppendRecipeEditorSearch(char),
     BackspaceRecipeEditorSearch, FinishRecipeEditorSearch,
     NextRecipeEditorMatch { backwards: bool, },
-    ToggleRecipeEditorEditing, OpenRecipeEditorExternal, AppendRecipeEditor(char),
+    ToggleRecipeEditorEditing, OpenRecipeEditorExternal, OpenRecipeEditorGitUi, AppendRecipeEditor(char),
     BackspaceRecipeEditor, SaveRecipeEditor, RecipeEditorSaved,
     BeginRecipeEditorBuild, CloseRecipeEditor, ConfirmRecipeTask,
     CancelRecipeTask, ConfirmDevtoolReset, CancelDevtoolReset,

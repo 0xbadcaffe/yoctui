@@ -118,7 +118,11 @@ fn fixture() -> (PathBuf, PtyDevtoolRouter, DevtoolStatus) {
             recipe_file: None,
         },
         git: DevtoolGitState::Available {
+            repository_root: Some(root.join("workspace/busybox")),
             branch: Some("devtool".into()),
+            upstream: None,
+            ahead: 0,
+            behind: 0,
             head: Some("abc".into()),
             modified: 0,
             untracked: 0,

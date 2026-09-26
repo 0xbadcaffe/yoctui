@@ -46,7 +46,11 @@ fn devtool_publish_finish_requires_clean_status_and_configured_layer_confirmatio
                 recipe_file: Some(identity.file.clone()),
             },
             git: DevtoolGitState::Available {
+                repository_root: Some("/build/workspace/sources/busybox".into()),
                 branch: Some("devtool".into()),
+                upstream: None,
+                ahead: 0,
+                behind: 0,
                 head: Some("abc123".into()),
                 modified: 1,
                 untracked: 0,
@@ -61,7 +65,11 @@ fn devtool_publish_finish_requires_clean_status_and_configured_layer_confirmatio
         Some("Commit all workspace changes before Devtool finish.")
     );
     app.devtool_statuses.get_mut(&identity).unwrap().git = DevtoolGitState::Available {
+        repository_root: Some("/build/workspace/sources/busybox".into()),
         branch: Some("devtool".into()),
+        upstream: None,
+        ahead: 0,
+        behind: 0,
         head: Some("abc123".into()),
         modified: 0,
         untracked: 0,

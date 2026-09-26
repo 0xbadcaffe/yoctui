@@ -210,6 +210,7 @@ pub(crate) fn apply_raw_execution_fixture(
 mod compatibility_dynamic_app_converts_installs_updates_and_invalidates_authority;
 mod daemon_recovery_restores_metadata_without_claiming_live_bitbake_or_profile;
 mod dependency_graph_maps_typed_navigation_filter_topology_and_open_actions;
+mod devtool_editor_git;
 mod devtool_editor_search;
 mod devtool_editor_viewport;
 mod devtool_workspace;

@@ -96,7 +96,11 @@ fn recipes_workspace_renders_authoritative_summary_and_inspector_sections() {
                 recipe_file: Some("/layers/meta/recipes-core/busybox/busybox_1.36.bb".into()),
             },
             git: yoctui_model::DevtoolGitState::Available {
+                repository_root: Some("/build/workspace/sources/busybox".into()),
                 branch: Some("devtool".into()),
+                upstream: Some("origin/devtool".into()),
+                ahead: 0,
+                behind: 0,
                 head: Some("abc123".into()),
                 modified: 1,
                 untracked: 0,

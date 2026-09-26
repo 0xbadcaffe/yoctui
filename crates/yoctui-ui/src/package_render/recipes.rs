@@ -269,7 +269,7 @@ fn devtool_compact_state<'a>(app: &'a App, recipe: &'a Recipe) -> (&'a str, &'a 
 
 fn devtool_workflow_detail(app: &App, recipe: &Recipe) -> String {
     let (workspace, git) = devtool_compact_state(app, recipe);
-    let source = recipe
+    let status = recipe
         .file
         .as_ref()
         .filter(|path| path.is_absolute())
@@ -278,14 +278,39 @@ fn devtool_workflow_detail(app: &App, recipe: &Recipe) -> String {
                 name: recipe.name.clone(),
                 file: file.clone(),
             })
-        })
-        .and_then(|status| match &status.workspace {
+        });
+    let source = status.and_then(|status| match &status.workspace {
             DevtoolWorkspace::Present { source_path, .. }
             | DevtoolWorkspace::MissingDirectory { source_path } => Some(source_path),
             DevtoolWorkspace::NotMember => None,
         });
+    let git_detail = status.map_or_else(
+        || "Repository: unavailable\nBranch: unavailable\nUpstream: unavailable\nSync: unavailable".into(),
+        |status| match &status.git {
+            DevtoolGitState::Available {
+                repository_root,
+                branch,
+                upstream,
+                ahead,
+                behind,
+                modified,
+                untracked,
+                conflicted,
+                ..
+            } => format!(
+                "Repository: {}\nBranch: {}\nUpstream: {}\nSync: {}\nChanges: modified {modified}, untracked {untracked}, conflicted {conflicted}",
+                repository_root
+                    .as_ref()
+                    .map_or_else(|| "unavailable".into(), |path| path.display().to_string()),
+                branch.as_deref().unwrap_or("detached"),
+                upstream.as_deref().unwrap_or("not configured"),
+                crate::recipe_render::devtool_git_sync_text(upstream.as_deref(), *ahead, *behind),
+            ),
+            _ => "Repository: unavailable\nBranch: unavailable\nUpstream: unavailable\nSync: unavailable".into(),
+        },
+    );
     format!(
-        "Recipe: {}\nProvider: {}\nWorkspace: {workspace}\nSource: {}\nGit: {git}\nBuild: {}\n\n1  Start/refresh workspace       Enter / d\n2  Edit source                   d / e\n3  Build workspace recipe        b\n4  Deploy build with SSH/SCP     P\n5  Create/update patches         u\n6  Finish into configured layer  F\n\nWorkspace shell: s   GitUI: G   Reset: D\n\n{}",
+        "Recipe: {}\nProvider: {}\nWorkspace: {workspace}\nSource: {}\nGit: {git}\n{git_detail}\nBuild: {}\nGitUI: G · Workspace shell: s · Reset: D\n\n1  Start/refresh workspace       Enter / d\n2  Edit source                   d / e\n3  Build workspace recipe        b\n4  Deploy build with SSH/SCP     P\n5  Create/update patches         u\n6  Finish into configured layer  F\n\n{}",
         recipe.name,
         recipe
             .file

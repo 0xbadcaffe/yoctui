@@ -36,7 +36,15 @@ pub enum DaemonDevtoolGitData {
     MissingExecutable,
     NotRepository,
     Available {
+        #[serde(default)]
+        repository_root: Option<String>,
         branch: Option<String>,
+        #[serde(default)]
+        upstream: Option<String>,
+        #[serde(default)]
+        ahead: u64,
+        #[serde(default)]
+        behind: u64,
         head: Option<String>,
         modified: u64,
         untracked: u64,
