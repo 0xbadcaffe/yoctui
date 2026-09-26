@@ -2000,5 +2000,9 @@ same relay.
 
 MENUCONFIG-PTY-ISOLATION-001 isolates the outer BitBake client's standard
 streams while preserving the validated wrapper handoff and terminal outcome.
-MENUCONFIG-PTY-RELEASE-001 packages the focused correction in v0.1.235 and
-restarts the initialized Romulus daemon for manual verification.
+MENUCONFIG-PTY-RELEASE-001 is complete in v0.1.235. A live 210x50 Romulus
+session confirmed the outer BitBake client used null standard streams while
+`mconf` exclusively owned the embedded PTY; menuconfig rendered without the
+Knotty 99% footer, accepted navigation, exited normally, and completed
+`do_menuconfig`. The optimized binary is installed and the initialized daemon
+was restarted. The full workspace suite remains deferred until requested.

@@ -1,17 +1,21 @@
 # Current Task
 
-**ID:** MENUCONFIG-PTY-RELEASE-001
-**Title:** Release the embedded menuconfig PTY correction
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Bump v0.1.235, build and install the optimized binary, restart the initialized
-Romulus daemon, and live-verify that menuconfig exclusively owns its PTY until
-the operator exits normally. The full workspace suite remains deferred until
-requested.
+MENUCONFIG-PTY-RELEASE-001 is complete in v0.1.235. The only remaining registry
+task requires a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto`
+compile capture. Existing retained evidence is bound to source base
+`d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
+mismatches, including changes predating M67.
+
+After new live evidence is supplied, run:
 
 ```bash
-cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-python3 scripts/check-version-bump.py
-./scripts/verify-roadmap.sh
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
+
+Do not rewrite evidence digests or use fake-process startup timings as live
+certification.

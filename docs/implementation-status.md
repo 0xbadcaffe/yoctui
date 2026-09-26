@@ -1,9 +1,17 @@
 # Yoctui Implementation Status
 
-M82 is IN_PROGRESS from the v0.1.234 manual bug pass. Live Romulus evidence
-shows the outer BitBake Knotty client and `mconf` sharing one embedded PTY:
-Knotty repeatedly overwrites ncurses with its 99% `do_menuconfig` footer and
-retains the same terminal input. MENUCONFIG-PTY-ISOLATION-001 is DONE: the outer BitBake client now receives null standard streams, leaving the validated wrapper as the only PTY owner. Five focused relay tests, formatting, strict CLI Clippy, and roadmap validation pass. MENUCONFIG-PTY-RELEASE-001 is current; the task remains running only until the operator exits menuconfig.
+M82 is DONE in v0.1.235. The outer BitBake Knotty client now receives null
+standard streams, leaving the validated menuconfig wrapper as the only PTY
+owner. Five focused relay tests, formatting, strict CLI Clippy, version policy,
+roadmap validation, and the optimized release build pass. Live Romulus session
+6 confirmed the BitBake client used `/dev/null` for file descriptors 0, 1, and
+2 while `scripts/kconfig/mconf` exclusively used `/dev/pts/3`; the 210x50
+embedded menu rendered without the 99% footer, accepted navigation, exited
+through its Exit control, completed `do_menuconfig`, and left no relay, client,
+or mconf process. The identical installed and release binary SHA-256 is
+`a976d72be3c66d32ff289347d12209a645ff895ac1ea4d6d0129b4e2fefa576d`,
+with embedded source SHA `3809753af937`; the initialized Romulus daemon runs
+as PID 3613946. The full workspace suite remains deferred until requested.
 
 M81 is DONE in the v0.1.234 manual feature pass. Hardware is
 a build-independent, persistent library grouped by Board, SoC, Memory,
