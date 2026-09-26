@@ -22,6 +22,7 @@ impl Default for DaemonPtySupervisor {
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         Self {
             sessions: HashMap::new(),
+            next_generic_id: 1,
             tx,
             rx,
         }
@@ -29,6 +30,20 @@ impl Default for DaemonPtySupervisor {
 }
 
 impl DaemonPtySupervisor {
+    pub fn with_recovered_session_ids(ids: impl IntoIterator<Item = u64>) -> Self {
+        let next_generic_id = ids
+            .into_iter()
+            .filter(|id| *id < GENERIC_PTY_ID_LIMIT)
+            .max()
+            .unwrap_or(0)
+            .saturating_add(1)
+            .min(GENERIC_PTY_ID_LIMIT);
+        Self {
+            next_generic_id,
+            ..Self::default()
+        }
+    }
+
     pub fn start_raw(
         &mut self,
         id: PtySessionId,
@@ -89,11 +104,13 @@ impl DaemonPtySupervisor {
                 .map(|id| id.0)
                 .filter(|id| *id < GENERIC_PTY_ID_LIMIT)
                 .max()
-                .unwrap_or(0)
-                .checked_add(1)
-                .filter(|id| *id < GENERIC_PTY_ID_LIMIT)
-                .ok_or_else(|| "generic PTY session ID space exhausted".to_string())?,
+                .and_then(|id| id.checked_add(1))
+                .unwrap_or(1)
+                .max(self.next_generic_id),
         );
+        if id.0 >= GENERIC_PTY_ID_LIMIT {
+            return Err("generic PTY session ID space exhausted".into());
+        }
         self.start(id, name, kind, cwd, command, dimensions)?;
         Ok(id)
     }
@@ -108,7 +125,11 @@ impl DaemonPtySupervisor {
         dimensions: TerminalDimensions,
     ) -> Result<(), String> {
         let spec = wire_spec(id, name, kind, cwd, command, dimensions)?;
-        self.start_spec(spec)
+        self.start_spec(spec)?;
+        if id.0 < GENERIC_PTY_ID_LIMIT {
+            self.next_generic_id = id.0.saturating_add(1).min(GENERIC_PTY_ID_LIMIT);
+        }
+        Ok(())
     }
 }
 

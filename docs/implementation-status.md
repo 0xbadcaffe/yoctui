@@ -14,7 +14,9 @@ A live Romulus smoke test then exposed recovered PTY identity reuse: ncurses
 ran successfully on the new isolated endpoint, but the daemon reused an ID
 already present in lost terminal history, so the client excluded it as
 pre-existing and retained `Starting Kernel menuconfig`. PTY-SESSION-ID-RECOVERY-001
-is IN_PROGRESS before the release task.
+is DONE: daemon startup seeds generic PTY allocation above recovered generic
+identities while leaving the Raw namespace independent, and focused allocator
+plus platform binding tests pass. PLATFORM-PTY-RELEASE-001 is IN_PROGRESS.
 
 M79 ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are DONE in the
 v0.1.232 series. Current and saved diagnostics share one Errors workspace,

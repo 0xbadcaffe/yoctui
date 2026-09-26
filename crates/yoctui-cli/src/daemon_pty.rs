@@ -68,6 +68,7 @@ struct SessionHandle {
 
 pub struct DaemonPtySupervisor {
     sessions: HashMap<PtySessionId, SessionHandle>,
+    next_generic_id: u64,
     tx: tokio::sync::mpsc::UnboundedSender<DaemonPtyEvent>,
     rx: tokio::sync::mpsc::UnboundedReceiver<DaemonPtyEvent>,
 }

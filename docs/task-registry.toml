@@ -9673,18 +9673,18 @@ notes = "DONE. Every hidden menuconfig relay now derives a private process-scope
 id = "PTY-SESSION-ID-RECOVERY-001"
 milestone = "M80"
 title = "Allocate new PTY identities above recovered terminal history"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2802
 required = true
 depends_on = ["MENUCONFIG-RELAY-ISOLATION-001"]
 verify = ["cargo test -p yoctui --bin yoctui recovered_pty", "cargo test -p yoctui-model platform_menuconfig", "cargo fmt --all --check"]
-notes = "A live Romulus smoke test showed the daemon reusing session ID 1 after recovering prior lost sessions. The platform client correctly excludes pre-launch IDs, so the reused identity leaves embedded menuconfig at Starting while ncurses runs in the daemon PTY. Seed allocation above every recovered identity."
+notes = "DONE. Daemon startup now seeds generic PTY allocation above the highest recovered generic identity while keeping the Raw namespace independent; allocation remains monotonic after close. Focused allocator and platform waiting/binding tests pass."
 
 [[task]]
 id = "PLATFORM-PTY-RELEASE-001"
 milestone = "M80"
 title = "Package and install the platform inspection and menuconfig correction series"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2803
 required = true
 depends_on = ["PTY-SESSION-ID-RECOVERY-001"]

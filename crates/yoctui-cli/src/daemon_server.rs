@@ -109,7 +109,13 @@ pub(crate) async fn run_daemon_foreground(
         daemon_security::DaemonSecurityMapperSupervisor::new(job_ids.clone());
     let maintenance_supervisor =
         daemon_maintenance::DaemonMaintenanceSupervisor::new(job_ids.clone());
-    let pty_supervisor = daemon_pty::DaemonPtySupervisor::default();
+    let pty_supervisor = daemon_pty::DaemonPtySupervisor::with_recovered_session_ids(
+        daemon_journal
+            .snapshot()
+            .pty_sessions
+            .iter()
+            .map(|session| session.id.0),
+    );
     write_persisted_state(
         &persist_paths,
         &DaemonPersistedState::capture(
