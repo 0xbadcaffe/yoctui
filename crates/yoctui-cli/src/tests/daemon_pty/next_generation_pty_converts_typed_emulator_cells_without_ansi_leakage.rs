@@ -11,12 +11,20 @@ fn next_generation_pty_converts_typed_emulator_cells_without_ansi_leakage() {
     )
     .unwrap();
     emulator
-        .process(b"\x1b[2J\x1b[1;1Hready\r\nprompt")
+        .process(b"\x1b[2J\x1b[1;1H\x1b(0lqqk\x1b(B\r\nprompt")
         .unwrap();
     let terminal = emulator.snapshot(0).unwrap();
     let screen = terminal_to_wire(PtySessionId(3), &terminal);
     assert_eq!(screen.session_id.0, 3);
-    assert!(screen.cells.iter().any(|cell| cell.contents == "r"));
+    for symbol in ["┌", "─", "┐"] {
+        assert!(screen.cells.iter().any(|cell| cell.contents == symbol));
+    }
+    assert!(
+        !screen
+            .cells
+            .iter()
+            .any(|cell| matches!(cell.contents.as_str(), "l" | "q" | "k"))
+    );
     assert!(
         screen
             .cells

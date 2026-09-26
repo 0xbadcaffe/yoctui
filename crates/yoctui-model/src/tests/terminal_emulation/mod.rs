@@ -4,6 +4,8 @@ fn emulator(rows: u16, columns: u16, scrollback: usize) -> TerminalEmulator {
     TerminalEmulator::new(PtyDimensions { columns, rows }, scrollback).unwrap()
 }
 
+mod dec_special_graphics_are_chunk_stable;
+
 mod terminal_emulation_tracks_cursor_styles_unicode_and_modes;
 
 mod ux_terminal_adapter_snapshot_is_complete_bounded_and_parser_owned;

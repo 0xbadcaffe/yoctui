@@ -1,6 +1,11 @@
 use crate::{PtyDimensions, PtySessionError};
 use thiserror::Error;
 
+#[path = "terminal_charset.rs"]
+mod terminal_charset;
+
+use terminal_charset::TerminalCharsetNormalizer;
+
 pub const MAX_TERMINAL_SCROLLBACK_LINES: usize = 100_000;
 pub const MAX_TERMINAL_FEED_BYTES: usize = 64 * 1024;
 pub const MAX_TERMINAL_SNAPSHOT_CELLS: usize = 250_000;
@@ -69,6 +74,7 @@ pub struct TerminalSnapshot {
 
 pub struct TerminalEmulator {
     parser: vt100::Parser,
+    charset: TerminalCharsetNormalizer,
     observed_line_feeds: u64,
 }
 
@@ -86,6 +92,7 @@ impl TerminalEmulator {
         }
         Ok(Self {
             parser: vt100::Parser::new(dimensions.rows, dimensions.columns, scrollback_lines),
+            charset: TerminalCharsetNormalizer::default(),
             observed_line_feeds: 0,
         })
     }
@@ -94,7 +101,8 @@ impl TerminalEmulator {
         if bytes.len() > MAX_TERMINAL_FEED_BYTES {
             return Err(TerminalEmulationError::FeedTooLarge(bytes.len()));
         }
-        self.parser.process(bytes);
+        let normalized = self.charset.normalize(bytes);
+        self.parser.process(&normalized);
         self.observed_line_feeds = self
             .observed_line_feeds
             .saturating_add(bytes.iter().filter(|byte| **byte == b'\n').count() as u64);
