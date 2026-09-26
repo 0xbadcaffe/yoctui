@@ -191,6 +191,8 @@ mod raw_search_browsing_and_help_follow_exact_stable_selection;
 
 mod raw_mode_form_preview_and_back_restore_exact_typed_state;
 
+mod raw_execution_returns_to_catalog;
+
 mod raw_form_editor_is_typed_bounded_and_invalidates_stale_values;
 
 mod raw_mode_capability_replacement_closes_stale_preview_or_unsafe_form;

@@ -51,6 +51,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             app.overview_view = view;
         }
         Action::Open(s) => {
+            let raw_execution_effect = (s == Screen::RawMode
+                && app.raw_mode.view == RawModeView::Execution)
+                .then(|| update(app, Action::RawMode(RawModeAction::CloseExecution)))
+                .flatten();
             let correlated_log_id = (s == Screen::Logs)
                 .then(|| selected_correlated_log_id(app))
                 .flatten();
@@ -76,6 +80,9 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             }
             if let Some(id) = correlated_log_id {
                 app.logs.jump_to(id);
+            }
+            if raw_execution_effect.is_some() {
+                return raw_execution_effect;
             }
             if app.is_offline() {
                 return None;

@@ -39,3 +39,18 @@ fn raw_navigation_is_unique_grouped_and_palette_reachable() {
     assert_eq!(app.focus, FocusTarget::Workspace);
     assert_eq!(app.inspector_mode(), InspectorMode::RawCommand);
 }
+
+#[test]
+fn navigator_raw_destination_closes_execution_into_the_catalog() {
+    let mut app = App::new(16, 4096);
+    app.screen = Screen::Dashboard;
+    app.raw_mode.view = RawModeView::Execution;
+    app.raw_mode.focus = RawModeFocus::Execution;
+    app.raw_mode.execution = Some(RawCommandId::new("build.target").unwrap());
+
+    assert_eq!(update(&mut app, Action::Open(Screen::RawMode)), None);
+    assert_eq!(app.screen, Screen::RawMode);
+    assert_eq!(app.raw_mode.view, RawModeView::Browser);
+    assert_eq!(app.raw_mode.browser_column, RawBrowserColumn::Commands);
+    assert_eq!(app.raw_mode.focus, RawModeFocus::Commands);
+}

@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M78 RAW-CATALOG-RETURN-001 is DONE in v0.1.231. Closing a confirmed Raw
+BitBake execution now goes directly to its command catalog. Selecting
+`Tools → Raw Mode` in the Navigator performs the same transition and detaches
+an attached nonterminal daemon job without cancelling it. Focused model, app,
+and UI checks, strict Clippy, formatting, version policy, and roadmap
+validation pass; the full suite remains deferred for the manual bug pass.
+
 M75 BITBAKE-LAYERS-ALL-001 is DONE in v0.1.227. F12 Tools covers all 14
 subcommands and every command-specific option advertised by the initialized
 BitBake 2.19 `bitbake-layers --help`. Typed forms validate operation-specific

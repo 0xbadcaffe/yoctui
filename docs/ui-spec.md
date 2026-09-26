@@ -4699,7 +4699,9 @@ scrolling and `Left`/`Right` (or `h`/`l`) for bounded horizontal scrolling.
 `Ctrl+U` clears that search, and `1`/`2` selects stdout/stderr when the narrow
 layout can show only one stream. `c` requests typed cancellation, `d` detaches
 the current client, `r` reattaches it, and `Esc` returns, detaching an attached
-nonterminal execution without cancellation.
+nonterminal execution without cancellation. Returning through the Navigator's
+`Tools → Raw Mode` destination has the same result: it closes the execution
+view to the Raw command catalog and detaches any attached nonterminal job.
 Unavailable, terminal, already-attached, and already-detached actions remain
 visible but reject with an exact reason; keys never become terminal input for
 an interactive PTY. PTY input continues to use the established writer-owned

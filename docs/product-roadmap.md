@@ -1930,3 +1930,13 @@ or health fallback. Focused checks, formatting, strict Clippy, and roadmap
 validation pass; the optimized release is installed and the initialized
 Romulus daemon was restarted. The full workspace suite remains deferred for
 the user's manual bug pass.
+
+## M78 — Raw command catalog return
+
+RAW-CATALOG-RETURN-001 is DONE in v0.1.231. A Raw execution no longer preserves
+its form and preview beneath the output screen: closing it returns directly to
+the selected command catalog. The Navigator's `Tools → Raw Mode` destination
+also closes that execution view and detaches an attached nonterminal daemon job
+without cancellation. Focused model/app/UI checks, strict Clippy, formatting,
+version policy, and roadmap validation pass; the full suite remains deferred
+for the user's manual bug pass.

@@ -1,5 +1,5 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.230 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64  •  Distro: poky               D:✓ Connected/Local • BB:– Exited • Local 19:28│
+│yoctui v0.1.231 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64  •  Distro: poky               D:✓ Connected/Local • BB:– Exited • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: – Exited                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 0 / —  |  Elapsed: --:--:--  |  Workers: 0                                                │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

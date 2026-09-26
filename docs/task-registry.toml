@@ -9602,3 +9602,14 @@ required = true
 depends_on = ["HEADER-STATUS-001"]
 verify = ["cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.230. Focused Devtool viewport, search, Git, daemon-worker, Header, visual-contract and version checks pass with strict all-target/all-feature Clippy, formatting, and roadmap validation. The optimized binary embeds source SHA 2f77d485a191, is installed at ~/.cargo/bin/yoctui, and a fresh initialized-Romulus daemon runs as PID 3403746. The full workspace suite remains deferred until requested."
+
+[[task]]
+id = "RAW-CATALOG-RETURN-001"
+milestone = "M78"
+title = "Return Raw executions to the command catalog"
+status = "DONE"
+priority = 2600
+required = true
+depends_on = ["DEVTOOL-EDITOR-RELEASE-001"]
+verify = ["cargo test -p yoctui-model raw_execution_returns_to_catalog", "cargo test -p yoctui-model navigator_raw_destination_closes_execution_into_the_catalog", "cargo test -p yoctui-app navigator_raw_destination_detaches_running_execution", "cargo fmt --all --check", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "DONE in v0.1.231. Confirmed execution discards the form/preview return stack and closes directly to the selected Raw command catalog. Reopening Tools → Raw Mode from the Navigator performs the same transition and emits a detach effect for an attached nonterminal daemon job without cancellation. Focused model/app/UI checks, strict Clippy, version policy, formatting, and roadmap validation pass; the full suite remains deferred for the user's manual bug pass."

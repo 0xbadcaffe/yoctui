@@ -4,10 +4,10 @@
 **Title:** Supply current-source real-Poky release performance evidence
 **Status:** BLOCKED
 
-All M74, M75, M76, and M77 work is complete through v0.1.230. The only
-remaining registry task requires a new genuine source/binary-bound Yocto 6.0.2
-`linux-yocto` compile capture. Existing retained evidence is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
+RAW-CATALOG-RETURN-001 is complete in v0.1.231. The only remaining registry
+task requires a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto`
+compile capture. Existing retained evidence is bound to source base
+`d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
 mismatches, including changes predating M67.
 
 After new live evidence is supplied, run:

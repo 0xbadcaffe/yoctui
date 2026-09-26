@@ -134,7 +134,16 @@ pub fn reduce_raw_mode(
         RawModeAction::ConfirmPreview
         | RawModeAction::CancelExecution(_)
         | RawModeAction::SetExecutionAttachment { .. } => {}
-        RawModeAction::CloseExecution => raw_mode_back(state),
+        RawModeAction::CloseExecution => {
+            state.execution = None;
+            state.output = RawOutputViewState::default();
+            state.form = None;
+            state.preview = None;
+            state.return_stack.clear();
+            state.view = RawModeView::Browser;
+            state.browser_column = RawBrowserColumn::Commands;
+            state.focus = RawModeFocus::Commands;
+        }
         RawModeAction::ToggleOutputFollow => {
             state.output.follow = !state.output.follow;
             if state.output.follow {
@@ -183,6 +192,15 @@ pub fn reduce_raw_mode(
         RawModeAction::ClearOutputSearch => state.output.query.clear(),
         RawModeAction::OpenExecution(command) => {
             if catalog.command(&command).is_some() {
+                // A confirmed command starts a new execution session.  Its
+                // return destination is always the catalog, rather than the
+                // form and preview that initiated it.
+                state.form = None;
+                state.preview = None;
+                state.return_stack.clear();
+                state.view = RawModeView::Browser;
+                state.browser_column = RawBrowserColumn::Commands;
+                state.focus = RawModeFocus::Commands;
                 state.execution = Some(command);
                 state.output = RawOutputViewState::default();
                 state.enter_view(RawModeView::Execution, RawModeFocus::Execution);
