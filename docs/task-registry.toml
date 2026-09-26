@@ -9662,18 +9662,18 @@ notes = "DONE. Kernel and U-Boot inspection now reconstruct the exact selected p
 id = "MENUCONFIG-RELAY-ISOLATION-001"
 milestone = "M80"
 title = "Isolate concurrent Kernel and U-Boot menuconfig relays"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2801
 required = true
 depends_on = ["PLATFORM-INSPECTION-ENV-001"]
 verify = ["cargo test -p yoctui --bin yoctui menuconfig_relay", "cargo fmt --all --check"]
-notes = "Replace the process-wide fixed menuconfig socket with a private per-relay endpoint so retries or concurrent platform sessions cannot consume another relay's one-shot handoff and cause a broken pipe."
+notes = "DONE. Every hidden menuconfig relay now derives a private process-scoped runtime socket and publishes that endpoint only to its BitBake child, so retries and concurrent Kernel/U-Boot relays cannot consume one another's handoff. The focused command, validation, environment, isolation, and formatting checks pass."
 
 [[task]]
 id = "PLATFORM-PTY-RELEASE-001"
 milestone = "M80"
 title = "Package and install the platform inspection and menuconfig correction series"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2802
 required = true
 depends_on = ["MENUCONFIG-RELAY-ISOLATION-001"]

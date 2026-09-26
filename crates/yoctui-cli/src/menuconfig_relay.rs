@@ -187,9 +187,14 @@ fn shell_word(value: &OsStr) -> String {
 }
 
 pub(crate) fn socket_path() -> Result<PathBuf> {
-    Ok(yoctui_protocol::daemon_ipc::runtime_paths()?
-        .directory
-        .join("menuconfig.sock"))
+    Ok(socket_path_in(
+        &yoctui_protocol::daemon_ipc::runtime_paths()?.directory,
+        std::process::id(),
+    ))
+}
+
+fn socket_path_in(runtime_directory: &Path, process_id: u32) -> PathBuf {
+    runtime_directory.join(format!("menuconfig-{process_id}.sock"))
 }
 
 pub(crate) fn configure_environment(
@@ -320,5 +325,23 @@ mod tests {
         );
         assert!(environment["OE_TERMINAL_CUSTOMCMD"].contains("__menuconfig-handoff"));
         assert!(environment["OE_TERMINAL_CUSTOMCMD"].contains("-- {command}"));
+    }
+
+    #[test]
+    fn concurrent_relays_use_distinct_private_sockets() {
+        let runtime_directory = Path::new("/run/user/1000/yoctui");
+
+        let first = socket_path_in(runtime_directory, 1201);
+        let second = socket_path_in(runtime_directory, 1202);
+
+        assert_eq!(
+            first,
+            Path::new("/run/user/1000/yoctui/menuconfig-1201.sock")
+        );
+        assert_eq!(
+            second,
+            Path::new("/run/user/1000/yoctui/menuconfig-1202.sock")
+        );
+        assert_ne!(first, second);
     }
 }

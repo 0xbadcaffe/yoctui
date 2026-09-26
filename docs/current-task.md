@@ -1,17 +1,20 @@
 # Current Task
 
-**ID:** MENUCONFIG-RELAY-ISOLATION-001
-**Title:** Isolate concurrent Kernel and U-Boot menuconfig relays
+**ID:** PLATFORM-PTY-RELEASE-001
+**Title:** Package and install the platform inspection and menuconfig correction series
 **Status:** IN_PROGRESS
 
-The fixed `menuconfig.sock` permits a later relay's liveness connection to be
-accepted as an earlier relay's one-shot command, producing EOF/broken-pipe task
-failures. Allocate a unique private socket for each relay process and ensure
-retries and concurrent Kernel/U-Boot sessions cannot touch one another.
+Prepare v0.1.233, run the focused correction checks, build and install the
+optimized binary, restart the daemon in the initialized Romulus environment,
+and smoke-test provider inspection from a plain client plus embedded
+menuconfig startup. Do not run the full workspace suite during the user's
+manual bug pass.
 
 Verify with:
 
 ```bash
-cargo test -p yoctui --bin yoctui menuconfig_relay
 cargo fmt --all --check
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
+./scripts/verify-roadmap.sh
 ```
