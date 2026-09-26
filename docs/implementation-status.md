@@ -1,5 +1,12 @@
 # Yoctui Implementation Status
 
+M82 is IN_PROGRESS from the v0.1.234 manual bug pass. Live Romulus evidence
+shows the outer BitBake Knotty client and `mconf` sharing one embedded PTY:
+Knotty repeatedly overwrites ncurses with its 99% `do_menuconfig` footer and
+retains the same terminal input. MENUCONFIG-PTY-ISOLATION-001 is current and
+will give the PTY exclusively to the validated menuconfig wrapper; the task is
+expected to remain running only until the operator exits menuconfig.
+
 M81 is DONE in the v0.1.234 manual feature pass. Hardware is
 a build-independent, persistent library grouped by Board, SoC, Memory,
 Peripherals, Sensors, and Other. The authoritative UI and architecture now

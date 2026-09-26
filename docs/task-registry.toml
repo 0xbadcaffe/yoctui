@@ -9734,3 +9734,25 @@ required = true
 depends_on = ["HARDWARE-UI-001"]
 verify = ["cargo fmt --all --check", "cargo clippy --workspace --all-targets --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.234. Focused Hardware model/app/UI/CLI tests, browser/raster/symlink and restart persistence checks, formatting, strict all-target/all-feature workspace Clippy, version policy, and roadmap validation pass. The optimized binary SHA-256 is 2ee975719fe34d28866f3b9801e63dfa4ed6fd24b80be4b3ab63af98dafb87be with embedded source SHA 5e82225396c6; it is installed and a fresh initialized Romulus daemon runs as PID 3603735. The full workspace suite remains deferred until requested."
+
+[[task]]
+id = "MENUCONFIG-PTY-ISOLATION-001"
+milestone = "M82"
+title = "Give embedded menuconfig exclusive PTY streams"
+status = "IN_PROGRESS"
+priority = 3000
+required = true
+depends_on = ["HARDWARE-RELEASE-001"]
+verify = ["cargo test -p yoctui --bin yoctui menuconfig_relay", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Redirect only the outer BitBake client's stdin/stdout/stderr away from the relay PTY so the validated menuconfig wrapper exclusively owns ncurses rendering and input. Preserve exact BitBake argv, wrapper validation, exit propagation, and private socket isolation."
+
+[[task]]
+id = "MENUCONFIG-PTY-RELEASE-001"
+milestone = "M82"
+title = "Release the embedded menuconfig PTY correction"
+status = "NOT_STARTED"
+priority = 3001
+required = true
+depends_on = ["MENUCONFIG-PTY-ISOLATION-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Bump v0.1.235, build and install the optimized binary, restart the initialized Romulus daemon, and live-verify that menuconfig owns the PTY until normal exit. The full workspace suite remains deferred until requested."

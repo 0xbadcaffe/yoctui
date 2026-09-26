@@ -5532,6 +5532,11 @@ snapshot; accepting the request does not clear that waiting state.
 Each relay owns a unique socket for its lifetime. A retry or concurrent Kernel
 or U-Boot session cannot connect to, consume, remove, or otherwise interrupt an
 existing relay's one-shot handoff.
+The relay keeps the outer BitBake client's stdin, stdout, and stderr away from
+the selected PTY. Only the validated menuconfig wrapper inherits that terminal,
+so BitBake's 99% task footer cannot overwrite ncurses or consume operator input.
+`do_menuconfig` remains running while the interactive screen is open and
+completes after the operator exits menuconfig normally.
 After daemon restart, recovered terminal records retain their identities and
 new sessions receive a strictly newer identity. The platform workspace can
 therefore distinguish its requested session from pre-existing terminal history

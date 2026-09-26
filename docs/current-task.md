@@ -1,21 +1,17 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** MENUCONFIG-PTY-ISOLATION-001
+**Title:** Give embedded menuconfig exclusive PTY streams
+**Status:** IN_PROGRESS
 
-HARDWARE-RELEASE-001 is complete in v0.1.234. The only remaining registry
-task requires a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto`
-compile capture. Existing retained evidence is bound to source base
-`d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
-
-After new live evidence is supplied, run:
+Live Romulus evidence shows BitBake's Knotty footer overwriting the ncurses
+screen and sharing input while `do_menuconfig` waits at 99%. Isolate the outer
+BitBake client's standard streams so only the validated menuconfig wrapper
+owns the selected PTY. Preserve argv, private handoff sockets, validation, and
+terminal outcome propagation.
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui --bin yoctui menuconfig_relay
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.

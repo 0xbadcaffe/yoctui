@@ -1991,3 +1991,14 @@ controls. Focused tests, strict workspace Clippy, version policy, formatting, an
 roadmap validation pass; the optimized binary is installed and the initialized
 Romulus daemon was restarted. The full workspace suite remains deferred for the
 user's manual feature pass.
+
+## M82 — Embedded menuconfig PTY isolation
+
+Goal: keep BitBake's Knotty progress terminal from overwriting or competing
+for input with the Kernel and U-Boot ncurses menuconfig screen hosted by the
+same relay.
+
+MENUCONFIG-PTY-ISOLATION-001 isolates the outer BitBake client's standard
+streams while preserving the validated wrapper handoff and terminal outcome.
+MENUCONFIG-PTY-RELEASE-001 packages the focused correction in v0.1.235 and
+restarts the initialized Romulus daemon for manual verification.
