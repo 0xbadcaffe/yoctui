@@ -1,4 +1,4 @@
-M84 is IN_PROGRESS for v0.1.237. MENUCONFIG-INTERACTION-001 is DONE: the daemon
+M84 is DONE in v0.1.237. MENUCONFIG-INTERACTION-001 is DONE: the daemon
 flushes the final typed screen after a throttled output burst, and embedded
 Kernel/U-Boot sessions keep their writer lease while `Ctrl+G` hides or resumes
 the exact session. While visible, every other key including function keys and
@@ -8,9 +8,20 @@ DETACHED-TERMINAL-STARTUP-001 is DONE: explicit emulator profiles preserve
 shell-free argv and foreground/wait behavior, GNOME Terminal is preferred over
 this host's generic Terminator alias, and a background startup probe reports an
 early launcher exit instead of false success. Focused argv, failure, liveness,
-formatting, strict CLI Clippy, and roadmap checks pass. The versioned optimized
-release and live Kernel/U-Boot validation remain; the full workspace suite stays
-deferred for the agreed manual bug pass.
+formatting, strict CLI Clippy, and roadmap checks pass. The optimized binary is
+installed and identical to the release artifact at SHA-256
+`4a5ab01a594ea4507da2f83bfd9b62262e6aa852ce8a22c4836545a1a4cb1aa8`, with
+embedded source SHA `76218abf2a55`; initialized daemon PID 3665626 serves the
+Romulus build. A live Kernel session rendered without input after BitBake
+preparation, accepted navigation and edits, kept its exact process across
+`Ctrl+G` leave/resume, and exited normally. A real GNOME Terminal detached
+launch survived the startup probe and hosted the expected relay and BitBake
+process. Kernel and U-Boot share this typed PTY/input implementation and its
+focused coverage. The live Romulus U-Boot screen could not launch because
+compatibility did not report an authoritative task, despite BitBake listing
+`do_menuconfig` for `u-boot-aspeed-sdk`; this is recorded as a live-environment
+limitation rather than a false interaction result. The full workspace suite
+stays deferred for the agreed manual bug pass.
 
 M83 is DONE in v0.1.236. The admitted `vt100` parser ignores DEC G0/G1
 Special Graphics state and previously exposed ncurses border source letters

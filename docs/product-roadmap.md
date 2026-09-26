@@ -2030,6 +2030,12 @@ MENUCONFIG-INTERACTION-001 adds the quiet-period screen flush and a model-owned
 `Ctrl+G` foreground toggle that leaves the exact daemon session running while
 the operator visits Yoctui and later resumes it. DETACHED-TERMINAL-STARTUP-001
 adds explicit emulator profiles and bounded early-exit verification.
-MENUCONFIG-INTERACTION-RELEASE-001 packages the correction as v0.1.237 after
-focused automated and live Kernel/U-Boot validation. The full workspace suite
-remains deferred until requested.
+MENUCONFIG-INTERACTION-RELEASE-001 is complete in v0.1.237. Focused automated
+coverage passes, and live Romulus Kernel validation confirms automatic ncurses
+rendering, keyboard ownership, `Ctrl+G` leave/resume, normal exit, and a real
+GNOME Terminal detached launch. Kernel and U-Boot share the validated typed
+PTY/input path. Romulus compatibility did not expose an authoritative U-Boot
+menuconfig task for a second live launch even though BitBake lists
+`do_menuconfig` for `u-boot-aspeed-sdk`. The optimized binary is installed and
+the initialized daemon was restarted. The full workspace suite remains deferred
+until requested.
