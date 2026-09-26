@@ -13,6 +13,7 @@ fn concept_chrome_and_pane_mouse_boundaries_agree_across_resize() {
         app.screen = screen;
         for (width, height) in [(150, 50), (160, 50), (180, 55), (200, 60), (160, 48)] {
             let [header, footer] = workbench_chrome_heights(&app, width, height);
+            assert_eq!([header, footer], [5, 3]);
             let widths = workbench_pane_widths(&app, width, height);
             assert_eq!(widths.iter().sum::<u16>(), width);
             let shell = super::super::mouse::workbench_shell(&app, width, height).unwrap();

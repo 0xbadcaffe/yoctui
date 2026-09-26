@@ -21,6 +21,7 @@ tui-logger.workspace = true
 log.workspace = true
 unicode-width.workspace = true
 tui-tree-widget.workspace = true
+libc.workspace = true
 
 [dev-dependencies]
 yoctui-protocol = { version = "0.1.229", path = "../yoctui-protocol" }

@@ -14,6 +14,7 @@ mod devtool_editor_search;
 mod devtool_editor_viewport;
 mod devtool_workspace;
 mod global_search_selection_moves_within_pages;
+mod header_status;
 mod inspector_shell_names_modes_and_orders_typed_sections;
 mod keymap_preferences_render_search_custom_capture_errors_and_narrow_state;
 mod log_workspace_exposes_search_filters_pressure_and_narrow_wrap_safely;

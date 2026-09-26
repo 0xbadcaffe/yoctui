@@ -4017,4 +4017,12 @@ ahead/behind synchronization, and dirty counts through the daemon protocol.
 The Devtool workspace and integrated editor render that complete state; `G`
 opens GitUI at the exact repository root and preserves the editor beneath the
 terminal chooser. Focused adapter, model, app, TestBackend, protocol round-trip,
-and formatting checks pass. HEADER-STATUS-001 is now IN_PROGRESS.
+and formatting checks pass.
+
+HEADER-STATUS-001 is DONE in the v0.1.230 correction series. Every supported
+screen now uses a five-row Header and a three-row Footer. The Header shows the
+client host's `Local HH:MM` without seconds, then a bold semantic current
+message with Braille waiting activity or a daemon/BitBake health fallback, then
+workspace/build context. The Footer contains only its bordered shortcut row.
+Focused TestBackend, shared mouse-geometry, compile, and formatting checks pass.
+DEVTOOL-EDITOR-RELEASE-001 is now IN_PROGRESS.

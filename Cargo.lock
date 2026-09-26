@@ -2657,6 +2657,7 @@ dependencies = [
 name = "yoctui-ui"
 version = "0.1.229"
 dependencies = [
+ "libc",
  "log",
  "ratatui",
  "throbber-widgets-tui",

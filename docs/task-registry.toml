@@ -9585,18 +9585,18 @@ notes = "DONE in the v0.1.230 correction series. Git porcelain-v2 status now ret
 id = "HEADER-STATUS-001"
 milestone = "M77"
 title = "Move local time and daemon status into persistent Header chrome"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2513
 required = true
 depends_on = ["DEVTOOL-EDITOR-GIT-001"]
 verify = ["cargo test -p yoctui-ui header_status", "cargo test -p yoctui-app concept_chrome", "cargo fmt --all --check"]
-notes = "Show host-local HH:MM in the Header and a bold current message or daemon-health fallback beneath the version; leave the Footer to shortcuts."
+notes = "DONE in the v0.1.230 correction series. Every supported shell reserves a five-row Header and three-row Footer. The Header shows host-local Local HH:MM without seconds, a bold semantic current message with Braille activity or daemon/BitBake health fallback, and workspace context; the Footer contains only its bordered shortcut row. Focused UI, shared mouse-geometry, compile, and formatting checks pass."
 
 [[task]]
 id = "DEVTOOL-EDITOR-RELEASE-001"
 milestone = "M77"
 title = "Package and install the Devtool editor correction series"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2514
 required = true
 depends_on = ["HEADER-STATUS-001"]

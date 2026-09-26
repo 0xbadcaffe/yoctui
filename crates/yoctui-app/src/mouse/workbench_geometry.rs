@@ -30,21 +30,12 @@ pub(crate) struct WorkbenchMouseRegion {
 }
 
 /// Shared chrome allocation keeps live mouse input aligned with the renderer.
-pub fn workbench_chrome_heights(app: &yoctui_model::App, width: u16, height: u16) -> [u16; 2] {
-    let concept = matches!(
-        app.screen,
-        Screen::Dashboard
-            | Screen::Tasks
-            | Screen::Errors
-            | Screen::Images
-            | Screen::Recipes
-            | Screen::TerminalSessions
-    );
-    if (width == 160 && height == 50) || (concept && width >= 150 && height >= 50) {
-        [5, 4]
-    } else {
-        [2, 3]
-    }
+pub fn workbench_chrome_heights(
+    _app: &yoctui_model::App,
+    _width: u16,
+    _height: u16,
+) -> [u16; 2] {
+    [5, 3]
 }
 
 /// Wide pane widths in terminal cells, shared by rendering and hit testing.

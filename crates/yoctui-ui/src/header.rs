@@ -245,6 +245,15 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
             status_tone_style(&palette, bitbake_tone),
         ));
     }
+    right.push(header_separator(&palette, true));
+    right.push(Span::styled(
+        if mode == HeaderMode::Narrow {
+            local_clock_text(now)
+        } else {
+            clock_label(now)
+        },
+        palette.role(palette.primary_foreground, Modifier::BOLD),
+    ));
     let right = Line::from(right);
     let right_width = u16::try_from(right.width())
         .unwrap_or(inner.width)
@@ -284,11 +293,7 @@ pub(crate) fn workbench_header(frame: &mut Frame, app: &App, area: Rect, now: Sy
         primary_columns[1],
     );
 
-    frame.render_widget(
-        Paragraph::new("─".repeat(usize::from(inner.width)))
-            .style(palette.role(palette.inactive_border, Modifier::DIM)),
-        header_rows[1],
-    );
+    render_header_status(frame, app, header_rows[1], &palette);
     let workspace = app
         .workspace
         .source_dir
@@ -331,7 +336,80 @@ pub(crate) fn clock_text(now: SystemTime) -> String {
 }
 
 pub(crate) fn clock_label(now: SystemTime) -> String {
-    format!("UTC {}", clock_text(now))
+    format!("Local {}", local_clock_text(now))
+}
+
+pub(crate) fn local_clock_text(now: SystemTime) -> String {
+    let seconds = now
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_secs());
+    let timestamp = libc::time_t::try_from(seconds).unwrap_or(libc::time_t::MAX);
+    // SAFETY: `libc::tm` is a C data struct that permits all-zero initialization.
+    let mut local = unsafe { std::mem::zeroed::<libc::tm>() };
+    // SAFETY: both pointers are valid for the duration of this call.
+    let result = unsafe { libc::localtime_r(&timestamp, &mut local) };
+    if result.is_null() {
+        return "--:--".into();
+    }
+    format!("{:02}:{:02}", local.tm_hour, local.tm_min)
+}
+
+fn render_header_status(frame: &mut Frame, app: &App, area: Rect, palette: &ThemePalette) {
+    if area.is_empty() {
+        return;
+    }
+    if let Some(status) = app.transient_status() {
+        let tone = transient_status_tone(status.kind);
+        let style = status_tone_style(palette, tone).add_modifier(Modifier::BOLD);
+        let text = bounded_status_line(
+            status.text.split_whitespace().collect::<Vec<_>>().join(" "),
+            area.width.saturating_sub(2),
+        );
+        let spans = match status.kind {
+            TransientStatusKind::Activity => vec![Span::styled(
+                format!("{} {text}", task_activity(app, None)),
+                style,
+            )],
+            TransientStatusKind::Notification => {
+                vec![Span::styled(text, style)]
+            }
+            _ => vec![status_label(tone, text, style)],
+        };
+        frame.render_widget(Paragraph::new(Line::from(spans)), area);
+        return;
+    }
+
+    let daemon_tone = daemon_status_tone(app.daemon.status);
+    let (bitbake, bitbake_tone) = if app.daemon.status == yoctui_model::ClientReplicaStatus::Current
+    {
+        (
+            daemon_lifecycle_label(app.daemon.bitbake),
+            daemon_lifecycle_tone(app.daemon.bitbake),
+        )
+    } else {
+        ("Unavailable", StatusTone::Disabled)
+    };
+    let spans = vec![
+        Span::styled(
+            "Daemon health: ",
+            palette.role(palette.heading, Modifier::BOLD),
+        ),
+        status_label(
+            daemon_tone,
+            daemon_status_label(app.daemon.status),
+            status_tone_style(palette, daemon_tone).add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            format!("/{} · BitBake: ", app.client_access_origin.label()),
+            palette.role(palette.informational, Modifier::BOLD),
+        ),
+        status_label(
+            bitbake_tone,
+            bitbake,
+            status_tone_style(palette, bitbake_tone).add_modifier(Modifier::BOLD),
+        ),
+    ];
+    frame.render_widget(Paragraph::new(Line::from(spans)), area);
 }
 
 pub(crate) fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
@@ -363,10 +441,10 @@ pub(crate) fn shortcut_rail<'a>(app: &App, shortcuts: &'a str) -> Line<'a> {
     Line::from(spans)
 }
 
-pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: SystemTime) {
+pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, _now: SystemTime) {
     let palette = ThemePalette::for_app(app);
     let block = Block::default()
-        .borders(if area.height >= 4 {
+        .borders(if area.height >= 3 {
             Borders::ALL
         } else if area.width == LITERAL_REFERENCE_WIDTH && app.screen == Screen::Tasks {
             Borders::LEFT | Borders::RIGHT | Borders::BOTTOM
@@ -380,72 +458,15 @@ pub(crate) fn workbench_footer(frame: &mut Frame, app: &App, area: Rect, now: Sy
     if inner.is_empty() {
         return;
     }
-    let [status_row, command_row] = if inner.height >= 2 {
-        let rows = Layout::vertical([Constraint::Length(1), Constraint::Length(1)]).split(inner);
-        [rows[0], rows[1]]
-    } else {
-        [Rect::default(), inner]
-    };
-    let clock_width = if area.width >= 100 { 14 } else { 0 };
-    let transient = app.transient_status();
-    let columns = Layout::horizontal([
-        Constraint::Min(if area.width < 100 { 32 } else { 36 }),
-        Constraint::Length(clock_width),
-    ])
-    .split(command_row);
     let shortcuts = if app.preferences.footer_shortcuts {
-        footer_rail_shortcuts(app, columns[0].width)
+        footer_rail_shortcuts(app, inner.width)
     } else {
         "F1 Help | shortcuts hidden".into()
     };
     frame.render_widget(
         Paragraph::new(shortcut_rail(app, &shortcuts)).style(palette.base()),
-        columns[0],
+        inner,
     );
-    if let Some(status) = transient.filter(|_| !status_row.is_empty()) {
-        let tone = transient_status_tone(status.kind);
-        let responsive_text =
-            if app.build.status == BuildStatus::Running && app.background_activities.is_empty() {
-                let jobs = app.job_summary();
-                if jobs.queued > 0 && status_row.width < 30 {
-                    format!("Running · {} queued", jobs.queued)
-                } else if jobs.queued > 0 && status_row.width < 40 {
-                    let active = app
-                        .tasks
-                        .values()
-                        .filter(|task| task.state == TaskState::Active)
-                        .count();
-                    format!("Running · {active} task · {} queued", jobs.queued)
-                } else {
-                    status.text.split_whitespace().collect::<Vec<_>>().join(" ")
-                }
-            } else {
-                status.text.split_whitespace().collect::<Vec<_>>().join(" ")
-            };
-        let text = bounded_status_line(responsive_text, status_row.width.saturating_sub(2));
-        let spans = match status.kind {
-            TransientStatusKind::Activity => vec![Span::styled(
-                format!("{} {text}", task_activity(app, None)),
-                status_tone_style(&palette, tone),
-            )],
-            TransientStatusKind::Notification => {
-                vec![Span::styled(text, status_tone_style(&palette, tone))]
-            }
-            _ => vec![status_label(tone, text, status_tone_style(&palette, tone))],
-        };
-        frame.render_widget(
-            Paragraph::new(Line::from(spans)).alignment(Alignment::Left),
-            status_row,
-        );
-    }
-    if clock_width > 0 {
-        frame.render_widget(
-            Paragraph::new(clock_label(now))
-                .alignment(Alignment::Right)
-                .style(palette.role(palette.primary_foreground, Modifier::DIM)),
-            columns[1],
-        );
-    }
 }
 
 pub(crate) fn transient_status_tone(kind: TransientStatusKind) -> StatusTone {
