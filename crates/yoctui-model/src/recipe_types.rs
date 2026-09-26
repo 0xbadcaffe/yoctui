@@ -158,6 +158,7 @@ pub struct RecipeEditor {
     pub recipe: String,
     pub root: PathBuf,
     pub files: Vec<PathBuf>,
+    pub file_inventory_truncated: bool,
     pub selection: usize,
     pub focus: RecipeEditorFocus,
     pub language: SourceLanguage,
@@ -218,6 +219,7 @@ impl SourceLanguage {
             "yaml" | "yml" => Self::Yaml,
             "md" | "markdown" => Self::Markdown,
             "dts" | "dtsi" => Self::DeviceTree,
+            _ if name.ends_with(".wks.in") => Self::BitBake,
             _ if matches!(name.as_str(), "makefile" | "gnumakefile")
                 || name.starts_with("makefile.") =>
             {

@@ -3992,3 +3992,12 @@ editing visibility, complete known-language syntax projection, and semantic
 editor pane chrome. Follow-up tasks add selected-file/workspace search, complete
 workspace Git tracking with GitUI access, persistent local-time/daemon Header
 status, and the focused v0.1.230 release.
+
+DEVTOOL-EDITOR-VIEWPORT-001 is DONE in the v0.1.230 correction series. The
+workspace scan now retains up to 16,384 editable files and names truncation;
+file and long-document viewports follow their selected row/cursor, complete
+tree navigation and reducer-owned Normal/Insert/Visual editing remain active,
+every closed language identity has extension and keyword presentation, and
+Files, Document, Validation/Diff, and Inspector panes use distinct semantic
+chrome. Focused model, app, TestBackend, filesystem scan, and formatting checks
+pass. DEVTOOL-EDITOR-SEARCH-001 is now IN_PROGRESS.

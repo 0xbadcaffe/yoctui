@@ -5,8 +5,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::OpenRecipeEditor {
             recipe,
             root,
-            files,
+            mut files,
         } => {
+            let file_inventory_truncated = files.len() > MAX_RECIPE_EDITOR_FILES;
+            files.truncate(MAX_RECIPE_EDITOR_FILES);
             let language = files.first().map_or(SourceLanguage::PlainText, |path| {
                 SourceLanguage::from_path(path)
             });
@@ -16,6 +18,7 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
                     recipe,
                     root,
                     files,
+                    file_inventory_truncated,
                     selection: 0,
                     focus: RecipeEditorFocus::Files,
                     language,

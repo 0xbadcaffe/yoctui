@@ -185,6 +185,7 @@ pub use recipe_types::{
 };
 
 mod editor_types;
+pub use editor_types::MAX_RECIPE_EDITOR_FILES;
 use editor_types::apply_recipe_editor_command;
 pub use editor_types::{
     Dialog, PopupEditor, PopupEditorCommand, TransientStatus, TransientStatusKind,

@@ -169,30 +169,68 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     } else {
         regions[2]
     };
+    let palette = ThemePalette::for_app(app);
+    let file_rows = usize::from(columns[0].height.saturating_sub(2)).max(1);
+    let file_viewport = editor.file_viewport(file_rows);
+    let file_start = file_viewport.start;
     let files = editor
         .files
         .iter()
         .enumerate()
+        .skip(file_viewport.start)
+        .take(file_viewport.len())
         .map(|(index, path)| {
-            format!(
-                "{} {}",
-                if index == editor.selection {
-                    "▶"
-                } else {
-                    " "
-                },
-                path.display()
-            )
+            let selected = index == editor.selection;
+            let language = SourceLanguage::from_path(path);
+            let marker = if selected { "▶ " } else { "  " };
+            let display = path.display().to_string();
+            let split = display
+                .rfind('.')
+                .filter(|_| language != SourceLanguage::PlainText)
+                .unwrap_or(display.len());
+            let known_style = source_language_tree_style(language, &palette);
+            Line::from(vec![
+                Span::styled(
+                    marker,
+                    if selected {
+                        palette.role(palette.focused_border, Modifier::BOLD)
+                    } else {
+                        Style::default()
+                    },
+                ),
+                Span::raw(display[..split].to_owned()),
+                Span::styled(display[split..].to_owned(), known_style),
+            ])
         })
-        .collect::<Vec<_>>()
-        .join("\n");
+        .collect::<Vec<_>>();
+    let file_end = file_start.saturating_add(files.len());
+    let file_position = if editor.files.is_empty() {
+        "0/0".into()
+    } else {
+        format!("{}/{}", editor.selection + 1, editor.files.len())
+    };
+    let file_arrows = format!(
+        "{}{}",
+        if file_start > 0 { "↑" } else { "" },
+        if file_end < editor.files.len() {
+            "↓"
+        } else {
+            ""
+        }
+    );
+    let file_limit = if editor.file_inventory_truncated {
+        " · limited"
+    } else {
+        ""
+    };
     frame.render_widget(
-        Paragraph::new(files)
-            .block(
-                Block::default()
-                    .title(format!("Workspace file tree: {}", editor.recipe))
-                    .borders(Borders::ALL),
-            )
+        Paragraph::new(Text::from(files))
+            .block(editor_pane_block(
+                app,
+                format!("Files {file_position}{file_arrows}{file_limit}"),
+                palette.informational,
+                editor.focus == yoctui_model::RecipeEditorFocus::Files,
+            ))
             .wrap(Wrap { trim: false }),
         columns[0],
     );
@@ -210,20 +248,24 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
     let content = popup_editor_text(&editor.document);
     let file_focus = editor.focus == yoctui_model::RecipeEditorFocus::Files;
     let document_focus = editor.focus == yoctui_model::RecipeEditorFocus::Document;
+    let document_rows = usize::from(document_area.height.saturating_sub(2)).max(1);
+    let document_viewport = editor.document_viewport(document_rows);
     frame.render_widget(
         Paragraph::new(source_preview(&content, &selected, app))
-            .block(
-                Block::default()
-                    .title(format!(
-                        "{} {selected} — {} · {mode} · {modified} · Ln {} Col {}",
-                        if document_focus { "▶" } else { " " },
-                        editor.language.label(),
-                        position.line + 1,
-                        position.column + 1,
-                    ))
-                    .borders(Borders::ALL),
-            )
-            .wrap(Wrap { trim: false }),
+            .block(editor_pane_block(
+                app,
+                format!(
+                    "{} {selected} — {} · {mode} · {modified} · Ln {} Col {}",
+                    if document_focus { "▶" } else { " " },
+                    editor.language.label(),
+                    position.line + 1,
+                    position.column + 1,
+                ),
+                palette.progress,
+                document_focus,
+            ))
+            .wrap(Wrap { trim: false })
+            .scroll((document_viewport.start.min(u16::MAX as usize) as u16, 0)),
         document_area,
     );
     if integrated {
@@ -259,7 +301,12 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
         ];
         frame.render_widget(
             Paragraph::new(inspector)
-                .block(pane_block(app, "Recipe Inspector", false))
+                .block(editor_pane_block(
+                    app,
+                    "Recipe Inspector",
+                    palette.warning,
+                    false,
+                ))
                 .wrap(Wrap { trim: false }),
             columns[2],
         );
@@ -292,17 +339,18 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
             }));
             lines
         })
-        .block(
-            Block::default()
-                .title("Validation and diff state")
-                .borders(Borders::ALL),
-        )
+        .block(editor_pane_block(
+            app,
+            "Validation and diff state",
+            palette.accent,
+            false,
+        ))
         .wrap(Wrap { trim: false }),
         validation_area,
     );
     frame.render_widget(
         Paragraph::new(if file_focus {
-            "FILES · ↑/↓ select · Enter/e focus editor · Ctrl+B build recipe · Esc close"
+            "FILES · ↑/↓ PgUp/PgDn Home/End select · Enter/Tab document · e external · Esc close"
         } else if integrated {
             "i insert · / search · Ctrl+S save · Ctrl+B build · Tab files"
         } else {
@@ -311,4 +359,54 @@ pub(crate) fn recipe_editor(frame: &mut Frame, app: &App, editor: &RecipeEditor,
         .style(dialog_styles(app).hint),
         status_area,
     );
+}
+
+fn editor_pane_block<'a>(
+    app: &App,
+    title: impl Into<Line<'a>>,
+    color: Color,
+    focused: bool,
+) -> Block<'a> {
+    let palette = ThemePalette::for_app(app);
+    let color = if focused {
+        palette.focused_border
+    } else {
+        color
+    };
+    Block::default()
+        .title(title.into().style(palette.role(color, Modifier::BOLD)))
+        .borders(Borders::ALL)
+        .border_style(palette.role(
+            color,
+            if focused {
+                Modifier::BOLD
+            } else {
+                Modifier::empty()
+            },
+        ))
+}
+
+fn source_language_tree_style(language: SourceLanguage, palette: &ThemePalette) -> Style {
+    let color = match language {
+        SourceLanguage::BitBake | SourceLanguage::Toml | SourceLanguage::Yaml => {
+            palette.syntax_name
+        }
+        SourceLanguage::C | SourceLanguage::Cpp | SourceLanguage::Rust => palette.syntax_keyword,
+        SourceLanguage::Python | SourceLanguage::Shell | SourceLanguage::Make => {
+            palette.syntax_operator
+        }
+        SourceLanguage::JavaScript | SourceLanguage::TypeScript | SourceLanguage::Json => {
+            palette.syntax_value
+        }
+        SourceLanguage::Markdown | SourceLanguage::DeviceTree => palette.accent,
+        SourceLanguage::PlainText => palette.primary_foreground,
+    };
+    palette.role(
+        color,
+        if language == SourceLanguage::PlainText {
+            Modifier::empty()
+        } else {
+            Modifier::BOLD
+        },
+    )
 }

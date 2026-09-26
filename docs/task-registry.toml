@@ -9552,18 +9552,18 @@ notes = "DONE in v0.1.229. The version policy, focused Devtool workspace/patch/U
 id = "DEVTOOL-EDITOR-VIEWPORT-001"
 milestone = "M77"
 title = "Repair complete Devtool file and document navigation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 2510
 required = true
 depends_on = ["DEVTOOL-WORKSPACE-RELEASE-001"]
 verify = ["cargo test -p yoctui-model devtool_editor_viewport", "cargo test -p yoctui-app devtool_editor_viewport", "cargo test -p yoctui-ui devtool_editor_viewport", "cargo test -p yoctui --all-features workspace_editor", "cargo fmt --all --check"]
-notes = "Follow selection through the bounded file tree and long document, retain Vim-style in-TUI editing, cover every known language projection, and distinguish pane chrome."
+notes = "DONE in the v0.1.230 correction series. The bounded inventory grows from 512 to 16,384 files with an explicit limited state, selection-centered tree and document viewports expose every retained row and cursor line, Page/Home/End navigation works, Vim-style editing remains visible, all known extensions receive tree/syntax roles, and the four editor panes have distinct semantic borders and bold titles. Focused model, app, UI and real filesystem-scan tests pass."
 
 [[task]]
 id = "DEVTOOL-EDITOR-SEARCH-001"
 milestone = "M77"
 title = "Add selected-file and workspace-scoped Devtool search"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 2511
 required = true
 depends_on = ["DEVTOOL-EDITOR-VIEWPORT-001"]

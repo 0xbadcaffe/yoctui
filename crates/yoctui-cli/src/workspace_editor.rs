@@ -3,8 +3,11 @@ use super::*;
 
 pub(crate) fn recipe_editor_files(root: &Path) -> Result<Vec<PathBuf>> {
     fn visit(root: &Path, directory: &Path, files: &mut Vec<PathBuf>) -> std::io::Result<()> {
+        if files.len() > yoctui_model::MAX_RECIPE_EDITOR_FILES {
+            return Ok(());
+        }
         for entry in fs::read_dir(directory)? {
-            if files.len() >= 512 {
+            if files.len() > yoctui_model::MAX_RECIPE_EDITOR_FILES {
                 break;
             }
             let entry = entry?;
@@ -50,5 +53,34 @@ pub(crate) async fn open_workspace_editor(app: &mut App, recipe: String, root: P
             app.notification = Some(format!("Could not list workspace files: {error}"))
         }
         Err(error) => app.notification = Some(format!("Workspace file scan failed: {error}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn workspace_editor_discovers_more_than_the_old_visible_file_limit() {
+        let root = std::env::temp_dir().join(format!(
+            "yoctui-workspace-editor-{}-{}",
+            std::process::id(),
+            SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(root.join("src")).unwrap();
+        for index in 0..600 {
+            fs::write(
+                root.join("src").join(format!("file-{index:03}.c")),
+                "int value;\n",
+            )
+            .unwrap();
+        }
+        let files = recipe_editor_files(&root).unwrap();
+        assert_eq!(files.len(), 600);
+        assert!(files.contains(&PathBuf::from("src/file-599.c")));
+        fs::remove_dir_all(root).unwrap();
     }
 }

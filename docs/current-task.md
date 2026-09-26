@@ -1,21 +1,21 @@
 # Current Task
 
-**ID:** DEVTOOL-EDITOR-VIEWPORT-001
-**Title:** Repair complete Devtool file and document navigation
+**ID:** DEVTOOL-EDITOR-SEARCH-001
+**Title:** Add selected-file and workspace-scoped Devtool search
 **Status:** IN_PROGRESS
 
-Make the integrated Devtool workspace file tree follow selection through the
-complete bounded inventory, make long-document navigation visibly follow the
-Vim-style cursor, retain in-TUI editing, highlight every known language in the
-tree and source view, and give editor panes distinct semantic borders/titles.
-Add model/app/TestBackend coverage for the visible failure paths.
+Route Ctrl+F to selected-buffer search, Ctrl+Shift+F to the shared bounded regex
+surface scoped to the exact absolute workspace root, and `/` to its unchanged
+global build-content scope. Selecting a workspace hit must load it into the
+integrated editor without losing recipe context. Preserve all containment,
+symlink, byte, result, cancellation, and responsive-dialog bounds.
 
 Verify with:
 
 ```bash
-cargo test -p yoctui-model devtool_editor_viewport
-cargo test -p yoctui-app devtool_editor_viewport
-cargo test -p yoctui-ui devtool_editor_viewport
-cargo test -p yoctui --all-features workspace_editor
+cargo test -p yoctui-model devtool_editor_search
+cargo test -p yoctui-app devtool_editor_search
+cargo test -p yoctui --all-features workspace_search
+cargo test -p yoctui-ui devtool_editor_search
 cargo fmt --all --check
 ```

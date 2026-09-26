@@ -91,6 +91,7 @@ fn devwork_editor_renders_confirmation_and_workspace_editor_build_shortcut() {
         recipe: "busybox".into(),
         root: "/build/workspace/sources/busybox".into(),
         files: vec!["main.c".into()],
+        file_inventory_truncated: false,
         selection: 0,
         focus: yoctui_model::RecipeEditorFocus::Files,
         language: yoctui_model::SourceLanguage::C,

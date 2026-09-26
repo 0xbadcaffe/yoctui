@@ -3,6 +3,8 @@ use super::*;
 
 pub type PopupEditor = TextAreaState;
 
+pub const MAX_RECIPE_EDITOR_FILES: usize = 16_384;
+
 impl TextAreaState {
     pub fn select_toml_value(&mut self, key: &str) -> Result<(), String> {
         let prefix = format!("{key} = ");
@@ -314,6 +316,22 @@ pub struct TransientStatus {
 }
 
 impl RecipeEditor {
+    pub fn file_viewport(&self, rows: usize) -> std::ops::Range<usize> {
+        centered_viewport_range(
+            (!self.files.is_empty()).then_some(self.selection),
+            self.files.len(),
+            rows.max(1),
+        )
+    }
+
+    pub fn document_viewport(&self, rows: usize) -> std::ops::Range<usize> {
+        centered_viewport_range(
+            Some(self.document.position().line),
+            self.document.line_count(),
+            rows.max(1),
+        )
+    }
+
     pub fn selected_path(&self) -> Option<PathBuf> {
         self.files
             .get(self.selection)

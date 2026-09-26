@@ -1,5 +1,5 @@
 pub(crate) fn source_preview(content: &str, file_name: &str, app: &App) -> Text<'static> {
-    let bitbake_source = ["bb", "bbappend", "inc", "conf", "wks", "wks.in"]
+    let bitbake_source = ["bb", "bbappend", "bbclass", "inc", "conf", "wks", "wks.in"]
         .iter()
         .any(|extension| file_name.ends_with(&format!(".{extension}")));
     let markdown = file_name.ends_with(".md") || file_name.ends_with(".markdown");
@@ -105,7 +105,8 @@ pub(crate) fn generic_source_preview(
         yoctui_model::SourceLanguage::Python
         | yoctui_model::SourceLanguage::Shell
         | yoctui_model::SourceLanguage::Yaml
-        | yoctui_model::SourceLanguage::Make => Some("#"),
+        | yoctui_model::SourceLanguage::Make
+        | yoctui_model::SourceLanguage::Toml => Some("#"),
         _ => None,
     };
     let keywords: &[&str] = match language {
@@ -208,6 +209,17 @@ pub(crate) fn generic_source_preview(
             "void",
             "while",
             "yield",
+        ],
+        yoctui_model::SourceLanguage::Json => &["false", "null", "true"],
+        yoctui_model::SourceLanguage::Toml => &["false", "true"],
+        yoctui_model::SourceLanguage::Yaml => &[
+            "false", "False", "FALSE", "null", "Null", "NULL", "off", "on", "true",
+            "True", "TRUE", "yes", "no",
+        ],
+        yoctui_model::SourceLanguage::Make => &[
+            "define", "else", "endef", "endif", "export", "ifdef", "ifeq", "ifndef",
+            "ifneq", "include", "override", "private", "sinclude", "undefine", "unexport",
+            "vpath",
         ],
         _ => &[],
     };
