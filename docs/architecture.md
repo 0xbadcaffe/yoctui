@@ -1496,6 +1496,15 @@ ID as a temporary jump target, preserving the user's query and filters while
 making that one retained entry selectable. Completion and backend-loss
 reducers create typed protected diagnostics and actionable outcome state.
 
+`ErrorWorkspaceState` owns the Current/Past view, independent selections, and
+the bounded read-only source-log viewer. Current rows project `LogState`;
+historical rows project the private `BuildArchive` and retain optional recipe,
+task, build, and source-path context captured from daemon log records. A past
+failure is resolved only by a newer successful archive record with the same
+target and machine. File loading and archive removal are typed client-local
+effects; the CLI bounds file reads and rewrites the private archive atomically.
+Removal targets one archive identity and never mutates Yocto build artifacts.
+
 ## Dialog architecture
 
 Dialogs are typed model values, not ad-hoc widget-local state.

@@ -1820,6 +1820,18 @@ Yoctui diagnostic controls:
 
 Warnings and errors are structured records, not merely colored log lines.
 
+The workspace has two explicit views:
+
+- `1 Current build` shows retained diagnostics for the active or most recently
+  observed build session.
+- `2 Past builds` shows warning/error records from the bounded saved-build
+  archive, newest first. A failed build is labelled `Resolved` only when a
+  newer successful saved build has the same target and machine; otherwise it
+  remains `Unresolved`.
+
+`Tab`/`Shift+Tab` and `1`/`2` change views. Selection is retained separately
+for each view.
+
 List columns:
 
 - time
@@ -1851,10 +1863,21 @@ Build completion behavior:
 - pressing `Enter` on a failure notification opens the selected error
 
 Each retained warning/error has a stable session identity and typed category,
-summary, event metadata, and suggested actions. `Enter` on a selected
-diagnostic opens that exact retained entry in Logs without overwriting the
-user's existing query or filters. `o` opens its source path when present.
-`↑`/`↓` or `k`/`j` changes the bounded diagnostic selection.
+summary, event metadata, and suggested actions. `Enter` opens an in-workspace,
+read-only view of the selected `log.do_*` file when a source path is retained;
+the viewer remains bounded, reports unavailable or oversized files explicitly,
+and supports `↑`/`↓`, `PgUp`/`PgDn`, `Home`/`End`, and `Esc`. When no source file
+is available, it shows the complete retained diagnostic or archived log text.
+`l` opens the exact current diagnostic in Logs without overwriting the user's
+existing query or filters. `o` opens its source path in the configured external
+editor. `↑`/`↓` or `k`/`j` changes the bounded diagnostic selection.
+
+Historical cleanup is intentionally narrow. `Delete`/`d` is available only for
+a selected historical build labelled `Resolved`, requires a confirmation that
+names the target and saved build, and removes that saved build record from
+Yoctui's private archive. It never removes BitBake task logs, build output,
+downloads, sstate, or source files. Unresolved, active, lost, cancelled, and
+incomplete build records cannot be removed from the Errors workspace.
 
 Native BitBake `CRITICAL` and `FATAL` records are errors. When BitBake reports
 one from a correlated task process, its source path is the authoritative

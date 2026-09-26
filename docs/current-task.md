@@ -1,21 +1,25 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** ERRORS-HISTORY-VIEWER-001
+**Title:** Unify current and historical build errors with an in-workspace log viewer
+**Status:** IN_PROGRESS
 
-RAW-CATALOG-RETURN-001 is complete in v0.1.231. The only remaining registry
-task requires a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto`
-compile capture. Existing retained evidence is bound to source base
-`d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
+Implement the authoritative Errors workspace changes in `docs/ui-spec.md`:
 
-After new live evidence is supplied, run:
+- separate Current build and Past builds views with independent selection
+- project saved warning/error records and derive resolved state only from a
+  newer successful build of the same target and machine
+- retain saved log recipe/task/build/path context
+- open a bounded, read-only source log inside the Errors workspace
+- keep exact current-log navigation and external editor opening as secondary
+  actions
+
+Verify with:
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model errors_history
+cargo test -p yoctui-app errors_history
+cargo test -p yoctui-ui errors_history
+cargo test -p yoctui --all-features error_log
+cargo fmt --all --check
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.

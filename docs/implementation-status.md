@@ -3993,6 +3993,13 @@ The full workspace suite remains deferred until the user requests it. All 860
 implementation tasks are DONE; M67-LIVE-EVIDENCE-001 remains BLOCKED on a new
 genuine current-source real-Poky performance capture.
 
+M79 is planned from the user's Errors workspace review. The current and saved
+build diagnostics will share one two-view workspace, source task logs will open
+in a bounded read-only viewer without leaving Errors, and only failures proven
+resolved by a newer matching successful build can be removed from Yoctui's
+private archive after confirmation. The blocked real-Poky performance evidence
+task remains unchanged and will resume after this user-directed series.
+
 M77 is planned from the user's Devtool workspace correction pass. The first
 task repairs bounded file/document viewport navigation, Vim-style integrated
 editing visibility, complete known-language syntax projection, and semantic
