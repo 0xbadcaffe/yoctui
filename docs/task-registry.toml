@@ -9756,3 +9756,25 @@ required = true
 depends_on = ["MENUCONFIG-PTY-ISOLATION-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.235. Formatting, strict CLI Clippy, version policy, roadmap validation, the optimized release build, and live Romulus validation pass. In live session 6 the outer BitBake client had /dev/null on stdin/stdout/stderr while scripts/kconfig/mconf exclusively owned /dev/pts/3; the 210x50 embedded menu rendered, accepted navigation, exited through its Exit control, do_menuconfig succeeded, and every relay/client/mconf process terminated. The installed binary SHA-256 is a976d72be3c66d32ff289347d12209a645ff895ac1ea4d6d0129b4e2fefa576d with embedded source SHA 3809753af937; the initialized daemon runs as PID 3613946. The full workspace suite remains deferred until requested."
+
+[[task]]
+id = "TERMINAL-DEC-GRAPHICS-001"
+milestone = "M83"
+title = "Render DEC Special Graphics in embedded terminals"
+status = "IN_PROGRESS"
+priority = 3010
+required = true
+depends_on = ["MENUCONFIG-PTY-RELEASE-001"]
+verify = ["cargo test -p yoctui-model terminal_emulation", "cargo test -p yoctui --bin yoctui daemon_pty", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Track VT100 G0/G1 designation and SI/SO selection across bounded feed chunks, translate the complete DEC Special Graphics set before vt100 snapshot generation, and cover normal text plus chunk-split ncurses borders."
+
+[[task]]
+id = "TERMINAL-DEC-GRAPHICS-RELEASE-001"
+milestone = "M83"
+title = "Release DEC Special Graphics terminal correction"
+status = "NOT_STARTED"
+priority = 3011
+required = true
+depends_on = ["TERMINAL-DEC-GRAPHICS-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Bump v0.1.236, build and install the optimized binary, restart the initialized Romulus daemon, and live-verify readable Kernel menuconfig borders. The full workspace suite remains deferred until requested."

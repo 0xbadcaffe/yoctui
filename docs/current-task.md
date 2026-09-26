@@ -1,21 +1,17 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** TERMINAL-DEC-GRAPHICS-001
+**Title:** Render DEC Special Graphics in embedded terminals
+**Status:** IN_PROGRESS
 
-MENUCONFIG-PTY-RELEASE-001 is complete in v0.1.235. The only remaining registry
-task requires a new genuine source/binary-bound Yocto 6.0.2 `linux-yocto`
-compile capture. Existing retained evidence is bound to source base
-`d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
-
-After new live evidence is supplied, run:
+Implement bounded, chunk-stable VT100 G0/G1 designation and SI/SO selection in
+the model-owned terminal emulator so ncurses borders render as Unicode cells
+instead of `q`, `x`, `l`, and `m`. Preserve CSI, OSC, DCS, UTF-8, ordinary ASCII,
+styles, and the typed protocol/UI boundary.
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model terminal_emulation
+cargo test -p yoctui --bin yoctui daemon_pty
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.

@@ -1,3 +1,8 @@
+M83 is IN_PROGRESS from the v0.1.235 manual bug pass. Embedded Kernel
+menuconfig now owns its PTY correctly, but the admitted `vt100` parser ignores
+DEC G0/G1 Special Graphics state and exposes ncurses border source letters such
+as `q`, `x`, `l`, and `m`. TERMINAL-DEC-GRAPHICS-001 is current.
+
 # Yoctui Implementation Status
 
 M82 is DONE in v0.1.235. The outer BitBake Knotty client now receives null

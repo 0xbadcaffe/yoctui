@@ -2279,15 +2279,20 @@ actual exit identity. Dropping a live runner kills only its recorded group and
 child. The adapter contains no terminal rendering or UI state.
 
 Terminal interpretation uses the maintained Rust `vt100` parser/emulator behind
-`yoctui-model::TerminalEmulator`; Yoctui does not parse ANSI/VT sequences ad
-hoc. The wrapper accepts bounded raw-byte feeds, owns configured bounded
-scrollback, validates resize and maximum screen cells, and exports Yoctui-owned
-typed cells, colors, styles, cursor, alternate-screen, application cursor/keypad,
-bracketed-paste, and mouse modes. Snapshots clamp requested scrollback offsets,
-restore the live viewport after inspection, and contain no crate-specific types
-across the model boundary. Default callbacks deliberately do not execute OSC
-clipboard requests or other external side effects. Shell/editor/ncurses-style
-fixtures cover cursor addressing, Unicode box drawing, SGR, alternate screen,
+`yoctui-model::TerminalEmulator`. Because the admitted `vt100` release ignores
+G0/G1 character-set designation and SI/SO selection, a bounded model-owned
+stream normalizer tracks those standard terminal controls across feed chunks and
+converts printable DEC Special Graphics cells to their Unicode equivalents
+before the bytes enter `vt100`; it leaves CSI, OSC, DCS, UTF-8, and ordinary
+ASCII payloads unchanged. The wrapper accepts bounded raw-byte feeds, owns
+configured bounded scrollback, validates resize and maximum screen cells, and
+exports Yoctui-owned typed cells, colors, styles, cursor, alternate-screen,
+application cursor/keypad, bracketed-paste, and mouse modes. Snapshots clamp
+requested scrollback offsets, restore the live viewport after inspection, and
+contain no crate-specific types across the model boundary. Default callbacks
+deliberately do not execute OSC clipboard requests or other external side
+effects. Shell/editor/ncurses-style fixtures cover chunk-split G0/G1 DEC Special
+Graphics, cursor addressing, Unicode box drawing, SGR, alternate screen,
 scrollback, resize, paste, keypad, cursor, and mouse modes.
 
 As bounded PTY output chunks arrive, the daemon converts the maintained

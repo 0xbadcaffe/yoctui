@@ -5258,6 +5258,11 @@ The live writer PTY follows the visible terminal content dimensions, including
 window changes, so ncurses composes against the actual available area. The
 renderer preserves the daemon's indexed/RGB colors, attributes, cursor, and
 Unicode cells; Yoctui does not recreate or parse the menuconfig interface.
+The daemon terminal emulator applies VT100 G0/G1 designation and SI/SO selection
+for the DEC Special Graphics character set before it exports typed cells. Ncurses
+borders therefore render as Unicode line-drawing and symbol cells; designation
+source letters such as `q`, `x`, `l`, and `m` must never appear in their place.
+Charset state persists across bounded PTY chunks and resets with the terminal.
 
 ### Dependency and accessibility gate
 

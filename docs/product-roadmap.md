@@ -2006,3 +2006,13 @@ session confirmed the outer BitBake client used null standard streams while
 Knotty 99% footer, accepted navigation, exited normally, and completed
 `do_menuconfig`. The optimized binary is installed and the initialized daemon
 was restarted. The full workspace suite remains deferred until requested.
+
+## M83 — Ncurses DEC graphics emulation
+
+Goal: render ncurses interfaces with their intended line-drawing characters
+instead of leaking DEC Special Graphics source letters into embedded PTYs.
+
+TERMINAL-DEC-GRAPHICS-001 adds bounded, chunk-stable G0/G1 designation and
+SI/SO translation ahead of the typed terminal snapshot.
+TERMINAL-DEC-GRAPHICS-RELEASE-001 packages the correction in v0.1.236, restarts
+the initialized Romulus daemon, and live-verifies Kernel menuconfig borders.
