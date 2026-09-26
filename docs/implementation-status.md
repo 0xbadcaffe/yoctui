@@ -1,5 +1,14 @@
 # Yoctui Implementation Status
 
+M79 ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are DONE in the
+v0.1.232 series. Current and saved diagnostics share one Errors workspace,
+exact source logs open in a bounded read-only viewer, and only failures proven
+resolved by a newer matching build can be removed from private history after
+confirmation. ERRORS-WORKSPACE-RELEASE-001 is DONE in v0.1.232 with focused
+tests, reviewed Errors golden, formatting, strict Clippy, version, and roadmap
+checks passing. The optimized binary is installed and the initialized Romulus
+daemon is restarted; the full suite remains deferred for the manual bug pass.
+
 M78 RAW-CATALOG-RETURN-001 is DONE in v0.1.231. Closing a confirmed Raw
 BitBake execution now goes directly to its command catalog. Selecting
 `Tools → Raw Mode` in the Navigator performs the same transition and detaches

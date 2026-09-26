@@ -1940,3 +1940,15 @@ also closes that execution view and detaches an attached nonterminal daemon job
 without cancellation. Focused model/app/UI checks, strict Clippy, formatting,
 version policy, and roadmap validation pass; the full suite remains deferred
 for the user's manual bug pass.
+
+## M79 — Build error investigation and resolved history
+
+Goal: make active OpenBMC build failures and saved build failures available in
+one Errors workspace, open the exact task log without leaving the application,
+and safely remove saved failures after a newer matching build proves they are
+resolved.
+
+ERRORS-HISTORY-VIEWER-001 and ERRORS-RESOLVED-CLEANUP-001 are complete in the
+v0.1.232 series. ERRORS-WORKSPACE-RELEASE-001 packages the focused validation
+and optimized binary. M79 is complete; the full workspace suite remains
+deferred for the user's manual bug pass.

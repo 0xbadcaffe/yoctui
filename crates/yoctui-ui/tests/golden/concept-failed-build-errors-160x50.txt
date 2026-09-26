@@ -1,29 +1,29 @@
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│yoctui v0.1.231 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64  •  Distro: poky               D:✓ Connected/Local • BB:✕ Failed • Local 19:28│
+│yoctui v0.1.232 • Project: yocto • T:core-image-minimal  •  Machine: qemux86-64  •  Distro: poky               D:✓ Connected/Local • BB:✕ Failed • Local 19:28│
 │Daemon health: ✓ Connected/Local · BitBake: ✕ Failed                                                                                                          │
 │Workspace: /workspace/yocto  |  Build: core-image-minimal  |  Task: 4 / 10  |  Elapsed: --:--:--  |  Workers: 0                                               │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌Navigator────────────────┐┌Build Result · Failed────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
-│▾ OVERVIEW               ││Target: core-image-minimal  ·  Result: Failed (exit 1)                               ││Severity    : Error                         │
-│  ▱ Dashboard            ││Diagnostics: 1 error / 1 warning  ·  Selected: bash_5.2.21-2:do_compile              ││Task        : do_compile                    │
-│  ▱ Insights             ││                                                                                     ││Recipe      : bash_5.2.21-2                 │
-│▾ CONTENT                │└─────────────────────────────────────────────────────────────────────────────────────┘│Current build exit : 1                      │
-│    Layers               │┌Errors and warnings (2 retained; 1 warning / 1 error records evicted)────────────────┐│First seen  : 19:28:27                      │
-│    Recipes              ││Time     Severity  Recipe         Task             Summary                           ││Source log  :                               │
-│    Packages             ││19:28:27 Warning   bash_5.2.21-2  do_compile       WARNING: bash:do_compile found a  ││/workspace/yocto/build/tmp/log.do_compile.85│
-│    Images               ││19:28:27 Error     bash_5.2.21-2  do_compile       ERROR: bash:do_compile failed wit ││873                                         │
-│    Kernel               ││                                                                                     ││                                            │
-│    U-Boot / BIOS        ││                                                                                     ││Message                                     │
-│    SDK                  ││                                                                                     ││ERROR: bash:do_compile failed with exit code│
-│▾ BUILD                  │└─────────────────────────────────────────────────────────────────────────────────────┘│1                                           │
-│    Tasks                │┌Correlated · Paused · match 3/3 · loss 2 W1 E1 ·    1-3/3────────────────────────────┐│                                            │
-│  ▱ Logs            PAUSE││Time       Severity  Task          Message                                           ││                                            │
-│  ▱ Errors              1││19:28:27   i Info    do_compile    NOTE: running task bash:do_compile with oe_runmake││                                            │
-│    Configuration        ││19:28:27   ! Warning do_compile    WARNING: bash:do_compile found a recoverable confi││                                            │
-│    Dependencies         ││19:28:27   ✕ Error   do_compile    ERROR: bash:do_compile failed with exit code 1    ││                                            │
-│▾ VALIDATE               ││                                                                                     ││                                            │
-│    Testing              ││                                                                                     ││                                            │
-│    Security             ││                                                                                     ││                                            │
+┌Navigator────────────────┐┌Build errors─────────────────────────────────────────────────────────────────────────┐┌Inspector: Error────────────────────────────┐
+│▾ OVERVIEW               ││▶ 1 Current build (2)      2 Past builds (0)    Tab switches                         ││Severity    : Error                         │
+│  ▱ Dashboard            │└─────────────────────────────────────────────────────────────────────────────────────┘│Task        : do_compile                    │
+│  ▱ Insights             │┌Build Result · Failed────────────────────────────────────────────────────────────────┐│Recipe      : bash_5.2.21-2                 │
+│▾ CONTENT                ││Target: core-image-minimal  ·  Result: Failed (exit 1)                               ││Current build exit : 1                      │
+│    Layers               ││Diagnostics: 1 error / 1 warning  ·  Selected: bash_5.2.21-2:do_compile              ││First seen  : 19:28:27                      │
+│    Recipes              ││                                                                                     ││Source log  :                               │
+│    Packages             │└─────────────────────────────────────────────────────────────────────────────────────┘│/workspace/yocto/build/tmp/log.do_compile.85│
+│    Images               │┌Errors and warnings (2 retained; 1 warning / 1 error records evicted)────────────────┐│873                                         │
+│    Kernel               ││Time     Severity  Recipe         Task             Summary                           ││                                            │
+│    U-Boot / BIOS        ││19:28:27 Warning   bash_5.2.21-2  do_compile       WARNING: bash:do_compile found a  ││Message                                     │
+│    SDK                  ││19:28:27 Error     bash_5.2.21-2  do_compile       ERROR: bash:do_compile failed wit ││ERROR: bash:do_compile failed with exit code│
+│▾ BUILD                  ││                                                                                     ││1                                           │
+│    Tasks                ││                                                                                     ││                                            │
+│  ▱ Logs            PAUSE││                                                                                     ││                                            │
+│  ▱ Errors              1│└─────────────────────────────────────────────────────────────────────────────────────┘│                                            │
+│    Configuration        │┌Correlated · Paused · match 3/3 · loss 2 W1 E1 ·    1-3/3────────────────────────────┐│                                            │
+│    Dependencies         ││Time       Severity  Task          Message                                           ││                                            │
+│▾ VALIDATE               ││19:28:27   i Info    do_compile    NOTE: running task bash:do_compile with oe_runmake││                                            │
+│    Testing              ││19:28:27   ! Warning do_compile    WARNING: bash:do_compile found a recoverable confi││                                            │
+│    Security             ││19:28:27   ✕ Error   do_compile    ERROR: bash:do_compile failed with exit code 1    ││                                            │
 │    QA                   ││                                                                                     ││                                            │
 │▾ TOOLS                  ││                                                                                     ││                                            │
 │    Raw Mode             ││                                                                                     ││                                            │
@@ -37,7 +37,7 @@
 │                         ││                                                                                     ││Recovery Actions────────────────────────────│
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│[Enter] Open matching log                   │
 │                         │┌Recovery actions─────────────────────────────────────────────────────────────────────┐│[o] Open source log                         │
-│                         ││Enter matching log · o source · B rebuild options                                    ││[s] Cycle severity filter                   │
+│                         ││Enter view source log · l matching live log · o external · B rebuild options         ││[s] Cycle severity filter                   │
 │                         ││Rebuild: review + confirmation required.                                             ││[f] Pause / follow logs                     │
 │                         │└─────────────────────────────────────────────────────────────────────────────────────┘│[B] Rebuild options                         │
 │                         │┌Correlated-log filters───────────────────────────────────────────────────────────────┐│                                            │
@@ -46,5 +46,5 @@
 │                         ││                                                                                     ││                                            │
 └─────────────────────────┘└─────────────────────────────────────────────────────────────────────────────────────┘└────────────────────────────────────────────┘
 ┌──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Tab Focus   ↑/↓ select   Enter matching log   o source   s severity filter   f pause/follow   B rebuild options   F2 Tasks   F1 Help   F12 Menu   q Quit      │
+│Tab Focus   1 current   2 past   Tab switch   ↑/↓ select   Enter view log   l matching live log   F2 Tasks   F3 History   F1 Help   F12 Menu   q Quit         │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
