@@ -2052,3 +2052,13 @@ MENUCONFIG-FAILURE-ACK-RELEASE-001 is complete in v0.1.238. Live Romulus
 validation reproduced the U-Boot ncurses failure, retained its diagnostic
 screen, automatically completed the acknowledgement wrapper, and then launched
 the full Kernel menuconfig screen without a daemon restart.
+
+## M86 — Device-tree decompile destinations
+
+Goal: let operators choose where a DTB/DTBO is decompiled and immediately read
+the resulting DTS without racing the compiler.
+
+DTB-DECOMPILE-DIALOG-001 adds a typed destination form, bounded directory
+browser, checked-by-default view option, and successful-PTY completion
+correlation for Kernel and U-Boot. DTB-DECOMPILE-DIALOG-RELEASE-001 publishes
+the focused correction as v0.1.239.

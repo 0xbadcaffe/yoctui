@@ -4385,6 +4385,18 @@ for a final pre-spawn check. Source and root must be absolute, traversal-free
 and lexically related members of the reported inventory. Option fields emit
 individual arguments and never form an unstructured shell string.
 
+DTB decompilation uses a separate typed dialog owned by the model. It retains
+the source, executable, authoritative working root, destination path,
+checked-by-default view-after-success flag, text editor state, and bounded
+directory-browser state. The existing local directory adapter supplies typed
+directory listings; renderers never inspect the filesystem. The terminal
+creation effect carries an optional typed completion intent. The daemon client
+records the pre-launch PTY identities, binds the intent only to a newly created
+matching session, and completes it only from that session's terminal lifecycle
+and exit code. The CLI then loads the exact generated DTS into the integrated
+Device Tree editor. Failed, lost, detached, stale, or pre-existing sessions
+cannot trigger the viewer.
+
 ## M66 README profiling evidence
 
 The README Flamegraph is a projection of the checked SVG and key-value summary

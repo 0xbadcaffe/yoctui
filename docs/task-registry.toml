@@ -9833,3 +9833,25 @@ required = true
 depends_on = ["MENUCONFIG-FAILURE-ACK-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-bitbake --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.238. Focused split-output/no-writer coverage, formatting, strict BitBake/CLI Clippy, version policy, roadmap validation, and the optimized release build pass. Live Romulus session 15 reproduced U-Boot's legacy ncurses failure and retained its diagnostic plus acknowledgement prompt, then automatically exited at about 80 seconds without operator input. Kernel session 16 launched immediately afterward and rendered its full ncurses configuration, proving the failed wrapper no longer blocks subsequent operations; it was then terminated through the daemon API. The identical installed and release binary SHA-256 is 27f7230e0409771a0dd1729bc9f48537b7439a8560eedfa212024c6043c2e175 with embedded source SHA f77e10ca75ed; the initialized daemon runs as PID 3684241. The full workspace suite remains deferred until requested."
+
+[[task]]
+id = "DTB-DECOMPILE-DIALOG-001"
+milestone = "M86"
+title = "Choose and view device-tree decompile outputs"
+status = "IN_PROGRESS"
+priority = 3040
+required = true
+depends_on = ["MENUCONFIG-FAILURE-ACK-RELEASE-001"]
+verify = ["cargo test -p yoctui-model device_tree_decompile", "cargo test -p yoctui-app dtc_decompile", "cargo test -p yoctui-ui dtc_decompile", "cargo test -p yoctui --bin yoctui dtc_decompile", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Model-owned destination and view-after-success flow for Kernel and U-Boot DTB/DTBO decompilation."
+
+[[task]]
+id = "DTB-DECOMPILE-DIALOG-RELEASE-001"
+milestone = "M86"
+title = "Release device-tree decompile destination workflow"
+status = "NOT_STARTED"
+priority = 3041
+required = true
+depends_on = ["DTB-DECOMPILE-DIALOG-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui-app --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Publish the focused workflow as v0.1.239 and install the optimized binary."

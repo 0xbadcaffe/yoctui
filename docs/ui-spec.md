@@ -5647,8 +5647,18 @@ in the in-app explorer/editor, `o` explores the selected root, `c` compiles a
 DTS, `d` decompiles a DTB/DTBO, and `r` refreshes the inventory. Binary device
 trees do not enter the text viewer. `Enter`/`e` on a DTB or DTBO invokes the
 same decompile flow as `d`; when `dtc` is missing, the notice tells the operator
-to install the compiler. Compile/decompile actions preview exact
-argv and refuse to overwrite an existing `.yoctui` output. Opening Kernel
+to install the compiler. Decompile first opens a focus-trapped form containing
+the absolute `.dts` destination and a checked-by-default **View file after
+decompilation** checkbox. `b` browses bounded local directories for the save
+location, `e` edits the destination directly, Space toggles the checkbox, and
+Enter advances to the exact launch preview. The directory browser preserves
+the derived filename and returns to the form after `s` chooses its current
+directory. A successful embedded decompile opens that exact generated DTS in
+the in-app Device Tree viewer when the checkbox is checked; failure never opens
+an older or partial file. Automatic viewing requires the embedded terminal, so
+the detached destination is unavailable for that launch. Compile/decompile
+actions preview exact argv and refuse to overwrite an existing `.yoctui`
+output. Opening Kernel
 starts the metadata server on demand and resolves `virtual/kernel` through
 BitBake's configured best provider; it does not require a running build or a
 previous successful kernel build. Missing generated artifacts remain an
@@ -5860,6 +5870,16 @@ file's authoritative root through the daemon-owned utility PTY. Its complete
 stdout, stderr and exit status remain visible in Terminal Sessions. DTSI is
 editable but cannot be compiled directly; DTB and DTBO retain the existing
 decompile workflow.
+
+Pressing `d`, or opening a selected DTB/DTBO, derives a sibling
+`NAME.yoctui.dts` and opens the decompile form. The destination must be an
+absolute, normalized `.dts` path whose parent exists. Choosing another folder
+with the browser retains `NAME.yoctui.dts`; direct path editing remains
+available for an exact filename. Existing entries, including dangling symbolic
+links, are rejected both before preview and immediately before launch. The
+daemon-owned utility PTY remains the source of stdout, stderr, and exit status.
+When automatic viewing is enabled, Yoctui correlates the launch to the newly
+created PTY and opens the output only after an exit status of zero.
 
 ## 47. README Flamegraph report
 
