@@ -2081,3 +2081,9 @@ recipe metadata, and recipe inventory operations.
 Repair terminal key encoding, foreground toggling and client restart recovery
 for Kernel and U-Boot, improve startup feedback, and publish v0.1.241 after
 focused automated coverage and live menuconfig validation.
+
+M88 input, recovery and preparation changes are released in v0.1.241. Live
+Kernel input, Ctrl+G resume, and client restart pass. U-Boot shares the tested
+implementation, but MENUCONFIG-UBOOT-LIVE-001 is BLOCKED on the local legacy
+provider's ncurses compile check; its upstream wrapper exit status alone does
+not certify a successful menuconfig build. Full workspace testing stays deferred.

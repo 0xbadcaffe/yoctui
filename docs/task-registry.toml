@@ -9904,9 +9904,20 @@ notes = "Files: CLI menuconfig relay and model waiting state. Done when preparat
 id = "MENUCONFIG-RESUME-RELEASE-001"
 milestone = "M88"
 title = "Release menuconfig input and recovery fixes"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3062
 required = true
 depends_on = ["MENUCONFIG-LOADING-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "Build/install v0.1.241; validate live navigation, leave/resume and client reattach; commit/push and document limits. Full workspace suite deferred per user."
+
+[[task]]
+id = "MENUCONFIG-UBOOT-LIVE-001"
+milestone = "M88"
+title = "Validate U-Boot interaction after provider ncurses build repair"
+status = "BLOCKED"
+priority = 3063
+required = true
+depends_on = ["MENUCONFIG-RESUME-RELEASE-001"]
+verify = ["Manual: rebuild u-boot-aspeed-sdk menuconfig after fixing its recipe sysroot/compiler ncurses check, then verify arrows, Enter, search, Ctrl+G resume and client restart in Firmware"]
+notes = "External dependency: Romulus u-boot-aspeed-sdk v2019.04+git fails scripts/kconfig/dochecklxdialog with Unable to find the ncurses libraries or required header files before producing mconf. Reproduced with installed v0.1.241 daemon session 20, bitbake u-boot-aspeed-sdk -c menuconfig. The retained PTY shows the compile error; the generated upstream wrapper exits 0 after its acknowledgement despite the failed make command, so that status is not evidence of a successful U-Boot frontend. Shared typed Firmware key/resume tests pass; real Kernel session 19 passed live input and client restart checks and exited 0. Do not claim live U-Boot navigation until the provider dependency is repaired."

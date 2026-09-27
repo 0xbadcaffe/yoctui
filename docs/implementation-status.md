@@ -4238,3 +4238,25 @@ output. The relay immediately reports preparation and drains bounded separate
 stdout/stderr tails without sharing the ncurses terminal. Failures retain their
 diagnostics, and inherited pipes cannot stall reader shutdown. Seven relay
 checks and both platform model checks pass. Release verification is in progress.
+
+MENUCONFIG-RESUME-RELEASE-001 is DONE in v0.1.241. Focused model, protocol,
+app, UI and CLI checks, strict CLI Clippy with all features, formatting, version
+policy and roadmap validation pass. The explicit native mconf smoke passes.
+Live Romulus Kernel session 19 rendered without further input, accepted arrows,
+Enter and search, retained keyboard control after Ctrl+G out/back, and resumed
+the same session with a new writer after a normal client quit/restart. It then
+exited normally with status 0; no kernel configuration changes were made.
+The optimized installed/release binary SHA-256 is
+`f4a3ff0f033cd8164796c35ba84116d4cceb3cf2add362298a09ef951ad4d353`
+with embedded source SHA `7963eba0`; initialized daemon PID is 3764604.
+Full workspace tests remain deferred at the user's request.
+
+MENUCONFIG-UBOOT-LIVE-001 is BLOCKED externally. Live session 20 reproduced
+u-boot-aspeed-sdk v2019.04+git's ncurses compile-check failure in
+`scripts/kconfig/dochecklxdialog`. Its generated upstream wrapper exits 0 after
+acknowledgement despite failed make; this is not a successful frontend build.
+The session ended and retained diagnostics, with no stuck interactive process.
+Firmware shares the tested key and recovery flow, but live U-Boot navigation
+needs the recipe/compiler/sysroot issue repaired first. Both this provider
+validation and the pre-existing M67 real-Poky performance evidence are blocked;
+no eligible implementation task remains.

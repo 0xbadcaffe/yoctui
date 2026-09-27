@@ -1,17 +1,35 @@
 # Current Task
 
-**ID:** MENUCONFIG-RESUME-RELEASE-001
-**Title:** Release menuconfig input and recovery fixes
-**Status:** IN_PROGRESS
+**ID:** MENUCONFIG-UBOOT-LIVE-001
+**Title:** Validate U-Boot interaction after provider ncurses build repair
+**Status:** BLOCKED
 
-Dependencies are DONE. Bump to v0.1.241, run focused strict checks, build and
-install the optimized binary, validate live navigation and client reattachment,
-record limitations, commit and push. Full workspace suite remains deferred.
+M88 implementation and v0.1.241 release are complete. Live Kernel navigation,
+search, Ctrl+G out/back and normal client restart recovery passed on Romulus.
+Shared Firmware model/input coverage passes. The full workspace suite remains
+deferred at the user's request.
+
+External dependency: `u-boot-aspeed-sdk` v2019.04+git fails its ncurses compile
+check in `scripts/kconfig/dochecklxdialog`, before an interactive frontend is
+available. Reproduced in daemon session 20 using:
 
 ```bash
-cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-python3 scripts/check-version-bump.py
-./scripts/verify-roadmap.sh
-cargo build --release -p yoctui --bin yoctui
+cd /home/bspguy-dev/src/openbmc
+source oe-init-build-env build/romulus
+bitbake u-boot-aspeed-sdk -c menuconfig
 ```
+
+The generated upstream wrapper returns 0 after acknowledging the failed make;
+do not interpret that as successful ncurses validation. Repair the provider's
+compiler/sysroot check, then verify arrows, Enter, search, Ctrl+G out/back and
+client quit/restart through Content > U-Boot. Preserve the typed shared flow.
+
+```bash
+cargo test -p yoctui-model platform_menuconfig
+cargo test -p yoctui --bin yoctui menuconfig
+cargo test -p yoctui-ui menuconfig
+./scripts/verify-roadmap.sh
+```
+
+The other remaining task, M67-LIVE-EVIDENCE-001, independently requires a new
+current-source real-Poky performance capture. No unblocked task is eligible.
