@@ -4194,3 +4194,11 @@ pass. The optimized binary is installed with SHA-256
 `bf62d958201a4852de925da1cd72176d4f6fbbcb6bf005f9f79218168b933aa7`; the
 initialized Romulus daemon runs as PID 3704618. The full workspace suite
 remains deferred until requested.
+M87 is IN PROGRESS from the live Kernel failure report. The running v0.1.239
+daemon has the canonical Romulus workspace in persisted state, but its process
+environment has no `BUILDDIR` or BitBake path because daemon command dispatch
+discarded the explicit `--build-dir` option before startup. Compatibility
+discovery therefore returned no snapshot and Kernel rendered `Unknown` for
+`bitbake.getvar`, recipe metadata, and recipe inventory. The focused fix will
+initialize explicit and recovered build profiles before compatibility probes,
+then publish v0.1.240 after a real Romulus authority check.

@@ -9855,3 +9855,25 @@ required = true
 depends_on = ["DTB-DECOMPILE-DIALOG-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui-app --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.239. Focused model, app, UI, and CLI tests, formatting, strict model/app/CLI Clippy, version policy, roadmap validation, and the optimized release build pass. The identical installed and release binary SHA-256 is bf62d958201a4852de925da1cd72176d4f6fbbcb6bf005f9f79218168b933aa7 with embedded source SHA 9bf4094dd29b; the initialized Romulus daemon runs as PID 3704618. The full workspace suite remains deferred until requested."
+
+[[task]]
+id = "DAEMON-BUILD-DIR-COMPAT-001"
+milestone = "M87"
+title = "Initialize daemon compatibility from the selected build directory"
+status = "IN_PROGRESS"
+priority = 3050
+required = true
+depends_on = ["DTB-DECOMPILE-DIALOG-RELEASE-001"]
+verify = ["cargo test -p yoctui --bin yoctui daemon_build_directory", "cargo test -p yoctui --bin yoctui daemon_compatibility", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Carry explicit and recovered build profiles into daemon startup compatibility and metadata discovery."
+
+[[task]]
+id = "DAEMON-BUILD-DIR-COMPAT-RELEASE-001"
+milestone = "M87"
+title = "Release daemon build-directory compatibility correction"
+status = "NOT_STARTED"
+priority = 3051
+required = true
+depends_on = ["DAEMON-BUILD-DIR-COMPAT-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Publish v0.1.240, install the optimized binary, and validate current compatibility authority against the real Romulus build."

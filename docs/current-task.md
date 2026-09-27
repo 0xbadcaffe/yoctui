@@ -1,21 +1,18 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** DAEMON-BUILD-DIR-COMPAT-001
+**Title:** Initialize daemon compatibility from the selected build directory
+**Status:** IN_PROGRESS
 
-DTB-DECOMPILE-DIALOG-RELEASE-001 is complete in v0.1.239. The remaining
-registry task requires a new genuine source/binary-bound Yocto 6.0.2
-`linux-yocto` compile capture. Existing retained evidence is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
+Carry explicit daemon build-directory selection into the foreground process,
+recover persisted workspace selection when needed, and publish current BitBake
+capabilities before platform inspection is authorized.
 
-After new live evidence is supplied, run:
+Verify with:
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui --bin yoctui daemon_build_directory
+cargo test -p yoctui --bin yoctui daemon_compatibility
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.

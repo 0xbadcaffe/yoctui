@@ -9,6 +9,15 @@ On Unix automatic compatibility probes and the inventory scan use background
 process priority, while input, rendering, daemon IPC and requested builds
 retain normal process priority.
 
+Starting or restarting the daemon with `--build-dir PATH` initializes that
+exact Yocto build environment before capability discovery. If no explicit path
+or already initialized shell is present, daemon foreground startup attempts the
+canonical build directory recovered from its persisted workspace. A usable
+recovered profile therefore publishes the same current capability snapshot as
+an initialized shell; Kernel and U-Boot do not remain `Unknown` merely because
+the foreground process was spawned from another working directory. An explicit
+invalid build path fails startup with the exact profile-initialization error.
+
 Status: **Authoritative product and interaction contract**
 
 ### M72 live dashboard corrections

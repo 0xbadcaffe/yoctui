@@ -4408,6 +4408,17 @@ remain explicit when current runtime or rendering sources differ.
 
 ## Requested startup and content-search boundaries
 
+Daemon environment selection has a closed precedence order: an already
+initialized process environment, an explicit CLI/`YOCTUI_BUILD_DIR` build
+directory, then the canonical build directory recovered from persisted daemon
+workspace identity. The CLI initializes an explicit profile before spawning
+the foreground child and passes the resulting environment without a shell. The
+foreground daemon performs the same bounded reconstruction for recovered
+workspace identity before it starts compatibility discovery. Capability and
+metadata workers consume that one selected environment; the build-directory
+option is never discarded merely because daemon commands are dispatched before
+interactive configuration resolution.
+
 The CLI scanner searches only build-directory text contents and returns typed
 file/line hits. A bounded four-worker pipeline scans files concurrently while
 one traversal owns directory limits and symlink rejection; cancellation, file

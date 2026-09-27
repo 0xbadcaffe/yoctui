@@ -2063,3 +2063,14 @@ browser, checked-by-default view option, and successful-PTY completion
 correlation for Kernel and U-Boot. DTB-DECOMPILE-DIALOG-RELEASE-001 is complete
 in v0.1.239; the optimized binary is installed and the initialized Romulus
 daemon has been restarted.
+
+## M87 — Daemon build-directory compatibility authority
+
+Goal: make an explicit or recovered build directory initialize the daemon's
+BitBake environment so Kernel, U-Boot, recipes, and configuration receive a
+current capability snapshot after restart.
+
+DAEMON-BUILD-DIR-COMPAT-001 carries the selected build environment through
+daemon start/restart and reconstructs persisted workspace authority before
+startup probes. DAEMON-BUILD-DIR-COMPAT-RELEASE-001 publishes the correction
+as v0.1.240 after focused and live Romulus validation.
