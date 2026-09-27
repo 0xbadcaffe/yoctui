@@ -9997,7 +9997,7 @@ priority = 3100
 required = true
 depends_on = ["HARDWARE-NATIVE-GRAPHICS-RELEASE-001"]
 verify = ["cargo test -p yoctui-model workspace_compatibility", "cargo test -p yoctui-app platform_inspection", "cargo test -p yoctui --bin yoctui platform_inspection", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "DONE. InspectKernel and InspectFirmware are client-local orchestration effects and therefore reach the existing initialized background worker while daemon compatibility authority is absent or refreshing. Menuconfig, build, package, and other environment effects retain their existing capability gates. Focused model/app/CLI tests, formatting, and roadmap validation pass. The compatibility catalog regression was also corrected to count and exercise the previously added Hardware destination."
+notes = "DONE. InspectKernel and InspectFirmware are client-local orchestration effects and therefore reach the initialized background worker while daemon compatibility authority is absent or refreshing. Its local bridge scope permits only variable and recipe-metadata reads; build, cancellation, events, server control, and every other API remain gated. Focused model/app/BitBake/CLI tests, formatting, strict focused Clippy, and roadmap validation pass. The compatibility catalog regression was also corrected to count and exercise the previously added Hardware destination."
 
 [[task]]
 id = "PLATFORM-INSPECTION-SNAPSHOT-RELEASE-001"

@@ -9,8 +9,40 @@ pub struct BridgeBackend {
     pub(crate) accepted_correlations: VecDeque<String>,
     pub(crate) signature_adapter: SignatureAdapter,
     pub(crate) api_authority: Option<BitBakeApiAuthority>,
+    pub(crate) local_api_scope: Option<BridgeLocalApiScope>,
     pub(crate) stderr_tail: Arc<Mutex<BridgeStderrTail>>,
     pub(crate) stderr_task: Option<tokio::task::JoinHandle<()>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum BridgeLocalApiScope {
+    PlatformInspection,
+}
+
+impl BridgeLocalApiScope {
+    pub(crate) const fn allows(self, operation: BitBakeApiOperation) -> bool {
+        match self {
+            Self::PlatformInspection => matches!(
+                operation,
+                BitBakeApiOperation::Variable | BitBakeApiOperation::RecipeMetadata
+            ),
+        }
+    }
+}
+
+#[cfg(test)]
+mod local_api_scope_tests {
+    use super::*;
+
+    #[test]
+    fn platform_inspection_scope_allows_only_read_only_metadata() {
+        let scope = BridgeLocalApiScope::PlatformInspection;
+        assert!(scope.allows(BitBakeApiOperation::Variable));
+        assert!(scope.allows(BitBakeApiOperation::RecipeMetadata));
+        assert!(!scope.allows(BitBakeApiOperation::Build));
+        assert!(!scope.allows(BitBakeApiOperation::Cancel));
+        assert!(!scope.allows(BitBakeApiOperation::ServerSocket));
+    }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

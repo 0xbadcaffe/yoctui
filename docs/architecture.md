@@ -4662,7 +4662,10 @@ reconstructs the selected `oe-init-build-env`, creates a bounded Bridge backend,
 queries the provider, shuts the backend down, and returns a typed loaded/failed
 action. It does not consume the daemon compatibility snapshot, so its launch is
 valid while that snapshot is absent or refreshing. Provider menuconfig and
-build effects remain daemon-authority gated.
+build effects remain daemon-authority gated. The locally owned bridge receives
+an explicit platform-inspection scope that authorizes only variable lookup and
+recipe metadata. Build, cancellation, event, server-socket, and every other
+BitBake API remain unavailable without daemon compatibility authority.
 
 `yoctui` CLI owns local filesystem access and optional document tools. It
 validates regular non-symlink files, lists bounded browser entries, extracts

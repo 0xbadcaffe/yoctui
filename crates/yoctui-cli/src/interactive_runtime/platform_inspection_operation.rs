@@ -20,7 +20,6 @@ impl InteractiveRuntime {
             return;
         }
         let build_dir = self.session_build_dir.clone();
-        let cancellation_timeout = self.cancellation_timeout;
         let backend_kind = self.backend_kind.clone();
         let deploy_dir = self
             .app
@@ -46,25 +45,19 @@ impl InteractiveRuntime {
                 Ok(environment) => environment,
                 Err(error) => return failed_action(request, format!("{error:#}")),
             };
-            let mut backend = match select_backend_with_environment(
-                Backend::Bridge,
-                build_dir,
-                Some(cancellation_timeout),
-                Some(environment),
-            )
-            .await
-            {
-                Ok(backend) => backend,
-                Err(error) => return failed_action(request, format!("{error:#}")),
-            };
+            let python = env::var("PYTHON").unwrap_or_else(|_| "python3".into());
+            let mut backend =
+                match spawn_configured_bridge(&python, build_dir, Some(environment)).await {
+                    Ok(backend) => backend.with_platform_inspection_scope(),
+                    Err(error) => return failed_action(request, format!("{error:#}")),
+                };
             let inspection = async {
                 match request {
                     PlatformInspectionRequest::Kernel => {
-                        inspect_kernel_workbench(deploy_dir, backend.as_mut()).await
+                        inspect_kernel_workbench(deploy_dir, &mut backend).await
                     }
                     PlatformInspectionRequest::Firmware => {
-                        inspect_firmware_workbench(image, recipes, deploy_dir, backend.as_mut())
-                            .await
+                        inspect_firmware_workbench(image, recipes, deploy_dir, &mut backend).await
                     }
                 }
             };

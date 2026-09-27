@@ -165,6 +165,7 @@ impl BridgeBackend {
             accepted_correlations: VecDeque::new(),
             signature_adapter,
             api_authority,
+            local_api_scope: None,
             stderr_tail,
             stderr_task: Some(stderr_task),
         };
@@ -302,6 +303,12 @@ impl BridgeBackend {
     }
 
     pub(crate) fn require_api(&self, operation: BitBakeApiOperation) -> Result<(), BackendError> {
+        if self
+            .local_api_scope
+            .is_some_and(|scope| scope.allows(operation))
+        {
+            return Ok(());
+        }
         self.api_authority
             .as_ref()
             .ok_or_else(|| {
@@ -314,9 +321,19 @@ impl BridgeBackend {
     }
 
     pub fn supports_api(&self, operation: BitBakeApiOperation) -> bool {
-        self.api_authority
-            .as_ref()
-            .is_some_and(|authority| authority.require(operation).is_ok())
+        self.local_api_scope
+            .is_some_and(|scope| scope.allows(operation))
+            || self
+                .api_authority
+                .as_ref()
+                .is_some_and(|authority| authority.require(operation).is_ok())
+    }
+
+    /// Restricts a bridge without daemon compatibility authority to the two
+    /// read-only metadata APIs used by Kernel and Firmware inspection.
+    pub fn with_platform_inspection_scope(mut self) -> Self {
+        self.local_api_scope = Some(BridgeLocalApiScope::PlatformInspection);
+        self
     }
 
     /// Interrupt an owned metadata query so Python can release its Tinfoil
