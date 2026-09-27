@@ -42,8 +42,11 @@ pub async fn probe_bundled_backend_capabilities(
             truncated: false,
             ..
         } => parse_backend_capabilities(&stdout, build_directory, bitbake_version),
-        ProbeProcessResult::Completed { .. } => {
-            Err("backend capability probe failed or exceeded its output bound".into())
+        ProbeProcessResult::Completed { output, truncated, .. } => {
+            let diagnostic = yoctui_utils::strip_ansi(&output).chars()
+                .filter(|c| !c.is_control() || *c == '\n').take(2048).collect::<String>();
+            Err(format!("backend capability probe failed{}: {}",
+                if truncated { " (output limit exceeded)" } else { "" }, diagnostic.trim()))
         }
         ProbeProcessResult::TimedOut => Err("backend capability probe timed out".into()),
         ProbeProcessResult::Failed(error) => Err(error),

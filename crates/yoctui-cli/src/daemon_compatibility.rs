@@ -11,6 +11,7 @@ use yoctui_model::{
     CapabilityImplementation, DaemonCompatibilitySnapshot,
 };
 
+pub(crate) mod backend_recovery;
 mod coordinator;
 mod process_helpers;
 mod runtime_detection;

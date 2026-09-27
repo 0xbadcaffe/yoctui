@@ -23,6 +23,7 @@ use yoctui_protocol::{
 mod background;
 mod client_requests;
 mod commands;
+mod compatibility;
 mod state;
 mod telemetry;
 use state::{ClientConnection, DaemonClient, DaemonServices};
@@ -166,6 +167,7 @@ pub(crate) async fn run_daemon_foreground(
         daemon_journal,
         startup_environment,
         startup_compatibility,
+        backend_recovery: daemon_compatibility::backend_recovery::BackendRecovery::default(),
         startup_metadata,
         startup_configured,
         rootfs_environment,
@@ -461,6 +463,7 @@ pub(crate) async fn run_daemon_foreground(
         .await;
     archive_recorder.finish().await;
     services.startup_compatibility.shutdown().await;
+    services.backend_recovery.shutdown().await;
     if let Some(scan) = &mut services.startup_metadata {
         scan.shutdown().await;
     }

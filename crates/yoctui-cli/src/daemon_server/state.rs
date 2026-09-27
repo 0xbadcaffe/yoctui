@@ -6,6 +6,7 @@ pub(super) struct DaemonServices {
     pub(super) startup_environment: BTreeMap<String, String>,
     pub(super) startup_compatibility:
         daemon_metadata::StartupMetadata<yoctui_model::DaemonCompatibilitySnapshot>,
+    pub(super) backend_recovery: daemon_compatibility::backend_recovery::BackendRecovery,
     pub(super) startup_metadata: Option<daemon_metadata::StartupMetadata>,
     pub(super) startup_configured: bool,
     pub(super) rootfs_environment: BTreeMap<String, String>,

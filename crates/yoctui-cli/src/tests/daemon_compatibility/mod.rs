@@ -139,6 +139,7 @@ fn write_tool(path: &Path, body: &str) {
 }
 
 mod authoritative_value_ignores_bitbake_diagnostics;
+mod backend_recovery;
 mod command_probes_are_grouped_by_executable_for_serial_scheduling;
 mod daemon_compatibility_backend_probe_enables_future_api_only_with_current_evidence;
 mod daemon_compatibility_directory_resolution_keeps_unsafe_tools_rejected;

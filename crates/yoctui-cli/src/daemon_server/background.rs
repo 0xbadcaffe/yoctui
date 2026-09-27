@@ -1,66 +1,7 @@
 use super::*;
 
 pub(super) fn poll(services: &mut DaemonServices) -> Result<()> {
-    if let Some(result) = services.startup_compatibility.try_result() {
-        match result {
-            Ok(Some(compatibility)) => {
-                services
-                    .devtool_supervisor
-                    .replace_compatibility(Some(compatibility.clone()))?;
-                services
-                    .raw_supervisor
-                    .replace_compatibility(Some(compatibility.clone()))?;
-                services
-                    .bitbake_supervisor
-                    .replace_compatibility(Some(compatibility.clone()))
-                    .map_err(anyhow::Error::msg)?;
-                yoctui_app::reduce_daemon_state(
-                    &mut services.daemon_state,
-                    yoctui_model::DaemonStateAction::ReplaceCompatibility(Box::new(
-                        compatibility.clone(),
-                    )),
-                )?;
-                let wire = daemon_protocol_snapshot(&services.daemon_state)
-                    .compatibility
-                    .expect("installed compatibility has wire authority");
-                services.daemon_journal.publish(
-                    yoctui_protocol::daemon::DaemonEvent::CompatibilityChanged(Box::new(wire)),
-                )?;
-                publish_startup_metadata_log(
-                    &mut services.daemon_journal,
-                    "Loading initial workspace and recipe inventory",
-                    false,
-                )?;
-                let environment = services.startup_environment.clone();
-                services.startup_metadata = Some(daemon_metadata::StartupMetadata::spawn(
-                    |cancelled| async move {
-                        inspect_daemon_startup_workspace(
-                            &environment,
-                            Some(compatibility),
-                            cancelled,
-                        )
-                        .await
-                    },
-                ));
-            }
-            Ok(None) => {}
-            Err(error) => {
-                eprintln!("Compatibility authority is unavailable: {error:#}");
-                tracing::warn!(%error, "daemon compatibility startup probe failed");
-                publish_startup_metadata_log(
-                    &mut services.daemon_journal,
-                    &format!("Compatibility authority is unavailable: {error:#}"),
-                    true,
-                )?;
-                yoctui_app::reduce_daemon_state(
-                    &mut services.daemon_state,
-                    yoctui_model::DaemonStateAction::RecordError(format!(
-                        "Compatibility authority is unavailable: {error:#}"
-                    )),
-                )?;
-            }
-        }
-    }
+    super::compatibility::poll(services)?;
     if let Some(result) = services
         .startup_metadata
         .as_mut()

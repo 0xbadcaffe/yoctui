@@ -4265,3 +4265,13 @@ M89 is IN_PROGRESS from the v0.1.241 fallback-map screenshot. Live direct probin
 now succeeds on BitBake 2.19.0 in 1.1 seconds, but the daemon retained unknown
 API records from its earlier failed startup attempt. Implement backend-only
 retry and current-generation publication, then validate fresh Kernel inspection.
+
+BACKEND-PROBE-RECOVERY-001 is DONE. A cancellable backend-only worker retries
+unknown API authority after bounded failures, with a 30-second retry delay.
+Current build/version validation and generation checks reject stale reports.
+Successful recovery preserves independently probed command authority, publishes
+new API records and starts inventory. Probe errors retain bounded diagnostics.
+Four focused recovery tests, both backend report tests, formatting and strict
+CLI Clippy pass. The explicit live recovery test used the daemon's actual
+unknown snapshot and the Romulus environment; it restored workspace, recipe
+inventory and recipe metadata authority in 1.12 seconds. Release work follows.
