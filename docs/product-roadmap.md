@@ -2104,3 +2104,7 @@ Correct Hardware PDF and schematic rendering so zoom samples a bounded
 high-resolution page instead of enlarging a 320×240 preview. Keep the Navigator
 usable beside the document, omit the Inspector to preserve viewing space, and
 release v0.1.243 after focused model, app, CLI, and TestBackend checks.
+
+M90 is DONE in v0.1.243. The reported 71-page PDF renders from a bounded
+high-resolution source at fit and zoom, and the live Navigator remains operable
+beside the document.

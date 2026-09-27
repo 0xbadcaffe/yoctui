@@ -4304,3 +4304,13 @@ available document area; Hardware controls cannot consume keys while Navigator
 owns focus. The reported page 8 converts to 900×1200 rather than 170×240.
 Focused model, app, UI and CLI tests, formatting, and strict Clippy pass.
 Release v0.1.243 is in progress; full workspace tests remain deferred.
+
+HARDWARE-PDF-VIEWER-RELEASE-001 is DONE in v0.1.243. The optimized and installed
+binaries match SHA-256
+`5acd7f06c33db28634987025cb442d9a144a778b20384e36015373a98a4fdac3`
+and embed source `73cf70423a7e`. A live 229×55 installed client loaded the
+reported 71-page PDF, completed graphical rendering, displayed the fitted page,
+resampled it at 125%, 150%, and 175%, and returned focus to the visible
+Navigator with Tab while keeping the document open. Initialized Romulus daemon
+PID 3845555 is running with `BUILDDIR` restored. Full workspace tests remain
+deferred at the user's request.
