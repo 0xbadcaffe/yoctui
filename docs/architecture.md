@@ -4633,6 +4633,25 @@ terminal or external GUI. Raster projection computes a fit transform from the
 bounded source raster to terminal half-block pixels and samples the source at
 the selected zoom, so layout size is not encoded in backend output.
 
+For terminals that affirmatively advertise SIXEL, `yoctui-cli` owns a bounded
+native-raster presenter after the Ratatui frame is committed. `yoctui-ui`
+exports only typed document viewport geometry; it does not write terminal
+protocol bytes. The presenter derives physical cell geometry from the terminal
+window when available, otherwise uses a bounded VTE fallback, resamples the
+model-owned RGB raster, quantizes it to a fixed palette, and emits one capped
+SIXEL payload per changed page/zoom/pan/viewport identity. It clears and
+invalidates the Ratatui surface before native-image transitions so images
+cannot remain beneath another workspace or overlay. Capability detection is a
+read-only primary-device-attributes query before the event loop. Unsupported
+or inconclusive terminals never receive SIXEL bytes; PDFs use their existing
+model-owned extracted text as the readable default and retain the cell preview
+as an explicit alternate presentation.
+
+Hardware viewer close routing is handled before ordinary pane-local routing for
+`Esc`, because the visible Navigator can own focus while the document remains
+open. The model reducer remains the sole owner of closing the viewer and keeps
+the category and file selection unchanged.
+
 `yoctui` CLI owns local filesystem access and optional document tools. It
 validates regular non-symlink files, lists bounded browser entries, extracts
 bounded PDF/source search text, and converts one requested page or image into a

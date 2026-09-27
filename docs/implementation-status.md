@@ -4314,3 +4314,13 @@ resampled it at 125%, 150%, and 175%, and returned focus to the visible
 Navigator with Tab while keeping the document open. Initialized Romulus daemon
 PID 3845555 is running with `BUILDDIR` restored. Full workspace tests remain
 deferred at the user's request.
+
+M91 is IN_PROGRESS from the v0.1.243 Hardware PDF report. The retained
+1200-pixel source is still reduced to roughly one color sample per terminal
+column and two per row, so a fitted full page remains visibly blocky. The live
+GNOME Terminal profile exposes SIXEL support but currently has it disabled.
+The focused correction adds capability-gated native pixels, a crisp extracted
+text default when native graphics are unavailable, explicit page/text
+switching, and an `Esc` route that closes the viewer even after focus moves to
+Navigator. Release v0.1.244 follows focused checks and live validation; the
+full workspace suite remains deferred at the user's request.

@@ -1,24 +1,20 @@
 # Current Task
 
-**ID:** MENUCONFIG-UBOOT-LIVE-001
-**Title:** Validate U-Boot interaction after provider ncurses build repair
-**Status:** BLOCKED
+**ID:** HARDWARE-NATIVE-GRAPHICS-001
+**Title:** Render readable Hardware PDFs and restore library exit
+**Status:** IN_PROGRESS
 
-M90 Hardware document rendering and v0.1.243 are complete. The reported PDF
-passed live fit, zoom, and Navigator access checks. Full workspace tests remain
-deferred at the user's request.
-
-External dependency: `u-boot-aspeed-sdk` v2019.04+git fails its ncurses compile
-check in `scripts/kconfig/dochecklxdialog`, before an interactive frontend is
-available. Repair the provider's compiler/sysroot check, then verify arrows,
-Enter, search, Ctrl+G out/back and client restart in Content > U-Boot.
+Implement bounded capability-gated SIXEL presentation for Hardware rasters,
+use extracted PDF text when native graphics are unavailable, add explicit
+page/text switching, and route `Esc` back to the retained Hardware library from
+either visible pane. Do not mutate terminal settings or emit native image bytes
+without affirmative capability evidence.
 
 ```bash
-cargo test -p yoctui-model platform_menuconfig
-cargo test -p yoctui --bin yoctui menuconfig
-cargo test -p yoctui-ui menuconfig
+cargo test -p yoctui-model hardware
+cargo test -p yoctui-app hardware
+cargo test -p yoctui-ui hardware
+cargo test -p yoctui --bin yoctui hardware
+cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
-
-M67-LIVE-EVIDENCE-001 independently requires a new current-source real-Poky
-performance capture. No unblocked implementation task is eligible.

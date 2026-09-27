@@ -130,11 +130,27 @@ a low-resolution terminal preview. Rendering work runs outside the input/render
 loop and shows Braille activity until the typed result arrives. No viewer
 command launches an external window.
 
+Raster pages use terminal-native SIXEL pixels only after the current terminal
+affirmatively reports SIXEL support. The native image remains inside the
+document workspace, follows page, zoom, pan, resize, and focus changes, and is
+cleared before another screen, popup, or dialog is drawn. A PDF opened without
+native graphics starts in its extracted-text presentation so document text is
+crisp instead of being presented as enlarged character cells; `v` switches
+between text and the bounded character-cell page preview. With native graphics,
+PDFs start in page presentation and `v` still exposes their extracted text.
+The header identifies Page, Native page, or Text presentation. No terminal
+capability probe changes terminal or multiplexer configuration.
+
+`Esc` closes an open Hardware viewer and restores the same category and file
+selection even if focus was moved to the Navigator. `Tab` and `Shift+Tab`
+continue to move between the visible Navigator and viewer, and selecting
+Hardware again exposes the library rather than trapping the prior document.
+
 Hardware list controls are `↑/↓` files, `←/→` categories, Enter view, `a` add,
 `d` remove with exact confirmation, and `r` reload. Viewer controls are
 `PgUp/PgDn` or `[`/`]` previous/next page, `Home/End` first/last page,
 `+`/`-` zoom, `0` reset/fit, arrows or `h/j/k/l` pan, `/` search, `n`/`N`
-next/previous match, `r` reload, and Esc close. The Footer and Help/Operator
+next/previous match, `v` page/text presentation, `r` reload, and Esc close. The Footer and Help/Operator
 Guide publish these controls. Narrow terminals preserve the selected file and
 viewer position, use a single-column library layout, and never panic.
 

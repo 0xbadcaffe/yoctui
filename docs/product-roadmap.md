@@ -2108,3 +2108,12 @@ release v0.1.243 after focused model, app, CLI, and TestBackend checks.
 M90 is DONE in v0.1.243. The reported 71-page PDF renders from a bounded
 high-resolution source at fit and zoom, and the live Navigator remains operable
 beside the document.
+
+## M91 — Native Hardware document presentation and viewer exit
+
+Replace the still-blocky full-page character preview with bounded native SIXEL
+output on terminals that advertise it, provide crisp extracted PDF text when
+native graphics are unavailable, and make `Esc` return to the Hardware library
+regardless of whether Navigator or Workspace currently owns focus. Release the
+focused correction as v0.1.244 after model, app, UI, CLI, and live Hardware
+checks. The full workspace suite remains deferred until requested.
