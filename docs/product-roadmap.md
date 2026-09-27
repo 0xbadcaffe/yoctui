@@ -2125,8 +2125,9 @@ library from either visible pane.
 
 ## M92 — Snapshot-independent platform inspection
 
-Remove the stale daemon-snapshot gate from Kernel and U-Boot / BIOS inspection,
-retain capability enforcement for menuconfig and builds, and release the focused
-fix as v0.1.245. Validate U-Boot inspection during an absent compatibility
-snapshot and against the initialized Romulus environment. Full workspace tests
-remain deferred until requested.
+DONE in v0.1.245. Kernel and U-Boot / BIOS inspection use a locally owned,
+read-only metadata scope while the daemon compatibility snapshot is absent or
+refreshing. Menuconfig, builds, cancellation, events, and server control retain
+daemon authority. Installed U-Boot inspection remained active with Braille
+progress during an initialized Romulus daemon refresh and showed no
+missing-snapshot notice. Full workspace tests remain deferred until requested.

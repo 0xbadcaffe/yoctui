@@ -4360,3 +4360,15 @@ compatibility snapshot. Menuconfig, builds, package queries, and all other
 environment effects keep their prior capability authority. Focused model,
 app, and CLI tests pass, including the exact absent-snapshot U-Boot route.
 Release v0.1.245 is in progress; full workspace tests remain deferred.
+
+PLATFORM-INSPECTION-SNAPSHOT-RELEASE-001 is DONE in v0.1.245. The platform
+worker's locally owned bridge permits only variable and recipe-metadata reads;
+all mutating and server-control APIs remain unavailable without daemon
+authority. A live installed client opened U-Boot while the initialized Romulus
+daemon still reported `Loading initial compatibility authority`; inspection
+continued with visible Braille activity and no missing-snapshot notice. Focused
+model, app, BitBake, and CLI tests, formatting, strict focused Clippy, version
+policy, roadmap validation, and optimized build pass. Binary SHA-256 is
+`caf2c01442db8a2b894b6a92a545c255a186cad07e83e70e71ebaab104120149`,
+embedded source is `9cc3fe902518`, and daemon PID 3899600 is running. Full
+workspace tests remain deferred at the user's request.
