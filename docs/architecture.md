@@ -4691,3 +4691,13 @@ Menuconfig writer acquisition and release are guarded by the session writer
 epoch, without a global generation precondition that races ongoing PTY output
 or the immediately preceding pane attach. Other command preconditions remain
 unchanged.
+
+## M89 backend authority recovery
+
+The daemon owns a separate cancellable, bounded backend capability recovery
+worker. It reuses the validated current environment and probes the bundled
+bridge, not the full tool-help catalog. Exact build-directory and BitBake-version
+checks apply to every report. Only backend capability records are resolved from
+that report; other records remain unchanged. A new generation invalidates stale
+client authority. Failed attempts leave capability authority unchanged and retry
+after a delay. Inventory begins once backend workspace APIs are available.

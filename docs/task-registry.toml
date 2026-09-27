@@ -9921,3 +9921,25 @@ required = true
 depends_on = ["MENUCONFIG-RESUME-RELEASE-001"]
 verify = ["Manual: rebuild u-boot-aspeed-sdk menuconfig after fixing its recipe sysroot/compiler ncurses check, then verify arrows, Enter, search, Ctrl+G resume and client restart in Firmware"]
 notes = "External dependency: Romulus u-boot-aspeed-sdk v2019.04+git fails scripts/kconfig/dochecklxdialog with Unable to find the ncurses libraries or required header files before producing mconf. Reproduced with installed v0.1.241 daemon session 20, bitbake u-boot-aspeed-sdk -c menuconfig. The retained PTY shows the compile error; the generated upstream wrapper exits 0 after its acknowledgement despite the failed make command, so that status is not evidence of a successful U-Boot frontend. Shared typed Firmware key/resume tests pass; real Kernel session 19 passed live input and client restart checks and exited 0. Do not claim live U-Boot navigation until the provider dependency is repaired."
+
+[[task]]
+id = "BACKEND-PROBE-RECOVERY-001"
+milestone = "M89"
+title = "Retry inconclusive backend authority without repeating tool discovery"
+status = "IN_PROGRESS"
+priority = 3070
+required = true
+depends_on = ["MENUCONFIG-RESUME-RELEASE-001"]
+verify = ["cargo test -p yoctui --bin yoctui backend_recovery", "cargo test -p yoctui-bitbake backend_probe", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Files: CLI daemon compatibility and background services; BitBake probe diagnostics. Done when failed discovery retries with bounded work, exact identity validation and current positive evidence publishes a new generation and starts inventory. Cover failure, recovery, unsupported and cancellation paths; update spec/architecture/status."
+
+[[task]]
+id = "BACKEND-PROBE-RECOVERY-RELEASE-001"
+milestone = "M89"
+title = "Release backend capability recovery"
+status = "NOT_STARTED"
+priority = 3071
+required = true
+depends_on = ["BACKEND-PROBE-RECOVERY-001"]
+verify = ["cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Bump/install v0.1.242; restart initialized daemon and verify actual fresh-client Kernel inspection after current API discovery; commit/push. Full workspace suite remains deferred per user."

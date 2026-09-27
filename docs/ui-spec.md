@@ -6248,3 +6248,14 @@ BitBake failure diagnostics, while ncurses owns the terminal after handoff.
 The context menu labels an existing platform session `Resume menuconfig` and
 enables it even when fresh recipe metadata is unavailable. Pending launches
 are not duplicated, and reconnect resets the new client's writer request.
+
+## M89 recovery after an inconclusive BitBake API probe
+
+A temporary startup probe failure does not permanently disable metadata on a
+newer BitBake release. The daemon retries only the failed backend API discovery
+in the background, with a bounded attempt and delay between attempts. Current
+command-tool evidence remains usable. Each failed attempt retains its actual
+reason in daemon diagnostics; it does not claim the BitBake release is unsupported.
+A successful probe publishes fresh capability authority and starts the workspace
+inventory without requiring a daemon restart. No operation is enabled without
+positive current-environment evidence.

@@ -4260,3 +4260,8 @@ Firmware shares the tested key and recovery flow, but live U-Boot navigation
 needs the recipe/compiler/sysroot issue repaired first. Both this provider
 validation and the pre-existing M67 real-Poky performance evidence are blocked;
 no eligible implementation task remains.
+
+M89 is IN_PROGRESS from the v0.1.241 fallback-map screenshot. Live direct probing
+now succeeds on BitBake 2.19.0 in 1.1 seconds, but the daemon retained unknown
+API records from its earlier failed startup attempt. Implement backend-only
+retry and current-generation publication, then validate fresh Kernel inspection.
