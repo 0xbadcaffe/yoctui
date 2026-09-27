@@ -31,6 +31,7 @@ const MAX_SUPERVISOR_EVENTS_PER_TICK: usize = 32;
 
 pub(crate) async fn run_daemon_foreground(
     termination: &mut tokio::sync::mpsc::Receiver<()>,
+    startup_environment: Option<BTreeMap<String, String>>,
 ) -> Result<()> {
     let paths = runtime_paths()?;
     let listener = DaemonListener::bind(&paths)?;
@@ -74,7 +75,23 @@ pub(crate) async fn run_daemon_foreground(
     if let Some(persisted) = &persisted {
         recover_daemon_model_metadata(&mut daemon_state, persisted, &record.boot_id)?;
     }
-    let mut startup_environment = env::vars().collect::<BTreeMap<_, _>>();
+    let mut startup_environment =
+        startup_environment.unwrap_or_else(|| env::vars().collect::<BTreeMap<_, _>>());
+    if !startup_environment.contains_key("BUILDDIR")
+        && let Some(build_dir) = daemon_state.workspace.build_dir.clone()
+    {
+        match crate::daemon_commands::initialize_daemon_build_directory(&build_dir).await {
+            Ok(environment) => startup_environment = environment,
+            Err(error) => {
+                yoctui_app::reduce_daemon_state(
+                    &mut daemon_state,
+                    yoctui_model::DaemonStateAction::RecordError(format!(
+                        "Recovered build environment could not be initialized: {error:#}"
+                    )),
+                )?;
+            }
+        }
+    }
     menuconfig_relay::configure_environment(
         &mut startup_environment,
         &record.executable,

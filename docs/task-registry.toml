@@ -9860,18 +9860,18 @@ notes = "DONE in v0.1.239. Focused model, app, UI, and CLI tests, formatting, st
 id = "DAEMON-BUILD-DIR-COMPAT-001"
 milestone = "M87"
 title = "Initialize daemon compatibility from the selected build directory"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3050
 required = true
 depends_on = ["DTB-DECOMPILE-DIALOG-RELEASE-001"]
 verify = ["cargo test -p yoctui --bin yoctui daemon_build_directory", "cargo test -p yoctui --bin yoctui daemon_compatibility", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Carry explicit and recovered build profiles into daemon startup compatibility and metadata discovery."
+notes = "DONE. Daemon command dispatch now retains the selected build directory, initializes its Yocto environment before foreground compatibility discovery, and recovers a persisted workspace build directory when foreground startup has no initialized environment. Invalid explicit profiles fail closed. Focused startup, compatibility, formatting, strict CLI Clippy, and roadmap checks pass."
 
 [[task]]
 id = "DAEMON-BUILD-DIR-COMPAT-RELEASE-001"
 milestone = "M87"
 title = "Release daemon build-directory compatibility correction"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3051
 required = true
 depends_on = ["DAEMON-BUILD-DIR-COMPAT-001"]

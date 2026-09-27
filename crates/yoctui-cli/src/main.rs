@@ -256,7 +256,13 @@ async fn main() -> Result<()> {
         return menuconfig_relay::handoff(socket, command);
     }
     if let Some(Command::Daemon { command }) = &cli.command {
-        return daemon_cli(command.clone()).await;
+        let configured = read_file_config(config_path(&cli).as_deref())?;
+        let build_dir = cli
+            .build_dir
+            .clone()
+            .or_else(|| env::var_os("YOCTUI_BUILD_DIR").map(PathBuf::from))
+            .or(configured.build_dir);
+        return daemon_cli(command.clone(), build_dir).await;
     }
     if matches!(&cli.command, Some(Command::Sessions)) {
         return daemon_sessions();

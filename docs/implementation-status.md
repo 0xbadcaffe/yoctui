@@ -4202,3 +4202,10 @@ discovery therefore returned no snapshot and Kernel rendered `Unknown` for
 `bitbake.getvar`, recipe metadata, and recipe inventory. The focused fix will
 initialize explicit and recovered build profiles before compatibility probes,
 then publish v0.1.240 after a real Romulus authority check.
+DAEMON-BUILD-DIR-COMPAT-001 is DONE. Explicit daemon start and restart now
+initialize the selected build profile before spawning the foreground process,
+and direct foreground startup reconstructs the persisted workspace profile
+when its environment lacks `BUILDDIR`. Invalid explicit profiles fail closed.
+Focused startup and compatibility tests, formatting, strict CLI Clippy, and
+roadmap validation pass. The v0.1.240 release and live Romulus authority check
+are in progress.

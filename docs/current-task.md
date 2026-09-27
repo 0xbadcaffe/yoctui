@@ -1,18 +1,18 @@
 # Current Task
 
-**ID:** DAEMON-BUILD-DIR-COMPAT-001
-**Title:** Initialize daemon compatibility from the selected build directory
+**ID:** DAEMON-BUILD-DIR-COMPAT-RELEASE-001
+**Title:** Release daemon build-directory compatibility correction
 **Status:** IN_PROGRESS
 
-Carry explicit daemon build-directory selection into the foreground process,
-recover persisted workspace selection when needed, and publish current BitBake
-capabilities before platform inspection is authorized.
+Publish v0.1.240, install its optimized binary, restart the daemon with the
+Romulus build directory, and confirm its live compatibility snapshot authorizes
+BitBake variable and recipe metadata queries.
 
 Verify with:
 
 ```bash
-cargo test -p yoctui --bin yoctui daemon_build_directory
-cargo test -p yoctui --bin yoctui daemon_compatibility
 cargo fmt --all --check
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
 ```

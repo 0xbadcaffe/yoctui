@@ -2,9 +2,12 @@
 use super::*;
 
 #[cfg(unix)]
-pub(crate) async fn daemon_cli(command: DaemonCliCommand) -> Result<()> {
+pub(crate) async fn daemon_cli(
+    command: DaemonCliCommand,
+    build_dir: Option<PathBuf>,
+) -> Result<()> {
     match command {
-        DaemonCliCommand::Start => start_daemon().await,
+        DaemonCliCommand::Start => start_daemon(build_dir).await,
         DaemonCliCommand::Build { targets } => daemon_start_build(targets),
         DaemonCliCommand::Status => daemon_status(),
         DaemonCliCommand::Stop => stop_daemon(),
@@ -12,18 +15,22 @@ pub(crate) async fn daemon_cli(command: DaemonCliCommand) -> Result<()> {
             if daemon_is_available().is_ok() {
                 stop_daemon()?;
             }
-            start_daemon().await
+            start_daemon(build_dir).await
         }
         DaemonCliCommand::Foreground => {
             let mut termination = termination_receiver()?;
-            run_daemon_foreground(&mut termination).await
+            let environment = daemon_launch_environment(build_dir.as_deref()).await?;
+            run_daemon_foreground(&mut termination, environment).await
         }
         DaemonCliCommand::Service { command } => daemon_service(command),
     }
 }
 
 #[cfg(not(unix))]
-pub(crate) async fn daemon_cli(_command: DaemonCliCommand) -> Result<()> {
+pub(crate) async fn daemon_cli(
+    _command: DaemonCliCommand,
+    _build_dir: Option<PathBuf>,
+) -> Result<()> {
     anyhow::bail!("Yoctui daemon mode currently requires secure Unix peer credentials")
 }
 
@@ -59,7 +66,7 @@ impl Drop for DaemonStartupChild {
 }
 
 #[cfg(unix)]
-pub(crate) async fn start_daemon() -> Result<()> {
+pub(crate) async fn start_daemon(build_dir: Option<PathBuf>) -> Result<()> {
     use yoctui_protocol::daemon_ipc::{DaemonConnection, runtime_paths};
     let paths = runtime_paths()?;
     if DaemonConnection::connect(&paths, Duration::from_millis(50)).is_ok() {
@@ -71,16 +78,8 @@ pub(crate) async fn start_daemon() -> Result<()> {
     let executable = env::current_exe().context("could not resolve the Yoctui executable")?;
     let mut command = ProcessCommand::new(executable);
     command.args(["daemon", "foreground"]).stdin(Stdio::null());
-    if env::var_os("BUILDDIR").is_none()
-        && let Some(profile) = inferred_build_environment_profile(&env::current_dir()?)
-    {
-        let initialized = BuildEnvironmentAdapter::default()
-            .initialize(profile)
-            .await
-            .context(
-                "could not initialize the Yocto environment from the current build directory",
-            )?;
-        command.env_clear().envs(initialized.environment);
+    if let Some(environment) = daemon_launch_environment(build_dir.as_deref()).await? {
+        command.env_clear().envs(environment);
     }
     if let Some(log_path) = env::var_os("YOCTUI_DAEMON_LOG") {
         let log = fs::OpenOptions::new()
@@ -153,6 +152,52 @@ pub(crate) async fn start_daemon() -> Result<()> {
 }
 
 #[cfg(unix)]
+async fn daemon_launch_environment(
+    explicit_build_dir: Option<&Path>,
+) -> Result<Option<BTreeMap<String, String>>> {
+    if env::var_os("BUILDDIR").is_some() {
+        return Ok(None);
+    }
+    let current_dir = env::current_dir()?;
+    let candidate = explicit_build_dir.unwrap_or(&current_dir);
+    let profile = inferred_build_environment_profile(candidate);
+    if profile.is_none() && explicit_build_dir.is_some() {
+        anyhow::bail!(
+            "cannot locate oe-init-build-env for the selected build directory {}",
+            candidate.display()
+        );
+    }
+    let Some(profile) = profile else {
+        return Ok(None);
+    };
+    initialize_daemon_build_environment(profile).await.map(Some)
+}
+
+#[cfg(unix)]
+pub(crate) async fn initialize_daemon_build_directory(
+    build_dir: &Path,
+) -> Result<BTreeMap<String, String>> {
+    let profile = inferred_build_environment_profile(build_dir).with_context(|| {
+        format!(
+            "cannot locate oe-init-build-env for the selected build directory {}",
+            build_dir.display()
+        )
+    })?;
+    initialize_daemon_build_environment(profile).await
+}
+
+#[cfg(unix)]
+async fn initialize_daemon_build_environment(
+    profile: yoctui_model::BuildEnvironmentProfile,
+) -> Result<BTreeMap<String, String>> {
+    let initialized = BuildEnvironmentAdapter::default()
+        .initialize(profile)
+        .await
+        .context("could not initialize the selected Yocto environment for the daemon")?;
+    Ok(initialized.environment)
+}
+
+#[cfg(unix)]
 pub(crate) fn inferred_build_environment_profile(
     working_directory: &Path,
 ) -> Option<yoctui_model::BuildEnvironmentProfile> {
@@ -175,36 +220,8 @@ pub(crate) fn inferred_build_environment_profile(
 }
 
 #[cfg(all(test, unix))]
-mod startup_environment_tests {
-    use super::*;
-
-    #[test]
-    fn daemon_start_infers_initialized_build_directory_and_canonical_script() {
-        use std::os::unix::fs::symlink;
-        let root = std::env::temp_dir().join(format!(
-            "yoctui-daemon-cwd-{}-{}",
-            std::process::id(),
-            yoctui_utils::unix_ms()
-        ));
-        let build = root.join("build/romulus");
-        let upstream = root.join("upstream");
-        std::fs::create_dir_all(build.join("conf")).unwrap();
-        std::fs::create_dir_all(&upstream).unwrap();
-        std::fs::write(build.join("conf/local.conf"), "MACHINE = \"romulus\"\n").unwrap();
-        std::fs::write(build.join("conf/bblayers.conf"), "BBLAYERS = \"\"\n").unwrap();
-        std::fs::write(upstream.join("oe-init-build-env"), "#!/bin/sh\n").unwrap();
-        symlink("upstream/oe-init-build-env", root.join("oe-init-build-env")).unwrap();
-
-        let profile = inferred_build_environment_profile(&build).unwrap();
-        assert_eq!(profile.source_dir, root.canonicalize().unwrap());
-        assert_eq!(profile.build_dir, build.canonicalize().unwrap());
-        assert_eq!(
-            profile.init_script,
-            upstream.join("oe-init-build-env").canonicalize().unwrap()
-        );
-        std::fs::remove_dir_all(root).unwrap();
-    }
-}
+#[path = "tests/daemon_commands/mod.rs"]
+mod tests;
 
 #[cfg(unix)]
 pub(crate) fn daemon_status() -> Result<()> {
