@@ -259,7 +259,7 @@ fn render_viewer(
                 render_text_preview(frame, app, rows[1], viewer, lines, limitation.as_deref())
             }
             yoctui_model::HardwarePreview::Raster(raster) => {
-                render_raster_preview(frame, rows[1], viewer, raster)
+                hardware_raster_render::render_raster_preview(frame, rows[1], viewer, raster)
             }
         }
     }
@@ -279,7 +279,7 @@ fn render_viewer(
         )
     };
     frame.render_widget(Paragraph::new(vec![
-        Line::from("Esc library  PgUp/PgDn page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/N match  r reload"),
+        Line::from("Esc library  Tab Navigator  PgUp/PgDn page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/N match  r reload"),
         Line::styled(search, Style::default().fg(palette.accent)),
     ]), rows[2]);
 }
@@ -319,49 +319,6 @@ fn render_text_preview(
         );
     }
     frame.render_widget(Paragraph::new(visible).wrap(Wrap { trim: false }), area);
-}
-
-fn render_raster_preview(
-    frame: &mut Frame,
-    area: Rect,
-    viewer: &yoctui_model::HardwareViewerState,
-    raster: &yoctui_model::HardwareRaster,
-) {
-    let zoom = usize::from(viewer.zoom_percent).max(1);
-    let lines = (0..usize::from(area.height))
-        .map(|row| {
-            let y_top = viewer.pan_y + row.saturating_mul(200) / zoom;
-            let y_bottom = viewer.pan_y + (row.saturating_mul(2) + 1).saturating_mul(100) / zoom;
-            Line::from(
-                (0..usize::from(area.width))
-                    .map(|column| {
-                        let x = viewer.pan_x + column.saturating_mul(100) / zoom;
-                        let top = pixel(raster, x, y_top);
-                        let bottom = pixel(raster, x, y_bottom);
-                        Span::styled(
-                            "▀",
-                            Style::default()
-                                .fg(Color::Rgb(top.red, top.green, top.blue))
-                                .bg(Color::Rgb(bottom.red, bottom.green, bottom.blue)),
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-            )
-        })
-        .collect::<Vec<_>>();
-    frame.render_widget(Paragraph::new(lines), area);
-}
-
-fn pixel(raster: &yoctui_model::HardwareRaster, x: usize, y: usize) -> yoctui_model::HardwareRgb {
-    if x < raster.width && y < raster.height {
-        raster.pixels[y * raster.width + x]
-    } else {
-        yoctui_model::HardwareRgb {
-            red: 0,
-            green: 0,
-            blue: 0,
-        }
-    }
 }
 
 fn render_remove_confirmation(

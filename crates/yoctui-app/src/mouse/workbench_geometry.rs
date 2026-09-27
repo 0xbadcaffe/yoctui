@@ -49,7 +49,9 @@ pub fn workbench_pane_widths(app: &yoctui_model::App, width: u16, height: u16) -
             | Screen::Images
             | Screen::TerminalSessions
     );
-    if app.platform_menuconfig_visible() {
+    if app.platform_menuconfig_visible()
+        || (app.screen == Screen::Hardware && app.hardware.viewer.is_some())
+    {
         let navigator = if compact { 18 } else { 22 };
         return [navigator, width.saturating_sub(navigator), 0];
     }

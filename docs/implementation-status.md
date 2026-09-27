@@ -4295,3 +4295,12 @@ projection also removes the Navigator. The focused correction will retain a
 bounded high-resolution source, fit and resample it in the UI, keep Navigator
 focus usable beside the viewer, and publish v0.1.243. Full workspace testing
 remains deferred at the user's request.
+
+HARDWARE-PDF-VIEWER-001 is DONE. Graphical Hardware sources now retain up to a
+1200×1200 bounded raster, 100% fits the page to the live half-block viewport,
+and zoom uses bilinear source sampling with centered, bounded projection. The
+open viewer keeps Navigator focus and mouse geometry aligned beside the largest
+available document area; Hardware controls cannot consume keys while Navigator
+owns focus. The reported page 8 converts to 900×1200 rather than 170×240.
+Focused model, app, UI and CLI tests, formatting, and strict Clippy pass.
+Release v0.1.243 is in progress; full workspace tests remain deferred.

@@ -69,3 +69,31 @@ async fn hardware_loader_decodes_bounded_raster_and_rejects_symlink() {
     }
     let _ = fs::remove_dir_all(root);
 }
+
+#[tokio::test]
+async fn hardware_loader_retains_detail_up_to_the_bounded_raster_edge() {
+    let root = fixture_root("detail");
+    let path = root.join("board.png");
+    image::RgbImage::from_pixel(1600, 900, image::Rgb([12, 34, 56]))
+        .save(&path)
+        .unwrap();
+    let request = HardwareLoadRequest {
+        generation: 8,
+        document: yoctui_model::HardwareDocument {
+            path,
+            category: yoctui_model::HardwareCategory::Board,
+            kind: HardwareDocumentKind::Raster,
+        },
+        page: 1,
+    };
+    let (_, preview, _) = load_document(request).await.unwrap();
+    assert!(matches!(
+        preview,
+        HardwarePreview::Raster(HardwareRaster {
+            width: 1200,
+            height: 675,
+            ..
+        })
+    ));
+    let _ = fs::remove_dir_all(root);
+}

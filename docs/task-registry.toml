@@ -9948,18 +9948,18 @@ notes = "DONE in v0.1.242. Optimized binary built and installed, strict CLI Clip
 id = "HARDWARE-PDF-VIEWER-001"
 milestone = "M90"
 title = "Render readable Hardware documents with usable navigation"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3080
 required = true
 depends_on = ["BACKEND-PROBE-RECOVERY-RELEASE-001"]
 verify = ["cargo test -p yoctui-model hardware", "cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Files: Hardware model bounds, CLI document conversion, app input routing, UI shell/viewer rendering and focused tests. Done when PDFs retain bounded high-resolution detail, 100% fits the page, zoom resamples the source, and Navigator focus remains usable beside an open viewer. Update UI spec, architecture, status, and registry."
+notes = "DONE. PDF, KiCad, SVG and raster loads retain a bounded 1200-pixel-edge source instead of the old 320x240 preview. The viewer fits that source at 100%, bilinearly resamples it at zoom, centers it, and clamps render-time pan. Its shell keeps an operable Navigator, dedicates all remaining width to the viewer, omits the Inspector, and preserves narrow pane switching. Hardware actions run only with Workspace focus. Focused model/app/UI/CLI tests, formatting and strict model/app/UI/CLI Clippy pass; the reported page 8 produces a 900x1200 Poppler source."
 
 [[task]]
 id = "HARDWARE-PDF-VIEWER-RELEASE-001"
 milestone = "M90"
 title = "Release Hardware viewer corrections"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3081
 required = true
 depends_on = ["HARDWARE-PDF-VIEWER-001"]

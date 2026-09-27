@@ -3,7 +3,9 @@ use super::*;
 pub const MAX_HARDWARE_DOCUMENTS: usize = 512;
 pub const MAX_HARDWARE_BROWSER_ENTRIES: usize = 4096;
 pub const MAX_HARDWARE_TEXT_BYTES: usize = 2 * 1024 * 1024;
-pub const MAX_HARDWARE_RASTER_PIXELS: usize = 320 * 240;
+pub const MAX_HARDWARE_RASTER_EDGE: u32 = 1200;
+pub const MAX_HARDWARE_RASTER_PIXELS: usize =
+    MAX_HARDWARE_RASTER_EDGE as usize * MAX_HARDWARE_RASTER_EDGE as usize;
 pub const MAX_HARDWARE_QUERY_CHARS: usize = 256;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]

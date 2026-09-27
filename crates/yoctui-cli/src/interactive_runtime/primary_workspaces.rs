@@ -53,6 +53,7 @@ impl InteractiveRuntime {
                 );
             }
         } else if runtime.app.screen == Screen::Hardware
+            && runtime.app.focus == yoctui_model::FocusTarget::Workspace
             && let Some(action) = yoctui_app::hardware_workspace_action(&runtime.app, input)
         {
             match compatibility_workspace_action(&mut runtime.app, action) {

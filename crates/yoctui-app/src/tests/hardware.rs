@@ -45,6 +45,11 @@ fn hardware_library_browser_and_viewer_have_typed_controls() {
         hardware_workspace_action(&app, Input::Char('/')),
         Some(Action::Hardware(HardwareAction::BeginSearch))
     );
+    assert_eq!(
+        focus_action_for_app(&app, Input::Tab),
+        Some(Action::CycleFocus { backwards: false })
+    );
+    assert_eq!(workbench_pane_widths(&app, 160, 50), [22, 138, 0]);
 }
 
 #[test]

@@ -13,7 +13,8 @@ use tokio::{process::Command, task::JoinHandle};
 use yoctui_model::{
     Action, App, Effect, HardwareAction, HardwareBrowserEntry, HardwareDocumentKind,
     HardwareEffect, HardwareLoadRequest, HardwarePreview, HardwareRaster, HardwareRgb,
-    MAX_HARDWARE_BROWSER_ENTRIES, MAX_HARDWARE_RASTER_PIXELS, MAX_HARDWARE_TEXT_BYTES,
+    MAX_HARDWARE_BROWSER_ENTRIES, MAX_HARDWARE_RASTER_EDGE, MAX_HARDWARE_RASTER_PIXELS,
+    MAX_HARDWARE_TEXT_BYTES,
 };
 
 static NEXT_TEMPORARY: AtomicU64 = AtomicU64::new(1);
@@ -266,10 +267,8 @@ async fn render_pdf_page(path: &Path, page: usize) -> Result<HardwareRaster> {
             OsString::from("-l"),
             OsString::from(page),
             OsString::from("-singlefile"),
-            OsString::from("-scale-to-x"),
-            OsString::from("320"),
-            OsString::from("-scale-to-y"),
-            OsString::from("-1"),
+            OsString::from("-scale-to"),
+            OsString::from(MAX_HARDWARE_RASTER_EDGE.to_string()),
             path.as_os_str().to_owned(),
             prefix.as_os_str().to_owned(),
         ],
@@ -326,9 +325,9 @@ async fn load_svg(path: &Path) -> Result<(usize, HardwarePreview, Vec<String>)> 
             "rsvg-convert",
             [
                 OsString::from("-w"),
-                OsString::from("320"),
+                OsString::from(MAX_HARDWARE_RASTER_EDGE.to_string()),
                 OsString::from("-h"),
-                OsString::from("240"),
+                OsString::from(MAX_HARDWARE_RASTER_EDGE.to_string()),
                 OsString::from("--keep-aspect-ratio"),
                 OsString::from("-o"),
                 output.as_os_str().to_owned(),
@@ -386,8 +385,10 @@ async fn decode_raster(path: PathBuf) -> Result<HardwareRaster> {
             .with_guessed_format()?
             .decode()
             .with_context(|| format!("Could not decode image {}", path.display()))?;
-        let image = if image.width() > 320 || image.height() > 240 {
-            image.thumbnail(320, 240)
+        let image = if image.width() > MAX_HARDWARE_RASTER_EDGE
+            || image.height() > MAX_HARDWARE_RASTER_EDGE
+        {
+            image.thumbnail(MAX_HARDWARE_RASTER_EDGE, MAX_HARDWARE_RASTER_EDGE)
         } else {
             image
         }

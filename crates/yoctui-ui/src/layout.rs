@@ -13,7 +13,7 @@ pub(super) fn responsive_shell(
         .then(|| app.visible_task_row_refs_at(now));
     let task_rows = task_rows.as_deref();
     if app.screen == Screen::Hardware && app.hardware.viewer.is_some() {
-        workspace(frame, app, area, terminal_width, now, task_rows);
+        hardware_document_shell(frame, app, area, terminal_width, now, task_rows);
         return;
     }
     if let Some(zoomed) = app.zoomed_pane {
@@ -89,5 +89,35 @@ pub(super) fn responsive_shell(
                 workspace(frame, app, rows[1], terminal_width, now, task_rows);
             }
         }
+    }
+}
+
+fn hardware_document_shell(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    terminal_width: u16,
+    now: SystemTime,
+    task_rows: Option<&[TaskRowRef<'_>]>,
+) {
+    if terminal_width >= 100 {
+        let navigator_width = if app.preferences.density == yoctui_model::UiDensity::Compact {
+            18
+        } else {
+            22
+        };
+        let panes = Layout::horizontal([Constraint::Length(navigator_width), Constraint::Min(40)])
+            .split(area);
+        navigator(frame, app, panes[0], task_rows);
+        workspace(frame, app, panes[1], terminal_width, now, task_rows);
+        return;
+    }
+
+    let rows = Layout::vertical([Constraint::Length(1), Constraint::Min(1)]).split(area);
+    pane_switcher(frame, app, rows[0]);
+    if app.focus == FocusTarget::Navigator {
+        navigator(frame, app, rows[1], task_rows);
+    } else {
+        workspace(frame, app, rows[1], terminal_width, now, task_rows);
     }
 }

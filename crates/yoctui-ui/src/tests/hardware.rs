@@ -43,7 +43,7 @@ fn hardware_library_and_browser_render_responsively() {
 }
 
 #[test]
-fn hardware_viewer_uses_the_full_body_and_shows_search_tools() {
+fn hardware_viewer_keeps_navigator_and_shows_search_tools() {
     let mut app = App::new(100, 100_000);
     app.screen = Screen::Hardware;
     app.focus = FocusTarget::Workspace;
@@ -71,5 +71,51 @@ fn hardware_viewer_uses_the_full_body_and_shows_search_tools() {
     assert!(output.contains("page 2/4 · zoom 125%"));
     assert!(output.contains("Romulus board schematic"));
     assert!(output.contains("Search: power · 1/1"));
-    assert!(!output.contains("Navigator"));
+    assert!(output.contains("Navigator"));
+    assert!(!output.contains("Inspector"));
+    assert!(output.contains("Tab Navigator"));
+}
+
+#[test]
+fn hardware_raster_fit_uses_the_viewport_then_zoom_resamples_the_source() {
+    let mut app = App::new(100, 100_000);
+    app.hardware.viewer = Some(HardwareViewerState {
+        document: document(),
+        generation: 1,
+        page: 1,
+        page_count: 1,
+        zoom_percent: 100,
+        pan_x: 0,
+        pan_y: 0,
+        loading: false,
+        preview: None,
+        searchable_text: Vec::new(),
+        query: String::new(),
+        searching: false,
+        matches: Vec::new(),
+        match_selection: 0,
+        error: None,
+    });
+    let raster = yoctui_model::HardwareRaster {
+        width: 900,
+        height: 1200,
+        pixels: Vec::new(),
+    };
+    let area = Rect::new(0, 0, 200, 48);
+    let fit = crate::hardware_raster_render::raster_geometry(
+        area,
+        app.hardware.viewer.as_ref().unwrap(),
+        &raster,
+    );
+    assert_eq!((fit.target_width, fit.target_height), (72, 96));
+    assert_eq!((fit.offset_x, fit.offset_y), (64, 0));
+
+    app.hardware.viewer.as_mut().unwrap().zoom_percent = 400;
+    let zoomed = crate::hardware_raster_render::raster_geometry(
+        area,
+        app.hardware.viewer.as_ref().unwrap(),
+        &raster,
+    );
+    assert_eq!((zoomed.target_width, zoomed.target_height), (288, 384));
+    assert_eq!((zoomed.offset_x, zoomed.offset_y), (0, 0));
 }
