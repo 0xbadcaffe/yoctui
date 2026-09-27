@@ -2,6 +2,7 @@
 use yoctui_utils::format_duration;
 mod dialogs;
 mod environment_setup;
+mod hardware_native_projection;
 mod hardware_raster_render;
 mod hardware_render;
 mod layout;
@@ -115,6 +116,9 @@ use header::{
 };
 
 mod render;
+pub use hardware_native_projection::{
+    HardwareNativeRasterProjection, hardware_native_raster_projection,
+};
 pub use render::{render, render_at};
 
 mod popup_render;

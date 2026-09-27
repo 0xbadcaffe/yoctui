@@ -9970,12 +9970,12 @@ notes = "DONE in v0.1.243. Focused Hardware model/app/UI/CLI tests, formatting, 
 id = "HARDWARE-NATIVE-GRAPHICS-001"
 milestone = "M91"
 title = "Render readable Hardware PDFs and restore library exit"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3090
 required = true
 depends_on = ["HARDWARE-PDF-VIEWER-RELEASE-001"]
 verify = ["cargo test -p yoctui-model hardware", "cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Files: typed Hardware presentation/capability state and reducer, app input and CLI routing, UI viewport geometry, bounded CLI SIXEL capability/encoding/presentation. Done when supported terminals receive a bounded native page, unsupported terminals default PDFs to crisp extracted text with an explicit page toggle, and Esc closes the viewer from Workspace or Navigator while preserving category/selection. Update UI spec, architecture, status, registry, and focused tests."
+notes = "DONE. A read-only primary-device-attributes query selects SIXEL only on affirmative parameter 4; explicit none/sixel overrides support controlled terminals. The CLI presenter fits, zooms, crops, fixed-palette quantizes, byte/pixel caps, caches, clears, and emits native pages in UI-exported viewport geometry. Unsupported PDFs start in crisp extracted text and v switches page/text. Esc reaches the viewer while Navigator owns focus and preserves library selection. Four model, two app, four UI, six CLI Hardware tests, formatting, strict focused Clippy and roadmap validation pass."
 
 [[task]]
 id = "HARDWARE-NATIVE-GRAPHICS-RELEASE-001"

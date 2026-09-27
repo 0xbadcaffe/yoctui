@@ -52,8 +52,7 @@ impl InteractiveRuntime {
                     "Terminal is read-only; press o or Ctrl+B o to take writer control.".into(),
                 );
             }
-        } else if runtime.app.screen == Screen::Hardware
-            && runtime.app.focus == yoctui_model::FocusTarget::Workspace
+        } else if hardware_route_owns_input(&runtime.app, input)
             && let Some(action) = yoctui_app::hardware_workspace_action(&runtime.app, input)
         {
             match compatibility_workspace_action(&mut runtime.app, action) {
@@ -516,5 +515,50 @@ impl InteractiveRuntime {
             return Ok(None);
         }
         Ok(Some(KeyRouteOutcome::Handled))
+    }
+}
+
+fn hardware_route_owns_input(app: &App, input: Input) -> bool {
+    app.screen == Screen::Hardware
+        && (app.focus == yoctui_model::FocusTarget::Workspace
+            || (input == Input::Esc && app.hardware.viewer.is_some()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use yoctui_model::{
+        HardwareDocument, HardwareDocumentKind, HardwarePresentation, HardwareViewerState,
+    };
+
+    #[test]
+    fn hardware_escape_reaches_open_viewer_while_navigator_owns_focus() {
+        let mut app = App::new(10, 1024);
+        app.screen = Screen::Hardware;
+        app.focus = yoctui_model::FocusTarget::Navigator;
+        app.hardware.viewer = Some(HardwareViewerState {
+            document: HardwareDocument {
+                path: PathBuf::from("/tmp/board.pdf"),
+                category: yoctui_model::HardwareCategory::Board,
+                kind: HardwareDocumentKind::Pdf,
+            },
+            generation: 1,
+            page: 1,
+            page_count: 1,
+            zoom_percent: 100,
+            presentation: HardwarePresentation::Text,
+            pan_x: 0,
+            pan_y: 0,
+            loading: false,
+            preview: None,
+            searchable_text: vec!["board".into()],
+            query: String::new(),
+            searching: false,
+            matches: Vec::new(),
+            match_selection: 0,
+            error: None,
+        });
+        assert!(hardware_route_owns_input(&app, Input::Esc));
+        assert!(!hardware_route_owns_input(&app, Input::Enter));
     }
 }

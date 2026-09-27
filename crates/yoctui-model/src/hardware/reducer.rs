@@ -3,6 +3,9 @@ use super::*;
 pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<Effect> {
     let state = &mut app.hardware;
     match action {
+        HardwareAction::GraphicsCapabilityDetected(capability) => {
+            state.graphics_capability = capability;
+        }
         HardwareAction::Install(documents) => match validate_hardware_documents(&documents) {
             Ok(()) => {
                 state.documents = documents;
@@ -162,6 +165,13 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
         HardwareAction::CancelBrowser => state.browser = None,
         HardwareAction::OpenSelected => {
             let document = state.selected_document()?.clone();
+            let presentation = if document.kind == HardwareDocumentKind::Pdf
+                && state.graphics_capability != HardwareGraphicsCapability::Sixel
+            {
+                HardwarePresentation::Text
+            } else {
+                HardwarePresentation::Page
+            };
             let generation = state
                 .viewer
                 .as_ref()
@@ -172,6 +182,7 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
                 page: 1,
                 page_count: 1,
                 zoom_percent: 100,
+                presentation,
                 pan_x: 0,
                 pan_y: 0,
                 loading: true,
@@ -265,6 +276,17 @@ pub(crate) fn reduce_hardware(app: &mut App, action: HardwareAction) -> Option<E
             viewer.zoom_percent = 100;
             viewer.pan_x = 0;
             viewer.pan_y = 0;
+        }
+        HardwareAction::TogglePresentation => {
+            let viewer = state.viewer.as_mut()?;
+            if viewer.document.kind == HardwareDocumentKind::Pdf {
+                viewer.presentation = match viewer.presentation {
+                    HardwarePresentation::Page => HardwarePresentation::Text,
+                    HardwarePresentation::Text => HardwarePresentation::Page,
+                };
+                viewer.pan_x = 0;
+                viewer.pan_y = 0;
+            }
         }
         HardwareAction::Pan {
             horizontal,

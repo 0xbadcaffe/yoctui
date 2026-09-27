@@ -4324,3 +4324,13 @@ text default when native graphics are unavailable, explicit page/text
 switching, and an `Esc` route that closes the viewer even after focus moves to
 Navigator. Release v0.1.244 follows focused checks and live validation; the
 full workspace suite remains deferred at the user's request.
+
+HARDWARE-NATIVE-GRAPHICS-001 is DONE. A read-only device-attributes query
+requires the exact SIXEL capability before native bytes are emitted. The CLI
+presenter uses bounded viewport geometry, physical cell sizing, fixed palette,
+pixel and payload caps, signature caching, and explicit surface clearing.
+Unsupported PDFs open as crisp extracted text and `v` changes page/text
+presentation. `Esc` closes the viewer while either Workspace or Navigator owns
+focus, retaining the category and selected file. Four model, two app, four UI,
+and six CLI Hardware tests pass with formatting, strict focused Clippy, and the
+roadmap gate. Release v0.1.244 is in progress; the full suite remains deferred.

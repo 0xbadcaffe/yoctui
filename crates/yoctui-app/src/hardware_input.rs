@@ -31,6 +31,7 @@ pub fn hardware_workspace_action(app: &App, input: Input) -> Option<Action> {
             Input::Char('+') => hardware(HardwareAction::Zoom { delta: 25 }),
             Input::Char('-') => hardware(HardwareAction::Zoom { delta: -25 }),
             Input::Char('0') => hardware(HardwareAction::ResetZoom),
+            Input::Char('v') => hardware(HardwareAction::TogglePresentation),
             Input::Left | Input::Char('h') => hardware(HardwareAction::Pan {
                 horizontal: -4,
                 vertical: 0,

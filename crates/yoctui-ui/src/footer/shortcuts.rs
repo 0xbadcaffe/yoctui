@@ -95,7 +95,7 @@ pub(crate) fn footer_shortcuts(app: &App) -> String {
         },
         Screen::Hardware => {
             if app.hardware.viewer.is_some() {
-                "Esc library | PgUp/PgDn page | +/- zoom | 0 fit | arrows pan | / search | n/N match | r reload"
+                "Esc library | PgUp/PgDn page | +/- zoom | 0 fit | arrows pan | / search | n/N match | v view | r reload"
             } else if app.hardware.browser.is_some() {
                 "↑/↓ select | Enter directory | Backspace parent | ←/→ category | a add | Esc cancel"
             } else {

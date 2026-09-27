@@ -173,6 +173,20 @@ pub enum HardwarePreview {
     Raster(HardwareRaster),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum HardwareGraphicsCapability {
+    #[default]
+    Unknown,
+    Unavailable,
+    Sixel,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HardwarePresentation {
+    Page,
+    Text,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HardwareViewerState {
     pub document: HardwareDocument,
@@ -180,6 +194,7 @@ pub struct HardwareViewerState {
     pub page: usize,
     pub page_count: usize,
     pub zoom_percent: u16,
+    pub presentation: HardwarePresentation,
     pub pan_x: usize,
     pub pan_y: usize,
     pub loading: bool,
@@ -238,6 +253,7 @@ pub struct HardwareState {
     pub viewer: Option<HardwareViewerState>,
     pub removal_pending: Option<HardwareDocument>,
     pub last_directory: Option<PathBuf>,
+    pub graphics_capability: HardwareGraphicsCapability,
 }
 
 impl HardwareState {
@@ -259,6 +275,7 @@ impl HardwareState {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HardwareAction {
+    GraphicsCapabilityDetected(HardwareGraphicsCapability),
     Install(Vec<HardwareDocument>),
     SelectCategory {
         delta: isize,
@@ -309,6 +326,7 @@ pub enum HardwareAction {
         delta: i16,
     },
     ResetZoom,
+    TogglePresentation,
     Pan {
         horizontal: isize,
         vertical: isize,

@@ -46,6 +46,10 @@ fn hardware_library_browser_and_viewer_have_typed_controls() {
         Some(Action::Hardware(HardwareAction::BeginSearch))
     );
     assert_eq!(
+        hardware_workspace_action(&app, Input::Char('v')),
+        Some(Action::Hardware(HardwareAction::TogglePresentation))
+    );
+    assert_eq!(
         focus_action_for_app(&app, Input::Tab),
         Some(Action::CycleFocus { backwards: false })
     );

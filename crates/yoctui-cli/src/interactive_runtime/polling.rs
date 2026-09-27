@@ -356,7 +356,17 @@ impl InteractiveRuntime {
             .render_scheduler
             .take_frame_with_interval(ordinary_frame_interval(&runtime.app))
         {
+            let size = runtime.terminal.size()?;
+            if runtime
+                .hardware_native_graphics
+                .prepare_frame(&runtime.app, size.width, size.height)
+            {
+                runtime.terminal.clear()?;
+            }
             runtime.terminal.draw(|f| render(f, &runtime.app))?;
+            runtime
+                .hardware_native_graphics
+                .paint_frame(&runtime.app, size.width, size.height);
         }
         let startup_platform_inspection = runtime.startup_platform_inspection.take();
         match startup_platform_inspection {

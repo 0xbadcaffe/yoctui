@@ -76,6 +76,7 @@ pub(crate) async fn tui(
     // Settings value), so Crossterm must not silently apply a second ambient
     // NO_COLOR policy that contradicts the visible setting.
     crossterm::style::force_color_output(true);
+    let hardware_graphics_capability = terminal_graphics::detect_hardware_graphics_capability();
     let guard = TerminalGuard::enter()?;
     let terminal = Terminal::new(ratatui::backend::CrosstermBackend::new(io::stdout()))?;
     let mut app = if build_dir_configured {
@@ -88,6 +89,12 @@ pub(crate) async fn tui(
     app.focus = yoctui_model::FocusTarget::Navigator;
     app.require_daemon = true;
     app.client_access_origin = client_access_origin();
+    let _ = update(
+        &mut app,
+        Action::Hardware(yoctui_model::HardwareAction::GraphicsCapabilityDetected(
+            hardware_graphics_capability,
+        )),
+    );
     let _ = update(
         &mut app,
         Action::DetachedTerminalAvailabilityDetected(detached_terminal_availability()),
@@ -319,6 +326,7 @@ pub(crate) async fn tui(
     let render_scheduler = RenderScheduler::default();
     let environment_browser_io = environment_setup::EnvironmentBrowserIo::default();
     let hardware_io = hardware_io::HardwareIo::default();
+    let hardware_native_graphics = hardware_native_graphics::HardwareNativeGraphics::default();
     let recipe_inspection_operation = None;
     let devtool_status_operation = None;
     let platform_inspection_operation = None;
@@ -400,6 +408,7 @@ pub(crate) async fn tui(
         render_scheduler,
         environment_browser_io,
         hardware_io,
+        hardware_native_graphics,
         recipe_inspection_operation,
         devtool_status_operation,
         platform_inspection_operation,

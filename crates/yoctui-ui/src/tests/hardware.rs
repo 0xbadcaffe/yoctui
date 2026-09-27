@@ -1,7 +1,7 @@
 use super::*;
 use yoctui_model::{
     HardwareBrowserEntry, HardwareBrowserState, HardwareCategory, HardwareDocument,
-    HardwareDocumentKind, HardwarePreview, HardwareViewerState,
+    HardwareDocumentKind, HardwarePresentation, HardwarePreview, HardwareViewerState,
 };
 
 fn document() -> HardwareDocument {
@@ -53,6 +53,7 @@ fn hardware_viewer_keeps_navigator_and_shows_search_tools() {
         page: 2,
         page_count: 4,
         zoom_percent: 125,
+        presentation: HardwarePresentation::Text,
         pan_x: 0,
         pan_y: 0,
         loading: false,
@@ -85,6 +86,7 @@ fn hardware_raster_fit_uses_the_viewport_then_zoom_resamples_the_source() {
         page: 1,
         page_count: 1,
         zoom_percent: 100,
+        presentation: HardwarePresentation::Page,
         pan_x: 0,
         pan_y: 0,
         loading: false,
@@ -118,4 +120,50 @@ fn hardware_raster_fit_uses_the_viewport_then_zoom_resamples_the_source() {
     );
     assert_eq!((zoomed.target_width, zoomed.target_height), (288, 384));
     assert_eq!((zoomed.offset_x, zoomed.offset_y), (0, 0));
+}
+
+#[test]
+fn hardware_pdf_uses_crisp_text_without_native_graphics_and_projects_sixel_area() {
+    let mut app = App::new(100, 100_000);
+    app.screen = Screen::Hardware;
+    app.focus = FocusTarget::Workspace;
+    app.hardware.viewer = Some(HardwareViewerState {
+        document: document(),
+        generation: 7,
+        page: 1,
+        page_count: 71,
+        zoom_percent: 100,
+        presentation: HardwarePresentation::Text,
+        pan_x: 0,
+        pan_y: 0,
+        loading: false,
+        preview: Some(HardwarePreview::Raster(yoctui_model::HardwareRaster {
+            width: 1,
+            height: 1,
+            pixels: vec![yoctui_model::HardwareRgb {
+                red: 255,
+                green: 255,
+                blue: 255,
+            }],
+        })),
+        searchable_text: vec!["SMARC carrier user guide".into()],
+        query: String::new(),
+        searching: false,
+        matches: Vec::new(),
+        match_selection: 0,
+        error: None,
+    });
+    let fallback = rendered_text(&app, 120, 32);
+    assert!(fallback.contains("Text"), "{fallback}");
+    assert!(fallback.contains("SMARC carrier user guide"), "{fallback}");
+    assert!(
+        fallback.contains("Native terminal graphics unavailable"),
+        "{fallback}"
+    );
+
+    app.hardware.graphics_capability = yoctui_model::HardwareGraphicsCapability::Sixel;
+    app.hardware.viewer.as_mut().unwrap().presentation = HardwarePresentation::Page;
+    let projection = crate::hardware_native_raster_projection(&app, 120, 32).unwrap();
+    assert_eq!(projection.area.x, 22);
+    assert!(projection.area.width > 0 && projection.area.height > 0);
 }

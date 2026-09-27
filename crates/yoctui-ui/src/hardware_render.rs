@@ -225,12 +225,13 @@ fn render_viewer(
     .split(area);
     frame.render_widget(
         Paragraph::new(format!(
-            "{} · {} · page {}/{} · zoom {}%",
+            "{} · {} · page {}/{} · zoom {}% · {}",
             viewer.document.name(),
             viewer.document.kind.label(),
             viewer.page,
             viewer.page_count,
-            viewer.zoom_percent
+            viewer.zoom_percent,
+            presentation_label(app, viewer)
         ))
         .block(
             Block::default()
@@ -253,13 +254,31 @@ fn render_viewer(
                 .style(palette.role(palette.error, Modifier::BOLD)),
             rows[1],
         );
+    } else if viewer.presentation == yoctui_model::HardwarePresentation::Text
+        && !viewer.searchable_text.is_empty()
+    {
+        let limitation = (app.hardware.graphics_capability
+            != yoctui_model::HardwareGraphicsCapability::Sixel)
+            .then_some("Native terminal graphics unavailable; v opens the page preview.");
+        render_text_preview(
+            frame,
+            app,
+            rows[1],
+            viewer,
+            &viewer.searchable_text,
+            limitation,
+        );
     } else if let Some(preview) = viewer.preview.as_ref() {
         match preview {
             yoctui_model::HardwarePreview::Text { lines, limitation } => {
                 render_text_preview(frame, app, rows[1], viewer, lines, limitation.as_deref())
             }
             yoctui_model::HardwarePreview::Raster(raster) => {
-                hardware_raster_render::render_raster_preview(frame, rows[1], viewer, raster)
+                if app.hardware.graphics_capability
+                    != yoctui_model::HardwareGraphicsCapability::Sixel
+                {
+                    hardware_raster_render::render_raster_preview(frame, rows[1], viewer, raster)
+                }
             }
         }
     }
@@ -279,9 +298,22 @@ fn render_viewer(
         )
     };
     frame.render_widget(Paragraph::new(vec![
-        Line::from("Esc library  Tab Navigator  PgUp/PgDn page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/N match  r reload"),
+        Line::from("Esc library  Tab Navigator  PgUp/PgDn page  +/- zoom  0 fit  arrows/hjkl pan  / search  n/N match  v view  r reload"),
         Line::styled(search, Style::default().fg(palette.accent)),
     ]), rows[2]);
+}
+
+fn presentation_label(app: &App, viewer: &yoctui_model::HardwareViewerState) -> &'static str {
+    match viewer.presentation {
+        yoctui_model::HardwarePresentation::Text => "Text",
+        yoctui_model::HardwarePresentation::Page
+            if app.hardware.graphics_capability
+                == yoctui_model::HardwareGraphicsCapability::Sixel =>
+        {
+            "Native page"
+        }
+        yoctui_model::HardwarePresentation::Page => "Page preview",
+    }
 }
 
 fn render_text_preview(

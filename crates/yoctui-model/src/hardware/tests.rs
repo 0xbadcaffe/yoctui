@@ -136,3 +136,43 @@ fn hardware_search_zoom_page_and_pan_transitions_are_pure() {
         )))
     ));
 }
+
+#[test]
+fn hardware_pdf_presentation_uses_capability_and_close_preserves_selection() {
+    let mut app = App::new(100, 100_000);
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::Install(vec![document(
+            "board",
+            HardwareCategory::Board,
+        )])),
+    );
+    update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    assert_eq!(
+        app.hardware.viewer.as_ref().unwrap().presentation,
+        HardwarePresentation::Text
+    );
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::TogglePresentation),
+    );
+    assert_eq!(
+        app.hardware.viewer.as_ref().unwrap().presentation,
+        HardwarePresentation::Page
+    );
+    update(&mut app, Action::Hardware(HardwareAction::CloseViewer));
+    assert!(app.hardware.viewer.is_none());
+    assert_eq!(app.hardware.selection, 0);
+
+    update(
+        &mut app,
+        Action::Hardware(HardwareAction::GraphicsCapabilityDetected(
+            HardwareGraphicsCapability::Sixel,
+        )),
+    );
+    update(&mut app, Action::Hardware(HardwareAction::OpenSelected));
+    assert_eq!(
+        app.hardware.viewer.as_ref().unwrap().presentation,
+        HardwarePresentation::Page
+    );
+}

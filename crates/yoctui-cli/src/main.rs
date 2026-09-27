@@ -3,6 +3,8 @@ use maintenance_cli::MaintenanceCliCoordinator;
 use yoctui_utils::unix_ms;
 mod build_archive;
 mod error_log;
+mod hardware_native_graphics;
+mod terminal_graphics;
 use error_log::*;
 
 use anyhow::{Context, Result};
