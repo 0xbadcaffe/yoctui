@@ -4353,3 +4353,10 @@ its bounded metadata backend, but `Effect::InspectFirmware` and
 gate. The focused fix classifies these inspection launch effects as client-local
 orchestration while leaving menuconfig/build authority unchanged, covers absent
 snapshot routing, and releases v0.1.245. Full workspace tests remain deferred.
+
+PLATFORM-INSPECTION-SNAPSHOT-001 is DONE. Kernel and Firmware inspection now
+reach the initialized background metadata worker without a current daemon
+compatibility snapshot. Menuconfig, builds, package queries, and all other
+environment effects keep their prior capability authority. Focused model,
+app, and CLI tests pass, including the exact absent-snapshot U-Boot route.
+Release v0.1.245 is in progress; full workspace tests remain deferred.

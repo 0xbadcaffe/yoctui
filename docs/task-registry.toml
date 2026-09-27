@@ -9992,18 +9992,18 @@ notes = "DONE in v0.1.244. Focused Hardware model/app/UI/CLI and terminal-capabi
 id = "PLATFORM-INSPECTION-SNAPSHOT-001"
 milestone = "M92"
 title = "Inspect U-Boot without a daemon capability snapshot"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3100
 required = true
 depends_on = ["HARDWARE-NATIVE-GRAPHICS-RELEASE-001"]
 verify = ["cargo test -p yoctui-model workspace_compatibility", "cargo test -p yoctui-app platform_inspection", "cargo test -p yoctui --bin yoctui platform_inspection", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "Files: workspace effect requirements and focused app/CLI routing tests. Done when InspectKernel and InspectFirmware pass through absent compatibility authority into the existing initialized background worker, while menuconfig/build effects retain authority gating. Update spec, architecture, status, and registry."
+notes = "DONE. InspectKernel and InspectFirmware are client-local orchestration effects and therefore reach the existing initialized background worker while daemon compatibility authority is absent or refreshing. Menuconfig, build, package, and other environment effects retain their existing capability gates. Focused model/app/CLI tests, formatting, and roadmap validation pass. The compatibility catalog regression was also corrected to count and exercise the previously added Hardware destination."
 
 [[task]]
 id = "PLATFORM-INSPECTION-SNAPSHOT-RELEASE-001"
 milestone = "M92"
 title = "Release snapshot-independent platform inspection"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3101
 required = true
 depends_on = ["PLATFORM-INSPECTION-SNAPSHOT-001"]

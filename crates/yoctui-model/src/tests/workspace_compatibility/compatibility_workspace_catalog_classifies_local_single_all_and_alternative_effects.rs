@@ -7,6 +7,14 @@ fn compatibility_workspace_catalog_classifies_local_single_all_and_alternative_e
         WorkspaceEffectRequirement::ClientLocal
     );
     assert_eq!(
+        workspace_effect_requirement(&Effect::InspectKernel),
+        WorkspaceEffectRequirement::ClientLocal
+    );
+    assert_eq!(
+        workspace_effect_requirement(&Effect::InspectFirmware),
+        WorkspaceEffectRequirement::ClientLocal
+    );
+    assert_eq!(
         workspace_effect_requirement(&Effect::GetVariable(VariableIdentity {
             name: "MACHINE".into(),
             recipe: None,

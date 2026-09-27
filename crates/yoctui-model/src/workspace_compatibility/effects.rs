@@ -20,6 +20,8 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::LoadLayerBrowserDirectory { .. }
         | Effect::LoadLayerBrowserPreview(_)
         | Effect::OpenLayerBrowserEditor { .. }
+        | Effect::InspectKernel
+        | Effect::InspectFirmware
         | Effect::GetImageArtifacts(_)
         | Effect::CancelImageArtifactOperation
         | Effect::GetRootfsComposition(_)
@@ -40,9 +42,6 @@ pub fn workspace_effect_requirement(effect: &Effect) -> WorkspaceEffectRequireme
         | Effect::WriteBbmask(_) => Requirement::ClientLocal,
 
         Effect::Start(request) => build_request_requirement(request),
-        Effect::InspectKernel | Effect::InspectFirmware => {
-            Requirement::all(&[Id::BitBakeGetVar, Id::BitBakeRecipeMetadata])
-        }
         Effect::Cancel => Requirement::one(Id::BitBakeCancellation),
         Effect::StartRaw(request) => builtin_raw_catalog()
             .command(&request.command)

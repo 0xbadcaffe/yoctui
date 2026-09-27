@@ -2,7 +2,7 @@ use super::*;
 
 #[test]
 fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
-    assert_eq!(WorkspaceDestination::ALL.len(), 28);
+    assert_eq!(WorkspaceDestination::ALL.len(), 29);
     for screen in [
         Screen::Dashboard,
         Screen::Insights,
@@ -14,6 +14,7 @@ fn compatibility_workspace_catalog_covers_every_screen_and_named_destination() {
         Screen::Recipes,
         Screen::Packages,
         Screen::Images,
+        Screen::Hardware,
         Screen::Kernel,
         Screen::Firmware,
         Screen::Sdk,

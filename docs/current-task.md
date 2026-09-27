@@ -1,17 +1,20 @@
 # Current Task
 
-**ID:** PLATFORM-INSPECTION-SNAPSHOT-001
-**Title:** Inspect U-Boot without a daemon capability snapshot
+**ID:** PLATFORM-INSPECTION-SNAPSHOT-RELEASE-001
+**Title:** Release snapshot-independent platform inspection
 **Status:** IN_PROGRESS
 
-Route Kernel and Firmware inspection as client-local orchestration because the
-CLI worker initializes and owns its metadata backend. Preserve current
-capability enforcement for menuconfig and builds. Reproduce absent-snapshot
-U-Boot routing, verify the focused fix, update governance, and commit.
+Bump v0.1.245, run focused strict checks, build and install the optimized
+binary, validate initialized Romulus U-Boot inspection, restart the initialized
+daemon, commit, and push. Full workspace tests remain deferred at the user's
+request.
 
 ```bash
-cargo test -p yoctui-model workspace_compatibility
-cargo test -p yoctui-app platform_inspection
-cargo test -p yoctui --bin yoctui platform_inspection
+cargo fmt --all --check
+cargo clippy -p yoctui-model --all-features -- -D warnings
+cargo clippy -p yoctui-app --all-features -- -D warnings
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
 ```
