@@ -4642,8 +4642,10 @@ model-owned RGB raster, quantizes it to a fixed palette, and emits one capped
 SIXEL payload per changed page/zoom/pan/viewport identity. It clears and
 invalidates the Ratatui surface before native-image transitions so images
 cannot remain beneath another workspace or overlay. Capability detection is a
-read-only primary-device-attributes query before the event loop. Unsupported
-or inconclusive terminals never receive SIXEL bytes; PDFs use their existing
+read-only primary-device-attributes query before the event loop. VTE-based
+GNOME Terminal, which does not advertise SIXEL in that reply, additionally
+requires its explicit `enable-sixel` profile value and minimum supporting VTE
+version. Unsupported or inconclusive terminals never receive SIXEL bytes; PDFs use their existing
 model-owned extracted text as the readable default and retain the cell preview
 as an explicit alternate presentation.
 

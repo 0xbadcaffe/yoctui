@@ -560,5 +560,9 @@ mod tests {
         });
         assert!(hardware_route_owns_input(&app, Input::Esc));
         assert!(!hardware_route_owns_input(&app, Input::Enter));
+        let action = yoctui_app::hardware_workspace_action(&app, Input::Esc).unwrap();
+        let _ = compatibility_workspace_action(&mut app, action);
+        assert!(app.hardware.viewer.is_none());
+        assert_eq!(app.hardware.selection, 0);
     }
 }

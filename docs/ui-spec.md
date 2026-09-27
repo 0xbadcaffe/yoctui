@@ -138,8 +138,10 @@ native graphics starts in its extracted-text presentation so document text is
 crisp instead of being presented as enlarged character cells; `v` switches
 between text and the bounded character-cell page preview. With native graphics,
 PDFs start in page presentation and `v` still exposes their extracted text.
-The header identifies Page, Native page, or Text presentation. No terminal
-capability probe changes terminal or multiplexer configuration.
+The header identifies Page, Native page, or Text presentation. A positive
+device-attributes response or an enabled GNOME Terminal SIXEL profile is
+affirmative capability evidence. No probe changes terminal or multiplexer
+configuration.
 
 `Esc` closes an open Hardware viewer and restores the same category and file
 selection even if focus was moved to the Navigator. `Tab` and `Shift+Tab`

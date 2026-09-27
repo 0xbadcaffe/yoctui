@@ -2117,3 +2117,8 @@ native graphics are unavailable, and make `Esc` return to the Hardware library
 regardless of whether Navigator or Workspace currently owns focus. Release the
 focused correction as v0.1.244 after model, app, UI, CLI, and live Hardware
 checks. The full workspace suite remains deferred until requested.
+
+M91 is DONE in v0.1.244. Enabled GNOME Terminal profiles and terminals that
+advertise SIXEL receive bounded native document pixels; unsupported terminals
+open PDFs as crisp extracted text. The viewer returns to its retained Hardware
+library from either visible pane.

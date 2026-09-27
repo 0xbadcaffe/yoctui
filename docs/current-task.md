@@ -1,21 +1,23 @@
 # Current Task
 
-**ID:** HARDWARE-NATIVE-GRAPHICS-RELEASE-001
-**Title:** Release native Hardware document presentation
-**Status:** IN_PROGRESS
+**ID:** MENUCONFIG-UBOOT-LIVE-001
+**Title:** Validate U-Boot interaction after provider ncurses build repair
+**Status:** BLOCKED
 
-Build and install v0.1.244, validate the reported PDF in native and fallback
-presentations, confirm `Esc` returns to the library so another document can be
-added/opened, restart the initialized Romulus daemon, commit, and push. Do not
-run the full workspace suite until the user requests it.
+M91 Hardware native/fallback document presentation, viewer exit, and v0.1.244
+are complete. Full workspace tests remain deferred at the user's request.
+
+External dependency: `u-boot-aspeed-sdk` v2019.04+git fails its ncurses compile
+check in `scripts/kconfig/dochecklxdialog`, before an interactive frontend is
+available. Repair the provider's compiler/sysroot check, then verify arrows,
+Enter, search, Ctrl+G out/back and client restart in Content > U-Boot.
 
 ```bash
-cargo fmt --all --check
-cargo clippy -p yoctui-model --all-features -- -D warnings
-cargo clippy -p yoctui-app --all-features -- -D warnings
-cargo clippy -p yoctui-ui --all-features -- -D warnings
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-python3 scripts/check-version-bump.py
+cargo test -p yoctui-model platform_menuconfig
+cargo test -p yoctui --bin yoctui menuconfig
+cargo test -p yoctui-ui menuconfig
 ./scripts/verify-roadmap.sh
-cargo build --release -p yoctui --bin yoctui
 ```
+
+M67-LIVE-EVIDENCE-001 independently requires a new current-source real-Poky
+performance capture. No unblocked implementation task is eligible.

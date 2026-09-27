@@ -18,7 +18,46 @@ pub(crate) fn detect_hardware_graphics_capability() -> HardwareGraphicsCapabilit
     {
         return HardwareGraphicsCapability::Sixel;
     }
+    if gnome_terminal_sixel_enabled() {
+        return HardwareGraphicsCapability::Sixel;
+    }
     HardwareGraphicsCapability::Unavailable
+}
+
+fn gnome_terminal_sixel_enabled() -> bool {
+    if env::var_os("GNOME_TERMINAL_SERVICE").is_none()
+        || env::var("VTE_VERSION")
+            .ok()
+            .and_then(|version| version.parse::<u32>().ok())
+            .is_none_or(|version| version < 6200)
+    {
+        return false;
+    }
+    let Ok(profile) = ProcessCommand::new("gsettings")
+        .args(["get", "org.gnome.Terminal.ProfilesList", "default"])
+        .output()
+    else {
+        return false;
+    };
+    let Some(profile) = enabled_profile_id(&profile.stdout) else {
+        return false;
+    };
+    let schema = format!(
+        "org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{profile}/"
+    );
+    ProcessCommand::new("gsettings")
+        .args(["get", &schema, "enable-sixel"])
+        .output()
+        .is_ok_and(|output| output.status.success() && output.stdout == b"true\n")
+}
+
+fn enabled_profile_id(output: &[u8]) -> Option<&str> {
+    let profile = std::str::from_utf8(output).ok()?.trim().trim_matches('\'');
+    (!profile.is_empty()
+        && profile
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-'))
+    .then_some(profile)
 }
 
 pub(crate) fn primary_device_attributes_support_sixel(response: &[u8]) -> bool {
@@ -83,5 +122,15 @@ mod tests {
         assert!(!primary_device_attributes_support_sixel(b"\x1b[?65;1;9c"));
         assert!(!primary_device_attributes_support_sixel(b"text 4"));
         assert!(!primary_device_attributes_support_sixel(b"\x1b[?64;14;9c"));
+    }
+
+    #[test]
+    fn gnome_profile_id_accepts_only_bounded_schema_characters() {
+        assert_eq!(
+            enabled_profile_id(b"'b1dcc9dd-5262-4d8d-a863-c897e6d979b9'\n"),
+            Some("b1dcc9dd-5262-4d8d-a863-c897e6d979b9")
+        );
+        assert_eq!(enabled_profile_id(b"'../../profile'\n"), None);
+        assert_eq!(enabled_profile_id(b"''\n"), None);
     }
 }

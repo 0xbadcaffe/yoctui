@@ -4334,3 +4334,14 @@ presentation. `Esc` closes the viewer while either Workspace or Navigator owns
 focus, retaining the category and selected file. Four model, two app, four UI,
 and six CLI Hardware tests pass with formatting, strict focused Clippy, and the
 roadmap gate. Release v0.1.244 is in progress; the full suite remains deferred.
+
+HARDWARE-NATIVE-GRAPHICS-RELEASE-001 is DONE in v0.1.244. GNOME Terminal's
+SIXEL profile is enabled, and normal capability detection selected Native page
+for the reported 71-page PDF and emitted one bounded frame in a 120×40 PTY. A
+forced-unsupported run emitted no SIXEL and displayed the crisp Text mode with
+its limitation. Focused Hardware and terminal-capability checks, formatting,
+strict Clippy, version policy, roadmap validation, and the optimized build pass.
+Release and installed binaries match SHA-256
+`3385fc7ab0b20ead4f817595b1fdc74c41a3e331231995b75a9302b988d252f7`
+and embed source `d4af795ea1f4`. The initialized Romulus daemon runs as PID
+3868935. Full workspace tests remain deferred at the user's request.

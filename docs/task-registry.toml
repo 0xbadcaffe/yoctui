@@ -9975,15 +9975,15 @@ priority = 3090
 required = true
 depends_on = ["HARDWARE-PDF-VIEWER-RELEASE-001"]
 verify = ["cargo test -p yoctui-model hardware", "cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
-notes = "DONE. A read-only primary-device-attributes query selects SIXEL only on affirmative parameter 4; explicit none/sixel overrides support controlled terminals. The CLI presenter fits, zooms, crops, fixed-palette quantizes, byte/pixel caps, caches, clears, and emits native pages in UI-exported viewport geometry. Unsupported PDFs start in crisp extracted text and v switches page/text. Esc reaches the viewer while Navigator owns focus and preserves library selection. Four model, two app, four UI, six CLI Hardware tests, formatting, strict focused Clippy and roadmap validation pass."
+notes = "DONE. A read-only primary-device-attributes query selects SIXEL on affirmative parameter 4; GNOME Terminal additionally requires an enabled profile value and VTE 0.62+, while explicit none/sixel overrides support controlled terminals. The CLI presenter fits, zooms, crops, fixed-palette quantizes, byte/pixel caps, caches, clears, and emits native pages in UI-exported viewport geometry. Unsupported PDFs start in crisp extracted text and v switches page/text. Esc reaches the viewer while Navigator owns focus and preserves library selection. Four model, two app, four UI, and focused CLI Hardware/capability tests, formatting, strict focused Clippy and roadmap validation pass."
 
 [[task]]
 id = "HARDWARE-NATIVE-GRAPHICS-RELEASE-001"
 milestone = "M91"
 title = "Release native Hardware document presentation"
-status = "NOT_STARTED"
+status = "DONE"
 priority = 3091
 required = true
 depends_on = ["HARDWARE-NATIVE-GRAPHICS-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui-app --all-features -- -D warnings", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
-notes = "Build/install v0.1.244, validate the reported PDF in native and fallback presentations plus viewer exit/library reuse, restart the initialized daemon, commit and push. Full workspace suite remains deferred per user."
+notes = "DONE in v0.1.244. Focused Hardware model/app/UI/CLI and terminal-capability tests, formatting, strict focused Clippy, version policy, roadmap validation and optimized build pass. A normal 120x40 PTY with the enabled GNOME SIXEL profile loaded the reported 71-page PDF, selected Native page and emitted one bounded SIXEL frame; a forced-unsupported run emitted no SIXEL and showed Text plus the exact limitation. Esc/library state is reducer and CLI-route covered from Workspace and Navigator. Release and installed binaries match SHA-256 3385fc7ab0b20ead4f817595b1fdc74c41a3e331231995b75a9302b988d252f7 with embedded source SHA d4af795ea1f4. Initialized Romulus daemon PID 3868935 is running. Full workspace suite remains deferred per user."
