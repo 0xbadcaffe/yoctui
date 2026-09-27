@@ -9943,3 +9943,25 @@ required = true
 depends_on = ["BACKEND-PROBE-RECOVERY-001"]
 verify = ["cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "DONE in v0.1.242. Optimized binary built and installed, strict CLI Clippy and focused checks pass. Live recovery of the actual retained unknown snapshot passed; fresh daemon generation 1 reports getvar, recipe metadata and inventory available, and initial inventory completed. A fresh interactive client loaded the Kernel configuration file and opened its daemon-owned menuconfig launch dialog. Full workspace suite remains deferred per user."
+
+[[task]]
+id = "HARDWARE-PDF-VIEWER-001"
+milestone = "M90"
+title = "Render readable Hardware documents with usable navigation"
+status = "IN_PROGRESS"
+priority = 3080
+required = true
+depends_on = ["BACKEND-PROBE-RECOVERY-RELEASE-001"]
+verify = ["cargo test -p yoctui-model hardware", "cargo test -p yoctui-app hardware", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh"]
+notes = "Files: Hardware model bounds, CLI document conversion, app input routing, UI shell/viewer rendering and focused tests. Done when PDFs retain bounded high-resolution detail, 100% fits the page, zoom resamples the source, and Navigator focus remains usable beside an open viewer. Update UI spec, architecture, status, and registry."
+
+[[task]]
+id = "HARDWARE-PDF-VIEWER-RELEASE-001"
+milestone = "M90"
+title = "Release Hardware viewer corrections"
+status = "NOT_STARTED"
+priority = 3081
+required = true
+depends_on = ["HARDWARE-PDF-VIEWER-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui-app --all-features -- -D warnings", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Build/install v0.1.243, validate the reported 71-page PDF at fit and zoom with Navigator access, restart the initialized daemon, commit/push, and document evidence. Full workspace suite remains deferred per user."

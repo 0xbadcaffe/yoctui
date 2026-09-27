@@ -4287,3 +4287,11 @@ dialog, then quit normally without starting another task. Formatting, strict
 CLI Clippy, version policy and roadmap validation pass. Full workspace tests
 remain deferred. Only the pre-existing U-Boot provider and M67 evidence tasks
 remain externally blocked.
+
+M90 is IN_PROGRESS from the Hardware PDF report on v0.1.242. The current loader
+reduces every graphical page to 320×240 before display and the viewer then
+enlarges those pixels, producing the reported blocky 175% page. The full-body
+projection also removes the Navigator. The focused correction will retain a
+bounded high-resolution source, fit and resample it in the UI, keep Navigator
+focus usable beside the viewer, and publish v0.1.243. Full workspace testing
+remains deferred at the user's request.

@@ -2097,3 +2097,10 @@ provider and M67 evidence blockers remain independent.
 M89 is DONE in v0.1.242. Live recovery from the daemon's retained unknown
 snapshot passed, and a fresh initialized daemon/client loaded the real Kernel
 configuration and menuconfig launch dialog with positive API authority.
+
+## M90 — Readable Hardware document viewer
+
+Correct Hardware PDF and schematic rendering so zoom samples a bounded
+high-resolution page instead of enlarging a 320×240 preview. Keep the Navigator
+usable beside the document, omit the Inspector to preserve viewing space, and
+release v0.1.243 after focused model, app, CLI, and TestBackend checks.

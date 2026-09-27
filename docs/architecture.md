@@ -4624,16 +4624,19 @@ bounded persistent document records, browser/viewer state, search matches,
 viewport and zoom transitions, and typed load/persist effects. Paths are data;
 the model and UI never invoke a shell or parse converter output.
 
-`yoctui-app` maps Hardware list, browser, search, page, pan, and zoom input to
-typed actions. `yoctui-ui` renders only typed library rows, browser entries,
-text/raster cells, activity, failures, and viewer metadata. The open document
-projection may request the full body rectangle from the existing shell layout;
-it does not create a second terminal or external GUI.
+`yoctui-app` maps Hardware list, browser, search, page, pan, zoom, and pane focus
+input to typed actions. `yoctui-ui` renders only typed library rows, browser
+entries, text/raster cells, activity, failures, and viewer metadata. The open
+document projection retains the normal Navigator, omits the Inspector, and uses
+the remaining body rectangle for the viewer; it does not create a second
+terminal or external GUI. Raster projection computes a fit transform from the
+bounded source raster to terminal half-block pixels and samples the source at
+the selected zoom, so layout size is not encoded in backend output.
 
 `yoctui` CLI owns local filesystem access and optional document tools. It
 validates regular non-symlink files, lists bounded browser entries, extracts
 bounded PDF/source search text, and converts one requested page or image into a
-bounded RGB cell grid off the input/render loop. Commands are executed as a
+bounded high-resolution RGB raster off the input/render loop. Commands are executed as a
 program plus argv without a shell. PDF rendering uses Poppler when available;
 KiCad and SVG rendering use a discovered local converter and retain a typed
 source/text fallback when unavailable. The CLI returns typed success/failure

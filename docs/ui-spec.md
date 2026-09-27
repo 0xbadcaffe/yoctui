@@ -111,18 +111,24 @@ reboot. Missing documents remain listed with a visible Missing state so the
 operator may repair the mount/path or remove the entry; Yoctui never copies or
 modifies the source document.
 
-Enter opens the selected document inside Yoctui. While a document is open, its
-viewer uses the full body between Header and Footer, temporarily replacing the
-Navigator, normal Workspace, and Inspector. Esc returns to the same category
-and file selection. PDFs expose page number/count, next/previous page, first
+Enter opens the selected document inside Yoctui. While a document is open, the
+Navigator remains visible beside the largest available document workspace and
+the Inspector is omitted. Tab and Shift+Tab move focus between Navigator and
+viewer, so the operator can open another Yoctui destination without closing the
+document first. Esc in the viewer returns to the same Hardware category and file
+selection. On narrow terminals the existing pane switcher provides the same
+Navigator/viewer access. PDFs expose page number/count, next/previous page, first
 and last page, searchable extracted text, next/previous result, vertical and
 horizontal pan, fit width, and zoom in/out/reset. Raster images expose the same
 pan and zoom controls. KiCad/SVG documents render graphically when the
 corresponding local converter is available and otherwise show a bounded,
 searchable source preview with an exact tool-install hint. PDF text remains a
-searchable embedded fallback if graphical conversion is unavailable. Rendering
-work runs outside the input/render loop and shows Braille activity until the
-typed result arrives. No viewer command launches an external window.
+searchable embedded fallback if graphical conversion is unavailable. PDF and
+schematic pages retain a bounded high-resolution raster; 100% fits the complete
+page to the current viewer and zoom resamples that source instead of enlarging
+a low-resolution terminal preview. Rendering work runs outside the input/render
+loop and shows Braille activity until the typed result arrives. No viewer
+command launches an external window.
 
 Hardware list controls are `↑/↓` files, `←/→` categories, Enter view, `a` add,
 `d` remove with exact confirmation, and `r` reload. Viewer controls are

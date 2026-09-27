@@ -1,36 +1,24 @@
 # Current Task
 
-**ID:** MENUCONFIG-UBOOT-LIVE-001
-**Title:** Validate U-Boot interaction after provider ncurses build repair
-**Status:** BLOCKED
+**ID:** HARDWARE-PDF-VIEWER-001
+**Title:** Render readable Hardware documents with usable navigation
+**Status:** IN_PROGRESS
 
-M89 recovery and v0.1.242 release are complete. Live recovery of the retained
-unknown API snapshot passed. A fresh initialized daemon published recipe
-metadata/inventory/getvar authority and completed initial inventory. A fresh
-client loaded Kernel configuration and opened the menuconfig launch dialog.
-Full workspace tests remain deferred at the user's request.
-
-External dependency: `u-boot-aspeed-sdk` v2019.04+git fails its ncurses compile
-check in `scripts/kconfig/dochecklxdialog`, before an interactive frontend is
-available. Reproduced in daemon session 20 using:
+v0.1.242 reduces PDF pages to a 320×240 raster before display and enlarges
+those discarded pixels when zooming. Its full-body viewer also removes the
+Navigator. Retain a bounded high-resolution page, fit/resample it in the UI,
+keep Navigator focus usable beside the document, and preserve narrow-terminal
+access through the pane switcher.
 
 ```bash
-cd /home/bspguy-dev/src/openbmc
-source oe-init-build-env build/romulus
-bitbake u-boot-aspeed-sdk -c menuconfig
-```
-
-The generated upstream wrapper returns 0 after acknowledging failed make;
-that is not successful ncurses validation. Repair the provider's compiler/sysroot
-check, then verify arrows, Enter, search, Ctrl+G out/back and client restart in
-Content > U-Boot. Shared typed key/resume coverage already passes.
-
-```bash
-cargo test -p yoctui-model platform_menuconfig
-cargo test -p yoctui --bin yoctui menuconfig
-cargo test -p yoctui-ui menuconfig
+cargo test -p yoctui-model hardware
+cargo test -p yoctui-app hardware
+cargo test -p yoctui-ui hardware
+cargo test -p yoctui --bin yoctui hardware
+cargo fmt --all --check
 ./scripts/verify-roadmap.sh
 ```
 
-M67-LIVE-EVIDENCE-001 independently requires a new current-source real-Poky
-performance capture. No unblocked implementation task is eligible.
+Then complete HARDWARE-PDF-VIEWER-RELEASE-001 for v0.1.243. The blocked U-Boot
+provider validation and M67 real-Poky evidence remain independent. Full
+workspace tests remain deferred until the user requests them.
