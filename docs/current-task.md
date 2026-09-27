@@ -1,23 +1,17 @@
 # Current Task
 
-**ID:** MENUCONFIG-UBOOT-LIVE-001
-**Title:** Validate U-Boot interaction after provider ncurses build repair
-**Status:** BLOCKED
+**ID:** PLATFORM-INSPECTION-SNAPSHOT-001
+**Title:** Inspect U-Boot without a daemon capability snapshot
+**Status:** IN_PROGRESS
 
-M91 Hardware native/fallback document presentation, viewer exit, and v0.1.244
-are complete. Full workspace tests remain deferred at the user's request.
-
-External dependency: `u-boot-aspeed-sdk` v2019.04+git fails its ncurses compile
-check in `scripts/kconfig/dochecklxdialog`, before an interactive frontend is
-available. Repair the provider's compiler/sysroot check, then verify arrows,
-Enter, search, Ctrl+G out/back and client restart in Content > U-Boot.
+Route Kernel and Firmware inspection as client-local orchestration because the
+CLI worker initializes and owns its metadata backend. Preserve current
+capability enforcement for menuconfig and builds. Reproduce absent-snapshot
+U-Boot routing, verify the focused fix, update governance, and commit.
 
 ```bash
-cargo test -p yoctui-model platform_menuconfig
-cargo test -p yoctui --bin yoctui menuconfig
-cargo test -p yoctui-ui menuconfig
+cargo test -p yoctui-model workspace_compatibility
+cargo test -p yoctui-app platform_inspection
+cargo test -p yoctui --bin yoctui platform_inspection
 ./scripts/verify-roadmap.sh
 ```
-
-M67-LIVE-EVIDENCE-001 independently requires a new current-source real-Poky
-performance capture. No unblocked implementation task is eligible.

@@ -4345,3 +4345,11 @@ Release and installed binaries match SHA-256
 `3385fc7ab0b20ead4f817595b1fdc74c41a3e331231995b75a9302b988d252f7`
 and embed source `d4af795ea1f4`. The initialized Romulus daemon runs as PID
 3868935. Full workspace tests remain deferred at the user's request.
+
+M92 is IN_PROGRESS from the v0.1.244 U-Boot inspection notice. The platform
+inspection worker already reconstructs the selected build environment and owns
+its bounded metadata backend, but `Effect::InspectFirmware` and
+`Effect::InspectKernel` still inherit the older daemon compatibility-snapshot
+gate. The focused fix classifies these inspection launch effects as client-local
+orchestration while leaving menuconfig/build authority unchanged, covers absent
+snapshot routing, and releases v0.1.245. Full workspace tests remain deferred.

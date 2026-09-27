@@ -156,6 +156,16 @@ next/previous match, `v` page/text presentation, `r` reload, and Esc close. The 
 Guide publish these controls. Narrow terminals preserve the selected file and
 viewer position, use a single-column library layout, and never panic.
 
+### M92 Platform inspection during capability refresh
+
+Opening or refreshing Kernel and U-Boot / BIOS inspection does not require a
+pre-existing daemon compatibility snapshot. Both inspections initialize the
+selected build environment in a bounded background operation and report the
+actual provider/filesystem result. A daemon restart or capability refresh must
+not produce a `No current environment capability snapshot` notice for these
+inspection actions. Menuconfig, builds, and other daemon-owned operations keep
+their existing current-authority requirements.
+
 ---
 
 ## 2. Persistent application shell

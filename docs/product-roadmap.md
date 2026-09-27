@@ -2122,3 +2122,11 @@ M91 is DONE in v0.1.244. Enabled GNOME Terminal profiles and terminals that
 advertise SIXEL receive bounded native document pixels; unsupported terminals
 open PDFs as crisp extracted text. The viewer returns to its retained Hardware
 library from either visible pane.
+
+## M92 — Snapshot-independent platform inspection
+
+Remove the stale daemon-snapshot gate from Kernel and U-Boot / BIOS inspection,
+retain capability enforcement for menuconfig and builds, and release the focused
+fix as v0.1.245. Validate U-Boot inspection during an absent compatibility
+snapshot and against the initialized Romulus environment. Full workspace tests
+remain deferred until requested.

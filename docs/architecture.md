@@ -4654,6 +4654,16 @@ Hardware viewer close routing is handled before ordinary pane-local routing for
 open. The model reducer remains the sole owner of closing the viewer and keeps
 the category and file selection unchanged.
 
+## M92 Platform inspection authority
+
+`Effect::InspectKernel` and `Effect::InspectFirmware` are client-local
+orchestration effects for compatibility routing purposes. The CLI worker
+reconstructs the selected `oe-init-build-env`, creates a bounded Bridge backend,
+queries the provider, shuts the backend down, and returns a typed loaded/failed
+action. It does not consume the daemon compatibility snapshot, so its launch is
+valid while that snapshot is absent or refreshing. Provider menuconfig and
+build effects remain daemon-authority gated.
+
 `yoctui` CLI owns local filesystem access and optional document tools. It
 validates regular non-symlink files, lists bounded browser entries, extracts
 bounded PDF/source search text, and converts one requested page or image into a
