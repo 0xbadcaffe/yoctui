@@ -9871,9 +9871,9 @@ notes = "DONE. Daemon command dispatch now retains the selected build directory,
 id = "DAEMON-BUILD-DIR-COMPAT-RELEASE-001"
 milestone = "M87"
 title = "Release daemon build-directory compatibility correction"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3051
 required = true
 depends_on = ["DAEMON-BUILD-DIR-COMPAT-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
-notes = "Publish v0.1.240, install the optimized binary, and validate current compatibility authority against the real Romulus build."
+notes = "DONE in v0.1.240. Formatting, strict CLI Clippy, version policy, roadmap validation, and the optimized release build pass. The installed and release binaries have SHA-256 58539b3629db54f135cf15f705ea96fcda7a043e70de3bf11b882042e0f50612 and embed source SHA b15a47f16972. The fresh daemon runs as PID 3738308 with BUILDDIR=/home/bspguy-dev/src/openbmc/build/romulus; live generation 1 authority is current with bitbake.getvar, bitbake.recipe_metadata, and bitbake.recipe_inventory available. The full workspace suite remains deferred until requested."

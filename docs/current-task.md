@@ -1,18 +1,21 @@
 # Current Task
 
-**ID:** DAEMON-BUILD-DIR-COMPAT-RELEASE-001
-**Title:** Release daemon build-directory compatibility correction
-**Status:** IN_PROGRESS
+**ID:** M67-LIVE-EVIDENCE-001
+**Title:** Supply current-source real-Poky release performance evidence
+**Status:** BLOCKED
 
-Publish v0.1.240, install its optimized binary, restart the daemon with the
-Romulus build directory, and confirm its live compatibility snapshot authorizes
-BitBake variable and recipe metadata queries.
+DAEMON-BUILD-DIR-COMPAT-RELEASE-001 is complete in v0.1.240. The remaining
+registry task requires a new genuine source/binary-bound Yocto 6.0.2
+`linux-yocto` compile capture. Existing retained evidence is bound to source
+base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
+mismatches, including changes predating M67.
 
-Verify with:
+After new live evidence is supplied, run:
 
 ```bash
-cargo fmt --all --check
-cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
-python3 scripts/check-version-bump.py
-./scripts/verify-roadmap.sh
+./scripts/verify-performance.sh --real-poky-evidence
+./scripts/verify-completion.sh
 ```
+
+Do not rewrite evidence digests or use fake-process startup timings as live
+certification.

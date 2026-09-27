@@ -2072,5 +2072,6 @@ current capability snapshot after restart.
 
 DAEMON-BUILD-DIR-COMPAT-001 carries the selected build environment through
 daemon start/restart and reconstructs persisted workspace authority before
-startup probes. DAEMON-BUILD-DIR-COMPAT-RELEASE-001 publishes the correction
-as v0.1.240 after focused and live Romulus validation.
+startup probes. DAEMON-BUILD-DIR-COMPAT-RELEASE-001 is complete in v0.1.240;
+the installed daemon publishes current Romulus authority for BitBake variable,
+recipe metadata, and recipe inventory operations.

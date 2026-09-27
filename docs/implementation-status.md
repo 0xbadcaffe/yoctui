@@ -4209,3 +4209,11 @@ when its environment lacks `BUILDDIR`. Invalid explicit profiles fail closed.
 Focused startup and compatibility tests, formatting, strict CLI Clippy, and
 roadmap validation pass. The v0.1.240 release and live Romulus authority check
 are in progress.
+DAEMON-BUILD-DIR-COMPAT-RELEASE-001 is DONE in v0.1.240. The installed
+optimized binary has SHA-256
+`58539b3629db54f135cf15f705ea96fcda7a043e70de3bf11b882042e0f50612` and
+embeds source SHA `b15a47f16972`. A fresh daemon runs as PID 3738308 with the
+Romulus `BUILDDIR` and initialized BitBake path. Its live generation 1
+compatibility authority is current; `bitbake.getvar`, recipe metadata, and
+recipe inventory are available, and initial workspace inventory completed.
+The full workspace suite remains deferred until requested.
