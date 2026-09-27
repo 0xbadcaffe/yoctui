@@ -1,16 +1,17 @@
 # Current Task
 
-**ID:** MENUCONFIG-LOADING-001
-**Title:** Keep menuconfig preparation visible and retain startup errors
+**ID:** MENUCONFIG-RESUME-RELEASE-001
+**Title:** Release menuconfig input and recovery fixes
 **Status:** IN_PROGRESS
 
-The keyboard/recovery dependency is complete. Keep loading until ncurses is
-ready and retain bounded BitBake startup diagnostics without competing for the
-interactive PTY. Update spec, status, registry, and commit.
+Dependencies are DONE. Bump to v0.1.241, run focused strict checks, build and
+install the optimized binary, validate live navigation and client reattachment,
+record limitations, commit and push. Full workspace suite remains deferred.
 
 ```bash
-cargo test -p yoctui --bin yoctui menuconfig_relay
-cargo test -p yoctui-model platform_menuconfig
 cargo fmt --all --check
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
 ```

@@ -316,6 +316,10 @@ fn platform_terminal_waiting(terminal: &PlatformTerminalState, daemon: &ClientDa
     let screen_ready = daemon
         .pty_screens
         .iter()
-        .any(|screen| screen.session_id == session_id && !screen.rows.is_empty());
+        .any(|screen| {
+            screen.session_id == session_id
+                && screen.application_cursor
+                && screen.rows.iter().any(|row| !row.trim().is_empty())
+        });
     !running || !screen_ready
 }

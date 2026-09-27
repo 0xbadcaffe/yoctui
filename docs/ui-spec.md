@@ -6240,8 +6240,9 @@ current build directory are discoverable from their Kernel or U-Boot screen,
 without another metadata query. Recovery leaves Yoctui in control until Ctrl+G
 or the menuconfig action resumes the session; exited and lost sessions cannot
 be resumed. A new client acquires an unowned writer lease but does not steal one
-from another attached client. Loading remains visible until terminal output is
-actually present. The relay reports preparation immediately and retains bounded
+from another attached client. Loading remains visible until nonblank terminal output is
+present in ncurses application cursor mode; blank screens and preparation text
+do not clear the activity indicator. The relay reports preparation immediately and retains bounded
 BitBake failure diagnostics, while ncurses owns the terminal after handoff.
 
 The context menu labels an existing platform session `Resume menuconfig` and

@@ -259,6 +259,11 @@ fn platform_menuconfig_stays_in_its_workspace_until_the_pty_screen_is_ready() {
         scrollback_lines: 0,
         dropped_line_feeds_lower_bound: 0,
     });
+    assert!(app.platform_menuconfig_waiting());
+    app.daemon.pty_screens[0].application_cursor = true;
+    app.daemon.pty_screens[0].rows = vec![" ".into()];
+    assert!(app.platform_menuconfig_waiting());
+    app.daemon.pty_screens[0].rows = vec!["Linux Kernel Configuration".into()];
     assert!(!app.platform_menuconfig_waiting());
     assert!(app.platform_menuconfig_visible());
     assert_eq!(

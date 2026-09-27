@@ -4231,3 +4231,10 @@ the session epoch to avoid global-generation races. Focused model, app,
 protocol, CLI and TestBackend tests pass. The real Romulus kernel mconf binary
 passed arrow/Enter, y/n, search and client writer reattach checks using a private
 Kconfig fixture; this does not certify a U-Boot provider build.
+
+MENUCONFIG-LOADING-001 is DONE. Blank screens and preparation text retain the
+activity indicator until ncurses reports application cursor mode and nonblank
+output. The relay immediately reports preparation and drains bounded separate
+stdout/stderr tails without sharing the ncurses terminal. Failures retain their
+diagnostics, and inherited pipes cannot stall reader shutdown. Seven relay
+checks and both platform model checks pass. Release verification is in progress.

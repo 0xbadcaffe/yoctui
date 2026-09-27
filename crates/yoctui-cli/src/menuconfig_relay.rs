@@ -15,6 +15,8 @@ use std::{
     time::Duration,
 };
 
+mod diagnostics;
+
 const MAX_HANDOFF_PATH_BYTES: usize = 16 * 1024;
 
 pub(crate) fn command(
@@ -47,6 +49,8 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
 
     let mut environment = std::env::vars().collect();
     configure_environment(&mut environment, &executable, &socket);
+    println!("Preparing menuconfig with BitBake…");
+    std::io::stdout().flush()?;
     let mut bitbake_child = Command::new(bitbake);
     bitbake_child
         .args(arguments)
@@ -58,11 +62,14 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
         .spawn()
         .with_context(|| format!("cannot start {}", bitbake.display()))?;
 
+    let diagnostics = diagnostics::Diagnostics::start(&mut bitbake_child)?;
+
     let (mut stream, _) = loop {
         match listener.accept() {
             Ok(connection) => break connection,
             Err(error) if error.kind() == ErrorKind::WouldBlock => {
                 if let Some(status) = bitbake_child.try_wait()? {
+                    diagnostics.report();
                     if status.success() {
                         bail!("BitBake finished without opening menuconfig");
                     }
@@ -86,6 +93,9 @@ pub(crate) fn run(bitbake: &Path, arguments: &[String]) -> Result<()> {
     drop(stream);
 
     let bitbake_status = bitbake_child.wait()?;
+    if !wrapper_status.success() || !bitbake_status.success() {
+        diagnostics.report();
+    }
     if !wrapper_status.success() {
         bail!("menuconfig exited with {wrapper_status}");
     }
@@ -102,8 +112,8 @@ fn isolate_outer_bitbake_console(command: &mut Command) {
     // only its transient client console is detached from this PTY.
     command
         .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null());
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
 }
 
 pub(crate) fn handoff(socket: &Path, command: &[PathBuf]) -> Result<()> {
@@ -272,105 +282,5 @@ impl Drop for Cleanup {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn relay_command_preserves_bitbake_arguments_without_a_shell() {
-        let (program, arguments) = command(
-            Path::new("/opt/bitbake/bin/bitbake"),
-            &["virtual/kernel".into(), "-c".into(), "menuconfig".into()],
-        )
-        .unwrap();
-        assert!(program.is_absolute());
-        assert_eq!(
-            arguments,
-            [
-                "__menuconfig-relay",
-                "--bitbake",
-                "/opt/bitbake/bin/bitbake",
-                "--",
-                "virtual/kernel",
-                "-c",
-                "menuconfig",
-            ]
-        );
-    }
-
-    #[test]
-    fn command_validation_rejects_paths_outside_the_build() {
-        let build = std::env::temp_dir().join(format!(
-            "yoctui-menuconfig-validation-{}",
-            std::process::id()
-        ));
-        fs::create_dir_all(&build).unwrap();
-        assert!(
-            validate_command(
-                &build,
-                &[
-                    build.clone(),
-                    PathBuf::from("/bin/true"),
-                    std::env::temp_dir().join("pidfile"),
-                    PathBuf::from("/bin/false"),
-                ],
-            )
-            .is_err()
-        );
-        fs::remove_dir_all(build).unwrap();
-    }
-
-    #[test]
-    fn relay_environment_appends_the_stable_terminal_variables() {
-        let mut environment = std::collections::BTreeMap::from([(
-            "BB_ENV_PASSTHROUGH_ADDITIONS".into(),
-            "MACHINE DISTRO".into(),
-        )]);
-        configure_environment(
-            &mut environment,
-            Path::new("/opt/bin/yoctui"),
-            Path::new("/run/user/1000/yoctui/menuconfig.sock"),
-        );
-        assert_eq!(environment["OE_TERMINAL"], "custom");
-        assert_eq!(
-            environment["BB_ENV_PASSTHROUGH_ADDITIONS"],
-            "MACHINE DISTRO OE_TERMINAL OE_TERMINAL_CUSTOMCMD"
-        );
-        assert!(environment["OE_TERMINAL_CUSTOMCMD"].contains("__menuconfig-handoff"));
-        assert!(environment["OE_TERMINAL_CUSTOMCMD"].contains("-- {command}"));
-    }
-
-    #[test]
-    fn concurrent_relays_use_distinct_private_sockets() {
-        let runtime_directory = Path::new("/run/user/1000/yoctui");
-
-        let first = socket_path_in(runtime_directory, 1201);
-        let second = socket_path_in(runtime_directory, 1202);
-
-        assert_eq!(
-            first,
-            Path::new("/run/user/1000/yoctui/menuconfig-1201.sock")
-        );
-        assert_eq!(
-            second,
-            Path::new("/run/user/1000/yoctui/menuconfig-1202.sock")
-        );
-        assert_ne!(first, second);
-    }
-
-    #[cfg(target_os = "linux")]
-    #[test]
-    fn outer_bitbake_client_cannot_share_the_menuconfig_pty_streams() {
-        let mut command = Command::new("/bin/sh");
-        command.args(["-c", "sleep 30"]);
-        isolate_outer_bitbake_console(&mut command);
-        let mut child = command.spawn().unwrap();
-
-        for descriptor in 0..=2 {
-            let target = fs::read_link(format!("/proc/{}/fd/{descriptor}", child.id())).unwrap();
-            assert_eq!(target, Path::new("/dev/null"));
-        }
-
-        child.kill().unwrap();
-        child.wait().unwrap();
-    }
-}
+#[path = "tests/menuconfig_relay/mod.rs"]
+mod tests;
