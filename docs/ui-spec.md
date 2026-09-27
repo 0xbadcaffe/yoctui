@@ -6225,3 +6225,21 @@ Compatibility authority disables commands whose exact subcommand or exposed
 option surface was not observed. Read-only discovery commands are labeled
 read-only; commands that build, write, deploy, import, export, or alter the
 workspace require confirmation, with reset and undeploy marked destructive.
+
+## M88 menuconfig keyboard, resume, and startup
+
+Kernel and U-Boot menuconfig forward arrow, Enter, Escape, page, character,
+function, and modifier keys to the foreground PTY using the terminal's reported
+application cursor mode. Key release events do not send duplicate input.
+Ctrl+G always leaves or resumes the platform session while no dialog is open.
+Resuming restores Workspace focus and live terminal mode. Opening menuconfig
+again resumes the existing running session instead of launching a duplicate.
+
+After a client restart or reconnect, running platform menuconfig sessions in the
+current build directory are discoverable from their Kernel or U-Boot screen,
+without another metadata query. Recovery leaves Yoctui in control until Ctrl+G
+or the menuconfig action resumes the session; exited and lost sessions cannot
+be resumed. A new client acquires an unowned writer lease but does not steal one
+from another attached client. Loading remains visible until terminal output is
+actually present. The relay reports preparation immediately and retains bounded
+BitBake failure diagnostics, while ncurses owns the terminal after handoff.

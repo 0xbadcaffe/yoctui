@@ -2075,3 +2075,9 @@ daemon start/restart and reconstructs persisted workspace authority before
 startup probes. DAEMON-BUILD-DIR-COMPAT-RELEASE-001 is complete in v0.1.240;
 the installed daemon publishes current Romulus authority for BitBake variable,
 recipe metadata, and recipe inventory operations.
+
+## M88 — Reliable menuconfig interaction
+
+Repair terminal key encoding, foreground toggling and client restart recovery
+for Kernel and U-Boot, improve startup feedback, and publish v0.1.241 after
+focused automated coverage and live menuconfig validation.

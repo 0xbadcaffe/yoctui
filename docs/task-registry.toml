@@ -9877,3 +9877,36 @@ required = true
 depends_on = ["DAEMON-BUILD-DIR-COMPAT-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
 notes = "DONE in v0.1.240. Formatting, strict CLI Clippy, version policy, roadmap validation, and the optimized release build pass. The installed and release binaries have SHA-256 58539b3629db54f135cf15f705ea96fcda7a043e70de3bf11b882042e0f50612 and embed source SHA b15a47f16972. The fresh daemon runs as PID 3738308 with BUILDDIR=/home/bspguy-dev/src/openbmc/build/romulus; live generation 1 authority is current with bitbake.getvar, bitbake.recipe_metadata, and bitbake.recipe_inventory available. The full workspace suite remains deferred until requested."
+
+[[task]]
+id = "MENUCONFIG-RESUME-001"
+milestone = "M88"
+title = "Restore menuconfig keyboard input and running session recovery"
+status = "IN_PROGRESS"
+priority = 3060
+required = true
+depends_on = ["DAEMON-BUILD-DIR-COMPAT-RELEASE-001"]
+verify = ["cargo test -p yoctui-model platform_menuconfig", "cargo test -p yoctui --bin yoctui menuconfig", "cargo test -p yoctui-app pty_screen", "cargo test -p yoctui-protocol pty_screen"]
+notes = "Files: model terminal selection/reducers, protocol snapshots, app projection, CLI input. Done when ncurses keys use reported mode, Ctrl+G resumes, and restart recovers running platform sessions without duplicates. Update UI spec, architecture, status, and registry."
+
+[[task]]
+id = "MENUCONFIG-LOADING-001"
+milestone = "M88"
+title = "Keep menuconfig preparation visible and retain startup errors"
+status = "NOT_STARTED"
+priority = 3061
+required = true
+depends_on = ["MENUCONFIG-RESUME-001"]
+verify = ["cargo test -p yoctui --bin yoctui menuconfig_relay", "cargo test -p yoctui-model platform_menuconfig"]
+notes = "Files: CLI menuconfig relay and model waiting state. Done when preparation is visible, empty screens remain waiting, and failures retain bounded diagnostics. Update spec, status, and registry."
+
+[[task]]
+id = "MENUCONFIG-RESUME-RELEASE-001"
+milestone = "M88"
+title = "Release menuconfig input and recovery fixes"
+status = "NOT_STARTED"
+priority = 3062
+required = true
+depends_on = ["MENUCONFIG-LOADING-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh"]
+notes = "Build/install v0.1.241; validate live navigation, leave/resume and client reattach; commit/push and document limits. Full workspace suite deferred per user."

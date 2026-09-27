@@ -4676,3 +4676,13 @@ path, allowing the wrapper and outer BitBake client to return their real
 failure status. The diagnostic screen remains in terminal history; the daemon
 does not reinterpret the underlying build error. Other PTY kinds and ordinary
 menuconfig output never receive synthetic input.
+
+## M88 menuconfig recovery and input
+
+Typed PTY snapshots carry application cursor mode from the daemon emulator
+through protocol and app projection. CLI input encoding uses that mode and
+preserves Crossterm modifiers before screen shortcuts. Platform session recovery
+is model-owned, matches the current build directory and Menuconfig kind, and
+retains a live session identity across navigation. Recovery and resume never
+spawn a process or require a BitBake metadata refresh. The relay owns bounded
+preparation diagnostics; the renderer consumes terminal cells only.

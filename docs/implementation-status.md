@@ -4217,3 +4217,8 @@ Romulus `BUILDDIR` and initialized BitBake path. Its live generation 1
 compatibility authority is current; `bitbake.getvar`, recipe metadata, and
 recipe inventory are available, and initial workspace inventory completed.
 The full workspace suite remains deferred until requested.
+
+M88 is IN_PROGRESS from the menuconfig keyboard/resume report. Application
+cursor mode is dropped by PTY snapshots, client restart loses platform session
+bindings, and repeated launches can create duplicate sessions. Focused tasks
+cover input and resume, preparation feedback, then the v0.1.241 release.

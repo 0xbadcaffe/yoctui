@@ -1,21 +1,17 @@
 # Current Task
 
-**ID:** M67-LIVE-EVIDENCE-001
-**Title:** Supply current-source real-Poky release performance evidence
-**Status:** BLOCKED
+**ID:** MENUCONFIG-RESUME-001
+**Title:** Restore menuconfig keyboard input and running session recovery
+**Status:** IN_PROGRESS
 
-DAEMON-BUILD-DIR-COMPAT-RELEASE-001 is complete in v0.1.240. The remaining
-registry task requires a new genuine source/binary-bound Yocto 6.0.2
-`linux-yocto` compile capture. Existing retained evidence is bound to source
-base `d2214e82974a5be708a7cc40f1532254d7c7de63` and has 143 source digest
-mismatches, including changes predating M67.
-
-After new live evidence is supplied, run:
+Repair mode-aware PTY input and model-owned platform session resume/recovery.
+Dependencies are complete. See the M88 UI/architecture contracts.
 
 ```bash
-./scripts/verify-performance.sh --real-poky-evidence
-./scripts/verify-completion.sh
+cargo test -p yoctui-model platform_menuconfig
+cargo test -p yoctui --bin yoctui menuconfig
+cargo test -p yoctui-app pty_screen
+cargo test -p yoctui-protocol pty_screen
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
-
-Do not rewrite evidence digests or use fake-process startup timings as live
-certification.
