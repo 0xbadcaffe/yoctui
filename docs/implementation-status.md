@@ -4275,3 +4275,15 @@ Four focused recovery tests, both backend report tests, formatting and strict
 CLI Clippy pass. The explicit live recovery test used the daemon's actual
 unknown snapshot and the Romulus environment; it restored workspace, recipe
 inventory and recipe metadata authority in 1.12 seconds. Release work follows.
+
+BACKEND-PROBE-RECOVERY-RELEASE-001 is DONE in v0.1.242. The installed and
+optimized release binaries match SHA-256
+`ed0d629fa568cec950f75994f30859794f7a6ad89074917d2d21b2456c3b14a9`
+and embed source `f4d2400b`. Initialized daemon PID 3772087 published current
+recipe metadata, recipe inventory and variable lookup authority; the initial
+workspace inventory completed. A new interactive client with a private session
+loaded the real Kernel `.config` and opened the daemon-owned menuconfig launch
+dialog, then quit normally without starting another task. Formatting, strict
+CLI Clippy, version policy and roadmap validation pass. Full workspace tests
+remain deferred. Only the pre-existing U-Boot provider and M67 evidence tasks
+remain externally blocked.

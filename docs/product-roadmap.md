@@ -2093,3 +2093,7 @@ not certify a successful menuconfig build. Full workspace testing stays deferred
 Repair sticky unknown backend capabilities after a temporary startup failure;
 verify live fresh-client Kernel inspection and release v0.1.242. Existing U-Boot
 provider and M67 evidence blockers remain independent.
+
+M89 is DONE in v0.1.242. Live recovery from the daemon's retained unknown
+snapshot passed, and a fresh initialized daemon/client loaded the real Kernel
+configuration and menuconfig launch dialog with positive API authority.
