@@ -4222,3 +4222,12 @@ M88 is IN_PROGRESS from the menuconfig keyboard/resume report. Application
 cursor mode is dropped by PTY snapshots, client restart loses platform session
 bindings, and repeated launches can create duplicate sessions. Focused tasks
 cover input and resume, preparation feedback, then the v0.1.241 release.
+
+MENUCONFIG-RESUME-001 is DONE. PTY snapshots retain application cursor mode,
+foreground key routing preserves modifiers before workspace shortcuts, Ctrl+G
+restores focus/live mode, and matching running sessions recover from daemon
+snapshots without metadata inspection or duplicate launch. Writer commands use
+the session epoch to avoid global-generation races. Focused model, app,
+protocol, CLI and TestBackend tests pass. The real Romulus kernel mconf binary
+passed arrow/Enter, y/n, search and client writer reattach checks using a private
+Kconfig fixture; this does not certify a U-Boot provider build.

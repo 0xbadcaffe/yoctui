@@ -98,6 +98,7 @@ pub struct ClientDaemonPtyScreen {
     pub cursor_column: u16,
     pub cursor_row: u16,
     pub cursor_hidden: bool,
+    pub application_cursor: bool,
     pub scrollback_offset: u32,
     pub rows: Vec<String>,
     pub cells: Vec<ClientDaemonTerminalCell>,

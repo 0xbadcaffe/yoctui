@@ -110,7 +110,9 @@ impl InteractiveDaemonRuntime {
                     })?;
                 self.transport.command(CommandRequest {
                     request_id,
-                    expected_generation: Some(app.daemon.generation),
+                    // The session epoch protects this lease. Output and the preceding
+                    // attach may advance the unrelated global generation.
+                    expected_generation: None,
                     command: DaemonCommand::TakePtyControl {
                         session_id: PtySessionId(*session_id),
                         expected_epoch: *expected_epoch,
@@ -122,7 +124,7 @@ impl InteractiveDaemonRuntime {
                 writer_epoch,
             } => self.transport.command(CommandRequest {
                 request_id,
-                expected_generation: Some(app.daemon.generation),
+                expected_generation: None,
                 command: DaemonCommand::ReleasePtyControl {
                     session_id: PtySessionId(*session_id),
                     expected_epoch: *writer_epoch,
@@ -264,9 +266,7 @@ pub(super) fn prefix_daemon_command(
         }
         PrefixCommand::TakeControl => {
             let session = app
-                .daemon
-                .pty_sessions
-                .get(app.pty_selection)
+                .selected_terminal_session()
                 .filter(|session| matches!(session.lifecycle, ClientDaemonLifecycle::Running))
                 .ok_or(ClientRuntimeError::MissingPtySession)?;
             let details = app

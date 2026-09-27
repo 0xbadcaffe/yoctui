@@ -82,6 +82,7 @@ pub(super) fn terminal_to_wire(
         cursor_column: terminal.cursor.1,
         cursor_row: terminal.cursor.0,
         cursor_hidden: terminal.modes.cursor_hidden,
+        application_cursor: terminal.modes.application_cursor,
         scrollback_offset: terminal.scrollback_offset.min(u32::MAX as usize) as u32,
         cells,
         scrollback_lines: terminal.max_scrollback_offset.min(u32::MAX as usize) as u32,

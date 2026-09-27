@@ -252,6 +252,7 @@ fn platform_menuconfig_stays_in_its_workspace_until_the_pty_screen_is_ready() {
         cursor_column: 0,
         cursor_row: 0,
         cursor_hidden: false,
+        application_cursor: false,
         scrollback_offset: 0,
         rows: vec!["Linux Kernel Configuration".into()],
         cells: Vec::new(),
@@ -430,4 +431,57 @@ fn build_authority_loss_retires_every_nonterminal_task_without_faking_failure() 
             .as_deref()
             .is_some_and(|message| message.contains("Reconnecting to the daemon"))
     );
+}
+
+#[test]
+fn platform_menuconfig_recovers_current_build_and_resumes_without_metadata_or_spawn() {
+    for (screen, name, launch) in [
+        (
+            Screen::Kernel,
+            "kernel menuconfig",
+            Action::LaunchKernelMenuconfig,
+        ),
+        (
+            Screen::Firmware,
+            "u-boot menuconfig",
+            Action::LaunchFirmwareMenuconfig,
+        ),
+    ] {
+        let mut app = ux_terminal_fixture(ClientDaemonLifecycle::Running, None);
+        app.workspace.build_dir = Some("/work/build".into());
+        app.daemon.pty_sessions[0].name = name.into();
+        app.daemon.pty_details[0].kind = ClientDaemonPtyKind::Menuconfig;
+        app.daemon.pty_details[0].cwd = "/other/build".into();
+        app.reconcile_platform_menuconfigs();
+        app.screen = screen;
+        assert!(!app.platform_menuconfig_running());
+        app.daemon.pty_details[0].cwd = "/work/build".into();
+        app.reconcile_platform_menuconfigs();
+        assert!(app.platform_menuconfig_hidden());
+        let destination = if screen == Screen::Kernel {
+            WorkspaceDestination::Kernel
+        } else {
+            WorkspaceDestination::Firmware
+        };
+        let items = app.context_menu_items(destination);
+        let resume = items
+            .iter()
+            .find(|item| item.label == "Resume menuconfig")
+            .unwrap();
+        assert!(resume.disabled_reason.is_none());
+        assert_eq!(update(&mut app, Action::Open(screen)), None);
+        assert_eq!(update(&mut app, launch), None);
+        assert!(app.active_dialog().is_none());
+        assert!(app.platform_menuconfig_visible());
+        assert!(matches!(
+            app.pending_platform_writer_effect(),
+            Some(TerminalEffect::TakeControl { session_id: 41, .. })
+        ));
+        let _ = update(&mut app, Action::TogglePlatformMenuconfigForeground);
+        assert!(app.platform_menuconfig_hidden());
+        assert_eq!(app.pending_platform_writer_effect(), None);
+        app.daemon.pty_sessions[0].lifecycle = ClientDaemonLifecycle::Exited;
+        app.reconcile_platform_menuconfigs();
+        assert!(!app.platform_menuconfig_running());
+    }
 }

@@ -272,6 +272,7 @@ fn ux_terminal_adapter_renders_typed_cells_cursor_styles_and_accessible_color() 
         cursor_column: 3,
         cursor_row: 0,
         cursor_hidden: false,
+        application_cursor: false,
         scrollback_offset: 1,
         rows: vec!["A界".into(), String::new()],
         cells,

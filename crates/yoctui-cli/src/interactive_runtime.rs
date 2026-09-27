@@ -15,6 +15,10 @@ mod metadata_backend;
 pub(crate) use metadata_backend::metadata_backend_start_required;
 
 pub(crate) fn begin_startup_platform_inspection(app: &mut App) -> Option<Screen> {
+    app.reconcile_platform_menuconfigs();
+    if app.platform_menuconfig_running() {
+        return None;
+    }
     match app.screen {
         Screen::Kernel => matches!(
             compatibility_workspace_action(app, Action::InspectKernel),

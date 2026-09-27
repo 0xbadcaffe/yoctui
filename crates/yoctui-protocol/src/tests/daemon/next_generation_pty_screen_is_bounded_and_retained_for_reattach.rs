@@ -14,11 +14,16 @@ fn next_generation_pty_screen_is_bounded_and_retained_for_reattach() {
         cursor_column: 3,
         cursor_row: 1,
         cursor_hidden: false,
+        application_cursor: true,
         scrollback_offset: 0,
         cells: Vec::new(),
         scrollback_lines: 7,
         dropped_line_feeds_lower_bound: 0,
     };
+    let mut legacy = serde_json::to_value(&screen).unwrap();
+    legacy.as_object_mut().unwrap().remove("application_cursor");
+    let legacy: PtyScreenSnapshot = serde_json::from_value(legacy).unwrap();
+    assert!(!legacy.application_cursor);
     journal
         .publish(DaemonEvent::PtyScreen(screen.clone()))
         .unwrap();
@@ -51,6 +56,7 @@ fn next_generation_pty_screen_is_bounded_and_retained_for_reattach() {
         cursor_column: 0,
         cursor_row: 0,
         cursor_hidden: false,
+        application_cursor: false,
         scrollback_offset: 0,
         cells: vec![PtyScreenCell {
             index: 2,

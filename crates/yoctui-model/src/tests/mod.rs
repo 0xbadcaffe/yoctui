@@ -343,6 +343,7 @@ pub(crate) fn ux_terminal_fixture(
         cursor_column: 0,
         cursor_row: 1,
         cursor_hidden: false,
+        application_cursor: false,
         scrollback_offset: 0,
         rows: vec!["$ bitbake busybox -c devshell".into(), "ready".into()],
         cells: Vec::new(),

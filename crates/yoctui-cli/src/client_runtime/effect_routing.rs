@@ -70,7 +70,8 @@ impl InteractiveDaemonRuntime {
             .ok_or(ClientRuntimeError::RequestSpaceExhausted)?;
         self.transport.command(CommandRequest {
             request_id,
-            expected_generation: Some(app.daemon.generation),
+            expected_generation: (command != PrefixCommand::TakeControl)
+                .then_some(app.daemon.generation),
             command: daemon_command,
         })?;
         Ok(RuntimeEffectRoute::Daemon(request_id))

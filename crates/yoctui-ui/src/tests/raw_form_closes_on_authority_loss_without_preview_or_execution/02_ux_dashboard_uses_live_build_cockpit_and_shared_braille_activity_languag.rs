@@ -158,6 +158,13 @@ fn platform_menuconfig_terminal_renders_in_place_and_keeps_waiting_activity_visi
     assert!(output.contains("shell: bounded output"), "{output}");
     assert!(output.contains("Ctrl+G Yoctui"), "{output}");
     assert!(!output.contains("Inspector:"), "{output}");
+    let _ = yoctui_model::update(&mut app, Action::TogglePlatformMenuconfigForeground);
+    let hidden = rendered_text(&app, 160, 50);
+    assert!(hidden.contains("Resume menuconfig"), "{hidden}");
+    let _ = yoctui_model::update(&mut app, Action::TogglePlatformMenuconfigForeground);
+    let resumed = rendered_text(&app, 160, 50);
+    assert!(resumed.contains("shell: bounded output"), "{resumed}");
+    assert!(resumed.contains("Ctrl+G Yoctui"), "{resumed}");
 }
 
 #[test]

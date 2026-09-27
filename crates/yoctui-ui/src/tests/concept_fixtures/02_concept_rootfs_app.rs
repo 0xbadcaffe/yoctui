@@ -268,6 +268,7 @@ pub(crate) fn concept_terminal_sessions_app() -> App {
             cursor_column: 35,
             cursor_row: 6,
             cursor_hidden: false,
+            application_cursor: false,
             scrollback_offset: 0,
             rows: vec![
                 "build-shell$ bitbake-layers show-layers".into(),
@@ -288,6 +289,7 @@ pub(crate) fn concept_terminal_sessions_app() -> App {
             cursor_column: 18,
             cursor_row: 5,
             cursor_hidden: false,
+            application_cursor: false,
             scrollback_offset: 0,
             rows: vec![
                 "busybox-devshell$ make CONFIG_PREFIX=/tmp/rootfs".into(),

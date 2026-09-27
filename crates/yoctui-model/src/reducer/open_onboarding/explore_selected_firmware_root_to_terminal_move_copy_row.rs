@@ -95,6 +95,10 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
             {
                 return Some(begin_package_inventory(app));
             }
+            app.reconcile_platform_menuconfigs();
+            if app.platform_menuconfig_running() {
+                return None;
+            }
             if s == Screen::Kernel
                 && matches!(app.kernel.inventory, PlatformInventoryState::NotLoaded)
             {

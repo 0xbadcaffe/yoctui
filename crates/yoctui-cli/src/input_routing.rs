@@ -1,5 +1,9 @@
 //! Input routing.
 use super::*;
+mod menuconfig;
+pub(crate) use menuconfig::platform_menuconfig_key;
+#[cfg(test)]
+pub(crate) use menuconfig::terminal_key_bytes;
 
 pub(crate) fn direct_menu_shortcut_action(
     app: &App,
@@ -231,4 +235,20 @@ pub(crate) const MAX_NORMAL_RENDER_RATE: Duration = Duration::from_millis(100);
 
 pub(crate) fn interactive_frame_interval(configured_refresh: Duration) -> Duration {
     configured_refresh.max(MAX_NORMAL_RENDER_RATE)
+}
+
+/// Use the selected terminal's mode in the general Sessions workspace too.
+pub(crate) fn terminal_input_bytes_for_app(app: &App, input: Input) -> Option<Vec<u8>> {
+    let mut bytes = terminal_input_bytes(input)?;
+    if app
+        .selected_terminal_screen()
+        .is_some_and(|screen| screen.application_cursor)
+        && matches!(
+            input,
+            Input::Up | Input::Down | Input::Left | Input::Right | Input::Home | Input::End
+        )
+    {
+        bytes[1] = b'O';
+    }
+    Some(bytes)
 }

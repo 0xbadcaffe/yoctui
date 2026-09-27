@@ -32,6 +32,16 @@ impl InteractiveDaemonRuntime {
         }
         restore_local_build_dir(app, local_build_dir.as_ref());
         app.terminal.client_id = Some(client_id.0);
+        app.reconcile_platform_menuconfigs();
+        for session_id in [
+            app.kernel.menuconfig_terminal.session_id,
+            app.firmware.menuconfig_terminal.session_id,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            app.retry_platform_writer_control(session_id);
+        }
         Ok(Self {
             transport,
             replica,

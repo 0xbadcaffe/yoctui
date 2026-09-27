@@ -14,22 +14,17 @@ impl KeyRouteOutcome {
 impl InteractiveRuntime {
     pub(super) async fn handle_key(&mut self, k: crossterm::event::KeyEvent) -> Result<bool> {
         let runtime = self;
-        let Some(mut input) = input_from_key(k) else {
-            return Ok(true);
-        };
-        if input == Input::CtrlG
-            && runtime.app.active_dialog().is_none()
-            && !runtime.app.menu.is_open()
-            && !runtime.app.onboarding.open
-            && runtime.app.platform_menuconfig_running()
-        {
-            let _ = compatibility_workspace_action(
-                &mut runtime.app,
-                Action::TogglePlatformMenuconfigForeground,
-            );
+        if let Some(effect) = platform_menuconfig_key(&mut runtime.app, k) {
+            if let Some(effect) = effect {
+                let _ =
+                    submit_daemon_effect(&mut runtime.daemon_runtime, &mut runtime.app, &effect);
+            }
             runtime.render_scheduler.invalidate(RenderCause::State);
             return Ok(true);
         }
+        let Some(mut input) = input_from_key(k) else {
+            return Ok(true);
+        };
         if input == Input::Esc
             && runtime.app.screen == Screen::BuildEnvironment
             && runtime.app.active_dialog().is_none()

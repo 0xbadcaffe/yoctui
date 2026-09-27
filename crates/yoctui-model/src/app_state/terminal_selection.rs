@@ -64,11 +64,23 @@ impl App {
             writer_control_requested: false,
             foreground: true,
         };
+        self.focus = FocusTarget::Workspace;
+        self.terminal.mode = TerminalWorkbenchMode::Live;
     }
 
     pub fn reconcile_platform_menuconfigs(&mut self) {
-        reconcile_platform_terminal(&mut self.kernel.menuconfig_terminal, &self.daemon);
-        reconcile_platform_terminal(&mut self.firmware.menuconfig_terminal, &self.daemon);
+        reconcile_platform_terminal(
+            &mut self.kernel.menuconfig_terminal,
+            &self.daemon,
+            self.workspace.build_dir.as_deref(),
+            "kernel menuconfig",
+        );
+        reconcile_platform_terminal(
+            &mut self.firmware.menuconfig_terminal,
+            &self.daemon,
+            self.workspace.build_dir.as_deref(),
+            "u-boot menuconfig",
+        );
     }
 
     pub fn cancel_pending_platform_menuconfig(&mut self) {
@@ -82,14 +94,20 @@ impl App {
         }
     }
 
+    pub fn platform_menuconfig_pending(&self) -> bool {
+        self.embedded_platform_terminal()
+            .is_some_and(|terminal| terminal.name.is_some() && terminal.session_id.is_none())
+    }
+
     pub fn platform_menuconfig_visible(&self) -> bool {
         self.embedded_platform_terminal()
             .filter(|terminal| terminal.foreground)
             .and_then(|terminal| terminal.session_id)
             .is_some_and(|id| {
-                self.daemon.pty_sessions.iter().any(|session| {
-                    session.id == id && !session.lifecycle.is_terminal()
-                })
+                self.daemon
+                    .pty_sessions
+                    .iter()
+                    .any(|session| session.id == id && !session.lifecycle.is_terminal())
             })
     }
 
@@ -97,9 +115,10 @@ impl App {
         self.embedded_platform_terminal()
             .and_then(|terminal| terminal.session_id)
             .is_some_and(|id| {
-                self.daemon.pty_sessions.iter().any(|session| {
-                    session.id == id && !session.lifecycle.is_terminal()
-                })
+                self.daemon
+                    .pty_sessions
+                    .iter()
+                    .any(|session| session.id == id && !session.lifecycle.is_terminal())
             })
     }
 
@@ -116,6 +135,11 @@ impl App {
         };
         if running {
             terminal.foreground = !terminal.foreground;
+            if terminal.foreground {
+                terminal.writer_control_requested = false;
+                self.focus = FocusTarget::Workspace;
+                self.terminal.mode = TerminalWorkbenchMode::Live;
+            }
         }
     }
 
@@ -152,6 +176,9 @@ impl App {
             &mut self.kernel.menuconfig_terminal,
             &mut self.firmware.menuconfig_terminal,
         ] {
+            if !terminal.foreground {
+                continue;
+            }
             let Some(session_id) = terminal.session_id else {
                 continue;
             };
@@ -209,8 +236,41 @@ impl App {
     }
 }
 
-fn reconcile_platform_terminal(terminal: &mut PlatformTerminalState, daemon: &ClientDaemonView) {
+fn reconcile_platform_terminal(
+    terminal: &mut PlatformTerminalState,
+    daemon: &ClientDaemonView,
+    build_dir: Option<&Path>,
+    platform_name: &str,
+) {
+    if daemon.status != ClientReplicaStatus::Current {
+        return;
+    }
     if terminal.name.is_none() {
+        let recovered = daemon
+            .pty_sessions
+            .iter()
+            .filter(|session| {
+                session.name == platform_name
+                    && !session.lifecycle.is_terminal()
+                    && daemon.pty_details.iter().any(|details| {
+                        details.id == session.id
+                            && details.kind == ClientDaemonPtyKind::Menuconfig
+                            && build_dir == Some(Path::new(&details.cwd))
+                    })
+            })
+            .max_by_key(|session| {
+                (
+                    daemon
+                        .pty_screens
+                        .iter()
+                        .any(|screen| screen.session_id == session.id && screen.application_cursor),
+                    session.id,
+                )
+            });
+        if let Some(session) = recovered {
+            terminal.name = Some(session.name.clone());
+            terminal.session_id = Some(session.id);
+        }
         return;
     }
     if let Some(session_id) = terminal.session_id {
@@ -243,10 +303,7 @@ fn reconcile_platform_terminal(terminal: &mut PlatformTerminalState, daemon: &Cl
         .map(|session| session.id);
 }
 
-fn platform_terminal_waiting(
-    terminal: &PlatformTerminalState,
-    daemon: &ClientDaemonView,
-) -> bool {
+fn platform_terminal_waiting(terminal: &PlatformTerminalState, daemon: &ClientDaemonView) -> bool {
     let Some(_) = terminal.name.as_ref() else {
         return false;
     };

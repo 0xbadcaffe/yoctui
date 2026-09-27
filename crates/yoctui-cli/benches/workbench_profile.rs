@@ -362,6 +362,7 @@ fn scenario_workload(scenario: &str) -> App {
                 cursor_column: 2,
                 cursor_row: 79,
                 cursor_hidden: false,
+                application_cursor: false,
                 scrollback_offset: 0,
                 rows: (0..4_096)
                     .map(|index| {

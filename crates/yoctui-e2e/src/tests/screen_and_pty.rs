@@ -131,6 +131,7 @@
                 cursor_column: 0,
                 cursor_row: 0,
                 cursor_hidden: false,
+                application_cursor: false,
                 scrollback_offset: 0,
                 rows: vec!["left-session-only".into()],
                 cells: Vec::new(),
@@ -144,6 +145,7 @@
                 cursor_column: resized.cursor.1,
                 cursor_row: resized.cursor.0,
                 cursor_hidden: resized.modes.cursor_hidden,
+                application_cursor: false,
                 scrollback_offset: resized.scrollback_offset as u32,
                 rows: resized.plain_text.lines().map(str::to_owned).collect(),
                 cells: resized

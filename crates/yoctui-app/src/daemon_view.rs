@@ -164,6 +164,7 @@ pub(crate) fn daemon_client_view(
                     cursor_column: screen.cursor_column,
                     cursor_row: screen.cursor_row,
                     cursor_hidden: screen.cursor_hidden,
+                    application_cursor: screen.application_cursor,
                     scrollback_offset: screen.scrollback_offset,
                     rows,
                     cells,

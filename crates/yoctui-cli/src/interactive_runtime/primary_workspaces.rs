@@ -32,7 +32,7 @@ impl InteractiveRuntime {
                 }
             } else if runtime.app.selected_terminal_is_writer() {
                 if let (Some(bytes), Some(session), Some(details)) = (
-                    terminal_input_bytes(input),
+                    terminal_input_bytes_for_app(&runtime.app, input),
                     runtime.app.selected_terminal_session(),
                     runtime.app.selected_terminal_details(),
                 ) {

@@ -298,6 +298,8 @@ pub struct PtyScreenSnapshot {
     pub cursor_column: u16,
     pub cursor_row: u16,
     pub cursor_hidden: bool,
+    #[serde(default)]
+    pub application_cursor: bool,
     pub scrollback_offset: u32,
     pub cells: Vec<PtyScreenCell>,
     pub scrollback_lines: u32,

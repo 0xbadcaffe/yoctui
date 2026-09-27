@@ -6243,3 +6243,7 @@ be resumed. A new client acquires an unowned writer lease but does not steal one
 from another attached client. Loading remains visible until terminal output is
 actually present. The relay reports preparation immediately and retains bounded
 BitBake failure diagnostics, while ncurses owns the terminal after handoff.
+
+The context menu labels an existing platform session `Resume menuconfig` and
+enables it even when fresh recipe metadata is unavailable. Pending launches
+are not duplicated, and reconnect resets the new client's writer request.

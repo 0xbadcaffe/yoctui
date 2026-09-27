@@ -4686,3 +4686,8 @@ is model-owned, matches the current build directory and Menuconfig kind, and
 retains a live session identity across navigation. Recovery and resume never
 spawn a process or require a BitBake metadata refresh. The relay owns bounded
 preparation diagnostics; the renderer consumes terminal cells only.
+
+Menuconfig writer acquisition and release are guarded by the session writer
+epoch, without a global generation precondition that races ongoing PTY output
+or the immediately preceding pane attach. Other command preconditions remain
+unchanged.

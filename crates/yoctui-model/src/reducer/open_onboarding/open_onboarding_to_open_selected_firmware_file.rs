@@ -191,6 +191,16 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::SetKernelView(view) => app.kernel.view = view,
         Action::SelectKernelFile { delta } => app.kernel.select(delta),
         Action::LaunchKernelMenuconfig => {
+            app.reconcile_platform_menuconfigs();
+            if app.platform_menuconfig_pending() {
+                return None;
+            }
+            if app.platform_menuconfig_running() {
+                if !app.platform_menuconfig_visible() {
+                    app.toggle_platform_menuconfig_foreground();
+                }
+                return None;
+            }
             if app.daemon.status != ClientReplicaStatus::Current {
                 app.notification =
                     Some("Reconnect to a current daemon before opening kernel menuconfig.".into());
@@ -289,6 +299,16 @@ pub(super) fn reduce_actions(app: &mut App, action: Action) -> Option<Effect> {
         Action::SetFirmwareView(view) => app.firmware.view = view,
         Action::SelectFirmwareFile { delta } => app.firmware.select(delta),
         Action::LaunchFirmwareMenuconfig => {
+            app.reconcile_platform_menuconfigs();
+            if app.platform_menuconfig_pending() {
+                return None;
+            }
+            if app.platform_menuconfig_running() {
+                if !app.platform_menuconfig_visible() {
+                    app.toggle_platform_menuconfig_foreground();
+                }
+                return None;
+            }
             if app.daemon.status != ClientReplicaStatus::Current {
                 app.notification = Some(
                     "Reconnect to a current daemon before opening firmware menuconfig.".into(),

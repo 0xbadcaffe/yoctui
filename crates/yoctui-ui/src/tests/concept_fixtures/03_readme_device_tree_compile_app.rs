@@ -191,6 +191,7 @@ fn captured_terminal_screen(
         cursor_column: snapshot.cursor.1,
         cursor_row: snapshot.cursor.0,
         cursor_hidden: snapshot.modes.cursor_hidden,
+        application_cursor: false,
         scrollback_offset: 0,
         rows: snapshot.plain_text.lines().map(str::to_owned).collect(),
         cells,

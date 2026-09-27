@@ -172,7 +172,17 @@ impl App {
     pub fn context_menu_items(&self, destination: WorkspaceDestination) -> Vec<MenuItem> {
         workspace_operator_action_definitions(destination)
             .into_iter()
-            .map(|definition| {
+            .map(|mut definition| {
+                let resume = self.platform_menuconfig_running()
+                    && matches!(
+                        (self.screen, definition.id.as_str()),
+                        (Screen::Kernel, "kernel.menuconfig")
+                            | (Screen::Firmware, "firmware.menuconfig")
+                    );
+                if resume {
+                    definition.label = "Resume menuconfig";
+                    definition.requirement = WorkspaceEffectRequirement::ClientLocal;
+                }
                 let availability = compatibility_ui_action_availability(
                     &self.workspace_compatibility,
                     &definition.requirement,
@@ -187,6 +197,7 @@ impl App {
                                 })
                             })
                         });
+                let disabled_reason = if resume { None } else { disabled_reason };
                 MenuItem {
                     action_id: definition.id,
                     target: definition.target,
@@ -218,5 +229,4 @@ impl App {
         self.zoomed_pane
             .map(|focus| pane_focus_label(focus, self.workspace_subfocus, self.inspector_subfocus))
     }
-
 }

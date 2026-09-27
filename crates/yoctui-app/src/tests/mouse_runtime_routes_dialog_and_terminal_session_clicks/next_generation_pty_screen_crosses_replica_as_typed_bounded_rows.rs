@@ -28,6 +28,7 @@ fn next_generation_pty_screen_crosses_replica_as_typed_bounded_rows() {
                         cursor_column: 2,
                         cursor_row: 1,
                         cursor_hidden: false,
+                        application_cursor: true,
                         scrollback_offset: 0,
                         cells: vec![yoctui_protocol::daemon::PtyScreenCell {
                             index: 0,
@@ -51,6 +52,7 @@ fn next_generation_pty_screen_crosses_replica_as_typed_bounded_rows() {
         .unwrap();
     let screen = &app.daemon.pty_screens[0];
     assert_eq!(screen.session_id, 4);
+    assert!(screen.application_cursor);
     assert_eq!(screen.rows[0], "r");
     assert_eq!(screen.scrollback_lines, 8);
     assert_eq!(screen.cells.len(), 60);
