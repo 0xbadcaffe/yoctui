@@ -3,6 +3,7 @@ use maintenance_cli::MaintenanceCliCoordinator;
 use yoctui_utils::unix_ms;
 mod build_archive;
 mod error_log;
+mod graphics_terminal_handoff;
 mod hardware_native_graphics;
 mod terminal_graphics;
 use error_log::*;
@@ -251,6 +252,10 @@ fn uses_interactive_terminal(cli: &Cli) -> bool {
 async fn main() -> Result<()> {
     install_panic_hook();
     let cli = Cli::parse();
+    if uses_interactive_terminal(&cli) && graphics_terminal_handoff::handoff_if_needed()?.is_some()
+    {
+        return Ok(());
+    }
     if let Some(Command::MenuconfigRelay { bitbake, arguments }) = &cli.command {
         return menuconfig_relay::run(bitbake, arguments);
     }

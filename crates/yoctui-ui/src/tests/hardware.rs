@@ -160,9 +160,10 @@ fn hardware_pdf_uses_crisp_text_without_native_graphics_and_projects_sixel_area(
     for size in [(160, 45), (100, 30), (80, 24)] {
         let unavailable = rendered_text(&app, size.0, size.1);
         assert!(
-            unavailable.contains("xterm -ti vt340 -e yoctui attach"),
+            unavailable.contains("run yoctui attach again"),
             "{unavailable}"
         );
+        assert!(unavailable.contains("opens its graphics terminal automatically"));
         assert!(
             unavailable.contains("cannot display PDF page graphics"),
             "{unavailable}"

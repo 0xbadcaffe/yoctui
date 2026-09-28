@@ -4385,6 +4385,14 @@ makes the interactive CLI hand itself to XTerm when graphics are unavailable,
 using VT340, a 14-point scalable Monospace font, and 140x40 cells. The public
 invocation remains `yoctui attach`; release v0.1.249 follows focused checks.
 
+HARDWARE-PDF-AUTO-XTERM-001 is DONE. Interactive startup preserves the current
+executable, exact argv, initialized environment, and working directory while
+directly invoking XTerm without a shell. A private child marker prevents loops;
+explicit test overrides and sessions without an X display stay in place. The
+focused CLI command test, Hardware UI test, formatting, and roadmap gate pass.
+A live handoff opened the attached Hardware library at a readable 140x40 grid.
+Release v0.1.249 is in progress.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell

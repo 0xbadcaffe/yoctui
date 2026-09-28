@@ -337,9 +337,9 @@ fn render_pdf_graphics_help(
                 palette.role(palette.warning, Modifier::BOLD),
             ),
             Line::from(""),
-            Line::from("To view pages inside Yoctui, start it in XTerm with graphics enabled:"),
+            Line::from("Yoctui normally opens its graphics terminal automatically."),
             Line::styled(
-                "xterm -ti vt340 -e yoctui attach",
+                "Install XTerm or use a graphical session, then run yoctui attach again.",
                 Style::default().fg(palette.informational),
             ),
             Line::from(""),

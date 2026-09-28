@@ -10080,18 +10080,18 @@ notes = "DONE in v0.1.248. Focused tests, formatting, strict CLI Clippy, version
 id = "HARDWARE-PDF-AUTO-XTERM-001"
 milestone = "M96"
 title = "Open an automatic readable graphics terminal"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3140
 required = true
 depends_on = ["HARDWARE-PDF-NATIVE-ONLY-RELEASE-001"]
 verify = ["cargo test -p yoctui --bin yoctui terminal_graphics", "cargo test -p yoctui-ui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "Manual: invoke yoctui attach in Terminator and inspect the automatically opened XTerm Hardware library and PDF"]
-notes = "Interactive startup must directly launch XTerm with VT340, Monospace 14, and 140x40 geometry when the invoking terminal lacks native graphics; preserve argv/environment and prevent recursive launch."
+notes = "DONE. Interactive startup directly launches XTerm with VT340, Monospace 14, and 140x40 geometry when the invoking terminal lacks native graphics. It preserves the current executable, original argv, inherited initialized environment and working directory, invokes no shell, and uses a one-generation guard against recursion. Explicit capability overrides and sessions without an X display retain the original terminal. Focused CLI/UI tests, formatting and roadmap validation pass. A live unsupported-terminal invocation opened /usr/bin/xterm with the exact argv and displayed a readable 140x40 attached Hardware library."
 
 [[task]]
 id = "HARDWARE-PDF-AUTO-XTERM-RELEASE-001"
 milestone = "M96"
 title = "Release automatic readable graphics-terminal handoff"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3141
 required = true
 depends_on = ["HARDWARE-PDF-AUTO-XTERM-001"]

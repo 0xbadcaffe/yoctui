@@ -1,21 +1,18 @@
 # Current Task
 
-**ID:** HARDWARE-PDF-AUTO-XTERM-001
-**Title:** Open an automatic readable graphics terminal
+**ID:** HARDWARE-PDF-AUTO-XTERM-RELEASE-001
+**Title:** Release automatic readable graphics-terminal handoff
 **Status:** IN_PROGRESS
 
-When an interactive invocation lacks native graphics, launch the current
-executable and original arguments directly through XTerm with VT340, a
-14-point scalable Monospace font, and 140x40 cells. Preserve the initialized
-environment and prevent recursive relaunch. Continue in the original terminal
-when no graphical display or XTerm exists.
+Bump the workspace to v0.1.249, run the focused release checks, build and install
+the optimized binary, and restart the initialized Romulus daemon. Confirm that
+ordinary `yoctui attach` hands itself to the readable graphics terminal.
 
 ```bash
-cargo test -p yoctui --bin yoctui terminal_graphics
-cargo test -p yoctui-ui hardware
 cargo fmt --all --check
+cargo clippy -p yoctui-ui --all-features -- -D warnings
+cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings
+python3 scripts/check-version-bump.py
 ./scripts/verify-roadmap.sh
+cargo build --release -p yoctui --bin yoctui
 ```
-
-Invoke `yoctui attach` from Terminator and inspect the automatically opened
-XTerm Hardware library and native PDF before completing the task.
