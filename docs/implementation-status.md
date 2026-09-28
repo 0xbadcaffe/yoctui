@@ -4337,6 +4337,15 @@ with embedded source `449490926585`. The initialized Romulus daemon runs as PID
 3953640 with its build directory restored. Full workspace tests remain deferred
 at the user's request.
 
+M94 is IN_PROGRESS from the follow-up PDF report. All five PDFs under
+`~/projects/smarc` are valid, and Poppler rendered all 92 pages without errors.
+Four documents contain readable embedded text while the 71-page carrier guide
+does not, which exposes the current text-first split. The raster sources are
+sharp; blur is introduced by the 1×2-sample terminal fallback. The focused
+correction makes PDFs page-first and replaces that PDF fallback with a colored
+2×4-dot projection. Release v0.1.247 will follow focused and live checks. Full
+workspace tests remain deferred at the user's request.
+
 HARDWARE-NATIVE-GRAPHICS-001 is DONE. A read-only device-attributes query
 requires the exact SIXEL capability before native bytes are emitted. The CLI
 presenter uses bounded viewport geometry, physical cell sizing, fixed palette,

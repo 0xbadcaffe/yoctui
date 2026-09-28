@@ -2145,3 +2145,11 @@ viewer, non-native PDF pages use a fit-width scrolling raster, and Escape or
 Backspace returns to the retained Hardware library row. The reported document
 passed live forced-fallback validation. Full workspace tests remain deferred
 until requested.
+
+## M94 — Page-first detailed PDF fallback
+
+Open every PDF as a visual page and replace the low-detail unsupported-terminal
+PDF projection with a colored 2×4-dot cell renderer. Audit all five PDFs and all
+92 pages under `~/projects/smarc`, then release v0.1.247 after focused model,
+UI, CLI, and live document checks. Full workspace tests remain deferred until
+requested.

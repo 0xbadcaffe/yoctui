@@ -4680,6 +4680,21 @@ vertical pan over the resulting page height. Input remains typed: application
 mapping emits the existing close-viewer action for both Escape and Backspace,
 and the reducer retains the selected library record.
 
+## M94 detailed non-native PDF projection
+
+`yoctui-model` initializes every PDF viewer in Page presentation independently
+of graphics capability and keeps extracted text as a secondary searchable
+presentation. The backend continues to provide one bounded high-resolution RGB
+raster; it does not pre-render terminal glyphs.
+
+`yoctui-ui` projects non-native PDF rasters through a document-specific 2×4
+sample cell renderer. Geometry is expressed in subcell pixels so fit, zoom, pan,
+centering, and clipping remain pure and testable. Each cell chooses a bounded
+luminance split, maps dark/light samples to the standard Braille bit layout, and
+uses averaged RGB foreground/background colors. Low-contrast cells collapse to
+a solid averaged background. Other raster documents keep the existing 1×2
+half-block projection, and native SIXEL remains CLI-owned.
+
 `yoctui` CLI owns local filesystem access and optional document tools. It
 validates regular non-symlink files, lists bounded browser entries, extracts
 bounded PDF/source search text, and converts one requested page or image into a

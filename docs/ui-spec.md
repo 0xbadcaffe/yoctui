@@ -184,6 +184,26 @@ Workspace focus and restore the same category and selected library row. The
 viewer footer always advertises the return action. Closing a document does not
 remove it from the persistent library.
 
+### M94 page-first PDF viewing and detailed terminal fallback
+
+Every PDF opens in Page presentation. Extracted text remains searchable and is
+available with `v`, but the presence of readable embedded text must not replace
+the document's visual layout on open. Page changes and reloads retain the chosen
+presentation.
+
+When native terminal graphics are unavailable, PDF pages use a colored Braille
+projection with two horizontal by four vertical source samples per terminal
+cell. The projection fits page width at 100%, keeps the existing pan and zoom
+model, and derives foreground/background colors from each bounded cell. Uniform
+areas remain solid rather than producing noise. Raster images retain their
+color half-block renderer. The viewer header identifies the terminal page
+fallback, and `v` switches to extracted text when available.
+
+The five PDFs under `~/projects/smarc` form the live compatibility set. Every
+page must convert successfully, each document must open as a page, and the
+fallback must preserve the visible structure of text, tables, diagrams, and
+photographs without private-use glyphs.
+
 ---
 
 ## 2. Persistent application shell

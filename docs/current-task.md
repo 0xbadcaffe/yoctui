@@ -1,25 +1,22 @@
 # Current Task
 
-**ID:** MENUCONFIG-UBOOT-LIVE-001
-**Title:** Validate U-Boot interaction after provider ncurses probe repair
-**Status:** BLOCKED
+**ID:** HARDWARE-PDF-DETAIL-001
+**Title:** Open PDFs as pages with detailed terminal projection
+**Status:** IN_PROGRESS
 
-M93 Hardware PDF fallback and v0.1.246 are complete. Full workspace tests remain
-deferred at the user's request.
-
-External dependency: `u-boot-aspeed-sdk` v2019.04+git uses the legacy
-`scripts/kconfig/lxdialog/check-lxdialog.sh` probe `main() {}`. Current host GCC
-rejects that missing return type before linking, but the script hides the
-compiler diagnostic and prints its generic ncurses-package message. The same
-Yocto native-sysroot include/library flags pass with
-`int main(void) { return 0; }`. Add that provider recipe patch, then verify
-arrows, Enter, search, Ctrl+G out/back, and client restart in Content > U-Boot.
+Make every PDF open in Page presentation while keeping `v` text view. Replace
+the unsupported-terminal PDF half-block projection with colored 2×4 Braille
+cells, retain the existing raster-image renderer, and validate all 92 pages of
+the five PDFs under `~/projects/smarc`.
 
 ```bash
-cargo test -p yoctui-model platform_menuconfig
-cargo test -p yoctui --bin yoctui menuconfig
-cargo test -p yoctui-ui menuconfig
+cargo test -p yoctui-model hardware
+cargo test -p yoctui-ui hardware
+cargo test -p yoctui --bin yoctui hardware
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
 
-M67-LIVE-EVIDENCE-001 independently requires a new current-source real-Poky
-performance capture. No unblocked implementation task is eligible.
+Full workspace tests remain deferred at the user's request. After the focused
+task, release v0.1.247, install it, restart the initialized Romulus daemon, and
+push the coherent commits.
