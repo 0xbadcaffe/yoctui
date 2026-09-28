@@ -4356,6 +4356,15 @@ diagnostics, and every document opened page-first in a forced-fallback 160×45
 live session. Release v0.1.247 is in progress; the full workspace suite remains
 deferred at the user's request.
 
+HARDWARE-PDF-DETAIL-RELEASE-001 is DONE in v0.1.247. Formatting, strict focused
+model/UI/CLI Clippy, version policy, roadmap validation, and the optimized build
+pass. The optimized binary opened all five `~/projects/smarc` PDFs as
+`Terminal page · fit width` with native graphics forced off and emitted detailed
+colored Braille page cells. Release and installed binary SHA-256 is
+`7b53f3aed7b102086fa8944c1218623add87f19c5e8993dc4af6268fd8e6abd5`,
+with embedded source `b20c5eed1cab`. The initialized Romulus daemon runs as PID
+3966806. Full workspace tests remain deferred at the user's request.
+
 HARDWARE-NATIVE-GRAPHICS-001 is DONE. A read-only device-attributes query
 requires the exact SIXEL capability before native bytes are emitted. The CLI
 presenter uses bounded viewport geometry, physical cell sizing, fixed palette,

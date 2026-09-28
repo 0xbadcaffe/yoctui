@@ -2153,3 +2153,9 @@ PDF projection with a colored 2×4-dot cell renderer. Audit all five PDFs and al
 92 pages under `~/projects/smarc`, then release v0.1.247 after focused model,
 UI, CLI, and live document checks. Full workspace tests remain deferred until
 requested.
+
+M94 is DONE in v0.1.247. Every PDF opens as a rendered page, readable extracted
+text remains available through `v`, and terminals without native graphics use a
+colored 2×4 Braille projection. Poppler converted all 92 pages, and all five
+documents opened through the optimized forced-fallback viewer. Full workspace
+tests remain deferred until requested.
