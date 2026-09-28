@@ -2165,3 +2165,9 @@ tests remain deferred until requested.
 Remove unreadable PDF character projection and false GNOME capability inference.
 Validate complete SIXEL detection and native pixels in XTerm VT340 using all
 five smarc PDFs. Release v0.1.248 after focused checks.
+
+M95 is DONE in v0.1.248. PDF character projection and false capability inference
+are removed. Native pages use cell-aligned tiles to avoid per-image clipping.
+Real XTerm screenshots cover all five PDFs, zoom and library return. The user's
+Terminator VTE build lacks SIXEL; it receives clear supported-terminal guidance.
+Full workspace tests remain deferred at the user's request.

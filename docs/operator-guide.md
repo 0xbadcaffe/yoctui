@@ -20,9 +20,10 @@ select a document, and press Enter. The header should say **Native page**.
 Use `+`/`-` to zoom, arrows to pan, PgUp/PgDn to change page, `v` for embedded
 text when available, and Esc/Backspace to return to the document list.
 
-The default XTerm mode on this machine does not enable SIXEL. Its GNOME
-Terminal VTE library was built without SIXEL, even though a profile setting
-exists. Yoctui explains missing graphics support instead of drawing PDF text
+The default XTerm mode on this machine does not enable SIXEL. The installed
+VTE library used by Terminator and GNOME Terminal was built without SIXEL,
+even though a GNOME profile setting exists. Yoctui explains missing graphics
+support instead of drawing PDF text
 with blocks or Braille characters. A daemon restart cannot change the terminal's
 graphics support; start a new client using the command above.
 

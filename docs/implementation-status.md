@@ -4362,6 +4362,23 @@ VT340 screenshots of all five PDFs show native text, tables and photographs;
 XTerm's 1000-pixel per-image clipping; cell-aligned 480-pixel tiles now preserve
 the complete visible page. Release v0.1.248 is in progress.
 
+The operator confirmed Terminator running locally. Installed Terminator 2.1.5
+loads the same libvte-2.91 library whose build features omit SIXEL. Real PDF
+pixels require a different terminal build; the installed XTerm VT340 provides
+the validated embedded-page path without changing system terminal libraries.
+
+HARDWARE-PDF-NATIVE-ONLY-RELEASE-001 is DONE in v0.1.248. Focused tests,
+formatting, strict CLI Clippy, version policy, roadmap and optimized build pass.
+The release binary was exercised in real XTerm VT340 with screenshots of all
+five PDFs, 150% zoom and library return. Default XTerm correctly shows the
+unsupported-terminal explanation with no PDF character projection. Release and
+installed binary SHA-256 is
+`e70adaa287b2c51d9426d4b2e5d1e5c284d061483070d1f90e1ef90bbac67d86`.
+The initialized Romulus daemon is running as PID 3981597. Full workspace tests
+remain deferred at the user's request. Visual PDFs still require a terminal
+with compiled and enabled graphics support; this release cannot add that
+feature to the installed Terminator/VTE library.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell
