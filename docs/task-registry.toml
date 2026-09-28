@@ -10053,3 +10053,25 @@ required = true
 depends_on = ["HARDWARE-PDF-DETAIL-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-model --all-features -- -D warnings", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "DONE in v0.1.247. Formatting, strict focused model/UI/CLI Clippy, version policy, roadmap validation, and optimized release build pass. The optimized binary opened all five ~/projects/smarc PDFs as Terminal page / fit width with native graphics forced off and emitted colored Braille detail. Release and installed binary SHA-256 is 7b53f3aed7b102086fa8944c1218623add87f19c5e8993dc4af6268fd8e6abd5 and embeds source b20c5eed1cab. Initialized Romulus daemon PID 3966806 is running. Full workspace suite remains deferred per user."
+
+[[task]]
+id = "HARDWARE-PDF-NATIVE-ONLY-001"
+milestone = "M95"
+title = "Require readable native PDF pages"
+status = "IN_PROGRESS"
+priority = 3130
+required = true
+depends_on = ["HARDWARE-PDF-DETAIL-RELEASE-001"]
+verify = ["cargo test -p yoctui --bin yoctui terminal_graphics", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "Manual: inspect native screenshots of all five smarc PDFs in XTerm VT340"]
+notes = "Files: CLI terminal_graphics/native presenter, Hardware UI/tests. Done when PDF cell rendering and false profile inference are removed, complete/fragmented/malformed replies are covered, unsupported views explain a working terminal command, and real native screenshots are readable. Update spec, architecture, status, roadmap and registry."
+
+[[task]]
+id = "HARDWARE-PDF-NATIVE-ONLY-RELEASE-001"
+milestone = "M95"
+title = "Release readable native PDF viewing"
+status = "NOT_STARTED"
+priority = 3131
+required = true
+depends_on = ["HARDWARE-PDF-NATIVE-ONLY-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Bump v0.1.248, build/install optimized binary, restart initialized Romulus daemon, commit/push. Full workspace suite deferred per user."

@@ -2159,3 +2159,9 @@ text remains available through `v`, and terminals without native graphics use a
 colored 2×4 Braille projection. Poppler converted all 92 pages, and all five
 documents opened through the optimized forced-fallback viewer. Full workspace
 tests remain deferred until requested.
+
+## M95 — Readable PDF graphics
+
+Remove unreadable PDF character projection and false GNOME capability inference.
+Validate complete SIXEL detection and native pixels in XTerm VT340 using all
+five smarc PDFs. Release v0.1.248 after focused checks.

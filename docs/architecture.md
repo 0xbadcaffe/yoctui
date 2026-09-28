@@ -4766,3 +4766,12 @@ checks apply to every report. Only backend capability records are resolved from
 that report; other records remain unchanged. A new generation invalidates stale
 client authority. Failed attempts leave capability authority unchanged and retry
 after a delay. Inventory begins once backend workspace APIs are available.
+
+## M95 PDF graphics capability and readability
+
+M95 supersedes the PDF character renderer and GNOME profile inference above.
+The CLI collects complete, possibly fragmented primary-device-attributes replies
+within a bounded timeout. Environment names and profile settings cannot prove
+support: local GNOME VTE lacks SIXEL despite its enabled profile value.
+Unsupported PDF pages show a limitation and supported-terminal command derived
+from typed state. Actual native screenshots verify readability.

@@ -4346,6 +4346,12 @@ correction makes PDFs page-first and replaces that PDF fallback with a colored
 2×4-dot projection. Release v0.1.247 will follow focused and live checks. Full
 workspace tests remain deferred at the user's request.
 
+M95 is IN_PROGRESS. The screenshot confirms that v0.1.247 Braille pages remain
+unreadable. Local GNOME Terminal links VTE without the SIXEL build feature.
+Installed XTerm advertises SIXEL in VT340 mode, but not its default VT420 mode.
+Require complete capability evidence, remove PDF character rendering, show an
+exact supported-terminal command, and inspect real native screenshots.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell

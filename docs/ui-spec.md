@@ -184,7 +184,7 @@ Workspace focus and restore the same category and selected library row. The
 viewer footer always advertises the return action. Closing a document does not
 remove it from the persistent library.
 
-### M94 page-first PDF viewing and detailed terminal fallback
+### M94 page-first PDF viewing and detailed terminal fallback (superseded by M95)
 
 Every PDF opens in Page presentation. Extracted text remains searchable and is
 available with `v`, but the presence of readable embedded text must not replace
@@ -6331,3 +6331,18 @@ reason in daemon diagnostics; it does not claim the BitBake release is unsupport
 A successful probe publishes fresh capability authority and starts the workspace
 inventory without requiring a daemon restart. No operation is enabled without
 positive current-environment evidence.
+
+### M95 readable PDF graphics
+
+This section supersedes the M91–M94 PDF fallback rules above. PDFs open as
+visual pages only through a positively detected native graphics protocol.
+Yoctui must never substitute Braille or block characters for PDF pages.
+If graphics are unavailable, keep the document open with a readable explanation
+and the command `xterm -ti vt340 -e yoctui attach`. The operator can still use
+`v` for readable extracted text, or Esc/Backspace for the library; Navigator
+and other screens remain available. Do not silently select text.
+
+A GNOME profile setting, terminal name, or VTE version alone does not prove
+graphics support. Require a complete terminal response with SIXEL support.
+Handle fragmented responses within a bounded timeout. Verify actual rendered
+pixels in a real supported terminal using the five PDFs under ~/projects/smarc.

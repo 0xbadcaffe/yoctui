@@ -1,19 +1,17 @@
 # Current Task
 
-**ID:** MENUCONFIG-UBOOT-LIVE-001
-**Title:** Validate U-Boot interaction after provider ncurses build repair
-**Status:** BLOCKED
+**ID:** HARDWARE-PDF-NATIVE-ONLY-001
+**Title:** Require readable native PDF pages
+**Status:** IN_PROGRESS
 
-The Romulus `u-boot-aspeed-sdk` v2019.04+git provider fails before producing
-`mconf`. Its legacy `scripts/kconfig/lxdialog/check-lxdialog.sh` probe declares
-`main() {}`, which the current compiler rejects. A corrected
-`int main(void) { return 0; }` probe links successfully against the recipe's
-Yocto ncurses sysroot. Repair that external provider, rerun menuconfig, and then
-validate arrows, Enter, search, Ctrl+G resume, and client restart in Firmware.
+Implement M95 and validate native screenshots for all five smarc PDFs.
 
 ```bash
-bitbake u-boot-aspeed-sdk -c menuconfig
+cargo test -p yoctui --bin yoctui terminal_graphics
+cargo test -p yoctui-ui hardware
+cargo test -p yoctui --bin yoctui hardware
+cargo fmt --all --check
+./scripts/verify-roadmap.sh
 ```
 
-This is an external OpenBMC provider compatibility blocker. Do not claim live
-U-Boot menuconfig navigation until the provider builds its ncurses frontend.
+Full suite deferred per user. Release v0.1.248 after focused verification.
