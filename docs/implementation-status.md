@@ -4379,6 +4379,12 @@ remain deferred at the user's request. Visual PDFs still require a terminal
 with compiled and enabled graphics support; this release cannot add that
 feature to the installed Terminator/VTE library.
 
+M96 is IN_PROGRESS from the reported tiny native-PDF XTerm interface and the
+requirement that users must not construct an XTerm command. The focused change
+makes the interactive CLI hand itself to XTerm when graphics are unavailable,
+using VT340, a 14-point scalable Monospace font, and 140x40 cells. The public
+invocation remains `yoctui attach`; release v0.1.249 follows focused checks.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell

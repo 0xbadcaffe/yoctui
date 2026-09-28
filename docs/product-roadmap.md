@@ -2171,3 +2171,11 @@ are removed. Native pages use cell-aligned tiles to avoid per-image clipping.
 Real XTerm screenshots cover all five PDFs, zoom and library return. The user's
 Terminator VTE build lacks SIXEL; it receives clear supported-terminal guidance.
 Full workspace tests remain deferred at the user's request.
+
+## M96 — Automatic readable graphics terminal
+
+Make ordinary interactive invocation open its native-PDF-capable XTerm itself
+when the current terminal lacks graphics. Select a readable scalable font and
+useful starting grid while preserving the initialized environment and daemon
+attachment. Release v0.1.249 after focused CLI, Hardware UI, and live XTerm
+checks. Full workspace tests remain deferred until requested.

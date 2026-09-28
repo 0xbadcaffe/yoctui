@@ -4778,3 +4778,14 @@ from typed state. Actual native screenshots verify readability.
 The native presenter tiles pixels on whole-cell boundaries at a 480-pixel edge
 to respect XTerm image limits. One bounded frame preserves/restores the cursor
 and enforces the existing cumulative byte limit before any output is written.
+
+## M96 automatic graphics-terminal handoff
+
+The CLI performs graphics-terminal handoff before terminal lifecycle setup. It
+uses the current executable and original argv, invokes XTerm directly without a
+shell, preserves the initialized environment and working directory, and sets a
+private one-generation guard to prevent recursion. XTerm presentation arguments
+select VT340, scalable Monospace at 14 points, and 140x40 cells. If XTerm or a
+graphical display is unavailable, startup continues in the invoking terminal
+with typed graphics capability unavailable; model and UI boundaries are
+unchanged.

@@ -10075,3 +10075,25 @@ required = true
 depends_on = ["HARDWARE-PDF-NATIVE-ONLY-001"]
 verify = ["cargo fmt --all --check", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
 notes = "DONE in v0.1.248. Focused tests, formatting, strict CLI Clippy, version policy, roadmap and optimized build pass. Release screenshots verify all five PDFs, zoom and library return in real XTerm VT340; default XTerm shows clear unsupported guidance instead of blurred glyphs. User confirmed Terminator; its loaded VTE library reports SIXEL feature disabled at compile time, so it requires a supported terminal build for visual PDFs. Installed/release SHA-256 e70adaa287b2c51d9426d4b2e5d1e5c284d061483070d1f90e1ef90bbac67d86; initialized Romulus daemon PID 3981597. Full workspace suite deferred per user."
+
+[[task]]
+id = "HARDWARE-PDF-AUTO-XTERM-001"
+milestone = "M96"
+title = "Open an automatic readable graphics terminal"
+status = "IN_PROGRESS"
+priority = 3140
+required = true
+depends_on = ["HARDWARE-PDF-NATIVE-ONLY-RELEASE-001"]
+verify = ["cargo test -p yoctui --bin yoctui terminal_graphics", "cargo test -p yoctui-ui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "Manual: invoke yoctui attach in Terminator and inspect the automatically opened XTerm Hardware library and PDF"]
+notes = "Interactive startup must directly launch XTerm with VT340, Monospace 14, and 140x40 geometry when the invoking terminal lacks native graphics; preserve argv/environment and prevent recursive launch."
+
+[[task]]
+id = "HARDWARE-PDF-AUTO-XTERM-RELEASE-001"
+milestone = "M96"
+title = "Release automatic readable graphics-terminal handoff"
+status = "NOT_STARTED"
+priority = 3141
+required = true
+depends_on = ["HARDWARE-PDF-AUTO-XTERM-001"]
+verify = ["cargo fmt --all --check", "cargo clippy -p yoctui-ui --all-features -- -D warnings", "cargo clippy -p yoctui --bin yoctui --all-features -- -D warnings", "python3 scripts/check-version-bump.py", "./scripts/verify-roadmap.sh", "cargo build --release -p yoctui --bin yoctui"]
+notes = "Release v0.1.249 after focused tests and a real automatic Terminator-to-XTerm handoff check."

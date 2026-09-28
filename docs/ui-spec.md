@@ -6348,3 +6348,13 @@ Handle fragmented responses within a bounded timeout. Verify actual rendered
 pixels in a real supported terminal using the five PDFs under ~/projects/smarc.
 Large native pages and zoomed views must not be clipped by per-image terminal
 limits; send smaller native tiles while retaining the viewport and Navigator.
+
+### M96 automatic readable graphics terminal
+
+An interactive Yoctui invocation in a terminal without native PDF graphics
+automatically opens the same client in XTerm when XTerm and a graphical display
+are available. The child uses VT340 terminal identity, a 14-point scalable
+monospace font, and a 140x40 initial cell geometry. The user continues to invoke
+`yoctui attach`; recursive relaunch is forbidden. If automatic launch is not
+available, Yoctui remains usable in the original terminal and explains the
+missing display or XTerm prerequisite without requiring a copied launch command.
