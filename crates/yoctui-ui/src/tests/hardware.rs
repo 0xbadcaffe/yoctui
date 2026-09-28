@@ -78,51 +78,6 @@ fn hardware_viewer_keeps_navigator_and_shows_search_tools() {
 }
 
 #[test]
-fn hardware_pdf_raster_fallback_fits_width_then_zoom_resamples_the_source() {
-    let mut app = App::new(100, 100_000);
-    app.hardware.viewer = Some(HardwareViewerState {
-        document: document(),
-        generation: 1,
-        page: 1,
-        page_count: 1,
-        zoom_percent: 100,
-        presentation: HardwarePresentation::Page,
-        pan_x: 0,
-        pan_y: 0,
-        loading: false,
-        preview: None,
-        searchable_text: Vec::new(),
-        query: String::new(),
-        searching: false,
-        matches: Vec::new(),
-        match_selection: 0,
-        error: None,
-    });
-    let raster = yoctui_model::HardwareRaster {
-        width: 900,
-        height: 1200,
-        pixels: Vec::new(),
-    };
-    let area = Rect::new(0, 0, 200, 48);
-    let fit = crate::hardware_raster_render::raster_geometry(
-        area,
-        app.hardware.viewer.as_ref().unwrap(),
-        &raster,
-    );
-    assert_eq!((fit.target_width, fit.target_height), (400, 533));
-    assert_eq!((fit.offset_x, fit.offset_y), (0, 0));
-
-    app.hardware.viewer.as_mut().unwrap().zoom_percent = 400;
-    let zoomed = crate::hardware_raster_render::raster_geometry(
-        area,
-        app.hardware.viewer.as_ref().unwrap(),
-        &raster,
-    );
-    assert_eq!((zoomed.target_width, zoomed.target_height), (1600, 2133));
-    assert_eq!((zoomed.offset_x, zoomed.offset_y), (0, 0));
-}
-
-#[test]
 fn hardware_image_raster_keeps_complete_page_half_block_fit() {
     let mut app = App::new(100, 100_000);
     app.hardware.viewer = Some(HardwareViewerState {
@@ -159,31 +114,6 @@ fn hardware_image_raster_keeps_complete_page_half_block_fit() {
     );
     assert_eq!((fit.target_width, fit.target_height), (72, 96));
     assert_eq!((fit.offset_x, fit.offset_y), (64, 0));
-}
-
-#[test]
-fn hardware_pdf_braille_cells_preserve_two_by_four_detail_and_uniform_space() {
-    let white = yoctui_model::HardwareRgb {
-        red: 255,
-        green: 255,
-        blue: 255,
-    };
-    let black = yoctui_model::HardwareRgb {
-        red: 0,
-        green: 0,
-        blue: 0,
-    };
-    let mut samples = [Some(white); 8];
-    samples[0] = Some(black);
-    samples[7] = Some(black);
-    let detailed = crate::hardware_raster_render::pdf_braille_span(samples);
-    assert_eq!(detailed.content.as_ref(), "⢁");
-    assert_eq!(detailed.style.fg, Some(Color::Rgb(0, 0, 0)));
-    assert_eq!(detailed.style.bg, Some(Color::Rgb(255, 255, 255)));
-
-    let uniform = crate::hardware_raster_render::pdf_braille_span([Some(white); 8]);
-    assert_eq!(uniform.content.as_ref(), " ");
-    assert_eq!(uniform.style.bg, Some(Color::Rgb(255, 255, 255)));
 }
 
 #[test]
@@ -225,6 +155,35 @@ fn hardware_pdf_uses_crisp_text_without_native_graphics_and_projects_sixel_area(
         "{fallback}"
     );
     assert!(fallback.contains("Esc/Backspace library"), "{fallback}");
+
+    app.hardware.viewer.as_mut().unwrap().presentation = HardwarePresentation::Page;
+    for size in [(160, 45), (100, 30), (80, 24)] {
+        let unavailable = rendered_text(&app, size.0, size.1);
+        assert!(
+            unavailable.contains("xterm -ti vt340 -e yoctui attach"),
+            "{unavailable}"
+        );
+        assert!(
+            unavailable.contains("cannot display PDF page graphics"),
+            "{unavailable}"
+        );
+        assert!(unavailable.contains("Press v"), "{unavailable}");
+        assert!(!unavailable.contains("Terminal page"));
+        assert!(
+            !unavailable
+                .chars()
+                .any(|c| ('\u{2801}'..='\u{28ff}').contains(&c))
+        );
+    }
+    app.hardware
+        .viewer
+        .as_mut()
+        .unwrap()
+        .searchable_text
+        .clear();
+    let unavailable = rendered_text(&app, 160, 45);
+    assert!(unavailable.contains("no readable embedded text"));
+    assert!(crate::hardware_native_raster_projection(&app, 160, 45).is_none());
 
     app.hardware.graphics_capability = yoctui_model::HardwareGraphicsCapability::Sixel;
     app.hardware.viewer.as_mut().unwrap().presentation = HardwarePresentation::Page;

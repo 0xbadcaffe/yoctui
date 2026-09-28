@@ -3,7 +3,8 @@
 use super::*;
 use yoctui_model::HardwareGraphicsCapability;
 
-const QUERY_TIMEOUT_MS: i32 = 120;
+const QUERY_TIMEOUT: Duration = Duration::from_millis(400);
+const MAX_REPLY_BYTES: usize = 512;
 
 pub(crate) fn detect_hardware_graphics_capability() -> HardwareGraphicsCapability {
     match env::var("YOCTUI_TERMINAL_GRAPHICS").ok().as_deref() {
@@ -18,60 +19,36 @@ pub(crate) fn detect_hardware_graphics_capability() -> HardwareGraphicsCapabilit
     {
         return HardwareGraphicsCapability::Sixel;
     }
-    if gnome_terminal_sixel_enabled() {
-        return HardwareGraphicsCapability::Sixel;
-    }
     HardwareGraphicsCapability::Unavailable
 }
 
-fn gnome_terminal_sixel_enabled() -> bool {
-    if env::var_os("GNOME_TERMINAL_SERVICE").is_none()
-        || env::var("VTE_VERSION")
-            .ok()
-            .and_then(|version| version.parse::<u32>().ok())
-            .is_none_or(|version| version < 6200)
-    {
-        return false;
-    }
-    let Ok(profile) = ProcessCommand::new("gsettings")
-        .args(["get", "org.gnome.Terminal.ProfilesList", "default"])
-        .output()
-    else {
-        return false;
-    };
-    let Some(profile) = enabled_profile_id(&profile.stdout) else {
-        return false;
-    };
-    let schema = format!(
-        "org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:{profile}/"
-    );
-    ProcessCommand::new("gsettings")
-        .args(["get", &schema, "enable-sixel"])
-        .output()
-        .is_ok_and(|output| output.status.success() && output.stdout == b"true\n")
-}
-
-fn enabled_profile_id(output: &[u8]) -> Option<&str> {
-    let profile = std::str::from_utf8(output).ok()?.trim().trim_matches('\'');
-    (!profile.is_empty()
-        && profile
-            .bytes()
-            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-'))
-    .then_some(profile)
-}
-
 pub(crate) fn primary_device_attributes_support_sixel(response: &[u8]) -> bool {
-    response.windows(3).enumerate().any(|(offset, marker)| {
-        marker == b"\x1b[?"
-            && response[offset + 3..]
-                .split(|byte| *byte == b'c')
-                .next()
-                .is_some_and(|parameters| {
-                    parameters
-                        .split(|byte| *byte == b';')
-                        .any(|parameter| parameter == b"4")
-                })
+    device_attributes(response).is_some_and(|parameters| {
+        let mut fields = parameters.split(|byte| *byte == b';');
+        // VT100-family device numbers are not capability parameters.
+        let terminal = fields.next().unwrap_or_default();
+        matches!(terminal, b"62" | b"63" | b"64" | b"65")
+            && fields.any(|parameter| parameter == b"4")
     })
+}
+
+fn device_attributes(response: &[u8]) -> Option<&[u8]> {
+    response
+        .windows(3)
+        .enumerate()
+        .find_map(|(offset, marker)| {
+            if marker != b"\x1b[?" {
+                return None;
+            }
+            let remainder = &response[offset + 3..];
+            let end = remainder.iter().position(|byte| *byte == b'c')?;
+            let parameters = &remainder[..end];
+            (!parameters.is_empty()
+                && parameters
+                    .split(|byte| *byte == b';')
+                    .all(|field| !field.is_empty() && field.iter().all(u8::is_ascii_digit)))
+            .then_some(parameters)
+        })
 }
 
 #[cfg(unix)]
@@ -99,38 +76,50 @@ fn query_primary_device_attributes() -> Option<Vec<u8>> {
 fn query_primary_device_attributes_raw(input: libc::c_int) -> Option<Vec<u8>> {
     io::stdout().write_all(b"\x1b[c").ok()?;
     io::stdout().flush().ok()?;
+    read_device_attributes(input, QUERY_TIMEOUT)
+}
+
+#[cfg(unix)]
+fn read_device_attributes(input: libc::c_int, timeout: Duration) -> Option<Vec<u8>> {
+    let deadline = std::time::Instant::now() + timeout;
     let mut descriptor = libc::pollfd {
         fd: input,
         events: libc::POLLIN,
         revents: 0,
     };
-    if unsafe { libc::poll(&mut descriptor, 1, QUERY_TIMEOUT_MS) } <= 0 {
-        return None;
+    let mut response = Vec::with_capacity(MAX_REPLY_BYTES);
+    while response.len() < MAX_REPLY_BYTES {
+        let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+        if remaining.is_zero() {
+            break;
+        }
+        let timeout_ms = remaining.as_millis().max(1).min(i32::MAX as u128) as i32;
+        let ready = unsafe { libc::poll(&mut descriptor, 1, timeout_ms) };
+        if ready < 0 && io::Error::last_os_error().kind() == io::ErrorKind::Interrupted {
+            continue;
+        }
+        if ready <= 0 {
+            break;
+        }
+        let mut buffer = [0_u8; MAX_REPLY_BYTES];
+        let read = unsafe {
+            libc::read(
+                input,
+                buffer.as_mut_ptr().cast(),
+                MAX_REPLY_BYTES - response.len(),
+            )
+        };
+        if read <= 0 {
+            break;
+        }
+        response.extend_from_slice(&buffer[..read as usize]);
+        if device_attributes(&response).is_some() {
+            return Some(response);
+        }
     }
-    let mut buffer = [0_u8; 512];
-    let read = unsafe { libc::read(input, buffer.as_mut_ptr().cast(), buffer.len()) };
-    (read > 0).then(|| buffer[..read as usize].to_vec())
+    None
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn primary_device_attributes_require_exact_sixel_parameter() {
-        assert!(primary_device_attributes_support_sixel(b"\x1b[?65;1;4;9c"));
-        assert!(!primary_device_attributes_support_sixel(b"\x1b[?65;1;9c"));
-        assert!(!primary_device_attributes_support_sixel(b"text 4"));
-        assert!(!primary_device_attributes_support_sixel(b"\x1b[?64;14;9c"));
-    }
-
-    #[test]
-    fn gnome_profile_id_accepts_only_bounded_schema_characters() {
-        assert_eq!(
-            enabled_profile_id(b"'b1dcc9dd-5262-4d8d-a863-c897e6d979b9'\n"),
-            Some("b1dcc9dd-5262-4d8d-a863-c897e6d979b9")
-        );
-        assert_eq!(enabled_profile_id(b"'../../profile'\n"), None);
-        assert_eq!(enabled_profile_id(b"''\n"), None);
-    }
-}
+#[path = "tests/terminal_graphics.rs"]
+mod tests;

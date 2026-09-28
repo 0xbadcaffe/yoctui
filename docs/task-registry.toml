@@ -10058,18 +10058,18 @@ notes = "DONE in v0.1.247. Formatting, strict focused model/UI/CLI Clippy, versi
 id = "HARDWARE-PDF-NATIVE-ONLY-001"
 milestone = "M95"
 title = "Require readable native PDF pages"
-status = "IN_PROGRESS"
+status = "DONE"
 priority = 3130
 required = true
 depends_on = ["HARDWARE-PDF-DETAIL-RELEASE-001"]
 verify = ["cargo test -p yoctui --bin yoctui terminal_graphics", "cargo test -p yoctui-ui hardware", "cargo test -p yoctui --bin yoctui hardware", "cargo fmt --all --check", "./scripts/verify-roadmap.sh", "Manual: inspect native screenshots of all five smarc PDFs in XTerm VT340"]
-notes = "Files: CLI terminal_graphics/native presenter, Hardware UI/tests. Done when PDF cell rendering and false profile inference are removed, complete/fragmented/malformed replies are covered, unsupported views explain a working terminal command, and real native screenshots are readable. Update spec, architecture, status, roadmap and registry."
+notes = "DONE. Removed PDF Braille projection and false GNOME profile inference. Complete bounded capability replies are required, including fragmented responses. Unsupported PDF pages explain xterm -ti vt340 -e yoctui attach and retain text/library controls. Native output uses cell-aligned tiles to avoid XTerm's per-image clipping, preserves the cursor and enforces a cumulative byte cap. Three capability, four UI Hardware, seven CLI Hardware plus the new tiling regression pass; formatting, strict focused CLI Clippy and roadmap pass. Actual XTerm VT340 screenshots of all five PDFs, 150% zoom and library return inspected in /tmp/yoctui-native-pdf-check-k5syljti/fixed."
 
 [[task]]
 id = "HARDWARE-PDF-NATIVE-ONLY-RELEASE-001"
 milestone = "M95"
 title = "Release readable native PDF viewing"
-status = "NOT_STARTED"
+status = "IN_PROGRESS"
 priority = 3131
 required = true
 depends_on = ["HARDWARE-PDF-NATIVE-ONLY-001"]

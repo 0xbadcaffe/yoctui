@@ -4352,6 +4352,16 @@ Installed XTerm advertises SIXEL in VT340 mode, but not its default VT420 mode.
 Require complete capability evidence, remove PDF character rendering, show an
 exact supported-terminal command, and inspect real native screenshots.
 
+HARDWARE-PDF-NATIVE-ONLY-001 is DONE. Three capability tests cover exact,
+fragmented, truncated, malformed and absent replies. Four Hardware UI tests
+cover readable unsupported-terminal guidance and the persistent Navigator;
+seven focused CLI Hardware tests and the new tiled-frame regression pass.
+Formatting, strict focused Clippy and roadmap validation pass. Actual XTerm
+VT340 screenshots of all five PDFs show native text, tables and photographs;
+150% zoom and library return were inspected. The screenshots also exposed
+XTerm's 1000-pixel per-image clipping; cell-aligned 480-pixel tiles now preserve
+the complete visible page. Release v0.1.248 is in progress.
+
 HARDWARE-PDF-DETAIL-001 is DONE. PDFs now initialize in Page presentation and
 offer extracted Text with `v` only when readable text exists. The non-native PDF
 renderer uses allocation-free colored 2×4 Braille cells with fit-width subcell

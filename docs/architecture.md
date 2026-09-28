@@ -4775,3 +4775,6 @@ within a bounded timeout. Environment names and profile settings cannot prove
 support: local GNOME VTE lacks SIXEL despite its enabled profile value.
 Unsupported PDF pages show a limitation and supported-terminal command derived
 from typed state. Actual native screenshots verify readability.
+The native presenter tiles pixels on whole-cell boundaries at a 480-pixel edge
+to respect XTerm image limits. One bounded frame preserves/restores the cursor
+and enforces the existing cumulative byte limit before any output is written.

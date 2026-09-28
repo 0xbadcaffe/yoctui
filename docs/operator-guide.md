@@ -6,6 +6,26 @@ Yoctui has opened its build directory. Follow the guarded setup commands in the
 events remain authoritative; a visible row, filename, or log message is never
 treated as proof that an operation or artifact exists.
 
+## View Hardware PDFs
+
+PDF pages need a terminal with SIXEL graphics enabled. For the installed XTerm,
+start Yoctui from your initialized build shell with:
+
+```sh
+xterm -ti vt340 -e yoctui attach
+```
+
+The PDF stays inside Yoctui, beside its Navigator. Open Content > Hardware,
+select a document, and press Enter. The header should say **Native page**.
+Use `+`/`-` to zoom, arrows to pan, PgUp/PgDn to change page, `v` for embedded
+text when available, and Esc/Backspace to return to the document list.
+
+The default XTerm mode on this machine does not enable SIXEL. Its GNOME
+Terminal VTE library was built without SIXEL, even though a profile setting
+exists. Yoctui explains missing graphics support instead of drawing PDF text
+with blocks or Braille characters. A daemon restart cannot change the terminal's
+graphics support; start a new client using the command above.
+
 ## Start a workspace safely
 
 `yoctui daemon build <target>` returns success only after an accepted/completed

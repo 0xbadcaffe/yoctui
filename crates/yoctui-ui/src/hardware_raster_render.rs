@@ -9,29 +9,18 @@ pub(super) fn render_raster_preview(
     raster: &yoctui_model::HardwareRaster,
 ) {
     let geometry = raster_geometry(area, viewer, raster);
-    let pdf = viewer.document.kind == yoctui_model::HardwareDocumentKind::Pdf;
     let lines = (0..usize::from(area.height))
         .map(|row| {
             Line::from(
                 (0..usize::from(area.width))
                     .map(|column| {
-                        if pdf {
-                            pdf_braille_span(BRAILLE_SAMPLES.map(|(x, y, _)| {
-                                geometry.sample(
-                                    raster,
-                                    column.saturating_mul(2).saturating_add(x),
-                                    row.saturating_mul(4).saturating_add(y),
-                                )
-                            }))
-                        } else {
-                            let top = geometry.sample(raster, column, row.saturating_mul(2));
-                            let bottom = geometry.sample(
-                                raster,
-                                column,
-                                row.saturating_mul(2).saturating_add(1),
-                            );
-                            raster_span(top, bottom)
-                        }
+                        let top = geometry.sample(raster, column, row.saturating_mul(2));
+                        let bottom = geometry.sample(
+                            raster,
+                            column,
+                            row.saturating_mul(2).saturating_add(1),
+                        );
+                        raster_span(top, bottom)
                     })
                     .collect::<Vec<_>>(),
             )
@@ -55,21 +44,12 @@ pub(crate) fn raster_geometry(
     viewer: &yoctui_model::HardwareViewerState,
     raster: &yoctui_model::HardwareRaster,
 ) -> RasterGeometry {
-    let pdf = viewer.document.kind == yoctui_model::HardwareDocumentKind::Pdf;
-    let viewport_width = usize::from(area.width)
-        .saturating_mul(if pdf { 2 } else { 1 })
-        .max(1);
-    let viewport_height = usize::from(area.height)
-        .saturating_mul(if pdf { 4 } else { 2 })
-        .max(1);
+    let viewport_width = usize::from(area.width).max(1);
+    let viewport_height = usize::from(area.height).saturating_mul(2).max(1);
     let source_width = raster.width.max(1);
     let source_height = raster.height.max(1);
-    let width_fit = viewport_width as f64 / source_width as f64;
-    let fit = if pdf {
-        width_fit
-    } else {
-        width_fit.min(viewport_height as f64 / source_height as f64)
-    };
+    let fit = (viewport_width as f64 / source_width as f64)
+        .min(viewport_height as f64 / source_height as f64);
     let scale = fit * f64::from(viewer.zoom_percent) / 100.0;
     let target_width = (source_width as f64 * scale).round().max(1.0) as usize;
     let target_height = (source_height as f64 * scale).round().max(1.0) as usize;
@@ -84,106 +64,6 @@ pub(crate) fn raster_geometry(
         pan_y: viewer
             .pan_y
             .min(target_height.saturating_sub(viewport_height)),
-    }
-}
-
-const BRAILLE_SAMPLES: [(usize, usize, u8); 8] = [
-    (0, 0, 0x01),
-    (0, 1, 0x02),
-    (0, 2, 0x04),
-    (1, 0, 0x08),
-    (1, 1, 0x10),
-    (1, 2, 0x20),
-    (0, 3, 0x40),
-    (1, 3, 0x80),
-];
-
-pub(crate) fn pdf_braille_span(samples: [Option<yoctui_model::HardwareRgb>; 8]) -> Span<'static> {
-    let mut minimum = u8::MAX;
-    let mut maximum = u8::MIN;
-    let mut total = RgbTotal::default();
-    for pixel in samples.iter().flatten().copied() {
-        let value = luminance(pixel);
-        minimum = minimum.min(value);
-        maximum = maximum.max(value);
-        total.add(pixel);
-    }
-    if total.count == 0 {
-        return Span::raw(" ");
-    }
-    if maximum.saturating_sub(minimum) < 24 {
-        let background = total.average();
-        return Span::styled(
-            " ",
-            Style::default().bg(Color::Rgb(
-                background.red,
-                background.green,
-                background.blue,
-            )),
-        );
-    }
-    let threshold = minimum.saturating_add(maximum.saturating_sub(minimum) / 2);
-    let mut mask = 0_u8;
-    let mut foreground = RgbTotal::default();
-    let mut background = RgbTotal::default();
-    for (sample, (_, _, bit)) in samples.into_iter().zip(BRAILLE_SAMPLES) {
-        let Some(pixel) = sample else {
-            continue;
-        };
-        if luminance(pixel) <= threshold {
-            mask |= bit;
-            foreground.add(pixel);
-        } else {
-            background.add(pixel);
-        }
-    }
-    let foreground = foreground.average();
-    let background = background.average();
-    let character = char::from_u32(0x2800 + u32::from(mask)).unwrap_or(' ');
-    Span::styled(
-        character.to_string(),
-        Style::default()
-            .fg(Color::Rgb(
-                foreground.red,
-                foreground.green,
-                foreground.blue,
-            ))
-            .bg(Color::Rgb(
-                background.red,
-                background.green,
-                background.blue,
-            )),
-    )
-}
-
-fn luminance(pixel: yoctui_model::HardwareRgb) -> u8 {
-    ((u16::from(pixel.red) * 54 + u16::from(pixel.green) * 183 + u16::from(pixel.blue) * 19) / 256)
-        as u8
-}
-
-#[derive(Default)]
-struct RgbTotal {
-    red: u32,
-    green: u32,
-    blue: u32,
-    count: u32,
-}
-
-impl RgbTotal {
-    fn add(&mut self, pixel: yoctui_model::HardwareRgb) {
-        self.red += u32::from(pixel.red);
-        self.green += u32::from(pixel.green);
-        self.blue += u32::from(pixel.blue);
-        self.count += 1;
-    }
-
-    fn average(&self) -> yoctui_model::HardwareRgb {
-        let count = self.count.max(1);
-        yoctui_model::HardwareRgb {
-            red: (self.red / count) as u8,
-            green: (self.green / count) as u8,
-            blue: (self.blue / count) as u8,
-        }
     }
 }
 

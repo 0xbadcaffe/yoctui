@@ -1,7 +1,6 @@
 //! Bounded SIXEL presentation for model-owned Hardware rasters.
 
 use super::*;
-use crossterm::{cursor::MoveTo, queue};
 use image::{Rgb, RgbImage, imageops::FilterType};
 use ratatui::layout::Rect;
 
@@ -10,6 +9,7 @@ const FALLBACK_CELL_HEIGHT: u16 = 18;
 const MAX_NATIVE_PIXELS: usize = 2_000_000;
 const MAX_SIXEL_BYTES: usize = 8 * 1024 * 1024;
 const PALETTE_COLORS: usize = 80;
+const TILE_EDGE: usize = 480;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct NativeImageKey {
@@ -57,7 +57,7 @@ impl HardwareNativeGraphics {
             key.cell_width,
             key.cell_height,
         )
-        .and_then(|page| write_sixel(page, projection.area))
+        .and_then(|page| write_sixel(page, projection.area, key.cell_width, key.cell_height))
         {
             Ok(()) => self.visible = Some(key),
             Err(message) => tracing::warn!(%message, "could not render native Hardware page"),
@@ -167,21 +167,56 @@ fn constrain_pixels(width: &mut usize, height: &mut usize) {
     *height = (*height as f64 * factor).floor().max(1.0) as usize;
 }
 
-fn write_sixel(page: NativePage, area: Rect) -> Result<(), String> {
-    let payload = encode_sixel(&page.image)?;
+fn write_sixel(
+    page: NativePage,
+    area: Rect,
+    cell_width: u16,
+    cell_height: u16,
+) -> Result<(), String> {
+    let payload = sixel_frame(&page, area, cell_width, cell_height)?;
     let mut output = io::stdout();
-    queue!(
-        output,
-        MoveTo(
-            area.x.saturating_add(page.column_offset),
-            area.y.saturating_add(page.row_offset)
-        )
-    )
-    .map_err(|error| error.to_string())?;
     output
         .write_all(&payload)
         .and_then(|()| output.flush())
         .map_err(|error| error.to_string())
+}
+
+fn sixel_frame(
+    page: &NativePage,
+    area: Rect,
+    cell_width: u16,
+    cell_height: u16,
+) -> Result<Vec<u8>, String> {
+    let cell_width = usize::from(cell_width.max(1));
+    let cell_height = usize::from(cell_height.max(1));
+    // XTerm commonly limits each image to 1000x1000 pixels. Tile at cell
+    // boundaries so large pages remain complete without changing terminal settings.
+    let tile_width = (TILE_EDGE / cell_width).max(1) * cell_width;
+    let tile_height = (TILE_EDGE / cell_height).max(1) * cell_height;
+    let width = page.image.width() as usize;
+    let height = page.image.height() as usize;
+    let mut output = b"\x1b7".to_vec();
+    for y in (0..height).step_by(tile_height) {
+        for x in (0..width).step_by(tile_width) {
+            let tile = image::imageops::crop_imm(
+                &page.image,
+                x as u32,
+                y as u32,
+                (width - x).min(tile_width) as u32,
+                (height - y).min(tile_height) as u32,
+            )
+            .to_image();
+            let column = usize::from(area.x) + usize::from(page.column_offset) + x / cell_width + 1;
+            let row = usize::from(area.y) + usize::from(page.row_offset) + y / cell_height + 1;
+            output.extend_from_slice(format!("\x1b[{row};{column}H").as_bytes());
+            output.extend(encode_sixel(&tile)?);
+            if output.len() > MAX_SIXEL_BYTES - 2 {
+                return Err("native Hardware frame exceeds the SIXEL byte limit".into());
+            }
+        }
+    }
+    output.extend_from_slice(b"\x1b8");
+    Ok(output)
 }
 
 fn encode_sixel(image: &RgbImage) -> Result<Vec<u8>, String> {
@@ -276,21 +311,5 @@ fn append_runs(output: &mut Vec<u8>, masks: &[u8]) {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn sixel_encoder_is_bounded_and_declares_raster_geometry() {
-        let image = RgbImage::from_fn(8, 7, |x, y| {
-            if (x + y) % 2 == 0 {
-                Rgb([0, 0, 0])
-            } else {
-                Rgb([255, 255, 255])
-            }
-        });
-        let encoded = encode_sixel(&image).unwrap();
-        assert!(encoded.starts_with(b"\x1bP0;1;0q\"1;1;8;7"));
-        assert!(encoded.ends_with(b"\x1b\\"));
-        assert!(encoded.len() < MAX_SIXEL_BYTES);
-    }
-}
+#[path = "tests/hardware_native_graphics.rs"]
+mod tests;

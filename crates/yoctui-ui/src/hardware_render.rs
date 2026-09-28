@@ -1,6 +1,7 @@
 //! Persistent hardware-document library, browser, and embedded viewer.
 
 use super::*;
+use yoctui_model::HardwareDocumentKind;
 
 pub(super) fn hardware_workspace(frame: &mut Frame, app: &App, area: Rect) {
     if let Some(viewer) = app.hardware.viewer.as_ref() {
@@ -267,7 +268,13 @@ fn render_viewer(
                 if app.hardware.graphics_capability
                     != yoctui_model::HardwareGraphicsCapability::Sixel
                 {
-                    hardware_raster_render::render_raster_preview(frame, rows[1], viewer, raster)
+                    if viewer.document.kind == HardwareDocumentKind::Pdf {
+                        render_pdf_graphics_help(frame, app, rows[1], viewer);
+                    } else {
+                        hardware_raster_render::render_raster_preview(
+                            frame, rows[1], viewer, raster,
+                        );
+                    }
                 }
             }
         }
@@ -302,8 +309,46 @@ fn presentation_label(app: &App, viewer: &yoctui_model::HardwareViewerState) -> 
         {
             "Native page"
         }
-        yoctui_model::HardwarePresentation::Page => "Terminal page · fit width",
+        yoctui_model::HardwarePresentation::Page
+            if viewer.document.kind == HardwareDocumentKind::Pdf =>
+        {
+            "Page unavailable"
+        }
+        yoctui_model::HardwarePresentation::Page => "Terminal preview",
     }
+}
+
+fn render_pdf_graphics_help(
+    frame: &mut Frame,
+    app: &App,
+    area: Rect,
+    viewer: &yoctui_model::HardwareViewerState,
+) {
+    let palette = ThemePalette::for_app(app);
+    let text = if viewer.searchable_text.is_empty() {
+        "This PDF has no readable embedded text."
+    } else {
+        "Press v to read the PDF's extracted text."
+    };
+    frame.render_widget(
+        Paragraph::new(vec![
+            Line::styled(
+                "This terminal cannot display PDF page graphics.",
+                palette.role(palette.warning, Modifier::BOLD),
+            ),
+            Line::from(""),
+            Line::from("To view pages inside Yoctui, start it in XTerm with graphics enabled:"),
+            Line::styled(
+                "xterm -ti vt340 -e yoctui attach",
+                Style::default().fg(palette.informational),
+            ),
+            Line::from(""),
+            Line::from(text),
+            Line::from("Esc / Backspace returns to the Hardware library. Tab selects Navigator."),
+        ])
+        .wrap(Wrap { trim: false }),
+        area,
+    );
 }
 
 fn render_text_preview(

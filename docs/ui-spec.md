@@ -6346,3 +6346,5 @@ A GNOME profile setting, terminal name, or VTE version alone does not prove
 graphics support. Require a complete terminal response with SIXEL support.
 Handle fragmented responses within a bounded timeout. Verify actual rendered
 pixels in a real supported terminal using the five PDFs under ~/projects/smarc.
+Large native pages and zoomed views must not be clipped by per-image terminal
+limits; send smaller native tiles while retaining the viewport and Navigator.
